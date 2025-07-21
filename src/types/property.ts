@@ -1,3 +1,4 @@
+
 export interface Property {
   id: string;
   address: string;
@@ -12,6 +13,23 @@ export interface Property {
   leaseStartDate?: string;
   leaseEndDate?: string;
   status: 'occupied' | 'vacant' | 'maintenance';
+  // New fields for enhanced property management
+  propertySize?: number; // in square meters
+  floor?: number;
+  rooms?: number;
+  notes?: string;
+  documents?: PropertyDocument[];
+  lastUpdated?: string;
+  createdAt?: string;
+}
+
+export interface PropertyDocument {
+  id: string;
+  name: string;
+  type: 'contract' | 'image' | 'certificate' | 'invoice' | 'other';
+  url?: string;
+  uploadedAt: string;
+  size?: number;
 }
 
 export interface PropertyStats {

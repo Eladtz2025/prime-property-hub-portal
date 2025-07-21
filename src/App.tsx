@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from './components/Layout';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
+import { PropertyDetail } from './components/PropertyDetail';
 import { Alerts } from './pages/Alerts';
 import { Messages } from './pages/Messages';
 import { Reports } from './pages/Reports';
@@ -26,6 +27,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/reports" element={<Reports />} />

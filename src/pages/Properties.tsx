@@ -1,15 +1,18 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Phone, Mail, Calendar, MapPin } from 'lucide-react';
+import { Search, Filter, Phone, Mail, Calendar, MapPin, Eye } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 
 export const Properties: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
@@ -75,6 +78,10 @@ export const Properties: React.FC = () => {
       return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
     }
     return phone;
+  };
+
+  const handlePropertyClick = (propertyId: string) => {
+    navigate(`/properties/${propertyId}`);
   };
 
   return (
@@ -167,7 +174,11 @@ export const Properties: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {filteredProperties.slice(0, 50).map((property) => (
-                  <TableRow key={property.id}>
+                  <TableRow 
+                    key={property.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handlePropertyClick(property.id)}
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -223,18 +234,38 @@ export const Properties: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePropertyClick(property.id);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         {property.ownerPhone && (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={`tel:${property.ownerPhone}`}>
-                              <Phone className="h-4 w-4" />
-                            </a>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`tel:${property.ownerPhone}`, '_self');
+                            }}
+                          >
+                            <Phone className="h-4 w-4" />
                           </Button>
                         )}
                         {property.ownerEmail && (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={`mailto:${property.ownerEmail}`}>
-                              <Mail className="h-4 w-4" />
-                            </a>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`mailto:${property.ownerEmail}`, '_self');
+                            }}
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
                         )}
                       </div>

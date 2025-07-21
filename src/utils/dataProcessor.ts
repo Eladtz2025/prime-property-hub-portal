@@ -1,5 +1,6 @@
 
 import { Property } from '../types/property';
+import { loadPropertiesFromStorage, mergePropertyWithStorage } from './propertyStorage';
 
 export const fixPhoneNumber = (phone: string): string => {
   if (!phone || phone === 'nan' || phone === '—') return '';
@@ -31,21 +32,27 @@ export const fixPhoneNumber = (phone: string): string => {
 };
 
 export const processPropertyData = (rawData: any[]): Property[] => {
-  return rawData.map((item, index) => ({
-    id: `property-${index + 1}`,
-    address: item.address || '',
-    city: extractCityFromAddress(item.address || ''),
-    ownerName: item.owner_name || '',
-    ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
-    ownerEmail: '',
-    tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
-    tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
-    tenantEmail: '',
-    monthlyRent: 0,
-    leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
-    leaseEndDate: '',
-    status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant'
-  }));
+  return rawData.map((item, index) => {
+    const baseProperty: Property = {
+      id: `property-${index + 1}`,
+      address: item.address || '',
+      city: extractCityFromAddress(item.address || ''),
+      ownerName: item.owner_name || '',
+      ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
+      ownerEmail: '',
+      tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
+      tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
+      tenantEmail: '',
+      monthlyRent: 0,
+      leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
+      leaseEndDate: '',
+      status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
+      createdAt: new Date().toISOString()
+    };
+    
+    // Merge with stored updates
+    return mergePropertyWithStorage(baseProperty);
+  });
 };
 
 export const calculatePropertyStats = (properties: Property[]): any => {
@@ -64,21 +71,27 @@ export const processPropertiesData = async (): Promise<Property[]> => {
     const response = await fetch('/כל הנכסים - JSON ל-AI.json');
     const rawData = await response.json();
     
-    return rawData.map((item: any, index: number) => ({
-      id: `property-${index + 1}`,
-      address: item.address || '',
-      city: extractCityFromAddress(item.address || ''),
-      ownerName: item.owner_name || '',
-      ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
-      ownerEmail: '',
-      tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
-      tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
-      tenantEmail: '',
-      monthlyRent: 0,
-      leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
-      leaseEndDate: '',
-      status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant'
-    }));
+    return rawData.map((item: any, index: number) => {
+      const baseProperty: Property = {
+        id: `property-${index + 1}`,
+        address: item.address || '',
+        city: extractCityFromAddress(item.address || ''),
+        ownerName: item.owner_name || '',
+        ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
+        ownerEmail: '',
+        tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
+        tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
+        tenantEmail: '',
+        monthlyRent: 0,
+        leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
+        leaseEndDate: '',
+        status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Merge with stored updates
+      return mergePropertyWithStorage(baseProperty);
+    });
   } catch (error) {
     console.error('Error loading properties:', error);
     return [];
