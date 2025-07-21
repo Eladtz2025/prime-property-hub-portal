@@ -12,6 +12,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Search, 
   Phone, 
@@ -137,14 +138,15 @@ export const Properties: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">רשימת נכסים</h2>
-        <div className="text-sm text-muted-foreground">
-          {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-foreground">רשימת נכסים</h2>
+          <div className="text-sm text-muted-foreground">
+            {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
+          </div>
         </div>
-      </div>
 
       {/* Filters */}
       <Card>
@@ -290,37 +292,60 @@ export const Properties: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDetails(property.id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingProperty(property)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewDetails(property.id)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>צפה בפרטי הנכס</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingProperty(property)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>עריכת פרטי הנכס</TooltipContent>
+                            </Tooltip>
+                            
                             {property.ownerPhone && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                              >
-                                <Phone className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                  >
+                                    <Phone className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                              </Tooltip>
                             )}
+                            
                             {property.ownerEmail && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
+                              </Tooltip>
                             )}
                           </div>
                         </TableCell>
@@ -377,6 +402,7 @@ export const Properties: React.FC = () => {
           onSave={handlePropertyUpdate}
         />
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
