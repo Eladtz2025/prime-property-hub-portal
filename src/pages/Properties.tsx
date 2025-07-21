@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -155,17 +154,18 @@ export const Properties: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-foreground">רשימת נכסים</h2>
+          <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
           <div className="flex items-center gap-4">
             <Button
               onClick={() => setShowWhatsAppBulkModal(true)}
               disabled={propertiesWithWhatsApp.length === 0}
               className="bg-green-600 hover:bg-green-700 text-white"
+              size={isMobile ? "sm" : "default"}
             >
               <MessageSquare className="h-4 w-4 ml-2" />
-              וואטסאפ קבוצתי ({propertiesWithWhatsApp.length})
+              {isMobile ? `וואטסאפ (${propertiesWithWhatsApp.length})` : `וואטסאפ קבוצתי (${propertiesWithWhatsApp.length})`}
             </Button>
-            <div className="text-sm text-muted-foreground">
+            <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
             </div>
           </div>
@@ -174,7 +174,7 @@ export const Properties: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>חיפוש וסינון</CardTitle>
+          <CardTitle className={isMobile ? 'text-lg' : 'text-xl'}>חיפוש וסינון</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4 flex-col md:flex-row">
@@ -206,6 +206,7 @@ export const Properties: React.FC = () => {
                 setStatusFilter('all');
                 setSortBy('address');
               }}
+              size={isMobile ? "sm" : "default"}
             >
               נקה סינונים
             </Button>
@@ -215,7 +216,7 @@ export const Properties: React.FC = () => {
 
       {/* Main Content */}
       <Card>
-        <Tabs defaultValue="list" className="w-full">
+        <Tabs defaultValue={isMobile ? "cards" : "list"} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="list">רשימה</TabsTrigger>
             <TabsTrigger value="cards">כרטיסים</TabsTrigger>
@@ -225,172 +226,178 @@ export const Properties: React.FC = () => {
           <TabsContent value="list" className="space-y-4">
             <PullToRefresh onRefresh={loadData}>
               <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead 
-                        className="text-right cursor-pointer hover:bg-muted/50" 
-                        onClick={() => handleSort('address')}
-                      >
-                        <div className="flex items-center justify-end gap-2">
-                          כתובת
-                          <ArrowUpDown className="h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="text-right cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSort('ownerName')}
-                      >
-                        <div className="flex items-center justify-end gap-2">
-                          בעל הנכס
-                          <ArrowUpDown className="h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-right">דייר</TableHead>
-                      <TableHead 
-                        className="text-right cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSort('status')}
-                      >
-                        <div className="flex items-center justify-end gap-2">
-                          סטטוס
-                          <ArrowUpDown className="h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="text-right cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSort('leaseEndDate')}
-                      >
-                        <div className="flex items-center justify-end gap-2">
-                          סיום חוזה
-                          <ArrowUpDown className="h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-right">פעולות</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAndSortedProperties.map((property) => (
-                      <TableRow key={property.id}>
-                        <TableCell className="font-medium text-right">{property.address}</TableCell>
-                        <TableCell className="text-right">
+                {isMobile ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <p>עבור למצב כרטיסים לתצוגה טובה יותר במובייל</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-muted/50" 
+                          onClick={() => handleSort('address')}
+                        >
                           <div className="flex items-center justify-end gap-2">
-                            <div>
-                              <div className="font-medium">{property.ownerName}</div>
-                              {property.ownerPhone && (
-                                <div className="text-sm text-muted-foreground">{property.ownerPhone}</div>
-                              )}
-                            </div>
-                            <User className="h-4 w-4 text-muted-foreground" />
+                            כתובת
+                            <ArrowUpDown className="h-4 w-4" />
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {property.tenantName ? (
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('ownerName')}
+                        >
+                          <div className="flex items-center justify-end gap-2">
+                            בעל הנכס
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-right">דייר</TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('status')}
+                        >
+                          <div className="flex items-center justify-end gap-2">
+                            סטטוס
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('leaseEndDate')}
+                        >
+                          <div className="flex items-center justify-end gap-2">
+                            סיום חוזה
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-right">פעולות</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedProperties.map((property) => (
+                        <TableRow key={property.id}>
+                          <TableCell className="font-medium text-right">{property.address}</TableCell>
+                          <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <div>
-                                <div className="font-medium">{property.tenantName}</div>
-                                {property.tenantPhone && (
-                                  <div className="text-sm text-muted-foreground">{property.tenantPhone}</div>
+                                <div className="font-medium">{property.ownerName}</div>
+                                {property.ownerPhone && (
+                                  <div className="text-sm text-muted-foreground">{property.ownerPhone}</div>
                                 )}
                               </div>
                               <User className="h-4 w-4 text-muted-foreground" />
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge className={getStatusColor(property.status)}>
-                            {getStatusText(property.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {property.leaseEndDate ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <span>{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewDetails(property.id)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>צפה בפרטי הנכס</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setEditingProperty(property)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>עריכת פרטי הנכס</TooltipContent>
-                            </Tooltip>
-                            
-                            {property.ownerPhone && (
-                              <>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleWhatsAppSingle(property.ownerPhone!)}
-                                    >
-                                      <MessageSquare className="h-4 w-4 text-green-600" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>שלח הודעת וואטסאפ</TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                                    >
-                                      <Phone className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>התקשר לבעל הנכס</TooltipContent>
-                                </Tooltip>
-                              </>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {property.tenantName ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <div>
+                                  <div className="font-medium">{property.tenantName}</div>
+                                  {property.tenantPhone && (
+                                    <div className="text-sm text-muted-foreground">{property.tenantPhone}</div>
+                                  )}
+                                </div>
+                                <User className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
                             )}
-                            
-                            {property.ownerEmail && (
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={getStatusColor(property.status)}>
+                              {getStatusText(property.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {property.leaseEndDate ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <span>{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                                    onClick={() => handleViewDetails(property.id)}
                                   >
-                                    <Mail className="h-4 w-4" />
+                                    <Eye className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
+                                <TooltipContent>צפה בפרטי הנכס</TooltipContent>
                               </Tooltip>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingProperty(property)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>עריכת פרטי הנכס</TooltipContent>
+                              </Tooltip>
+                              
+                              {property.ownerPhone && (
+                                <>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleWhatsAppSingle(property.ownerPhone!)}
+                                      >
+                                        <MessageSquare className="h-4 w-4 text-green-600" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>שלח הודעת וואטסאפ</TooltipContent>
+                                  </Tooltip>
+                                  
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                      >
+                                        <Phone className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                                  </Tooltip>
+                                </>
+                              )}
+                              
+                              {property.ownerEmail && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                                    >
+                                      <Mail className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </Card>
             </PullToRefresh>
           </TabsContent>

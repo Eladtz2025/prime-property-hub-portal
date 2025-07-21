@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Eye, User, Calendar } from 'lucide-react';
+import { Phone, MapPin, Eye, User, Calendar, MessageSquare, Mail, Edit } from 'lucide-react';
 import { Property } from '@/types/property';
+import { openWhatsApp } from '@/utils/whatsappHelper';
 
 interface MobilePropertyCardProps {
   property: Property;
@@ -33,57 +34,84 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = ({
     }
   };
 
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return '';
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    }
-    return phone;
-  };
-
   return (
     <Card className="mb-4 shadow-sm">
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium text-sm">{property.address}</span>
+            <span className="font-medium text-sm truncate">{property.address}</span>
           </div>
-          <Badge className={`${getStatusColor(property.status)} text-xs`}>
+          <Badge className={`${getStatusColor(property.status)} text-xs flex-shrink-0`}>
             {getStatusText(property.status)}
           </Badge>
         </div>
 
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{property.ownerName}</span>
-            {property.ownerPhone && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                className="h-6 px-2"
-              >
-                <Phone className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-
-          {property.tenantName && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">שוכר: {property.tenantName}</span>
-              {property.tenantPhone && (
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium truncate">{property.ownerName}</span>
+            </div>
+            <div className="flex gap-1">
+              {property.ownerPhone && (
+                <>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => openWhatsApp(property.ownerPhone!)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <MessageSquare className="h-3 w-3 text-green-600" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Phone className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+              {property.ownerEmail && (
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
-                  className="h-6 px-2"
+                  onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                  className="h-7 w-7 p-0"
                 >
-                  <Phone className="h-3 w-3" />
+                  <Mail className="h-3 w-3" />
                 </Button>
+              )}
+            </div>
+          </div>
+
+          {property.tenantName && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm truncate">שוכר: {property.tenantName}</span>
+              </div>
+              {property.tenantPhone && (
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => openWhatsApp(property.tenantPhone!)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <MessageSquare className="h-3 w-3 text-green-600" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Phone className="h-3 w-3" />
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -104,14 +132,16 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = ({
           )}
         </div>
 
-        <Button 
-          onClick={() => onViewDetails(property.id)}
-          className="w-full"
-          size="sm"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          צפה בפרטים
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => onViewDetails(property.id)}
+            className="flex-1"
+            size="sm"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            צפה בפרטים
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
