@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, Phone, Mail, Calendar, MapPin, Eye } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
+import { MobilePropertyCard } from '@/components/MobilePropertyCard';
+import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 export const Properties: React.FC = () => {
   const navigate = useNavigate();
+  const { isMobile } = useMobileOptimization();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
@@ -88,7 +90,9 @@ export const Properties: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">רשימת נכסים</h2>
+        <h2 className={`font-bold text-foreground ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
+          רשימת נכסים
+        </h2>
         <div className="text-sm text-muted-foreground">
           {filteredProperties.length} מתוך {properties.length} נכסים
         </div>
@@ -103,7 +107,7 @@ export const Properties: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-4'}`}>
             <div className="relative">
               <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -152,137 +156,158 @@ export const Properties: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Properties Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>נכסים ({filteredProperties.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">כתובת</TableHead>
-                  <TableHead className="text-right">עיר</TableHead>
-                  <TableHead className="text-right">סטטוס</TableHead>
-                  <TableHead className="text-right">בעל נכס</TableHead>
-                  <TableHead className="text-right">שוכר</TableHead>
-                  <TableHead className="text-right">שכירות</TableHead>
-                  <TableHead className="text-right">תאריך סיום</TableHead>
-                  <TableHead className="text-right">פעולות</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProperties.slice(0, 50).map((property) => (
-                  <TableRow 
-                    key={property.id} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handlePropertyClick(property.id)}
-                  >
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        {property.address}
-                      </div>
-                    </TableCell>
-                    <TableCell>{property.city}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(property.status)}>
-                        {getStatusText(property.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{property.ownerName}</div>
-                        {property.ownerPhone && (
-                          <div className="text-sm text-muted-foreground">
-                            {formatPhoneNumber(property.ownerPhone)}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {property.tenantName ? (
+      {/* Properties List */}
+      {isMobile ? (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">נכסים ({filteredProperties.length})</h3>
+          <div className="space-y-4">
+            {filteredProperties.slice(0, 50).map((property) => (
+              <MobilePropertyCard
+                key={property.id}
+                property={property}
+                onViewDetails={handlePropertyClick}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>נכסים ({filteredProperties.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">כתובת</TableHead>
+                    <TableHead className="text-right">עיר</TableHead>
+                    <TableHead className="text-right">סטטוס</TableHead>
+                    <TableHead className="text-right">בעל נכס</TableHead>
+                    <TableHead className="text-right">שוכר</TableHead>
+                    <TableHead className="text-right">שכירות</TableHead>
+                    <TableHead className="text-right">תאריך סיום</TableHead>
+                    <TableHead className="text-right">פעולות</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProperties.slice(0, 50).map((property) => (
+                    <TableRow 
+                      key={property.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handlePropertyClick(property.id)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          {property.address}
+                        </div>
+                      </TableCell>
+                      <TableCell>{property.city}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(property.status)}>
+                          {getStatusText(property.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <div>
-                          <div className="font-medium">{property.tenantName}</div>
-                          {property.tenantPhone && (
+                          <div className="font-medium">{property.ownerName}</div>
+                          {property.ownerPhone && (
                             <div className="text-sm text-muted-foreground">
-                              {formatPhoneNumber(property.tenantPhone)}
+                              {formatPhoneNumber(property.ownerPhone)}
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground">אין שוכר</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {property.monthlyRent ? (
-                        <span className="font-medium">₪{property.monthlyRent.toLocaleString()}</span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {property.leaseEndDate ? (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {new Date(property.leaseEndDate).toLocaleDateString('he-IL')}
+                      </TableCell>
+                      <TableCell>
+                        {property.tenantName ? (
+                          <div>
+                            <div className="font-medium">{property.tenantName}</div>
+                            {property.tenantPhone && (
+                              <div className="text-sm text-muted-foreground">
+                                {formatPhoneNumber(property.tenantPhone)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">אין שוכר</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {property.monthlyRent ? (
+                          <span className="font-medium">₪{property.monthlyRent.toLocaleString()}</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {property.leaseEndDate ? (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            {new Date(property.leaseEndDate).toLocaleDateString('he-IL')}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">לא זמין</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePropertyClick(property.id);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {property.ownerPhone && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`tel:${property.ownerPhone}`, '_self');
+                              }}
+                            >
+                              <Phone className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {property.ownerEmail && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`mailto:${property.ownerEmail}`, '_self');
+                              }}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground">לא זמין</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePropertyClick(property.id);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {property.ownerPhone && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`tel:${property.ownerPhone}`, '_self');
-                            }}
-                          >
-                            <Phone className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {property.ownerEmail && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`mailto:${property.ownerEmail}`, '_self');
-                            }}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {filteredProperties.length > 50 && (
-            <div className="mt-4 text-center text-muted-foreground">
-              מציג 50 נכסים ראשונים מתוך {filteredProperties.length}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            {filteredProperties.length > 50 && (
+              <div className="mt-4 text-center text-muted-foreground">
+                מציג 50 נכסים ראשונים מתוך {filteredProperties.length}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredProperties.length > 50 && (
+        <div className="mt-4 text-center text-muted-foreground">
+          מציג 50 נכסים ראשונים מתוך {filteredProperties.length}
+        </div>
+      )}
     </div>
   );
 };
