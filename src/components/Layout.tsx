@@ -2,6 +2,7 @@
 import React from 'react';
 import { TopNavigation } from './TopNavigation';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
+import { Building2 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,8 +15,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen flex flex-col w-full bg-background">
       <header className={`h-14 border-b bg-card flex items-center justify-between px-4 ${isMobile ? 'sticky top-0 z-10' : ''}`}>
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">PM</span>
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform duration-200">
+            <Building2 className="h-5 w-5 text-primary-foreground" />
           </div>
           <h1 className={`font-bold text-foreground ${isMobile ? 'text-lg' : 'text-xl'}`}>
             מערכת ניהול נכסים

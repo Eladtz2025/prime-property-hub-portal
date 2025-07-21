@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User } from 'lucide-react';
+import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon } from 'lucide-react';
 import { Property } from '../types/property';
+import { ImageCarousel } from './ImageCarousel';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -69,8 +70,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general">פרטים כלליים</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="general">כללי</TabsTrigger>
+            <TabsTrigger value="images">תמונות</TabsTrigger>
             <TabsTrigger value="contract">חוזה</TabsTrigger>
             <TabsTrigger value="history">היסטוריה</TabsTrigger>
             <TabsTrigger value="notes">הערות</TabsTrigger>
@@ -207,6 +209,21 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Images */}
+          <TabsContent value="images" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  תמונות הנכס
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ImageCarousel images={property.images || []} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Contract Details */}

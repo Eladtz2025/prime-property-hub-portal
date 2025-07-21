@@ -19,8 +19,18 @@ export interface Property {
   rooms?: number;
   notes?: string;
   documents?: PropertyDocument[];
+  images?: PropertyImage[];
   lastUpdated?: string;
   createdAt?: string;
+}
+
+export interface PropertyImage {
+  id: string;
+  name: string;
+  url: string; // Base64 encoded image data
+  isPrimary: boolean;
+  uploadedAt: string;
+  size?: number;
 }
 
 export interface PropertyDocument {
