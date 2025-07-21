@@ -1,16 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Bell, Clock, CheckCircle, Phone, Mail } from 'lucide-react';
-import { Alert } from '../types/property';
+import { Alert, Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { AlertCard } from '../components/AlertCard';
 
 export const Alerts: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'urgent' | 'high' | 'medium'>('all');
   
-  const properties = processPropertiesData();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await processPropertiesData();
+      setProperties(data);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
   
   // Generate alerts from properties data
   const alerts = useMemo(() => {
