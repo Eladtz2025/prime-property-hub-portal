@@ -6,6 +6,7 @@ import { AlertTriangle, Bell, Clock, CheckCircle, Phone, Mail } from 'lucide-rea
 import { Alert, Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { AlertCard } from '../components/AlertCard';
+import { PullToRefresh } from '../components/PullToRefresh';
 
 export const Alerts: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'urgent' | 'high' | 'medium'>('all');
@@ -14,13 +15,20 @@ export const Alerts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const loadData = async () => {
-      const data = await processPropertiesData();
-      setProperties(data);
-      setLoading(false);
-    };
     loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const data = await processPropertiesData();
+      setProperties(data);
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Generate alerts from properties data
   const alerts = useMemo(() => {
@@ -132,14 +140,15 @@ export const Alerts: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">התראות ומעקב</h2>
-        <div className="text-sm text-muted-foreground">
-          {filteredAlerts.length} התראות פעילות
+    <PullToRefresh onRefresh={loadData}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-foreground">התראות ומעקב</h2>
+          <div className="text-sm text-muted-foreground">
+            {filteredAlerts.length} התראות פעילות
+          </div>
         </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -245,7 +254,8 @@ export const Alerts: React.FC = () => {
             <AlertCard key={alert.id} alert={alert} />
           ))
         )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
   );
 };
