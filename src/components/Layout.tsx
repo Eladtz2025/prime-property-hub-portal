@@ -14,7 +14,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col w-full bg-background">
       <header className={`h-14 border-b bg-card flex items-center justify-between px-4 ${isMobile ? 'sticky top-0 z-10' : ''}`}>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform duration-200">
             <Building2 className="h-5 w-5 text-primary-foreground" />
           </div>
