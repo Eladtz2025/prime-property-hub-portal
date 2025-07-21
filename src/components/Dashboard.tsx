@@ -1,0 +1,129 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell } from 'lucide-react';
+import { Property, PropertyStats, Alert } from '../types/property';
+import { AlertCard } from './AlertCard';
+import { StatsCard } from './StatsCard';
+
+interface DashboardProps {
+  properties: Property[];
+  stats: PropertyStats;
+  alerts: Alert[];
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts }) => {
+  const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
+  const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-foreground">דשבורד מרכזי</h2>
+        <div className="text-sm text-muted-foreground">
+          עדכון אחרון: {new Date().toLocaleDateString('he-IL')}
+        </div>
+      </div>
+
+      {/* Urgent Alerts */}
+      {urgentAlerts.length > 0 && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              התראות דחופות ({urgentAlerts.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {urgentAlerts.slice(0, 3).map((alert) => (
+              <AlertCard key={alert.id} alert={alert} />
+            ))}
+            {urgentAlerts.length > 3 && (
+              <Button variant="outline" size="sm" className="w-full">
+                הצג עוד {urgentAlerts.length - 3} התראות
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard 
+          title="סה״כ נכסים"
+          value={stats.totalProperties}
+          icon={Building}
+          color="blue"
+        />
+        <StatsCard 
+          title="נכסים תפוסים"
+          value={stats.occupiedProperties}
+          icon={CheckCircle}
+          color="green"
+        />
+        <StatsCard 
+          title="נכסים פנויים"
+          value={stats.vacantProperties}
+          icon={Users}
+          color="orange"
+        />
+        <StatsCard 
+          title="חידושים קרובים"
+          value={stats.upcomingRenewals}
+          icon={Clock}
+          color="purple"
+        />
+      </div>
+
+      {/* High Priority Alerts */}
+      {highPriorityAlerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              התראות בעדיפות גבוהה
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {highPriorityAlerts.slice(0, 5).map((alert) => (
+              <AlertCard key={alert.id} alert={alert} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>פעילות אחרונה</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-primary" />
+                <div>
+                  <div className="font-medium">שיחה עם בעל נכס</div>
+                  <div className="text-sm text-muted-foreground">בן יהודה 107 - שחר</div>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">לפני 2 שעות</div>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Building className="h-4 w-4 text-primary" />
+                <div>
+                  <div className="font-medium">נכס חדש נוסף</div>
+                  <div className="text-sm text-muted-foreground">זנגביל 24 - מייק</div>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">אתמול</div>
+            </div>
+          </div>
+        </CardContent>
+      </div>
+    </div>
+  );
+};
