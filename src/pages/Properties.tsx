@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Phone, Mail, Calendar, MapPin, Eye } from 'lucide-react';
+import { Search, Filter, Phone, Mail, Calendar, MapPin, Eye, ArrowUpDown } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { MobilePropertyCard } from '@/components/MobilePropertyCard';
@@ -17,7 +17,7 @@ export const Properties: React.FC = () => {
   const { isMobile } = useMobileOptimization();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [cityFilter, setCityFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('address');
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,16 +30,10 @@ export const Properties: React.FC = () => {
     };
     loadData();
   }, []);
-  
-  // Get unique cities for filter
-  const cities = useMemo(() => {
-    const citySet = new Set(properties.map(p => p.city).filter(Boolean));
-    return Array.from(citySet).sort();
-  }, [properties]);
 
-  // Filtered properties
+  // Filtered and sorted properties
   const filteredProperties = useMemo(() => {
-    return properties.filter(property => {
+    let filtered = properties.filter(property => {
       const matchesSearch = 
         property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,11 +41,29 @@ export const Properties: React.FC = () => {
         property.city.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
-      const matchesCity = cityFilter === 'all' || property.city === cityFilter;
       
-      return matchesSearch && matchesStatus && matchesCity;
+      return matchesSearch && matchesStatus;
     });
-  }, [properties, searchTerm, statusFilter, cityFilter]);
+
+    // Sort properties
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'lease_expiry':
+          if (!a.leaseEndDate && !b.leaseEndDate) return 0;
+          if (!a.leaseEndDate) return 1;
+          if (!b.leaseEndDate) return -1;
+          return new Date(a.leaseEndDate).getTime() - new Date(b.leaseEndDate).getTime();
+        case 'owner':
+          return a.ownerName.localeCompare(b.ownerName, 'he');
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default: // address
+          return a.address.localeCompare(b.address, 'he');
+      }
+    });
+
+    return filtered;
+  }, [properties, searchTerm, statusFilter, sortBy]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -130,15 +142,15 @@ export const Properties: React.FC = () => {
               </SelectContent>
             </Select>
 
-            <Select value={cityFilter} onValueChange={setCityFilter}>
+            <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger>
-                <SelectValue placeholder="עיר" />
+                <SelectValue placeholder="מיון לפי" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל הערים</SelectItem>
-                {cities.map(city => (
-                  <SelectItem key={city} value={city}>{city}</SelectItem>
-                ))}
+                <SelectItem value="address">כתובת</SelectItem>
+                <SelectItem value="owner">בעל נכס</SelectItem>
+                <SelectItem value="status">סטטוס</SelectItem>
+                <SelectItem value="lease_expiry">סיום חוזה</SelectItem>
               </SelectContent>
             </Select>
 
@@ -147,7 +159,7 @@ export const Properties: React.FC = () => {
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
-                setCityFilter('all');
+                setSortBy('address');
               }}
             >
               נקה סינונים
@@ -173,7 +185,15 @@ export const Properties: React.FC = () => {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>נכסים ({filteredProperties.length})</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>נכסים ({filteredProperties.length})</span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ArrowUpDown className="h-4 w-4" />
+                מיון לפי: {sortBy === 'address' ? 'כתובת' : 
+                          sortBy === 'owner' ? 'בעל נכס' : 
+                          sortBy === 'status' ? 'סטטוס' : 'סיום חוזה'}
+              </div>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
