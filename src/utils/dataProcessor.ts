@@ -77,39 +77,39 @@ export const calculatePropertyStats = (properties: Property[]): any => {
   return stats;
 };
 
-export const processPropertiesData = (): Property[] => {
-  // This is a simplified version - in real implementation, would load from JSON
-  return [
-    {
-      id: '1',
-      address: 'בן יהודה 107',
-      city: 'תל אביב',
-      ownerName: 'שחר',
-      ownerPhone: '050-123-4567',
-      ownerEmail: 'shachar@example.com',
-      tenantName: 'דני כהן',
-      tenantPhone: '054-987-6543',
-      tenantEmail: 'danny@example.com',
-      monthlyRent: 8500,
-      leaseStartDate: '2023-01-01',
-      leaseEndDate: '2024-12-31',
-      status: 'occupied'
-    },
-    {
-      id: '2',
-      address: 'זנגביל 24',
-      city: 'תל אביב',
-      ownerName: 'מייק',
-      ownerPhone: '052-111-2222',
-      ownerEmail: 'mike@example.com',
-      tenantName: '',
-      tenantPhone: '',
-      tenantEmail: '',
-      monthlyRent: 0,
-      leaseStartDate: '',
-      leaseEndDate: '',
-      status: 'vacant'
-    }
-    // Add more sample data as needed
-  ];
+export const processPropertiesData = async (): Promise<Property[]> => {
+  try {
+    const response = await fetch('/כל הנכסים - JSON ל-AI.json');
+    const rawData = await response.json();
+    
+    return rawData.map((item: any, index: number) => ({
+      id: `property-${index + 1}`,
+      address: item.address || item['כתובת'] || '',
+      city: item.city || item['עיר'] || extractCityFromAddress(item.address || item['כתובת'] || ''),
+      ownerName: item.ownerName || item['בעל נכס'] || item['שם בעל נכס'] || '',
+      ownerPhone: fixPhoneNumber(item.ownerPhone || item['טלפון בעל נכס'] || ''),
+      ownerEmail: item.ownerEmail || item['אימייל בעל נכס'] || '',
+      tenantName: (item.tenant && item.tenant !== 'nan') ? item.tenant : 
+                  (item['שוכר'] && item['שוכר'] !== 'nan') ? item['שוכר'] : '',
+      tenantPhone: fixPhoneNumber(item.tenantPhone || item['טלפון שוכר'] || ''),
+      tenantEmail: item.tenantEmail || item['אימייל שוכר'] || '',
+      monthlyRent: parseFloat(item.monthlyRent || item['שכירות חודשית'] || '0') || 0,
+      leaseStartDate: item.leaseStartDate || item['תאריך תחילת חוזה'] || item.entryDate || '',
+      leaseEndDate: item.leaseEndDate || item['תאריך סיום חוזה'] || '',
+      status: (item.tenant && item.tenant !== 'nan') || (item['שוכר'] && item['שוכר'] !== 'nan') ? 'occupied' : 'vacant'
+    }));
+  } catch (error) {
+    console.error('Error loading properties:', error);
+    return [];
+  }
+};
+
+const extractCityFromAddress = (address: string): string => {
+  if (!address) return '';
+  // Extract city from address - common Israeli city patterns
+  const cities = ['תל אביב', 'ירושלים', 'חיפה', 'רמת גן', 'גבעתיים', 'בני ברק', 'פתח תקווה'];
+  for (const city of cities) {
+    if (address.includes(city)) return city;
+  }
+  return address.split(',')[1]?.trim() || 'לא צוין';
 };
