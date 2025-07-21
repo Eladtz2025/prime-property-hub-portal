@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, Bell, Users, FileText, Settings, Search } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -16,12 +16,10 @@ import {
 
 const navigationItems = [
   { title: "דשבורד", url: "/", icon: Home },
-  { title: "כל הנכסים", url: "/properties", icon: Building },
-  { title: "התראות", url: "/alerts", icon: Bell },
-  { title: "בעלי נכסים", url: "/owners", icon: Users },
-  { title: "חיפוש", url: "/search", icon: Search },
-  { title: "דוחות", url: "/reports", icon: FileText },
-  { title: "הגדרות", url: "/settings", icon: Settings },
+  { title: "נכסים", url: "/properties", icon: Building },
+  { title: "התראות", url: "/alerts", icon: AlertTriangle },
+  { title: "הודעות", url: "/messages", icon: MessageSquare },
+  { title: "דוחות", url: "/reports", icon: BarChart3 },
 ];
 
 export function AppSidebar() {

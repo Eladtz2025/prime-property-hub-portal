@@ -76,3 +76,40 @@ export const calculatePropertyStats = (properties: Property[]): any => {
 
   return stats;
 };
+
+export const processPropertiesData = (): Property[] => {
+  // This is a simplified version - in real implementation, would load from JSON
+  return [
+    {
+      id: '1',
+      address: 'בן יהודה 107',
+      city: 'תל אביב',
+      ownerName: 'שחר',
+      ownerPhone: '050-123-4567',
+      ownerEmail: 'shachar@example.com',
+      tenantName: 'דני כהן',
+      tenantPhone: '054-987-6543',
+      tenantEmail: 'danny@example.com',
+      monthlyRent: 8500,
+      leaseStartDate: '2023-01-01',
+      leaseEndDate: '2024-12-31',
+      status: 'occupied'
+    },
+    {
+      id: '2',
+      address: 'זנגביל 24',
+      city: 'תל אביב',
+      ownerName: 'מייק',
+      ownerPhone: '052-111-2222',
+      ownerEmail: 'mike@example.com',
+      tenantName: '',
+      tenantPhone: '',
+      tenantEmail: '',
+      monthlyRent: 0,
+      leaseStartDate: '',
+      leaseEndDate: '',
+      status: 'vacant'
+    }
+    // Add more sample data as needed
+  ];
+};

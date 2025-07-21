@@ -1,37 +1,34 @@
-
 export interface Property {
   id: string;
   address: string;
+  city: string;
   ownerName: string;
-  ownerPhone: string;
-  tenant: string;
-  tenantPhone: string;
-  additionalDetails: string;
-  entryDate: string;
-  status: 'occupied' | 'vacant' | 'pending';
-  contractStatus: 'yearly' | 'two-year' | 'flexible' | 'custom';
-  contractEndDate?: string;
-  lastContactDate?: string;
-  notes?: string;
-  reminderStatus?: 'none' | 'two-months' | 'one-month' | 'two-weeks' | 'urgent';
+  ownerPhone?: string;
+  ownerEmail?: string;
+  tenantName?: string;
+  tenantPhone?: string;
+  tenantEmail?: string;
+  monthlyRent?: number;
+  leaseStartDate?: string;
+  leaseEndDate?: string;
+  status: 'occupied' | 'vacant' | 'maintenance';
 }
 
 export interface PropertyStats {
   totalProperties: number;
   occupiedProperties: number;
   vacantProperties: number;
-  pendingProperties: number;
   upcomingRenewals: number;
-  urgentAlerts: number;
 }
 
 export interface Alert {
   id: string;
-  propertyId: string;
-  type: 'contract-renewal' | 'contact-needed' | 'vacant-property' | 'urgent';
-  title: string;
+  type: 'lease_expiry' | 'vacancy' | 'maintenance' | 'payment';
+  priority: 'urgent' | 'high' | 'medium';
   message: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  dueDate: string;
-  status: 'active' | 'handled' | 'snoozed';
+  propertyAddress: string;
+  ownerName: string;
+  tenantName?: string;
+  dueDate?: string;
+  createdAt: string;
 }
