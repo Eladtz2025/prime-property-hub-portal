@@ -18,19 +18,25 @@ export const TopNavigation: React.FC = () => {
   const { isMobile } = useMobileOptimization();
 
   return (
-    <nav className="flex items-center space-x-1 space-x-reverse rtl:space-x-reverse">
+    <nav className={cn(
+      "flex items-center rtl:space-x-reverse",
+      isMobile ? "gap-0.5" : "space-x-1 space-x-reverse"
+    )}>
       {navigationItems.map((item) => (
         <NavLink 
           key={item.title}
           to={item.url}
           className={({ isActive }) => cn(
-            "flex items-center px-3 py-2 rounded-md transition-colors",
+            "flex items-center rounded-md transition-colors",
+            isMobile ? "px-2 py-1.5" : "px-3 py-2",
             isActive 
               ? "bg-primary text-primary-foreground" 
               : "text-foreground hover:bg-accent hover:text-accent-foreground"
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn(
+            isMobile ? "h-3.5 w-3.5" : "h-4 w-4"
+          )} />
           {!isMobile && (
             <span className="mr-2 rtl:ml-2 rtl:mr-0">{item.title}</span>
           )}
