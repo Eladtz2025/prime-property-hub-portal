@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,8 @@ import {
   User, 
   Calendar,
   ArrowUpDown,
-  Map
+  Map,
+  MessageSquare
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
@@ -31,7 +33,9 @@ import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
+import { WhatsAppBulkModal } from '../components/WhatsAppBulkModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 
 export const Properties: React.FC = () => {
   const { isMobile } = useMobileOptimization();
@@ -40,6 +44,7 @@ export const Properties: React.FC = () => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [showWhatsAppBulkModal, setShowWhatsAppBulkModal] = useState(false);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +98,10 @@ export const Properties: React.FC = () => {
     return filtered;
   }, [properties, searchTerm, statusFilter, sortBy]);
 
+  const propertiesWithWhatsApp = useMemo(() => {
+    return getPropertiesWithPhones(filteredAndSortedProperties);
+  }, [filteredAndSortedProperties]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -129,6 +138,10 @@ export const Properties: React.FC = () => {
     setEditingProperty(null);
   };
 
+  const handleWhatsAppSingle = (phone: string) => {
+    openWhatsApp(phone);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -143,8 +156,18 @@ export const Properties: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold text-foreground">רשימת נכסים</h2>
-          <div className="text-sm text-muted-foreground">
-            {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setShowWhatsAppBulkModal(true)}
+              disabled={propertiesWithWhatsApp.length === 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <MessageSquare className="h-4 w-4 ml-2" />
+              וואטסאפ קבוצתי ({propertiesWithWhatsApp.length})
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
+            </div>
           </div>
         </div>
 
@@ -319,18 +342,33 @@ export const Properties: React.FC = () => {
                             </Tooltip>
                             
                             {property.ownerPhone && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                                  >
-                                    <Phone className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>התקשר לבעל הנכס</TooltipContent>
-                              </Tooltip>
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleWhatsAppSingle(property.ownerPhone!)}
+                                    >
+                                      <MessageSquare className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>שלח הודעת וואטסאפ</TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                    >
+                                      <Phone className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                                </Tooltip>
+                              </>
                             )}
                             
                             {property.ownerEmail && (
@@ -400,6 +438,15 @@ export const Properties: React.FC = () => {
           isOpen={true}
           onClose={() => setEditingProperty(null)}
           onSave={handlePropertyUpdate}
+        />
+      )}
+
+      {/* WhatsApp Bulk Modal */}
+      {showWhatsAppBulkModal && (
+        <WhatsAppBulkModal
+          isOpen={showWhatsAppBulkModal}
+          onClose={() => setShowWhatsAppBulkModal(false)}
+          properties={filteredAndSortedProperties}
         />
       )}
       </div>
