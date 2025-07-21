@@ -123,7 +123,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts 
             </div>
           </div>
         </CardContent>
-      </div>
+        </Card>
     </div>
   );
 };
