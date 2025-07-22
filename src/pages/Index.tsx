@@ -9,14 +9,20 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🚀 Index component mounted, starting to load data...');
     const loadData = async () => {
       try {
+        console.log('📞 Calling processPropertiesData...');
         const propertiesData = await processPropertiesData();
+        console.log('🎯 Got properties data:', propertiesData.length, 'items');
+        console.log('📋 Properties sample:', propertiesData.slice(0, 2));
         setProperties(propertiesData);
+        console.log('✅ Properties set in state');
       } catch (error) {
-        console.error('Failed to load properties:', error);
+        console.error('❌ Failed to load properties:', error);
       } finally {
         setLoading(false);
+        console.log('🏁 Loading finished');
       }
     };
 
