@@ -94,6 +94,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts 
         </Card>
       )}
 
+      {/* Properties Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>סקירת נכסים</span>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/properties">הצג הכל</a>
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {properties.slice(0, 5).map((property) => (
+              <div key={property.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <Building className="h-4 w-4 text-primary" />
+                  <div>
+                    <div className="font-medium">{property.address}</div>
+                    <div className="text-sm text-muted-foreground">
+                      בעלים: {property.ownerName}
+                      {property.tenantName && ` • דייר: ${property.tenantName}`}
+                    </div>
+                  </div>
+                </div>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  property.status === 'occupied' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-orange-100 text-orange-800'
+                }`}>
+                  {property.status === 'occupied' ? 'תפוס' : 'פנוי'}
+                </div>
+              </div>
+            ))}
+            {properties.length > 5 && (
+              <div className="text-center text-sm text-muted-foreground pt-2">
+                ועוד {properties.length - 5} נכסים נוספים
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Recent Activity */}
       <Card>
         <CardHeader>
