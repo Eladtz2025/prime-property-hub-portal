@@ -17,6 +17,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts 
   const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
   const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
 
+  console.log('📊 Dashboard rendering with:', properties.length, 'properties');
+  console.log('🏠 Properties in dashboard:', properties.slice(0, 3));
+  
   return (
     <div className="space-y-6">
       {/* Header */}
