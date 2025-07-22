@@ -31,8 +31,17 @@ const Index = () => {
     loadData();
   }, []);
 
-  const handlePropertyAdded = (newProperty: Property) => {
-    setProperties(prev => [...prev, newProperty]);
+  const handlePropertyAdded = async (newProperty: Property) => {
+    try {
+      // Save to localStorage
+      const { savePropertyToStorage } = await import('../utils/propertyStorage');
+      await savePropertyToStorage(newProperty);
+      
+      // Update state
+      setProperties(prev => [...prev, newProperty]);
+    } catch (error) {
+      console.error('Error saving new property:', error);
+    }
   };
 
   const stats: PropertyStats = calculatePropertyStats(properties);

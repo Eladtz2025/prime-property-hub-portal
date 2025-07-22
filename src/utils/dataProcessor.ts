@@ -125,10 +125,16 @@ export const processPropertiesData = async (): Promise<Property[]> => {
         return mergePropertyWithStorage(baseProperty);
       });
     
+    // Load additional properties from localStorage (newly added properties)
+    const storedProperties = loadPropertiesFromStorage();
+    const newlyAddedProperties = Object.values(storedProperties)
+      .filter(property => !processedProperties.find(p => p.id === property.id));
+    
     console.log('🏠 Processed properties count:', processedProperties.length);
     console.log('📊 Sample processed property:', processedProperties[0]);
+    console.log('✨ Newly added properties:', newlyAddedProperties.length);
     
-    return processedProperties;
+    return [...processedProperties, ...newlyAddedProperties];
   } catch (error) {
     console.error('❌ Error loading properties:', error);
     // Return empty array as final fallback
