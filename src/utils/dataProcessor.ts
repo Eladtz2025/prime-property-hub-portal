@@ -68,32 +68,60 @@ export const calculatePropertyStats = (properties: Property[]): any => {
 
 export const processPropertiesData = async (): Promise<Property[]> => {
   try {
+    console.log('🔄 Starting to fetch properties data...');
     const response = await fetch('/כל הנכסים - JSON ל-AI.json');
-    const rawData = await response.json();
     
-    return rawData.map((item: any, index: number) => {
-      const baseProperty: Property = {
-        id: `property-${index + 1}`,
-        address: item.address || '',
-        city: extractCityFromAddress(item.address || ''),
-        ownerName: item.owner_name || '',
-        ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
-        ownerEmail: '',
-        tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
-        tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
-        tenantEmail: '',
-        monthlyRent: 0,
-        leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
-        leaseEndDate: '',
-        status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
-        createdAt: new Date().toISOString()
-      };
-      
-      // Merge with stored updates
-      return mergePropertyWithStorage(baseProperty);
-    });
+    if (!response.ok) {
+      console.error('❌ Failed to fetch properties:', response.status, response.statusText);
+      return [];
+    }
+    
+    const rawData = await response.json();
+    console.log('✅ Raw data loaded, items count:', rawData.length);
+    console.log('📋 First few items:', rawData.slice(0, 3));
+    
+    const processedProperties = rawData
+      .filter((item: any) => {
+        // Filter out header row and invalid entries
+        const isValid = item.address && 
+                       item.address !== 'רחוב' && 
+                       item.address !== 'נובמבר 2021' &&
+                       item.owner_name &&
+                       item.owner_name !== 'שם בעל דירה';
+        
+        if (!isValid) {
+          console.log('⚠️ Filtering out invalid item:', item.address, item.owner_name);
+        }
+        return isValid;
+      })
+      .map((item: any, index: number) => {
+        const baseProperty: Property = {
+          id: `property-${index + 1}`,
+          address: item.address || '',
+          city: extractCityFromAddress(item.address || ''),
+          ownerName: item.owner_name || '',
+          ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
+          ownerEmail: '',
+          tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
+          tenantPhone: fixPhoneNumber(String(item.tenant_phone || '')),
+          tenantEmail: '',
+          monthlyRent: 0,
+          leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
+          leaseEndDate: '',
+          status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
+          createdAt: new Date().toISOString()
+        };
+        
+        // Merge with stored updates
+        return mergePropertyWithStorage(baseProperty);
+      });
+    
+    console.log('🏠 Processed properties count:', processedProperties.length);
+    console.log('📊 Sample processed property:', processedProperties[0]);
+    
+    return processedProperties;
   } catch (error) {
-    console.error('Error loading properties:', error);
+    console.error('❌ Error loading properties:', error);
     return [];
   }
 };
