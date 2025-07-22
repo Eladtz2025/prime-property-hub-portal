@@ -5,9 +5,9 @@ import { LucideIcon } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
-  color: 'blue' | 'green' | 'orange' | 'purple';
+  color: 'blue' | 'green' | 'orange' | 'purple' | 'gray';
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color }) => {
@@ -15,7 +15,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
     blue: 'text-blue-600 bg-blue-100',
     green: 'text-green-600 bg-green-100',
     orange: 'text-orange-600 bg-orange-100',
-    purple: 'text-purple-600 bg-purple-100'
+    purple: 'text-purple-600 bg-purple-100',
+    gray: 'text-gray-600 bg-gray-100'
   };
 
   return (
@@ -27,7 +28,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value.toLocaleString('he-IL')}</div>
+        <div className="text-2xl font-bold">
+          {typeof value === 'number' ? value.toLocaleString('he-IL') : value}
+        </div>
       </CardContent>
     </Card>
   );

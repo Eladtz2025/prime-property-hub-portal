@@ -32,10 +32,15 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <div className="font-medium">{alert.message}</div>
-          <div className="text-sm text-muted-foreground">{alert.message}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            תאריך יעד: {new Date(alert.dueDate).toLocaleDateString('he-IL')}
+          <div className="font-medium text-sm">{alert.message}</div>
+          <div className="text-xs text-muted-foreground">
+            {alert.propertyAddress && `כתובת: ${alert.propertyAddress}`}
+            {alert.ownerName && ` • בעלים: ${alert.ownerName}`}
+            {alert.dueDate && (
+              <div className="mt-1">
+                יעד: {new Date(alert.dueDate).toLocaleDateString('he-IL')}
+              </div>
+            )}
           </div>
         </div>
       </div>

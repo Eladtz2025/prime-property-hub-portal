@@ -86,7 +86,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               </div>
               <div className="text-xl font-bold">
                 ₪{properties
-                  .filter(p => p.monthlyRent)
+                  .filter(p => p.monthlyRent && p.monthlyRent > 0)
                   .reduce((sum, p) => sum + (p.monthlyRent || 0), 0)
                   .toLocaleString('he-IL')}
               </div>
@@ -97,19 +97,31 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 
       {/* Urgent Alerts */}
       {urgentAlerts.length > 0 && (
-        <Card className="border-red-200 bg-red-50 animate-scale-in">
+        <Card className="border-red-200/60 bg-red-50/80 animate-scale-in backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-red-600 text-base">
+            <CardTitle className="flex items-center gap-2 text-red-700 text-base">
               <AlertTriangle className="h-4 w-4" />
               התראות דחופות ({urgentAlerts.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {urgentAlerts.slice(0, 2).map((alert) => (
-              <AlertCard key={alert.id} alert={alert} />
+              <div key={alert.id} className="bg-white/60 rounded-lg p-3 border border-red-100">
+                <div className="flex items-start gap-3">
+                  <div className="bg-red-100 p-2 rounded-full">
+                    <AlertTriangle className="h-3 w-3 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm text-red-800">{alert.message}</div>
+                    <div className="text-xs text-red-600 mt-1">
+                      {alert.propertyAddress} • {alert.ownerName}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
             {urgentAlerts.length > 2 && (
-              <Button variant="outline" size="sm" className="w-full text-xs">
+              <Button variant="outline" size="sm" className="w-full text-xs border-red-200 text-red-700 hover:bg-red-50">
                 הצג עוד {urgentAlerts.length - 2}
               </Button>
             )}

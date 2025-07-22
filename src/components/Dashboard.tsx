@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -63,7 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard 
           title="סה״כ נכסים"
           value={stats.totalProperties}
@@ -83,10 +83,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           color="orange"
         />
         <StatsCard 
+          title="הכנסה חודשית"
+          value={`₪${properties
+            .filter(p => p.monthlyRent && p.monthlyRent > 0)
+            .reduce((sum, p) => sum + (p.monthlyRent || 0), 0)
+            .toLocaleString('he-IL')}`}
+          icon={TrendingUp}
+          color="purple"
+        />
+        <StatsCard 
           title="חידושים קרובים"
           value={stats.upcomingRenewals}
           icon={Clock}
-          color="purple"
+          color="gray"
         />
       </div>
 

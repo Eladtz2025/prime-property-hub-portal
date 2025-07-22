@@ -47,7 +47,8 @@ const Index = () => {
       propertyAddress: 'בן יהודה 107',
       ownerName: 'שחר',
       tenantName: 'דייר נוכחי',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
       id: 'alert-2',
@@ -56,7 +57,8 @@ const Index = () => {
       priority: 'urgent',
       propertyAddress: 'זנגביל 24',
       ownerName: 'מייק',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     }
   ];
 
