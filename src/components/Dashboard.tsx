@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell } from 'lucide-react';
@@ -112,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           <CardTitle className="flex items-center justify-between">
             <span>סקירת נכסים</span>
             <Button variant="outline" size="sm" asChild>
-              <a href="/properties">הצג הכל</a>
+              <Link to="/properties">הצג הכל</Link>
             </Button>
           </CardTitle>
         </CardHeader>

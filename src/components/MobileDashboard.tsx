@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +154,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-bold">נכסים אחרונים</CardTitle>
             <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10">
-              <a href="/properties" className="font-semibold">הצג הכל →</a>
+              <Link to="/properties" className="font-semibold">הצג הכל →</Link>
             </Button>
           </div>
         </CardHeader>
@@ -200,10 +201,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               asChild 
               className="h-14 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
             >
-              <a href="/properties" className="flex flex-col gap-1">
+              <Link to="/properties" className="flex flex-col gap-1">
                 <Building className="h-5 w-5" />
                 <span className="text-sm font-semibold">כל הנכסים</span>
-              </a>
+              </Link>
             </Button>
             <Button 
               variant="outline" 
@@ -211,10 +212,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               asChild 
               className="h-14 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
             >
-              <a href="/alerts" className="flex flex-col gap-1">
+              <Link to="/alerts" className="flex flex-col gap-1">
                 <Bell className="h-5 w-5" />
                 <span className="text-sm font-semibold">התראות</span>
-              </a>
+              </Link>
             </Button>
           </div>
         </CardContent>
