@@ -6,19 +6,28 @@ import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell } from 
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
+import { MobileDashboard } from './MobileDashboard';
+import { useMobileOptimization } from '../hooks/useMobileOptimization';
 
 interface DashboardProps {
   properties: Property[];
   stats: PropertyStats;
   alerts: Alert[];
+  onAddProperty?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts, onAddProperty }) => {
+  const { isMobile } = useMobileOptimization();
   const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
   const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
 
   console.log('📊 Dashboard rendering with:', properties.length, 'properties');
   console.log('🏠 Properties in dashboard:', properties.slice(0, 3));
+  
+  // Show mobile dashboard for mobile users
+  if (isMobile) {
+    return <MobileDashboard properties={properties} stats={stats} alerts={alerts} onAddProperty={onAddProperty} />;
+  }
   
   return (
     <div className="space-y-6">

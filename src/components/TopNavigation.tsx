@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3 } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
@@ -14,34 +14,56 @@ const navigationItems = [
   { title: "דוחות", url: "/reports", icon: BarChart3 },
 ];
 
-export const TopNavigation: React.FC = () => {
+interface TopNavigationProps {
+  onLogout?: () => void;
+}
+
+export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
   const { isMobile } = useMobileOptimization();
 
   return (
-    <nav className={cn(
-      "flex items-center rtl:space-x-reverse",
-      isMobile ? "gap-0.5" : "space-x-1 space-x-reverse"
-    )}>
-      {navigationItems.map((item) => (
-        <NavLink 
-          key={item.title}
-          to={item.url}
-          className={({ isActive }) => cn(
-            "flex items-center rounded-md transition-colors",
-            isMobile ? "px-2 py-1.5" : "px-3 py-2",
-            isActive 
-              ? "bg-primary text-primary-foreground" 
-              : "text-foreground hover:bg-accent hover:text-accent-foreground"
-          )}
+    <div className="flex items-center gap-2">
+      <nav className={cn(
+        "flex items-center rtl:space-x-reverse",
+        isMobile ? "gap-0.5" : "space-x-1 space-x-reverse"
+      )}>
+        {navigationItems.map((item) => (
+          <NavLink 
+            key={item.title}
+            to={item.url}
+            className={({ isActive }) => cn(
+              "flex items-center rounded-md transition-colors",
+              isMobile ? "px-2 py-1.5" : "px-3 py-2",
+              isActive 
+                ? "bg-primary text-primary-foreground" 
+                : "text-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            <item.icon className={cn(
+              isMobile ? "h-3.5 w-3.5" : "h-4 w-4"
+            )} />
+            {!isMobile && (
+              <span className="mr-2 rtl:ml-2 rtl:mr-0">{item.title}</span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+      
+      {onLogout && (
+        <Button
+          variant="ghost"
+          size={isMobile ? "sm" : "default"}
+          onClick={onLogout}
+          className="text-muted-foreground hover:text-destructive"
         >
-          <item.icon className={cn(
+          <LogOut className={cn(
             isMobile ? "h-3.5 w-3.5" : "h-4 w-4"
           )} />
           {!isMobile && (
-            <span className="mr-2 rtl:ml-2 rtl:mr-0">{item.title}</span>
+            <span className="mr-2 rtl:ml-2 rtl:mr-0">יציאה</span>
           )}
-        </NavLink>
-      ))}
-    </nav>
+        </Button>
+      )}
+    </div>
   );
 };

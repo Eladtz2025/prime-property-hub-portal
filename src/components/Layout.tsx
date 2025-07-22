@@ -6,9 +6,10 @@ import { Building2 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const { isMobile } = useMobileOptimization();
 
   return (
@@ -22,7 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {isMobile ? 'ניהול נכסים' : 'מערכת ניהול נכסים'}
           </h1>
         </div>
-        <TopNavigation />
+        <TopNavigation onLogout={onLogout} />
       </header>
       <main className="flex-1 flex flex-col">
         <div className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>

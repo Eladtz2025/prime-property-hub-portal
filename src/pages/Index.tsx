@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dashboard } from '../components/Dashboard';
+import { AddPropertyModal } from '../components/AddPropertyModal';
 import { processPropertiesData, calculatePropertyStats } from '../utils/dataProcessor';
 import { Property, PropertyStats, Alert } from '../types/property';
 
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
 
   useEffect(() => {
     console.log('🚀 Index component mounted, starting to load data...');
@@ -28,6 +30,10 @@ const Index = () => {
 
     loadData();
   }, []);
+
+  const handlePropertyAdded = (newProperty: Property) => {
+    setProperties(prev => [...prev, newProperty]);
+  };
 
   const stats: PropertyStats = calculatePropertyStats(properties);
   
@@ -62,7 +68,21 @@ const Index = () => {
     );
   }
 
-  return <Dashboard properties={properties} stats={stats} alerts={alerts} />;
+  return (
+    <>
+      <Dashboard 
+        properties={properties} 
+        stats={stats} 
+        alerts={alerts} 
+        onAddProperty={() => setShowAddPropertyModal(true)}
+      />
+      <AddPropertyModal
+        isOpen={showAddPropertyModal}
+        onClose={() => setShowAddPropertyModal(false)}
+        onPropertyAdded={handlePropertyAdded}
+      />
+    </>
+  );
 };
 
 export default Index;
