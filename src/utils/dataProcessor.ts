@@ -1,6 +1,6 @@
-
 import { Property } from '../types/property';
 import { loadPropertiesFromStorage, mergePropertyWithStorage } from './propertyStorage';
+import { propertiesRawData } from '../data/propertiesData';
 
 export const fixPhoneNumber = (phone: string): string => {
   if (!phone || phone === 'nan' || phone === '—') return '';
@@ -69,15 +69,24 @@ export const calculatePropertyStats = (properties: Property[]): any => {
 export const processPropertiesData = async (): Promise<Property[]> => {
   try {
     console.log('🔄 Starting to fetch properties data...');
-    const response = await fetch('/כל הנכסים - JSON ל-AI.json');
     
-    if (!response.ok) {
-      console.error('❌ Failed to fetch properties:', response.status, response.statusText);
-      return [];
+    let rawData;
+    
+    // Try to fetch from JSON file first
+    try {
+      const response = await fetch('/כל הנכסים - JSON ל-AI.json');
+      if (response.ok) {
+        rawData = await response.json();
+        console.log('✅ Raw data loaded from JSON file, items count:', rawData.length);
+      } else {
+        throw new Error(`Failed to fetch JSON: ${response.status}`);
+      }
+    } catch (error) {
+      console.warn('⚠️ JSON file not available, using embedded data:', error);
+      rawData = propertiesRawData;
+      console.log('✅ Using embedded data, items count:', rawData.length);
     }
     
-    const rawData = await response.json();
-    console.log('✅ Raw data loaded, items count:', rawData.length);
     console.log('📋 First few items:', rawData.slice(0, 3));
     
     const processedProperties = rawData
@@ -122,6 +131,7 @@ export const processPropertiesData = async (): Promise<Property[]> => {
     return processedProperties;
   } catch (error) {
     console.error('❌ Error loading properties:', error);
+    // Return empty array as final fallback
     return [];
   }
 };
