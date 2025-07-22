@@ -50,6 +50,20 @@ export const Properties: React.FC = () => {
   
   useEffect(() => {
     loadData();
+    
+    // Listen for storage changes to refresh data when new properties are added
+    const handleStorageChange = () => {
+      loadData();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Also listen for focus events to refresh when coming back to the page
+    window.addEventListener('focus', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
   }, []);
 
   const loadData = async () => {
