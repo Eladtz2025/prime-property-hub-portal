@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, ExternalLink } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -48,31 +48,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
         </div>
       </div>
 
-      {/* Duplicate Phone Numbers Alert */}
+      {/* Duplicate Phone Numbers Alert - Clean Version */}
       {duplicateGroups.length > 0 && (
         <Card className="border-orange-300 bg-orange-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertTriangle className="h-5 w-5" />
-              נמצאו כפיליות במספרי טלפון ({duplicateGroups.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-orange-700">
-              {duplicateGroups.map((group, index) => (
-                <div key={index} className="flex items-center justify-between py-2">
-                  <div>
-                    <strong>{group.phoneNumber}</strong> - {group.properties.length} נכסים
-                  </div>
-                  <div className="text-xs">
-                    {group.properties.map((p: Property) => p.address).join(', ')}
-                  </div>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <div>
+                  <h3 className="font-semibold text-orange-800">
+                    נמצאו כפילויות במספרי טלפון
+                  </h3>
+                  <p className="text-sm text-orange-700">
+                    {duplicateGroups.length} מספרי טלפון כפולים זוהו במערכת
+                  </p>
                 </div>
-              ))}
+              </div>
+              <Button variant="outline" size="sm" asChild className="border-orange-300 text-orange-700 hover:bg-orange-100">
+                <Link to="/properties" className="flex items-center gap-2">
+                  נהל כפיליות
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/properties">נהל כפיליות</Link>
-            </Button>
           </CardContent>
         </Card>
       )}
