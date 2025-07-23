@@ -877,3 +877,6 @@ export const propertiesRawData = [
     owner_phone: "507456789",
     tenant_name: "nan",
     tenant_phone: "nan",
+    entry_date: "nan"
+  }
+];
