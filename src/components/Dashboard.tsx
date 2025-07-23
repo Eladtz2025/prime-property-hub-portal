@@ -18,12 +18,19 @@ import {
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { StatsCard } from './StatsCard';
-import { AlertCard } from './AlertCard';
+import { AlertListCard } from './AlertListCard';
 import { DuplicateManagementModal } from './DuplicateManagementModal';
 import { findDuplicatePhoneNumbers } from '../utils/duplicateDetection';
 import { useToast } from "@/hooks/use-toast";
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  properties?: Property[];
+  stats?: any;
+  alerts?: any[];
+  onAddProperty?: () => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = () => {
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +156,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <AlertCard
+        <AlertListCard
           title="חוזים שפגו"
           count={expiredLeases.length}
           icon={AlertTriangle}
@@ -160,7 +167,7 @@ export const Dashboard: React.FC = () => {
           }))}
         />
         
-        <AlertCard
+        <AlertListCard
           title="חוזים שיפגו בקרוב"
           count={expiringSoonLeases.length}
           icon={Calendar}
