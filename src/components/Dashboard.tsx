@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -21,6 +22,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
   const { isMobile } = useMobileOptimization();
   const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
   const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
+  
+  // Manual monthly income state
+  const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
+  const [isEditingIncome, setIsEditingIncome] = useState(false);
+  
+  // Load saved manual income from localStorage
+  useEffect(() => {
+    const savedIncome = localStorage.getItem('manualMonthlyIncome');
+    if (savedIncome) {
+      setManualMonthlyIncome(Number(savedIncome));
+    }
+  }, []);
+  
+  // Save manual income to localStorage
+  const saveManualIncome = (income: number) => {
+    setManualMonthlyIncome(income);
+    localStorage.setItem('manualMonthlyIncome', income.toString());
+    setIsEditingIncome(false);
+  };
+  
+  // Calculate automatic income from rent
+  const autoCalculatedIncome = properties
+    .filter(p => p.monthlyRent && p.monthlyRent > 0)
+    .reduce((sum, p) => sum + (p.monthlyRent || 0), 0);
+  
+  // Use manual income if set, otherwise use auto-calculated
+  const displayIncome = manualMonthlyIncome !== null ? manualMonthlyIncome : autoCalculatedIncome;
 
   console.log('📊 Dashboard rendering with:', properties.length, 'properties');
   console.log('🏠 Properties in dashboard:', properties.slice(0, 3));
@@ -82,15 +110,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           icon={Users}
           color="orange"
         />
-        <StatsCard 
-          title="הכנסה חודשית"
-          value={`₪${properties
-            .filter(p => p.monthlyRent && p.monthlyRent > 0)
-            .reduce((sum, p) => sum + (p.monthlyRent || 0), 0)
-            .toLocaleString('he-IL')}`}
-          icon={TrendingUp}
-          color="purple"
-        />
+        <Card className="cursor-pointer" onClick={() => setIsEditingIncome(true)}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                <span className="text-sm font-medium text-muted-foreground">הכנסה חודשית</span>
+              </div>
+              <Edit2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            {isEditingIncome ? (
+              <div className="mt-2 space-y-2">
+                <Input
+                  type="number"
+                  placeholder="הכנס סכום..."
+                  defaultValue={manualMonthlyIncome || autoCalculatedIncome}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const value = Number((e.target as HTMLInputElement).value);
+                      saveManualIncome(value);
+                    }
+                    if (e.key === 'Escape') {
+                      setIsEditingIncome(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const input = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('input') as HTMLInputElement;
+                      const value = Number(input.value);
+                      saveManualIncome(value);
+                    }}
+                  >
+                    שמור
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingIncome(false);
+                    }}
+                  >
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2">
+                <div className="text-2xl font-bold">₪{displayIncome.toLocaleString('he-IL')}</div>
+                {manualMonthlyIncome !== null && (
+                  <div className="text-xs text-muted-foreground">
+                    ערך ידני (אוטומטי: ₪{autoCalculatedIncome.toLocaleString('he-IL')})
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         <StatsCard 
           title="חידושים קרובים"
           value={stats.upcomingRenewals}
