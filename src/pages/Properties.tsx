@@ -45,7 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 interface DuplicateGroup {
   key: string;
   properties: Property[];
-  duplicateType: 'address' | 'owner' | 'both';
+  duplicateType: 'phone';
 }
 
 export const Properties: React.FC = () => {

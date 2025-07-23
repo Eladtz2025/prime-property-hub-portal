@@ -8,7 +8,7 @@ import { Property } from '../types/property';
 interface DuplicateGroup {
   key: string;
   properties: Property[];
-  duplicateType: 'address' | 'owner' | 'both';
+  duplicateType: 'phone';
 }
 
 interface DuplicateAlertProps {
@@ -26,20 +26,12 @@ export const DuplicateAlert: React.FC<DuplicateAlertProps> = ({
 }) => {
   const totalDuplicates = duplicateGroups.reduce((sum, group) => sum + group.properties.length, 0);
   
-  const getDuplicateTypeText = (type: 'address' | 'owner' | 'both') => {
-    switch (type) {
-      case 'address': return 'כתובת זהה';
-      case 'owner': return 'בעל נכס זהה';
-      case 'both': return 'כתובת ובעל נכס זהים';
-    }
+  const getDuplicateTypeText = (type: 'phone') => {
+    return 'מספר טלפון זהה';
   };
 
-  const getDuplicateTypeColor = (type: 'address' | 'owner' | 'both') => {
-    switch (type) {
-      case 'address': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'owner': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'both': return 'bg-red-100 text-red-800 border-red-200';
-    }
+  const getDuplicateTypeColor = (type: 'phone') => {
+    return 'bg-blue-100 text-blue-800 border-blue-200';
   };
 
   if (duplicateGroups.length === 0) return null;

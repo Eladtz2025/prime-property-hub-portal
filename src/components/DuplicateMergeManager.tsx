@@ -15,7 +15,7 @@ import { Star, Check, User, Phone, Mail, Calendar, Home } from 'lucide-react';
 interface DuplicateGroup {
   key: string;
   properties: Property[];
-  duplicateType: 'address' | 'owner' | 'both';
+  duplicateType: 'phone';
 }
 
 interface DuplicateMergeManagerProps {

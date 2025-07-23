@@ -14,7 +14,7 @@ import { Eye, Edit, Phone, Mail, MessageSquare, User, Calendar, Merge } from 'lu
 interface DuplicateGroup {
   key: string;
   properties: Property[];
-  duplicateType: 'address' | 'owner' | 'both';
+  duplicateType: 'phone';
 }
 
 interface DuplicateViewModalProps {
@@ -54,12 +54,8 @@ export const DuplicateViewModal: React.FC<DuplicateViewModalProps> = ({
     }
   };
 
-  const getDuplicateTypeText = (type: 'address' | 'owner' | 'both') => {
-    switch (type) {
-      case 'address': return 'כתובת זהה';
-      case 'owner': return 'בעל נכס זהה';
-      case 'both': return 'כתובת ובעל נכס זהים';
-    }
+  const getDuplicateTypeText = (type: 'phone') => {
+    return 'מספר טלפון זהה';
   };
 
   return (
