@@ -34,9 +34,19 @@ import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
+import { DuplicateAlert } from '../components/DuplicateAlert';
+import { DuplicateViewModal } from '../components/DuplicateViewModal';
+import { DuplicateMergeManager } from '../components/DuplicateMergeManager';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
+import { detectDuplicates } from '../utils/duplicateDetector';
 import { useToast } from "@/hooks/use-toast";
+
+interface DuplicateGroup {
+  key: string;
+  properties: Property[];
+  duplicateType: 'address' | 'owner' | 'both';
+}
 
 export const Properties: React.FC = () => {
   const { isMobile } = useMobileOptimization();
@@ -46,6 +56,10 @@ export const Properties: React.FC = () => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [selectedDuplicateGroup, setSelectedDuplicateGroup] = useState<DuplicateGroup | null>(null);
+  const [duplicateViewOpen, setDuplicateViewOpen] = useState(false);
+  const [duplicateMergeOpen, setDuplicateMergeOpen] = useState(false);
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState(true);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +129,11 @@ export const Properties: React.FC = () => {
   const propertiesWithWhatsApp = useMemo(() => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
+
+  // Detect duplicates
+  const duplicateGroups = useMemo(() => {
+    return detectDuplicates(properties);
+  }, [properties]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -225,6 +244,31 @@ export const Properties: React.FC = () => {
     openWhatsApp(phone);
   };
 
+  const handleViewDuplicateGroup = (group: DuplicateGroup) => {
+    setSelectedDuplicateGroup(group);
+    setDuplicateViewOpen(true);
+  };
+
+  const handleMergeDuplicateGroup = (group: DuplicateGroup) => {
+    setSelectedDuplicateGroup(group);
+    setDuplicateMergeOpen(true);
+  };
+
+  const handleDuplicateMergeComplete = (primaryProperty: Property) => {
+    setProperties(prev => 
+      prev.filter(p => 
+        p.id === primaryProperty.id || 
+        !selectedDuplicateGroup?.properties.some(dp => dp.id === p.id)
+      ).map(p => p.id === primaryProperty.id ? primaryProperty : p)
+    );
+    setDuplicateMergeOpen(false);
+    setSelectedDuplicateGroup(null);
+    toast({
+      title: "הנכסים מוזגו בהצלחה!",
+      description: "הנכסים הכפולים מוזגו לנכס אחד.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -277,6 +321,16 @@ export const Properties: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Duplicate Alert */}
+        {duplicateGroups.length > 0 && showDuplicateAlert && (
+          <DuplicateAlert
+            duplicateGroups={duplicateGroups}
+            onViewGroup={handleViewDuplicateGroup}
+            onMergeGroup={handleMergeDuplicateGroup}
+            onDismiss={() => setShowDuplicateAlert(false)}
+          />
+        )}
 
         {/* Filters */}
         <Card>
@@ -552,6 +606,38 @@ export const Properties: React.FC = () => {
             isOpen={true}
             onClose={() => setEditingProperty(null)}
             onSave={handlePropertyUpdate}
+          />
+        )}
+
+        {/* Duplicate View Modal */}
+        <DuplicateViewModal
+          group={selectedDuplicateGroup}
+          isOpen={duplicateViewOpen}
+          onClose={() => {
+            setDuplicateViewOpen(false);
+            setSelectedDuplicateGroup(null);
+          }}
+          onViewProperty={(property) => {
+            setSelectedProperty(property);
+            setDuplicateViewOpen(false);
+          }}
+          onEditProperty={(property) => {
+            setEditingProperty(property);
+            setDuplicateViewOpen(false);
+          }}
+          onMergeGroup={handleMergeDuplicateGroup}
+        />
+
+        {/* Duplicate Merge Modal */}
+        {selectedDuplicateGroup && (
+          <DuplicateMergeManager
+            duplicateGroup={selectedDuplicateGroup}
+            isOpen={duplicateMergeOpen}
+            onClose={() => {
+              setDuplicateMergeOpen(false);
+              setSelectedDuplicateGroup(null);
+            }}
+            onMergeComplete={handleDuplicateMergeComplete}
           />
         )}
       </div>
