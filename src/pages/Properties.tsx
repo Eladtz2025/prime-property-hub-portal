@@ -25,7 +25,10 @@ import {
   Map,
   MessageSquare,
   Copy,
-  Users
+  Users,
+  Download,
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
@@ -34,19 +37,15 @@ import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { DuplicateAlert } from '../components/DuplicateAlert';
-import { DuplicateViewModal } from '../components/DuplicateViewModal';
-import { DuplicateMergeManager } from '../components/DuplicateMergeManager';
+import { DuplicateManagementModal } from '../components/DuplicateManagementModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
-import { detectDuplicates } from '../utils/duplicateDetector';
+import { 
+  findDuplicatePhoneNumbers, 
+  generateCSVData, 
+  downloadCSV 
+} from '../utils/duplicateDetection';
 import { useToast } from "@/hooks/use-toast";
-
-interface DuplicateGroup {
-  key: string;
-  properties: Property[];
-  duplicateType: 'phone';
-}
 
 export const Properties: React.FC = () => {
   const { isMobile } = useMobileOptimization();
@@ -56,10 +55,7 @@ export const Properties: React.FC = () => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [selectedDuplicateGroup, setSelectedDuplicateGroup] = useState<DuplicateGroup | null>(null);
-  const [duplicateViewOpen, setDuplicateViewOpen] = useState(false);
-  const [duplicateMergeOpen, setDuplicateMergeOpen] = useState(false);
-  const [showDuplicateAlert, setShowDuplicateAlert] = useState(true);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,54 +126,20 @@ export const Properties: React.FC = () => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
 
-  // Detect duplicates
   const duplicateGroups = useMemo(() => {
-    return detectDuplicates(properties);
+    return findDuplicatePhoneNumbers(properties);
   }, [properties]);
 
-  const handleExportCSV = () => {
-    const headers = [
-      'כתובת',
-      'שם בעל הנכס',
-      'טלפון בעל הנכס',
-      'אימייל בעל הנכס',
-      'שם דייר',
-      'טלפון דייר',
-      'אימייל דייר',
-      'סטטוס',
-      'תאריך סיום חוזה',
-      'שכר דירה',
-      'הערות'
-    ];
+  const handleCopyPhoneNumbers = () => {
+    const phoneNumbers = propertiesWithWhatsApp
+      .map(p => p.ownerPhone)
+      .filter(phone => phone)
+      .join('\n');
     
-    const csvRows = [
-      headers.join(','),
-      ...filteredAndSortedProperties.map(property => [
-        `"${property.address}"`,
-        `"${property.ownerName}"`,
-        `"${property.ownerPhone || ''}"`,
-        `"${property.ownerEmail || ''}"`,
-        `"${property.tenantName || ''}"`,
-        `"${property.tenantPhone || ''}"`,
-        `"${property.tenantEmail || ''}"`,
-        `"${getStatusText(property.status)}"`,
-        `"${property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : ''}"`,
-        `"${property.monthlyRent || ''}"`,
-        `"${property.notes || ''}"`
-      ].join(','))
-    ];
-    
-    const csvContent = csvRows.join('\n');
-    const BOM = '\uFEFF'; // UTF-8 BOM for proper Hebrew display
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `רשימת_נכסים_${new Date().toLocaleDateString('he-IL').replace(/\./g, '-')}.csv`;
-    link.click();
-    
+    navigator.clipboard.writeText(phoneNumbers);
     toast({
-      title: "הקובץ יוצא!",
-      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
+      title: "הועתק!",
+      description: `${propertiesWithWhatsApp.length} מספרי טלפון הועתקו ללוח`,
     });
   };
 
@@ -191,17 +153,22 @@ export const Properties: React.FC = () => {
     window.open(groupUrl, '_blank');
   };
 
-  const handleExportContacts = () => {
-    const csvContent = [
-      'שם,טלפון,כתובת',
-      ...propertiesWithWhatsApp.map(p => `${p.ownerName},${p.ownerPhone},${p.address}`)
-    ].join('\n');
+  const handleExportCSV = () => {
+    const csvData = generateCSVData(filteredAndSortedProperties);
+    const filename = `נכסים_${new Date().toISOString().split('T')[0]}`;
+    downloadCSV(csvData, filename);
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'אנשי_קשר_נכסים.csv';
-    link.click();
+    toast({
+      title: "הקובץ יוצא בהצלחה",
+      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
+    });
+  };
+
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(prev => 
+      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
+    );
+    setEditingProperty(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -233,40 +200,8 @@ export const Properties: React.FC = () => {
     }
   };
 
-  const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperties(prev => 
-      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-    );
-    setEditingProperty(null);
-  };
-
   const handleWhatsAppSingle = (phone: string) => {
     openWhatsApp(phone);
-  };
-
-  const handleViewDuplicateGroup = (group: DuplicateGroup) => {
-    setSelectedDuplicateGroup(group);
-    setDuplicateViewOpen(true);
-  };
-
-  const handleMergeDuplicateGroup = (group: DuplicateGroup) => {
-    setSelectedDuplicateGroup(group);
-    setDuplicateMergeOpen(true);
-  };
-
-  const handleDuplicateMergeComplete = (primaryProperty: Property) => {
-    setProperties(prev => 
-      prev.filter(p => 
-        p.id === primaryProperty.id || 
-        !selectedDuplicateGroup?.properties.some(dp => dp.id === p.id)
-      ).map(p => p.id === primaryProperty.id ? primaryProperty : p)
-    );
-    setDuplicateMergeOpen(false);
-    setSelectedDuplicateGroup(null);
-    toast({
-      title: "הנכסים מוזגו בהצלחה!",
-      description: "הנכסים הכפולים מוזגו לנכס אחד.",
-    });
   };
 
   if (loading) {
@@ -288,16 +223,16 @@ export const Properties: React.FC = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={handleExportCSV}
-                    disabled={filteredAndSortedProperties.length === 0}
+                    onClick={handleCopyPhoneNumbers}
+                    disabled={propertiesWithWhatsApp.length === 0}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
                     <Copy className="h-4 w-4 ml-2" />
-                    {isMobile ? 'ייצוא CSV' : 'ייצוא קובץ CSV'}
+                    {isMobile ? 'העתק' : 'העתק טלפונים'}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>ייצא את כל הנכסים לקובץ CSV</TooltipContent>
+                <TooltipContent>העתק את כל מספרי הטלפון</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -314,6 +249,37 @@ export const Properties: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>צור קישור לקבוצת WhatsApp</TooltipContent>
               </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleExportCSV}
+                    variant="outline"
+                    size={isMobile ? "sm" : "default"}
+                  >
+                    <Download className="h-4 w-4 ml-2" />
+                    {isMobile ? 'יצוא' : 'יצא לCSV'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>יצא את הנתונים לקובץ CSV</TooltipContent>
+              </Tooltip>
+
+              {duplicateGroups.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setShowDuplicateModal(true)}
+                      variant="outline"
+                      size={isMobile ? "sm" : "default"}
+                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      <AlertTriangle className="h-4 w-4 ml-2" />
+                      כפיליות ({duplicateGroups.length})
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>נמצאו כפיליות במספרי טלפון</TooltipContent>
+                </Tooltip>
+              )}
             </div>
 
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -321,16 +287,6 @@ export const Properties: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Duplicate Alert */}
-        {duplicateGroups.length > 0 && showDuplicateAlert && (
-          <DuplicateAlert
-            duplicateGroups={duplicateGroups}
-            onViewGroup={handleViewDuplicateGroup}
-            onMergeGroup={handleMergeDuplicateGroup}
-            onDismiss={() => setShowDuplicateAlert(false)}
-          />
-        )}
 
         {/* Filters */}
         <Card>
@@ -609,37 +565,17 @@ export const Properties: React.FC = () => {
           />
         )}
 
-        {/* Duplicate View Modal */}
-        <DuplicateViewModal
-          group={selectedDuplicateGroup}
-          isOpen={duplicateViewOpen}
-          onClose={() => {
-            setDuplicateViewOpen(false);
-            setSelectedDuplicateGroup(null);
-          }}
+        {/* Duplicate Management Modal */}
+        <DuplicateManagementModal
+          duplicateGroups={duplicateGroups}
+          isOpen={showDuplicateModal}
+          onClose={() => setShowDuplicateModal(false)}
+          onUpdateProperty={handlePropertyUpdate}
           onViewProperty={(property) => {
             setSelectedProperty(property);
-            setDuplicateViewOpen(false);
+            setShowDuplicateModal(false);
           }}
-          onEditProperty={(property) => {
-            setEditingProperty(property);
-            setDuplicateViewOpen(false);
-          }}
-          onMergeGroup={handleMergeDuplicateGroup}
         />
-
-        {/* Duplicate Merge Modal */}
-        {selectedDuplicateGroup && (
-          <DuplicateMergeManager
-            duplicateGroup={selectedDuplicateGroup}
-            isOpen={duplicateMergeOpen}
-            onClose={() => {
-              setDuplicateMergeOpen(false);
-              setSelectedDuplicateGroup(null);
-            }}
-            onMergeComplete={handleDuplicateMergeComplete}
-          />
-        )}
       </div>
     </TooltipProvider>
   );
