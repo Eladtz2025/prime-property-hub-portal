@@ -28,7 +28,8 @@ import {
   Users,
   Download,
   AlertTriangle,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
