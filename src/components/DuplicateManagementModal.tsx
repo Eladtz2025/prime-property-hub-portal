@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -19,10 +20,12 @@ import {
   Edit,
   AlertTriangle,
   Users,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { DuplicateGroup } from '../utils/duplicateDetection';
+import { DuplicateMergeManager } from './DuplicateMergeManager';
 import { useToast } from "@/hooks/use-toast";
 
 interface DuplicateManagementModalProps {
@@ -44,6 +47,7 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
 }) => {
   const { toast } = useToast();
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -133,10 +137,19 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
     }
   };
 
-  const confirmMerge = (primary: Property, secondary: Property) => {
-    if (window.confirm(`האם אתה בטוח שברצונך למזג את הנכס ${secondary.address} עם ${primary.address}?`)) {
-      handleMergeProperties(primary, secondary);
-    }
+  const handleViewPropertyInternal = (property: Property) => {
+    setViewingProperty(property);
+    onViewProperty(property);
+  };
+
+  const handleEditPropertyInternal = (property: Property) => {
+    setEditingProperty(property);
+    setNewPhoneNumber(property.ownerPhone || '');
+  };
+
+  const handleBackToMain = () => {
+    setViewingProperty(null);
+    setEditingProperty(null);
   };
 
   if (!isOpen) return null;
@@ -144,7 +157,7 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -169,81 +182,65 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
                     </h3>
                   </div>
                   <p className="text-sm text-orange-700">
-                    בחר את הפעולה הרצויה עבור כל קבוצה
+                    בחר את הפעולה הרצויה עבור כל קבוצה. ניתן למזג נכסים או לערוך מספרי טלפון.
                   </p>
                 </div>
 
                 <div className="grid gap-4">
                   {duplicateGroups.map((group, index) => (
-                    <Card key={index} className="border-orange-200">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <Phone className="h-4 w-4" />
-                          {group.phoneNumber}
-                          <Badge variant="outline" className="text-orange-600 border-orange-300">
-                            {group.properties.length} נכסים
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid gap-3">
-                          {group.properties.map((property, propIndex) => (
-                            <div 
-                              key={property.id}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-gray-500" />
-                                    <span className="font-medium">{property.address}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <User className="h-4 w-4 text-gray-500" />
-                                    <span className="text-sm text-gray-600">{property.ownerName}</span>
-                                    <Badge className={getStatusColor(property.status)}>
-                                      {getStatusText(property.status)}
-                                    </Badge>
-                                  </div>
+                    <div key={index} className="space-y-4">
+                      <DuplicateMergeManager
+                        properties={group.properties}
+                        phoneNumber={group.phoneNumber}
+                        onMerge={handleMergeProperties}
+                        isLoading={isLoading}
+                      />
+                      
+                      {/* Individual property actions */}
+                      <div className="grid gap-2 ml-4">
+                        {group.properties.map((property) => (
+                          <div 
+                            key={property.id}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded border-r-4 border-orange-300"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-gray-500" />
+                                  <span className="font-medium text-sm">{property.address}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                  <span className="text-xs text-gray-600">{property.ownerName}</span>
+                                  <Badge className={`${getStatusColor(property.status)} text-xs`}>
+                                    {getStatusText(property.status)}
+                                  </Badge>
                                 </div>
                               </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => onViewProperty(property)}
-                                  disabled={isLoading}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingProperty(property);
-                                    setNewPhoneNumber(property.ownerPhone || '');
-                                  }}
-                                  disabled={isLoading}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                {propIndex === 0 && group.properties.length === 2 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => confirmMerge(property, group.properties[1])}
-                                    disabled={isLoading}
-                                  >
-                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'מזג עם השני'}
-                                  </Button>
-                                )}
-                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                            
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewPropertyInternal(property)}
+                                disabled={isLoading}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditPropertyInternal(property)}
+                                disabled={isLoading}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </>
@@ -259,10 +256,16 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
       </Dialog>
 
       {/* Edit Phone Dialog */}
-      <Dialog open={!!editingProperty} onOpenChange={() => setEditingProperty(null)}>
+      <Dialog open={!!editingProperty} onOpenChange={() => !isLoading && setEditingProperty(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>עריכת מספר טלפון</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowLeft 
+                className="h-4 w-4 cursor-pointer hover:text-primary" 
+                onClick={handleBackToMain}
+              />
+              עריכת מספר טלפון
+            </DialogTitle>
           </DialogHeader>
           
           {editingProperty && (
@@ -297,13 +300,10 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => {
-                setEditingProperty(null);
-                setNewPhoneNumber('');
-              }}
+              onClick={handleBackToMain}
               disabled={isLoading}
             >
-              ביטול
+              חזור
             </Button>
           </DialogFooter>
         </DialogContent>

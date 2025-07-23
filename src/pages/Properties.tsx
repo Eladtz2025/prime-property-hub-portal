@@ -56,9 +56,11 @@ export const Properties: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateModalKey, setDuplicateModalKey] = useState(0);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   
   useEffect(() => {
     loadData();
@@ -175,18 +177,28 @@ export const Properties: React.FC = () => {
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
+    setActionLoading(true);
     setProperties(prev => 
       prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
     );
     setEditingProperty(null);
-    // Refresh data to update localStorage
-    loadData();
+    
+    setDuplicateModalKey(prev => prev + 1);
+    
+    loadData().finally(() => setActionLoading(false));
   };
 
   const handlePropertyDelete = (propertyId: string) => {
+    setActionLoading(true);
     setProperties(prev => prev.filter(p => p.id !== propertyId));
-    // Refresh data to update localStorage
-    loadData();
+    
+    setDuplicateModalKey(prev => prev + 1);
+    
+    loadData().finally(() => setActionLoading(false));
+  };
+
+  const handleViewPropertyFromDuplicate = (property: Property) => {
+    setSelectedProperty(property);
   };
 
   const getStatusColor = (status: string) => {
@@ -225,7 +237,10 @@ export const Properties: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">טוען נתונים...</div>
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <div className="text-lg">טוען נתונים...</div>
+        </div>
       </div>
     );
   }
@@ -242,7 +257,7 @@ export const Properties: React.FC = () => {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCopyPhoneNumbers}
-                    disabled={propertiesWithWhatsApp.length === 0}
+                    disabled={propertiesWithWhatsApp.length === 0 || actionLoading}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
@@ -257,7 +272,7 @@ export const Properties: React.FC = () => {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCreateWhatsAppGroup}
-                    disabled={propertiesWithWhatsApp.length === 0}
+                    disabled={propertiesWithWhatsApp.length === 0 || actionLoading}
                     className="bg-green-600 hover:bg-green-700 text-white"
                     size={isMobile ? "sm" : "default"}
                   >
@@ -272,6 +287,7 @@ export const Properties: React.FC = () => {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleExportCSV}
+                    disabled={actionLoading}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
@@ -287,6 +303,7 @@ export const Properties: React.FC = () => {
                   <TooltipTrigger asChild>
                     <Button
                       onClick={() => setShowDuplicateModal(true)}
+                      disabled={actionLoading}
                       variant="outline"
                       size={isMobile ? "sm" : "default"}
                       className="border-orange-300 text-orange-600 hover:bg-orange-50"
@@ -305,6 +322,14 @@ export const Properties: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Loading indicator for actions */}
+        {actionLoading && (
+          <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
+            <Loader2 className="h-5 w-5 animate-spin ml-2" />
+            <span className="text-blue-700">מעדכן נתונים...</span>
+          </div>
+        )}
 
         {/* Filters */}
         <Card>
@@ -585,15 +610,13 @@ export const Properties: React.FC = () => {
 
         {/* Duplicate Management Modal */}
         <DuplicateManagementModal
+          key={duplicateModalKey}
           duplicateGroups={duplicateGroups}
           isOpen={showDuplicateModal}
           onClose={() => setShowDuplicateModal(false)}
           onUpdateProperty={handlePropertyUpdate}
           onDeleteProperty={handlePropertyDelete}
-          onViewProperty={(property) => {
-            setSelectedProperty(property);
-            setShowDuplicateModal(false);
-          }}
+          onViewProperty={handleViewPropertyFromDuplicate}
         />
       </div>
     </TooltipProvider>

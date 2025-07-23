@@ -22,12 +22,13 @@ export const findDuplicatePhoneNumbers = (properties: Property[]): DuplicateGrou
     }
   });
   
-  // Return only groups with duplicates
+  // Return only groups with duplicates, sorted by group size (largest first)
   return Object.entries(phoneGroups)
     .filter(([_, properties]) => properties.length > 1)
+    .sort(([, a], [, b]) => b.length - a.length)
     .map(([phoneNumber, properties]) => ({
       phoneNumber,
-      properties
+      properties: properties.sort((a, b) => a.address.localeCompare(b.address, 'he'))
     }));
 };
 
