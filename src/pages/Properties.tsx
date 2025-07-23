@@ -116,16 +116,49 @@ export const Properties: React.FC = () => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
 
-  const handleCopyPhoneNumbers = () => {
-    const phoneNumbers = propertiesWithWhatsApp
-      .map(p => p.ownerPhone)
-      .filter(phone => phone)
-      .join('\n');
+  const handleExportCSV = () => {
+    const headers = [
+      'כתובת',
+      'שם בעל הנכס',
+      'טלפון בעל הנכס',
+      'אימייל בעל הנכס',
+      'שם דייר',
+      'טלפון דייר',
+      'אימייל דייר',
+      'סטטוס',
+      'תאריך סיום חוזה',
+      'שכר דירה',
+      'הערות'
+    ];
     
-    navigator.clipboard.writeText(phoneNumbers);
+    const csvRows = [
+      headers.join(','),
+      ...filteredAndSortedProperties.map(property => [
+        `"${property.address}"`,
+        `"${property.ownerName}"`,
+        `"${property.ownerPhone || ''}"`,
+        `"${property.ownerEmail || ''}"`,
+        `"${property.tenantName || ''}"`,
+        `"${property.tenantPhone || ''}"`,
+        `"${property.tenantEmail || ''}"`,
+        `"${getStatusText(property.status)}"`,
+        `"${property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : ''}"`,
+        `"${property.monthlyRent || ''}"`,
+        `"${property.notes || ''}"`
+      ].join(','))
+    ];
+    
+    const csvContent = csvRows.join('\n');
+    const BOM = '\uFEFF'; // UTF-8 BOM for proper Hebrew display
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `רשימת_נכסים_${new Date().toLocaleDateString('he-IL').replace(/\./g, '-')}.csv`;
+    link.click();
+    
     toast({
-      title: "הועתק!",
-      description: `${propertiesWithWhatsApp.length} מספרי טלפון הועתקו ללוח`,
+      title: "הקובץ יוצא!",
+      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
     });
   };
 
@@ -211,16 +244,16 @@ export const Properties: React.FC = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={handleCopyPhoneNumbers}
-                    disabled={propertiesWithWhatsApp.length === 0}
+                    onClick={handleExportCSV}
+                    disabled={filteredAndSortedProperties.length === 0}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
                     <Copy className="h-4 w-4 ml-2" />
-                    {isMobile ? 'העתק' : 'העתק טלפונים'}
+                    {isMobile ? 'ייצוא CSV' : 'ייצוא קובץ CSV'}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>העתק את כל מספרי הטלפון</TooltipContent>
+                <TooltipContent>ייצא את כל הנכסים לקובץ CSV</TooltipContent>
               </Tooltip>
 
               <Tooltip>
