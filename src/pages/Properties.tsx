@@ -25,10 +25,7 @@ import {
   Map,
   MessageSquare,
   Copy,
-  Users,
-  Download,
-  AlertTriangle,
-  FileText
+  Users
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
@@ -37,14 +34,8 @@ import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { DuplicateManagementModal } from '../components/DuplicateManagementModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
-import { 
-  findDuplicatePhoneNumbers, 
-  generateCSVData, 
-  downloadCSV 
-} from '../utils/duplicateDetection';
 import { useToast } from "@/hooks/use-toast";
 
 export const Properties: React.FC = () => {
@@ -55,7 +46,6 @@ export const Properties: React.FC = () => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,20 +116,49 @@ export const Properties: React.FC = () => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
 
-  const duplicateGroups = useMemo(() => {
-    return findDuplicatePhoneNumbers(properties);
-  }, [properties]);
-
-  const handleCopyPhoneNumbers = () => {
-    const phoneNumbers = propertiesWithWhatsApp
-      .map(p => p.ownerPhone)
-      .filter(phone => phone)
-      .join('\n');
+  const handleExportCSV = () => {
+    const headers = [
+      'כתובת',
+      'שם בעל הנכס',
+      'טלפון בעל הנכס',
+      'אימייל בעל הנכס',
+      'שם דייר',
+      'טלפון דייר',
+      'אימייל דייר',
+      'סטטוס',
+      'תאריך סיום חוזה',
+      'שכר דירה',
+      'הערות'
+    ];
     
-    navigator.clipboard.writeText(phoneNumbers);
+    const csvRows = [
+      headers.join(','),
+      ...filteredAndSortedProperties.map(property => [
+        `"${property.address}"`,
+        `"${property.ownerName}"`,
+        `"${property.ownerPhone || ''}"`,
+        `"${property.ownerEmail || ''}"`,
+        `"${property.tenantName || ''}"`,
+        `"${property.tenantPhone || ''}"`,
+        `"${property.tenantEmail || ''}"`,
+        `"${getStatusText(property.status)}"`,
+        `"${property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : ''}"`,
+        `"${property.monthlyRent || ''}"`,
+        `"${property.notes || ''}"`
+      ].join(','))
+    ];
+    
+    const csvContent = csvRows.join('\n');
+    const BOM = '\uFEFF'; // UTF-8 BOM for proper Hebrew display
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `רשימת_נכסים_${new Date().toLocaleDateString('he-IL').replace(/\./g, '-')}.csv`;
+    link.click();
+    
     toast({
-      title: "הועתק!",
-      description: `${propertiesWithWhatsApp.length} מספרי טלפון הועתקו ללוח`,
+      title: "הקובץ יוצא!",
+      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
     });
   };
 
@@ -153,22 +172,17 @@ export const Properties: React.FC = () => {
     window.open(groupUrl, '_blank');
   };
 
-  const handleExportCSV = () => {
-    const csvData = generateCSVData(filteredAndSortedProperties);
-    const filename = `נכסים_${new Date().toISOString().split('T')[0]}`;
-    downloadCSV(csvData, filename);
+  const handleExportContacts = () => {
+    const csvContent = [
+      'שם,טלפון,כתובת',
+      ...propertiesWithWhatsApp.map(p => `${p.ownerName},${p.ownerPhone},${p.address}`)
+    ].join('\n');
     
-    toast({
-      title: "הקובץ יוצא בהצלחה",
-      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
-    });
-  };
-
-  const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperties(prev => 
-      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-    );
-    setEditingProperty(null);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'אנשי_קשר_נכסים.csv';
+    link.click();
   };
 
   const getStatusColor = (status: string) => {
@@ -200,6 +214,13 @@ export const Properties: React.FC = () => {
     }
   };
 
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(prev => 
+      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
+    );
+    setEditingProperty(null);
+  };
+
   const handleWhatsAppSingle = (phone: string) => {
     openWhatsApp(phone);
   };
@@ -223,16 +244,16 @@ export const Properties: React.FC = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={handleCopyPhoneNumbers}
-                    disabled={propertiesWithWhatsApp.length === 0}
+                    onClick={handleExportCSV}
+                    disabled={filteredAndSortedProperties.length === 0}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
                     <Copy className="h-4 w-4 ml-2" />
-                    {isMobile ? 'העתק' : 'העתק טלפונים'}
+                    {isMobile ? 'ייצוא CSV' : 'ייצוא קובץ CSV'}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>העתק את כל מספרי הטלפון</TooltipContent>
+                <TooltipContent>ייצא את כל הנכסים לקובץ CSV</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -249,37 +270,6 @@ export const Properties: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>צור קישור לקבוצת WhatsApp</TooltipContent>
               </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleExportCSV}
-                    variant="outline"
-                    size={isMobile ? "sm" : "default"}
-                  >
-                    <Download className="h-4 w-4 ml-2" />
-                    {isMobile ? 'יצוא' : 'יצא לCSV'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>יצא את הנתונים לקובץ CSV</TooltipContent>
-              </Tooltip>
-
-              {duplicateGroups.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setShowDuplicateModal(true)}
-                      variant="outline"
-                      size={isMobile ? "sm" : "default"}
-                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                    >
-                      <AlertTriangle className="h-4 w-4 ml-2" />
-                      כפיליות ({duplicateGroups.length})
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>נמצאו כפיליות במספרי טלפון</TooltipContent>
-                </Tooltip>
-              )}
             </div>
 
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -564,18 +554,6 @@ export const Properties: React.FC = () => {
             onSave={handlePropertyUpdate}
           />
         )}
-
-        {/* Duplicate Management Modal */}
-        <DuplicateManagementModal
-          duplicateGroups={duplicateGroups}
-          isOpen={showDuplicateModal}
-          onClose={() => setShowDuplicateModal(false)}
-          onUpdateProperty={handlePropertyUpdate}
-          onViewProperty={(property) => {
-            setSelectedProperty(property);
-            setShowDuplicateModal(false);
-          }}
-        />
       </div>
     </TooltipProvider>
   );
