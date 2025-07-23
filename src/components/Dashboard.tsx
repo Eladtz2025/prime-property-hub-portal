@@ -9,6 +9,7 @@ import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
 import { MobileDashboard } from './MobileDashboard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { findDuplicatePhoneNumbers } from '../utils/duplicateDetection';
 
 interface DashboardProps {
   properties: Property[];
@@ -19,6 +20,13 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts, onAddProperty }) => {
   const { isMobile } = useMobileOptimization();
+  const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const duplicates = findDuplicatePhoneNumbers(properties);
+    setDuplicateGroups(duplicates);
+  }, [properties]);
+
   const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
   const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
 
@@ -39,6 +47,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           עדכון אחרון: {new Date().toLocaleDateString('he-IL')}
         </div>
       </div>
+
+      {/* Duplicate Phone Numbers Alert */}
+      {duplicateGroups.length > 0 && (
+        <Card className="border-orange-300 bg-orange-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertTriangle className="h-5 w-5" />
+              נמצאו כפיליות במספרי טלפון ({duplicateGroups.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-orange-700">
+              {duplicateGroups.map((group, index) => (
+                <div key={index} className="flex items-center justify-between py-2">
+                  <div>
+                    <strong>{group.phoneNumber}</strong> - {group.properties.length} נכסים
+                  </div>
+                  <div className="text-xs">
+                    {group.properties.map((p: Property) => p.address).join(', ')}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/properties">נהל כפיליות</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Urgent Alerts */}
       {urgentAlerts.length > 0 && (
@@ -187,7 +224,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
             </div>
           </div>
         </CardContent>
-        </Card>
+      </Card>
     </div>
   );
 };

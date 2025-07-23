@@ -13,7 +13,7 @@ export const findDuplicatePhoneNumbers = (properties: Property[]): DuplicateGrou
     if (property.ownerPhone) {
       // Normalize phone number for comparison
       const normalizedPhone = normalizePhoneNumber(property.ownerPhone);
-      if (normalizedPhone) {
+      if (normalizedPhone && normalizedPhone.length >= 9) { // Only valid normalized numbers
         if (!phoneGroups[normalizedPhone]) {
           phoneGroups[normalizedPhone] = [];
         }
@@ -32,26 +32,36 @@ export const findDuplicatePhoneNumbers = (properties: Property[]): DuplicateGrou
 };
 
 export const normalizePhoneNumber = (phone: string): string => {
-  if (!phone || phone === 'nan' || phone === '—') return '';
+  if (!phone || phone === 'nan' || phone === '—' || phone.trim() === '') return '';
   
   // Handle multiple phone numbers - take the first one
-  const firstPhone = phone.split(' / ')[0];
+  const firstPhone = phone.split(/[\/,;]|או/)[0].trim();
   
   // Remove all non-digit characters
   const digitsOnly = firstPhone.replace(/[^\d]/g, '');
   
+  // Skip if too short or too long
+  if (digitsOnly.length < 8 || digitsOnly.length > 13) return '';
+  
   // Handle different formats
   if (digitsOnly.length === 8) {
-    return '0' + digitsOnly; // Add leading 0 for landline
+    // 8 digits - likely landline, add leading 0
+    return '0' + digitsOnly;
   } else if (digitsOnly.length === 9) {
-    return '0' + digitsOnly; // Add leading 0 for mobile
+    // 9 digits - mobile without leading 0
+    return '0' + digitsOnly;
   } else if (digitsOnly.length === 10) {
-    return digitsOnly; // Already correct format
+    // 10 digits - should be correct format
+    return digitsOnly;
   } else if (digitsOnly.length === 12 && digitsOnly.startsWith('972')) {
-    return '0' + digitsOnly.slice(3); // Remove country code +972
+    // 12 digits with +972 country code
+    return '0' + digitsOnly.slice(3);
+  } else if (digitsOnly.length === 13 && digitsOnly.startsWith('972')) {
+    // 13 digits with +972 country code
+    return '0' + digitsOnly.slice(3);
   }
   
-  return digitsOnly; // Return as is for unclear formats
+  return ''; // Return empty for unclear formats
 };
 
 export const generateCSVData = (properties: Property[], includeAll: boolean = true): string => {
@@ -75,9 +85,9 @@ export const generateCSVData = (properties: Property[], includeAll: boolean = tr
   ];
   
   const rows = properties.map(property => [
-    property.address,
-    property.city,
-    property.ownerName,
+    property.address || '',
+    property.city || '',
+    property.ownerName || '',
     property.ownerPhone || '',
     property.ownerEmail || '',
     property.tenantName || '',
@@ -95,7 +105,7 @@ export const generateCSVData = (properties: Property[], includeAll: boolean = tr
   ]);
   
   const csvContent = [headers, ...rows]
-    .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     .join('\n');
   
   return csvContent;
@@ -107,6 +117,8 @@ export const downloadCSV = (csvContent: string, filename: string = 'נכסים')
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `${filename}.csv`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 };

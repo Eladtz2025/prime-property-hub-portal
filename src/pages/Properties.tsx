@@ -63,13 +63,11 @@ export const Properties: React.FC = () => {
   useEffect(() => {
     loadData();
     
-    // Listen for storage changes to refresh data when new properties are added
     const handleStorageChange = () => {
       loadData();
     };
     
     window.addEventListener('storage', handleStorageChange);
-    // Also listen for focus events to refresh when coming back to the page
     window.addEventListener('focus', handleStorageChange);
     
     return () => {
@@ -85,6 +83,11 @@ export const Properties: React.FC = () => {
       setProperties(data);
     } catch (error) {
       console.error('Error loading properties:', error);
+      toast({
+        title: "שגיאה בטעינת הנתונים",
+        description: "לא הצלחנו לטעון את רשימת הנכסים",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -102,7 +105,6 @@ export const Properties: React.FC = () => {
       return matchesSearch && matchesStatus;
     });
 
-    // Sort properties
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'leaseEndDate':
@@ -114,7 +116,7 @@ export const Properties: React.FC = () => {
           return a.ownerName.localeCompare(b.ownerName, 'he');
         case 'status':
           return a.status.localeCompare(b.status);
-        default: // address
+        default:
           return a.address.localeCompare(b.address, 'he');
       }
     });
@@ -154,14 +156,22 @@ export const Properties: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const csvData = generateCSVData(filteredAndSortedProperties);
-    const filename = `נכסים_${new Date().toISOString().split('T')[0]}`;
-    downloadCSV(csvData, filename);
-    
-    toast({
-      title: "הקובץ יוצא בהצלחה",
-      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
-    });
+    try {
+      const csvData = generateCSVData(filteredAndSortedProperties);
+      const filename = `נכסים_${new Date().toISOString().split('T')[0]}`;
+      downloadCSV(csvData, filename);
+      
+      toast({
+        title: "הקובץ יוצא בהצלחה",
+        description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "שגיאה ביצוא הקובץ",
+        description: "לא הצלחנו לייצא את הקובץ",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
@@ -169,6 +179,14 @@ export const Properties: React.FC = () => {
       prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
     );
     setEditingProperty(null);
+    // Refresh data to update localStorage
+    loadData();
+  };
+
+  const handlePropertyDelete = (propertyId: string) => {
+    setProperties(prev => prev.filter(p => p.id !== propertyId));
+    // Refresh data to update localStorage
+    loadData();
   };
 
   const getStatusColor = (status: string) => {
@@ -571,6 +589,7 @@ export const Properties: React.FC = () => {
           isOpen={showDuplicateModal}
           onClose={() => setShowDuplicateModal(false)}
           onUpdateProperty={handlePropertyUpdate}
+          onDeleteProperty={handlePropertyDelete}
           onViewProperty={(property) => {
             setSelectedProperty(property);
             setShowDuplicateModal(false);
