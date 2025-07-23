@@ -44,7 +44,7 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
   const { toast } = useToast();
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [selectedPrimary, setSelectedPrimary] = useState<string>('');
-  const [selectedSecondary, setSelectedSecondary] = useState<string>('');
+  const [mergeMode, setMergeMode] = useState<'single' | 'all'>('all');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,46 +75,46 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
     }
     
     setSelectedPrimary('');
-    setSelectedSecondary('');
     setShowMergeDialog(true);
   };
 
   const handleMergeConfirm = () => {
-    if (!selectedPrimary || !selectedSecondary) {
+    if (!selectedPrimary) {
       toast({
         title: "שגיאה",
-        description: "בחר נכס ראשי ונכס למיזוג",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedPrimary === selectedSecondary) {
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן למזג נכס עם עצמו",
+        description: "בחר נכס ראשי",
         variant: "destructive",
       });
       return;
     }
 
     const primaryProperty = properties.find(p => p.id === selectedPrimary);
-    const secondaryProperty = properties.find(p => p.id === selectedSecondary);
-
-    if (!primaryProperty || !secondaryProperty) {
+    if (!primaryProperty) {
       toast({
         title: "שגיאה",
-        description: "נכס לא נמצא",
+        description: "נכס ראשי לא נמצא",
         variant: "destructive",
       });
       return;
     }
 
-    onMerge(primaryProperty, secondaryProperty);
-    setShowMergeDialog(false);
-  };
+    // For "all" mode, merge all other properties into the primary one
+    if (mergeMode === 'all') {
+      const secondaryProperties = properties.filter(p => p.id !== selectedPrimary);
+      
+      // Merge all properties one by one
+      secondaryProperties.forEach(secondaryProperty => {
+        onMerge(primaryProperty, secondaryProperty);
+      });
+    }
 
-  const availableSecondaryProperties = properties.filter(p => p.id !== selectedPrimary);
+    setShowMergeDialog(false);
+    
+    toast({
+      title: "הנכסים מוזגו בהצלחה",
+      description: `כל הנכסים מוזגו לנכס ${primaryProperty.address}`,
+    });
+  };
 
   return (
     <>
@@ -129,7 +129,7 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {properties.map((property) => (
               <div 
                 key={property.id}
@@ -167,7 +167,7 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
                 ) : (
                   <Users className="h-4 w-4 ml-2" />
                 )}
-                מזג נכסים
+                מזג כל הנכסים
               </Button>
             </div>
           )}
@@ -191,60 +191,44 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
                 <h3 className="font-semibold text-orange-800">אזהרה - פעולה בלתי הפיכה</h3>
               </div>
               <p className="text-sm text-orange-700">
-                המיזוג יאחד את הנתונים מהנכס השני לנכס הראשי וימחק את הנכס השני לצמיתות.
+                המיזוג יאחד את כל הנתונים מכל הנכסים לנכס הראשי שתבחר וימחק את שאר הנכסים לצמיתות.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">נכס ראשי (יישמר):</label>
-                <Select value={selectedPrimary} onValueChange={setSelectedPrimary}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר נכס ראשי" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          {property.address}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                בחר נכס ראשי (כל הנכסים האחרים יימחקו ויתמזגו אליו):
+              </label>
+              <Select value={selectedPrimary} onValueChange={setSelectedPrimary}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר נכס ראשי שישמר" />
+                </SelectTrigger>
+                <SelectContent>
+                  {properties.map((property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">{property.address}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {property.ownerName} - {getStatusText(property.status)}
+                          </div>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">נכס למיזוג (יימחק):</label>
-                <Select 
-                  value={selectedSecondary} 
-                  onValueChange={setSelectedSecondary}
-                  disabled={!selectedPrimary}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר נכס למיזוג" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSecondaryProperties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          {property.address}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {selectedPrimary && selectedSecondary && (
+            {selectedPrimary && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h4 className="font-medium text-blue-800 mb-2">תוצאת המיזוג:</h4>
                 <div className="text-sm text-blue-700">
                   הנכס <strong>{properties.find(p => p.id === selectedPrimary)?.address}</strong> יישמר
-                  עם כל הנתונים המשולבים, והנכס <strong>{properties.find(p => p.id === selectedSecondary)?.address}</strong> יימחק.
+                  עם כל הנתונים המשולבים מכל הנכסים האחרים.
+                  <br />
+                  <strong>{properties.length - 1} נכסים אחרים יימחקו.</strong>
                 </div>
               </div>
             )}
@@ -253,7 +237,7 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
           <DialogFooter>
             <Button 
               onClick={handleMergeConfirm}
-              disabled={!selectedPrimary || !selectedSecondary || isLoading}
+              disabled={!selectedPrimary || isLoading}
               className="bg-orange-600 hover:bg-orange-700"
             >
               {isLoading ? (
@@ -261,7 +245,7 @@ export const DuplicateMergeManager: React.FC<DuplicateMergeManagerProps> = ({
               ) : (
                 <Check className="h-4 w-4 ml-2" />
               )}
-              אשר מיזוג
+              אשר מיזוג כל הנכסים
             </Button>
             <Button 
               variant="outline" 

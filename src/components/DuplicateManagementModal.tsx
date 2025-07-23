@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -156,7 +155,7 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen && !editingProperty} onOpenChange={onClose}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -186,7 +185,7 @@ export const DuplicateManagementModal: React.FC<DuplicateManagementModalProps> =
                   </p>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="space-y-6">
                   {duplicateGroups.map((group, index) => (
                     <div key={index} className="space-y-4">
                       <DuplicateMergeManager
