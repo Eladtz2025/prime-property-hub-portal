@@ -49,6 +49,21 @@ export const Properties: React.FC = () => {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Count properties per owner
+  const ownerPropertyCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    properties.forEach(property => {
+      const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
+      counts[ownerKey] = (counts[ownerKey] || 0) + 1;
+    });
+    return counts;
+  }, [properties]);
+
+  const getOwnerPropertyCount = (property: Property) => {
+    const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
+    return ownerPropertyCounts[ownerKey] || 1;
+  };
   
   useEffect(() => {
     loadData();
@@ -388,7 +403,14 @@ export const Properties: React.FC = () => {
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <div>
-                                  <div className="font-medium">{property.ownerName}</div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="font-medium">{property.ownerName}</div>
+                                    {getOwnerPropertyCount(property) > 1 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {getOwnerPropertyCount(property)} נכסים
+                                      </Badge>
+                                    )}
+                                  </div>
                                   {property.ownerPhone && (
                                     <div className="text-sm text-muted-foreground">{property.ownerPhone}</div>
                                   )}
@@ -517,6 +539,7 @@ export const Properties: React.FC = () => {
                       key={property.id}
                       property={property}
                       onViewDetails={handleViewDetails}
+                      ownerPropertyCount={getOwnerPropertyCount(property)}
                     />
                   ))}
                 </div>
