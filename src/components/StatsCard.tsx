@@ -8,10 +8,9 @@ interface StatsCardProps {
   value: number | string;
   icon: LucideIcon;
   color: 'blue' | 'green' | 'orange' | 'purple' | 'gray';
-  trend?: string;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color, trend }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, color }) => {
   const colorClasses = {
     blue: 'text-blue-600 bg-blue-100',
     green: 'text-green-600 bg-green-100',
@@ -32,9 +31,6 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
         <div className="text-2xl font-bold">
           {typeof value === 'number' ? value.toLocaleString('he-IL') : value}
         </div>
-        {trend && (
-          <p className="text-xs text-muted-foreground mt-1">{trend}</p>
-        )}
       </CardContent>
     </Card>
   );

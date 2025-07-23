@@ -25,11 +25,7 @@ import {
   Map,
   MessageSquare,
   Copy,
-  Users,
-  Download,
-  AlertTriangle,
-  FileText,
-  Loader2
+  Users
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
@@ -38,14 +34,8 @@ import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { DuplicateManagementModal } from '../components/DuplicateManagementModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
-import { 
-  findDuplicatePhoneNumbers, 
-  generateCSVData, 
-  downloadCSV 
-} from '../utils/duplicateDetection';
 import { useToast } from "@/hooks/use-toast";
 
 export const Properties: React.FC = () => {
@@ -56,21 +46,20 @@ export const Properties: React.FC = () => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateModalKey, setDuplicateModalKey] = useState(0);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   
   useEffect(() => {
     loadData();
     
+    // Listen for storage changes to refresh data when new properties are added
     const handleStorageChange = () => {
       loadData();
     };
     
     window.addEventListener('storage', handleStorageChange);
+    // Also listen for focus events to refresh when coming back to the page
     window.addEventListener('focus', handleStorageChange);
     
     return () => {
@@ -86,11 +75,6 @@ export const Properties: React.FC = () => {
       setProperties(data);
     } catch (error) {
       console.error('Error loading properties:', error);
-      toast({
-        title: "שגיאה בטעינת הנתונים",
-        description: "לא הצלחנו לטעון את רשימת הנכסים",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
@@ -108,6 +92,7 @@ export const Properties: React.FC = () => {
       return matchesSearch && matchesStatus;
     });
 
+    // Sort properties
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'leaseEndDate':
@@ -119,7 +104,7 @@ export const Properties: React.FC = () => {
           return a.ownerName.localeCompare(b.ownerName, 'he');
         case 'status':
           return a.status.localeCompare(b.status);
-        default:
+        default: // address
           return a.address.localeCompare(b.address, 'he');
       }
     });
@@ -130,10 +115,6 @@ export const Properties: React.FC = () => {
   const propertiesWithWhatsApp = useMemo(() => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
-
-  const duplicateGroups = useMemo(() => {
-    return findDuplicatePhoneNumbers(properties);
-  }, [properties]);
 
   const handleCopyPhoneNumbers = () => {
     const phoneNumbers = propertiesWithWhatsApp
@@ -158,48 +139,17 @@ export const Properties: React.FC = () => {
     window.open(groupUrl, '_blank');
   };
 
-  const handleExportCSV = () => {
-    try {
-      const csvData = generateCSVData(filteredAndSortedProperties);
-      const filename = `נכסים_${new Date().toISOString().split('T')[0]}`;
-      downloadCSV(csvData, filename);
-      
-      toast({
-        title: "הקובץ יוצא בהצלחה",
-        description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
-      });
-    } catch (error) {
-      toast({
-        title: "שגיאה ביצוא הקובץ",
-        description: "לא הצלחנו לייצא את הקובץ",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handlePropertyUpdate = (updatedProperty: Property) => {
-    setActionLoading(true);
-    setProperties(prev => 
-      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-    );
-    setEditingProperty(null);
+  const handleExportContacts = () => {
+    const csvContent = [
+      'שם,טלפון,כתובת',
+      ...propertiesWithWhatsApp.map(p => `${p.ownerName},${p.ownerPhone},${p.address}`)
+    ].join('\n');
     
-    setDuplicateModalKey(prev => prev + 1);
-    
-    loadData().finally(() => setActionLoading(false));
-  };
-
-  const handlePropertyDelete = (propertyId: string) => {
-    setActionLoading(true);
-    setProperties(prev => prev.filter(p => p.id !== propertyId));
-    
-    setDuplicateModalKey(prev => prev + 1);
-    
-    loadData().finally(() => setActionLoading(false));
-  };
-
-  const handleViewPropertyFromDuplicate = (property: Property) => {
-    setSelectedProperty(property);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'אנשי_קשר_נכסים.csv';
+    link.click();
   };
 
   const getStatusColor = (status: string) => {
@@ -231,6 +181,13 @@ export const Properties: React.FC = () => {
     }
   };
 
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(prev => 
+      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
+    );
+    setEditingProperty(null);
+  };
+
   const handleWhatsAppSingle = (phone: string) => {
     openWhatsApp(phone);
   };
@@ -238,10 +195,7 @@ export const Properties: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <div className="text-lg">טוען נתונים...</div>
-        </div>
+        <div className="text-lg">טוען נתונים...</div>
       </div>
     );
   }
@@ -258,7 +212,7 @@ export const Properties: React.FC = () => {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCopyPhoneNumbers}
-                    disabled={propertiesWithWhatsApp.length === 0 || actionLoading}
+                    disabled={propertiesWithWhatsApp.length === 0}
                     variant="outline"
                     size={isMobile ? "sm" : "default"}
                   >
@@ -273,7 +227,7 @@ export const Properties: React.FC = () => {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCreateWhatsAppGroup}
-                    disabled={propertiesWithWhatsApp.length === 0 || actionLoading}
+                    disabled={propertiesWithWhatsApp.length === 0}
                     className="bg-green-600 hover:bg-green-700 text-white"
                     size={isMobile ? "sm" : "default"}
                   >
@@ -283,39 +237,6 @@ export const Properties: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>צור קישור לקבוצת WhatsApp</TooltipContent>
               </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={actionLoading}
-                    variant="outline"
-                    size={isMobile ? "sm" : "default"}
-                  >
-                    <Download className="h-4 w-4 ml-2" />
-                    {isMobile ? 'יצוא' : 'יצא לCSV'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>יצא את הנתונים לקובץ CSV</TooltipContent>
-              </Tooltip>
-
-              {duplicateGroups.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setShowDuplicateModal(true)}
-                      disabled={actionLoading}
-                      variant="outline"
-                      size={isMobile ? "sm" : "default"}
-                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                    >
-                      <AlertTriangle className="h-4 w-4 ml-2" />
-                      כפיליות ({duplicateGroups.length})
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>נמצאו כפיליות במספרי טלפון</TooltipContent>
-                </Tooltip>
-              )}
             </div>
 
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -323,14 +244,6 @@ export const Properties: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Loading indicator for actions */}
-        {actionLoading && (
-          <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
-            <Loader2 className="h-5 w-5 animate-spin ml-2" />
-            <span className="text-blue-700">מעדכן נתונים...</span>
-          </div>
-        )}
 
         {/* Filters */}
         <Card>
@@ -608,17 +521,6 @@ export const Properties: React.FC = () => {
             onSave={handlePropertyUpdate}
           />
         )}
-
-        {/* Duplicate Management Modal */}
-        <DuplicateManagementModal
-          key={duplicateModalKey}
-          duplicateGroups={duplicateGroups}
-          isOpen={showDuplicateModal}
-          onClose={() => setShowDuplicateModal(false)}
-          onUpdateProperty={handlePropertyUpdate}
-          onDeleteProperty={handlePropertyDelete}
-          onViewProperty={handleViewPropertyFromDuplicate}
-        />
       </div>
     </TooltipProvider>
   );
