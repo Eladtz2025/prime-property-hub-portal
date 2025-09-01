@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, UserProfile, Permission, getUserProfile, getUserPermissions } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { UserProfile, Permission } from '@/types/auth';
+import { getUserProfile, getUserPermissions } from '@/lib/auth';
 import { logger } from '@/utils/logger';
 
 interface AuthContextType {
@@ -46,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (userProfile?.role) {
         const { data: userPermissions } = await getUserPermissions(userProfile.role);
-        setPermissions(userPermissions || []);
+        setPermissions((userPermissions || []) as Permission[]);
       }
     } catch (error) {
       logger.error('Error refreshing profile:', error);

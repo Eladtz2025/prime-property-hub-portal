@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building, Eye, EyeOff, Mail, Chrome, AlertCircle } from 'lucide-react';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
-import { signInWithEmail, signInWithGoogle } from '@/lib/supabase';
+import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 

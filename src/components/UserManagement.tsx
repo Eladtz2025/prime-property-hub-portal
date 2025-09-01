@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, UserProfile, UserRole } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { UserProfile, UserRole } from '@/types/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +38,7 @@ export const UserManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      setUsers((data || []) as UserProfile[]);
     } catch (error) {
       logger.error('Error fetching users:', error);
       toast({
@@ -57,10 +58,13 @@ export const UserManagement: React.FC = () => {
     try {
       // In a real app, you would send an invitation email
       // For now, we'll create a pending user entry
+      // Generate a temporary ID for the invite (in real app, this would be handled by auth signup)
+      const tempId = crypto.randomUUID();
       const { data, error } = await supabase
         .from('profiles')
         .insert([
           {
+            id: tempId,
             email: inviteEmail,
             role: inviteRole,
             is_approved: false,
