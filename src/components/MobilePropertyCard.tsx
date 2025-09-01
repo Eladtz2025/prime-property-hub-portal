@@ -5,18 +5,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, Eye, User, Calendar, MessageSquare, Mail, Edit } from 'lucide-react';
 import { Property } from '@/types/property';
+import { SearchHighlight } from './SearchHighlight';
 import { openWhatsApp } from '@/utils/whatsappHelper';
 
 interface MobilePropertyCardProps {
   property: Property;
   onViewDetails: (id: string) => void;
   ownerPropertyCount?: number;
+  searchTerm?: string;
 }
 
 export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({ 
   property, 
   onViewDetails,
-  ownerPropertyCount = 1
+  ownerPropertyCount = 1,
+  searchTerm = ''
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,7 +45,9 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium text-sm truncate">{property.address}</span>
+            <span className="font-medium text-sm truncate">
+              <SearchHighlight text={property.address} searchTerm={searchTerm} />
+            </span>
           </div>
           <Badge className={`${getStatusColor(property.status)} text-xs flex-shrink-0`}>
             {getStatusText(property.status)}
@@ -54,7 +59,9 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-sm font-medium truncate">{property.ownerName}</span>
+                   <span className="text-sm font-medium truncate">
+                     <SearchHighlight text={property.ownerName} searchTerm={searchTerm} />
+                   </span>
                   {ownerPropertyCount > 1 && (
                     <Badge variant="secondary" className="text-xs flex-shrink-0">
                       {ownerPropertyCount} נכסים
@@ -100,7 +107,9 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm truncate">שוכר: {property.tenantName}</span>
+                 <span className="text-sm truncate">
+                   שוכר: <SearchHighlight text={property.tenantName} searchTerm={searchTerm} />
+                 </span>
               </div>
               {property.tenantPhone && (
                 <div className="flex gap-1">

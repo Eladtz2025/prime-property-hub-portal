@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Pagination } from "@/components/ui/pagination";
 import { 
   Search, 
   Phone, 
@@ -35,9 +36,11 @@ import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
+import { AdvancedSearchFilters } from '../components/AdvancedSearchFilters';
+import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { usePropertyData } from '../hooks/usePropertyData';
-import { useDebounceValue } from '../hooks/useDebounceValue';
+import { useAdvancedSearch } from '../hooks/useAdvancedSearch';
 import { usePagination } from '../hooks/usePagination';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 import { useToast } from "@/hooks/use-toast";
@@ -47,13 +50,9 @@ const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  
-  const debouncedSearchTerm = useDebounceValue(searchTerm, 300);
   
   const { 
     properties, 
@@ -63,19 +62,31 @@ export const Properties: React.FC = memo(() => {
     refetch 
   } = usePropertyData();
 
+  const {
+    filters,
+    setFilters,
+    filteredProperties: searchFilteredProperties,
+    savedSearches,
+    saveSearch,
+    loadSearch,
+    deleteSearch,
+    clearFilters,
+    initializeFilters,
+    maxPrice,
+    maxOwnerCount,
+    ownerPropertyCounts
+  } = useAdvancedSearch(properties);
+
+  // Initialize filters when properties load
+  useEffect(() => {
+    if (properties.length > 0) {
+      initializeFilters();
+    }
+  }, [properties.length, initializeFilters]);
+
   const handleRefresh = async () => {
     await refetch();
   };
-
-  // Count properties per owner
-  const ownerPropertyCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    properties.forEach(property => {
-      const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
-      counts[ownerKey] = (counts[ownerKey] || 0) + 1;
-    });
-    return counts;
-  }, [properties]);
 
   const getOwnerPropertyCount = (property: Property) => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
@@ -83,16 +94,7 @@ export const Properties: React.FC = memo(() => {
   };
 
   const filteredAndSortedProperties = useMemo(() => {
-    let filtered = properties.filter(property => {
-      const matchesSearch = 
-        property.address.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.ownerName.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        (property.tenantName?.toLowerCase() || '').includes(debouncedSearchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
+    let filtered = [...searchFilteredProperties];
 
     // Sort properties
     filtered.sort((a, b) => {
@@ -112,7 +114,7 @@ export const Properties: React.FC = memo(() => {
     });
 
     return filtered;
-  }, [properties, debouncedSearchTerm, statusFilter, sortBy]);
+  }, [searchFilteredProperties, sortBy]);
 
   const {
     currentPage,
@@ -314,48 +316,19 @@ export const Properties: React.FC = memo(() => {
           </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-lg' : 'text-xl'}>חיפוש וסינון</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-4 flex-col md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="חיפוש לפי כתובת, בעל נכס או שוכר..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
-                />
-              </div>
-              
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background"
-              >
-                <option value="all">כל הסטטוסים</option>
-                <option value="occupied">תפוס</option>
-                <option value="vacant">פנוי</option>
-                <option value="maintenance">תחזוקה</option>
-              </select>
-
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setSortBy('address');
-                }}
-                size={isMobile ? "sm" : "default"}
-              >
-                נקה סינונים
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Advanced Search Filters */}
+        <AdvancedSearchFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          savedSearches={savedSearches}
+          onSaveSearch={saveSearch}
+          onLoadSearch={loadSearch}
+          onDeleteSearch={deleteSearch}
+          onClearFilters={clearFilters}
+          propertyCount={filteredAndSortedProperties.length}
+          maxPrice={maxPrice}
+          maxOwnerCount={maxOwnerCount}
+        />
 
         {/* Main Content */}
         <Card>
@@ -420,12 +393,22 @@ export const Properties: React.FC = memo(() => {
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <TableRow key={property.id}>
-                            <TableCell className="font-medium text-right">{property.address}</TableCell>
+                            <TableCell className="font-medium text-right">
+                              <SearchHighlight 
+                                text={property.address} 
+                                searchTerm={filters.searchTerm}
+                              />
+                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <div className="font-medium">{property.ownerName}</div>
+                                    <div className="font-medium">
+                                      <SearchHighlight 
+                                        text={property.ownerName} 
+                                        searchTerm={filters.searchTerm}
+                                      />
+                                    </div>
                                     {getOwnerPropertyCount(property) > 1 && (
                                       <Badge variant="secondary" className="text-xs">
                                         {getOwnerPropertyCount(property)} נכסים
@@ -433,7 +416,12 @@ export const Properties: React.FC = memo(() => {
                                     )}
                                   </div>
                                   {property.ownerPhone && (
-                                    <div className="text-sm text-muted-foreground">{property.ownerPhone}</div>
+                                     <div className="text-sm text-muted-foreground">
+                                       <SearchHighlight 
+                                         text={property.ownerPhone} 
+                                         searchTerm={filters.searchTerm}
+                                       />
+                                     </div>
                                   )}
                                 </div>
                                 <User className="h-4 w-4 text-muted-foreground" />
@@ -443,9 +431,19 @@ export const Properties: React.FC = memo(() => {
                               {property.tenantName ? (
                                 <div className="flex items-center justify-end gap-2">
                                   <div>
-                                    <div className="font-medium">{property.tenantName}</div>
+                                    <div className="font-medium">
+                                      <SearchHighlight 
+                                        text={property.tenantName} 
+                                        searchTerm={filters.searchTerm}
+                                      />
+                                    </div>
                                     {property.tenantPhone && (
-                                      <div className="text-sm text-muted-foreground">{property.tenantPhone}</div>
+                                       <div className="text-sm text-muted-foreground">
+                                         <SearchHighlight 
+                                           text={property.tenantPhone} 
+                                           searchTerm={filters.searchTerm}
+                                         />
+                                       </div>
                                     )}
                                   </div>
                                   <User className="h-4 w-4 text-muted-foreground" />
@@ -581,12 +579,13 @@ export const Properties: React.FC = memo(() => {
               <PullToRefresh onRefresh={handleRefresh}>
                  <div className="space-y-4">
                   {paginatedProperties.map((property) => (
-                    <OptimizedMobilePropertyCard
-                      key={property.id}
-                      property={property}
-                      onViewDetails={handleViewDetails}
-                      ownerPropertyCount={getOwnerPropertyCount(property)}
-                    />
+                     <OptimizedMobilePropertyCard
+                       key={property.id}
+                       property={property}
+                       onViewDetails={handleViewDetails}
+                       ownerPropertyCount={getOwnerPropertyCount(property)}
+                       searchTerm={filters.searchTerm}
+                     />
                   ))}
                 </div>
                 
