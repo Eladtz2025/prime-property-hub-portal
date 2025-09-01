@@ -89,7 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatsCard 
           title="סה״כ נכסים"
           value={stats.totalProperties}
@@ -97,16 +97,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           color="blue"
         />
         <StatsCard 
-          title="נכסים תפוסים"
-          value={stats.occupiedProperties}
+          title="בעלי נכסים שהתקשרתי"
+          value={stats.contactedProperties}
           icon={CheckCircle}
           color="green"
         />
         <StatsCard 
-          title="נכסים פנויים"
-          value={stats.vacantProperties}
-          icon={Users}
+          title="עוד לא התקשרתי"
+          value={stats.notContactedProperties}
+          icon={Phone}
           color="orange"
+        />
+        <StatsCard 
+          title="נכסים תפוסים מאושרים"
+          value={stats.confirmedOccupied}
+          icon={Users}
+          color="green"
         />
         <Card className="cursor-pointer" onClick={() => setIsEditingIncome(true)}>
           <CardContent className="p-4">
@@ -171,8 +177,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           </CardContent>
         </Card>
         <StatsCard 
-          title="חידושים קרובים"
-          value={stats.upcomingRenewals}
+          title="עוד לא ידוע"
+          value={stats.unknownStatus}
           icon={Clock}
           color="gray"
         />
@@ -222,9 +228,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   property.status === 'occupied' 
                     ? 'bg-green-100 text-green-800' 
-                    : 'bg-orange-100 text-orange-800'
+                    : property.status === 'vacant'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {property.status === 'occupied' ? 'תפוס' : 'פנוי'}
+                  {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
                 </div>
               </div>
             ))}

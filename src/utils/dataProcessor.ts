@@ -46,7 +46,9 @@ export const processPropertyData = (rawData: any[]): Property[] => {
       monthlyRent: generateRealisticRent(item.address || ''),
       leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
       leaseEndDate: '',
-      status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
+      status: 'unknown' as const,
+      contactStatus: 'not_contacted' as const,
+      contactAttempts: 0,
       createdAt: new Date().toISOString()
     };
     
@@ -58,8 +60,11 @@ export const processPropertyData = (rawData: any[]): Property[] => {
 export const calculatePropertyStats = (properties: Property[]): any => {
   const stats = {
     totalProperties: properties.length,
-    occupiedProperties: properties.filter(p => p.status === 'occupied').length,
-    vacantProperties: properties.filter(p => p.status === 'vacant').length,
+    contactedProperties: properties.filter(p => p.contactStatus !== 'not_contacted').length,
+    notContactedProperties: properties.filter(p => p.contactStatus === 'not_contacted').length,
+    confirmedOccupied: properties.filter(p => p.status === 'occupied').length,
+    confirmedVacant: properties.filter(p => p.status === 'vacant').length,
+    unknownStatus: properties.filter(p => p.status === 'unknown').length,
     upcomingRenewals: 0,
   };
 
@@ -105,7 +110,9 @@ export const processPropertiesData = async (): Promise<Property[]> => {
           monthlyRent: generateRealisticRent(item.address || ''),
           leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
           leaseEndDate: '',
-          status: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? 'occupied' : 'vacant',
+          status: 'unknown' as const,
+          contactStatus: 'not_contacted' as const,
+          contactAttempts: 0,
           createdAt: new Date().toISOString()
         };
         

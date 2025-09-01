@@ -100,8 +100,11 @@ export const usePropertyStats = (properties: Property[]) => {
     queryKey: [...QUERY_KEYS.propertyStats, properties.length],
     queryFn: () => {
       const total = properties.length;
-      const occupied = properties.filter(p => p.tenantName && p.tenantName !== 'nan').length;
-      const vacant = total - occupied;
+      const occupied = properties.filter(p => p.status === 'occupied').length;
+      const vacant = properties.filter(p => p.status === 'vacant').length;
+      const unknown = properties.filter(p => p.status === 'unknown').length;
+      const contacted = properties.filter(p => p.contactStatus !== 'not_contacted').length;
+      const notContacted = properties.filter(p => p.contactStatus === 'not_contacted').length;
       const upcomingRenewals = properties.filter(p => {
         if (!p.leaseEndDate) return false;
         const endDate = new Date(p.leaseEndDate);
@@ -114,6 +117,9 @@ export const usePropertyStats = (properties: Property[]) => {
         total,
         occupied,
         vacant,
+        unknown,
+        contacted,
+        notContacted,
         upcomingRenewals,
         occupancyRate: total > 0 ? Math.round((occupied / total) * 100) : 0,
       };

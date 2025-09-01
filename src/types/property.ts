@@ -12,7 +12,12 @@ export interface Property {
   monthlyRent?: number;
   leaseStartDate?: string;
   leaseEndDate?: string;
-  status: 'occupied' | 'vacant' | 'maintenance';
+  status: 'unknown' | 'occupied' | 'vacant' | 'maintenance';
+  // Contact tracking fields
+  contactStatus: 'not_contacted' | 'called_no_answer' | 'called_answered' | 'needs_callback';
+  lastContactDate?: string;
+  contactNotes?: string;
+  contactAttempts: number;
   // New fields for enhanced property management
   propertySize?: number; // in square meters
   floor?: number;
@@ -44,8 +49,11 @@ export interface PropertyDocument {
 
 export interface PropertyStats {
   totalProperties: number;
-  occupiedProperties: number;
-  vacantProperties: number;
+  contactedProperties: number;
+  notContactedProperties: number;
+  confirmedOccupied: number;
+  confirmedVacant: number;
+  unknownStatus: number;
   upcomingRenewals: number;
 }
 

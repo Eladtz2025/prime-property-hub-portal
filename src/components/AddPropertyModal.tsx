@@ -59,6 +59,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         tenantPhone: formData.tenantPhone || undefined,
         tenantEmail: formData.tenantEmail || undefined,
         status: formData.status,
+        contactStatus: 'not_contacted' as const,
+        contactAttempts: 0,
         monthlyRent: formData.monthlyRent ? parseFloat(formData.monthlyRent) : undefined,
         leaseStartDate: formData.leaseStartDate || undefined,
         leaseEndDate: formData.leaseEndDate || undefined,
@@ -148,6 +150,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="unknown">לא ידוע</SelectItem>
                     <SelectItem value="vacant">פנוי</SelectItem>
                     <SelectItem value="occupied">תפוס</SelectItem>
                     <SelectItem value="maintenance">תחזוקה</SelectItem>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3 } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +17,7 @@ import {
 const navigationItems = [
   { title: "דשבורד", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
+  { title: "תור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "הודעות", url: "/messages", icon: MessageSquare },
   { title: "דוחות", url: "/reports", icon: BarChart3 },

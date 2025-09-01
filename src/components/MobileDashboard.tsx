@@ -133,7 +133,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-700/80 mb-2 font-medium">תפוסים</p>
-                <p className="text-2xl font-bold text-green-700">{stats.occupiedProperties}</p>
+                <p className="text-2xl font-bold text-green-700">{stats.confirmedOccupied}</p>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl shadow-lg">
                 <CheckCircle className="h-5 w-5 text-white" />
@@ -147,7 +147,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-orange-700/80 mb-2 font-medium">פנויים</p>
-                <p className="text-2xl font-bold text-orange-700">{stats.vacantProperties}</p>
+                <p className="text-2xl font-bold text-orange-700">{stats.confirmedVacant}</p>
               </div>
               <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
                 <Users className="h-5 w-5 text-white" />

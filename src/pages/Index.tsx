@@ -65,10 +65,21 @@ const Index = memo(() => {
         properties={properties} 
         stats={stats ? {
           totalProperties: stats.total,
-          occupiedProperties: stats.occupied,
-          vacantProperties: stats.vacant,
+          contactedProperties: stats.contacted || 0,
+          notContactedProperties: stats.notContacted || 0,
+          confirmedOccupied: stats.occupied,
+          confirmedVacant: stats.vacant,
+          unknownStatus: stats.unknown || 0,
           upcomingRenewals: stats.upcomingRenewals
-        } : { totalProperties: 0, occupiedProperties: 0, vacantProperties: 0, upcomingRenewals: 0 }} 
+        } : { 
+          totalProperties: 0, 
+          contactedProperties: 0, 
+          notContactedProperties: 0, 
+          confirmedOccupied: 0, 
+          confirmedVacant: 0, 
+          unknownStatus: 0, 
+          upcomingRenewals: 0 
+        }}
         alerts={alerts} 
         onAddProperty={() => setShowAddPropertyModal(true)}
       />
