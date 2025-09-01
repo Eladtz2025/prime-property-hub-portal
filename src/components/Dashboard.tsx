@@ -251,30 +251,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           <CardTitle>פעילות אחרונה</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-primary" />
-                <div>
-                  <div className="font-medium">שיחה עם בעל נכס</div>
-                  <div className="text-sm text-muted-foreground">בן יהודה 107 - שחר</div>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground">לפני 2 שעות</div>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Building className="h-4 w-4 text-primary" />
-                <div>
-                  <div className="font-medium">נכס חדש נוסף</div>
-                  <div className="text-sm text-muted-foreground">זנגביל 24 - מייק</div>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground">אתמול</div>
-            </div>
+          <div className="text-center py-8 text-muted-foreground">
+            <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>עדיין לא התחלת להשתמש במערכת</p>
+            <p className="text-sm">התקשר לבעלי נכסים כדי לראות פעילות כאן</p>
           </div>
         </CardContent>
-        </Card>
+      </Card>
     </div>
   );
 };

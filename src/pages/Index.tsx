@@ -21,30 +21,8 @@ const Index = memo(() => {
     setShowAddPropertyModal(false);
   };
   
-  // Mock alerts for demonstration
-  const alerts: Alert[] = [
-    {
-      id: 'alert-1',
-      type: 'lease_expiry',
-      message: 'חוזה השכירות מסתיים בעוד 30 יום',
-      priority: 'high',
-      propertyAddress: 'בן יהודה 107',
-      ownerName: 'שחר',
-      tenantName: 'דייר נוכחי',
-      createdAt: new Date().toISOString(),
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: 'alert-2',
-      type: 'maintenance',
-      message: 'נדרשת בדיקת מערכת חימום',
-      priority: 'urgent',
-      propertyAddress: 'זנגביל 24',
-      ownerName: 'מייק',
-      createdAt: new Date().toISOString(),
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ];
+  // No alerts yet - system is ready for first use
+  const alerts: Alert[] = [];
 
   if (isLoading) {
     return (
