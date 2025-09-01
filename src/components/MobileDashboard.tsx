@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,36 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   onAddProperty 
 }) => {
   const { isMobile } = useMobileOptimization();
-  const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
-  const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
+  
+  // Manual monthly income state
+  const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
+  
+  // Load saved manual income from localStorage
+  useEffect(() => {
+    const savedIncome = localStorage.getItem('manualMonthlyIncome');
+    if (savedIncome) {
+      setManualMonthlyIncome(Number(savedIncome));
+    }
+  }, []);
+  
+  // Memoized calculations for performance
+  const urgentAlerts = useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
+  const highPriorityAlerts = useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
+  
+  // Calculate monthly income only once and memoize it
+  const displayIncome = useMemo(() => {
+    if (manualMonthlyIncome !== null) {
+      return manualMonthlyIncome;
+    }
+    
+    // Calculate from actual property data
+    const autoCalculatedIncome = properties
+      .filter(p => p.monthlyRent && p.monthlyRent > 0)
+      .reduce((sum, p) => sum + (p.monthlyRent || 0), 0);
+    
+    // If no rent data available, show a placeholder
+    return autoCalculatedIncome > 0 ? autoCalculatedIncome : 15000;
+  }, [properties, manualMonthlyIncome]);
 
   if (!isMobile) {
     return null; // This component is only for mobile
@@ -85,7 +113,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 <span className="text-sm font-semibold">הכנסה חודשית</span>
               </div>
               <div className="text-2xl font-bold">
-                ₪{(Math.floor(Math.random() * 5000) + 15000).toLocaleString('he-IL')}
+                ₪{displayIncome.toLocaleString('he-IL')}
               </div>
             </div>
           </div>
@@ -187,10 +215,12 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 className={`text-xs font-semibold ${
                   property.status === 'occupied' 
                     ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                    : 'bg-orange-100 text-orange-700 hover:bg-orange-100'
+                    : property.status === 'vacant'
+                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                {property.status === 'occupied' ? 'תפוס' : 'פנוי'}
+                {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
               </Badge>
             </div>
           ))}
