@@ -14,13 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      permissions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          resource: string
+          role: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          resource: string
+          role: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          resource?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          is_approved: boolean
+          last_login: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          is_approved?: boolean
+          last_login?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_approved?: boolean
+          last_login?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
