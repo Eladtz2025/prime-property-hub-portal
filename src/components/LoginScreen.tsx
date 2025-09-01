@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building, Eye, EyeOff, Mail, Chrome, AlertCircle } from 'lucide-react';
+import { Building, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { signInWithEmail, signUp } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
