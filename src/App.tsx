@@ -22,83 +22,101 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, signOut } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-
   return (
     <BrowserRouter>
-      <Layout onLogout={signOut}>
-        <Routes>
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/login" element={<LoginScreen />} />
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/properties" 
-            element={
-              <ProtectedRoute>
-                <Properties />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/contact-queue" 
-            element={
-              <ProtectedRoute>
-                <ContactQueueWrapper />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/alerts" 
-            element={
-              <ProtectedRoute>
-                <Alerts />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/messages" 
-            element={
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/reports" 
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/users" 
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <UserManagement />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Auth callback route - needs to be outside authentication check */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/login" element={<LoginScreen />} />
+        
+        {loading ? (
+          <Route path="*" element={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          } />
+        ) : !isAuthenticated ? (
+          <Route path="*" element={<LoginScreen />} />
+        ) : (
+          <>
+            <Route 
+              path="/" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/properties" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Properties />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/contact-queue" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <ContactQueueWrapper />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/alerts" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Alerts />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/messages" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/users" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <UserManagement />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route path="*" element={
+              <Layout onLogout={signOut}>
+                <NotFound />
+              </Layout>
+            } />
+          </>
+        )}
+      </Routes>
     </BrowserRouter>
   );
 };
