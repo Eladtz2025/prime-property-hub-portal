@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface MobilePropertyCardProps {
   ownerPropertyCount?: number;
 }
 
-export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = ({ 
+export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({ 
   property, 
   onViewDetails,
   ownerPropertyCount = 1
@@ -154,4 +154,4 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});

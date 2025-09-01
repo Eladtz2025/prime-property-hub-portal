@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, memo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +28,21 @@ import {
   Users
 } from 'lucide-react';
 import { Property } from '../types/property';
-import { processPropertiesData } from '../utils/dataProcessor';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditModal } from '../components/PropertyEditModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
+import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
+import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { usePropertyData } from '../hooks/usePropertyData';
+import { useDebounceValue } from '../hooks/useDebounceValue';
+import { usePagination } from '../hooks/usePagination';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 import { useToast } from "@/hooks/use-toast";
+
+const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
@@ -47,8 +53,19 @@ export const Properties: React.FC = memo(() => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const debouncedSearchTerm = useDebounceValue(searchTerm, 300);
+  
+  const { 
+    properties, 
+    isLoading, 
+    updateProperty, 
+    isUpdatingProperty,
+    refetch 
+  } = usePropertyData();
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   // Count properties per owner
   const ownerPropertyCounts = useMemo(() => {
@@ -64,43 +81,13 @@ export const Properties: React.FC = memo(() => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
     return ownerPropertyCounts[ownerKey] || 1;
   };
-  
-  useEffect(() => {
-    loadData();
-    
-    // Listen for storage changes to refresh data when new properties are added
-    const handleStorageChange = () => {
-      loadData();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    // Also listen for focus events to refresh when coming back to the page
-    window.addEventListener('focus', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleStorageChange);
-    };
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await processPropertiesData();
-      setProperties(data);
-    } catch (error) {
-      // Error handled silently
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredAndSortedProperties = useMemo(() => {
     let filtered = properties.filter(property => {
       const matchesSearch = 
-        property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (property.tenantName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        property.address.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        property.ownerName.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (property.tenantName?.toLowerCase() || '').includes(debouncedSearchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
       
@@ -125,7 +112,24 @@ export const Properties: React.FC = memo(() => {
     });
 
     return filtered;
-  }, [properties, searchTerm, statusFilter, sortBy]);
+  }, [properties, debouncedSearchTerm, statusFilter, sortBy]);
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedProperties,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    canGoNext,
+    canGoPrevious,
+    startIndex,
+    endIndex,
+    totalItems
+  } = usePagination({ 
+    data: filteredAndSortedProperties, 
+    itemsPerPage: isMobile ? 10 : 20 
+  });
 
   const propertiesWithWhatsApp = useMemo(() => {
     return getPropertiesWithPhones(filteredAndSortedProperties);
@@ -230,9 +234,7 @@ export const Properties: React.FC = memo(() => {
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperties(prev => 
-      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-    );
+    updateProperty(updatedProperty);
     setEditingProperty(null);
   };
 
@@ -240,11 +242,30 @@ export const Properties: React.FC = memo(() => {
     openWhatsApp(phone);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">טוען נתונים...</div>
-      </div>
+      <TooltipProvider>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className={isMobile ? 'text-lg' : 'text-xl'}>חיפוש וסינון</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4 flex-col md:flex-row">
+                <div className="relative flex-1">
+                  <Input disabled placeholder="טוען..." />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            {isMobile ? <PropertyListSkeleton /> : <PropertyTableSkeleton />}
+          </Card>
+        </div>
+      </TooltipProvider>
     );
   }
 
@@ -288,7 +309,7 @@ export const Properties: React.FC = memo(() => {
             </div>
 
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              {filteredAndSortedProperties.length} מתוך {properties.length} נכסים
+              {startIndex}-{endIndex} מתוך {totalItems} נכסים
             </div>
           </div>
         </div>
@@ -346,7 +367,7 @@ export const Properties: React.FC = memo(() => {
             </TabsList>
 
             <TabsContent value="list" className="space-y-4">
-              <PullToRefresh onRefresh={loadData}>
+              <PullToRefresh onRefresh={handleRefresh}>
                 <Card>
                   {isMobile ? (
                     <div className="p-4 text-center text-muted-foreground">
@@ -397,7 +418,7 @@ export const Properties: React.FC = memo(() => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedProperties.map((property) => (
+                        {paginatedProperties.map((property) => (
                           <TableRow key={property.id}>
                             <TableCell className="font-medium text-right">{property.address}</TableCell>
                             <TableCell className="text-right">
@@ -528,14 +549,39 @@ export const Properties: React.FC = memo(() => {
                     </Table>
                   )}
                 </Card>
+                
+                {/* Pagination for Table */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPreviousPage}
+                      disabled={!canGoPrevious}
+                    >
+                      הקודם
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      עמוד {currentPage} מתוך {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={!canGoNext}
+                    >
+                      הבא
+                    </Button>
+                  </div>
+                )}
               </PullToRefresh>
             </TabsContent>
 
             <TabsContent value="cards" className="space-y-4">
-              <PullToRefresh onRefresh={loadData}>
-                <div className="space-y-4">
-                  {filteredAndSortedProperties.map((property) => (
-                    <MobilePropertyCard
+              <PullToRefresh onRefresh={handleRefresh}>
+                 <div className="space-y-4">
+                  {paginatedProperties.map((property) => (
+                    <OptimizedMobilePropertyCard
                       key={property.id}
                       property={property}
                       onViewDetails={handleViewDetails}
@@ -543,6 +589,31 @@ export const Properties: React.FC = memo(() => {
                     />
                   ))}
                 </div>
+                
+                {/* Pagination for Cards */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPreviousPage}
+                      disabled={!canGoPrevious}
+                    >
+                      הקודם
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      עמוד {currentPage} מתוך {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={!canGoNext}
+                    >
+                      הבא
+                    </Button>
+                  </div>
+                )}
               </PullToRefresh>
             </TabsContent>
 

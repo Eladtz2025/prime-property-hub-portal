@@ -1,44 +1,25 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, memo } from 'react';
 import { Dashboard } from '../components/Dashboard';
 import { AddPropertyModal } from '../components/AddPropertyModal';
-import { processPropertiesData, calculatePropertyStats } from '../utils/dataProcessor';
-import { Property, PropertyStats, Alert } from '../types/property';
+import { Alert } from '../types/property';
+import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const Index = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+const Index = memo(() => {
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
+  const { 
+    properties, 
+    isLoading, 
+    addProperty, 
+    isAddingProperty 
+  } = usePropertyData();
+  
+  const { data: stats } = usePropertyStats(properties);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const propertiesData = await processPropertiesData();
-        setProperties(propertiesData);
-      } catch (error) {
-        // Error handling will be done by ErrorBoundary
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handlePropertyAdded = async (newProperty: Property) => {
-    try {
-      // Save to localStorage
-      const { savePropertyToStorage } = await import('../utils/propertyStorage');
-      await savePropertyToStorage(newProperty);
-      
-      // Update state
-      setProperties(prev => [...prev, newProperty]);
-    } catch (error) {
-      // Error handling will be done by ErrorBoundary
-    }
+  const handlePropertyAdded = (newProperty: any) => {
+    addProperty(newProperty);
+    setShowAddPropertyModal(false);
   };
-
-  const stats: PropertyStats = calculatePropertyStats(properties);
   
   // Mock alerts for demonstration
   const alerts: Alert[] = [
@@ -65,10 +46,15 @@ const Index = () => {
     }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">טוען נתונים...</div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
@@ -77,7 +63,12 @@ const Index = () => {
     <>
       <Dashboard 
         properties={properties} 
-        stats={stats} 
+        stats={stats ? {
+          totalProperties: stats.total,
+          occupiedProperties: stats.occupied,
+          vacantProperties: stats.vacant,
+          upcomingRenewals: stats.upcomingRenewals
+        } : { totalProperties: 0, occupiedProperties: 0, vacantProperties: 0, upcomingRenewals: 0 }} 
         alerts={alerts} 
         onAddProperty={() => setShowAddPropertyModal(true)}
       />
@@ -88,6 +79,6 @@ const Index = () => {
       />
     </>
   );
-};
+});
 
 export default Index;
