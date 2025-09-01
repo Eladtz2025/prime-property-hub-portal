@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building, Eye, EyeOff, Mail, Chrome, AlertCircle } from 'lucide-react';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
-import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
+import { signInWithEmail, signUp } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -19,11 +19,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const { toast } = useToast();
   const [credentials, setCredentials] = useState({
     email: '',
-    password: ''
+    password: '',
+    fullName: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,50 +33,49 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setError(null);
     
     try {
-      const { data, error } = await signInWithEmail(credentials.email, credentials.password);
-      
-      if (error) {
-        setError(error.message);
-        logger.error('Login error:', error);
-        return;
-      }
+      if (isSignUp) {
+        const { data, error } = await signUp(credentials.email, credentials.password, credentials.fullName);
+        
+        if (error) {
+          setError(error.message);
+          logger.error('Sign up error:', error);
+          return;
+        }
 
-      if (data.user) {
-        logger.info('User logged in successfully');
+        logger.info('User signed up successfully');
         toast({
-          title: "התחברות הצליחה",
-          description: "ברוך הבא למערכת ניהול הנכסים",
+          title: "הרשמה הצליחה",
+          description: "נרשמת בהצלחה! אנא בדוק את המייל שלך לאימות החשבון.",
         });
-        onLogin?.();
+        setIsSignUp(false);
+        setCredentials({ email: '', password: '', fullName: '' });
+      } else {
+        const { data, error } = await signInWithEmail(credentials.email, credentials.password);
+        
+        if (error) {
+          setError(error.message);
+          logger.error('Login error:', error);
+          return;
+        }
+
+        if (data.user) {
+          logger.info('User logged in successfully');
+          toast({
+            title: "התחברות הצליחה",
+            description: "ברוך הבא למערכת ניהול הנכסים",
+          });
+          onLogin?.();
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'שגיאה לא צפויה';
       setError(errorMessage);
-      logger.error('Unexpected login error:', error);
+      logger.error('Unexpected auth error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { error } = await signInWithGoogle();
-      
-      if (error) {
-        setError(error.message);
-        logger.error('Google login error:', error);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא צפויה';
-      setError(errorMessage);
-      logger.error('Unexpected Google login error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleInputChange = (field: string, value: string) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
@@ -100,7 +101,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
         <Card className="shadow-xl backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl overflow-hidden">
           <CardHeader className="text-center pb-4 pt-6">
-            <CardTitle className="text-lg font-bold text-white">התחברות</CardTitle>
+            <CardTitle className="text-lg font-bold text-white">
+              {isSignUp ? "הרשמה למערכת" : "התחברות"}
+            </CardTitle>
           </CardHeader>
           
           <CardContent className="px-6 pb-6">
@@ -112,6 +115,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             )}
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-white text-sm font-medium">שם מלא</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={credentials.fullName}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    placeholder="שם מלא"
+                    required={isSignUp}
+                    className="text-right bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40 focus:ring-white/20 rounded-lg h-10 backdrop-blur-sm"
+                    dir="rtl"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white text-sm font-medium">אימייל</Label>
                 <Input
@@ -155,27 +173,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
               </div>
 
-              {/* Google Sign In */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 h-10 text-sm font-medium rounded-lg backdrop-blur-sm"
-              >
-                <Chrome className="h-4 w-4 ml-2" />
-                התחבר עם Google
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-white/20" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-2 text-white/60">או</span>
-                </div>
-              </div>
-
               <Button
                 type="submit"
                 className="w-full bg-white text-blue-700 hover:bg-white/90 h-10 text-sm font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] shadow-md"
@@ -184,12 +181,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 border-2 border-blue-700/30 border-t-blue-700 rounded-full animate-spin" />
-                    <span>מתחבר...</span>
+                    <span>{isSignUp ? "נרשם..." : "מתחבר..."}</span>
                   </div>
                 ) : (
-                  'התחבר למערכת'
+                  isSignUp ? "הירשם למערכת" : "התחבר למערכת"
                 )}
               </Button>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError(null);
+                    setCredentials({ email: '', password: '', fullName: '' });
+                  }}
+                  className="text-white/80 hover:text-white text-sm"
+                >
+                  {isSignUp ? "יש לך כבר חשבון? התחבר" : "אין לך חשבון? הירשם"}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
