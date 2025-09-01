@@ -50,8 +50,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
   // Use manual income if set, otherwise use auto-calculated
   const displayIncome = manualMonthlyIncome !== null ? manualMonthlyIncome : autoCalculatedIncome;
 
-  console.log('📊 Dashboard rendering with:', properties.length, 'properties');
-  console.log('🏠 Properties in dashboard:', properties.slice(0, 3));
   
   // Show mobile dashboard for mobile users
   if (isMobile) {

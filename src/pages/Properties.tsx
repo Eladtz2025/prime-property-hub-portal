@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 import { useToast } from "@/hooks/use-toast";
 
-export const Properties: React.FC = () => {
+export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,7 +89,7 @@ export const Properties: React.FC = () => {
       const data = await processPropertiesData();
       setProperties(data);
     } catch (error) {
-      console.error('Error loading properties:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -580,4 +580,4 @@ export const Properties: React.FC = () => {
       </div>
     </TooltipProvider>
   );
-};
+});

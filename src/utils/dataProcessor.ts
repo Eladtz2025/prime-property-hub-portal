@@ -68,8 +68,6 @@ export const calculatePropertyStats = (properties: Property[]): any => {
 
 export const processPropertiesData = async (): Promise<Property[]> => {
   try {
-    console.log('🔄 Starting to fetch properties data...');
-    
     let rawData;
     
     // Try to fetch from JSON file first
@@ -77,31 +75,21 @@ export const processPropertiesData = async (): Promise<Property[]> => {
       const response = await fetch('/כל הנכסים - JSON ל-AI.json');
       if (response.ok) {
         rawData = await response.json();
-        console.log('✅ Raw data loaded from JSON file, items count:', rawData.length);
       } else {
         throw new Error(`Failed to fetch JSON: ${response.status}`);
       }
     } catch (error) {
-      console.warn('⚠️ JSON file not available, using embedded data:', error);
       rawData = propertiesRawData;
-      console.log('✅ Using embedded data, items count:', rawData.length);
     }
-    
-    console.log('📋 First few items:', rawData.slice(0, 3));
     
     const processedProperties = rawData
       .filter((item: any) => {
         // Filter out header row and invalid entries
-        const isValid = item.address && 
-                       item.address !== 'רחוב' && 
-                       item.address !== 'נובמבר 2021' &&
-                       item.owner_name &&
-                       item.owner_name !== 'שם בעל דירה';
-        
-        if (!isValid) {
-          console.log('⚠️ Filtering out invalid item:', item.address, item.owner_name);
-        }
-        return isValid;
+        return item.address && 
+               item.address !== 'רחוב' && 
+               item.address !== 'נובמבר 2021' &&
+               item.owner_name &&
+               item.owner_name !== 'שם בעל דירה';
       })
       .map((item: any, index: number) => {
         const baseProperty: Property = {
@@ -130,14 +118,8 @@ export const processPropertiesData = async (): Promise<Property[]> => {
     const newlyAddedProperties = Object.values(storedProperties)
       .filter(property => !processedProperties.find(p => p.id === property.id));
     
-    console.log('🏠 Processed properties count:', processedProperties.length);
-    console.log('📊 Sample processed property:', processedProperties[0]);
-    console.log('✨ Newly added properties:', newlyAddedProperties.length);
-    
     return [...processedProperties, ...newlyAddedProperties];
   } catch (error) {
-    console.error('❌ Error loading properties:', error);
-    // Return empty array as final fallback
     return [];
   }
 };
