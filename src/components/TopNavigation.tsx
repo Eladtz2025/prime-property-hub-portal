@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
@@ -13,6 +14,7 @@ const navigationItems = [
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "הודעות", url: "/messages", icon: MessageSquare },
   { title: "דוחות", url: "/reports", icon: BarChart3 },
+  { title: "משתמשים", url: "/users", icon: Users },
 ];
 
 interface TopNavigationProps {
@@ -21,6 +23,14 @@ interface TopNavigationProps {
 
 export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
   const { isMobile } = useMobileOptimization();
+  const { hasPermission, profile } = useAuth();
+
+  const filteredNavItems = navigationItems.filter(item => {
+    if (item.url === '/users') {
+      return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
+    }
+    return true;
+  });
 
   return (
     <div className="flex items-center gap-2">
@@ -28,7 +38,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
         "flex items-center rtl:space-x-reverse",
         isMobile ? "gap-0.5" : "space-x-1 space-x-reverse"
       )}>
-        {navigationItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <NavLink 
             key={item.title}
             to={item.url}

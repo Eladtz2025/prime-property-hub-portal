@@ -3,31 +3,77 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Eye, EyeOff } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Building, Eye, EyeOff, Mail, Chrome, AlertCircle } from 'lucide-react';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { signInWithEmail, signInWithGoogle } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface LoginScreenProps {
-  onLogin: (credentials: { email: string; password: string }) => void;
+  onLogin?: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const { isMobile } = useMobileOptimization();
+  const { toast } = useToast();
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
-    // Simulate loading time
-    setTimeout(() => {
-      onLogin(credentials);
+    try {
+      const { data, error } = await signInWithEmail(credentials.email, credentials.password);
+      
+      if (error) {
+        setError(error.message);
+        logger.error('Login error:', error);
+        return;
+      }
+
+      if (data.user) {
+        logger.info('User logged in successfully');
+        toast({
+          title: "התחברות הצליחה",
+          description: "ברוך הבא למערכת ניהול הנכסים",
+        });
+        onLogin?.();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא צפויה';
+      setError(errorMessage);
+      logger.error('Unexpected login error:', error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        setError(error.message);
+        logger.error('Google login error:', error);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא צפויה';
+      setError(errorMessage);
+      logger.error('Unexpected Google login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -58,6 +104,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           </CardHeader>
           
           <CardContent className="px-6 pb-6">
+            {error && (
+              <Alert variant="destructive" className="mb-4 bg-red-500/10 border-red-500/20 text-red-300">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white text-sm font-medium">אימייל</Label>
@@ -102,9 +155,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
               </div>
 
-              {/* Demo credentials hint */}
-              <div className="text-xs text-white/70 bg-white/5 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm">
-                <p>להדגמה: השתמש בכל אימייל וסיסמה</p>
+              {/* Google Sign In */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 h-10 text-sm font-medium rounded-lg backdrop-blur-sm"
+              >
+                <Chrome className="h-4 w-4 ml-2" />
+                התחבר עם Google
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-transparent px-2 text-white/60">או</span>
+                </div>
               </div>
 
               <Button
