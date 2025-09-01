@@ -9,7 +9,7 @@ import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
-  { title: "תור התקשרויות", url: "/contact-queue", icon: Phone },
+  { title: "צור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "הודעות", url: "/messages", icon: MessageSquare },
   { title: "דוחות", url: "/reports", icon: BarChart3 },
