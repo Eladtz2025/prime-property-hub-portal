@@ -44,8 +44,8 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
     onUpdateProperty(updatedProperty);
     
     toast({
-      title: "פרטי הקשר נשמרו",
-      description: `הקשר עם ${property.ownerName} תועד בהצלחה`,
+      title: "פרטי יצירת הקשר נשמרו",
+      description: `הקשר עם ${property.ownerName} תועד במערכת בהצלחה`,
     });
 
     onClose();
@@ -66,7 +66,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Phone className="h-5 w-5" />
-            קשר עם בעל הנכס
+            יצירת קשר עם בעל הנכס
           </DialogTitle>
         </DialogHeader>
         
@@ -87,19 +87,19 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
                 <SelectItem value="called_answered">
                   <div className="flex items-center gap-2">
                     {getContactResultIcon('called_answered')}
-                    ענה לטלפון
+                    נענה לטלפון
                   </div>
                 </SelectItem>
                 <SelectItem value="called_no_answer">
                   <div className="flex items-center gap-2">
                     {getContactResultIcon('called_no_answer')}
-                    לא ענה לטלפון
+                    לא ענו לטלפון
                   </div>
                 </SelectItem>
                 <SelectItem value="needs_callback">
                   <div className="flex items-center gap-2">
                     {getContactResultIcon('needs_callback')}
-                    צריך להתקשר שוב
+                    נדרש מעקב נוסף
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -117,7 +117,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
                   <SelectContent>
                     <SelectItem value="occupied">תפוס</SelectItem>
                     <SelectItem value="vacant">פנוי</SelectItem>
-                    <SelectItem value="unknown">לא ברור</SelectItem>
+                    <SelectItem value="unknown">לא ידוע</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -131,7 +131,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
                       className="w-full p-2 border rounded-md"
                       value={tenantName}
                       onChange={(e) => setTenantName(e.target.value)}
-                      placeholder="הכנס שם דייר..."
+                      placeholder="הזן שם הדייר..."
                     />
                   </div>
                   <div className="space-y-2">
@@ -141,7 +141,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
                       className="w-full p-2 border rounded-md"
                       value={tenantPhone}
                       onChange={(e) => setTenantPhone(e.target.value)}
-                      placeholder="הכנס טלפון דייר..."
+                      placeholder="הזן מספר טלפון הדייר..."
                     />
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="הוסף הערות על השיחה..."
+              placeholder="הזן הערות על השיחה או מידע נוסף..."
               rows={3}
             />
           </div>

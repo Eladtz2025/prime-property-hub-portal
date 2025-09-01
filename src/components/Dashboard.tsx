@@ -60,9 +60,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">דשבורד מרכזי</h2>
+        <h2 className="text-3xl font-bold text-foreground">לוח בקרה ראשי</h2>
         <div className="text-sm text-muted-foreground">
-          עדכון אחרון: {new Date().toLocaleDateString('he-IL')}
+          עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}
         </div>
       </div>
 
@@ -97,19 +97,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           color="blue"
         />
         <StatsCard 
-          title="בעלי נכסים שהתקשרתי"
+          title="בעלים שנוצר קשר"
           value={stats.contactedProperties}
           icon={CheckCircle}
           color="green"
         />
         <StatsCard 
-          title="עוד לא התקשרתי"
+          title="טרם נוצר קשר"
           value={stats.notContactedProperties}
           icon={Phone}
           color="orange"
         />
         <StatsCard 
-          title="נכסים תפוסים מאושרים"
+          title="נכסים תפוסים"
           value={stats.confirmedOccupied}
           icon={Users}
           color="green"
@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium text-muted-foreground">הכנסה חודשית</span>
+                <span className="text-sm font-medium text-muted-foreground">הכנסה חודשית כוללת</span>
               </div>
               <Edit2 className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -127,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
               <div className="mt-2 space-y-2">
                 <Input
                   type="number"
-                  placeholder="הכנס סכום..."
+                  placeholder="הזן סכום בש״ח..."
                   defaultValue={manualMonthlyIncome || autoCalculatedIncome}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -177,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
           </CardContent>
         </Card>
         <StatsCard 
-          title="עוד לא ידוע"
+          title="סטטוס לא ידוע"
           value={stats.unknownStatus}
           icon={Clock}
           color="gray"

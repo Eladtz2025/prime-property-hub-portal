@@ -62,9 +62,9 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">תור קשר עם בעלי נכסים</h1>
+        <h1 className="text-3xl font-bold text-foreground">תור התקשרויות לבעלי נכסים</h1>
         <div className="text-sm text-muted-foreground">
-          {stats.notContacted + stats.needsCallback} בעלי נכסים מחכים לקשר
+          {stats.notContacted + stats.needsCallback} בעלי נכסים ממתינים ליצירת קשר
         </div>
       </div>
 
@@ -74,7 +74,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Phone className="h-5 w-5 text-orange-600" />
-              <span className="text-sm font-medium">לא הותקשר</span>
+              <span className="text-sm font-medium">טרם נוצר קשר</span>
             </div>
             <div className="text-2xl font-bold text-orange-600">{stats.notContacted}</div>
           </CardContent>
@@ -83,7 +83,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium">להתקשר שוב</span>
+              <span className="text-sm font-medium">נדרש מעקב</span>
             </div>
             <div className="text-2xl font-bold text-blue-600">{stats.needsCallback}</div>
           </CardContent>
@@ -92,7 +92,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">הותקשר</span>
+              <span className="text-sm font-medium">נוצר קשר</span>
             </div>
             <div className="text-2xl font-bold text-green-600">{stats.contacted}</div>
           </CardContent>
@@ -101,7 +101,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <XCircle className="h-5 w-5 text-red-600" />
-              <span className="text-sm font-medium">לא ענו</span>
+              <span className="text-sm font-medium">לא ענו לטלפון</span>
             </div>
             <div className="text-2xl font-bold text-red-600">{stats.noAnswer}</div>
           </CardContent>
@@ -116,7 +116,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="חפש לפי כתובת או שם בעל נכס..."
+                  placeholder="חיפוש לפי כתובת או שם בעל הנכס..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pr-10"
@@ -126,13 +126,13 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
             <div className="flex gap-2">
               <Select value={contactFilter} onValueChange={(value: any) => setContactFilter(value)}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="סינון לפי סטטוס קשר" />
+                  <SelectValue placeholder="סינון לפי סטטוס יצירת קשר" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
-                  <SelectItem value="not_contacted">לא הותקשר</SelectItem>
-                  <SelectItem value="needs_callback">להתקשר שוב</SelectItem>
-                  <SelectItem value="contacted">הותקשר</SelectItem>
+                  <SelectItem value="not_contacted">טרם נוצר קשר</SelectItem>
+                  <SelectItem value="needs_callback">נדרש מעקב</SelectItem>
+                  <SelectItem value="contacted">נוצר קשר</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -158,8 +158,8 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
             <CardContent className="p-8 text-center">
               <div className="text-muted-foreground">
                 {searchTerm || contactFilter !== 'all' 
-                  ? 'לא נמצאו נכסים המתאימים לחיפוש'
-                  : 'כל בעלי הנכסים כבר הותקשרו אליהם'}
+                    ? 'לא נמצאו נכסים המתאימים לקריטריוני החיפוש'
+                    : 'נוצר קשר עם כל בעלי הנכסים'}
               </div>
             </CardContent>
           </Card>

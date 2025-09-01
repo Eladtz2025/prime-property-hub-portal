@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 const navigationItems = [
-  { title: "דשבורד", url: "/", icon: Home },
+  { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
-  { title: "תור קשר", url: "/contact-queue", icon: Phone },
+  { title: "תור התקשרויות", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "הודעות", url: "/messages", icon: MessageSquare },
   { title: "דוחות", url: "/reports", icon: BarChart3 },

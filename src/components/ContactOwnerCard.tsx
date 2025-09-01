@@ -21,13 +21,13 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
   const getContactStatusBadge = (status: Property['contactStatus']) => {
     switch (status) {
       case 'not_contacted':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">לא הותקשר</Badge>;
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">טרם נוצר קשר</Badge>;
       case 'called_no_answer':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">לא ענה</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">לא ענו לטלפון</Badge>;
       case 'called_answered':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">ענה</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">נענה לטלפון</Badge>;
       case 'needs_callback':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">להתקשר שוב</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">נדרש מעקב</Badge>;
     }
   };
 
@@ -46,7 +46,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
 
   const handleWhatsApp = () => {
     if (property.ownerPhone) {
-      const message = `שלום ${property.ownerName}, אני מתקשר בנוגע לנכס ב${property.address}`;
+      const message = `שלום ${property.ownerName},\nאני פונה אליך בנוגע לנכס שלך ברחוב ${property.address}.\nנוח לך לשוחח?`;
       openWhatsApp(property.ownerPhone, message);
     }
   };
@@ -72,7 +72,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
 
             {property.lastContactDate && (
               <div className="text-xs text-muted-foreground">
-                שיחה אחרונה: {new Date(property.lastContactDate).toLocaleDateString('he-IL')}
+                קשר אחרון: {new Date(property.lastContactDate).toLocaleDateString('he-IL')}
                 {property.contactNotes && ` • ${property.contactNotes}`}
               </div>
             )}
