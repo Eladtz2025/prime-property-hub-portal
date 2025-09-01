@@ -62,7 +62,7 @@ export const ContactQueue: React.FC<ContactQueueProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">תור התקשרויות לבעלי נכסים</h1>
+        <h1 className="text-3xl font-bold text-foreground">צור קשר עם בעלי נכסים</h1>
         <div className="text-sm text-muted-foreground">
           {stats.notContacted + stats.needsCallback} בעלי נכסים ממתינים ליצירת קשר
         </div>
