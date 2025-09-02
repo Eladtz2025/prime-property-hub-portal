@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon } from 'lucide-react';
 import { Property } from '../types/property';
 import { ImageCarousel } from './ImageCarousel';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -21,6 +23,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   onClose,
   onEdit
 }) => {
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -136,9 +140,13 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                   {property.ownerPhone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
-                        {formatPhoneNumber(property.ownerPhone)}
-                      </a>
+                      {canViewPhone ? (
+                        <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
+                          {formatPhoneNumber(property.ownerPhone)}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">{formatPhoneDisplay(property.ownerPhone, canViewPhone)}</span>
+                      )}
                     </div>
                   )}
                   {property.ownerEmail && (
@@ -172,9 +180,13 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                       {property.tenantPhone && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
-                            {formatPhoneNumber(property.tenantPhone)}
-                          </a>
+                          {canViewPhone ? (
+                            <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
+                              {formatPhoneNumber(property.tenantPhone)}
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">{formatPhoneDisplay(property.tenantPhone, canViewPhone)}</span>
+                          )}
                         </div>
                       )}
                       {property.tenantEmail && (

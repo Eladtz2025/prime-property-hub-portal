@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Property } from '../types/property';
 import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 interface ContactOwnerModalProps {
   isOpen: boolean;
@@ -22,6 +24,8 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
   onUpdateProperty
 }) => {
   const { toast } = useToast();
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
   const [contactResult, setContactResult] = useState<'called_no_answer' | 'called_answered' | 'needs_callback'>('called_answered');
   const [propertyStatus, setPropertyStatus] = useState<'occupied' | 'vacant' | 'unknown'>(property.status as any);
   const [tenantName, setTenantName] = useState(property.tenantName || '');
@@ -74,7 +78,7 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
           <div className="p-4 bg-muted/50 rounded-lg">
             <div className="font-medium">{property.address}</div>
             <div className="text-sm text-muted-foreground">בעלים: {property.ownerName}</div>
-            <div className="text-sm text-muted-foreground">טלפון: {property.ownerPhone}</div>
+            <div className="text-sm text-muted-foreground">טלפון: {formatPhoneDisplay(property.ownerPhone, canViewPhone)}</div>
           </div>
 
           <div className="space-y-2">

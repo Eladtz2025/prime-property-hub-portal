@@ -7,6 +7,8 @@ import { Phone, MapPin, Eye, User, Calendar, MessageSquare, Mail, Edit } from 'l
 import { Property } from '@/types/property';
 import { SearchHighlight } from './SearchHighlight';
 import { openWhatsApp } from '@/utils/whatsappHelper';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 interface MobilePropertyCardProps {
   property: Property;
@@ -21,6 +23,8 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
   ownerPropertyCount = 1,
   searchTerm = ''
 }) => {
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -70,7 +74,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                 </div>
               </div>
             <div className="flex gap-1">
-              {property.ownerPhone && (
+              {property.ownerPhone && canViewPhone && (
                 <>
                   <Button 
                     size="sm" 
@@ -111,7 +115,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                    שוכר: <SearchHighlight text={property.tenantName} searchTerm={searchTerm} />
                  </span>
               </div>
-              {property.tenantPhone && (
+              {property.tenantPhone && canViewPhone && (
                 <div className="flex gap-1">
                   <Button 
                     size="sm" 

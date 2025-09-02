@@ -9,10 +9,14 @@ import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { PropertyEditModal } from './PropertyEditModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 export const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -177,9 +181,13 @@ export const PropertyDetail: React.FC = () => {
                 {property.ownerPhone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
-                      {formatPhoneNumber(property.ownerPhone)}
-                    </a>
+                    {canViewPhone ? (
+                      <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
+                        {formatPhoneNumber(property.ownerPhone)}
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">{formatPhoneDisplay(property.ownerPhone, canViewPhone)}</span>
+                    )}
                   </div>
                 )}
                 {property.ownerEmail && (
@@ -208,9 +216,13 @@ export const PropertyDetail: React.FC = () => {
                     {property.tenantPhone && (
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
-                        <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
-                          {formatPhoneNumber(property.tenantPhone)}
-                        </a>
+                        {canViewPhone ? (
+                          <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
+                            {formatPhoneNumber(property.tenantPhone)}
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">{formatPhoneDisplay(property.tenantPhone, canViewPhone)}</span>
+                        )}
                       </div>
                     )}
                     {property.tenantEmail && (
