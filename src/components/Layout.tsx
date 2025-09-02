@@ -20,7 +20,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <Building2 className="h-5 w-5 text-primary-foreground" />
           </div>
           <h1 className={`font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap ${isMobile ? 'text-base' : 'text-xl'}`}>
-            {isMobile ? 'ניהול נכסים' : 'מערכת ניהול נכסים'}
+            PrimePropertyAI
           </h1>
         </div>
         <TopNavigation onLogout={onLogout} />
