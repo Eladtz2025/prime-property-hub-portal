@@ -11,7 +11,7 @@ interface ImageCarouselProps {
   className?: string;
 }
 
-export const ImageCarousel: React.FC<ImageCarouselProps> = ({
+export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   images,
   className = ""
 }) => {
@@ -50,6 +50,8 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               src={currentImage.url}
               alt={currentImage.name}
               className="w-full h-full object-cover rounded-t"
+              loading="lazy"
+              decoding="async"
             />
             
             {/* Navigation arrows */}
@@ -107,6 +109,8 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
                     src={image.url}
                     alt={image.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </button>
               ))}
@@ -155,4 +159,4 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       </Dialog>
     </>
   );
-};
+});

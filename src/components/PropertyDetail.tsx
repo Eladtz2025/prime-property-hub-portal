@@ -12,7 +12,7 @@ import { PropertyEditModal } from './PropertyEditModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
-export const PropertyDetail: React.FC = () => {
+export const PropertyDetail: React.FC = React.memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { permissions } = useAuth();
@@ -343,4 +343,4 @@ export const PropertyDetail: React.FC = () => {
       />
     </div>
   );
-};
+});

@@ -18,10 +18,10 @@ interface DashboardProps {
   onAddProperty?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts, onAddProperty }) => {
+export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, stats, alerts, onAddProperty }) => {
   const { isMobile } = useMobileOptimization();
-  const urgentAlerts = alerts.filter(alert => alert.priority === 'urgent');
-  const highPriorityAlerts = alerts.filter(alert => alert.priority === 'high');
+  const urgentAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
+  const highPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
   
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
@@ -42,10 +42,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
     setIsEditingIncome(false);
   };
   
-  // Calculate automatic income from rent
-  const autoCalculatedIncome = properties
-    .filter(p => p.monthlyRent && p.monthlyRent > 0)
-    .reduce((sum, p) => sum + (p.monthlyRent || 0), 0);
+  // Calculate automatic income from rent - memoized for performance
+  const autoCalculatedIncome = React.useMemo(() => 
+    properties
+      .filter(p => p.monthlyRent && p.monthlyRent > 0)
+      .reduce((sum, p) => sum + (p.monthlyRent || 0), 0),
+    [properties]
+  );
   
   // Use manual income if set, otherwise use auto-calculated
   const displayIncome = manualMonthlyIncome !== null ? manualMonthlyIncome : autoCalculatedIncome;
@@ -260,4 +263,4 @@ export const Dashboard: React.FC<DashboardProps> = ({ properties, stats, alerts,
       </Card>
     </div>
   );
-};
+});
