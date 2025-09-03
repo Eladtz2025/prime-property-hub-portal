@@ -62,7 +62,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
       </nav>
       
       <div className="flex items-center gap-2">
-        <UserAvatar size={isMobile ? "sm" : "default"} />
+        {!isMobile && <UserAvatar size="default" />}
         
         {onLogout && (
           <Button

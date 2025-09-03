@@ -18,6 +18,7 @@ import {
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileDashboardProps {
   properties: Property[];
@@ -33,6 +34,20 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   onAddProperty 
 }) => {
   const { isMobile } = useMobileOptimization();
+  const { profile } = useAuth();
+  
+  // Extract user's name for greeting
+  const getUserName = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ')[0]; // Get first name
+    }
+    if (profile?.email) {
+      return profile.email.split('@')[0]; // Get part before @
+    }
+    return '';
+  };
+  
+  const userName = getUserName();
   
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
@@ -82,7 +97,9 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold mb-1 truncate">שלום! 👋</h1>
+                <h1 className="text-xl font-bold mb-1 truncate">
+                  שלום{userName ? ` ${userName}` : ''}! 👋
+                </h1>
                 <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
