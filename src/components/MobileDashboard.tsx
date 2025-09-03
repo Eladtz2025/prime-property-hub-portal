@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   Building, 
   Users, 
@@ -13,7 +14,10 @@ import {
   Bell, 
   TrendingUp,
   MapPin,
-  Plus
+  Plus,
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
@@ -51,6 +55,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
+  const [isEditingIncome, setIsEditingIncome] = useState(false);
+  const [editIncomeValue, setEditIncomeValue] = useState('');
   
   // Load saved manual income from localStorage
   useEffect(() => {
@@ -59,6 +65,26 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       setManualMonthlyIncome(Number(savedIncome));
     }
   }, []);
+  
+  // Handle income editing
+  const handleEditIncome = () => {
+    setEditIncomeValue(displayIncome.toString());
+    setIsEditingIncome(true);
+  };
+  
+  const handleSaveIncome = () => {
+    const newIncome = Number(editIncomeValue);
+    if (!isNaN(newIncome) && newIncome >= 0) {
+      setManualMonthlyIncome(newIncome);
+      localStorage.setItem('manualMonthlyIncome', newIncome.toString());
+    }
+    setIsEditingIncome(false);
+  };
+  
+  const handleCancelEdit = () => {
+    setIsEditingIncome(false);
+    setEditIncomeValue('');
+  };
   
   // Memoized calculations for performance
   const urgentAlerts = useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
@@ -129,10 +155,53 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     <TrendingUp className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-semibold truncate">הכנסה חודשית</span>
+                  {!isEditingIncome && (
+                    <Button
+                      onClick={handleEditIncome}
+                      size="sm"
+                      variant="ghost"
+                      className="bg-white/10 hover:bg-white/20 text-white p-1 h-6 w-6 ml-auto flex-shrink-0"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
-                <div className="text-lg font-bold number-display truncate">
-                  {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
-                </div>
+                {isEditingIncome ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={editIncomeValue}
+                      onChange={(e) => setEditIncomeValue(e.target.value)}
+                      placeholder="הכנסה חודשית"
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/70 text-sm h-8 flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveIncome();
+                        if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      onClick={handleSaveIncome}
+                      size="sm"
+                      variant="ghost"
+                      className="bg-white/10 hover:bg-white/20 text-white p-1 h-8 w-8 flex-shrink-0"
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      size="sm"
+                      variant="ghost"
+                      className="bg-white/10 hover:bg-white/20 text-white p-1 h-8 w-8 flex-shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold number-display truncate">
+                    {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
