@@ -9,6 +9,7 @@ import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface ContactOwnerModalProps {
   isOpen: boolean;
@@ -26,13 +27,14 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
   const { toast } = useToast();
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const { logActivity } = useActivityLogger();
   const [contactResult, setContactResult] = useState<'called_no_answer' | 'called_answered' | 'needs_callback'>('called_answered');
   const [propertyStatus, setPropertyStatus] = useState<'occupied' | 'vacant' | 'unknown'>(property.status as any);
   const [tenantName, setTenantName] = useState(property.tenantName || '');
   const [tenantPhone, setTenantPhone] = useState(property.tenantPhone || '');
   const [notes, setNotes] = useState('');
 
-  const handleSaveContact = () => {
+  const handleSaveContact = async () => {
     const updatedProperty: Property = {
       ...property,
       contactStatus: contactResult,
@@ -44,6 +46,21 @@ export const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({
       tenantPhone: propertyStatus === 'occupied' ? tenantPhone : undefined,
       lastUpdated: new Date().toISOString()
     };
+
+    // Log activity
+    await logActivity({
+      action: 'contact_made',
+      resourceType: 'property',
+      resourceId: property.id,
+      details: {
+        propertyAddress: property.address,
+        ownerName: property.ownerName,
+        contactResult,
+        propertyStatus,
+        notes: notes || undefined,
+        tenantName: propertyStatus === 'occupied' ? tenantName : undefined
+      }
+    });
 
     onUpdateProperty(updatedProperty);
     

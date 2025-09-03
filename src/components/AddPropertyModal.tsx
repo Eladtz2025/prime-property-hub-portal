@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from '../types/property';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { logActivity } = useActivityLogger();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +72,19 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       };
+
+      // Log activity
+      await logActivity({
+        action: 'property_created',
+        resourceType: 'property',
+        resourceId: newProperty.id,
+        details: {
+          propertyAddress: newProperty.address,
+          city: newProperty.city,
+          ownerName: newProperty.ownerName,
+          status: newProperty.status
+        }
+      });
 
       // Here you would typically save to your backend
       // For now, we'll use local storage and notify parent

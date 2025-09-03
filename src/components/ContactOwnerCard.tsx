@@ -8,6 +8,7 @@ import { ContactOwnerModal } from './ContactOwnerModal';
 import { openWhatsApp } from '../utils/whatsappHelper';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface ContactOwnerCardProps {
   property: Property;
@@ -21,6 +22,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const { logActivity } = useActivityLogger();
 
   const getContactStatusBadge = (status: Property['contactStatus']) => {
     switch (status) {
@@ -48,10 +50,22 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
     }
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (property.ownerPhone) {
       const message = `שלום ${property.ownerName},\nאני פונה אליך בנוגע לנכס שלך ברחוב ${property.address}.\nנוח לך לשוחח?`;
       openWhatsApp(property.ownerPhone, message);
+      
+      // Log WhatsApp activity
+      await logActivity({
+        action: 'whatsapp_sent',
+        resourceType: 'property',
+        resourceId: property.id,
+        details: {
+          propertyAddress: property.address,
+          ownerName: property.ownerName,
+          ownerPhone: property.ownerPhone
+        }
+      });
     }
   };
 

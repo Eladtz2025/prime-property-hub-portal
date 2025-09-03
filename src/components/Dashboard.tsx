@@ -9,6 +9,7 @@ import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
 import { MobileDashboard } from './MobileDashboard';
+import { ActivityLogsList } from './ActivityLogsList';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 
 interface DashboardProps {
