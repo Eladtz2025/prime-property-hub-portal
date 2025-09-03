@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserAvatar } from './UserAvatar';
 
 const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
@@ -60,21 +61,25 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
         ))}
       </nav>
       
-      {onLogout && (
-        <Button
-          variant="ghost"
-          size={isMobile ? "sm" : "default"}
-          onClick={onLogout}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <LogOut className={cn(
-            isMobile ? "h-3.5 w-3.5" : "h-4 w-4"
-          )} />
-          {!isMobile && (
-            <span className="mr-2 rtl:ml-2 rtl:mr-0">יציאה</span>
-          )}
-        </Button>
-      )}
+      <div className="flex items-center gap-2">
+        <UserAvatar size={isMobile ? "sm" : "default"} />
+        
+        {onLogout && (
+          <Button
+            variant="ghost"
+            size={isMobile ? "sm" : "default"}
+            onClick={onLogout}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className={cn(
+              isMobile ? "h-3.5 w-3.5" : "h-4 w-4"
+            )} />
+            {!isMobile && (
+              <span className="mr-2 rtl:ml-2 rtl:mr-0">יציאה</span>
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
