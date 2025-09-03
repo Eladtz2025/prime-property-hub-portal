@@ -186,6 +186,33 @@ All colors MUST be HSL.
     .mobile-card {
       margin-bottom: 0.75rem;
       border-radius: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Prevent overlapping and overflow issues */
+    .mobile-card:hover {
+      z-index: 2;
+    }
+    
+    /* Ensure proper text wrapping and overflow handling */
+    .text-ellipsis {
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    
+    /* Better scroll behavior */
+    .mobile-scroll {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    
+    /* Fix button spacing */
+    .mobile-buttons {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
     }
   }
 }

@@ -69,9 +69,9 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   }
 
   return (
-    <div className="space-y-6 p-4 pb-20">
+    <div className="space-y-6 p-4 pb-20 mobile-scroll">
       {/* Header with greeting */}
-      <div className="bg-gradient-primary rounded-3xl p-8 text-white shadow-elevated animate-fade-in overflow-hidden relative">
+      <div className="bg-gradient-primary rounded-3xl p-6 md:p-8 text-white shadow-elevated animate-fade-in overflow-hidden relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
@@ -131,14 +131,14 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </CardHeader>
           <CardContent className="space-y-3">
             {urgentAlerts.slice(0, 2).map((alert) => (
-              <div key={alert.id} className="bg-white/60 rounded-lg p-3 border border-red-100">
+              <div key={alert.id} className="bg-white/60 rounded-lg p-3 border border-red-100 overflow-hidden">
                 <div className="flex items-start gap-3">
-                  <div className="bg-red-100 p-2 rounded-full">
+                  <div className="bg-red-100 p-2 rounded-full flex-shrink-0">
                     <AlertTriangle className="h-3 w-3 text-red-600" />
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm text-red-800">{alert.message}</div>
-                    <div className="text-xs text-red-600 mt-1">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="font-medium text-sm text-red-800 truncate">{alert.message}</div>
+                    <div className="text-xs text-red-600 mt-1 truncate">
                       {alert.propertyAddress} • {alert.ownerName}
                     </div>
                   </div>
@@ -199,20 +199,20 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           {properties.slice(0, 3).map((property, index) => (
             <div 
               key={property.id}
-              className="flex items-center justify-between p-4 bg-gradient-to-l from-gray-50/50 to-transparent rounded-xl hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-gray-100/50"
+              className="flex items-center justify-between p-4 bg-gradient-to-l from-gray-50/50 to-transparent rounded-xl hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-gray-100/50 gap-3 overflow-hidden"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-md">
+              <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-md flex-shrink-0">
                   <MapPin className="h-4 w-4 text-white" />
                 </div>
-                <div>
-                  <p className="font-semibold text-sm text-gray-900">{property.address}</p>
-                  <p className="text-xs text-gray-600">{property.ownerName}</p>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="font-semibold text-sm text-gray-900 truncate">{property.address}</p>
+                  <p className="text-xs text-gray-600 truncate">{property.ownerName}</p>
                 </div>
               </div>
               <Badge 
-                className={`text-xs font-semibold ${
+                className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap ${
                   property.status === 'occupied' 
                     ? 'bg-green-100 text-green-700 hover:bg-green-100' 
                     : property.status === 'vacant'

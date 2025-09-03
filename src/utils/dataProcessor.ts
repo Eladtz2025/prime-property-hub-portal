@@ -116,8 +116,19 @@ export const processPropertiesData = async (): Promise<Property[]> => {
           createdAt: new Date().toISOString()
         };
         
-        // Merge with stored updates
-        return mergePropertyWithStorage(baseProperty);
+        // Merge with stored updates - this preserves user changes
+        const mergedProperty = mergePropertyWithStorage(baseProperty);
+        
+        // Only auto-determine status if no stored status exists
+        if (mergedProperty.status === 'unknown' && baseProperty.status === 'unknown') {
+          if (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') {
+            mergedProperty.status = 'occupied';
+          } else if (item.status === 'vacant' || item.status === 'פנוי') {
+            mergedProperty.status = 'vacant';
+          }
+        }
+        
+        return mergedProperty;
       });
     
     // Load additional properties from localStorage (newly added properties)
@@ -148,17 +159,8 @@ const extractCityFromAddress = (address: string): string => {
 // Generate realistic rent prices based on area and property type
 // Determine property status based on available data
 const determinePropertyStatus = (item: any): 'occupied' | 'vacant' | 'unknown' => {
-  // If we have tenant information, property is occupied
-  if (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') {
-    return 'occupied';
-  }
-  
-  // If explicitly vacant or entry date suggests new/vacant
-  if (item.status === 'vacant' || item.status === 'פנוי') {
-    return 'vacant';
-  }
-  
-  // Default to unknown if we can't determine
+  // Don't auto-determine status - let user updates be preserved
+  // This prevents overriding user-updated statuses when reloading data
   return 'unknown';
 };
 

@@ -45,36 +45,36 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
   };
 
   return (
-    <Card className="mb-4 shadow-sm hover:shadow-md transition-all duration-200 mobile-card border-0">
+    <Card className="mb-4 shadow-sm hover:shadow-md transition-all duration-200 mobile-card border-0 overflow-hidden">
       <CardContent className="p-4 mobile-padding">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex justify-between items-start mb-3 gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium text-sm truncate">
+            <span className="font-medium text-sm truncate overflow-hidden text-ellipsis">
               <SearchHighlight text={property.address} searchTerm={searchTerm} />
             </span>
           </div>
-          <Badge className={`${getStatusColor(property.status)} text-xs flex-shrink-0`}>
+          <Badge className={`${getStatusColor(property.status)} text-xs flex-shrink-0 whitespace-nowrap`}>
             {getStatusText(property.status)}
           </Badge>
         </div>
 
           <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                   <span className="text-sm font-medium truncate">
+                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                   <span className="text-sm font-medium truncate overflow-hidden text-ellipsis">
                      <SearchHighlight text={property.ownerName} searchTerm={searchTerm} />
                    </span>
                   {ownerPropertyCount > 1 && (
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    <Badge variant="secondary" className="text-xs flex-shrink-0 whitespace-nowrap">
                       {ownerPropertyCount} נכסים
                     </Badge>
                   )}
                 </div>
               </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               {property.ownerPhone && canViewPhone && (
                 <>
                    <Button 
@@ -109,15 +109,15 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
           </div>
 
           {property.tenantName && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                 <span className="text-sm truncate">
+                 <span className="text-sm truncate overflow-hidden text-ellipsis">
                    שוכר: <SearchHighlight text={property.tenantName} searchTerm={searchTerm} />
                  </span>
               </div>
               {property.tenantPhone && canViewPhone && (
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0">
                    <Button 
                      size="sm" 
                      variant="outline" 
@@ -140,15 +140,15 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
           )}
 
           {property.monthlyRent && property.monthlyRent > 0 && (
-            <div className="text-sm font-medium text-primary">
+            <div className="text-sm font-medium text-primary truncate">
               שכירות: ₪{property.monthlyRent.toLocaleString('he-IL')}
             </div>
           )}
 
           {property.leaseEndDate && (
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm truncate">
                 סיום: {new Date(property.leaseEndDate).toLocaleDateString('he-IL')}
               </span>
             </div>
