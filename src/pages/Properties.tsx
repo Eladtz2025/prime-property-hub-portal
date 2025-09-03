@@ -44,12 +44,16 @@ import { useAdvancedSearch } from '../hooks/useAdvancedSearch';
 import { usePagination } from '../hooks/usePagination';
 import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -415,14 +419,14 @@ export const Properties: React.FC = memo(() => {
                                       </Badge>
                                     )}
                                   </div>
-                                  {property.ownerPhone && (
-                                     <div className="text-sm text-muted-foreground">
-                                       <SearchHighlight 
-                                         text={property.ownerPhone} 
-                                         searchTerm={filters.searchTerm}
-                                       />
-                                     </div>
-                                  )}
+                                   {property.ownerPhone && (
+                                      <div className="text-sm text-muted-foreground">
+                                        <SearchHighlight 
+                                          text={formatPhoneDisplay(property.ownerPhone, canViewPhone)} 
+                                          searchTerm={filters.searchTerm}
+                                        />
+                                      </div>
+                                   )}
                                 </div>
                                 <User className="h-4 w-4 text-muted-foreground" />
                               </div>
@@ -437,14 +441,14 @@ export const Properties: React.FC = memo(() => {
                                         searchTerm={filters.searchTerm}
                                       />
                                     </div>
-                                    {property.tenantPhone && (
-                                       <div className="text-sm text-muted-foreground">
-                                         <SearchHighlight 
-                                           text={property.tenantPhone} 
-                                           searchTerm={filters.searchTerm}
-                                         />
-                                       </div>
-                                    )}
+                                     {property.tenantPhone && (
+                                        <div className="text-sm text-muted-foreground">
+                                          <SearchHighlight 
+                                            text={formatPhoneDisplay(property.tenantPhone, canViewPhone)} 
+                                            searchTerm={filters.searchTerm}
+                                          />
+                                        </div>
+                                     )}
                                   </div>
                                   <User className="h-4 w-4 text-muted-foreground" />
                                 </div>
@@ -495,7 +499,7 @@ export const Properties: React.FC = memo(() => {
                                   <TooltipContent>עריכת פרטי הנכס</TooltipContent>
                                 </Tooltip>
                                 
-                                {property.ownerPhone && (
+                                {property.ownerPhone && canViewPhone && (
                                   <>
                                     <Tooltip>
                                       <TooltipTrigger asChild>

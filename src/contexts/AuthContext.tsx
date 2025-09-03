@@ -48,6 +48,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (userProfile?.role) {
         const { data: userPermissions } = await getUserPermissions(userProfile.role);
+        console.log('User profile and permissions loaded:', {
+          email: userProfile.email,
+          role: userProfile.role,
+          permissions: userPermissions
+        });
         setPermissions((userPermissions || []) as Permission[]);
       }
     } catch (error) {

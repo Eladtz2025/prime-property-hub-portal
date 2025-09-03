@@ -5,7 +5,14 @@ import { Permission } from '@/types/auth';
  * Only Super Admins can view phone numbers
  */
 export const canViewPhoneNumbers = (permissions: Permission[]): boolean => {
-  return permissions.some(p => p.resource === 'contacts' && p.action === 'read');
+  // Debug logging to see what permissions user has
+  console.log('Checking permissions for phone numbers:', permissions);
+  
+  // Only super_admin role should be able to view phone numbers
+  const hasContactsPermission = permissions.some(p => p.resource === 'contacts' && p.action === 'read');
+  console.log('Has contacts permission:', hasContactsPermission);
+  
+  return hasContactsPermission;
 };
 
 /**

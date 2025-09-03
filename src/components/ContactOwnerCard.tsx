@@ -6,6 +6,8 @@ import { Property } from '../types/property';
 import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { ContactOwnerModal } from './ContactOwnerModal';
 import { openWhatsApp } from '../utils/whatsappHelper';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 interface ContactOwnerCardProps {
   property: Property;
@@ -17,6 +19,8 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
   onUpdateProperty
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { permissions } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
 
   const getContactStatusBadge = (status: Property['contactStatus']) => {
     switch (status) {
@@ -62,7 +66,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
               <div className="flex-1">
                 <h3 className="font-medium text-foreground">{property.address}</h3>
                 <p className="text-sm text-muted-foreground">בעלים: {property.ownerName}</p>
-                <p className="text-sm text-muted-foreground">טלפון: {property.ownerPhone}</p>
+                <p className="text-sm text-muted-foreground">טלפון: {formatPhoneDisplay(property.ownerPhone, canViewPhone)}</p>
               </div>
               <div className="flex flex-col gap-2">
                 {getContactStatusBadge(property.contactStatus)}
@@ -80,7 +84,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
             {property.tenantName && (
               <div className="text-sm text-muted-foreground">
                 דייר: {property.tenantName}
-                {property.tenantPhone && ` • ${property.tenantPhone}`}
+                {property.tenantPhone && ` • ${formatPhoneDisplay(property.tenantPhone, canViewPhone)}`}
               </div>
             )}
 
@@ -95,7 +99,7 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
                 התקשר
               </Button>
               
-              {property.ownerPhone && (
+              {property.ownerPhone && canViewPhone && (
                 <Button
                   size="sm"
                   variant="outline"
