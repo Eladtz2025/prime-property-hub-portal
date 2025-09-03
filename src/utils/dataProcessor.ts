@@ -116,19 +116,8 @@ export const processPropertiesData = async (): Promise<Property[]> => {
           createdAt: new Date().toISOString()
         };
         
-        // Merge with stored updates - this preserves user changes
-        const mergedProperty = mergePropertyWithStorage(baseProperty);
-        
-        // Only auto-determine status if no stored status exists
-        if (mergedProperty.status === 'unknown' && baseProperty.status === 'unknown') {
-          if (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') {
-            mergedProperty.status = 'occupied';
-          } else if (item.status === 'vacant' || item.status === 'פנוי') {
-            mergedProperty.status = 'vacant';
-          }
-        }
-        
-        return mergedProperty;
+        // Merge with stored updates - this preserves user changes only
+        return mergePropertyWithStorage(baseProperty);
       });
     
     // Load additional properties from localStorage (newly added properties)
