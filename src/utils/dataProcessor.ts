@@ -156,8 +156,7 @@ const extractCityFromAddress = (address: string): string => {
   return 'תל אביב'; // Default for most properties
 };
 
-// Generate realistic rent prices based on area and property type
-// Determine property status based on available data
+// Determine property status based on available data, preserving user updates
 const determinePropertyStatus = (item: any): 'occupied' | 'vacant' | 'unknown' => {
   // Don't auto-determine status - let user updates be preserved
   // This prevents overriding user-updated statuses when reloading data

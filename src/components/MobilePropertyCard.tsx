@@ -45,120 +45,124 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
   };
 
   return (
-    <Card className="mb-4 shadow-sm hover:shadow-md transition-all duration-200 mobile-card border-0 overflow-hidden">
-      <CardContent className="p-4 mobile-padding">
-        <div className="flex justify-between items-start mb-3 gap-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+    <Card className="mb-3 shadow-card hover:shadow-elevated transition-all duration-200 bg-card border border-border/50 rounded-xl overflow-hidden relative isolate">
+      <CardContent className="p-4 space-y-3">
+        {/* Address and Status Row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium text-sm truncate overflow-hidden text-ellipsis">
+            <span className="font-medium text-sm text-foreground truncate block">
               <SearchHighlight text={property.address} searchTerm={searchTerm} />
             </span>
           </div>
-          <Badge className={`${getStatusColor(property.status)} text-xs flex-shrink-0 whitespace-nowrap`}>
+          <Badge className={`${getStatusColor(property.status)} text-xs px-2 py-1 flex-shrink-0 whitespace-nowrap`}>
             {getStatusText(property.status)}
           </Badge>
         </div>
 
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                   <span className="text-sm font-medium truncate overflow-hidden text-ellipsis">
-                     <SearchHighlight text={property.ownerName} searchTerm={searchTerm} />
-                   </span>
-                  {ownerPropertyCount > 1 && (
-                    <Badge variant="secondary" className="text-xs flex-shrink-0 whitespace-nowrap">
-                      {ownerPropertyCount} נכסים
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            <div className="flex gap-1 flex-shrink-0">
-              {property.ownerPhone && canViewPhone && (
-                <>
-                   <Button 
-                     size="sm" 
-                     variant="outline" 
-                     onClick={() => openWhatsApp(property.ownerPhone!)}
-                     className="h-8 w-8 p-0 btn-mobile touch-target"
-                   >
-                     <MessageSquare className="h-3 w-3 text-green-600" />
-                   </Button>
-                   <Button 
-                     size="sm" 
-                     variant="outline" 
-                     onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                     className="h-8 w-8 p-0 btn-mobile touch-target"
-                   >
-                     <Phone className="h-3 w-3" />
-                   </Button>
-                </>
-              )}
-              {property.ownerEmail && (
-                 <Button 
-                   size="sm" 
-                   variant="outline" 
-                   onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
-                   className="h-8 w-8 p-0 btn-mobile touch-target"
-                 >
-                   <Mail className="h-3 w-3" />
-                 </Button>
+        {/* Owner Information Row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-sm font-medium text-foreground truncate block">
+                <SearchHighlight text={property.ownerName} searchTerm={searchTerm} />
+              </span>
+              {ownerPropertyCount > 1 && (
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 flex-shrink-0 whitespace-nowrap">
+                  {ownerPropertyCount} נכסים
+                </Badge>
               )}
             </div>
           </div>
-
-          {property.tenantName && (
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                 <span className="text-sm truncate overflow-hidden text-ellipsis">
-                   שוכר: <SearchHighlight text={property.tenantName} searchTerm={searchTerm} />
-                 </span>
-              </div>
-              {property.tenantPhone && canViewPhone && (
-                <div className="flex gap-1 flex-shrink-0">
-                   <Button 
-                     size="sm" 
-                     variant="outline" 
-                     onClick={() => openWhatsApp(property.tenantPhone!)}
-                     className="h-8 w-8 p-0 btn-mobile touch-target"
-                   >
-                     <MessageSquare className="h-3 w-3 text-green-600" />
-                   </Button>
-                   <Button 
-                     size="sm" 
-                     variant="outline" 
-                     onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
-                     className="h-8 w-8 p-0 btn-mobile touch-target"
-                   >
-                     <Phone className="h-3 w-3" />
-                   </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {property.monthlyRent && property.monthlyRent > 0 && (
-            <div className="text-sm font-medium text-primary truncate">
-              שכירות: ₪{property.monthlyRent.toLocaleString('he-IL')}
-            </div>
-          )}
-
-          {property.leaseEndDate && (
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm truncate">
-                סיום: {new Date(property.leaseEndDate).toLocaleDateString('he-IL')}
-              </span>
-            </div>
-          )}
+          <div className="flex gap-1 flex-shrink-0">
+            {property.ownerPhone && canViewPhone && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => openWhatsApp(property.ownerPhone!)}
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+            {property.ownerEmail && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                className="h-9 w-9 p-0 flex-shrink-0"
+              >
+                <Mail className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        {/* Tenant Information Row */}
+        {property.tenantName && (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm text-foreground truncate block">
+                שוכר: <SearchHighlight text={property.tenantName} searchTerm={searchTerm} />
+              </span>
+            </div>
+            {property.tenantPhone && canViewPhone && (
+              <div className="flex gap-1 flex-shrink-0">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => openWhatsApp(property.tenantPhone!)}
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rent Information */}
+        {property.monthlyRent && property.monthlyRent > 0 && (
+          <div className="text-sm font-medium text-primary">
+            שכירות: ₪{property.monthlyRent.toLocaleString('he-IL')}
+          </div>
+        )}
+
+        {/* Lease End Date */}
+        {property.leaseEndDate && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-foreground">
+              סיום: {new Date(property.leaseEndDate).toLocaleDateString('he-IL')}
+            </span>
+          </div>
+        )}
+
+        {/* View Details Button */}
+        <div className="pt-2">
           <Button 
             onClick={() => onViewDetails(property.id)}
-            className="flex-1 btn-mobile touch-target"
+            className="w-full h-10"
             size="sm"
           >
             <Eye className="h-4 w-4 mr-2" />

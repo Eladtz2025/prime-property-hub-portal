@@ -69,56 +69,57 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   }
 
   return (
-    <div className="space-y-6 p-4 pb-20 mobile-scroll">
-      {/* Header with greeting */}
-      <div className="bg-gradient-primary rounded-3xl p-6 md:p-8 text-white shadow-elevated animate-fade-in overflow-hidden relative">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
-          <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-white/10"></div>
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">שלום! 👋</h1>
-              <p className="text-white/90 text-sm">ברוך הבא למערכת ניהול הנכסים</p>
-            </div>
-            <Button
-              onClick={onAddProperty}
-              size="sm"
-              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-4 py-2"
-            >
-              <Plus className="h-4 w-4 ml-1" />
-              הוסף נכס
-            </Button>
+    <div className="min-h-screen bg-background overflow-hidden">
+      <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
+        {/* Header with greeting */}
+        <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-white/10"></div>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <div className="bg-white/15 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="bg-white/20 p-1.5 rounded-lg">
-                  <Building className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-semibold">סה״כ נכסים</span>
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold mb-1 truncate">שלום! 👋</h1>
+                <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
-              <div className="text-2xl font-bold">{stats.totalProperties}</div>
+              <Button
+                onClick={onAddProperty}
+                size="sm"
+                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-3 py-2 flex-shrink-0"
+              >
+                <Plus className="h-4 w-4 ml-1" />
+                הוסף נכס
+              </Button>
             </div>
             
-            <div className="bg-white/15 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="bg-white/20 p-1.5 rounded-lg">
-                  <TrendingUp className="h-4 w-4" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
+                    <Building className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold truncate">סה״כ נכסים</span>
                 </div>
-                <span className="text-sm font-semibold">הכנסה חודשית</span>
+                <div className="text-xl font-bold number-display">{stats.totalProperties}</div>
               </div>
-              <div className="text-2xl font-bold">
-                {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
+              
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold truncate">הכנסה חודשית</span>
+                </div>
+                <div className="text-lg font-bold number-display truncate">
+                  {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Urgent Alerts */}
       {urgentAlerts.length > 0 && (
@@ -185,80 +186,81 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         </Card>
       </div>
 
-      {/* Recent Properties */}
-      <Card className="shadow-elevated animate-fade-in border-0 bg-white">
-        <CardHeader className="pb-4 px-6 pt-6">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-bold">נכסים אחרונים</CardTitle>
-            <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10">
-              <Link to="/properties" className="font-semibold">הצג הכל →</Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 px-6">
-          {properties.slice(0, 3).map((property, index) => (
-            <div 
-              key={property.id}
-              className="flex items-center justify-between p-4 bg-gradient-to-l from-gray-50/50 to-transparent rounded-xl hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-gray-100/50 gap-3 overflow-hidden"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-md flex-shrink-0">
-                  <MapPin className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="font-semibold text-sm text-gray-900 truncate">{property.address}</p>
-                  <p className="text-xs text-gray-600 truncate">{property.ownerName}</p>
-                </div>
-              </div>
-              <Badge 
-                className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap ${
-                  property.status === 'occupied' 
-                    ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                    : property.status === 'vacant'
-                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
-              </Badge>
+        {/* Recent Properties */}
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card overflow-hidden">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base font-bold text-foreground truncate">נכסים אחרונים</CardTitle>
+              <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10 flex-shrink-0">
+                <Link to="/properties" className="font-semibold text-sm">הצג הכל ←</Link>
+              </Button>
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-4">
+            {properties.slice(0, 3).map((property, index) => (
+              <div 
+                key={property.id}
+                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0 flex-container-mobile">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-sm flex-shrink-0">
+                    <MapPin className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0 flex-container-mobile">
+                    <p className="font-semibold text-sm text-foreground truncate block">{property.address}</p>
+                    <p className="text-xs text-muted-foreground truncate block">{property.ownerName}</p>
+                  </div>
+                </div>
+                <Badge 
+                  className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap px-2 py-1 ${
+                    property.status === 'occupied' 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-100' 
+                      : property.status === 'vacant'
+                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-      {/* Quick Actions */}
-      <Card className="shadow-elevated animate-fade-in border-0 bg-white">
-        <CardHeader className="pb-4 px-6 pt-6">
-          <CardTitle className="text-lg font-bold">פעולות מהירות</CardTitle>
-        </CardHeader>
-        <CardContent className="px-6">
-          <div className="grid grid-cols-2 gap-4">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              asChild 
-              className="h-14 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
-            >
-              <Link to="/properties" className="flex flex-col gap-1">
-                <Building className="h-5 w-5" />
-                <span className="text-sm font-semibold">כל הנכסים</span>
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              asChild 
-              className="h-14 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
-            >
-              <Link to="/alerts" className="flex flex-col gap-1">
-                <Bell className="h-5 w-5" />
-                <span className="text-sm font-semibold">התראות</span>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Quick Actions */}
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <CardTitle className="text-base font-bold text-foreground">פעולות מהירות</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                asChild 
+                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+              >
+                <Link to="/properties" className="flex flex-col gap-1">
+                  <Building className="h-4 w-4" />
+                  <span className="text-xs font-semibold">כל הנכסים</span>
+                </Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                asChild 
+                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+              >
+                <Link to="/alerts" className="flex flex-col gap-1">
+                  <Bell className="h-4 w-4" />
+                  <span className="text-xs font-semibold">התראות</span>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

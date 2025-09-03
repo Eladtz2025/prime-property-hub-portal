@@ -161,58 +161,87 @@ All colors MUST be HSL.
     animation: scaleIn 0.2s ease-out;
   }
   
-  /* Mobile optimizations */
+  /* Mobile optimizations and layout fixes */
   @media (max-width: 768px) {
-    .mobile-padding {
-      padding: var(--mobile-padding);
-    }
-    
-    .mobile-gap {
-      gap: var(--mobile-gap);
-    }
-    
-    .touch-target {
-      min-height: var(--touch-target);
-      min-width: var(--touch-target);
-    }
-    
-    /* Improve touch targets for buttons on mobile */
-    .btn-mobile {
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    /* Better spacing for mobile cards */
-    .mobile-card {
-      margin-bottom: 0.75rem;
-      border-radius: 12px;
-      position: relative;
-      z-index: 1;
-    }
-    
-    /* Prevent overlapping and overflow issues */
-    .mobile-card:hover {
-      z-index: 2;
-    }
-    
-    /* Ensure proper text wrapping and overflow handling */
-    .text-ellipsis {
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    
-    /* Better scroll behavior */
+    /* Container optimizations */
     .mobile-scroll {
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      contain: layout style paint;
+      overflow-x: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
     
-    /* Fix button spacing */
+    /* Card layout improvements */
+    .mobile-card {
+      margin-bottom: 0.75rem;
+      border-radius: 12px;
+      contain: layout style;
+      isolation: isolate;
+      transform: translateZ(0); /* Force hardware acceleration */
+    }
+    
+    /* Touch target improvements */
+    .touch-target,
+    .btn-mobile {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+    
+    /* Text overflow and RTL fixes */
+    .truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      direction: inherit;
+      unicode-bidi: plaintext;
+    }
+    
+    /* Button container fixes */
     .mobile-buttons {
       display: flex;
       gap: 0.25rem;
       flex-shrink: 0;
+      align-items: center;
+    }
+    
+    /* Prevent content shift during loading */
+    .mobile-card-content {
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Ensure proper stacking context */
+    .mobile-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid hsl(var(--border));
+    }
+    
+    /* Smooth animations for mobile */
+    .mobile-card {
+      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    }
+    
+    .mobile-card:active {
+      transform: scale(0.98);
+    }
+    
+    /* Fix overflow in flex containers */
+    .flex-container-mobile {
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    /* Ensure numbers display correctly in RTL */
+    .number-display {
+      font-variant-numeric: tabular-nums;
+      direction: ltr;
+      unicode-bidi: embed;
     }
   }
 }
