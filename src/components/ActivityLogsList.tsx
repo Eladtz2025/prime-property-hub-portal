@@ -56,19 +56,32 @@ const getActionBadgeVariant = (action: string) => {
 
 const formatActionText = (action: string, resourceType: string, details: any) => {
   switch (action) {
-    case 'login': return 'Logged in';
-    case 'logout': return 'Logged out';
-    case 'property_created': return 'Created property';
-    case 'property_updated': return 'Updated property';
-    case 'property_deleted': return 'Deleted property';
-    case 'contact_made': return 'Made contact call';
-    case 'whatsapp_sent': return 'Sent WhatsApp message';
-    case 'user_approved': return 'Approved user';
-    case 'user_role_changed': return `Changed user role to ${details?.newRole || 'unknown'}`;
-    case 'profile_updated': return 'Updated profile';
-    case 'search_performed': return `Searched for "${details?.query || 'properties'}"`;
-    case 'export_data': return 'Exported data';
+    case 'login': return 'התחברות למערכת';
+    case 'logout': return 'יציאה מהמערכת';
+    case 'property_created': return 'נוצר נכס חדש';
+    case 'property_updated': return 'עודכן נכס';
+    case 'property_deleted': return 'נמחק נכס';
+    case 'contact_made': return 'בוצעה שיחה';
+    case 'whatsapp_sent': return 'נשלחה הודעה בוואטסאפ';
+    case 'user_approved': return 'אושר משתמש';
+    case 'user_role_changed': return `שונה תפקיד משתמש ל${details?.newRole || 'לא ידוע'}`;
+    case 'profile_updated': return 'עודכן פרופיל';
+    case 'search_performed': return `חיפוש: "${details?.query || 'נכסים'}"`;
+    case 'export_data': return 'יוצאו נתונים';
+    case 'bulk_action': return 'פעולת המוני';
     default: return action.replace('_', ' ');
+  }
+};
+
+const formatResourceType = (resourceType: string) => {
+  switch (resourceType) {
+    case 'property': return 'נכס';
+    case 'user': return 'משתמש';
+    case 'contact': return 'קשר';
+    case 'search': return 'חיפוש';
+    case 'system': return 'מערכת';
+    case 'auth': return 'אבטחה';
+    default: return resourceType;
   }
 };
 
@@ -114,19 +127,19 @@ export const ActivityLogsList: React.FC<ActivityLogsListProps> = ({ limit }) => 
       ) : (
         <div className="space-y-4">
           {activities.slice(0, limit).map((activity) => (
-              <div key={activity.id} className="flex items-center space-x-4 p-3 border rounded-lg">
+              <div key={activity.id} className="flex items-center space-x-4 space-x-reverse p-3 border rounded-lg" dir="rtl">
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                     {getActionIcon(activity.action)}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 space-x-reverse">
                     <p className="text-sm font-medium">
                       {formatActionText(activity.action, activity.resource_type, activity.details)}
                     </p>
                     <Badge variant={getActionBadgeVariant(activity.action) as any}>
-                      {activity.resource_type}
+                      {formatResourceType(activity.resource_type)}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
