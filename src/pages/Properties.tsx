@@ -348,8 +348,12 @@ export const Properties: React.FC = memo(() => {
               <PullToRefresh onRefresh={handleRefresh}>
                 <Card>
                   {isMobile ? (
-                    <div className="p-4 text-center text-muted-foreground">
-                      <p>עבור למצב כרטיסים לתצוגה טובה יותר במובייל</p>
+                    <div className="p-6 text-center text-muted-foreground bg-gradient-to-b from-blue-50 to-transparent rounded-lg border-2 border-dashed border-blue-200">
+                      <div className="max-w-xs mx-auto">
+                        <div className="text-4xl mb-3">📱</div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">תצוגה מותאמת למובייל</p>
+                        <p className="text-xs text-gray-500">עבור למצב כרטיסים לחוויה טובה יותר</p>
+                      </div>
                     </div>
                   ) : (
                     <Table>
@@ -584,16 +588,26 @@ export const Properties: React.FC = memo(() => {
 
             <TabsContent value="cards" className="space-y-4">
               <PullToRefresh onRefresh={handleRefresh}>
-                 <div className="space-y-4">
+                <div className="space-y-4 pb-4">
                   {paginatedProperties.map((property) => (
-                     <OptimizedMobilePropertyCard
-                       key={property.id}
-                       property={property}
-                       onViewDetails={handleViewDetails}
-                       ownerPropertyCount={getOwnerPropertyCount(property)}
-                       searchTerm={filters.searchTerm}
-                     />
+                    <OptimizedMobilePropertyCard
+                      key={property.id}
+                      property={property}
+                      onViewDetails={handleViewDetails}
+                      ownerPropertyCount={getOwnerPropertyCount(property)}
+                      searchTerm={filters.searchTerm}
+                    />
                   ))}
+                  
+                  {paginatedProperties.length === 0 && (
+                    <Card className="p-8">
+                      <div className="text-center text-muted-foreground">
+                        <div className="text-4xl mb-4">🔍</div>
+                        <h3 className="text-lg font-semibold mb-2">לא נמצאו נכסים</h3>
+                        <p className="text-sm">נסה לשנות את הפילטרים או לבטל את החיפוש</p>
+                      </div>
+                    </Card>
+                  )}
                 </div>
                 
                 {/* Pagination for Cards */}

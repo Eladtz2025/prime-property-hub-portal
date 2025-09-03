@@ -55,13 +55,13 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       return manualMonthlyIncome;
     }
     
-    // Calculate from actual property data
+    // Calculate from actual property data - only occupied properties
     const autoCalculatedIncome = properties
-      .filter(p => p.monthlyRent && p.monthlyRent > 0)
+      .filter(p => p.status === 'occupied' && p.monthlyRent && p.monthlyRent > 0)
       .reduce((sum, p) => sum + (p.monthlyRent || 0), 0);
     
-    // If no rent data available, show a placeholder
-    return autoCalculatedIncome > 0 ? autoCalculatedIncome : 15000;
+    // If no rent data available, don't show a placeholder
+    return autoCalculatedIncome;
   }, [properties, manualMonthlyIncome]);
 
   if (!isMobile) {
@@ -113,7 +113,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 <span className="text-sm font-semibold">הכנסה חודשית</span>
               </div>
               <div className="text-2xl font-bold">
-                ₪{displayIncome.toLocaleString('he-IL')}
+                {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
               </div>
             </div>
           </div>

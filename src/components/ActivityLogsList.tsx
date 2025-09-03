@@ -72,54 +72,48 @@ const formatActionText = (action: string, resourceType: string, details: any) =>
   }
 };
 
-export const ActivityLogsList = () => {
+interface ActivityLogsListProps {
+  limit?: number;
+}
+
+export const ActivityLogsList: React.FC<ActivityLogsListProps> = ({ limit }) => {
   const { activities, isLoading, error } = useActivityLogs();
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center space-x-4">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
-              </div>
+      <div className="space-y-4">
+        {Array.from({ length: limit || 5 }).map((_, i) => (
+          <div key={i} className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </div>
+        ))}
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Failed to load activity logs</p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground">
+        <p className="text-sm">שגיאה בטעינת הפעילות</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {activities.length === 0 ? (
-          <p className="text-muted-foreground">No recent activity</p>
-        ) : (
-          <div className="space-y-4">
-            {activities.map((activity) => (
+    <div>
+      {activities.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <div className="text-4xl mb-4">⚡</div>
+          <p className="text-sm font-medium">עדיין לא התחלת להשתמש במערכת</p>
+          <p className="text-xs mt-1">הפעילות שלך תופיע כאן</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {activities.slice(0, limit).map((activity) => (
               <div key={activity.id} className="flex items-center space-x-4 p-3 border rounded-lg">
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -154,9 +148,8 @@ export const ActivityLogsList = () => {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 };

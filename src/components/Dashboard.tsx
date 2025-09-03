@@ -255,11 +255,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           <CardTitle>פעילות אחרונה</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>עדיין לא התחלת להשתמש במערכת</p>
-            <p className="text-sm">התקשר לבעלי נכסים כדי לראות פעילות כאן</p>
-          </div>
+          <ActivityLogsList limit={5} />
         </CardContent>
       </Card>
     </div>

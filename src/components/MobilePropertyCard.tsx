@@ -39,13 +39,14 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
       case 'occupied': return 'תפוס';
       case 'vacant': return 'פנוי';
       case 'maintenance': return 'תחזוקה';
-      default: return status;
+      case 'unknown': return 'לא ידוע';
+      default: return 'לא ידוע';
     }
   };
 
   return (
-    <Card className="mb-4 shadow-sm">
-      <CardContent className="p-4">
+    <Card className="mb-4 shadow-sm hover:shadow-md transition-all duration-200 mobile-card border-0">
+      <CardContent className="p-4 mobile-padding">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -76,33 +77,33 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
             <div className="flex gap-1">
               {property.ownerPhone && canViewPhone && (
                 <>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => openWhatsApp(property.ownerPhone!)}
-                    className="h-7 w-7 p-0"
-                  >
-                    <MessageSquare className="h-3 w-3 text-green-600" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                    className="h-7 w-7 p-0"
-                  >
-                    <Phone className="h-3 w-3" />
-                  </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     onClick={() => openWhatsApp(property.ownerPhone!)}
+                     className="h-8 w-8 p-0 btn-mobile touch-target"
+                   >
+                     <MessageSquare className="h-3 w-3 text-green-600" />
+                   </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                     className="h-8 w-8 p-0 btn-mobile touch-target"
+                   >
+                     <Phone className="h-3 w-3" />
+                   </Button>
                 </>
               )}
               {property.ownerEmail && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
-                  className="h-7 w-7 p-0"
-                >
-                  <Mail className="h-3 w-3" />
-                </Button>
+                 <Button 
+                   size="sm" 
+                   variant="outline" 
+                   onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                   className="h-8 w-8 p-0 btn-mobile touch-target"
+                 >
+                   <Mail className="h-3 w-3" />
+                 </Button>
               )}
             </div>
           </div>
@@ -117,30 +118,30 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
               </div>
               {property.tenantPhone && canViewPhone && (
                 <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => openWhatsApp(property.tenantPhone!)}
-                    className="h-7 w-7 p-0"
-                  >
-                    <MessageSquare className="h-3 w-3 text-green-600" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
-                    className="h-7 w-7 p-0"
-                  >
-                    <Phone className="h-3 w-3" />
-                  </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     onClick={() => openWhatsApp(property.tenantPhone!)}
+                     className="h-8 w-8 p-0 btn-mobile touch-target"
+                   >
+                     <MessageSquare className="h-3 w-3 text-green-600" />
+                   </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline" 
+                     onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
+                     className="h-8 w-8 p-0 btn-mobile touch-target"
+                   >
+                     <Phone className="h-3 w-3" />
+                   </Button>
                 </div>
               )}
             </div>
           )}
 
-          {property.monthlyRent && (
+          {property.monthlyRent && property.monthlyRent > 0 && (
             <div className="text-sm font-medium text-primary">
-              שכירות: ₪{property.monthlyRent.toLocaleString()}
+              שכירות: ₪{property.monthlyRent.toLocaleString('he-IL')}
             </div>
           )}
 
@@ -157,7 +158,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
         <div className="flex gap-2">
           <Button 
             onClick={() => onViewDetails(property.id)}
-            className="flex-1"
+            className="flex-1 btn-mobile touch-target"
             size="sm"
           >
             <Eye className="h-4 w-4 mr-2" />

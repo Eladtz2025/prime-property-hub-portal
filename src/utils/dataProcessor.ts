@@ -99,9 +99,9 @@ export const processPropertiesData = async (): Promise<Property[]> => {
       .map((item: any, index: number) => {
         const baseProperty: Property = {
           id: `property-${index + 1}`,
-          address: item.address || '',
+          address: item.address || 'לא צוין',
           city: extractCityFromAddress(item.address || ''),
-          ownerName: item.owner_name || '',
+          ownerName: item.owner_name || 'לא צוין',
           ownerPhone: fixPhoneNumber(String(item.owner_phone || '')),
           ownerEmail: '',
           tenantName: (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') ? item.tenant_name : undefined,
@@ -110,7 +110,7 @@ export const processPropertiesData = async (): Promise<Property[]> => {
           monthlyRent: generateRealisticRent(item.address || ''),
           leaseStartDate: item.entry_date && item.entry_date !== 'nan' ? item.entry_date : '',
           leaseEndDate: '',
-          status: 'unknown' as const,
+          status: determinePropertyStatus(item),
           contactStatus: 'not_contacted' as const,
           contactAttempts: 0,
           createdAt: new Date().toISOString()
@@ -146,8 +146,24 @@ const extractCityFromAddress = (address: string): string => {
 };
 
 // Generate realistic rent prices based on area and property type
+// Determine property status based on available data
+const determinePropertyStatus = (item: any): 'occupied' | 'vacant' | 'unknown' => {
+  // If we have tenant information, property is occupied
+  if (item.tenant_name && item.tenant_name !== 'nan' && item.tenant_name !== '') {
+    return 'occupied';
+  }
+  
+  // If explicitly vacant or entry date suggests new/vacant
+  if (item.status === 'vacant' || item.status === 'פנוי') {
+    return 'vacant';
+  }
+  
+  // Default to unknown if we can't determine
+  return 'unknown';
+};
+
 const generateRealisticRent = (address: string): number => {
-  if (!address) return 0;
+  if (!address || address === 'לא צוין') return 0;
   
   // Main commercial areas - higher rent
   if (address.includes('בן יהודה') || address.includes('דיזנגוף') || address.includes('הירקון')) {

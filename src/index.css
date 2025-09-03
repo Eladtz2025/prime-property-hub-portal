@@ -48,6 +48,13 @@ All colors MUST be HSL.
     /* Shadows */
     --shadow-card: 0 2px 8px -2px hsl(0, 0%, 0%, 0.1);
     --shadow-elevated: 0 8px 25px -5px hsl(0, 0%, 0%, 0.15);
+    
+    /* Mobile optimizations */
+    --mobile-padding: 1rem;
+    --mobile-gap: 0.75rem;
+    
+    /* Touch targets for mobile */
+    --touch-target: 44px;
 
     --sidebar-background: 0 0% 98%;
 
@@ -152,6 +159,34 @@ All colors MUST be HSL.
   
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .mobile-padding {
+      padding: var(--mobile-padding);
+    }
+    
+    .mobile-gap {
+      gap: var(--mobile-gap);
+    }
+    
+    .touch-target {
+      min-height: var(--touch-target);
+      min-width: var(--touch-target);
+    }
+    
+    /* Improve touch targets for buttons on mobile */
+    .btn-mobile {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better spacing for mobile cards */
+    .mobile-card {
+      margin-bottom: 0.75rem;
+      border-radius: 12px;
+    }
   }
 }
 
