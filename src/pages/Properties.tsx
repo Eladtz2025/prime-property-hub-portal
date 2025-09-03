@@ -52,8 +52,9 @@ const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
-  const { permissions } = useAuth();
+  const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const canEditProperties = hasPermission('properties', 'update');
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -486,18 +487,20 @@ export const Properties: React.FC = memo(() => {
                                   <TooltipContent>צפה בפרטי הנכס</TooltipContent>
                                 </Tooltip>
                                 
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setEditingProperty(property)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>עריכת פרטי הנכס</TooltipContent>
-                                </Tooltip>
+                                {canEditProperties && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditingProperty(property)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>עריכת פרטי הנכס</TooltipContent>
+                                  </Tooltip>
+                                )}
                                 
                                 {property.ownerPhone && canViewPhone && (
                                   <>

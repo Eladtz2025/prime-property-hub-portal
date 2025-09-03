@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Property, PropertyImage } from '../types/property';
 import { savePropertyToStorage } from '../utils/propertyStorage';
 import { ImageUpload } from './ImageUpload';
+import { useAuth } from '@/contexts/AuthContext';
+import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -28,6 +30,14 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   const [formData, setFormData] = useState<Property>(property);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { permissions, hasPermission } = useAuth();
+  const canViewPhone = canViewPhoneNumbers(permissions);
+  const canEdit = hasPermission('properties', 'update');
+
+  // If user can't edit, don't show the modal
+  if (!canEdit) {
+    return null;
+  }
 
   useEffect(() => {
     setFormData(property);
@@ -168,8 +178,10 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   <Label htmlFor="ownerPhone">טלפון בעל הנכס</Label>
                   <Input
                     id="ownerPhone"
-                    value={formData.ownerPhone || ''}
+                    value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
                     onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                    disabled={!canViewPhone}
+                    placeholder={!canViewPhone ? "אין הרשאה לצפייה" : ""}
                   />
                 </div>
                 
@@ -196,8 +208,10 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   <Label htmlFor="tenantPhone">טלפון השוכר</Label>
                   <Input
                     id="tenantPhone"
-                    value={formData.tenantPhone || ''}
+                    value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
                     onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                    disabled={!canViewPhone}
+                    placeholder={!canViewPhone ? "אין הרשאה לצפייה" : ""}
                   />
                 </div>
                 

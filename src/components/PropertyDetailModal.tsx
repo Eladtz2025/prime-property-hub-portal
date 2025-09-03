@@ -23,8 +23,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   onClose,
   onEdit
 }) => {
-  const { permissions } = useAuth();
+  const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const canEdit = hasPermission('properties', 'update');
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -65,10 +66,12 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               <Badge className={getStatusColor(property.status)}>
                 {getStatusText(property.status)}
               </Badge>
-              <Button size="sm" onClick={() => onEdit(property)}>
-                <Edit className="h-4 w-4 mr-2" />
-                עריכה
-              </Button>
+              {canEdit && (
+                <Button size="sm" onClick={() => onEdit(property)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  עריכה
+                </Button>
+              )}
             </div>
           </div>
         </DialogHeader>
