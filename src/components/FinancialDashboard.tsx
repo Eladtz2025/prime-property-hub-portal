@@ -18,6 +18,7 @@ import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { IncomeTracker } from './IncomeTracker';
+import { ExpenseTracker } from './ExpenseTracker';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -196,10 +197,9 @@ export const FinancialDashboard: React.FC = () => {
             <TrendingUp className="w-4 h-4" />
             מעקב הכנסות
           </TabsTrigger>
-          <TabsTrigger value="expenses" className="gap-2" disabled>
+          <TabsTrigger value="expenses" className="gap-2">
             <BarChart3 className="w-4 h-4" />
             ניהול הוצאות
-            <Badge variant="secondary" className="text-xs">בקרוב</Badge>
           </TabsTrigger>
           <TabsTrigger value="reports" className="gap-2" disabled>
             <Download className="w-4 h-4" />
@@ -218,16 +218,10 @@ export const FinancialDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-6">
-          <Card>
-            <CardContent className="text-center py-12">
-              <BarChart3 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">ניהול הוצאות</h3>
-              <p className="text-muted-foreground mb-4">
-                תכונה זו תהיה זמינה בשלב הבא
-              </p>
-              <Badge variant="outline">שלב 2: ניהול הוצאות</Badge>
-            </CardContent>
-          </Card>
+          <ExpenseTracker
+            selectedMonth={selectedMonth}
+            properties={properties}
+          />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">

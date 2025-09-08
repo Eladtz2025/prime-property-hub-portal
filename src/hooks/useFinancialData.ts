@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { useExpenseData } from './useExpenseData';
 
 export interface FinancialSummary {
   totalIncome: number;
@@ -41,6 +42,9 @@ export const useFinancialData = (selectedMonth?: Date) => {
   const currentMonth = selectedMonth || new Date();
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
+
+  // Get expense data for the month
+  const { expenseSummary } = useExpenseData(selectedMonth);
 
   // Fetch rent payments for the selected month
   const rentPaymentsQuery = useQuery({
@@ -124,7 +128,7 @@ export const useFinancialData = (selectedMonth?: Date) => {
       ?.filter(p => p.status === 'paid')
       .reduce((sum, p) => sum + p.amount, 0) || 0,
     
-    totalExpenses: 0, // Will be implemented in Step 2
+    totalExpenses: expenseSummary.totalExpenses,
     
     netProfit: 0, // Will be calculated after expenses are implemented
     
