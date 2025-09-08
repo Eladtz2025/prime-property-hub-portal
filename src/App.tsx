@@ -180,15 +180,15 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <DataProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <DataProvider>
           <TooltipProvider>
             <AppContent />
             <Toaster />
             <Sonner />
           </TooltipProvider>
-        </AuthProvider>
-      </DataProvider>
+        </DataProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
