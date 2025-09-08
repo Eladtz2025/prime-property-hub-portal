@@ -12,6 +12,8 @@ import { Messages } from './pages/Messages';
 import { Reports } from './pages/Reports';
 import { ContactQueueWrapper } from './pages/ContactQueueWrapper';
 import { UserManagement } from './pages/UserManagement';
+import { OwnerPortal } from './pages/OwnerPortal';
+import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DataProvider } from './components/DataProvider';
@@ -108,6 +110,18 @@ const AppContent: React.FC = () => {
                   </ProtectedRoute>
                 </Layout>
               } 
+            />
+            <Route 
+              path="/owner-portal" 
+              element={
+                <ProtectedRoute requiredRole="property_owner" requireApproval={false}>
+                  <OwnerPortal />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/owner-invitation" 
+              element={<OwnerInvitationPage />} 
             />
             <Route path="*" element={
               <Layout onLogout={signOut}>

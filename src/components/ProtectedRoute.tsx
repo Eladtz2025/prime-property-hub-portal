@@ -62,7 +62,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       'viewer': 1,
       'manager': 2,
       'admin': 3,
-      'super_admin': 4
+      'super_admin': 4,
+      'property_owner': 1
     };
 
     const userLevel = roleHierarchy[profile.role];

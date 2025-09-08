@@ -183,7 +183,8 @@ export const UserManagement: React.FC = () => {
       'super_admin': 'מנהל עליון',
       'admin': 'מנהל',
       'manager': 'מנהל תיקים',
-      'viewer': 'צופה'
+      'viewer': 'צופה',
+      'property_owner': 'בעל נכס'
     };
     return labels[role];
   };
