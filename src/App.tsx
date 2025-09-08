@@ -16,6 +16,7 @@ import { PropertyInvitations } from './pages/PropertyInvitations';
 import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
+import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -120,6 +121,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminControl />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/data-migration" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <DataMigration />
                   </ProtectedRoute>
                 </Layout>
               } 

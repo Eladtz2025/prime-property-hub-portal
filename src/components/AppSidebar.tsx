@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, Users, UserPlus, Monitor } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, Users, UserPlus, Monitor, Database, Send, Shield } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ const navigationItems = [
 ];
 
 const adminItems = [
+  { title: "העברת נתונים", url: "/data-migration", icon: Database, requiredRole: "admin" },
   { title: "ניהול משתמשים", url: "/users", icon: Users, requiredRole: "admin" },
   { title: "הזמנות בעלי נכסים", url: "/property-invitations", icon: UserPlus, requiredRole: "admin" },
   { title: "מרכז בקרה", url: "/admin-control", icon: Monitor, requiredRole: "admin" },
