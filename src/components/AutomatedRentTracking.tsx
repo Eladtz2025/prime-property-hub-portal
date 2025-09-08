@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { logger } from '@/utils/logger';
 
 interface RecurringPayment {
   id: string;
@@ -124,7 +125,7 @@ export const AutomatedRentTracking: React.FC = () => {
       });
 
     } catch (error) {
-      console.error('Error loading rent tracking data:', error);
+      logger.error('Error loading rent tracking data:', error, 'AutomatedRentTracking');
     } finally {
       setLoading(false);
     }
@@ -156,7 +157,7 @@ export const AutomatedRentTracking: React.FC = () => {
 
   const sendPaymentReminder = async (paymentId: string) => {
     // In a real implementation, this would send email/SMS
-    console.log('Sending payment reminder for:', paymentId);
+    logger.info('Sending payment reminder for:', paymentId, 'AutomatedRentTracking');
     
     // Create notification
     const payment = recurringPayments.find(p => p.id === paymentId);

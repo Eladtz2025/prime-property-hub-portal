@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { UserProfile, Permission, UserRole } from '@/types/auth';
+import { logger } from '@/utils/logger';
 
 // Auth helpers
 export const signInWithEmail = async (email: string, password: string) => {
@@ -45,7 +46,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     .single();
   
   if (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error('Error fetching user profile:', error, 'getUserProfile');
     return null;
   }
   

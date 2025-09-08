@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from '../types/property';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { logger } from '@/utils/logger';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -111,7 +112,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       
       onClose();
     } catch (error) {
-      console.error('Error adding property:', error);
+      logger.error('Error adding property:', error, 'AddPropertyModal');
     } finally {
       setIsSubmitting(false);
     }

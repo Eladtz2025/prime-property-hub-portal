@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerProperties, getPropertyFinancials, createFinancialRecord } from '@/lib/owner-portal';
+import { logger } from '@/utils/logger';
 import { useToast } from '@/hooks/use-toast';
 import type { PropertyWithTenant, FinancialRecord } from '@/types/owner-portal';
 
@@ -158,7 +159,7 @@ export const FinancialReports: React.FC = () => {
       });
 
     } catch (error) {
-      console.error('Error loading financial data:', error);
+      logger.error('Error loading financial data:', error, 'FinancialReports');
       toast({
         title: "שגיאה",
         description: "שגיאה בטעינת הנתונים הפיננסיים",
@@ -211,7 +212,7 @@ export const FinancialReports: React.FC = () => {
       // Reload data
       await loadData();
     } catch (error) {
-      console.error('Error adding transaction:', error);
+      logger.error('Error adding transaction:', error, 'FinancialReports');
       toast({
         title: "שגיאה",
         description: "שגיאה בהוספת הרשומה",

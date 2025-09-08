@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { UserProfile } from '@/types/auth';
+import { logger } from '@/utils/logger';
 import type { DatabaseProperty, FinancialRecord } from '@/types/owner-portal';
 
 interface OwnerActivity {
@@ -137,7 +138,7 @@ export const AdminControlDashboard: React.FC = () => {
         setOwnersActivity(ownerActivities as OwnerActivity[]);
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      logger.error('Error loading dashboard data:', error, 'AdminControlDashboard');
     } finally {
       setLoading(false);
     }

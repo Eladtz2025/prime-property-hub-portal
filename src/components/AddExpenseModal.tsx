@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ReceiptUploader } from './ReceiptUploader';
+import { logger } from '@/utils/logger';
 
 const expenseCategories = [
   { value: 'maintenance', label: 'תחזוקה', icon: Wrench },
@@ -100,7 +101,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       setReceiptUrl('');
       onSuccess();
     } catch (error) {
-      console.error('Error adding expense:', error);
+      logger.error('Error adding expense:', error, 'AddExpenseModal');
       toast({
         title: "שגיאה בהוספת הוצאה",
         description: "אנא נסה שוב",

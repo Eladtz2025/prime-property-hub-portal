@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 interface FinancialForecast {
   month: string;
@@ -96,7 +97,7 @@ export const FinancialForecasting: React.FC = () => {
       });
 
     } catch (error) {
-      console.error('Error loading financial data:', error);
+      logger.error('Error loading financial data:', error, 'FinancialForecasting');
     } finally {
       setLoading(false);
     }

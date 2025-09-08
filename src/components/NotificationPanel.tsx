@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { Notification } from '@/types/owner-portal';
 import { markNotificationAsRead } from '@/lib/owner-portal';
+import { logger } from '@/utils/logger';
 
 interface NotificationPanelProps {
   notifications: Notification[];
@@ -68,7 +69,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       await markNotificationAsRead(notificationId);
       onMarkAsRead(notificationId);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error, 'NotificationPanel');
     }
   };
 

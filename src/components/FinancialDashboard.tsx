@@ -17,6 +17,7 @@ import {
 import { format, subMonths, addMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { IncomeTracker } from './IncomeTracker';
 import { ExpenseTracker } from './ExpenseTracker';
@@ -241,7 +242,7 @@ export const FinancialDashboard: React.FC = () => {
         <TabsContent value="documents" className="space-y-6">
           <DocumentManager
             documents={[]}
-            onDelete={(id) => console.log('Delete document:', id)}
+            onDelete={(id) => logger.debug('Delete document:', id, 'FinancialDashboard')}
           />
         </TabsContent>
 

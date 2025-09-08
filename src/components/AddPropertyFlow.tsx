@@ -11,6 +11,7 @@ import { Building, Upload, Search, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 interface AddPropertyFlowProps {
   onPropertyAdded: () => void;
@@ -109,7 +110,7 @@ export const AddPropertyFlow: React.FC<AddPropertyFlowProps> = ({ onPropertyAdde
       setIsOpen(false);
       onPropertyAdded();
     } catch (error) {
-      console.error('Error adding property:', error);
+      logger.error('Error adding property:', error, 'AddPropertyFlow');
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בהוספת הנכס. אנא נסה שוב",

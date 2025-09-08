@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Star, StarOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
+import { logger } from '@/utils/logger';
 
 interface ImageUploadProps {
   images: PropertyImage[];
@@ -90,7 +91,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
         newImages.push(newImage);
       } catch (error) {
-        console.error('Error compressing image:', error);
+        logger.error('Error compressing image:', error, 'ImageUpload');
         toast({
           title: "שגיאה",
           description: `לא הצלחנו לעבד את התמונה ${file.name}`,

@@ -377,13 +377,15 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? React.Fragment : "button"
     const { collapsed, isMobile } = useSidebar()
 
-    const button = (
+    const button = asChild ? (
+      <React.Fragment {...props} />
+    ) : (
       <Comp
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        ref={asChild ? undefined : ref}
+        ref={ref}
         {...props}
       />
     )
