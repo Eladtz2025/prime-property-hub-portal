@@ -21,6 +21,7 @@ import type { OwnerDashboardStats, PropertyWithTenant, Notification } from '@/ty
 import { PropertyCard } from './PropertyCard';
 import { NotificationPanel } from './NotificationPanel';
 import { AddPropertyFlow } from './AddPropertyFlow';
+import { TenantsList } from './TenantsList';
 
 export const OwnerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export const OwnerDashboard: React.FC = () => {
   const [properties, setProperties] = useState<PropertyWithTenant[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'tenants' | 'notifications'>('overview');
 
   useEffect(() => {
     if (user) {
@@ -108,6 +109,14 @@ export const OwnerDashboard: React.FC = () => {
             <Building className="h-4 w-4" />
             הנכסים שלי
             <Badge variant="secondary">{properties.length}</Badge>
+          </Button>
+          <Button
+            variant={activeTab === 'tenants' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('tenants')}
+            className="gap-2"
+          >
+            <Users className="h-4 w-4" />
+            דיירים
           </Button>
           <Button
             variant={activeTab === 'notifications' ? 'default' : 'outline'}
@@ -270,6 +279,13 @@ export const OwnerDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+
+        {/* Tenants Tab */}
+        {activeTab === 'tenants' && (
+          <div className="space-y-6">
+            <TenantsList />
           </div>
         )}
 

@@ -406,6 +406,120 @@ export type Database = {
           },
         ]
       }
+      rent_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          property_id: string
+          receipt_url: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          property_id: string
+          receipt_url?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          property_id?: string
+          receipt_url?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_communications: {
+        Row: {
+          communication_type: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          property_id: string
+          sender_id: string
+          subject: string | null
+          tenant_id: string
+        }
+        Insert: {
+          communication_type?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          property_id: string
+          sender_id: string
+          subject?: string | null
+          tenant_id: string
+        }
+        Update: {
+          communication_type?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          property_id?: string
+          sender_id?: string
+          subject?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_communications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_communications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
