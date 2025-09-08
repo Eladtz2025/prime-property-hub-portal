@@ -60,7 +60,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={`${collapsed ? 'w-14' : 'w-60'} bg-gradient-to-b from-background to-muted/30 border-r border-border/50 shadow-lg backdrop-blur-sm`}
+      className="bg-gradient-to-b from-background to-muted/30 border-r border-border/50 shadow-lg backdrop-blur-sm"
       collapsible="default"
     >
       <SidebarContent className="relative">
