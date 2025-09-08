@@ -20,6 +20,7 @@ import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } fro
 import type { OwnerDashboardStats, PropertyWithTenant, Notification } from '@/types/owner-portal';
 import { PropertyCard } from './PropertyCard';
 import { NotificationPanel } from './NotificationPanel';
+import { AddPropertyFlow } from './AddPropertyFlow';
 
 export const OwnerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -253,13 +254,19 @@ export const OwnerDashboard: React.FC = () => {
             </div>
 
             {properties.length === 0 && (
-              <Card>
+              <Card className="border-dashed border-2 border-muted-foreground/25">
                 <CardContent className="text-center py-12">
-                  <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">אין נכסים</h3>
-                  <p className="text-muted-foreground">
-                    עדיין לא הוקצו לך נכסים. צור קשר עם המנהל לקבלת גישה לנכסים.
+                  <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold mb-4">התחל לנהל את הנכסים שלך!</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    הוסף את הנכס הראשון שלך כדי להתחיל לעקוב אחר ההכנסות, הוצאות ולנהל דיירים בקלות.
                   </p>
+                  <div className="space-y-3">
+                    <AddPropertyFlow onPropertyAdded={loadDashboardData} />
+                    <p className="text-sm text-muted-foreground">
+                      ⚡ תוכל להוסיף מספר נכסים, לעקוב אחר דיירים ולנהל את הכל במקום אחד
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
