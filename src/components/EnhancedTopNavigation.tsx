@@ -72,28 +72,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-4">
-      {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center space-x-1 rtl:space-x-reverse">
-        {filteredNavItems.map((item) => (
-          <NavLink 
-            key={item.title}
-            to={item.url}
-            className={({ isActive }) => cn(
-              "flex items-center px-3 py-2 rounded-md transition-all duration-200",
-              isActive 
-                ? "bg-primary text-primary-foreground shadow-primary" 
-                : "text-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-md"
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            <span className="mr-2 rtl:ml-2 rtl:mr-0 font-medium">{item.title}</span>
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* User Menu */}
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -127,6 +106,5 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
   );
 };
