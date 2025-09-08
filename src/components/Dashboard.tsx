@@ -64,10 +64,18 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">לוח בקרה ראשי</h2>
-        <div className="text-sm text-muted-foreground">
-          עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-4xl font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent">
+            לוח בקרה ראשי
+          </h2>
+          <p className="text-muted-foreground mt-1">סקירה כללית של הנכסים שלך</p>
+        </div>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground">עודכן לאחרונה</div>
+          <div className="text-lg font-semibold text-foreground">
+            {new Date().toLocaleDateString('he-IL')}
+          </div>
         </div>
       </div>
 
@@ -94,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <StatsCard 
           title="סה״כ נכסים"
           value={stats.totalProperties}
@@ -119,14 +127,18 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           icon={Users}
           color="green"
         />
-        <Card className="cursor-pointer" onClick={() => setIsEditingIncome(true)}>
+        <Card className="cursor-pointer hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-primary group" onClick={() => setIsEditingIncome(true)}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium text-muted-foreground">הכנסה חודשית כוללת</span>
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 transition-all duration-300 group-hover:scale-110 shadow-sm">
+                  <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">הכנסה חודשית כוללת</span>
+                </div>
               </div>
-              <Edit2 className="h-4 w-4 text-muted-foreground" />
+              <Edit2 className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
             {isEditingIncome ? (
               <div className="mt-2 space-y-2">
@@ -170,13 +182,16 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
                 </div>
               </div>
             ) : (
-              <div className="mt-2">
-                <div className="text-2xl font-bold">₪{displayIncome.toLocaleString('he-IL')}</div>
+              <div className="mt-3">
+                <div className="text-3xl font-bold text-foreground mb-1">₪{displayIncome.toLocaleString('he-IL')}</div>
                 {manualMonthlyIncome !== null && (
                   <div className="text-xs text-muted-foreground">
                     ערך ידני (אוטומטי: ₪{autoCalculatedIncome.toLocaleString('he-IL')})
                   </div>
                 )}
+                <div className="h-1 w-full bg-muted rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-gradient-primary transition-all duration-500 group-hover:w-full w-0"></div>
+                </div>
               </div>
             )}
           </CardContent>

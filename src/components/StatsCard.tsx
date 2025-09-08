@@ -20,16 +20,21 @@ const colorClasses = {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${colorClasses[color]} transition-colors duration-200`}>
-          <Icon className="h-5 w-5" />
+    <Card className="hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-primary group">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          {title}
+        </CardTitle>
+        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${colorClasses[color]} transition-all duration-300 group-hover:scale-110 shadow-sm`}>
+          <Icon className="h-6 w-6" />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-foreground">
+        <div className="text-3xl font-bold text-foreground mb-1">
           {typeof value === 'number' ? value.toLocaleString('he-IL') : value}
+        </div>
+        <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-primary transition-all duration-500 group-hover:w-full w-0"></div>
         </div>
       </CardContent>
     </Card>

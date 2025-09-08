@@ -59,8 +59,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
     property.contact_status === 'needs_callback';
 
   return (
-    <Card className={`relative overflow-hidden transition-all hover:shadow-lg ${
-      needsAttention ? 'border-yellow-300 bg-yellow-50' : ''
+    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-2 group ${
+      needsAttention ? 'border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20' : 'hover:border-primary/30'
     }`}>
       {needsAttention && (
         <div className="absolute top-2 right-2">
@@ -178,11 +178,11 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
               size="sm"
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-primary hover:text-primary-foreground transition-all duration-200"
               onClick={() => onView?.(property)}
             >
               <Eye className="h-4 w-4 mr-1" />
@@ -191,7 +191,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             <Button
               size="sm"
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-secondary hover:text-secondary-foreground transition-all duration-200"
               onClick={() => onEdit?.(property)}
             >
               <Edit className="h-4 w-4 mr-1" />
