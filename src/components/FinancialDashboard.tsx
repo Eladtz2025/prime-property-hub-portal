@@ -22,6 +22,7 @@ import { IncomeTracker } from './IncomeTracker';
 import { ExpenseTracker } from './ExpenseTracker';
 import { FinancialReports } from './FinancialReports';
 import { DocumentManager } from './DocumentManager';
+import { FinancialAnalytics } from './FinancialAnalytics';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -195,7 +196,7 @@ export const FinancialDashboard: React.FC = () => {
 
       {/* Detailed Views */}
       <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="income" className="gap-2">
             <TrendingUp className="w-4 h-4" />
             מעקב הכנסות
@@ -211,6 +212,10 @@ export const FinancialDashboard: React.FC = () => {
           <TabsTrigger value="documents" className="gap-2">
             <FileText className="w-4 h-4" />
             מסמכים
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            ניתוחים
           </TabsTrigger>
         </TabsList>
 
@@ -238,6 +243,10 @@ export const FinancialDashboard: React.FC = () => {
             documents={[]}
             onDelete={(id) => console.log('Delete document:', id)}
           />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <FinancialAnalytics />
         </TabsContent>
       </Tabs>
     </div>
