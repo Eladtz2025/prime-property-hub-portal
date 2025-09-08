@@ -11,7 +11,8 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
   PieChart,
-  Download
+  Download,
+  FileText
 } from 'lucide-react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -20,6 +21,7 @@ import { useFinancialData } from '@/hooks/useFinancialData';
 import { IncomeTracker } from './IncomeTracker';
 import { ExpenseTracker } from './ExpenseTracker';
 import { FinancialReports } from './FinancialReports';
+import { DocumentManager } from './DocumentManager';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -193,7 +195,7 @@ export const FinancialDashboard: React.FC = () => {
 
       {/* Detailed Views */}
       <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="income" className="gap-2">
             <TrendingUp className="w-4 h-4" />
             מעקב הכנסות
@@ -205,6 +207,10 @@ export const FinancialDashboard: React.FC = () => {
           <TabsTrigger value="reports" className="gap-2">
             <Download className="w-4 h-4" />
             דוחות
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-2">
+            <FileText className="w-4 h-4" />
+            מסמכים
           </TabsTrigger>
         </TabsList>
 
@@ -226,6 +232,12 @@ export const FinancialDashboard: React.FC = () => {
 
         <TabsContent value="reports" className="space-y-6">
           <FinancialReports />
+        </TabsContent>
+        <TabsContent value="documents" className="space-y-6">
+          <DocumentManager
+            documents={[]}
+            onDelete={(id) => console.log('Delete document:', id)}
+          />
         </TabsContent>
       </Tabs>
     </div>
