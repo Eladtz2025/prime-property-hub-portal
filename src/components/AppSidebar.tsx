@@ -64,21 +64,6 @@ export function AppSidebar() {
       collapsible="default"
     >
       <SidebarContent className="relative">
-        {/* Enhanced Brand Section */}
-        <div className={`relative p-6 bg-gradient-primary ${collapsed ? 'px-3' : ''}`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary backdrop-blur-sm"></div>
-          <div className={`relative flex items-center gap-4 ${collapsed ? 'justify-center' : ''}`}>
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg backdrop-blur-sm border border-white/30">
-              <Building2 className="h-7 w-7 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="text-white">
-                <h1 className="font-bold text-xl leading-tight tracking-tight">PrimePropertyAI</h1>
-                <p className="text-xs text-white/80 font-medium">ניהול נכסים חכם</p>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Main Navigation */}
         <div className="p-4 space-y-2">
