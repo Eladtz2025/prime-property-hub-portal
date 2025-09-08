@@ -8,6 +8,7 @@ import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, Trendi
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
+import { AuthTestHelper } from './AuthTestHelper';
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
@@ -62,6 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   
   return (
     <div className="space-y-6">
+      <AuthTestHelper />
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-foreground">לוח בקרה ראשי</h2>

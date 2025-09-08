@@ -578,6 +578,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_property_invitation: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
