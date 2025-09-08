@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { TopNavigation } from './TopNavigation';
+import { AppSidebar } from './AppSidebar';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 import { Building2 } from 'lucide-react';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,24 +14,59 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const { isMobile } = useMobileOptimization();
 
-  return (
-    <div className="min-h-screen flex flex-col w-full bg-background">
-      <header className={`h-14 border-b bg-card flex items-center justify-between px-4 ${isMobile ? 'sticky top-0 z-10' : ''}`}>
-        <div className="flex items-center gap-6">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform duration-200 flex-shrink-0">
-            <Building2 className="h-5 w-5 text-primary-foreground" />
+  if (isMobile) {
+    // Mobile layout without sidebar
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        <header className="h-14 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
+          <div className="flex items-center gap-6">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform duration-200 flex-shrink-0">
+              <Building2 className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h1 className="font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap text-base">
+              PrimePropertyAI
+            </h1>
           </div>
-          <h1 className={`font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap ${isMobile ? 'text-base' : 'text-xl'}`}>
-            PrimePropertyAI
-          </h1>
+          <TopNavigation onLogout={onLogout} />
+        </header>
+        <main className="flex-1 flex flex-col">
+          <div className="flex-1 p-4">
+            {children}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Desktop layout with sidebar
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 border-b bg-card flex items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <div className="flex items-center gap-6">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform duration-200 flex-shrink-0">
+                  <Building2 className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <h1 className="font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xl">
+                  PrimePropertyAI
+                </h1>
+              </div>
+            </div>
+            <TopNavigation onLogout={onLogout} />
+          </header>
+          
+          <main className="flex-1 flex flex-col">
+            <div className="flex-1 p-6">
+              {children}
+            </div>
+          </main>
         </div>
-        <TopNavigation onLogout={onLogout} />
-      </header>
-      <main className="flex-1 flex flex-col">
-        <div className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>
-          {children}
-        </div>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };

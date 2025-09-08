@@ -1,6 +1,18 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, Users, UserPlus, Monitor, Database, Send, Shield } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { 
+  Home, 
+  Building, 
+  MessageSquare, 
+  AlertTriangle, 
+  Mail, 
+  FileText, 
+  Database, 
+  Users, 
+  UserPlus, 
+  Settings,
+  Building2
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,54 +23,68 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Main navigation items
 const navigationItems = [
-  { title: "דשבורד", url: "/", icon: Home },
-  { title: "נכסים", url: "/properties", icon: Building },
-  { title: "תור קשר", url: "/contact-queue", icon: Phone },
-  { title: "התראות", url: "/alerts", icon: AlertTriangle },
-  { title: "הודעות", url: "/messages", icon: MessageSquare },
-  { title: "דוחות", url: "/reports", icon: BarChart3 },
+  { title: 'לוח בקרה', url: '/', icon: Home },
+  { title: 'נכסים', url: '/properties', icon: Building },
+  { title: 'תור יצירת קשר', url: '/contact-queue', icon: MessageSquare },
+  { title: 'התראות', url: '/alerts', icon: AlertTriangle },
+  { title: 'הודעות', url: '/messages', icon: Mail },
+  { title: 'דוחות', url: '/reports', icon: FileText },
 ];
 
+// Admin-specific navigation items
 const adminItems = [
-  { title: "העברת נתונים", url: "/data-migration", icon: Database, requiredRole: "admin" },
-  { title: "ניהול משתמשים", url: "/users", icon: Users, requiredRole: "admin" },
-  { title: "הזמנות בעלי נכסים", url: "/property-invitations", icon: UserPlus, requiredRole: "admin" },
-  { title: "מרכז בקרה", url: "/admin-control", icon: Monitor, requiredRole: "admin" },
+  { title: 'העברת נתונים', url: '/data-migration', icon: Database, requiredRole: 'admin' },
+  { title: 'ניהול משתמשים', url: '/users', icon: Users, requiredRole: 'admin' },
+  { title: 'הזמנות נכסים', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
+  { title: 'מרכז בקרה', url: '/admin-control', icon: Settings, requiredRole: 'admin' },
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const { hasPermission, profile } = useAuth();
-  const isCollapsed = state === "collapsed";
+  const { collapsed } = useSidebar();
+  const location = useLocation();
+  const { permissions, profile } = useAuth();
+  const currentPath = location.pathname;
 
-  const canAccessAdmin = hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
+  const isActive = (path: string) => currentPath === path;
+  const getNavCls = ({ isActive }: { isActive: boolean }) =>
+    isActive ? 'bg-accent text-accent-foreground font-medium' : 'hover:bg-accent/50';
+
+  // Check if user has admin permissions
+  const hasAdminAccess = profile?.role === 'admin' || profile?.role === 'super_admin' || 
+    permissions.some(p => p.resource === 'users' && (p.action === 'create' || p.action === 'update'));
 
   return (
-    <Sidebar className="border-r">
+    <Sidebar
+      className={collapsed ? 'w-14' : 'w-60'}
+      collapsible="default"
+    >
       <SidebarContent>
+        {/* Brand */}
+        <div className={`flex items-center gap-3 p-4 border-b ${collapsed ? 'justify-center' : ''}`}>
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+            <Building2 className="h-5 w-5 text-primary-foreground" />
+          </div>
+          {!collapsed && (
+            <span className="font-bold text-foreground">PrimePropertyAI</span>
+          )}
+        </div>
+
+        {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>ניהול נכסים</SidebarGroupLabel>
+          <SidebarGroupLabel>ניווט ראשי</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={({ isActive }) => 
-                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                          isActive 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'hover:bg-muted'
-                        }`
-                      }
-                    >
+                    <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -68,26 +94,17 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Admin Section */}
-        {canAccessAdmin && (
+        {hasAdminAccess && (
           <SidebarGroup>
-            <SidebarGroupLabel>ניהול מערכת</SidebarGroupLabel>
+            <SidebarGroupLabel>אדמין</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        className={({ isActive }) => 
-                          `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                            isActive 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'hover:bg-muted'
-                          }`
-                        }
-                      >
+                      <NavLink to={item.url} className={getNavCls}>
                         <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
