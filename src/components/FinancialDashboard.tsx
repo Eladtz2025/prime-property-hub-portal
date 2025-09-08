@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { IncomeTracker } from './IncomeTracker';
 import { ExpenseTracker } from './ExpenseTracker';
+import { FinancialReports } from './FinancialReports';
 
 export const FinancialDashboard: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
@@ -201,10 +202,9 @@ export const FinancialDashboard: React.FC = () => {
             <BarChart3 className="w-4 h-4" />
             ניהול הוצאות
           </TabsTrigger>
-          <TabsTrigger value="reports" className="gap-2" disabled>
+          <TabsTrigger value="reports" className="gap-2">
             <Download className="w-4 h-4" />
             דוחות
-            <Badge variant="secondary" className="text-xs">בקרוב</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -225,16 +225,7 @@ export const FinancialDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
-          <Card>
-            <CardContent className="text-center py-12">
-              <Download className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">דוחות כספיים</h3>
-              <p className="text-muted-foreground mb-4">
-                דוחות מפורטים יהיו זמינים בשלב הבא
-              </p>
-              <Badge variant="outline">שלב 3: דוחות</Badge>
-            </CardContent>
-          </Card>
+          <FinancialReports />
         </TabsContent>
       </Tabs>
     </div>
