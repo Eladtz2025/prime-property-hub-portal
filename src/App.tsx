@@ -12,7 +12,10 @@ import { Messages } from './pages/Messages';
 import { Reports } from './pages/Reports';
 import { ContactQueueWrapper } from './pages/ContactQueueWrapper';
 import { UserManagement } from './pages/UserManagement';
+import { PropertyInvitations } from './pages/PropertyInvitations';
+import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
+import { OwnerFinancials } from './pages/OwnerFinancials';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -107,6 +110,34 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <UserManagement />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-control" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminControl />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/owner-financials" 
+              element={
+                <ProtectedRoute requiredRole="property_owner" requireApproval={false}>
+                  <OwnerFinancials />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/property-invitations" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <PropertyInvitations />
                   </ProtectedRoute>
                 </Layout>
               } 
