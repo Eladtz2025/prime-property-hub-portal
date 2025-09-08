@@ -1,23 +1,29 @@
 
 {
-  "name": "PrimePropertyAI",
-  "short_name": "PrimePropertyAI",
-  "description": "Advanced AI-powered property management system",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
+  "name": "מערכת ניהול נכסים - Prime Property AI",
+  "short_name": "Prime Property",
+  "description": "מערכת ניהול נכסים מתקדמת עם בינה מלאכותית",
   "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "display": "standalone",
   "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/placeholder.svg",
-      "type": "image/svg+xml",
-      "sizes": "512x512"
+      "src": "/favicon.png",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "he",
+  "dir": "rtl"
 }
