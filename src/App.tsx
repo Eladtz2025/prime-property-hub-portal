@@ -18,6 +18,7 @@ import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
 import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
+import { AllFeatures } from './pages/AllFeatures';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DataProvider } from './components/DataProvider';
@@ -164,6 +165,16 @@ const AppContent: React.FC = () => {
             <Route 
               path="/owner-invitation" 
               element={<OwnerInvitationPage />} 
+            />
+            <Route 
+              path="/all-features" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <AllFeatures />
+                  </ProtectedRoute>
+                </Layout>
+              } 
             />
             <Route path="*" element={
               <Layout onLogout={signOut}>
