@@ -68,7 +68,7 @@ export function AppSidebar() {
         {/* Main Navigation */}
         <div className="p-4 space-y-2">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-semibold bg-primary/10 text-primary px-3 py-2 rounded-lg uppercase tracking-wider mb-3">
+            <SidebarGroupLabel className="text-xs font-semibold bg-primary text-primary-foreground px-3 py-2 rounded-lg uppercase tracking-wider mb-3">
               ניווט ראשי
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -82,8 +82,8 @@ export function AppSidebar() {
                         className={({ isActive }) => 
                           `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
                             isActive 
-                              ? 'bg-primary/15 text-primary shadow-sm border border-primary/20 font-medium' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-primary/8 hover:shadow-sm'
+                              ? 'bg-primary/10 text-primary shadow-sm font-medium' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:shadow-sm'
                           }`
                         }
                       >
@@ -102,8 +102,7 @@ export function AppSidebar() {
         {hasAdminAccess && (
           <div className="px-4 pb-4">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold bg-gradient-warning text-white px-3 py-2 rounded-lg uppercase tracking-wider mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-white rounded-full opacity-80"></div>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider px-3 py-2 mb-3">
                 אדמין
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -116,8 +115,8 @@ export function AppSidebar() {
                           className={({ isActive }) => 
                             `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
                               isActive 
-                                ? 'bg-gradient-warning text-white shadow-sm border border-orange-400/30 font-medium' 
-                                : 'text-muted-foreground hover:text-foreground hover:bg-orange-500/10 hover:shadow-sm'
+                                ? 'bg-primary/10 text-primary shadow-sm font-medium' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:shadow-sm'
                             }`
                           }
                         >
