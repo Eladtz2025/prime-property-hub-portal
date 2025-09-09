@@ -54,18 +54,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         
         <div className="flex-1 flex flex-col">
           <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-accent rounded-lg transition-colors" />
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center hover:scale-105 transition-all duration-200 flex-shrink-0 shadow-primary">
-                  <Building2 className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="font-bold text-foreground text-xl leading-tight">
-                    PrimePropertyAI
-                  </h1>
-                  <p className="text-sm text-muted-foreground">ניהול נכסים חכם ומתקדם</p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center hover:scale-105 transition-all duration-200 flex-shrink-0 shadow-primary">
+                <Building2 className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="font-bold text-foreground text-xl leading-tight">
+                  PrimePropertyAI
+                </h1>
+                <p className="text-sm text-muted-foreground">ניהול נכסים חכם ומתקדם</p>
               </div>
             </div>
             <EnhancedTopNavigation onLogout={onLogout} />
