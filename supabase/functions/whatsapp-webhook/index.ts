@@ -120,7 +120,7 @@ serve(async (req) => {
     console.error('Error in whatsapp-webhook function:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
