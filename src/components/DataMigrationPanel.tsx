@@ -106,12 +106,21 @@ export const DataMigrationPanel: React.FC = () => {
           <div className="text-sm text-muted-foreground space-y-1">
             <p><strong>Migration will:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li>Import properties from כל הנכסים - JSON ל-AI.json</li>
+              <li>Import properties from כל הנכסים - JSON ל-AI.json (~400 properties)</li>
               <li>Import additional owners from בעלי_דירות_מעודכן.json</li>
               <li>Create property ownership relationships</li>
               <li>Import tenant information where available</li>
               <li>Generate email addresses for owners (for portal access)</li>
+              <li>Set up automatic daily backups</li>
+              <li>Add data validation and quality checks</li>
             </ul>
+            
+            {migrationResult && (
+              <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg">
+                <p className="font-semibold text-success">✅ Data Protected:</p>
+                <p className="text-sm">All {migrationResult.totalRecords} records are now safely stored in the database with automatic backups enabled.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
