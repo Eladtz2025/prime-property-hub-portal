@@ -259,6 +259,26 @@ All colors MUST be HSL.
   }
 }
 
+/* Enhanced focus indicators for better accessibility */
+.focus-visible\:ring-2:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  --tw-ring-opacity: 1;
+  --tw-ring-color: hsl(var(--ring) / var(--tw-ring-opacity));
+  --tw-ring-offset-width: 2px;
+}
+
+/* Better contrast for buttons and interactive elements */
+.btn-enhanced-contrast {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+}
+
+/* Enhanced touch targets for mobile */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px];
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -93,7 +93,12 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <AlertCard key={alert.id} alert={alert} />
             ))}
             {urgentAlerts.length > 3 && (
-              <Button variant="outline" size="sm" className="w-full">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                aria-label={`הצג עוד ${urgentAlerts.length - 3} התראות דחופות`}
+              >
                 הצג עוד {urgentAlerts.length - 3} התראות
               </Button>
             )}
@@ -102,7 +107,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
         <StatsCard 
           title="סה״כ נכסים"
           value={stats.totalProperties}
@@ -159,7 +164,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
                 />
                 <div className="flex gap-2">
                   <Button 
-                    size="sm" 
+                    size="sm"
+                    aria-label="שמור הכנסה חודשית"
                     onClick={(e) => {
                       e.stopPropagation();
                       const input = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('input') as HTMLInputElement;
@@ -171,7 +177,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
                   </Button>
                   <Button 
                     size="sm" 
-                    variant="outline" 
+                    variant="outline"
+                    aria-label="בטל עריכה"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditingIncome(false);
@@ -227,7 +234,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           <CardTitle className="flex items-center justify-between">
             <span>סקירת נכסים</span>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/properties">הצג הכל</Link>
+              <Link to="/properties" aria-label="הצג את כל הנכסים">הצג הכל</Link>
             </Button>
           </CardTitle>
         </CardHeader>

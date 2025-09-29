@@ -49,8 +49,9 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
               <NavLink
                 key={item.title}
                 to={item.url}
+                aria-label={`עבור ל${item.title}`}
                 className={cn(
-                  "flex flex-col items-center justify-center min-h-[44px] px-3 py-2 rounded-lg transition-all duration-200 relative touch-target",
+                  "flex flex-col items-center justify-center min-h-[44px] px-3 py-2 rounded-lg transition-all duration-200 relative touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   isActive 
                     ? "text-primary bg-primary/10" 
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
