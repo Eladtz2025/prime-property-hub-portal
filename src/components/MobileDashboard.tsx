@@ -292,7 +292,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
             {properties.slice(0, 3).map((property, index) => (
               <div 
                 key={property.id}
-                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3"
+                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3 mobile-card"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0 flex-container-mobile">
@@ -300,8 +300,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     <MapPin className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0 flex-container-mobile">
-                    <p className="font-semibold text-sm text-foreground truncate block">{property.address}</p>
-                    <p className="text-xs text-muted-foreground truncate block">{property.ownerName}</p>
+                    <p className="font-semibold text-sm text-foreground text-truncate-mobile">{property.address}</p>
+                    <p className="text-xs text-muted-foreground text-truncate-mobile">{property.ownerName}</p>
                   </div>
                 </div>
                 <Badge 

@@ -40,8 +40,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav">
       <div className="bg-card/95 backdrop-blur-sm border-t border-border shadow-lg">
-        <div className="flex items-center justify-around px-2 py-2 pb-safe-area-inset-bottom">{/* Fixed safe area class */}
-          <div className="grid grid-cols-5 gap-1 w-full max-w-md mx-auto">{/* Changed to grid for even spacing */}
+        <div className="grid grid-cols-5 gap-1 w-full px-2 py-2 pb-safe-area-inset-bottom">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.url;
@@ -83,9 +82,8 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
                 )}
               </NavLink>
-             );
-           })}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
