@@ -17,7 +17,6 @@ const navigationItems = [
   { title: "נכסים", url: "/properties", icon: Building },
   { title: "ווטסאפ", url: "/whatsapp", icon: MessageSquare },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
-  { title: "דוחות", url: "/reports", icon: BarChart3 },
 ];
 
 interface MobileBottomNavigationProps {

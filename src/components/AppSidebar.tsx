@@ -33,9 +33,7 @@ const navigationItems = [
   { title: 'נכסים', url: '/properties', icon: Building },
   { title: 'תור יצירת קשר', url: '/contact-queue', icon: MessageSquare },
   { title: 'WhatsApp', url: '/whatsapp', icon: MessageCircle },
-  { title: 'התראות', url: '/alerts', icon: AlertTriangle },
-  { title: 'הודעות', url: '/messages', icon: Mail },
-  { title: 'דוחות', url: '/reports', icon: FileText },
+  { title: 'התראות והודעות', url: '/alerts', icon: AlertTriangle },
 ];
 
 // Admin-specific navigation items
