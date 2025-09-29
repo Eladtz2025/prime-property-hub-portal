@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
-import { he } from "date-fns/locale";
 import { 
   User, 
   Home, 
@@ -91,7 +90,7 @@ interface ActivityLogsListProps {
 }
 
 export const ActivityLogsList: React.FC<ActivityLogsListProps> = ({ limit }) => {
-  const { activities, isLoading, error } = useActivityLogs(limit);
+  const { activities, isLoading, error } = useActivityLogs();
 
   if (isLoading) {
     return (
@@ -144,7 +143,7 @@ export const ActivityLogsList: React.FC<ActivityLogsListProps> = ({ limit }) => 
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: he })}
+                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                   </p>
                   {activity.details && Object.keys(activity.details).length > 0 && (
                     <div className="text-xs text-muted-foreground mt-1">
