@@ -18,10 +18,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const { isMobile } = useMobileOptimization();
 
   if (isMobile) {
-    // Mobile layout without sidebar
+    // Mobile layout without sidebar - Force mobile CSS class
     return (
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 mobile-header shadow-sm">{/* Added mobile-header class */}
+      <div className="min-h-screen flex flex-col w-full bg-background mobile-device">
+        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 mobile-header shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center hover:scale-105 transition-all duration-200 flex-shrink-0 shadow-primary">
               <Building2 className="h-6 w-6 text-primary-foreground" />

@@ -391,6 +391,38 @@ All colors MUST be HSL.
   }
 }
 
+/* Force mobile layout for mobile devices */
+.mobile-device .sidebar-provider,
+.mobile-device [data-sidebar="provider"] {
+  --sidebar-width: 0px !important;
+}
+
+.mobile-device .sidebar,
+.mobile-device [data-sidebar="sidebar"] {
+  display: none !important;
+}
+
+.mobile-device .sidebar-trigger {
+  display: none !important;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px), (pointer: coarse) {
+  .sidebar-provider,
+  [data-sidebar="provider"] {
+    --sidebar-width: 0px !important;
+  }
+
+  .sidebar,
+  [data-sidebar="sidebar"] {
+    display: none !important;
+  }
+
+  .sidebar-trigger {
+    display: none !important;
+  }
+}
+
 /* Enhanced focus indicators for better accessibility */
 .focus-visible\:ring-2:focus-visible {
   outline: 2px solid transparent;
