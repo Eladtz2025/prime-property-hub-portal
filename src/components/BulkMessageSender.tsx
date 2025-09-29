@@ -30,16 +30,24 @@ export const BulkMessageSender: React.FC<BulkMessageSenderProps> = ({ onSendComp
 
   // Filter contacts
   const filteredContacts = useMemo(() => {
+    console.log('[BulkSender Debug] All contacts:', allRelevantContacts.length);
+    console.log('[BulkSender Debug] Contact names:', allRelevantContacts.map(c => c.name));
+    
     return allRelevantContacts.filter(contact => {
-      const matchesSearch = 
-        (contact.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (contact.propertyAddress || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery.trim() ||
+        (contact.name || '').toLowerCase().includes(query) ||
+        (contact.propertyAddress || '').toLowerCase().includes(query) ||
         (contact.phone || '').includes(searchQuery) ||
         (contact.normalizedPhone || '').includes(searchQuery);
       
       const matchesType = 
         filterType === 'all' || 
         contact.type === filterType;
+      
+      if (searchQuery.trim() && query.includes('שי') && matchesSearch) {
+        console.log('[BulkSender Debug] Match found for שי:', contact.name, contact.phone);
+      }
       
       return matchesSearch && matchesType;
     });

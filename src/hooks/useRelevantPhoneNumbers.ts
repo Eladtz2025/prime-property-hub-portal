@@ -3,6 +3,7 @@ import { useTenantData } from './useTenantData';
 import { usePropertyData } from './usePropertyData';
 import { formatPhoneForWhatsApp } from '../utils/whatsappHelper';
 import { supabase } from '@/integrations/supabase/client';
+import { loadPropertiesFromStorage } from '../utils/propertyStorage';
 
 interface RelevantContact {
   phone: string;
@@ -18,7 +19,7 @@ export const useRelevantPhoneNumbers = () => {
   const [ownerContacts, setOwnerContacts] = useState<RelevantContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load owner contacts from both JSON file and database
+  // Load owner contacts from JSON file, database, and localStorage
   useEffect(() => {
     const loadOwnerContacts = async () => {
       try {
@@ -52,8 +53,30 @@ export const useRelevantPhoneNumbers = () => {
             }));
           
           contacts.push(...jsonContacts);
+          console.log('[WhatsApp Debug] Loaded from JSON:', jsonContacts.length, 'contacts');
         } catch (jsonError) {
           console.error('Error loading JSON owner contacts:', jsonError);
+        }
+        
+        // Load from localStorage (newly added properties)
+        try {
+          const storedProperties = loadPropertiesFromStorage();
+          const localStorageContacts: RelevantContact[] = Object.values(storedProperties)
+            .filter(property => property.ownerPhone && property.ownerPhone.trim() && property.ownerName)
+            .map(property => ({
+              phone: property.ownerPhone!,
+              normalizedPhone: formatPhoneForWhatsApp(property.ownerPhone!),
+              name: property.ownerName || 'בעל נכס',
+              type: 'owner' as const,
+              propertyAddress: property.address,
+              propertyId: property.id
+            }));
+          
+          contacts.push(...localStorageContacts);
+          console.log('[WhatsApp Debug] Loaded from localStorage:', localStorageContacts.length, 'contacts');
+          console.log('[WhatsApp Debug] localStorage contacts:', localStorageContacts);
+        } catch (storageError) {
+          console.error('Error loading localStorage owner contacts:', storageError);
         }
         
         // Load from database
@@ -90,10 +113,12 @@ export const useRelevantPhoneNumbers = () => {
             }));
           
           contacts.push(...dbContacts);
+          console.log('[WhatsApp Debug] Loaded from database:', dbContacts.length, 'contacts');
         } catch (dbError) {
           console.error('Error loading database owner contacts:', dbError);
         }
         
+        console.log('[WhatsApp Debug] Total owner contacts loaded:', contacts.length);
         setOwnerContacts(contacts);
       } catch (error) {
         console.error('Error loading owner contacts:', error);
@@ -125,7 +150,10 @@ export const useRelevantPhoneNumbers = () => {
       });
     });
 
-    return [...tenantContacts, ...ownerContacts];
+    const combined = [...tenantContacts, ...ownerContacts];
+    console.log('[WhatsApp Debug] All relevant contacts:', combined.length);
+    console.log('[WhatsApp Debug] Contact names:', combined.map(c => c.name));
+    return combined;
   }, [propertiesWithTenants, ownerContacts]);
 
   // Create a map for quick lookups

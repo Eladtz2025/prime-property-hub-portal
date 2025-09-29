@@ -39,13 +39,24 @@ export function ContactCombobox({
 
   // Filter contacts based on search
   const filteredContacts = allRelevantContacts.filter((contact) => {
+    if (!searchValue) return true;
+    
     const searchLower = searchValue.toLowerCase();
-    return (
+    console.log('[ContactCombobox Debug] Searching for:', searchLower);
+    console.log('[ContactCombobox Debug] Available contacts:', allRelevantContacts.length);
+    
+    const matches = (
       (contact.name || '').toLowerCase().includes(searchLower) ||
       (contact.propertyAddress || '').toLowerCase().includes(searchLower) ||
       (contact.phone || '').includes(searchValue) ||
       (contact.normalizedPhone || '').includes(searchValue)
     );
+    
+    if (matches && searchLower.includes('שי')) {
+      console.log('[ContactCombobox Debug] Match found for שי:', contact.name, contact.phone);
+    }
+    
+    return matches;
   });
 
   const handleSelect = (contact: typeof allRelevantContacts[0]) => {
