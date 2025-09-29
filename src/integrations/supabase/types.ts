@@ -578,6 +578,8 @@ export type Database = {
           api_source: string | null
           chat_id: string | null
           chat_type: string | null
+          contact_name: string | null
+          contact_type: string | null
           created_at: string
           direction: string
           group_name: string | null
@@ -597,6 +599,8 @@ export type Database = {
           api_source?: string | null
           chat_id?: string | null
           chat_type?: string | null
+          contact_name?: string | null
+          contact_type?: string | null
           created_at?: string
           direction?: string
           group_name?: string | null
@@ -616,6 +620,8 @@ export type Database = {
           api_source?: string | null
           chat_id?: string | null
           chat_type?: string | null
+          contact_name?: string | null
+          contact_type?: string | null
           created_at?: string
           direction?: string
           group_name?: string | null
