@@ -10,7 +10,9 @@ import { MessageSquare, Send, Clock, Users, Settings, Phone, CheckCircle, AlertC
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useRelevantPhoneNumbers } from '@/hooks/useRelevantPhoneNumbers';
+import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { AddNewContactDialog } from './AddNewContactDialog';
+import { MessageTemplateDialog } from './MessageTemplateDialog';
 
 interface WhatsAppMessage {
   id: string;
@@ -28,40 +30,6 @@ interface WhatsAppMessage {
   sender_id?: string;
 }
 
-interface MessageTemplate {
-  id: string;
-  name: string;
-  content: string;
-  category: 'contract' | 'payment' | 'maintenance' | 'general';
-}
-
-const messageTemplates: MessageTemplate[] = [
-  {
-    id: '1',
-    name: 'תזכורת תשלום שכירות',
-    content: 'שלום {שם}, מזכיר לך שתשלום דמי השכירות לנכס ב{כתובת} אמור להתקבל עד {תאריך}. תודה!',
-    category: 'payment'
-  },
-  {
-    id: '2', 
-    name: 'תזכורת חוזה מסתיים',
-    content: 'שלום {שם}, חוזה השכירות של הנכס ב{כתובת} מסתיים ב{חוזה}. נשמח לתאם פגישה לדיון על חידוש החוזה.',
-    category: 'contract'
-  },
-  {
-    id: '3',
-    name: 'בירור מצב נכס',
-    content: 'שלום {שם}, מעוניינים לבדוק את מצב הנכס ב{כתובת}. האם הנכס כרגע מושכר? תודה על העדכון.',
-    category: 'general'
-  },
-  {
-    id: '4',
-    name: 'עדכון תחזוקה',
-    content: 'שלום {שם}, רציתי לעדכן אותך שהתחזוקה בנכס ב{כתובת} הושלמה בהצלחה. הכל תקין ומוכן.',
-    category: 'maintenance'
-  }
-];
-
 export const WhatsAppHub: React.FC = () => {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
@@ -74,9 +42,12 @@ export const WhatsAppHub: React.FC = () => {
   const [showRelevantOnly, setShowRelevantOnly] = useState(true);
   const [showAddContactDialog, setShowAddContactDialog] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState('');
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const { toast } = useToast();
   
   const { isRelevantPhone, getContactInfo, addNewContact, isLoading: phonesLoading } = useRelevantPhoneNumbers();
+  const { templates, createTemplate, updateTemplate, deleteTemplate, isCreating, isDeleting } = useMessageTemplates();
 
   // Load messages from database
   useEffect(() => {
@@ -252,11 +223,35 @@ export const WhatsAppHub: React.FC = () => {
   };
 
   const sendTemplateMessage = async (templateId: string) => {
-    const template = messageTemplates.find(t => t.id === templateId);
+    const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
     // For now, send the template as-is. Later we'll add property data substitution
     await sendMessage(template.content);
+  };
+
+  const handleCreateTemplate = (template: any) => {
+    createTemplate(template);
+    setShowTemplateDialog(false);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    setEditingTemplate(template);
+    setShowTemplateDialog(true);
+  };
+
+  const handleUpdateTemplate = (updates: any) => {
+    if (editingTemplate) {
+      updateTemplate({ id: editingTemplate.id, ...updates });
+      setShowTemplateDialog(false);
+      setEditingTemplate(null);
+    }
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    if (confirm('האם אתה בטוח שברצונך למחוק את התבנית?')) {
+      deleteTemplate(templateId);
+    }
   };
 
   useEffect(() => {
@@ -265,6 +260,13 @@ export const WhatsAppHub: React.FC = () => {
 
   const conversations = getConversations();
   const selectedChatMessages = getSelectedChatMessages();
+
+  // Calculate real analytics
+  const totalSentMessages = messages.filter(m => m.direction === 'outbound').length;
+  const activeChats = new Set(messages.map(m => m.chat_id)).size;
+  const inboundCount = messages.filter(m => m.direction === 'inbound').length;
+  const outboundCount = messages.filter(m => m.direction === 'outbound').length;
+  const responseRate = outboundCount > 0 ? Math.round((inboundCount / outboundCount) * 100) : 0;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -514,33 +516,60 @@ export const WhatsAppHub: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>תבניות הודעות</CardTitle>
-                <CardDescription>
-                  תבניות מוכנות לשליחה מהירה
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>תבניות הודעות</CardTitle>
+                    <CardDescription>
+                      תבניות מוכנות לשליחה מהירה
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setShowTemplateDialog(true)}>
+                    <Settings className="h-4 w-4 ml-2" />
+                    תבנית חדשה
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {messageTemplates.map((template) => (
-                  <div key={template.id} className="p-3 border rounded-lg space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{template.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {template.category === 'payment' ? 'תשלום' :
-                         template.category === 'contract' ? 'חוזה' :
-                         template.category === 'maintenance' ? 'תחזוקה' : 'כלליות'}
-                      </Badge>
+                {templates.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">אין תבניות. צור תבנית חדשה!</p>
+                ) : (
+                  templates.map((template) => (
+                    <div key={template.id} className="p-3 border rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">{template.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {template.category}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditTemplate(template)}
+                          >
+                            ערוך
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            disabled={isDeleting}
+                          >
+                            מחק
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{template.content}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => sendTemplateMessage(template.id)}
+                        disabled={!selectedChat}
+                      >
+                        שלח תבנית
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">{template.content}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => sendTemplateMessage(template.id)}
-                      disabled={!selectedChat}
-                    >
-                      שלח תבנית
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
 
@@ -562,7 +591,7 @@ export const WhatsAppHub: React.FC = () => {
                     <SelectValue placeholder="בחר תבנית" />
                   </SelectTrigger>
                   <SelectContent>
-                    {messageTemplates.map((template) => (
+                    {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name}
                       </SelectItem>
@@ -576,7 +605,7 @@ export const WhatsAppHub: React.FC = () => {
                   rows={4}
                 />
                 <Button 
-                  onClick={() => sendMessage(newMessage || messageTemplates.find(t => t.id === selectedTemplate)?.content || '', phoneNumber)}
+                  onClick={() => sendMessage(newMessage || templates.find(t => t.id === selectedTemplate)?.content || '', phoneNumber)}
                   disabled={!phoneNumber || (!newMessage && !selectedTemplate)}
                   className="w-full"
                 >
@@ -615,8 +644,8 @@ export const WhatsAppHub: React.FC = () => {
                 <CardTitle className="text-sm font-medium">הודעות נשלחו</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">127</div>
-                <p className="text-xs text-muted-foreground">החודש</p>
+                <div className="text-2xl font-bold">{totalSentMessages}</div>
+                <p className="text-xs text-muted-foreground">סה"כ</p>
               </CardContent>
             </Card>
             <Card>
@@ -624,8 +653,8 @@ export const WhatsAppHub: React.FC = () => {
                 <CardTitle className="text-sm font-medium">שיחות פעילות</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">23</div>
-                <p className="text-xs text-muted-foreground">השבוע</p>
+                <div className="text-2xl font-bold">{activeChats}</div>
+                <p className="text-xs text-muted-foreground">סה"כ שיחות</p>
               </CardContent>
             </Card>
             <Card>
@@ -633,8 +662,10 @@ export const WhatsAppHub: React.FC = () => {
                 <CardTitle className="text-sm font-medium">אחוז מענה</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">89%</div>
-                <p className="text-xs text-muted-foreground">ממוצע</p>
+                <div className="text-2xl font-bold">{responseRate}%</div>
+                <p className="text-xs text-muted-foreground">
+                  {inboundCount} נכנס / {outboundCount} יוצא
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -646,6 +677,17 @@ export const WhatsAppHub: React.FC = () => {
         onOpenChange={setShowAddContactDialog}
         initialPhone={newContactPhone}
         onContactAdded={handleContactAdded}
+      />
+
+      <MessageTemplateDialog
+        isOpen={showTemplateDialog}
+        onClose={() => {
+          setShowTemplateDialog(false);
+          setEditingTemplate(null);
+        }}
+        onSave={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
+        template={editingTemplate}
+        isLoading={isCreating}
       />
     </div>
   );
