@@ -115,7 +115,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   
   return (
     <div className="w-full min-h-screen bg-background pb-20">
-      <div className="space-y-6 px-4 py-4 max-w-md mx-auto">
+      <div className="space-y-6 px-4 py-6 max-w-lg mx-auto">
         {/* Header with greeting */}
         <div className="bg-gradient-primary rounded-2xl p-6 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
           {/* Background Pattern */}
@@ -127,10 +127,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold mb-2 truncate">
+                <h1 className="text-2xl font-bold mb-2 leading-tight">
                   שלום{userName ? ` ${userName}` : ''}! 👋
                 </h1>
-                <p className="text-white/90 text-base truncate">ברוך הבא למערכת ניהול הנכסים</p>
+                <p className="text-white/90 text-lg leading-relaxed">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
                 onClick={() => {
@@ -206,7 +206,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-2xl font-bold number-display truncate">
+                  <div className="text-3xl font-bold number-display">
                     {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
                   </div>
                 )}

@@ -40,7 +40,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav">
       <div className="bg-card/95 backdrop-blur-sm border-t border-border shadow-lg">
-        <div className="grid grid-cols-5 gap-1 w-full px-2 py-3 pb-safe-area-inset-bottom">
+        <div className="grid grid-cols-5 gap-1 w-full px-2 py-4 pb-safe-area-inset-bottom">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.url;
@@ -52,7 +52,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                 to={item.url}
                 aria-label={`עבור ל${item.title}`}
                 className={cn(
-                  "flex flex-col items-center justify-center min-h-[60px] px-2 py-2 rounded-lg transition-all duration-200 relative touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "flex flex-col items-center justify-center min-h-[64px] px-3 py-3 rounded-lg transition-all duration-200 relative touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   isActive 
                     ? "text-primary bg-primary/10" 
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -60,7 +60,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
               >
                 <div className="relative">
                   <Icon className={cn(
-                    "h-5 w-5 transition-transform duration-200",
+                    "h-6 w-6 transition-transform duration-200",
                     isActive && "scale-110"
                   )} />
                   {showBadge && (
@@ -73,7 +73,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                   )}
                 </div>
                 <span className={cn(
-                  "text-xs font-medium mt-1 transition-colors duration-200 text-center",
+                  "text-sm font-medium mt-1 transition-colors duration-200 text-center",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {item.title}

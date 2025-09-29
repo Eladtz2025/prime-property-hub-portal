@@ -248,6 +248,57 @@ All colors MUST be HSL.
       flex-direction: column;
       padding: 1rem;
     }
+
+/* Mobile optimizations */
+.mobile-container {
+  min-height: calc(100vh - 80px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 16px;
+  padding-bottom: 120px;
+}
+
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-card {
+  min-height: 48px;
+  touch-target: 48px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Enhanced mobile text visibility */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  h1, h2, h3 {
+    line-height: 1.4;
+  }
+  
+  .text-sm {
+    font-size: 16px !important;
+  }
+  
+  .text-base {
+    font-size: 18px !important;
+  }
+  
+  .text-lg {
+    font-size: 20px !important;
+  }
+}
     
     /* Ensure proper stacking context */
     .mobile-header {
