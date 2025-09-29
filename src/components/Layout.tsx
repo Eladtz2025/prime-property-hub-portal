@@ -35,8 +35,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
           <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
         </header>
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 mobile-container mobile-scroll"> {/* Changed padding */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
+          <div className="w-full">
             <BreadcrumbNav />
             {children}
           </div>

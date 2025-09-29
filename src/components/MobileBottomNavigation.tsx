@@ -40,7 +40,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav">
       <div className="bg-card/95 backdrop-blur-sm border-t border-border shadow-lg">
-        <div className="grid grid-cols-5 gap-1 w-full px-2 py-2 pb-safe-area-inset-bottom">
+        <div className="grid grid-cols-5 gap-1 w-full px-2 py-3 pb-safe-area-inset-bottom">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.url;

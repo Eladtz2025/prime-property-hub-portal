@@ -111,11 +111,13 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
     return null; // This component is only for mobile
   }
 
+  console.log('MobileDashboard rendering:', { propertiesCount: properties.length, stats });
+  
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      <div className="space-y-4 mobile-container mobile-scroll max-w-screen-sm mx-auto">
+    <div className="w-full min-h-screen bg-background pb-20">
+      <div className="space-y-6 px-4 py-4 max-w-md mx-auto">
         {/* Header with greeting */}
-        <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
+        <div className="bg-gradient-primary rounded-2xl p-6 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
@@ -125,10 +127,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold mb-1 truncate">
+                <h1 className="text-2xl font-bold mb-2 truncate">
                   שלום{userName ? ` ${userName}` : ''}! 👋
                 </h1>
-                <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
+                <p className="text-white/90 text-base truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
                 onClick={() => {
@@ -152,7 +154,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                   </div>
                   <span className="text-sm font-semibold truncate">סה״כ נכסים</span>
                 </div>
-                <div className="text-xl font-bold number-display">{stats.totalProperties}</div>
+                <div className="text-3xl font-bold number-display">{stats.totalProperties}</div>
               </div>
               
               <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
@@ -204,7 +206,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-lg font-bold number-display truncate">
+                  <div className="text-2xl font-bold number-display truncate">
                     {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
                   </div>
                 )}
