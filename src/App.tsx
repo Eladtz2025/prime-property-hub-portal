@@ -19,6 +19,7 @@ import { OwnerFinancials } from './pages/OwnerFinancials';
 import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
+import { WhatsAppCenter } from './pages/WhatsAppCenter';
 import { Login } from './pages/Login';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -103,6 +104,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute>
                     <Reports />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/whatsapp" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <WhatsAppCenter />
                   </ProtectedRoute>
                 </Layout>
               } 
