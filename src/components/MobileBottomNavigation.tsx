@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const navigationItems = [
   { title: "בית", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
+  { title: "ווטסאפ", url: "/whatsapp", icon: MessageSquare },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "דוחות", url: "/reports", icon: BarChart3 },
 ];
