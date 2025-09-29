@@ -91,7 +91,7 @@ interface ActivityLogsListProps {
 }
 
 export const ActivityLogsList: React.FC<ActivityLogsListProps> = ({ limit }) => {
-  const { activities, isLoading, error } = useActivityLogs();
+  const { activities, isLoading, error } = useActivityLogs(limit);
 
   if (isLoading) {
     return (
