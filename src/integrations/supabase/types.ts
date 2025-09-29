@@ -50,6 +50,53 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_sends: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          failed_sends: number | null
+          id: string
+          message: string
+          recipient_count: number
+          recipient_phones: string[]
+          sent_by: string
+          successful_sends: number | null
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          failed_sends?: number | null
+          id?: string
+          message: string
+          recipient_count: number
+          recipient_phones: string[]
+          sent_by: string
+          successful_sends?: number | null
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          failed_sends?: number | null
+          id?: string
+          message?: string
+          recipient_count?: number
+          recipient_phones?: string[]
+          sent_by?: string
+          successful_sends?: number | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_records: {
         Row: {
           amount: number

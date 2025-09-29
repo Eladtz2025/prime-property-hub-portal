@@ -6,13 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Clock, Users, Settings, Phone, CheckCircle, AlertCircle, Filter, UserPlus } from 'lucide-react';
+import { MessageSquare, Send, Clock, Users, Settings, Phone, CheckCircle, AlertCircle, Filter, UserPlus, FileText, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useRelevantPhoneNumbers } from '@/hooks/useRelevantPhoneNumbers';
 import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { AddNewContactDialog } from './AddNewContactDialog';
 import { MessageTemplateDialog } from './MessageTemplateDialog';
+import { BulkMessageSender } from './BulkMessageSender';
 
 interface WhatsAppMessage {
   id: string;
@@ -294,21 +295,25 @@ export const WhatsAppHub: React.FC = () => {
       </div>
 
       <Tabs defaultValue="conversations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="conversations">
             <MessageSquare className="h-4 w-4 ml-2" />
             שיחות
           </TabsTrigger>
           <TabsTrigger value="templates">
-            <Clock className="h-4 w-4 ml-2" />
+            <FileText className="h-4 w-4 ml-2" />
             תבניות
+          </TabsTrigger>
+          <TabsTrigger value="bulk">
+            <Users className="h-4 w-4 ml-2" />
+            שליחה קבוצתית
           </TabsTrigger>
           <TabsTrigger value="automation">
             <Settings className="h-4 w-4 ml-2" />
             אוטומציה
           </TabsTrigger>
           <TabsTrigger value="analytics">
-            <Users className="h-4 w-4 ml-2" />
+            <BarChart3 className="h-4 w-4 ml-2" />
             דוחות
           </TabsTrigger>
         </TabsList>
@@ -615,6 +620,10 @@ export const WhatsAppHub: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="bulk">
+          <BulkMessageSender onSendComplete={loadMessages} />
         </TabsContent>
 
         <TabsContent value="automation" className="space-y-6">
