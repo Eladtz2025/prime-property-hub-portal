@@ -23,6 +23,7 @@ import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface MobileDashboardProps {
   properties: Property[];
@@ -39,6 +40,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 }) => {
   const { isMobile } = useMobileOptimization();
   const { profile } = useAuth();
+  const { trigger } = useHapticFeedback();
   
   // Extract user's name for greeting
   const getUserName = () => {
@@ -129,9 +131,13 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
-                onClick={onAddProperty}
+                onClick={() => {
+                  trigger('light');
+                  onAddProperty?.();
+                }}
                 size="sm"
-                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-3 py-2 flex-shrink-0"
+                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-3 py-2 flex-shrink-0 btn-enhanced-contrast touch-target"
+                aria-label="הוסף נכס חדש למערכת"
               >
                 <Plus className="h-4 w-4 ml-1" />
                 הוסף נכס
