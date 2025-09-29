@@ -32,9 +32,10 @@ export const BulkMessageSender: React.FC<BulkMessageSenderProps> = ({ onSendComp
   const filteredContacts = useMemo(() => {
     return allRelevantContacts.filter(contact => {
       const matchesSearch = 
-        contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.propertyAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.phone.includes(searchQuery);
+        (contact.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (contact.propertyAddress || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (contact.phone || '').includes(searchQuery) ||
+        (contact.normalizedPhone || '').includes(searchQuery);
       
       const matchesType = 
         filterType === 'all' || 

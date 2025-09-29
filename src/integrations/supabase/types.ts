@@ -267,6 +267,7 @@ export type Database = {
           id: string
           is_approved: boolean
           last_login: string | null
+          phone: string | null
           role: string
           updated_at: string
         }
@@ -277,6 +278,7 @@ export type Database = {
           id: string
           is_approved?: boolean
           last_login?: string | null
+          phone?: string | null
           role?: string
           updated_at?: string
         }
@@ -287,6 +289,7 @@ export type Database = {
           id?: string
           is_approved?: boolean
           last_login?: string | null
+          phone?: string | null
           role?: string
           updated_at?: string
         }

@@ -32,7 +32,8 @@ export const AddPropertyFlow: React.FC<AddPropertyFlowProps> = ({ onPropertyAdde
     property_size: '',
     notes: '',
     monthly_rent: '',
-    deposit_amount: ''
+    deposit_amount: '',
+    owner_phone: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -79,6 +80,14 @@ export const AddPropertyFlow: React.FC<AddPropertyFlowProps> = ({ onPropertyAdde
 
       if (ownershipError) throw ownershipError;
 
+      // Update user profile with phone if provided
+      if (formData.owner_phone) {
+        await supabase
+          .from('profiles')
+          .update({ phone: formData.owner_phone })
+          .eq('id', user.id);
+      }
+
       // Add tenant if rent info provided
       if (formData.monthly_rent) {
         await supabase
@@ -105,7 +114,8 @@ export const AddPropertyFlow: React.FC<AddPropertyFlowProps> = ({ onPropertyAdde
         property_size: '',
         notes: '',
         monthly_rent: '',
-        deposit_amount: ''
+        deposit_amount: '',
+        owner_phone: ''
       });
       setIsOpen(false);
       onPropertyAdded();
@@ -230,6 +240,17 @@ export const AddPropertyFlow: React.FC<AddPropertyFlowProps> = ({ onPropertyAdde
                       placeholder="4500"
                       value={formData.monthly_rent}
                       onChange={(e) => handleInputChange('monthly_rent', e.target.value)}
+                      className="text-right"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="owner_phone" className="text-right">טלפון בעל הנכס</Label>
+                    <Input
+                      id="owner_phone"
+                      type="tel"
+                      placeholder="052-123-4567"
+                      value={formData.owner_phone}
+                      onChange={(e) => handleInputChange('owner_phone', e.target.value)}
                       className="text-right"
                     />
                   </div>

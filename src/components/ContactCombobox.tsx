@@ -41,10 +41,10 @@ export function ContactCombobox({
   const filteredContacts = allRelevantContacts.filter((contact) => {
     const searchLower = searchValue.toLowerCase();
     return (
-      contact.name.toLowerCase().includes(searchLower) ||
-      contact.propertyAddress?.toLowerCase().includes(searchLower) ||
-      contact.phone.includes(searchValue) ||
-      contact.normalizedPhone.includes(searchValue)
+      (contact.name || '').toLowerCase().includes(searchLower) ||
+      (contact.propertyAddress || '').toLowerCase().includes(searchLower) ||
+      (contact.phone || '').includes(searchValue) ||
+      (contact.normalizedPhone || '').includes(searchValue)
     );
   });
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTenantData } from './useTenantData';
 import { usePropertyData } from './usePropertyData';
 import { formatPhoneForWhatsApp } from '../utils/whatsappHelper';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RelevantContact {
   phone: string;
@@ -17,22 +18,81 @@ export const useRelevantPhoneNumbers = () => {
   const [ownerContacts, setOwnerContacts] = useState<RelevantContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load owner contacts from JSON file
+  // Load owner contacts from both JSON file and database
   useEffect(() => {
     const loadOwnerContacts = async () => {
       try {
-        const response = await fetch('/כל הנכסים - JSON ל-AI.json');
-        const ownersData = await response.json();
+        const contacts: RelevantContact[] = [];
         
-        const contacts: RelevantContact[] = ownersData
-          .filter((owner: any) => owner.owner_phone && owner.owner_phone.toString().trim())
-          .map((owner: any) => ({
-            phone: owner.owner_phone.toString(),
-            normalizedPhone: formatPhoneForWhatsApp(owner.owner_phone.toString()),
-            name: owner.owner_name,
-            type: 'owner' as const,
-            propertyAddress: owner.address
-          }));
+        // Load from static JSON file
+        try {
+          const response = await fetch('/כל הנכסים - JSON ל-AI.json');
+          const ownersData = await response.json();
+          
+          const jsonContacts: RelevantContact[] = ownersData
+            .filter((owner: any) => {
+              const phone = owner.owner_phone;
+              if (!phone) return false;
+              
+              // Handle phone numbers that might be numbers or strings with slashes
+              const phoneStr = phone.toString().trim();
+              if (!phoneStr) return false;
+              
+              // Skip entries with slashes or multiple numbers for now
+              if (phoneStr.includes('/')) return false;
+              
+              return phoneStr.replace(/\D/g, '').length >= 9; // At least 9 digits
+            })
+            .map((owner: any) => ({
+              phone: owner.owner_phone.toString(),
+              normalizedPhone: formatPhoneForWhatsApp(owner.owner_phone.toString()),
+              name: owner.owner_name || 'בעל נכס',
+              type: 'owner' as const,
+              propertyAddress: owner.address
+            }));
+          
+          contacts.push(...jsonContacts);
+        } catch (jsonError) {
+          console.error('Error loading JSON owner contacts:', jsonError);
+        }
+        
+        // Load from database
+        try {
+          const { data: dbOwners, error } = await supabase
+            .from('profiles')
+            .select(`
+              id,
+              full_name,
+              phone,
+              property_owners!inner (
+                property_id,
+                properties!inner (
+                  address,
+                  city
+                )
+              )
+            `)
+            .not('phone', 'is', null)
+            .neq('phone', '');
+          
+          if (error) throw error;
+          
+          const dbContacts: RelevantContact[] = dbOwners
+            .filter(owner => owner.phone && owner.phone.trim())
+            .map(owner => ({
+              phone: owner.phone!,
+              normalizedPhone: formatPhoneForWhatsApp(owner.phone!),
+              name: owner.full_name || 'בעל נכס',
+              type: 'owner' as const,
+              propertyAddress: owner.property_owners?.[0]?.properties?.address 
+                ? `${owner.property_owners[0].properties.address}, ${owner.property_owners[0].properties.city}`
+                : undefined
+            }));
+          
+          contacts.push(...dbContacts);
+        } catch (dbError) {
+          console.error('Error loading database owner contacts:', dbError);
+        }
         
         setOwnerContacts(contacts);
       } catch (error) {
