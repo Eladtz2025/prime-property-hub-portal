@@ -43,39 +43,102 @@ serve(async (req) => {
       const body = await req.json();
       console.log('Received WhatsApp webhook:', JSON.stringify(body, null, 2));
 
-      // Process webhook data
-      if (body.entry && body.entry[0] && body.entry[0].changes) {
+      // Determine API source and process accordingly
+      if (body.typeWebhook) {
+        // Green-API format
+        console.log('Processing Green-API webhook');
+        await processGreenAPIWebhook(body);
+      } else if (body.entry && body.entry[0] && body.entry[0].changes) {
+        // Meta WhatsApp Business API format
+        console.log('Processing Meta API webhook');
+        await processMetaAPIWebhook(body);
+      } else {
+        console.log('Unknown webhook format:', body);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    async function processGreenAPIWebhook(body: any) {
+      try {
+        if (body.typeWebhook === 'incomingMessageReceived') {
+          const { senderData, messageData, timestamp, idMessage } = body;
+          
+          // Determine chat type (individual vs group)
+          const chatType = senderData.chatId.includes('@g.us') ? 'group' : 'individual';
+          
+          // Extract message content based on type
+          let messageText = '';
+          if (messageData.typeMessage === 'textMessage') {
+            messageText = messageData.textMessageData?.textMessage || '';
+          } else if (messageData.typeMessage === 'reactionMessage') {
+            messageText = `Reaction: ${messageData.extendedTextMessageData?.text || ''}`;
+          } else {
+            messageText = `[${messageData.typeMessage}]`;
+          }
+
+          // Store message in database
+          const { error: dbError } = await supabase
+            .from('whatsapp_messages')
+            .insert({
+              phone: senderData.sender?.replace('@c.us', '') || '',
+              message: messageText,
+              whatsapp_message_id: idMessage,
+              status: 'received',
+              direction: 'inbound',
+              message_type: messageData.typeMessage,
+              timestamp: new Date(parseInt(timestamp) * 1000).toISOString(),
+              chat_type: chatType,
+              group_name: chatType === 'group' ? senderData.chatName : null,
+              sender_name: senderData.senderName || senderData.senderContactName,
+              api_source: 'green-api',
+              chat_id: senderData.chatId,
+              sender_id: senderData.sender
+            });
+
+          if (dbError) {
+            console.error('Error storing Green-API message:', dbError);
+          } else {
+            console.log('Successfully stored Green-API message');
+          }
+        } else if (body.typeWebhook === 'quotaExceeded') {
+          console.log('Green-API quota exceeded:', body.quotaData);
+        }
+      } catch (error) {
+        console.error('Error processing Green-API webhook:', error);
+      }
+    }
+
+    async function processMetaAPIWebhook(body: any) {
+      try {
         for (const change of body.entry[0].changes) {
           if (change.value && change.value.messages) {
             for (const message of change.value.messages) {
-              console.log('Processing incoming message:', message);
+              console.log('Processing Meta API incoming message:', message);
 
-              try {
-                // Store incoming message in database
-                const { error: dbError } = await supabase
-                  .from('whatsapp_messages')
-                  .insert({
-                    phone: message.from,
-                    message: message.text?.body || message.type,
-                    whatsapp_message_id: message.id,
-                    status: 'received',
-                    direction: 'inbound',
-                    message_type: message.type,
-                    timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString()
-                  });
+              // Store incoming message in database
+              const { error: dbError } = await supabase
+                .from('whatsapp_messages')
+                .insert({
+                  phone: message.from,
+                  message: message.text?.body || message.type,
+                  whatsapp_message_id: message.id,
+                  status: 'received',
+                  direction: 'inbound',
+                  message_type: message.type,
+                  timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                  chat_type: 'individual',
+                  api_source: 'meta',
+                  chat_id: message.from,
+                  sender_id: message.from
+                });
 
-                if (dbError) {
-                  console.error('Error storing incoming message:', dbError);
-                }
-
-                // Here you can add logic to:
-                // 1. Match phone number to property owner
-                // 2. Send auto-replies
-                // 3. Create notifications
-                // 4. Update conversation status
-
-              } catch (error) {
-                console.error('Error processing message:', error);
+              if (dbError) {
+                console.error('Error storing Meta API message:', dbError);
+              } else {
+                console.log('Successfully stored Meta API message');
               }
             }
           }
@@ -104,11 +167,9 @@ serve(async (req) => {
             }
           }
         }
+      } catch (error) {
+        console.error('Error processing Meta API webhook:', error);
       }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     return new Response('Method not allowed', {

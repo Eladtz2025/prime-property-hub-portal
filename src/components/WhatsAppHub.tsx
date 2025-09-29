@@ -6,19 +6,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Clock, Users, Settings, Phone, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, Clock, Users, Settings, Phone, CheckCircle, AlertCircle, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface WhatsAppMessage {
   id: string;
-  propertyId: string;
-  ownerName: string;
-  ownerPhone: string;
-  lastMessage: string;
+  phone: string;
+  message: string;
   timestamp: string;
-  status: 'active' | 'pending' | 'resolved';
-  unreadCount: number;
+  status: string;
+  direction: string;
+  message_type: string;
+  chat_type: string;
+  group_name?: string;
+  sender_name?: string;
+  api_source: string;
+  chat_id: string;
+  sender_id?: string;
 }
 
 interface MessageTemplate {
@@ -56,40 +61,101 @@ const messageTemplates: MessageTemplate[] = [
 ];
 
 export const WhatsAppHub: React.FC = () => {
-  const [conversations, setConversations] = useState<WhatsAppMessage[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [chatTypeFilter, setChatTypeFilter] = useState<'all' | 'individual' | 'group'>('all');
+  const [apiSourceFilter, setApiSourceFilter] = useState<'all' | 'meta' | 'green-api'>('all');
   const { toast } = useToast();
 
-  // Mock data for demonstration
+  // Load messages from database
   useEffect(() => {
-    const mockConversations: WhatsAppMessage[] = [
-      {
-        id: '1',
-        propertyId: 'prop1',
-        ownerName: 'יוסי כהן',
-        ownerPhone: '972501234567',
-        lastMessage: 'תודה על העדכון!',
-        timestamp: '10:30',
-        status: 'active',
-        unreadCount: 0
-      },
-      {
-        id: '2', 
-        propertyId: 'prop2',
-        ownerName: 'שרה לוי',
-        ownerPhone: '972507654321',
-        lastMessage: 'מתי אפשר לתאם את התחזוקה?',
-        timestamp: '09:15',
-        status: 'pending',
-        unreadCount: 2
-      }
-    ];
-    setConversations(mockConversations);
+    loadMessages();
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('whatsapp_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'whatsapp_messages'
+        },
+        () => {
+          loadMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
+
+  const loadMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_messages')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast({
+        title: "שגיאה בטעינת הודעות",
+        description: "לא הצלחנו לטעון את ההודעות",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Group messages by chat_id for conversation view
+  const getConversations = () => {
+    const conversationsMap = new Map();
+    
+    let filteredMessages = messages;
+    if (chatTypeFilter !== 'all') {
+      filteredMessages = filteredMessages.filter(m => m.chat_type === chatTypeFilter);
+    }
+    if (apiSourceFilter !== 'all') {
+      filteredMessages = filteredMessages.filter(m => m.api_source === apiSourceFilter);
+    }
+    
+    filteredMessages.forEach(message => {
+      const chatId = message.chat_id;
+      if (!conversationsMap.has(chatId)) {
+        conversationsMap.set(chatId, {
+          id: chatId,
+          lastMessage: message,
+          messages: [message],
+          unreadCount: message.direction === 'inbound' ? 1 : 0
+        });
+      } else {
+        const existing = conversationsMap.get(chatId);
+        existing.messages.push(message);
+        if (message.direction === 'inbound') {
+          existing.unreadCount++;
+        }
+      }
+    });
+    
+    return Array.from(conversationsMap.values()).sort((a, b) => 
+      new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+    );
+  };
+
+  const getSelectedChatMessages = () => {
+    if (!selectedChat) return [];
+    return messages
+      .filter(m => m.chat_id === selectedChat)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  };
 
   const checkWhatsAppConnection = async () => {
     try {
@@ -104,7 +170,7 @@ export const WhatsAppHub: React.FC = () => {
 
   const sendMessage = async (message: string, phone?: string) => {
     try {
-      const targetPhone = phone || conversations.find(c => c.id === selectedConversation)?.ownerPhone;
+      const targetPhone = phone || selectedChat?.replace('@c.us', '').replace('@g.us', '');
       if (!targetPhone) {
         toast({
           title: "שגיאה",
@@ -127,6 +193,7 @@ export const WhatsAppHub: React.FC = () => {
 
       setNewMessage('');
       setPhoneNumber('');
+      loadMessages(); // Refresh messages
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -148,6 +215,9 @@ export const WhatsAppHub: React.FC = () => {
   useEffect(() => {
     checkWhatsAppConnection();
   }, []);
+
+  const conversations = getConversations();
+  const selectedChatMessages = getSelectedChatMessages();
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -191,56 +261,99 @@ export const WhatsAppHub: React.FC = () => {
         </TabsList>
 
         <TabsContent value="conversations" className="space-y-6">
+          <div className="space-y-4 mb-6">
+            <div className="flex gap-4">
+              <Select value={chatTypeFilter} onValueChange={(value: any) => setChatTypeFilter(value)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="סוג שיחה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל השיחות</SelectItem>
+                  <SelectItem value="individual">שיחות יחידות</SelectItem>
+                  <SelectItem value="group">קבוצות</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={apiSourceFilter} onValueChange={(value: any) => setApiSourceFilter(value)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="מקור API" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל המקורות</SelectItem>
+                  <SelectItem value="meta">Meta API</SelectItem>
+                  <SelectItem value="green-api">Green API</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={loadMessages}>
+                <Filter className="h-4 w-4 ml-2" />
+                רענן
+              </Button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Conversations List */}
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="text-lg">שיחות פעילות</CardTitle>
                 <CardDescription>
-                  {conversations.filter(c => c.unreadCount > 0).length} הודעות חדשות
+                  {conversations.reduce((acc, c) => acc + c.unreadCount, 0)} הודעות חדשות
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedConversation === conversation.id
-                        ? 'bg-primary/10 border-primary'
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => setSelectedConversation(conversation.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{conversation.ownerName}</h4>
-                          {conversation.unreadCount > 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              {conversation.unreadCount}
+                {conversations.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">אין הודעות להצגה</p>
+                ) : (
+                  conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedChat === conversation.id
+                          ? 'bg-primary/10 border-primary'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => setSelectedChat(conversation.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">
+                              {conversation.lastMessage.chat_type === 'group' 
+                                ? conversation.lastMessage.group_name 
+                                : conversation.lastMessage.sender_name || conversation.lastMessage.phone
+                              }
+                            </h4>
+                            {conversation.unreadCount > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {conversation.unreadCount}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {conversation.lastMessage.chat_type === 'group' ? 'קבוצה' : 'יחיד'}
                             </Badge>
-                          )}
+                            <Badge variant="secondary" className="text-xs">
+                              {conversation.lastMessage.api_source}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {conversation.lastMessage.message}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge 
+                              variant={conversation.lastMessage.direction === 'inbound' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {conversation.lastMessage.direction === 'inbound' ? 'נכנס' : 'יוצא'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(conversation.lastMessage.timestamp).toLocaleString('he-IL')}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {conversation.lastMessage}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge 
-                            variant={conversation.status === 'active' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {conversation.status === 'active' ? 'פעיל' : 
-                             conversation.status === 'pending' ? 'ממתין' : 'סגור'}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {conversation.timestamp}
-                          </span>
-                        </div>
+                        <Phone className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <Phone className="h-4 w-4 text-muted-foreground" />
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
 
@@ -248,24 +361,54 @@ export const WhatsAppHub: React.FC = () => {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {selectedConversation 
-                    ? conversations.find(c => c.id === selectedConversation)?.ownerName
+                  {selectedChat 
+                    ? (() => {
+                        const conv = conversations.find(c => c.id === selectedChat);
+                        if (!conv) return 'בחר שיחה';
+                        return conv.lastMessage.chat_type === 'group' 
+                          ? conv.lastMessage.group_name 
+                          : conv.lastMessage.sender_name || conv.lastMessage.phone;
+                      })()
                     : 'בחר שיחה'
                   }
                 </CardTitle>
-                {selectedConversation && (
-                  <CardDescription>
-                    {conversations.find(c => c.id === selectedConversation)?.ownerPhone}
-                  </CardDescription>
-                )}
+                {selectedChat && (() => {
+                  const conv = conversations.find(c => c.id === selectedChat);
+                  return conv ? (
+                    <CardDescription>
+                      {conv.lastMessage.chat_type === 'group' ? `קבוצה • ${conv.lastMessage.api_source}` : conv.lastMessage.phone}
+                    </CardDescription>
+                  ) : null;
+                })()}
               </CardHeader>
               <CardContent className="space-y-4">
-                {selectedConversation ? (
+                {selectedChat ? (
                   <>
-                    <div className="h-64 border rounded-lg p-4 bg-muted/20">
-                      <p className="text-center text-muted-foreground">
-                        היסטוריית השיחה תוצג כאן
-                      </p>
+                    <div className="h-64 border rounded-lg p-4 bg-muted/20 overflow-y-auto">
+                      {selectedChatMessages.length === 0 ? (
+                        <p className="text-center text-muted-foreground">אין הודעות בשיחה זו</p>
+                      ) : (
+                        selectedChatMessages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`mb-3 p-2 rounded-lg max-w-[80%] ${
+                              message.direction === 'outbound'
+                                ? 'bg-primary text-primary-foreground mr-auto text-right'
+                                : 'bg-muted ml-auto text-left'
+                            }`}
+                          >
+                            <p className="text-sm">{message.message}</p>
+                            <div className="flex items-center gap-1 mt-1">
+                              {message.sender_name && (
+                                <span className="text-xs opacity-70">{message.sender_name}</span>
+                              )}
+                              <span className="text-xs opacity-70">
+                                {new Date(message.timestamp).toLocaleTimeString('he-IL')}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Textarea
@@ -316,7 +459,7 @@ export const WhatsAppHub: React.FC = () => {
                       variant="outline" 
                       size="sm"
                       onClick={() => sendTemplateMessage(template.id)}
-                      disabled={!selectedConversation}
+                      disabled={!selectedChat}
                     >
                       שלח תבנית
                     </Button>

@@ -575,39 +575,57 @@ export type Database = {
       }
       whatsapp_messages: {
         Row: {
+          api_source: string | null
+          chat_id: string | null
+          chat_type: string | null
           created_at: string
           direction: string
+          group_name: string | null
           id: string
           message: string
           message_type: string | null
           phone: string
           property_id: string | null
+          sender_id: string | null
+          sender_name: string | null
           status: string
           timestamp: string | null
           updated_at: string
           whatsapp_message_id: string | null
         }
         Insert: {
+          api_source?: string | null
+          chat_id?: string | null
+          chat_type?: string | null
           created_at?: string
           direction?: string
+          group_name?: string | null
           id?: string
           message: string
           message_type?: string | null
           phone: string
           property_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
           status?: string
           timestamp?: string | null
           updated_at?: string
           whatsapp_message_id?: string | null
         }
         Update: {
+          api_source?: string | null
+          chat_id?: string | null
+          chat_type?: string | null
           created_at?: string
           direction?: string
+          group_name?: string | null
           id?: string
           message?: string
           message_type?: string | null
           phone?: string
           property_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
           status?: string
           timestamp?: string | null
           updated_at?: string
