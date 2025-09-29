@@ -30,7 +30,7 @@ export const MessageTemplateDialog: React.FC<MessageTemplateDialogProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('general');
+  const [category, setCategory] = useState('שיחה ראשונה');
 
   useEffect(() => {
     if (template) {
@@ -40,7 +40,7 @@ export const MessageTemplateDialog: React.FC<MessageTemplateDialogProps> = ({
     } else {
       setName('');
       setContent('');
-      setCategory('general');
+      setCategory('שיחה ראשונה');
     }
   }, [template]);
 
