@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -64,31 +64,18 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h2 className="text-4xl font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent">
             לוח בקרה ראשי
           </h2>
           <p className="text-muted-foreground mt-1">סקירה כללית של הנכסים שלך</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">עודכן לאחרונה</div>
-            <div className="text-lg font-semibold text-foreground">
-              {new Date().toLocaleDateString('he-IL')}
-            </div>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground">עודכן לאחרונה</div>
+          <div className="text-lg font-semibold text-foreground">
+            {new Date().toLocaleDateString('he-IL')}
           </div>
-          {onAddProperty && (
-            <Button
-              onClick={onAddProperty}
-              className="btn-enhanced-contrast touch-target"
-              size="lg"
-              aria-label="הוסף נכס חדש"
-            >
-              <Plus className="h-5 w-5 ml-2" />
-              הוסף נכס חדש
-            </Button>
-          )}
         </div>
       </div>
 
