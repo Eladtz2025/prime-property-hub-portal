@@ -11,6 +11,7 @@ import { StatsCard } from './StatsCard';
 
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
+import { QuickActionCenter } from './QuickActionCenter';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 
 interface DashboardProps {
@@ -271,6 +272,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Action Center */}
+      <QuickActionCenter alerts={alerts} />
 
       {/* Recent Activity */}
       <Card>
