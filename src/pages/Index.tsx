@@ -1,16 +1,14 @@
 import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
+import { Dashboard } from '../components/Dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ActivityLogsList } from '../components/ActivityLogsList';
-import { StatsCard } from '../components/StatsCard';
-import { useMobileOptimization } from '../hooks/useMobileOptimization';
-import { MobileDashboard } from '../components/MobileDashboard';
 import { 
   FileText, 
   TrendingUp, 
@@ -18,12 +16,8 @@ import {
   Calendar,
   Building,
   Users,
-  Download,
-  AlertTriangle,
-  Send,
-  MessageSquare,
-  Eye,
-  Home
+  BarChart3,
+  Download
 } from 'lucide-react';
 
 const Index = memo(() => {
@@ -87,241 +81,151 @@ const Index = memo(() => {
     );
   }
 
-  const { isMobile } = useMobileOptimization();
-  
-  // Mock urgent alerts for display
-  const urgentAlerts: Alert[] = [
-    { 
-      id: "1", 
-      message: "חידוש חוזה נדרש - רחוב הרצל 15", 
-      type: "lease_expiry", 
-      priority: "high",
-      propertyAddress: "רחוב הרצל 15",
-      ownerName: "יוסי כהן",
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: "2", 
-      message: "תשלום שכר דירה מתעכב - רחוב בן גוריון 23", 
-      type: "payment", 
-      priority: "urgent",
-      propertyAddress: "רחוב בן גוריון 23",
-      ownerName: "שרה לוי",
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  if (isMobile) {
-    return (
-      <>
-        <MobileDashboard 
-          properties={properties}
-          stats={stats ? {
-            totalProperties: stats.total,
-            contactedProperties: stats.contacted || 0,
-            notContactedProperties: stats.notContacted || 0,
-            confirmedOccupied: stats.occupied,
-            confirmedVacant: stats.vacant,
-            unknownStatus: stats.unknown || 0,
-            upcomingRenewals: stats.upcomingRenewals
-          } : { 
-            totalProperties: 0, 
-            contactedProperties: 0, 
-            notContactedProperties: 0, 
-            confirmedOccupied: 0, 
-            confirmedVacant: 0, 
-            unknownStatus: 0, 
-            upcomingRenewals: 0 
-          }}
-          alerts={urgentAlerts}
-          onAddProperty={() => setShowAddPropertyModal(true)}
-        />
-        <AddPropertyModal
-          isOpen={showAddPropertyModal}
-          onClose={() => setShowAddPropertyModal(false)}
-          onPropertyAdded={handlePropertyAdded}
-        />
-      </>
-    );
-  }
-
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-primary p-6 rounded-lg text-white">
-          <h1 className="text-3xl font-bold mb-2">מערכת ניהול נכסים</h1>
-          <p className="text-white/80">סקירה כוללת של הנכסים והפעילות</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatsCard
-            title="סך הכל נכסים"
-            value={stats?.total || 0}
-            icon={Home}
-            color="blue"
+      <Tabs defaultValue="dashboard" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            לוח בקרה
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            דוחות
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard">
+          <Dashboard 
+            properties={properties} 
+            stats={stats ? {
+              totalProperties: stats.total,
+              contactedProperties: stats.contacted || 0,
+              notContactedProperties: stats.notContacted || 0,
+              confirmedOccupied: stats.occupied,
+              confirmedVacant: stats.vacant,
+              unknownStatus: stats.unknown || 0,
+              upcomingRenewals: stats.upcomingRenewals
+            } : { 
+              totalProperties: 0, 
+              contactedProperties: 0, 
+              notContactedProperties: 0, 
+              confirmedOccupied: 0, 
+              confirmedVacant: 0, 
+              unknownStatus: 0, 
+              upcomingRenewals: 0 
+            }}
+            alerts={alerts} 
+            onAddProperty={() => setShowAddPropertyModal(true)}
           />
-          <StatsCard
-            title="נכסים תפוסים"
-            value={stats?.occupied || 0}
-            icon={Building}
-            color="green"
-          />
-          <StatsCard
-            title="נכסים פנויים"
-            value={stats?.vacant || 0}
-            icon={Building}
-            color="orange"
-          />
-          <StatsCard
-            title="הכנסות חודשיות"
-            value="₪45,800"
-            icon={DollarSign}
-            color="purple"
-          />
-          <StatsCard
-            title="חידושי חוזים"
-            value={stats?.upcomingRenewals || 0}
-            icon={Calendar}
-            color="orange"
-          />
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Urgent Alerts */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                התראות דחופות
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {urgentAlerts.length > 0 ? (
-                urgentAlerts.map((alert) => (
-                  <div key={alert.id} className="p-3 border rounded-lg bg-amber-50 border-amber-200">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-amber-800">{alert.message}</p>
-                        <p className="text-xs text-amber-600 mt-1">
-                          {new Date(alert.createdAt).toLocaleDateString('he-IL')}
-                        </p>
-                      </div>
-                    </div>
+        </TabsContent>
+        
+        <TabsContent value="reports" className="space-y-4">
+          {/* Reports Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600">הכנסות חודשיות</p>
+                    <p className="text-2xl font-bold text-blue-700">₪45,800</p>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-sm">אין התראות דחופות</p>
-              )}
-              <Button variant="outline" size="sm" className="w-full mt-3">
-                <Eye className="h-4 w-4 mr-2" />
-                צפה בכל ההתראות
-              </Button>
-            </CardContent>
-          </Card>
+                  <DollarSign className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600">נכסים פעילים</p>
+                    <p className="text-2xl font-bold text-green-700">{stats?.occupied || 0}</p>
+                  </div>
+                  <Building className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-600">שוכרים פעילים</p>
+                    <p className="text-2xl font-bold text-purple-700">{stats?.occupied || 0}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-600">תפוסה</p>
+                    <p className="text-2xl font-bold text-orange-700">
+                      {stats?.total ? Math.round((stats.occupied / stats.total) * 100) : 0}%
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Quick Reports */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                דוחות מהירים
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
-                <Download className="h-4 w-4 mr-2" />
-                דוח נכסים פעילים
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Download className="h-4 w-4 mr-2" />
-                דוח הכנסות חודשי
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Download className="h-4 w-4 mr-2" />
-                דוח חידושי חוזים
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Quick Message */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5" />
-                הודעה מהירה
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">תבנית הודעה פופולרית:</label>
-                <div className="p-3 bg-muted/50 rounded border text-sm">
-                  "שלום, רציתי לבדוק איתך לגבי תשלום שכר הדירה לחודש הנוכחי. תודה!"
-                </div>
-              </div>
-              <Button className="w-full">
-                <Send className="h-4 w-4 mr-2" />
-                שלח הודעה לכל השוכרים
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">פעילות אחרונה</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ActivityLogsList />
-            </CardContent>
-          </Card>
-
-        </div>
-
-        {/* Properties Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              סקירת נכסים
-              <Button onClick={() => setShowAddPropertyModal(true)}>
-                הוסף נכס
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {properties.slice(0, 5).map((property) => (
-              <div key={property.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
-                <div>
-                  <p className="font-medium">{property.address}</p>
-                  <p className="text-sm text-muted-foreground">
-                    בעלים: {property.ownerName} | שוכר: {property.tenantName || 'פנוי'}
-                  </p>
-                </div>
-                <div className={`px-2 py-1 rounded text-xs font-medium ${
-                  property.status === 'occupied' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-orange-100 text-orange-800'
-                }`}>
-                  {property.status === 'occupied' ? 'תפוס' : 'פנוי'}
-                </div>
-              </div>
-            ))}
-            {properties.length > 5 && (
-              <div className="pt-3">
-                <Button variant="outline" className="w-full">
-                  <Eye className="h-4 w-4 mr-2" />
-                  צפה בכל הנכסים ({properties.length})
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  דוחות מהירים
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  דוח נכסים פעילים
                 </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                <Button variant="outline" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  דוח הכנסות חודשי
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  דוח חידושי חוזים
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  דוח נכסים פנויים
+                </Button>
+              </CardContent>
+            </Card>
 
-      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  תחזיות ותכנון
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <div className="text-sm font-medium">חידושי חוזים הקרובים</div>
+                  <div className="text-2xl font-bold text-orange-600">{stats?.upcomingRenewals || 0}</div>
+                  <div className="text-xs text-muted-foreground">בשלושה חודשים הקרובים</div>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <div className="text-sm font-medium">תחזית הכנסות חודש הבא</div>
+                  <div className="text-2xl font-bold text-green-600">₪46,200</div>
+                  <div className="text-xs text-muted-foreground">על בסיס נכסים קיימים</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
       
       <AddPropertyModal
         isOpen={showAddPropertyModal}
