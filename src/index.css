@@ -256,6 +256,44 @@ All colors MUST be HSL.
       direction: ltr;
       unicode-bidi: embed;
     }
+    
+    /* Mobile touch targets */
+    .touch-target {
+      min-height: 40px;
+      min-width: 40px;
+    }
+    
+    /* Reduce overall spacing on mobile */
+    .space-y-4 > * + * {
+      margin-top: 0.75rem !important;
+    }
+    
+    .space-y-3 > * + * {
+      margin-top: 0.5rem !important;
+    }
+    
+    /* Ensure proper mobile layout */
+    .max-w-full {
+      max-width: 100% !important;
+    }
+    
+    .overflow-x-hidden {
+      overflow-x: hidden !important;
+    }
+    
+    /* Mobile optimized padding */
+    .mobile-padding {
+      padding: 0.5rem;
+    }
+    
+    .mobile-text {
+      font-size: 0.75rem;
+    }
+    
+    .mobile-compact {
+      padding: 0.25rem;
+      gap: 0.25rem;
+    }
   }
 }
 
