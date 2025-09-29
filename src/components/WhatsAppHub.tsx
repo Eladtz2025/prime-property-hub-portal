@@ -14,6 +14,7 @@ import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { AddNewContactDialog } from './AddNewContactDialog';
 import { MessageTemplateDialog } from './MessageTemplateDialog';
 import { BulkMessageSender } from './BulkMessageSender';
+import { ContactCombobox } from './ContactCombobox';
 
 interface WhatsAppMessage {
   id: string;
@@ -586,10 +587,11 @@ export const WhatsAppHub: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Input
-                  placeholder="מספר טלפון (עם קוד מדינה)"
+                <ContactCombobox
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={setPhoneNumber}
+                  placeholder="חפש איש קשר או הקלד מספר טלפון..."
+                  className="w-full"
                 />
                 <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                   <SelectTrigger>

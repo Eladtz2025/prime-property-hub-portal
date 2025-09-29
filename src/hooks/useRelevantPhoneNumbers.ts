@@ -21,16 +21,18 @@ export const useRelevantPhoneNumbers = () => {
   useEffect(() => {
     const loadOwnerContacts = async () => {
       try {
-        const response = await fetch('/בעלי_דירות_מעודכן.json');
+        const response = await fetch('/כל הנכסים - JSON ל-AI.json');
         const ownersData = await response.json();
         
-        const contacts: RelevantContact[] = ownersData.map((owner: any) => ({
-          phone: owner.טלפון,
-          normalizedPhone: formatPhoneForWhatsApp(owner.טלפון),
-          name: owner.שם,
-          type: 'owner' as const,
-          propertyAddress: owner.כתובת
-        }));
+        const contacts: RelevantContact[] = ownersData
+          .filter((owner: any) => owner.owner_phone && owner.owner_phone.toString().trim())
+          .map((owner: any) => ({
+            phone: owner.owner_phone.toString(),
+            normalizedPhone: formatPhoneForWhatsApp(owner.owner_phone.toString()),
+            name: owner.owner_name,
+            type: 'owner' as const,
+            propertyAddress: owner.address
+          }));
         
         setOwnerContacts(contacts);
       } catch (error) {
