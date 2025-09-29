@@ -26,17 +26,17 @@ export const QuickActionCenter: React.FC<QuickActionCenterProps> = ({ alerts = [
   const { toast } = useToast();
 
   const quickTemplates = {
+    first_contact: {
+      title: 'יצירת קשר ראשון',
+      message: 'שלום {שם}, אני מנהל הנכס ברחוב {כתובת}. אשמח ליצור קשר לצורך תיאום בנוגע לנכס.'
+    },
     lease_renewal: {
-      title: 'חידוש חוזה - מהיר',
-      message: 'שלום, אני מתקשר בנוגע לחידוש החוזה. אשמח לתיאום פגישה השבוע.'
+      title: 'חידוש חוזה',
+      message: 'שלום {שם}, החוזה ב-{כתובת} מסתיים ב-{חוזה}. אשמח לתיאום פגישה לבדיקת חידוש החוזה.'
     },
     maintenance_check: {
       title: 'בדיקת תחזוקה',
-      message: 'שלום, רציתי לבדוק איך מתקדמת התחזוקה בנכס. אשמח לעדכון.'
-    },
-    monthly_update: {
-      title: 'עדכון חודשי',
-      message: 'שלום, זה הזמן לעדכון החודשי. אשמח לשמוע איך הולך הכל.'
+      message: 'שלום {שם}, רציתי לבדוק איך מתקדמת התחזוקה בנכס ב-{כתובת}. אשמח לעדכון.'
     }
   };
 

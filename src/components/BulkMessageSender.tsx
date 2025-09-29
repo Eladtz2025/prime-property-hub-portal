@@ -213,14 +213,16 @@ export const BulkMessageSender: React.FC<BulkMessageSenderProps> = ({ onSendComp
 
               {/* Contact List */}
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {contactsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    טוען אנשי קשר...
-                  </div>
-                ) : filteredContacts.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    לא נמצאו אנשי קשר
-                  </div>
+                 {contactsLoading ? (
+                   <div className="text-center py-8 text-muted-foreground">
+                     טוען אנשי קשר...
+                   </div>
+                 ) : filteredContacts.length === 0 ? (
+                   <div className="text-center py-8 text-muted-foreground">
+                     <div className="mb-2">לא נמצאו אנשי קשר</div>
+                     <div className="text-xs">סה״כ אנשי קשר זמינים: {allRelevantContacts.length}</div>
+                     {searchQuery && <div className="text-xs">חיפוש: "{searchQuery}"</div>}
+                   </div>
                 ) : (
                   filteredContacts.map((contact) => (
                     <div
@@ -258,18 +260,24 @@ export const BulkMessageSender: React.FC<BulkMessageSenderProps> = ({ onSendComp
                 <label className="text-sm font-medium mb-2 block">
                   בחר תבנית (אופציונלי)
                 </label>
-                <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר תבנית או כתוב הודעה חופשית" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                 <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="בחר תבנית או כתוב הודעה חופשית" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {templatesLoading ? (
+                       <SelectItem value="" disabled>טוען תבניות...</SelectItem>
+                     ) : templates.length === 0 ? (
+                       <SelectItem value="" disabled>אין תבניות זמינות</SelectItem>
+                     ) : (
+                       templates.map((template) => (
+                         <SelectItem key={template.id} value={template.id}>
+                           {template.name} - {template.category}
+                         </SelectItem>
+                       ))
+                     )}
+                   </SelectContent>
+                 </Select>
               </div>
 
               {/* Message Text */}
