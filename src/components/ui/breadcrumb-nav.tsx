@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronLeft, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -30,11 +29,10 @@ const routeLabels: Record<string, string> = {
 
 export const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ className }) => {
   const location = useLocation();
-  const { isMobile } = useMobileOptimization();
   const pathnames = location.pathname.split('/').filter((x) => x);
 
-  if (pathnames.length === 0 || isMobile) {
-    return null; // Don't show breadcrumb on home page or mobile
+  if (pathnames.length === 0) {
+    return null; // Don't show breadcrumb on home page
   }
 
   return (

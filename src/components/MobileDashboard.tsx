@@ -111,13 +111,11 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
     return null; // This component is only for mobile
   }
 
-  console.log('MobileDashboard rendering:', { propertiesCount: properties.length, stats });
-  
   return (
-    <div className="w-full min-h-screen bg-background pb-20">
-      <div className="space-y-6 px-4 py-6 max-w-lg mx-auto">
+    <div className="min-h-screen bg-background overflow-hidden">
+      <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
         {/* Header with greeting */}
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
+        <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
@@ -127,10 +125,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold mb-2 leading-tight">
+                <h1 className="text-xl font-bold mb-1 truncate">
                   שלום{userName ? ` ${userName}` : ''}! 👋
                 </h1>
-                <p className="text-white/90 text-lg leading-relaxed">ברוך הבא למערכת ניהול הנכסים</p>
+                <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
                 onClick={() => {
@@ -154,7 +152,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                   </div>
                   <span className="text-sm font-semibold truncate">סה״כ נכסים</span>
                 </div>
-                <div className="text-3xl font-bold number-display">{stats.totalProperties}</div>
+                <div className="text-xl font-bold number-display">{stats.totalProperties}</div>
               </div>
               
               <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
@@ -206,7 +204,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-3xl font-bold number-display">
+                  <div className="text-lg font-bold number-display truncate">
                     {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
                   </div>
                 )}
@@ -294,7 +292,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
             {properties.slice(0, 3).map((property, index) => (
               <div 
                 key={property.id}
-                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3 mobile-card"
+                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0 flex-container-mobile">
@@ -302,8 +300,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     <MapPin className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0 flex-container-mobile">
-                    <p className="font-semibold text-sm text-foreground text-truncate-mobile">{property.address}</p>
-                    <p className="text-xs text-muted-foreground text-truncate-mobile">{property.ownerName}</p>
+                    <p className="font-semibold text-sm text-foreground truncate block">{property.address}</p>
+                    <p className="text-xs text-muted-foreground truncate block">{property.ownerName}</p>
                   </div>
                 </div>
                 <Badge 

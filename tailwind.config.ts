@@ -69,7 +69,6 @@ export default {
 			},
 			spacing: {
 				'safe-area-inset-bottom': 'env(safe-area-inset-bottom, 0px)',
-				'safe-area-inset-top': 'env(safe-area-inset-top, 0px)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

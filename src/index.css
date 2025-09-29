@@ -64,8 +64,6 @@ All colors MUST be HSL.
     /* Mobile optimizations */
     --mobile-padding: 1rem;
     --mobile-gap: 0.75rem;
-    --mobile-header-height: 64px;
-    --mobile-nav-height: 80px;
     
     /* Touch targets for mobile */
     --touch-target: 44px;
@@ -134,24 +132,12 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Assistant', 'Inter', system-ui, -apple-system, sans-serif;
-    overflow-x: hidden;
-    width: 100%;
-    position: relative;
   }
 
   /* Add RTL support for proper spacing */
   .rtl {
     direction: rtl;
     text-align: right;
-  }
-
-  /* iOS specific fixes */
-  @supports (-webkit-touch-callout: none) {
-    body {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
   }
 
   /* Custom gradient utilities */
@@ -196,8 +182,7 @@ All colors MUST be HSL.
       scroll-behavior: smooth;
       contain: layout style paint;
       overflow-x: hidden;
-      padding-bottom: env(safe-area-inset-bottom, 80px);
-      position: relative;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
     
     /* Card layout improvements */
@@ -207,8 +192,6 @@ All colors MUST be HSL.
       contain: layout style;
       isolation: isolate;
       transform: translateZ(0); /* Force hardware acceleration */
-      background: hsl(var(--card));
-      border: 1px solid hsl(var(--border));
     }
     
     /* Touch target improvements */
@@ -217,9 +200,6 @@ All colors MUST be HSL.
       min-height: 44px;
       min-width: 44px;
       touch-action: manipulation;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     
     /* Text overflow and RTL fixes */
@@ -229,7 +209,6 @@ All colors MUST be HSL.
       white-space: nowrap;
       direction: inherit;
       unicode-bidi: plaintext;
-      max-width: 100%;
     }
     
     /* Button container fixes */
@@ -238,7 +217,6 @@ All colors MUST be HSL.
       gap: 0.25rem;
       flex-shrink: 0;
       align-items: center;
-      justify-content: center;
     }
     
     /* Prevent content shift during loading */
@@ -246,59 +224,7 @@ All colors MUST be HSL.
       min-height: 120px;
       display: flex;
       flex-direction: column;
-      padding: 1rem;
     }
-
-/* Mobile optimizations */
-.mobile-container {
-  min-height: calc(100vh - 80px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px 16px;
-  padding-bottom: 120px;
-}
-
-.mobile-scroll {
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.mobile-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.mobile-card {
-  min-height: 48px;
-  touch-target: 48px;
-  padding: 12px 16px;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-/* Enhanced mobile text visibility */
-@media (max-width: 768px) {
-  body {
-    font-size: 16px;
-    line-height: 1.6;
-  }
-  
-  h1, h2, h3 {
-    line-height: 1.4;
-  }
-  
-  .text-sm {
-    font-size: 16px !important;
-  }
-  
-  .text-base {
-    font-size: 18px !important;
-  }
-  
-  .text-lg {
-    font-size: 20px !important;
-  }
-}
     
     /* Ensure proper stacking context */
     .mobile-header {
@@ -307,20 +233,6 @@ All colors MUST be HSL.
       z-index: 50;
       backdrop-filter: blur(8px);
       border-bottom: 1px solid hsl(var(--border));
-      background: hsl(var(--background) / 0.95);
-    }
-    
-    /* Mobile navigation fixes */
-    .mobile-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      background: hsl(var(--card) / 0.95);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid hsl(var(--border));
     }
     
     /* Smooth animations for mobile */
@@ -336,7 +248,6 @@ All colors MUST be HSL.
     .flex-container-mobile {
       min-width: 0;
       overflow: hidden;
-      flex: 1;
     }
     
     /* Ensure numbers display correctly in RTL */
@@ -344,82 +255,7 @@ All colors MUST be HSL.
       font-variant-numeric: tabular-nums;
       direction: ltr;
       unicode-bidi: embed;
-      text-align: center;
     }
-    
-    /* RTL layout fixes */
-    .rtl .flex {
-      flex-direction: row-reverse;
-    }
-    
-    .rtl .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
-      --tw-space-x-reverse: 1;
-    }
-    
-    /* Mobile spacing improvements */
-    .mobile-container {
-      padding: 1rem;
-      max-width: 100vw;
-      overflow-x: hidden;
-    }
-    
-    /* Improved text truncation for Hebrew */
-    .text-truncate-mobile {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      direction: rtl;
-      unicode-bidi: plaintext;
-      max-width: calc(100% - 2rem);
-    }
-    
-    /* Fixed dropdown positioning */
-    .mobile-dropdown {
-      position: fixed !important;
-      top: auto !important;
-      bottom: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      transform: none !important;
-      border-radius: 1rem 1rem 0 0;
-      max-height: 50vh;
-      z-index: 999;
-      background: hsl(var(--popover));
-      border: 1px solid hsl(var(--border));
-      box-shadow: 0 -4px 12px -2px hsl(var(--foreground) / 0.1);
-    }
-  }
-}
-
-/* Force mobile layout for mobile devices */
-.mobile-device .sidebar-provider,
-.mobile-device [data-sidebar="provider"] {
-  --sidebar-width: 0px !important;
-}
-
-.mobile-device .sidebar,
-.mobile-device [data-sidebar="sidebar"] {
-  display: none !important;
-}
-
-.mobile-device .sidebar-trigger {
-  display: none !important;
-}
-
-/* Mobile-specific optimizations */
-@media (max-width: 768px), (pointer: coarse) {
-  .sidebar-provider,
-  [data-sidebar="provider"] {
-    --sidebar-width: 0px !important;
-  }
-
-  .sidebar,
-  [data-sidebar="sidebar"] {
-    display: none !important;
-  }
-
-  .sidebar-trigger {
-    display: none !important;
   }
 }
 
@@ -441,54 +277,6 @@ All colors MUST be HSL.
 /* Enhanced touch targets for mobile */
 .touch-target {
   @apply min-h-[44px] min-w-[44px];
-}
-
-/* Dropdown fixes for mobile */
-.dropdown-content[data-radix-popper-content] {
-  z-index: 9999 !important;
-}
-
-/* Mobile tab improvements */
-.mobile-tab {
-  @apply text-xs px-2 py-2 min-h-[44px] touch-target;
-}
-
-/* Mobile card improvements */
-.mobile-card-grid {
-  @apply grid gap-3;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-
-@media (max-width: 768px) {
-  .dropdown-content[data-radix-popper-content] {
-    position: fixed !important;
-    inset: auto 1rem 1rem 1rem !important;
-    transform: none !important;
-    max-height: 50vh;
-    border-radius: 1rem;
-    background: hsl(var(--popover)) !important;
-    border: 1px solid hsl(var(--border)) !important;
-    box-shadow: 0 -4px 12px -2px hsl(var(--foreground) / 0.1) !important;
-  }
-  
-  /* Mobile grid improvements */
-  .mobile-card-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  /* Text input improvements for mobile */
-  input[type="text"], input[type="number"], textarea {
-    font-size: 16px !important; /* Prevents zoom on iOS */
-    min-height: 44px;
-  }
-  
-  /* Better scrolling on mobile */
-  .mobile-scroll-container {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
 }
 
 @keyframes fadeIn {
