@@ -82,7 +82,7 @@ export const MessageTemplateDialog: React.FC<MessageTemplateDialogProps> = ({
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="לדוגמה: conversation_starter"
+              placeholder="לדוגמה: שיחה ראשונה"
               disabled={isLoading}
             />
           </div>
