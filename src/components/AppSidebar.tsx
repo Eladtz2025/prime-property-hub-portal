@@ -3,10 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  Database, 
   Users, 
-  UserPlus, 
-  Settings
+  UserPlus
 } from 'lucide-react';
 import {
   Sidebar,
@@ -29,10 +27,8 @@ const navigationItems = [
 
 // Admin-specific navigation items
 const adminItems = [
-  { title: 'ייבוא מ-Storage', url: '/import-from-storage', icon: Database, requiredRole: 'admin' },
   { title: 'ניהול משתמשים', url: '/users', icon: Users, requiredRole: 'admin' },
   { title: 'הזמנות נכסים', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
-  { title: 'מרכז בקרה', url: '/admin-control', icon: Settings, requiredRole: 'admin' },
 ];
 
 export function AppSidebar() {
