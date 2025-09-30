@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
@@ -374,12 +375,10 @@ const SidebarMenuButton = React.forwardRef<
     { asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, ...props },
     ref
   ) => {
-    const Comp = asChild ? React.Fragment : "button"
+    const Comp = asChild ? Slot : "button"
     const { collapsed, isMobile } = useSidebar()
 
-    const button = asChild ? (
-      <React.Fragment {...props} />
-    ) : (
+    const button = (
       <Comp
         data-sidebar="menu-button"
         data-size={size}
