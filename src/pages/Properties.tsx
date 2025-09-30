@@ -33,7 +33,7 @@ import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditModal } from '../components/PropertyEditModal';
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
-import { PropertyMap } from '../components/PropertyMap';
+import { PropertyWhatsAppHistory } from '../components/PropertyWhatsAppHistory';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
@@ -307,8 +307,8 @@ export const Properties: React.FC = memo(() => {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="list">רשימה</TabsTrigger>
               <TabsTrigger value="cards">כרטיסים</TabsTrigger>
-              <TabsTrigger value="map">מפה</TabsTrigger>
-              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+              <TabsTrigger value="history">היסטורית שיחות</TabsTrigger>
+              <TabsTrigger value="whatsapp">שליחת הודעות</TabsTrigger>
             </TabsList>
 
             <TabsContent value="list" className="space-y-4">
@@ -589,8 +589,8 @@ export const Properties: React.FC = memo(() => {
               </PullToRefresh>
             </TabsContent>
 
-            <TabsContent value="map" className="space-y-4">
-              <PropertyMap 
+            <TabsContent value="history" className="space-y-4">
+              <PropertyWhatsAppHistory 
                 properties={filteredAndSortedProperties}
                 onPropertySelect={(property) => handleViewDetails(property.id)}
               />
