@@ -17,6 +17,7 @@ import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
 import { DataMigration } from './pages/DataMigration';
+import { DataConsolidation } from './pages/DataConsolidation';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
@@ -134,6 +135,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <DataMigration />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/data-consolidation" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <DataConsolidation />
                   </ProtectedRoute>
                 </Layout>
               } 
