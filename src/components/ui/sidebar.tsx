@@ -374,11 +374,17 @@ const SidebarMenuButton = React.forwardRef<
     { asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, ...props },
     ref
   ) => {
-    const Comp = asChild ? React.Fragment : "button"
+    const Comp = "button"
     const { collapsed, isMobile } = useSidebar()
 
-    const button = asChild ? (
-      <React.Fragment {...props} />
+    const button = asChild && props.children ? (
+      React.cloneElement(props.children as React.ReactElement, {
+        "data-sidebar": "menu-button",
+        "data-size": size,
+        "data-active": isActive,
+        className: cn(sidebarMenuButtonVariants({ variant, size }), className, (props.children as any)?.props?.className),
+        ref,
+      })
     ) : (
       <Comp
         data-sidebar="menu-button"
