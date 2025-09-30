@@ -25,7 +25,7 @@ const ImportFromStorage = () => {
       console.log('🚀 Starting import from storage...');
       toast.info('מתחיל ייבוא מהקובץ...');
 
-      const { data, error } = await supabase.functions.invoke('import-from-json');
+      const { data, error } = await supabase.functions.invoke('process-and-import-properties');
 
       if (error) {
         console.error('❌ Error calling function:', error);
@@ -62,13 +62,13 @@ const ImportFromStorage = () => {
             ייבוא נכסים מ-Storage
           </CardTitle>
           <CardDescription>
-            ייבוא כל הנכסים מהקובץ properties-unified-new.json שהועלה ל-Storage
+            עיבוד קובץ האקסל וייבוא אוטומטי של כל הנכסים למערכת
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert>
             <AlertDescription>
-              הקובץ נמצא ב-Storage bucket: <strong>data-import/properties-unified-new.json</strong>
+              הפונקציה תקרא את קובץ האקסל <strong>בעלי_דירות_מעודכן חדש.xlsx</strong> מ-Storage, תעבד אותו ותייבא את כל הנכסים למערכת
             </AlertDescription>
           </Alert>
 
