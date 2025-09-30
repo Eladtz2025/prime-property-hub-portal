@@ -3,15 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  MessageSquare, 
-  AlertTriangle, 
-  Mail, 
-  FileText, 
   Database, 
   Users, 
   UserPlus, 
-  Settings,
-  Building2
+  Settings
 } from 'lucide-react';
 import {
   Sidebar,
@@ -30,10 +25,6 @@ import { useAuth } from '@/contexts/AuthContext';
 const navigationItems = [
   { title: 'לוח בקרה', url: '/', icon: Home },
   { title: 'נכסים', url: '/properties', icon: Building },
-  { title: 'תור יצירת קשר', url: '/contact-queue', icon: MessageSquare },
-  { title: 'התראות', url: '/alerts', icon: AlertTriangle },
-  { title: 'הודעות', url: '/messages', icon: Mail },
-  { title: 'דוחות', url: '/reports', icon: FileText },
 ];
 
 // Admin-specific navigation items

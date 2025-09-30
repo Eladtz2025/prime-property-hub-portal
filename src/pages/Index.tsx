@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Dashboard } from '../components/Dashboard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,8 +26,78 @@ const Index = memo(() => {
     setShowAddPropertyModal(false);
   };
   
-  // No alerts yet - system is ready for first use
-  const alerts: Alert[] = [];
+  // Generate alerts from properties data
+  const alerts = useMemo(() => {
+    const alertsList: Alert[] = [];
+    const now = new Date();
+    
+    properties.forEach(property => {
+      if (property.leaseEndDate) {
+        const endDate = new Date(property.leaseEndDate);
+        const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+        
+        if (daysUntilEnd <= 60 && daysUntilEnd > 0) {
+          let priority: 'urgent' | 'high' | 'medium' = 'medium';
+          let message = '';
+          
+          if (daysUntilEnd <= 14) {
+            priority = 'urgent';
+            message = `חוזה מסתיים בעוד ${daysUntilEnd} ימים - דרושה פעולה מיידית!`;
+          } else if (daysUntilEnd <= 30) {
+            priority = 'high';
+            message = `חוזה מסתיים בעוד ${daysUntilEnd} ימים - יש להתחיל תיאום חידוש`;
+          } else {
+            priority = 'medium';
+            message = `חוזה מסתיים בעוד ${daysUntilEnd} ימים - תכנון מוקדם לחידוש`;
+          }
+          
+          alertsList.push({
+            id: `lease-${property.id}`,
+            type: 'lease_expiry',
+            priority,
+            message,
+            propertyAddress: property.address,
+            ownerName: property.ownerName,
+            tenantName: property.tenantName,
+            dueDate: property.leaseEndDate,
+            createdAt: now.toISOString()
+          });
+        }
+      }
+      
+      // Check for vacant properties
+      if (property.status === 'vacant') {
+        alertsList.push({
+          id: `vacant-${property.id}`,
+          type: 'vacancy',
+          priority: 'high',
+          message: 'נכס פנוי - דרושה השכרה',
+          propertyAddress: property.address,
+          ownerName: property.ownerName,
+          createdAt: now.toISOString()
+        });
+      }
+      
+      // Check for maintenance
+      if (property.status === 'maintenance') {
+        alertsList.push({
+          id: `maintenance-${property.id}`,
+          type: 'maintenance',
+          priority: 'medium',
+          message: 'נכס בתחזוקה - בדיקת התקדמות',
+          propertyAddress: property.address,
+          ownerName: property.ownerName,
+          tenantName: property.tenantName,
+          createdAt: now.toISOString()
+        });
+      }
+    });
+    
+    return alertsList.sort((a, b) => {
+      const priorityOrder = { urgent: 3, high: 2, medium: 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
+  }, [properties]);
 
   // Show login prompt for non-authenticated users
   if (!isAuthenticated) {

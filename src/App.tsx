@@ -7,10 +7,6 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
-import { Alerts } from './pages/Alerts';
-import { Messages } from './pages/Messages';
-import { Reports } from './pages/Reports';
-import { ContactQueueWrapper } from './pages/ContactQueueWrapper';
 import { UserManagement } from './pages/UserManagement';
 import { PropertyInvitations } from './pages/PropertyInvitations';
 import { AdminControl } from './pages/AdminControl';
@@ -67,46 +63,6 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute>
                     <Properties />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/contact-queue" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <ContactQueueWrapper />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/alerts" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Alerts />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/messages" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Messages />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/reports" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Reports />
                   </ProtectedRoute>
                 </Layout>
               } 
