@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -12,9 +10,9 @@ import {
   Clock, 
   MessageSquare, 
   Home,
-  Settings,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  LucideIcon
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,7 +87,7 @@ export const WhatsAppAutomations: React.FC = () => {
   };
 
   const getAutomationTitle = (key: string) => {
-    const titles = {
+    const titles: { [key: string]: string } = {
       leaseRenewal60Days: "תזכורת חידוש חוזה - 60 יום",
       leaseRenewal30Days: "תזכורת חידוש חוזה - 30 יום",
       leaseRenewal14Days: "התראה דחופה - 14 יום",
@@ -99,7 +97,7 @@ export const WhatsAppAutomations: React.FC = () => {
   };
 
   const getAutomationDescription = (key: string) => {
-    const descriptions = {
+    const descriptions: { [key: string]: string } = {
       leaseRenewal60Days: "שליחת הודעה אוטומטית 60 יום לפני סיום חוזה",
       leaseRenewal30Days: "שליחת הודעה אוטומטית 30 יום לפני סיום חוזה",
       leaseRenewal14Days: "התראה דחופה 14 יום לפני סיום חוזה",
@@ -108,8 +106,8 @@ export const WhatsAppAutomations: React.FC = () => {
     return descriptions[key] || "";
   };
 
-  const getAutomationIcon = (key: string) => {
-    const iconMap: { [key: string]: typeof Calendar } = {
+  const getAutomationIcon = (key: string): LucideIcon => {
+    const iconMap: { [key: string]: LucideIcon } = {
       leaseRenewal60Days: Calendar,
       leaseRenewal30Days: Clock,
       leaseRenewal14Days: AlertCircle,
@@ -155,50 +153,50 @@ export const WhatsAppAutomations: React.FC = () => {
                       <IconComponent className="h-4 w-4 md:h-5 md:w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base md:text-lg">{getAutomationTitle(key)}</CardTitle>
-                    <CardDescription className="mt-1 text-xs md:text-sm">
-                      {getAutomationDescription(key)}
-                    </CardDescription>
+                      <CardTitle className="text-base md:text-lg">{getAutomationTitle(key)}</CardTitle>
+                      <CardDescription className="mt-1 text-xs md:text-sm">
+                        {getAutomationDescription(key)}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-end md:self-auto">
+                    <Switch
+                      checked={automation.enabled}
+                      onCheckedChange={(checked) => handleToggleAutomation(key, checked)}
+                    />
+                    {automation.enabled && (
+                      <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 self-end md:self-auto">
-                  <Switch
-                    checked={automation.enabled}
-                    onCheckedChange={(checked) => handleToggleAutomation(key, checked)}
-                  />
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 pt-0">
+                <div className="space-y-3 md:space-y-4">
+                  <div>
+                    <Label className="text-xs md:text-sm font-medium mb-2">תבנית ההודעה</Label>
+                    <Textarea
+                      value={automation.message}
+                      onChange={(e) => setAutomations(prev => ({
+                        ...prev,
+                        [key]: { ...prev[key], message: e.target.value }
+                      }))}
+                      rows={6}
+                      className="mt-2 font-mono text-xs md:text-sm"
+                      disabled={!automation.enabled}
+                    />
+                    <div className="mt-2 text-[10px] md:text-xs text-muted-foreground">
+                      משתנים זמינים: {'{ownerName}'}, {'{address}'}, {'{leaseEndDate}'}, {'{agentName}'}, {'{agentPhone}'}
+                    </div>
+                  </div>
                   {automation.enabled && (
-                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                      <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <span className="text-xs md:text-sm text-green-700 dark:text-green-300">
+                        האוטומציה פעילה ותופעל אוטומטית
+                      </span>
+                    </div>
                   )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6 pt-0">
-              <div className="space-y-3 md:space-y-4">
-                <div>
-                  <Label className="text-xs md:text-sm font-medium mb-2">תבנית ההודעה</Label>
-                  <Textarea
-                    value={automation.message}
-                    onChange={(e) => setAutomations(prev => ({
-                      ...prev,
-                      [key]: { ...prev[key], message: e.target.value }
-                    }))}
-                    rows={6}
-                    className="mt-2 font-mono text-xs md:text-sm"
-                    disabled={!automation.enabled}
-                  />
-                  <div className="mt-2 text-[10px] md:text-xs text-muted-foreground">
-                    משתנים זמינים: {'{ownerName}'}, {'{address}'}, {'{leaseEndDate}'}, {'{agentName}'}, {'{agentPhone}'}
-                  </div>
-                </div>
-                {automation.enabled && (
-                  <div className="flex items-center gap-2 p-2 md:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
-                    <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                    <span className="text-xs md:text-sm text-green-700 dark:text-green-300">
-                      האוטומציה פעילה ותופעל אוטומטית
-                    </span>
-                  </div>
-                )}
-              </div>
               </CardContent>
             </Card>
           );
