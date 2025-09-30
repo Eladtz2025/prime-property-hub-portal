@@ -36,7 +36,7 @@ import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
-import { AdvancedSearchFilters } from '../components/AdvancedSearchFilters';
+
 import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { usePropertyData } from '../hooks/usePropertyData';
@@ -73,23 +73,9 @@ export const Properties: React.FC = memo(() => {
     filters,
     setFilters,
     filteredProperties: searchFilteredProperties,
-    savedSearches,
-    saveSearch,
-    loadSearch,
-    deleteSearch,
     clearFilters,
-    initializeFilters,
-    maxPrice,
-    maxOwnerCount,
     ownerPropertyCounts
   } = useAdvancedSearch(properties);
-
-  // Initialize filters when properties load
-  useEffect(() => {
-    if (properties.length > 0) {
-      initializeFilters();
-    }
-  }, [properties.length, initializeFilters]);
 
   const handleRefresh = async () => {
     await refetch();
@@ -328,19 +314,25 @@ export const Properties: React.FC = memo(() => {
           </div>
         </div>
 
-        {/* Advanced Search Filters */}
-        <AdvancedSearchFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          savedSearches={savedSearches}
-          onSaveSearch={saveSearch}
-          onLoadSearch={loadSearch}
-          onDeleteSearch={deleteSearch}
-          onClearFilters={clearFilters}
-          propertyCount={filteredAndSortedProperties.length}
-          maxPrice={maxPrice}
-          maxOwnerCount={maxOwnerCount}
-        />
+        {/* Simple Search Bar */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="חיפוש בנכסים... (כתובת, שם בעל נכס, טלפון וכו')"
+                value={filters.searchTerm}
+                onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                className="pr-10"
+              />
+            </div>
+            {filters.searchTerm && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                נמצאו {filteredAndSortedProperties.length} תוצאות
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Main Content */}
         <Card>
