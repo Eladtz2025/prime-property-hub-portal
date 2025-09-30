@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from '../types/property';
 import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { ContactOwnerModal } from './ContactOwnerModal';
-import { openWhatsApp } from '../utils/whatsappHelper';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
@@ -53,7 +53,8 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
   const handleWhatsApp = async () => {
     if (property.ownerPhone) {
       const message = `שלום ${property.ownerName},\nאני פונה אליך בנוגע לנכס שלך ברחוב ${property.address}.\nנוח לך לשוחח?`;
-      openWhatsApp(property.ownerPhone, message);
+      const whatsappUrl = `https://wa.me/972${property.ownerPhone.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
       
       // Log WhatsApp activity
       await logActivity({
