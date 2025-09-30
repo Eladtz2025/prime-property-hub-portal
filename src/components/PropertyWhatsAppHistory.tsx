@@ -41,6 +41,18 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
 
+  // Normalize phone number for comparison
+  const normalizePhone = (phone: string): string => {
+    if (!phone) return '';
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    // Convert 972XXXXXXXXX to 05XXXXXXXX or keep as is
+    if (digits.startsWith('972')) {
+      return '0' + digits.substring(3);
+    }
+    return digits;
+  };
+
   const fetchMessages = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -51,7 +63,7 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
 
       if (error) throw error;
 
-      // Group messages by phone number, but only show messages with valid phone numbers
+      // Group messages by normalized phone number
       const groupedByPhone: { [key: string]: WhatsAppMessage[] } = {};
       
       messages?.forEach((msg) => {
@@ -60,23 +72,25 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
           return;
         }
         
+        const normalizedPhone = normalizePhone(msg.phone);
+        
         // Only include messages that have a matching property owner
-        const hasMatchingProperty = properties.some(p => p.ownerPhone === msg.phone);
+        const hasMatchingProperty = properties.some(p => normalizePhone(p.ownerPhone) === normalizedPhone);
         if (!hasMatchingProperty) {
           return;
         }
         
-        if (!groupedByPhone[msg.phone]) {
-          groupedByPhone[msg.phone] = [];
+        if (!groupedByPhone[normalizedPhone]) {
+          groupedByPhone[normalizedPhone] = [];
         }
-        groupedByPhone[msg.phone].push(msg as WhatsAppMessage);
+        groupedByPhone[normalizedPhone].push(msg as WhatsAppMessage);
       });
 
       // Create conversation groups with owner info
       const conversationGroups: ConversationGroup[] = Object.entries(groupedByPhone)
-        .map(([phone, msgs]) => {
-          // Find owner info from properties
-          const ownerProperty = properties.find(p => p.ownerPhone === phone);
+        .map(([normalizedPhone, msgs]) => {
+          // Find owner info from properties using normalized phone
+          const ownerProperty = properties.find(p => normalizePhone(p.ownerPhone) === normalizedPhone);
           
           // Skip if no owner found
           if (!ownerProperty) {
@@ -86,11 +100,11 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
           const ownerName = ownerProperty.ownerName;
           
           // Get all properties for this owner
-          const ownerProperties = properties.filter(p => p.ownerPhone === phone);
+          const ownerProperties = properties.filter(p => normalizePhone(p.ownerPhone) === normalizedPhone);
           const propertyAddresses = ownerProperties.map(p => p.address);
 
           return {
-            phone,
+            phone: ownerProperty.ownerPhone, // Use the original format from property
             ownerName,
             messages: msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
             lastMessage: msgs[0],
