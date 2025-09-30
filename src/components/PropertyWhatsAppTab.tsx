@@ -108,9 +108,19 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
       for (const property of selectedRecipients) {
         if (!property.ownerPhone) continue;
 
+        // Extract first name only from owner name
+        const firstName = property.ownerName?.split(' ')[0] || property.ownerName || '';
+        
         const personalizedMessage = message
-          .replace('{{address}}', property.address)
-          .replace('{{ownerName}}', property.ownerName);
+          // Support {שם} and {{שם}} for first name only (more personal)
+          .replace(/\{שם\}/g, firstName)
+          .replace(/\{\{שם\}\}/g, firstName)
+          // Support {שם_מלא} and {{ownerName}} for full name
+          .replace(/\{שם_מלא\}/g, property.ownerName || '')
+          .replace('{{ownerName}}', property.ownerName || '')
+          // Support address placeholders
+          .replace(/\{כתובת\}/g, property.address)
+          .replace('{{address}}', property.address);
 
         const result = await sendWhatsAppMessage({
           phone: property.ownerPhone,
