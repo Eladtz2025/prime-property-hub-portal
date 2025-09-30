@@ -24,7 +24,6 @@ import {
   Calendar,
   ArrowUpDown,
   Map,
-  MessageSquare,
   Copy,
   Users,
   Plus
@@ -38,6 +37,7 @@ import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
+import { PropertyWhatsAppTab } from '../components/PropertyWhatsAppTab';
 
 import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
@@ -48,7 +48,6 @@ import { usePagination } from '../hooks/usePagination';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
-import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
@@ -58,7 +57,6 @@ export const Properties: React.FC = memo(() => {
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEditProperties = hasPermission('properties', 'update');
-  const { sendWhatsAppMessage } = useWhatsAppSender();
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -237,15 +235,6 @@ export const Properties: React.FC = memo(() => {
     setEditingProperty(null);
   };
 
-  const handleWhatsAppSingle = async (phone: string, property?: Property) => {
-    await sendWhatsAppMessage({
-      phone,
-      message: '', // Will use default message
-      propertyId: property?.id,
-      property
-    });
-  };
-
   if (isLoading) {
     return (
       <TooltipProvider>
@@ -315,10 +304,11 @@ export const Properties: React.FC = memo(() => {
         {/* Main Content */}
         <Card>
           <Tabs defaultValue={isMobile ? "cards" : "list"} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="list">רשימה</TabsTrigger>
               <TabsTrigger value="cards">כרטיסים</TabsTrigger>
               <TabsTrigger value="map">מפה</TabsTrigger>
+              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
             </TabsList>
 
             <TabsContent value="list" className="space-y-4">
@@ -481,37 +471,22 @@ export const Properties: React.FC = memo(() => {
                                     </TooltipTrigger>
                                     <TooltipContent>עריכת פרטי הנכס</TooltipContent>
                                   </Tooltip>
-                                )}
-                                
-                                {property.ownerPhone && canViewPhone && (
-                                  <>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleWhatsAppSingle(property.ownerPhone!, property)}
-                                        >
-                                          <MessageSquare className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>שלח הודעת וואטסאפ</TooltipContent>
-                                    </Tooltip>
-                                    
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                                        >
-                                          <Phone className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>התקשר לבעל הנכס</TooltipContent>
-                                    </Tooltip>
-                                  </>
-                                )}
+                                 )}
+                                 
+                                  {property.ownerPhone && canViewPhone && (
+                                   <Tooltip>
+                                       <TooltipTrigger asChild>
+                                         <Button
+                                           variant="ghost"
+                                           size="sm"
+                                           onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                         >
+                                           <Phone className="h-4 w-4" />
+                                         </Button>
+                                       </TooltipTrigger>
+                                       <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                                     </Tooltip>
+                                 )}
                                 
                                 {property.ownerEmail && (
                                   <Tooltip>
@@ -618,6 +593,13 @@ export const Properties: React.FC = memo(() => {
               <PropertyMap 
                 properties={filteredAndSortedProperties}
                 onPropertySelect={(property) => handleViewDetails(property.id)}
+              />
+            </TabsContent>
+
+            <TabsContent value="whatsapp">
+              <PropertyWhatsAppTab 
+                properties={filteredAndSortedProperties}
+                searchTerm={filters.searchTerm}
               />
             </TabsContent>
           </Tabs>

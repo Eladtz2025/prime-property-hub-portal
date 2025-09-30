@@ -3,13 +3,12 @@ import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Eye, User, Calendar, MessageSquare, Mail, Edit } from 'lucide-react';
+import { Phone, MapPin, Eye, User, Calendar, Mail } from 'lucide-react';
 import { Property } from '@/types/property';
 import { SearchHighlight } from './SearchHighlight';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
-import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
+import { canViewPhoneNumbers } from '@/utils/permissions';
 
 interface MobilePropertyCardProps {
   property: Property;
@@ -26,17 +25,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
 }) => {
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
-  const { sendWhatsAppMessage } = useWhatsAppSender();
 
-  const handleWhatsAppClick = async (phone: string, isOwner: boolean = true) => {
-    await sendWhatsAppMessage({
-      phone,
-      message: '', // Will use default message
-      propertyId: property.id,
-      property,
-      isOwner
-    });
-  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -89,24 +78,14 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
           </div>
           <div className="flex gap-1 flex-shrink-0">
             {property.ownerPhone && canViewPhone && (
-              <>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleWhatsAppClick(property.ownerPhone!)}
-                  className="h-9 w-9 p-0 flex-shrink-0"
-                >
-                  <MessageSquare className="h-3.5 w-3.5 text-green-600" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
-                  className="h-9 w-9 p-0 flex-shrink-0"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                </Button>
-              </>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                className="h-9 w-9 p-0 flex-shrink-0"
+              >
+                <Phone className="h-3.5 w-3.5" />
+              </Button>
             )}
             {property.ownerEmail && (
               <Button 
@@ -131,24 +110,14 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
               </span>
             </div>
             {property.tenantPhone && canViewPhone && (
-              <div className="flex gap-1 flex-shrink-0">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleWhatsAppClick(property.tenantPhone!, false)}
-                  className="h-9 w-9 p-0 flex-shrink-0"
-                >
-                  <MessageSquare className="h-3.5 w-3.5 text-green-600" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
-                  className="h-9 w-9 p-0 flex-shrink-0"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => window.open(`tel:${property.tenantPhone}`, '_self')}
+                className="h-9 w-9 p-0 flex-shrink-0"
+              >
+                <Phone className="h-3.5 w-3.5" />
+              </Button>
             )}
           </div>
         )}
