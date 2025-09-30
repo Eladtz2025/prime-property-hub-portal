@@ -21,37 +21,65 @@ export const ExcelImporter = () => {
     setStats(null);
 
     try {
+      console.log('📁 Starting file upload process...');
+      
       // Read the Excel file
       const data = await file.arrayBuffer();
+      console.log('📖 File read successfully, parsing Excel...');
+      
       const workbook = XLSX.read(data);
+      console.log(`📊 Found ${workbook.SheetNames.length} sheets:`, workbook.SheetNames);
       
       // Process all sheets
       let allData: any[] = [];
       workbook.SheetNames.forEach(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        console.log(`   - Sheet "${sheetName}": ${jsonData.length} rows`);
         allData = [...allData, ...jsonData];
       });
 
-      console.log(`Extracted ${allData.length} rows from Excel`);
+      console.log(`✅ Extracted ${allData.length} total rows from Excel`);
+      
+      if (allData.length === 0) {
+        throw new Error('קובץ האקסל ריק או לא מכיל נתונים');
+      }
 
       // Process the data
+      console.log('🔄 Processing properties...');
       const processedProperties = processExcelToUnified(allData);
-      console.log(`Processed ${processedProperties.length} properties`);
+      console.log(`✅ Processed ${processedProperties.length} valid properties`);
 
       if (processedProperties.length === 0) {
-        throw new Error('No valid properties found in the file');
+        throw new Error('לא נמצאו נכסים תקינים בקובץ - וודא שהקובץ מכיל עמודות: כתובת, בעל הנכס, טלפון');
       }
 
       // Send to Edge Function
+      console.log('📤 Sending data to Edge Function...');
+      toast.info(`מעבד ${processedProperties.length} נכסים...`);
+      
       const { data: result, error } = await supabase.functions.invoke('process-and-import-properties', {
         body: { properties: processedProperties }
       });
 
-      if (error) throw error;
+      console.log('📥 Edge Function response:', { result, error });
 
+      if (error) {
+        console.error('❌ Edge Function error:', error);
+        throw new Error(`שגיאה בשרת: ${error.message}`);
+      }
+
+      if (!result || !result.stats) {
+        throw new Error('תשובה לא תקינה מהשרת');
+      }
+
+      console.log('✅ Import completed successfully!', result.stats);
       setStats(result.stats);
-      toast.success(`Import completed! ${result.stats.successful} properties imported successfully`);
+      toast.success(`הייבוא הושלם! ${result.stats.successful} נכסים נוספו בהצלחה`);
+      
+      if (result.stats.failed > 0) {
+        toast.warning(`${result.stats.failed} נכסים נכשלו בייבוא`);
+      }
       
     } catch (error) {
       console.error('Error processing file:', error);
