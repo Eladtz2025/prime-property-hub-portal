@@ -109,14 +109,13 @@ export const WhatsAppAutomations: React.FC = () => {
   };
 
   const getAutomationIcon = (key: string) => {
-    const icons = {
+    const iconMap: { [key: string]: typeof Calendar } = {
       leaseRenewal60Days: Calendar,
       leaseRenewal30Days: Clock,
       leaseRenewal14Days: AlertCircle,
       vacancyAlert: Home
     };
-    const Icon = icons[key] || Zap;
-    return <Icon className="h-5 w-5" />;
+    return iconMap[key] || Zap;
   };
 
   const activeAutomationsCount = Object.values(automations).filter(a => a.enabled).length;
@@ -151,7 +150,7 @@ export const WhatsAppAutomations: React.FC = () => {
               <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-0">
                 <div className="flex items-start gap-2 md:gap-3 w-full md:w-auto">
                   <div className={`p-1.5 md:p-2 rounded-lg flex-shrink-0 ${automation.enabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    {getAutomationIcon(key)}
+                    {React.createElement(getAutomationIcon(key), { className: "h-4 w-4 md:h-5 md:w-5" })}
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base md:text-lg">{getAutomationTitle(key)}</CardTitle>
