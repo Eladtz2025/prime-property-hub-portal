@@ -20,6 +20,7 @@ import { OwnerFinancials } from './pages/OwnerFinancials';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
+import ImportData from './pages/ImportData';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -148,7 +149,17 @@ const AppContent: React.FC = () => {
               } 
             />
             <Route 
-              path="/owner-portal" 
+              path="/import-data" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportData />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/owner-portal"
               element={
                 <ProtectedRoute requiredRole="property_owner" requireApproval={false}>
                   <OwnerPortal />
