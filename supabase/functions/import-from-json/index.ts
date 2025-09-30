@@ -21,11 +21,11 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Download the JSON file from storage
-    console.log('📥 Downloading properties-unified-new.json from storage...');
+    console.log('📥 Downloading properties-unified-new_merged.json from storage...');
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from('data-import')
-      .download('properties-unified-new.json');
+      .download('properties-unified-new_merged.json');
 
     if (downloadError) {
       console.error('❌ Error downloading file:', downloadError);
@@ -34,19 +34,19 @@ Deno.serve(async (req) => {
 
     // Parse the JSON
     const jsonText = await fileData.text();
-    const jsonData = JSON.parse(jsonText);
+    const properties = JSON.parse(jsonText);
     
-    console.log(`📊 Found ${jsonData.properties.length} properties in file`);
+    console.log(`📊 Found ${properties.length} properties in file`);
 
     // Process each property
     const results = {
-      total: jsonData.properties.length,
+      total: properties.length,
       successful: 0,
       failed: 0,
       errors: [] as string[]
     };
 
-    for (const property of jsonData.properties) {
+    for (const property of properties) {
       try {
         // Transform property data to match database schema
         const dbProperty = {
