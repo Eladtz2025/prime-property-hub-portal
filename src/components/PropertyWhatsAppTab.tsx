@@ -5,7 +5,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Plus, X, User } from 'lucide-react';
+import { Send, Plus, X, User, Edit2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
@@ -30,6 +33,10 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
   const [message, setMessage] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editContent, setEditContent] = useState('');
   
   const { toast } = useToast();
   const { sendWhatsAppMessage } = useWhatsAppSender();
@@ -88,6 +95,49 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
 
   const removeRecipient = (propertyId: string) => {
     setSelectedRecipients(prev => prev.filter(r => r.id !== propertyId));
+  };
+
+  const openEditDialog = (template: MessageTemplate) => {
+    setEditingTemplate(template);
+    setEditName(template.name);
+    setEditContent(template.content);
+    setEditDialogOpen(true);
+  };
+
+  const saveTemplate = async () => {
+    if (!editingTemplate) return;
+
+    try {
+      const { error } = await supabase
+        .from('message_templates')
+        .update({
+          name: editName,
+          content: editContent,
+        })
+        .eq('id', editingTemplate.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "התבנית עודכנה בהצלחה",
+        description: `"${editName}" נשמר`,
+      });
+
+      await loadTemplates();
+      setEditDialogOpen(false);
+      
+      // If the edited template was selected, update the message
+      if (selectedTemplate === editingTemplate.id) {
+        setMessage(editContent);
+      }
+    } catch (error) {
+      console.error('Error updating template:', error);
+      toast({
+        title: "שגיאה בעדכון",
+        description: "לא הצלחנו לשמור את התבנית",
+        variant: "destructive"
+      });
+    }
   };
 
   const sendMessages = async () => {
@@ -175,11 +225,24 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
                   <SelectTrigger>
                     <SelectValue placeholder="בחר תבנית הודעה" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background z-50">
                     {templates.map(template => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
+                      <div key={template.id} className="flex items-center justify-between group px-2 hover:bg-accent rounded-sm">
+                        <SelectItem value={template.id} className="flex-1 cursor-pointer">
+                          {template.name}
+                        </SelectItem>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(template);
+                          }}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
@@ -333,6 +396,48 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Template Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>עריכת תבנית</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-name">שם התבנית</Label>
+              <Input
+                id="template-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="שם התבנית"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="template-content">תוכן התבנית</Label>
+              <Textarea
+                id="template-content"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="תוכן ההודעה..."
+                rows={8}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                טיפ: השתמש ב-{"{שם}"} לשם פרטי, {"{שם_מלא}"} לשם מלא, ו-{"{כתובת}"} לכתובת הנכס
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              ביטול
+            </Button>
+            <Button onClick={saveTemplate}>
+              שמור שינויים
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
