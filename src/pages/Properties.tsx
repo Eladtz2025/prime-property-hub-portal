@@ -306,24 +306,36 @@ export const Properties: React.FC = memo(() => {
         <Card>
           <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="list">רשימה</TabsTrigger>
-              <TabsTrigger value="automations">אוטומציות ווטסאפ</TabsTrigger>
-              <TabsTrigger value="history">היסטורית שיחות</TabsTrigger>
-              <TabsTrigger value="whatsapp">שליחת הודעות</TabsTrigger>
+              <TabsTrigger value="list" className="text-xs md:text-sm">
+                {isMobile ? "רשימה" : "רשימה"}
+              </TabsTrigger>
+              <TabsTrigger value="automations" className="text-xs md:text-sm">
+                {isMobile ? "אוטומציות" : "אוטומציות ווטסאפ"}
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-xs md:text-sm">
+                {isMobile ? "היסטוריה" : "היסטורית שיחות"}
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">
+                {isMobile ? "הודעות" : "שליחת הודעות"}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="list" className="space-y-4">
               <PullToRefresh onRefresh={handleRefresh}>
-                <Card>
-                  {isMobile ? (
-                    <div className="p-6 text-center text-muted-foreground bg-gradient-to-b from-blue-50 to-transparent rounded-lg border-2 border-dashed border-blue-200">
-                      <div className="max-w-xs mx-auto">
-                        <div className="text-4xl mb-3">📱</div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">תצוגה מותאמת למובייל</p>
-                        <p className="text-xs text-gray-500">עבור למצב כרטיסים לחוויה טובה יותר</p>
-                      </div>
-                    </div>
-                  ) : (
+                {isMobile ? (
+                  <div className="space-y-3 px-2">
+                    {paginatedProperties.map((property) => (
+                      <OptimizedMobilePropertyCard
+                        key={property.id}
+                        property={property}
+                        onViewDetails={handleViewDetails}
+                        ownerPropertyCount={getOwnerPropertyCount(property)}
+                        searchTerm={filters.searchTerm}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -509,8 +521,8 @@ export const Properties: React.FC = memo(() => {
                         ))}
                       </TableBody>
                     </Table>
-                  )}
-                </Card>
+                  </Card>
+                )}
                 
                 {/* Pagination for Table */}
                 {totalPages > 1 && (
