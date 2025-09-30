@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from '../types/property';
 import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { ContactOwnerModal } from './ContactOwnerModal';
-import { openWhatsApp } from '../utils/whatsappHelper';
+import { openWhatsApp, sendWhatsAppMessage } from '@/utils/whatsappHelper';
+import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
@@ -53,19 +54,34 @@ export const ContactOwnerCard: React.FC<ContactOwnerCardProps> = ({
   const handleWhatsApp = async () => {
     if (property.ownerPhone) {
       const message = `שלום ${property.ownerName},\nאני פונה אליך בנוגע לנכס שלך ברחוב ${property.address}.\nנוח לך לשוחח?`;
-      openWhatsApp(property.ownerPhone, message);
       
-      // Log WhatsApp activity
-      await logActivity({
-        action: 'whatsapp_sent',
-        resourceType: 'property',
-        resourceId: property.id,
-        details: {
-          propertyAddress: property.address,
-          ownerName: property.ownerName,
-          ownerPhone: property.ownerPhone
-        }
-      });
+      // Send via API instead of opening WhatsApp Web
+      const result = await sendWhatsAppMessage(property.ownerPhone, message, property.id);
+      
+      if (result.success) {
+        toast({
+          title: "הודעה נשלחה בהצלחה",
+          description: `הודעה נשלחה ל-${property.ownerName}`,
+        });
+        
+        // Log WhatsApp activity
+        await logActivity({
+          action: 'whatsapp_sent',
+          resourceType: 'property',
+          resourceId: property.id,
+          details: {
+            propertyAddress: property.address,
+            ownerName: property.ownerName,
+            ownerPhone: property.ownerPhone
+          }
+        });
+      } else {
+        toast({
+          title: "שגיאה בשליחת הודעה",
+          description: result.error || "אירעה שגיאה בשליחת ההודעה",
+          variant: "destructive"
+        });
+      }
     }
   };
 
