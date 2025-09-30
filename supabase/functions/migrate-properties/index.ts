@@ -39,6 +39,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Allow all users to access migration for now (temporary for migration)
+  console.log('Migration access granted (temporary)');
+  
+  // Log request details
+  console.log('Request method:', req.method);
+  console.log('Request URL:', req.url);
+
   try {
     console.log('Starting property migration...');
 

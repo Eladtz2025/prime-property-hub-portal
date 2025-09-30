@@ -8,6 +8,7 @@ import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MigrationTester } from '../components/MigrationTester';
 
 const Index = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -72,6 +73,11 @@ const Index = memo(() => {
 
   return (
     <>
+      {/* Migration Component - Show only if very few properties */}
+      {properties.length < 100 && (
+        <MigrationTester />
+      )}
+      
       <Dashboard 
         properties={properties} 
         stats={stats ? {
