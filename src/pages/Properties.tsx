@@ -275,42 +275,8 @@ export const Properties: React.FC = memo(() => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={filteredAndSortedProperties.length === 0}
-                    variant="outline"
-                    size={isMobile ? "sm" : "default"}
-                  >
-                    <Copy className="h-4 w-4 ml-2" />
-                    {isMobile ? 'ייצוא CSV' : 'ייצוא קובץ CSV'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>ייצא את כל הנכסים לקובץ CSV</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleCreateWhatsAppGroup}
-                    disabled={propertiesWithWhatsApp.length === 0}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    size={isMobile ? "sm" : "default"}
-                  >
-                    <Users className="h-4 w-4 ml-2" />
-                    {isMobile ? 'קבוצה' : 'צור קבוצה'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>צור קישור לקבוצת WhatsApp</TooltipContent>
-              </Tooltip>
-            </div>
-
-            <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              {startIndex}-{endIndex} מתוך {totalItems} נכסים
-            </div>
+          <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            {startIndex}-{endIndex} מתוך {totalItems} נכסים
           </div>
         </div>
 
