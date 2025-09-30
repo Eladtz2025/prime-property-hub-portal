@@ -4,7 +4,6 @@ import { Dashboard } from '../components/Dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
@@ -95,7 +94,6 @@ const Index = memo(() => {
         alerts={alerts} 
         onAddProperty={() => setShowAddPropertyModal(true)}
       />
-      
       <AddPropertyModal
         isOpen={showAddPropertyModal}
         onClose={() => setShowAddPropertyModal(false)}

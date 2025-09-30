@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
+import { Alerts } from './pages/Alerts';
 import { Messages } from './pages/Messages';
 import { Reports } from './pages/Reports';
 import { ContactQueueWrapper } from './pages/ContactQueueWrapper';
@@ -18,8 +19,6 @@ import { OwnerFinancials } from './pages/OwnerFinancials';
 import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
-import { WhatsAppCenter } from './pages/WhatsAppCenter';
-
 import { Login } from './pages/Login';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -83,17 +82,27 @@ const AppContent: React.FC = () => {
               element={
                 <Layout onLogout={signOut}>
                   <ProtectedRoute>
+                    <Alerts />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/messages" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
                     <Messages />
                   </ProtectedRoute>
                 </Layout>
               } 
             />
             <Route 
-              path="/whatsapp" 
+              path="/reports" 
               element={
                 <Layout onLogout={signOut}>
                   <ProtectedRoute>
-                    <WhatsAppCenter />
+                    <Reports />
                   </ProtectedRoute>
                 </Layout>
               } 

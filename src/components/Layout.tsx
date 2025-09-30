@@ -21,21 +21,23 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
     // Mobile layout without sidebar
     return (
       <div className="min-h-screen flex flex-col w-full bg-background">
-        <header className="h-12 border-b bg-card/95 backdrop-blur-sm flex items-center justify-between px-3 sticky top-0 z-50 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
+        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-50 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center hover:scale-105 transition-all duration-200 flex-shrink-0 shadow-primary">
+              <Building2 className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground text-base leading-tight">
+              <h1 className="font-bold text-foreground text-lg leading-tight">
                 PrimePropertyAI
               </h1>
+              <p className="text-xs text-muted-foreground">ניהול נכסים חכם</p>
             </div>
           </div>
           <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
         </header>
         <main className="flex-1 flex flex-col">
-          <div className="flex-1 p-2 pb-16 max-w-full overflow-x-hidden">
+          <div className="flex-1 p-4 pb-20"> {/* Added bottom padding for mobile nav */}
+            <BreadcrumbNav />
             {children}
           </div>
         </main>

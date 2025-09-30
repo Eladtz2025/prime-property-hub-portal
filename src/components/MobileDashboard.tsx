@@ -23,7 +23,6 @@ import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
-import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface MobileDashboardProps {
   properties: Property[];
@@ -40,7 +39,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 }) => {
   const { isMobile } = useMobileOptimization();
   const { profile } = useAuth();
-  const { trigger } = useHapticFeedback();
   
   // Extract user's name for greeting
   const getUserName = () => {
@@ -112,10 +110,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="space-y-3 p-2 pb-20 max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-hidden">
+      <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
         {/* Header with greeting */}
-        <div className="bg-gradient-primary rounded-xl p-4 text-white shadow-elevated overflow-hidden relative isolate">
+        <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
@@ -123,52 +121,48 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-start justify-between mb-3 gap-2">
+            <div className="flex items-start justify-between mb-4 gap-3">
               <div className="flex-1 min-w-0">
-                <h1 className="text-lg font-bold mb-1 truncate">
+                <h1 className="text-xl font-bold mb-1 truncate">
                   שלום{userName ? ` ${userName}` : ''}! 👋
                 </h1>
-                <p className="text-white/90 text-xs truncate">ברוך הבא למערכת ניהול הנכסים</p>
+                <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
               </div>
               <Button
-                onClick={() => {
-                  trigger('light');
-                  onAddProperty?.();
-                }}
+                onClick={onAddProperty}
                 size="sm"
-                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg transition-all duration-200 px-2 py-1.5 flex-shrink-0 text-xs"
-                aria-label="הוסף נכס חדש למערכת"
+                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-3 py-2 flex-shrink-0"
               >
-                <Plus className="h-3 w-3 ml-1" />
-                הוסף
+                <Plus className="h-4 w-4 ml-1" />
+                הוסף נכס
               </Button>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white/15 backdrop-blur-lg rounded-lg p-2.5 border border-white/10">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="bg-white/20 p-1 rounded flex-shrink-0">
-                    <Building className="h-3 w-3" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
+                    <Building className="h-4 w-4" />
                   </div>
-                  <span className="text-xs font-semibold truncate">סה״כ נכסים</span>
+                  <span className="text-sm font-semibold truncate">סה״כ נכסים</span>
                 </div>
-                <div className="text-lg font-bold number-display">{stats.totalProperties}</div>
+                <div className="text-xl font-bold number-display">{stats.totalProperties}</div>
               </div>
               
-              <div className="bg-white/15 backdrop-blur-lg rounded-lg p-2.5 border border-white/10">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="bg-white/20 p-1 rounded flex-shrink-0">
-                    <TrendingUp className="h-3 w-3" />
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
+                    <TrendingUp className="h-4 w-4" />
                   </div>
-                  <span className="text-xs font-semibold truncate">הכנסה חודשית</span>
+                  <span className="text-sm font-semibold truncate">הכנסה חודשית</span>
                   {!isEditingIncome && (
                     <Button
                       onClick={handleEditIncome}
                       size="sm"
                       variant="ghost"
-                      className="bg-white/10 hover:bg-white/20 text-white p-0.5 h-5 w-5 ml-auto flex-shrink-0"
+                      className="bg-white/10 hover:bg-white/20 text-white p-1 h-6 w-6 ml-auto flex-shrink-0"
                     >
-                      <Edit3 className="h-2.5 w-2.5" />
+                      <Edit3 className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
@@ -204,7 +198,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-sm font-bold number-display truncate">
+                  <div className="text-lg font-bold number-display truncate">
                     {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
                   </div>
                 )}
@@ -248,30 +242,30 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100/50">
-          <CardContent className="p-3">
+      <div className="grid grid-cols-2 gap-4 animate-fade-in">
+        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-green-700/80 mb-1 font-medium">תפוסים</p>
-                <p className="text-xl font-bold text-green-700">{stats.confirmedOccupied}</p>
+                <p className="text-sm text-green-700/80 mb-2 font-medium">תפוסים</p>
+                <p className="text-2xl font-bold text-green-700">{stats.confirmedOccupied}</p>
               </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 p-2 rounded-lg">
-                <CheckCircle className="h-4 w-4 text-white" />
+              <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl shadow-lg">
+                <CheckCircle className="h-5 w-5 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
-          <CardContent className="p-3">
+        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-orange-700/80 mb-1 font-medium">פנויים</p>
-                <p className="text-xl font-bold text-orange-700">{stats.confirmedVacant}</p>
+                <p className="text-sm text-orange-700/80 mb-2 font-medium">פנויים</p>
+                <p className="text-2xl font-bold text-orange-700">{stats.confirmedVacant}</p>
               </div>
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-lg">
-                <Users className="h-4 w-4 text-white" />
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
+                <Users className="h-5 w-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -279,37 +273,38 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       </div>
 
         {/* Recent Properties */}
-        <Card className="border border-border/50 bg-card overflow-hidden">
-          <CardHeader className="pb-2 px-3 pt-3">
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card overflow-hidden">
+          <CardHeader className="pb-3 px-4 pt-4">
             <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-sm font-bold text-foreground truncate">נכסים אחרונים</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10 flex-shrink-0 text-xs">
-                <Link to="/properties" className="font-semibold">הצג הכל ←</Link>
+              <CardTitle className="text-base font-bold text-foreground truncate">נכסים אחרונים</CardTitle>
+              <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10 flex-shrink-0">
+                <Link to="/properties" className="font-semibold text-sm">הצג הכל ←</Link>
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3">
+          <CardContent className="space-y-3 px-4 pb-4">
             {properties.slice(0, 3).map((property, index) => (
               <div 
                 key={property.id}
-                className="flex items-center justify-between p-2.5 bg-gradient-to-l from-muted/50 to-transparent rounded-lg border border-border/30 gap-2"
+                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg flex-shrink-0">
-                    <MapPin className="h-3 w-3 text-white" />
+                <div className="flex items-center gap-3 flex-1 min-w-0 flex-container-mobile">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-sm flex-shrink-0">
+                    <MapPin className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-xs text-foreground truncate">{property.address}</p>
-                    <p className="text-xs text-muted-foreground truncate">{property.ownerName}</p>
+                  <div className="flex-1 min-w-0 flex-container-mobile">
+                    <p className="font-semibold text-sm text-foreground truncate block">{property.address}</p>
+                    <p className="text-xs text-muted-foreground truncate block">{property.ownerName}</p>
                   </div>
                 </div>
                 <Badge 
-                  className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap px-1.5 py-0.5 ${
+                  className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap px-2 py-1 ${
                     property.status === 'occupied' 
-                      ? 'bg-green-100 text-green-700' 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-100' 
                       : property.status === 'vacant'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
@@ -320,31 +315,31 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         </Card>
 
         {/* Quick Actions */}
-        <Card className="border border-border/50 bg-card">
-          <CardHeader className="pb-2 px-3 pt-3">
-            <CardTitle className="text-sm font-bold text-foreground">פעולות מהירות</CardTitle>
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <CardTitle className="text-base font-bold text-foreground">פעולות מהירות</CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
-            <div className="grid grid-cols-2 gap-2">
+          <CardContent className="px-4 pb-4">
+            <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                size="sm" 
+                size="lg" 
                 asChild 
-                className="h-10 border border-primary/20 hover:border-primary/30 hover:bg-primary/5"
+                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
               >
-                <Link to="/properties" className="flex flex-col gap-0.5">
-                  <Building className="h-3.5 w-3.5" />
+                <Link to="/properties" className="flex flex-col gap-1">
+                  <Building className="h-4 w-4" />
                   <span className="text-xs font-semibold">כל הנכסים</span>
                 </Link>
               </Button>
               <Button 
                 variant="outline" 
-                size="sm" 
+                size="lg" 
                 asChild 
-                className="h-10 border border-primary/20 hover:border-primary/30 hover:bg-primary/5"
+                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
               >
-                <Link to="/alerts" className="flex flex-col gap-0.5">
-                  <Bell className="h-3.5 w-3.5" />
+                <Link to="/alerts" className="flex flex-col gap-1">
+                  <Bell className="h-4 w-4" />
                   <span className="text-xs font-semibold">התראות</span>
                 </Link>
               </Button>

@@ -27,21 +27,21 @@ serve(async (req) => {
       });
     }
 
-    const GREEN_API_INSTANCE_ID = Deno.env.get('GREEN_API_INSTANCE_ID');
-    const GREEN_API_TOKEN = Deno.env.get('GREEN_API_TOKEN');
+    const WHATSAPP_BUSINESS_API_TOKEN = Deno.env.get('WHATSAPP_BUSINESS_API_TOKEN');
+    const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
     
-    if (!GREEN_API_INSTANCE_ID || !GREEN_API_TOKEN) {
-      console.error('Missing Green-API credentials');
+    if (!WHATSAPP_BUSINESS_API_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+      console.error('Missing WhatsApp Business API credentials');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Green-API not configured' 
+        error: 'WhatsApp Business API not configured' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Format phone number to chatId format (972XXXXXXXXX@c.us)
+    // Format phone number (ensure it starts with country code)
     let formattedPhone = phone.replace(/\D/g, '');
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '972' + formattedPhone.substring(1);
@@ -49,18 +49,21 @@ serve(async (req) => {
     if (!formattedPhone.startsWith('972')) {
       formattedPhone = '972' + formattedPhone;
     }
-    const chatId = `${formattedPhone}@c.us`;
 
-    // Send message via Green-API
-    const greenApiUrl = `https://api.green-api.com/waInstance${GREEN_API_INSTANCE_ID}/sendMessage/${GREEN_API_TOKEN}`;
-    const whatsappResponse = await fetch(greenApiUrl, {
+    // Send message via WhatsApp Business API
+    const whatsappResponse = await fetch(`https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${WHATSAPP_BUSINESS_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chatId: chatId,
-        message: message
+        messaging_product: 'whatsapp',
+        to: formattedPhone,
+        type: 'text',
+        text: {
+          body: message
+        }
       }),
     });
 

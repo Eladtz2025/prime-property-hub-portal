@@ -26,13 +26,11 @@ import {
   Map,
   MessageSquare,
   Copy,
-  Users,
-  Plus
+  Users
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditModal } from '../components/PropertyEditModal';
-import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
@@ -44,7 +42,7 @@ import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { usePropertyData } from '../hooks/usePropertyData';
 import { useAdvancedSearch } from '../hooks/useAdvancedSearch';
 import { usePagination } from '../hooks/usePagination';
-
+import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
@@ -60,15 +58,12 @@ export const Properties: React.FC = memo(() => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   const { 
     properties, 
     isLoading, 
     updateProperty, 
-    addProperty,
     isUpdatingProperty,
-    isAddingProperty,
     refetch 
   } = usePropertyData();
 
@@ -144,7 +139,7 @@ export const Properties: React.FC = memo(() => {
   });
 
   const propertiesWithWhatsApp = useMemo(() => {
-    return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
+    return getPropertiesWithPhones(filteredAndSortedProperties);
   }, [filteredAndSortedProperties]);
 
   const handleExportCSV = () => {
@@ -251,17 +246,7 @@ export const Properties: React.FC = memo(() => {
   };
 
   const handleWhatsAppSingle = (phone: string) => {
-    const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleAddProperty = (newProperty: Property) => {
-    addProperty(newProperty);
-    setIsAddModalOpen(false);
-    toast({
-      title: "נכס נוסף בהצלחה!",
-      description: `הנכס ב${newProperty.address} נוסף למערכת`,
-    });
+    openWhatsApp(phone);
   };
 
   if (isLoading) {
@@ -298,15 +283,6 @@ export const Properties: React.FC = memo(() => {
         <div className="flex items-center justify-between">
           <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
           <div className="flex items-center gap-4">
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              className="btn-enhanced-contrast touch-target"
-              size="lg"
-              aria-label="הוסף נכס חדש"
-            >
-              <Plus className="h-5 w-5 ml-2" />
-              הוסף נכס חדש
-            </Button>
             <div className="flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -692,13 +668,6 @@ export const Properties: React.FC = memo(() => {
             onSave={handlePropertyUpdate}
           />
         )}
-        
-        {/* Add Property Modal */}
-        <AddPropertyModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onPropertyAdded={handleAddProperty}
-        />
       </div>
     </TooltipProvider>
   );

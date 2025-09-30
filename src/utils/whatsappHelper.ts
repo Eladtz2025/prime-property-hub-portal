@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { Property } from '../types/property';
 
 export const formatPhoneForWhatsApp = (phone: string): string => {
   // Remove all non-digit characters
@@ -18,30 +18,20 @@ export const formatPhoneForWhatsApp = (phone: string): string => {
   return cleanPhone;
 };
 
-export const sendWhatsAppMessage = async (phone: string, message: string, propertyId?: string): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-      body: {
-        phone,
-        message,
-        propertyId
-      }
-    });
+export const openWhatsApp = (phone: string, message?: string) => {
+  const formattedPhone = formatPhoneForWhatsApp(phone);
+  const encodedMessage = message ? encodeURIComponent(message) : '';
+  const whatsappUrl = `https://wa.me/${formattedPhone}${message ? `?text=${encodedMessage}` : ''}`;
+  window.open(whatsappUrl, '_blank');
+};
 
-    if (error) {
-      console.error('WhatsApp send error:', error);
-      return { success: false, error: error.message };
-    }
+export const replaceMessageVariables = (message: string, property: Property): string => {
+  return message
+    .replace(/{שם}/g, property.ownerName)
+    .replace(/{כתובת}/g, property.address)
+    .replace(/{חוזה}/g, property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : 'לא מוגדר');
+};
 
-    if (!data.success) {
-      console.error('WhatsApp API error:', data.error);
-      return { success: false, error: data.error };
-    }
-
-    console.log('WhatsApp message sent successfully:', data);
-    return { success: true };
-  } catch (error) {
-    console.error('Failed to send WhatsApp message:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
+export const getPropertiesWithPhones = (properties: Property[]): Property[] => {
+  return properties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
 };
