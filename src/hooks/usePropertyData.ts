@@ -1,5 +1,5 @@
-// Updated to use the unified JSON file as the single source of truth
-export { useUnifiedPropertyData as usePropertyData } from './useUnifiedPropertyData';
+// Updated to use Supabase as the single source of truth
+export { useSupabasePropertyData as usePropertyData } from './useSupabasePropertyData';
 
 // Re-export the stats function for compatibility
 import { useQuery } from '@tanstack/react-query';
