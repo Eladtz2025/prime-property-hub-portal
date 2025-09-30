@@ -1,5 +1,4 @@
 
-import { Property } from '../types/property';
 import { supabase } from '@/integrations/supabase/client';
 
 export const formatPhoneForWhatsApp = (phone: string): string => {
@@ -17,24 +16,6 @@ export const formatPhoneForWhatsApp = (phone: string): string => {
   }
   
   return cleanPhone;
-};
-
-export const openWhatsApp = (phone: string, message?: string) => {
-  const formattedPhone = formatPhoneForWhatsApp(phone);
-  const encodedMessage = message ? encodeURIComponent(message) : '';
-  const whatsappUrl = `https://wa.me/${formattedPhone}${message ? `?text=${encodedMessage}` : ''}`;
-  window.open(whatsappUrl, '_blank');
-};
-
-export const replaceMessageVariables = (message: string, property: Property): string => {
-  return message
-    .replace(/{שם}/g, property.ownerName)
-    .replace(/{כתובת}/g, property.address)
-    .replace(/{חוזה}/g, property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : 'לא מוגדר');
-};
-
-export const getPropertiesWithPhones = (properties: Property[]): Property[] => {
-  return properties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
 };
 
 export const sendWhatsAppMessage = async (phone: string, message: string, propertyId?: string): Promise<{ success: boolean; error?: string }> => {

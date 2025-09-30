@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, MapPin, Eye, User, Calendar, MessageSquare, Mail, Edit } from 'lucide-react';
 import { Property } from '@/types/property';
 import { SearchHighlight } from './SearchHighlight';
-import { openWhatsApp } from '@/utils/whatsappHelper';
+import { sendWhatsAppMessage } from '@/utils/whatsappHelper';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 
@@ -81,7 +81,10 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => openWhatsApp(property.ownerPhone!)}
+                  onClick={() => {
+                    const whatsappUrl = `https://wa.me/972${property.ownerPhone!.replace(/^0/, '')}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
                   className="h-9 w-9 p-0 flex-shrink-0"
                 >
                   <MessageSquare className="h-3.5 w-3.5 text-green-600" />
@@ -123,7 +126,10 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => openWhatsApp(property.tenantPhone!)}
+                  onClick={() => {
+                    const whatsappUrl = `https://wa.me/972${property.tenantPhone!.replace(/^0/, '')}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
                   className="h-9 w-9 p-0 flex-shrink-0"
                 >
                   <MessageSquare className="h-3.5 w-3.5 text-green-600" />

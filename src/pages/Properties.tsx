@@ -44,7 +44,7 @@ import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { usePropertyData } from '../hooks/usePropertyData';
 import { useAdvancedSearch } from '../hooks/useAdvancedSearch';
 import { usePagination } from '../hooks/usePagination';
-import { openWhatsApp, getPropertiesWithPhones } from '../utils/whatsappHelper';
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
@@ -144,7 +144,7 @@ export const Properties: React.FC = memo(() => {
   });
 
   const propertiesWithWhatsApp = useMemo(() => {
-    return getPropertiesWithPhones(filteredAndSortedProperties);
+    return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
   }, [filteredAndSortedProperties]);
 
   const handleExportCSV = () => {
@@ -251,7 +251,8 @@ export const Properties: React.FC = memo(() => {
   };
 
   const handleWhatsAppSingle = (phone: string) => {
-    openWhatsApp(phone);
+    const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleAddProperty = (newProperty: Property) => {

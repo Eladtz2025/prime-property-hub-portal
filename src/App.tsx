@@ -19,6 +19,7 @@ import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { WhatsAppCenter } from './pages/WhatsAppCenter';
+
 import { Login } from './pages/Login';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';

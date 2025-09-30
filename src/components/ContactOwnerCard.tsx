@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from '../types/property';
 import { Phone, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { ContactOwnerModal } from './ContactOwnerModal';
-import { openWhatsApp, sendWhatsAppMessage } from '@/utils/whatsappHelper';
+import { sendWhatsAppMessage } from '@/utils/whatsappHelper';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
