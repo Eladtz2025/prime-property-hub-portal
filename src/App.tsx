@@ -20,6 +20,7 @@ import { DataMigration } from './pages/DataMigration';
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
+import WhatsAppCenter from './pages/WhatsAppCenter';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DataProvider } from './components/DataProvider';
@@ -170,6 +171,16 @@ const AppContent: React.FC = () => {
             <Route 
               path="/login" 
               element={<Login />} 
+            />
+            <Route 
+              path="/whatsapp" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <WhatsAppCenter />
+                  </ProtectedRoute>
+                </Layout>
+              } 
             />
             <Route 
               path="/all-features" 

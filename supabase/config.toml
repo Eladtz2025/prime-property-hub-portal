@@ -1,1 +1,10 @@
 project_id = "jswumsdymlooeobrxict"
+
+[functions.whatsapp-send]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.whatsapp-status]
+verify_jwt = false

@@ -50,6 +50,53 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_sends: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          failed_sends: number | null
+          id: string
+          message: string
+          recipient_count: number
+          recipient_phones: string[]
+          sent_by: string
+          successful_sends: number | null
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          failed_sends?: number | null
+          id?: string
+          message: string
+          recipient_count: number
+          recipient_phones: string[]
+          sent_by: string
+          successful_sends?: number | null
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          failed_sends?: number | null
+          id?: string
+          message?: string
+          recipient_count?: number
+          recipient_phones?: string[]
+          sent_by?: string
+          successful_sends?: number | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_records: {
         Row: {
           amount: number
@@ -103,6 +150,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_templates: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -190,6 +267,7 @@ export type Database = {
           id: string
           is_approved: boolean
           last_login: string | null
+          phone: string | null
           role: string
           updated_at: string
         }
@@ -200,6 +278,7 @@ export type Database = {
           id: string
           is_approved?: boolean
           last_login?: string | null
+          phone?: string | null
           role?: string
           updated_at?: string
         }
@@ -210,6 +289,7 @@ export type Database = {
           id?: string
           is_approved?: boolean
           last_login?: string | null
+          phone?: string | null
           role?: string
           updated_at?: string
         }
@@ -566,6 +646,131 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_contacts: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          is_whatsapp_user: boolean | null
+          last_seen: string | null
+          name: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_whatsapp_user?: boolean | null
+          last_seen?: string | null
+          name?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_whatsapp_user?: boolean | null
+          last_seen?: string | null
+          name?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          api_source: string | null
+          chat_id: string | null
+          chat_type: string | null
+          contact_name: string | null
+          contact_type: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error_message: string | null
+          green_api_instance_id: string | null
+          group_name: string | null
+          id: string
+          message: string
+          message_type: string | null
+          phone: string
+          property_id: string | null
+          read_at: string | null
+          receipt_id: string | null
+          retry_count: number | null
+          sender_id: string | null
+          sender_name: string | null
+          status: string
+          timestamp: string | null
+          updated_at: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          api_source?: string | null
+          chat_id?: string | null
+          chat_type?: string | null
+          contact_name?: string | null
+          contact_type?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error_message?: string | null
+          green_api_instance_id?: string | null
+          group_name?: string | null
+          id?: string
+          message: string
+          message_type?: string | null
+          phone: string
+          property_id?: string | null
+          read_at?: string | null
+          receipt_id?: string | null
+          retry_count?: number | null
+          sender_id?: string | null
+          sender_name?: string | null
+          status?: string
+          timestamp?: string | null
+          updated_at?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          api_source?: string | null
+          chat_id?: string | null
+          chat_type?: string | null
+          contact_name?: string | null
+          contact_type?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error_message?: string | null
+          green_api_instance_id?: string | null
+          group_name?: string | null
+          id?: string
+          message?: string
+          message_type?: string | null
+          phone?: string
+          property_id?: string | null
+          read_at?: string | null
+          receipt_id?: string | null
+          retry_count?: number | null
+          sender_id?: string | null
+          sender_name?: string | null
+          status?: string
+          timestamp?: string | null
+          updated_at?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
