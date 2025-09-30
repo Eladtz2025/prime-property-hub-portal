@@ -58,8 +58,7 @@ Deno.serve(async (req) => {
           status: property.status || 'unknown',
           contact_status: 'not_contacted',
           contact_attempts: 0,
-          rooms: property.rooms,
-          monthly_rent: property.monthly_rent
+          rooms: property.rooms
         };
 
         // Insert into database
