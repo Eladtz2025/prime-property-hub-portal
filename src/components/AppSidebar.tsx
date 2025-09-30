@@ -38,7 +38,7 @@ const navigationItems = [
 
 // Admin-specific navigation items
 const adminItems = [
-  { title: 'העברת נתונים', url: '/data-migration', icon: Database, requiredRole: 'admin' },
+  { title: 'ייבוא מ-Storage', url: '/import-from-storage', icon: Database, requiredRole: 'admin' },
   { title: 'ניהול משתמשים', url: '/users', icon: Users, requiredRole: 'admin' },
   { title: 'הזמנות נכסים', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
   { title: 'מרכז בקרה', url: '/admin-control', icon: Settings, requiredRole: 'admin' },

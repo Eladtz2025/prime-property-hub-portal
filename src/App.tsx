@@ -21,6 +21,7 @@ import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
 import ImportData from './pages/ImportData';
+import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -154,6 +155,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <ImportData />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/import-from-storage" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportFromStorage />
                   </ProtectedRoute>
                 </Layout>
               } 
