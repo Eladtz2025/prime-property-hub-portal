@@ -16,8 +16,7 @@ import { PropertyInvitations } from './pages/PropertyInvitations';
 import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
-import { DataMigration } from './pages/DataMigration';
-import { DataConsolidation } from './pages/DataConsolidation';
+
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
@@ -29,8 +28,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
-// Trigger automatic data migration
-import './utils/runMigration';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, signOut } = useAuth();
@@ -128,26 +125,6 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminControl />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/data-migration" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <DataMigration />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/data-consolidation" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <DataConsolidation />
                   </ProtectedRoute>
                 </Layout>
               } 

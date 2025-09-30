@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "created_at": "2025-01-21T10:00:00.000Z",
+    "total_properties": 4250,
+    "source_breakdown": {
+      "main_file_records": 3728,
+      "owners_file_records": 522,
+      "total_before_dedup": 4250,
+      "duplicates_removed": 0
+    }
+  },
+  "properties": [
+    {
+      "address": "נחלת בנימין/בן יהודה",
+      "owner_name": "מומי",
+      "owner_phone": "0505765841",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "בן יהודה 190/167",
+      "owner_name": "ציון",
+      "owner_phone": "0522582225",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "זנגביל 24",
+      "owner_name": "מייק",
+      "owner_phone": "0544452189",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "בן יהודה 39 / הירקון 313",
+      "owner_name": "רונן",
+      "owner_phone": "0522539310",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "בן יהודה 107",
+      "owner_name": "שחר",
+      "owner_phone": "0547744439",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "זאן זורס",
+      "owner_name": "אהוד דיסקין",
+      "owner_phone": "013233519911",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "יורדי הסירה 26-28",
+      "owner_name": "איבון",
+      "owner_phone": "0544331043",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "בזל 45",
+      "owner_name": "איזבל",
+      "owner_phone": "0508666602",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "קיוסק בלוך",
+      "owner_name": "איזי",
+      "owner_phone": "035228488",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    },
+    {
+      "address": "הירקון השקט",
+      "owner_name": "איטה",
+      "owner_phone": "0545621831",
+      "tenant_name": "",
+      "tenant_phone": "",
+      "city": "תל אביב",
+      "notes": ""
+    }
+  ]
+}
