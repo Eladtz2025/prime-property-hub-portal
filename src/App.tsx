@@ -29,6 +29,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
+// Trigger automatic data migration
+import './utils/runMigration';
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, signOut } = useAuth();
 
