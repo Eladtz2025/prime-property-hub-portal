@@ -9,6 +9,7 @@ import { SearchHighlight } from './SearchHighlight';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 interface MobilePropertyCardProps {
   property: Property;
@@ -25,6 +26,17 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
 }) => {
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const { sendWhatsAppMessage } = useWhatsAppSender();
+
+  const handleWhatsAppClick = async (phone: string, isOwner: boolean = true) => {
+    await sendWhatsAppMessage({
+      phone,
+      message: '', // Will use default message
+      propertyId: property.id,
+      property,
+      isOwner
+    });
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -81,10 +93,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => {
-                    const whatsappUrl = `https://wa.me/972${property.ownerPhone!.replace(/^0/, '')}`;
-                    window.open(whatsappUrl, '_blank');
-                  }}
+                  onClick={() => handleWhatsAppClick(property.ownerPhone!)}
                   className="h-9 w-9 p-0 flex-shrink-0"
                 >
                   <MessageSquare className="h-3.5 w-3.5 text-green-600" />
@@ -126,10 +135,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => {
-                    const whatsappUrl = `https://wa.me/972${property.tenantPhone!.replace(/^0/, '')}`;
-                    window.open(whatsappUrl, '_blank');
-                  }}
+                  onClick={() => handleWhatsAppClick(property.tenantPhone!, false)}
                   className="h-9 w-9 p-0 flex-shrink-0"
                 >
                   <MessageSquare className="h-3.5 w-3.5 text-green-600" />

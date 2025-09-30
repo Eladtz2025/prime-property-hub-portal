@@ -46,6 +46,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
@@ -55,6 +56,7 @@ export const Properties: React.FC = memo(() => {
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEditProperties = hasPermission('properties', 'update');
+  const { sendWhatsAppMessage } = useWhatsAppSender();
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -245,11 +247,13 @@ export const Properties: React.FC = memo(() => {
     setEditingProperty(null);
   };
 
-  const handleWhatsAppSingle = (phone: string) => {
-    const formattedPhone = phone.replace(/\D/g, '');
-    const finalPhone = formattedPhone.startsWith('0') ? '972' + formattedPhone.substring(1) : formattedPhone;
-    const whatsappUrl = `https://wa.me/${finalPhone}`;
-    window.open(whatsappUrl, '_blank');
+  const handleWhatsAppSingle = async (phone: string, property?: Property) => {
+    await sendWhatsAppMessage({
+      phone,
+      message: '', // Will use default message
+      propertyId: property?.id,
+      property
+    });
   };
 
   if (isLoading) {
@@ -516,7 +520,7 @@ export const Properties: React.FC = memo(() => {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          onClick={() => handleWhatsAppSingle(property.ownerPhone!)}
+                                          onClick={() => handleWhatsAppSingle(property.ownerPhone!, property)}
                                         >
                                           <MessageSquare className="h-4 w-4 text-green-600" />
                                         </Button>
