@@ -177,6 +177,35 @@ export const useSupabasePropertyData = () => {
     }
   });
 
+  // Delete property mutation
+  const deletePropertyMutation = useMutation({
+    mutationFn: async (propertyId: string): Promise<void> => {
+      try {
+        log.info('Deleting property from Supabase', { id: propertyId });
+
+        const { error } = await supabase
+          .from('properties')
+          .delete()
+          .eq('id', propertyId);
+
+        if (error) {
+          log.error('Failed to delete property:', error);
+          throw error;
+        }
+      } catch (error) {
+        log.error('Failed to delete property:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supabase-properties'] });
+      log.info('Property deleted successfully');
+    },
+    onError: (error) => {
+      log.error('Property deletion failed:', error);
+    }
+  });
+
   return {
     // Query data
     properties: propertiesQuery.data ?? [],
@@ -187,8 +216,10 @@ export const useSupabasePropertyData = () => {
     // Mutations
     addProperty: addPropertyMutation.mutate,
     updateProperty: updatePropertyMutation.mutate,
+    deleteProperty: deletePropertyMutation.mutate,
     isAddingProperty: addPropertyMutation.isPending,
     isUpdatingProperty: updatePropertyMutation.isPending,
+    isDeletingProperty: deletePropertyMutation.isPending,
     
     // Utilities
     refetch: propertiesQuery.refetch,

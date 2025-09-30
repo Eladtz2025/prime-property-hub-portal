@@ -5,21 +5,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History } from 'lucide-react';
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, Trash2 } from 'lucide-react';
 import { Property } from '../types/property';
 import { processPropertiesData } from '../utils/dataProcessor';
 import { PropertyEditModal } from './PropertyEditModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { usePropertyData } from '@/hooks/usePropertyData';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const PropertyDetail: React.FC = React.memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const { deleteProperty, isDeletingProperty } = usePropertyData();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -71,6 +85,20 @@ export const PropertyDetail: React.FC = React.memo(() => {
     setIsEditModalOpen(false);
   };
 
+  const handleDelete = () => {
+    if (!property) return;
+    
+    deleteProperty(property.id, {
+      onSuccess: () => {
+        toast.success('הנכס נמחק בהצלחה');
+        navigate('/properties');
+      },
+      onError: (error: any) => {
+        toast.error('שגיאה במחיקת הנכס: ' + error.message);
+      }
+    });
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">טוען...</div>;
   }
@@ -112,6 +140,14 @@ export const PropertyDetail: React.FC = React.memo(() => {
           <Button onClick={() => setIsEditModalOpen(true)}>
             <Edit className="h-4 w-4 mr-2" />
             עריכה
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={isDeletingProperty}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            מחק
           </Button>
         </div>
       </div>
@@ -341,6 +377,33 @@ export const PropertyDetail: React.FC = React.memo(() => {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handlePropertyUpdate}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו תמחק את הנכס לצמיתות. לא ניתן לשחזר נכס שנמחק.
+              {property?.tenantName && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  <strong>שים לב:</strong> לנכס יש שוכר פעיל ({property.tenantName})
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeletingProperty}
+            >
+              {isDeletingProperty ? 'מוחק...' : 'מחק נכס'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
