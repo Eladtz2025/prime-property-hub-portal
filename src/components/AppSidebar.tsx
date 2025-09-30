@@ -28,7 +28,7 @@ const navigationItems = [
 // Admin-specific navigation items
 const adminItems = [
   { title: 'ניהול משתמשים', url: '/users', icon: Users, requiredRole: 'admin' },
-  { title: 'הזמנות נכסים', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
+  { title: 'הזמנת בעלי נכס', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
 ];
 
 export function AppSidebar() {
