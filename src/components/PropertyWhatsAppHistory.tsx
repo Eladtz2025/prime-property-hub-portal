@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +40,15 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
   const [conversations, setConversations] = useState<ConversationGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedPhone, conversations]);
 
   // Normalize phone number for comparison
   const normalizePhone = (phone: string): string => {
@@ -106,7 +115,7 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
           return {
             phone: ownerProperty.ownerPhone, // Use the original format from property
             ownerName,
-            messages: msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+            messages: msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()), // Oldest first for chat view
             lastMessage: msgs[0],
             propertyAddresses
           };
@@ -253,7 +262,7 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
         <CardContent>
           {selectedConversation ? (
             <ScrollArea className="h-[540px]">
-              <div className="space-y-4">
+              <div className="space-y-4 p-4">
                 {selectedConversation.messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -284,6 +293,7 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
                     </div>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
           ) : (
