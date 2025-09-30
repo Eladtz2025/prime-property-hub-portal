@@ -144,15 +144,17 @@ export const WhatsAppAutomations: React.FC = () => {
 
       {/* Automation Cards */}
       <div className="grid gap-3 md:gap-4">
-        {Object.entries(automations).map(([key, automation]) => (
-          <Card key={key} className={automation.enabled ? "border-primary/50 shadow-md" : ""}>
-            <CardHeader className="p-4 md:p-6">
-              <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-0">
-                <div className="flex items-start gap-2 md:gap-3 w-full md:w-auto">
-                  <div className={`p-1.5 md:p-2 rounded-lg flex-shrink-0 ${automation.enabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    {React.createElement(getAutomationIcon(key), { className: "h-4 w-4 md:h-5 md:w-5" })}
-                  </div>
-                  <div className="flex-1 min-w-0">
+        {Object.entries(automations).map(([key, automation]) => {
+          const IconComponent = getAutomationIcon(key);
+          return (
+            <Card key={key} className={automation.enabled ? "border-primary/50 shadow-md" : ""}>
+              <CardHeader className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-0">
+                  <div className="flex items-start gap-2 md:gap-3 w-full md:w-auto">
+                    <div className={`p-1.5 md:p-2 rounded-lg flex-shrink-0 ${automation.enabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <IconComponent className="h-4 w-4 md:h-5 md:w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
                     <CardTitle className="text-base md:text-lg">{getAutomationTitle(key)}</CardTitle>
                     <CardDescription className="mt-1 text-xs md:text-sm">
                       {getAutomationDescription(key)}
@@ -197,9 +199,10 @@ export const WhatsAppAutomations: React.FC = () => {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Info Box */}
