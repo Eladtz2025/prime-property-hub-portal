@@ -38,6 +38,7 @@ import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
 import { PropertyWhatsAppTab } from '../components/PropertyWhatsAppTab';
+import { WhatsAppAutomations } from '../components/WhatsAppAutomations';
 
 import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
@@ -303,10 +304,10 @@ export const Properties: React.FC = memo(() => {
 
         {/* Main Content */}
         <Card>
-          <Tabs defaultValue={isMobile ? "cards" : "list"} className="w-full">
+          <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="list">רשימה</TabsTrigger>
-              <TabsTrigger value="cards">כרטיסים</TabsTrigger>
+              <TabsTrigger value="automations">אוטומציות ווטסאפ</TabsTrigger>
               <TabsTrigger value="history">היסטורית שיחות</TabsTrigger>
               <TabsTrigger value="whatsapp">שליחת הודעות</TabsTrigger>
             </TabsList>
@@ -538,55 +539,8 @@ export const Properties: React.FC = memo(() => {
               </PullToRefresh>
             </TabsContent>
 
-            <TabsContent value="cards" className="space-y-4">
-              <PullToRefresh onRefresh={handleRefresh}>
-                <div className="space-y-4 pb-4">
-                  {paginatedProperties.map((property) => (
-                    <OptimizedMobilePropertyCard
-                      key={property.id}
-                      property={property}
-                      onViewDetails={handleViewDetails}
-                      ownerPropertyCount={getOwnerPropertyCount(property)}
-                      searchTerm={filters.searchTerm}
-                    />
-                  ))}
-                  
-                  {paginatedProperties.length === 0 && (
-                    <Card className="p-8">
-                      <div className="text-center text-muted-foreground">
-                        <div className="text-4xl mb-4">🔍</div>
-                        <h3 className="text-lg font-semibold mb-2">לא נמצאו נכסים</h3>
-                        <p className="text-sm">נסה לשנות את הפילטרים או לבטל את החיפוש</p>
-                      </div>
-                    </Card>
-                  )}
-                </div>
-                
-                {/* Pagination for Cards */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToPreviousPage}
-                      disabled={!canGoPrevious}
-                    >
-                      הקודם
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      עמוד {currentPage} מתוך {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToNextPage}
-                      disabled={!canGoNext}
-                    >
-                      הבא
-                    </Button>
-                  </div>
-                )}
-              </PullToRefresh>
+            <TabsContent value="automations" className="space-y-4">
+              <WhatsAppAutomations />
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
