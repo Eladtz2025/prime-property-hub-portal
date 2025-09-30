@@ -204,22 +204,30 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         />
       </div>
 
-      {/* High Priority Alerts */}
-      {highPriorityAlerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              התראות בעדיפות גבוהה
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {highPriorityAlerts.slice(0, 5).map((alert) => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {/* Alerts Section - Always Visible */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            התראות ומעקב
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {alerts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <p>אין התראות פעילות</p>
+              <p className="text-sm mt-2">כל הנכסים תקינים</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {alerts.map((alert) => (
+                <AlertCard key={alert.id} alert={alert} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Properties Overview */}
       <Card>
