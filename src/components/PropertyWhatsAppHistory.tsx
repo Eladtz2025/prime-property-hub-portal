@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,11 +41,7 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [properties]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: messages, error } = await supabase
@@ -55,10 +51,21 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
 
       if (error) throw error;
 
-      // Group messages by phone number
+      // Group messages by phone number, but only show messages with valid phone numbers
       const groupedByPhone: { [key: string]: WhatsAppMessage[] } = {};
       
       messages?.forEach((msg) => {
+        // Skip group messages and messages without proper phone numbers
+        if (msg.chat_type === 'group' || !msg.phone || msg.phone.includes('@g.us')) {
+          return;
+        }
+        
+        // Only include messages that have a matching property owner
+        const hasMatchingProperty = properties.some(p => p.ownerPhone === msg.phone);
+        if (!hasMatchingProperty) {
+          return;
+        }
+        
         if (!groupedByPhone[msg.phone]) {
           groupedByPhone[msg.phone] = [];
         }
@@ -66,23 +73,31 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
       });
 
       // Create conversation groups with owner info
-      const conversationGroups: ConversationGroup[] = Object.entries(groupedByPhone).map(([phone, msgs]) => {
-        // Find owner info from properties
-        const ownerProperty = properties.find(p => p.ownerPhone === phone);
-        const ownerName = ownerProperty?.ownerName || msgs[0]?.contact_name || phone;
-        
-        // Get all properties for this owner
-        const ownerProperties = properties.filter(p => p.ownerPhone === phone);
-        const propertyAddresses = ownerProperties.map(p => p.address);
+      const conversationGroups: ConversationGroup[] = Object.entries(groupedByPhone)
+        .map(([phone, msgs]) => {
+          // Find owner info from properties
+          const ownerProperty = properties.find(p => p.ownerPhone === phone);
+          
+          // Skip if no owner found
+          if (!ownerProperty) {
+            return null;
+          }
+          
+          const ownerName = ownerProperty.ownerName;
+          
+          // Get all properties for this owner
+          const ownerProperties = properties.filter(p => p.ownerPhone === phone);
+          const propertyAddresses = ownerProperties.map(p => p.address);
 
-        return {
-          phone,
-          ownerName,
-          messages: msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-          lastMessage: msgs[0],
-          propertyAddresses
-        };
-      });
+          return {
+            phone,
+            ownerName,
+            messages: msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+            lastMessage: msgs[0],
+            propertyAddresses
+          };
+        })
+        .filter((group): group is ConversationGroup => group !== null);
 
       // Sort by last message time
       conversationGroups.sort((a, b) => 
@@ -95,7 +110,13 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [properties]);
+
+  useEffect(() => {
+    if (properties.length > 0) {
+      fetchMessages();
+    }
+  }, [properties, fetchMessages]);
 
   const getDirectionColor = (direction: string) => {
     return direction === 'outbound' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
