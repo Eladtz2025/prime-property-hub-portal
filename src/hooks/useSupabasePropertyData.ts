@@ -6,14 +6,14 @@ import { logger } from '@/utils/logger';
 const log = logger.component('useSupabasePropertyData');
 
 // Transform Supabase data to Property interface
-function transformSupabaseProperty(dbProperty: any, owner?: any, tenant?: any): Property {
+function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
   return {
     id: dbProperty.id,
     address: dbProperty.address,
     city: dbProperty.city,
-    ownerName: owner?.full_name || 'Unknown Owner',
-    ownerPhone: owner?.phone || undefined,
-    ownerEmail: owner?.email || undefined,
+    ownerName: dbProperty.owner_name || 'Unknown Owner',
+    ownerPhone: dbProperty.owner_phone || undefined,
+    ownerEmail: undefined, // Not stored in properties table yet
     tenantName: tenant?.name || undefined,
     tenantPhone: tenant?.phone || undefined,
     tenantEmail: tenant?.email || undefined,
@@ -37,26 +37,21 @@ function transformSupabaseProperty(dbProperty: any, owner?: any, tenant?: any): 
 export const useSupabasePropertyData = () => {
   const queryClient = useQueryClient();
 
-  // Fetch all properties with their owners and tenants
+  // Fetch all properties with their tenants
   const propertiesQuery = useQuery({
     queryKey: ['supabase-properties'],
     queryFn: async (): Promise<Property[]> => {
       try {
         log.info('Loading properties from Supabase');
 
-        // Get properties with owner relationships
-        const { data: propertyOwnerships, error: ownershipError } = await supabase
-          .from('property_owners')
-          .select(`
-            property_id,
-            ownership_percentage,
-            properties!inner(*),
-            profiles!inner(*)
-          `);
+        // Get all properties (owner data is now stored directly in properties table)
+        const { data: properties, error: propertiesError } = await supabase
+          .from('properties')
+          .select('*');
 
-        if (ownershipError) {
-          log.error('Failed to load property ownerships:', ownershipError);
-          throw ownershipError;
+        if (propertiesError) {
+          log.error('Failed to load properties:', propertiesError);
+          throw propertiesError;
         }
 
         // Get tenants for properties
@@ -71,24 +66,15 @@ export const useSupabasePropertyData = () => {
         }
 
         // Transform and combine data
-        const properties: Property[] = [];
-        const processedProperties = new Set<string>();
+        const transformedProperties: Property[] = [];
 
-        for (const ownership of propertyOwnerships || []) {
-          const propertyId = ownership.property_id;
-          
-          if (processedProperties.has(propertyId)) continue;
-          processedProperties.add(propertyId);
-
-          const property = ownership.properties;
-          const owner = ownership.profiles;
-          const tenant = tenants?.find(t => t.property_id === propertyId);
-
-          properties.push(transformSupabaseProperty(property, owner, tenant));
+        for (const property of properties || []) {
+          const tenant = tenants?.find(t => t.property_id === property.id);
+          transformedProperties.push(transformSupabaseProperty(property, tenant));
         }
 
-        log.info(`Successfully loaded ${properties.length} properties from Supabase`);
-        return properties;
+        log.info(`Successfully loaded ${transformedProperties.length} properties from Supabase`);
+        return transformedProperties;
 
       } catch (error) {
         log.error('Failed to load properties from Supabase:', error);
@@ -110,6 +96,8 @@ export const useSupabasePropertyData = () => {
           .update({
             address: updatedProperty.address,
             city: updatedProperty.city,
+            owner_name: updatedProperty.ownerName,
+            owner_phone: updatedProperty.ownerPhone,
             status: updatedProperty.status,
             contact_status: updatedProperty.contactStatus,
             contact_attempts: updatedProperty.contactAttempts,
@@ -151,13 +139,15 @@ export const useSupabasePropertyData = () => {
 
         const propertyId = crypto.randomUUID();
         
-        // Insert property
+        // Insert property with owner data
         const { error: propertyError } = await supabase
           .from('properties')
           .insert({
             id: propertyId,
             address: newProperty.address,
             city: newProperty.city,
+            owner_name: newProperty.ownerName,
+            owner_phone: newProperty.ownerPhone,
             status: newProperty.status,
             contact_status: newProperty.contactStatus,
             contact_attempts: newProperty.contactAttempts,
@@ -170,39 +160,6 @@ export const useSupabasePropertyData = () => {
         if (propertyError) {
           log.error('Failed to insert property:', propertyError);
           throw propertyError;
-        }
-
-        // Create owner profile if needed and link to property
-        if (newProperty.ownerName) {
-          const ownerId = crypto.randomUUID();
-          
-          const { error: ownerError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: ownerId,
-              email: newProperty.ownerEmail || `${newProperty.ownerName.replace(/\s+/g, '').toLowerCase()}@example.com`,
-              full_name: newProperty.ownerName,
-              phone: newProperty.ownerPhone,
-              role: 'property_owner',
-              is_approved: true,
-            }, { onConflict: 'email' });
-
-          if (ownerError) {
-            log.warn('Failed to create owner profile, continuing:', ownerError);
-          }
-
-          // Link property to owner
-          const { error: linkError } = await supabase
-            .from('property_owners')
-            .insert({
-              property_id: propertyId,
-              owner_id: ownerId,
-              ownership_percentage: 100,
-            });
-
-          if (linkError) {
-            log.error('Failed to link property to owner:', linkError);
-          }
         }
 
         return { ...newProperty, id: propertyId };

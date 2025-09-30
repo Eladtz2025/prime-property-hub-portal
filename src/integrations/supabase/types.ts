@@ -309,6 +309,8 @@ export type Database = {
           id: string
           last_contact_date: string | null
           notes: string | null
+          owner_name: string | null
+          owner_phone: string | null
           property_size: number | null
           renovation_costs: number | null
           rooms: number | null
@@ -328,6 +330,8 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           property_size?: number | null
           renovation_costs?: number | null
           rooms?: number | null
@@ -347,6 +351,8 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           property_size?: number | null
           renovation_costs?: number | null
           rooms?: number | null

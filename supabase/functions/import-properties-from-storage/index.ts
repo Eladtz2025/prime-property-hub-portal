@@ -55,10 +55,10 @@ serve(async (req) => {
     console.log(`Loaded ${data.properties.length} properties from file`);
     console.log('Metadata:', data.metadata);
 
-    // Clear existing data in the correct order (respecting foreign key constraints)
+    // Clear existing data
     console.log('Clearing existing data...');
     
-    // Delete property_owners first (has foreign keys to properties and profiles)
+    // Delete property_owners first (has foreign keys to properties)
     const { error: clearOwnersError } = await supabase
       .from('property_owners')
       .delete()
@@ -76,16 +76,6 @@ serve(async (req) => {
 
     if (clearPropertiesError) {
       console.error('Error clearing properties:', clearPropertiesError);
-    }
-
-    // Delete profiles (except admin users)
-    const { error: clearProfilesError } = await supabase
-      .from('profiles')
-      .delete()
-      .not('role', 'in', '(super_admin,admin)');
-
-    if (clearProfilesError) {
-      console.error('Error clearing profiles:', clearProfilesError);
     }
 
     console.log('Existing data cleared successfully');
@@ -113,70 +103,34 @@ serve(async (req) => {
 
     // Process properties in batches
     const batchSize = 100;
-    const ownerPhoneToIdMap = new Map<string, string>();
     let totalProcessed = 0;
 
     for (let i = 0; i < data.properties.length; i += batchSize) {
       const batch = data.properties.slice(i, i + batchSize);
       console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(data.properties.length / batchSize)}`);
 
-      // Create owner profiles for this batch
-      const newOwners: any[] = [];
+      // Create property records with owner information directly
       const propertiesToInsert: any[] = [];
-      const ownershipRecords: any[] = [];
 
       for (const property of batch) {
         const cleanOwnerPhone = cleanPhoneNumber(property.owner_phone);
         
-        if (cleanOwnerPhone && !ownerPhoneToIdMap.has(cleanOwnerPhone)) {
-          const ownerId = crypto.randomUUID();
-          ownerPhoneToIdMap.set(cleanOwnerPhone, ownerId);
-          
-          newOwners.push({
-            id: ownerId,
-            email: `${cleanOwnerPhone}@temp.com`,
-            full_name: property.owner_name || 'Unknown Owner',
-            phone: cleanOwnerPhone,
-            role: 'property_owner',
-            is_approved: true
-          });
-        }
-
-        // Create property record
+        // Create property record with owner data
         const propertyId = crypto.randomUUID();
         propertiesToInsert.push({
           id: propertyId,
           address: property.address,
           city: property.city,
+          owner_name: property.owner_name || 'Unknown Owner',
+          owner_phone: cleanOwnerPhone,
           notes: property.notes || '',
           status: 'unknown',
           contact_status: 'not_contacted',
           contact_attempts: 0
         });
-
-        // Create ownership record if owner has valid phone
-        if (cleanOwnerPhone && ownerPhoneToIdMap.has(cleanOwnerPhone)) {
-          ownershipRecords.push({
-            property_id: propertyId,
-            owner_id: ownerPhoneToIdMap.get(cleanOwnerPhone),
-            ownership_percentage: 100
-          });
-        }
       }
 
-      // Insert new owner profiles
-      if (newOwners.length > 0) {
-        const { error: profilesError } = await supabase
-          .from('profiles')
-          .insert(newOwners);
-
-        if (profilesError) {
-          console.error('Error inserting profiles:', profilesError);
-          throw profilesError;
-        }
-      }
-
-      // Insert properties
+      // Insert properties with owner data
       const { error: propertiesError } = await supabase
         .from('properties')
         .insert(propertiesToInsert);
@@ -184,18 +138,6 @@ serve(async (req) => {
       if (propertiesError) {
         console.error('Error inserting properties:', propertiesError);
         throw propertiesError;
-      }
-
-      // Insert ownership records
-      if (ownershipRecords.length > 0) {
-        const { error: ownershipError } = await supabase
-          .from('property_owners')
-          .insert(ownershipRecords);
-
-        if (ownershipError) {
-          console.error('Error inserting property ownership:', ownershipError);
-          throw ownershipError;
-        }
       }
 
       totalProcessed += batch.length;
@@ -207,17 +149,8 @@ serve(async (req) => {
       .from('properties')
       .select('*', { count: 'exact', head: true });
 
-    const { count: finalOwnersCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'property_owner');
-
-    const { count: finalOwnershipCount } = await supabase
-      .from('property_owners')
-      .select('*', { count: 'exact', head: true });
-
     console.log('Import completed successfully!');
-    console.log(`Final counts: ${finalPropertiesCount} properties, ${finalOwnersCount} owners, ${finalOwnershipCount} ownership records`);
+    console.log(`Final counts: ${finalPropertiesCount} properties with owner data`);
 
     return new Response(
       JSON.stringify({
@@ -225,8 +158,6 @@ serve(async (req) => {
         message: 'Properties imported successfully from storage',
         statistics: {
           properties_imported: finalPropertiesCount,
-          owners_created: finalOwnersCount,
-          ownership_records: finalOwnershipCount,
           total_processed: totalProcessed
         }
       }),
