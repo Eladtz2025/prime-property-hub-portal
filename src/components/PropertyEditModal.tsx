@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Property, PropertyImage } from '../types/property';
-import { savePropertyToStorage } from '../utils/propertyStorage';
 import { ImageUpload } from './ImageUpload';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { usePropertyData } from '@/hooks/usePropertyData';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -28,11 +28,11 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   onSave
 }) => {
   const [formData, setFormData] = useState<Property>(property);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
+  const { updateProperty, isUpdatingProperty } = usePropertyData();
 
   // If user can't edit, don't show the modal
   if (!canEdit) {
@@ -59,27 +59,24 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     }));
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      await savePropertyToStorage(formData);
-      
-      toast({
-        title: "הנכס עודכן בהצלחה",
-        description: "השינויים נשמרו",
-      });
-      
-      onSave(formData);
-    } catch (error) {
-      console.error('Error saving property:', error);
-      toast({
-        title: "שגיאה בשמירה",
-        description: "לא הצלחנו לשמור את השינויים",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleSave = () => {
+    updateProperty(formData, {
+      onSuccess: () => {
+        toast({
+          title: "הנכס עודכן בהצלחה",
+          description: "השינויים נשמרו במערכת",
+        });
+        onSave(formData);
+        onClose();
+      },
+      onError: (error: any) => {
+        toast({
+          title: "שגיאה בעדכון הנכס",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   return (
@@ -157,6 +154,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   <Input
                     id="rooms"
                     type="number"
+                    step="0.5"
                     value={formData.rooms || ''}
                     onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
                   />
@@ -291,8 +289,8 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             ביטול
           </Button>
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? 'שומר...' : 'שמור'}
+          <Button onClick={handleSave} disabled={isUpdatingProperty}>
+            {isUpdatingProperty ? 'שומר...' : 'שמור'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,37 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History } from 'lucide-react';
 import { Property } from '../types/property';
-import { processPropertiesData } from '../utils/dataProcessor';
 import { PropertyEditModal } from './PropertyEditModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { usePropertyData } from '@/hooks/usePropertyData';
 
 export const PropertyDetail: React.FC = React.memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { properties, isLoading } = usePropertyData();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  useEffect(() => {
-    const loadProperty = async () => {
-      if (!id) return;
-      
-      try {
-        const properties = await processPropertiesData();
-        const foundProperty = properties.find(p => p.id === id);
-        setProperty(foundProperty || null);
-      } catch (error) {
-        console.error('Error loading property:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProperty();
-  }, [id]);
+  const property = properties.find(p => p.id === id) || null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -67,11 +50,10 @@ export const PropertyDetail: React.FC = React.memo(() => {
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
-    setProperty(updatedProperty);
     setIsEditModalOpen(false);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex justify-center items-center h-64">טוען...</div>;
   }
 

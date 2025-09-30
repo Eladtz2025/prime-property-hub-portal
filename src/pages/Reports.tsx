@@ -1,23 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Download, Calendar, DollarSign, Building, MapPin } from 'lucide-react';
-import { processPropertiesData } from '../utils/dataProcessor';
-import { Property } from '../types/property';
+import { TrendingUp, Calendar, DollarSign, Building } from 'lucide-react';
+import { usePropertyData } from '@/hooks/usePropertyData';
 
 export const Reports: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const loadData = async () => {
-      const data = await processPropertiesData();
-      setProperties(data);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
+  const { properties, isLoading } = usePropertyData();
 
   // Analytics calculations
   const analytics = useMemo(() => {
@@ -35,7 +22,7 @@ export const Reports: React.FC = () => {
     };
   }, [properties]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <h2 className="text-3xl font-bold text-foreground">דוחות ותובנות</h2>
