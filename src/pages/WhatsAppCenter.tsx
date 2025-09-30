@@ -51,25 +51,45 @@ export const WhatsAppCenter: React.FC = () => {
 
   const loadProperties = async () => {
     try {
-      const { data, error } = await supabase
+      // Load properties with owner information from database
+      const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
-        .select('id, address, city')
-        .order('address');
+        .select(`
+          id,
+          address,
+          city,
+          property_owners!inner (
+            owner_id,
+            profiles!inner (
+              full_name,
+              phone
+            )
+          )
+        `)
+        .not('property_owners.profiles.phone', 'is', null);
 
-      if (error) throw error;
+      if (propertiesError) {
+        throw propertiesError;
+      }
+
+      // Transform the data to match our interface
+      const transformedProperties = propertiesData?.map(property => ({
+        id: property.id,
+        address: property.address,
+        city: property.city,
+        ownerName: property.property_owners[0]?.profiles?.full_name || 'לא ידוע',
+        ownerPhone: property.property_owners[0]?.profiles?.phone || ''
+      })).filter(prop => prop.ownerPhone) || [];
       
-      // Filter properties that have owner phone numbers from the static data
-      const propertiesWithOwners = data.map(property => {
-        // Here you would normally join with owners table or similar
-        // For now, we'll use mock data structure
-        return {
-          ...property,
-          ownerName: `בעל נכס ${property.address}`,
-          ownerPhone: '0500000000' // This should come from actual owner data
-        };
-      }).filter(p => p.ownerPhone);
-
-      setProperties(propertiesWithOwners);
+      setProperties(transformedProperties);
+      
+      if (transformedProperties.length === 0) {
+        toast({
+          title: "התראה",
+          description: "לא נמצאו נכסים עם מספרי טלפון של בעלים",
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error('Error loading properties:', error);
       toast({
