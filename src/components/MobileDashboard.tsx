@@ -314,36 +314,101 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Alerts Section */}
         <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
           <CardHeader className="pb-3 px-4 pt-4">
-            <CardTitle className="text-base font-bold text-foreground">פעולות מהירות</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                התראות ומעקב
+              </CardTitle>
+              {alerts.length > 0 && (
+                <Badge variant="secondary" className="text-xs flex-shrink-0">
+                  {alerts.length}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                asChild 
-                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
-              >
-                <Link to="/properties" className="flex flex-col gap-1">
-                  <Building className="h-4 w-4" />
-                  <span className="text-xs font-semibold">כל הנכסים</span>
-                </Link>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                asChild 
-                className="h-12 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
-              >
-                <Link to="/alerts" className="flex flex-col gap-1">
-                  <Bell className="h-4 w-4" />
-                  <span className="text-xs font-semibold">התראות</span>
-                </Link>
-              </Button>
-            </div>
+            {alerts.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="bg-green-50 p-3 rounded-full w-fit mx-auto mb-3">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+                <p className="font-medium text-sm">אין התראות פעילות</p>
+                <p className="text-xs text-muted-foreground mt-1">כל הנכסים תקינים</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alerts.slice(0, 5).map((alert, index) => (
+                  <div 
+                    key={alert.id} 
+                    className={`rounded-lg p-3 border overflow-hidden animate-fade-in ${
+                      alert.priority === 'urgent' 
+                        ? 'bg-red-50/80 border-red-200/60' 
+                        : alert.priority === 'high'
+                        ? 'bg-orange-50/80 border-orange-200/60'
+                        : 'bg-blue-50/80 border-blue-200/60'
+                    }`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-full flex-shrink-0 ${
+                        alert.priority === 'urgent' 
+                          ? 'bg-red-100' 
+                          : alert.priority === 'high'
+                          ? 'bg-orange-100'
+                          : 'bg-blue-100'
+                      }`}>
+                        <AlertTriangle className={`h-3 w-3 ${
+                          alert.priority === 'urgent' 
+                            ? 'text-red-600' 
+                            : alert.priority === 'high'
+                            ? 'text-orange-600'
+                            : 'text-blue-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Badge variant="outline" className={`text-xs font-semibold mb-1 ${
+                          alert.priority === 'urgent' 
+                            ? 'border-red-300 text-red-700' 
+                            : alert.priority === 'high'
+                            ? 'border-orange-300 text-orange-700'
+                            : 'border-blue-300 text-blue-700'
+                        }`}>
+                          {alert.priority === 'urgent' ? 'דחוף' : alert.priority === 'high' ? 'חשוב' : 'רגיל'}
+                        </Badge>
+                        <div className={`font-medium text-sm truncate ${
+                          alert.priority === 'urgent' 
+                            ? 'text-red-800' 
+                            : alert.priority === 'high'
+                            ? 'text-orange-800'
+                            : 'text-blue-800'
+                        }`}>
+                          {alert.message}
+                        </div>
+                        <div className={`text-xs mt-1 truncate ${
+                          alert.priority === 'urgent' 
+                            ? 'text-red-600' 
+                            : alert.priority === 'high'
+                            ? 'text-orange-600'
+                            : 'text-blue-600'
+                        }`}>
+                          {alert.propertyAddress} • {alert.ownerName}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {alerts.length > 5 && (
+                  <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                    <Link to="/alerts">
+                      הצג עוד {alerts.length - 5} התראות
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
