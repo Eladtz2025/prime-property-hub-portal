@@ -21,11 +21,11 @@ serve(async (req) => {
 
     switch (typeWebhook) {
       case 'incomingMessageReceived':
-        await handleIncomingMessage(body);
+        await handleIncomingMessage(webhookData);
         break;
       
       case 'outgoingMessageStatus':
-        await handleMessageStatus(body);
+        await handleMessageStatus(webhookData);
         break;
       
       case 'incomingCall':
@@ -50,13 +50,13 @@ serve(async (req) => {
   }
 });
 
-async function handleIncomingMessage(messageBody: any) {
+async function handleIncomingMessage(webhookData: any) {
   const { 
     idMessage,
     timestamp,
     senderData,
     messageData
-  } = messageBody;
+  } = webhookData;
 
   const phone = senderData.chatId.replace('@c.us', '');
   const senderName = senderData.senderName || senderData.sender;
@@ -95,12 +95,12 @@ async function handleIncomingMessage(messageBody: any) {
     });
 }
 
-async function handleMessageStatus(statusBody: any) {
+async function handleMessageStatus(webhookData: any) {
   const {
     idMessage,
     status,
     timestamp
-  } = statusBody;
+  } = webhookData;
 
   console.log(`Message status update: ${idMessage} -> ${status}`);
 
