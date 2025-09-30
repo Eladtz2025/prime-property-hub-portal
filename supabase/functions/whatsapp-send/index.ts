@@ -1,3 +1,21 @@
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export async function serve(req: Request): Promise<Response> {
+  try {
+    // ... הקוד שלך כאן
+  } catch (error) {
+    console.error('Error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: getErrorMessage(error)
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/supabase.ts";
 
