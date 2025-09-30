@@ -1,5 +1,8 @@
 project_id = "jswumsdymlooeobrxict"
 
+[functions.import-properties-from-storage]
+verify_jwt = false
+
 [functions.migrate-properties]
 verify_jwt = false
 
