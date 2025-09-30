@@ -183,89 +183,23 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {/* Messages View */}
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {selectedConversation ? (
-              <>
-                <User className="h-5 w-5" />
-                {selectedConversation.ownerName}
-                <Badge variant="secondary">{selectedConversation.messages.length} הודעות</Badge>
-              </>
-            ) : (
-              <>
-                <MessageCircle className="h-5 w-5" />
-                בחר שיחה
-              </>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedConversation ? (
-            <ScrollArea className="h-[540px]">
-              <div className="space-y-4 p-4">
-                {selectedConversation.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.direction === 'outbound' ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-4 ${
-                        msg.direction === 'outbound'
-                          ? 'bg-primary/10 border border-primary/20'
-                          : 'bg-muted border border-border'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className={`text-xs ${getDirectionColor(msg.direction)}`}>
-                          {getDirectionText(msg.direction)}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {formatTime(msg.timestamp)}
-                        </div>
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap text-right">{msg.message}</p>
-                      {msg.status && (
-                        <div className="mt-2 text-xs text-muted-foreground text-right">
-                          סטטוס: {msg.status}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="h-[540px] flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>בחר שיחה כדי לראות את ההודעות</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Conversations List */}
-      <Card className="md:col-span-1">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
+    <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+      {/* Conversations List - First on mobile, right on desktop */}
+      <Card className="lg:col-span-1 lg:order-2">
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <MessageCircle className="h-4 w-4 md:h-5 md:w-5" />
             שיחות ({conversations.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-1 p-4">
+          <ScrollArea className="h-[400px] md:h-[600px]">
+            <div className="space-y-1 p-2 md:p-4">
               {conversations.map((conv) => (
                 <button
                   key={conv.phone}
                   onClick={() => setSelectedPhone(conv.phone)}
-                  className={`w-full text-right p-4 rounded-lg border transition-colors ${
+                  className={`w-full text-right p-3 md:p-4 rounded-lg border transition-colors ${
                     selectedPhone === conv.phone 
                       ? 'bg-primary/10 border-primary' 
                       : 'border-border hover:bg-muted/50'
@@ -274,28 +208,28 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-medium text-sm truncate">{conv.ownerName}</span>
+                        <User className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-xs md:text-sm truncate">{conv.ownerName}</span>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                        <span className="text-xs text-muted-foreground">{conv.phone}</span>
+                        <span className="text-[10px] md:text-xs text-muted-foreground truncate">{conv.phone}</span>
                       </div>
                       {conv.propertyAddresses.length > 0 && (
-                        <div className="text-xs text-muted-foreground mb-2">
+                        <div className="text-[10px] md:text-xs text-muted-foreground mb-2 line-clamp-1">
                           {conv.propertyAddresses.slice(0, 2).join(', ')}
                           {conv.propertyAddresses.length > 2 && ` +${conv.propertyAddresses.length - 2}`}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground line-clamp-2 text-right">
+                      <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-2 text-right">
                         {conv.lastMessage.message}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 md:px-2">
                         {conv.messages.length}
                       </Badge>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
                         {formatTime(conv.lastMessage.timestamp)}
                       </span>
                     </div>
@@ -307,6 +241,71 @@ export const PropertyWhatsAppHistory: React.FC<PropertyWhatsAppHistoryProps> = (
         </CardContent>
       </Card>
 
+      {/* Messages View - Second on mobile, left on desktop */}
+      <Card className="lg:col-span-2 lg:order-1">
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            {selectedConversation ? (
+              <>
+                <User className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="truncate">{selectedConversation.ownerName}</span>
+                <Badge variant="secondary" className="text-xs">{selectedConversation.messages.length} הודעות</Badge>
+              </>
+            ) : (
+              <>
+                <MessageCircle className="h-4 w-4 md:h-5 md:w-5" />
+                בחר שיחה
+              </>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-2 md:p-6">
+          {selectedConversation ? (
+            <ScrollArea className="h-[400px] md:h-[540px]">
+              <div className="space-y-3 md:space-y-4 p-2 md:p-4">
+                {selectedConversation.messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.direction === 'outbound' ? 'justify-start' : 'justify-end'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] md:max-w-[80%] rounded-lg p-3 md:p-4 ${
+                        msg.direction === 'outbound'
+                          ? 'bg-primary/10 border border-primary/20'
+                          : 'bg-muted border border-border'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={`text-[10px] md:text-xs ${getDirectionColor(msg.direction)}`}>
+                          {getDirectionText(msg.direction)}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground">
+                          <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                          {formatTime(msg.timestamp)}
+                        </div>
+                      </div>
+                      <p className="text-xs md:text-sm whitespace-pre-wrap text-right">{msg.message}</p>
+                      {msg.status && (
+                        <div className="mt-2 text-[10px] md:text-xs text-muted-foreground text-right">
+                          סטטוס: {msg.status}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="h-[400px] md:h-[540px] flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <MessageCircle className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm md:text-base">בחר שיחה כדי לראות את ההודעות</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
