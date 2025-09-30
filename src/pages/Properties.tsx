@@ -26,11 +26,13 @@ import {
   Map,
   MessageSquare,
   Copy,
-  Users
+  Users,
+  Plus
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditModal } from '../components/PropertyEditModal';
+import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyMap } from '../components/PropertyMap';
 import { PullToRefresh } from '../components/PullToRefresh';
@@ -60,10 +62,12 @@ export const Properties: React.FC = memo(() => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   
   const { 
     properties, 
-    isLoading, 
+    isLoading,
+    addProperty,
     updateProperty, 
     isUpdatingProperty,
     refetch 
@@ -275,8 +279,16 @@ export const Properties: React.FC = memo(() => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
-          <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
-            {startIndex}-{endIndex} מתוך {totalItems} נכסים
+          <div className="flex items-center gap-3">
+            <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              {startIndex}-{endIndex} מתוך {totalItems} נכסים
+            </div>
+            {canEditProperties && (
+              <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
+                <Plus className="h-4 w-4 mr-2" />
+                הוסף נכס
+              </Button>
+            )}
           </div>
         </div>
 
@@ -633,6 +645,16 @@ export const Properties: React.FC = memo(() => {
             onSave={handlePropertyUpdate}
           />
         )}
+
+        {/* Add Property Modal */}
+        <AddPropertyModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onPropertyAdded={(newProperty) => {
+            addProperty(newProperty);
+            setShowAddModal(false);
+          }}
+        />
       </div>
     </TooltipProvider>
   );

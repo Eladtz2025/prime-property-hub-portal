@@ -12,12 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from '../types/property';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPropertyAdded: (property: Property) => void;
+  onPropertyAdded: (property: Omit<Property, 'id'>) => void;
 }
 
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
@@ -27,7 +28,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     address: '',
-    city: '',
+    city: 'תל אביב-יפו',
     ownerName: '',
     ownerPhone: '',
     ownerEmail: '',
@@ -40,22 +41,34 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     leaseEndDate: '',
     rooms: '',
     propertySize: '',
+    floor: '',
     notes: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { logActivity } = useActivityLogger();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.address.trim() || !formData.ownerName.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "יש למלא כתובת ושם בעלים",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const newProperty: Property = {
-        id: `property-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        address: formData.address,
+      const newProperty: Omit<Property, 'id'> = {
+        address: formData.address.trim(),
         city: formData.city,
-        ownerName: formData.ownerName,
+        ownerName: formData.ownerName.trim(),
         ownerPhone: formData.ownerPhone || undefined,
         ownerEmail: formData.ownerEmail || undefined,
         tenantName: formData.tenantName || undefined,
@@ -69,32 +82,23 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         leaseEndDate: formData.leaseEndDate || undefined,
         rooms: formData.rooms ? parseFloat(formData.rooms) : undefined,
         propertySize: formData.propertySize ? parseFloat(formData.propertySize) : undefined,
+        floor: formData.floor ? parseInt(formData.floor) : undefined,
         notes: formData.notes || undefined,
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       };
 
-      // Log activity
-      await logActivity({
-        action: 'property_created',
-        resourceType: 'property',
-        resourceId: newProperty.id,
-        details: {
-          propertyAddress: newProperty.address,
-          city: newProperty.city,
-          ownerName: newProperty.ownerName,
-          status: newProperty.status
-        }
-      });
-
-      // Here you would typically save to your backend
-      // For now, we'll use local storage and notify parent
       onPropertyAdded(newProperty);
       
+      toast({
+        title: "הנכס נוסף בהצלחה!",
+        description: `הנכס ${newProperty.address} נוסף למערכת`,
+      });
+
       // Reset form
       setFormData({
         address: '',
-        city: '',
+        city: 'תל אביב-יפו',
         ownerName: '',
         ownerPhone: '',
         ownerEmail: '',
@@ -107,12 +111,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         leaseEndDate: '',
         rooms: '',
         propertySize: '',
+        floor: '',
         notes: ''
       });
       
-      onClose();
     } catch (error) {
       logger.error('Error adding property:', error, 'AddPropertyModal');
+      toast({
+        title: "שגיאה בהוספת נכס",
+        description: "אנא נסה שוב",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -152,13 +161,13 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   id="city"
                   value={formData.city}
                   onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="תל אביב"
+                  placeholder="תל אביב-יפו"
                   required
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="status">סטטוס</Label>
                 <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
@@ -175,7 +184,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </div>
               
               <div>
-                <Label htmlFor="rooms">מספר חדרים</Label>
+                <Label htmlFor="rooms">חדרים</Label>
                 <Input
                   id="rooms"
                   type="number"
@@ -183,6 +192,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   value={formData.rooms}
                   onChange={(e) => handleInputChange('rooms', e.target.value)}
                   placeholder="3.5"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="floor">קומה</Label>
+                <Input
+                  id="floor"
+                  type="number"
+                  value={formData.floor}
+                  onChange={(e) => handleInputChange('floor', e.target.value)}
+                  placeholder="2"
                 />
               </div>
               
@@ -262,6 +282,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   placeholder="050-1234567"
                 />
               </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="tenantEmail">אימייל שוכר</Label>
+              <Input
+                id="tenantEmail"
+                type="email"
+                value={formData.tenantEmail}
+                onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
+                placeholder="email@example.com"
+              />
             </div>
           </div>
 
