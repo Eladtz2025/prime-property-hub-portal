@@ -53,7 +53,7 @@ export const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ className }) => {
           const label = routeLabels[routeTo] || pathname;
 
           return (
-            <React.Fragment key={routeTo}>
+            <div key={routeTo} className="contents">
               <BreadcrumbSeparator>
                 <ChevronLeft className="h-3 w-3" />
               </BreadcrumbSeparator>
@@ -73,7 +73,7 @@ export const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ className }) => {
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
-            </React.Fragment>
+            </div>
           );
         })}
       </BreadcrumbList>
