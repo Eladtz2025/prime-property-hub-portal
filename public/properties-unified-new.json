@@ -1,0 +1,910 @@
+{
+  "metadata": {
+    "created_at": "2025-09-30T13:10:00.000Z",
+    "total_properties": 321,
+    "source": "בעלי דירות לסדר. (1).xlsx",
+    "source_file": "public/בעלי דירות לסדר. (1).xlsx"
+  },
+  "properties": [
+    {
+      "address": "נחלת בנימין/בן יהודה",
+      "owner_name": "מומי",
+      "owner_phone": "0505765841",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 190/167",
+      "owner_name": "ציון",
+      "owner_phone": "0522582225",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זנגביל 24",
+      "owner_name": "מייק",
+      "owner_phone": "0544452189",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 39 / הירקון 313",
+      "owner_name": "רונן",
+      "owner_phone": "0522539310",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 107",
+      "owner_name": "שחר",
+      "owner_phone": "0547744439",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "פיהרר נכסים",
+      "owner_name": "דב / אלון",
+      "owner_phone": "035664040",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 76/82",
+      "owner_name": "חיים",
+      "owner_phone": "0543453637",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ידידיה פרנקל",
+      "owner_name": "מלכה לוין",
+      "owner_phone": "0547334465",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בוגרשוב 86",
+      "owner_name": "רוני",
+      "owner_phone": "0544335944",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן גוריון 35",
+      "owner_name": "נטע",
+      "owner_phone": "0522568800",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "עמדן 4",
+      "owner_name": "עטרה",
+      "owner_phone": "0523677650",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 173",
+      "owner_name": "אלמוג",
+      "owner_phone": "0523213557",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ארנון 15",
+      "owner_name": "זמירה",
+      "owner_phone": "0523622114",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 84",
+      "owner_name": "רותי",
+      "owner_phone": "0522465588",
+      "tenant_name": "שחר",
+      "tenant_phone": "0508363406",
+      "monthly_rent": 6950,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "א.ה וויס 4",
+      "owner_name": "עדי",
+      "owner_phone": "0544657888",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ארלוזרוב 84",
+      "owner_name": "ליאור",
+      "owner_phone": "0505214939",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "יש לו מלא דירות",
+      "owner_name": "ברוך",
+      "owner_phone": "0544448909",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שלמה המלך",
+      "owner_name": "לייזי אלעזר",
+      "owner_phone": "0545552925",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הירקון 313",
+      "owner_name": "יצחק",
+      "owner_phone": "0523313122",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 184",
+      "owner_name": "דורי",
+      "owner_phone": "0526663768",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "יורדי הסירה 32",
+      "owner_name": "צביקה",
+      "owner_phone": "0507904748",
+      "rooms": 2,
+      "monthly_rent": 4500,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "פרישמן 64",
+      "owner_name": "עו\"ד",
+      "owner_phone": "035616279",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זלטופלוסקי 5",
+      "owner_name": "דליה",
+      "owner_phone": "0504263163",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שטנד 14",
+      "owner_name": "איציק",
+      "owner_phone": "0522782592",
+      "tenant_name": "אליעד",
+      "tenant_phone": "0532816998",
+      "rooms": 2,
+      "monthly_rent": 5550,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "זכריה",
+      "owner_name": "אבי",
+      "owner_phone": "0528820355",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "רמב\"ם 5",
+      "owner_name": "מאיר",
+      "owner_phone": "0523634709",
+      "tenant_name": "אלינור",
+      "tenant_phone": "0507110454",
+      "rooms": 1,
+      "monthly_rent": 3800,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "ישע חפץ 4",
+      "owner_name": "דבי",
+      "owner_phone": "0544225520",
+      "tenant_name": "יונתן",
+      "tenant_phone": "0524446264",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בזל 47",
+      "owner_name": "אייל",
+      "owner_phone": "0542335480",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הורקנוס 2",
+      "owner_name": "נורית",
+      "owner_phone": "0505288001",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 116",
+      "owner_name": "בני",
+      "owner_phone": "0526779004",
+      "tenant_name": "דייב",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "פראג 5",
+      "owner_name": "עוז",
+      "owner_phone": "0545987900",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שמעון התרסי 32",
+      "owner_name": "אילנה",
+      "owner_phone": "0544221451",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אלי כהן 7",
+      "owner_name": "נטאשה",
+      "owner_phone": "0544219625",
+      "tenant_name": "רותם",
+      "tenant_phone": "0543994230",
+      "rooms": 4,
+      "monthly_rent": 7800,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בן יהודה 140",
+      "owner_name": "קארין",
+      "owner_phone": "0507531185",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הורקנוס 21",
+      "owner_name": "דליה",
+      "owner_phone": "0545445053",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הקליר 18",
+      "owner_name": "יוכבד",
+      "owner_phone": "0544403366",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אוסישקין 94",
+      "owner_name": "אביב",
+      "owner_phone": "0546833347",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שפינוזה 6",
+      "owner_name": "רותם",
+      "owner_phone": "0544320580",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 223",
+      "owner_name": "משה",
+      "owner_phone": "0524370342",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "סוקולוב 99",
+      "owner_name": "יהורם",
+      "owner_phone": "0542210393",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שאול אביגור 1",
+      "owner_name": "בן סולימני",
+      "owner_phone": "0545883230",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 260",
+      "owner_name": "יעל",
+      "owner_phone": "0526442496",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 189",
+      "owner_name": "נועה",
+      "owner_phone": "0502082008",
+      "rooms": 2,
+      "monthly_rent": 5800,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אבן גבירול 160",
+      "owner_name": "מנדי",
+      "owner_phone": "0508656103",
+      "tenant_name": "מלי",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "מוסינזון 2",
+      "owner_name": "מרדכי",
+      "owner_phone": "0504837770",
+      "tenant_name": "ג'וש",
+      "tenant_phone": "0548756379",
+      "rooms": 3,
+      "monthly_rent": 6500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "שטנד 14א",
+      "owner_name": "אילנה",
+      "owner_phone": "0507313578",
+      "tenant_name": "דפנה",
+      "rooms": 2.5,
+      "monthly_rent": 5350,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בלוך 33",
+      "owner_name": "צביקה",
+      "owner_phone": "0523757474",
+      "tenant_name": "הילה",
+      "tenant_phone": "0526515458",
+      "rooms": 3,
+      "monthly_rent": 7500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "זאן זורס 7",
+      "owner_name": "עדי",
+      "owner_phone": "0544805256",
+      "tenant_name": "נגה",
+      "tenant_phone": "0542840433",
+      "rooms": 2.5,
+      "monthly_rent": 6800,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "צידון / הלסינקי",
+      "owner_name": "אוסנת",
+      "owner_phone": "0523599365",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ארלוזורוב 51",
+      "owner_name": "אלה",
+      "owner_phone": "0546555611",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "צידון 8",
+      "owner_name": "טלי",
+      "owner_phone": "0506795568",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שדרות נורדאו 7",
+      "owner_name": "דליה",
+      "owner_phone": "0502454772",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "גרוזנברג",
+      "owner_name": "ציון",
+      "owner_phone": "0527777877",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אבן גבירול 44",
+      "owner_name": "גילה",
+      "owner_phone": "0505443934",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "משה בן עזרא",
+      "owner_name": "מוטי",
+      "owner_phone": "0542216322",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 191",
+      "owner_name": "חיה / יעקב",
+      "owner_phone": "0543977701",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ארנון 7",
+      "owner_name": "עוזי",
+      "owner_phone": "0545965759",
+      "rooms": 2,
+      "monthly_rent": 5500,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אוסישקין 72",
+      "owner_name": "זמיר",
+      "owner_phone": "0505285341",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "פינסקר 64",
+      "owner_name": "קובי",
+      "owner_phone": "0502300569",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 306",
+      "owner_name": "מנור חסן",
+      "owner_phone": "0502609609",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "לוי יצחק 20",
+      "owner_name": "מוריאל",
+      "owner_phone": "0544985545",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "נורדאו 78",
+      "owner_name": "אבנר",
+      "owner_phone": "0509090908",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שלמה המלך 43",
+      "owner_name": "ירון",
+      "owner_phone": "0542332750",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שלום עליכם 27",
+      "owner_name": "טלי",
+      "owner_phone": "0547602832",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הירקון 245",
+      "owner_name": "יעקב",
+      "owner_phone": "0523316928",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הירקון 166",
+      "owner_name": "דורון",
+      "owner_phone": "0542052065",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אמיל זולא + מנדלסון",
+      "owner_name": "אבי",
+      "owner_phone": "0523366296",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אבן גבירול",
+      "owner_name": "זיווה",
+      "owner_phone": "0544310862",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "שלמה המלך 100",
+      "owner_name": "שרה",
+      "owner_phone": "0549203105",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 224",
+      "owner_name": "מאיה",
+      "owner_phone": "0544330528",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "רופין 16",
+      "owner_name": "יהודה",
+      "owner_phone": "0545741651",
+      "tenant_name": "ניר",
+      "tenant_phone": "0546204939",
+      "rooms": 2.5,
+      "monthly_rent": 5800,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "גורדון 29",
+      "owner_name": "פיהרר אלון",
+      "owner_phone": "0545310841",
+      "tenant_name": "שרון",
+      "tenant_phone": "0548722976",
+      "rooms": 1,
+      "monthly_rent": 4000,
+      "notes": "1+גג",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "זרובבל 18",
+      "owner_name": "הדס",
+      "owner_phone": "0544940150",
+      "tenant_name": "אלכס",
+      "tenant_phone": "0587728574",
+      "rooms": 1,
+      "monthly_rent": 3950,
+      "notes": "1+גג",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "רמב\"ם 5",
+      "owner_name": "משה",
+      "owner_phone": "0586677975",
+      "tenant_name": "אביב",
+      "rooms": 1,
+      "monthly_rent": 3500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בן יהודה 175",
+      "owner_name": "אבי",
+      "owner_phone": "0549231111",
+      "tenant_name": "לירון",
+      "tenant_phone": "0529355154",
+      "rooms": 2,
+      "monthly_rent": 5500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בן יהודה 215",
+      "owner_phone": "0522740346",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ויתקין 25",
+      "owner_name": "יאיר",
+      "owner_phone": "0523678706",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ז'בוטינסקי 107",
+      "owner_name": "זוהר",
+      "owner_phone": "0522532338",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "מרים החשמונאית 26",
+      "owner_name": "אמיר",
+      "owner_phone": "0544331676",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "יורדי הסירה 9",
+      "owner_name": "קארין",
+      "owner_phone": "0522946063",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן גוריון",
+      "owner_name": "אוסנת",
+      "owner_phone": "0522410661",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "גאולה",
+      "owner_name": "אלון",
+      "owner_phone": "0542494404",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 290",
+      "owner_name": "אלי",
+      "owner_phone": "0547769636",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הבשן 8",
+      "owner_name": "קובי",
+      "owner_phone": "0502062809",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "ירמיהו אידלסון",
+      "owner_name": "יוני",
+      "owner_phone": "0526905438",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זבוטינסקי 101",
+      "owner_name": "רימונה",
+      "owner_phone": "0507796800",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זלטופלוסקי 12",
+      "owner_name": "רמי",
+      "owner_phone": "0544248030",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "לוינסקי",
+      "owner_name": "ירון",
+      "owner_phone": "0543333101",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בר גיורא 10",
+      "owner_name": "גור",
+      "owner_phone": "0524452968",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הירקון 313",
+      "owner_name": "ג'קי",
+      "owner_phone": "0523612060",
+      "tenant_name": "פרי",
+      "tenant_phone": "0524636050",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "גורדון 68",
+      "owner_name": "אבי (מנהל נכס)",
+      "owner_phone": "0545554116",
+      "tenant_name": "קרן",
+      "tenant_phone": "0532781458",
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "דיזנגוף 237",
+      "owner_name": "שרה",
+      "owner_phone": "0507975832",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "גליקסון 2",
+      "owner_name": "דן",
+      "owner_phone": "0523908152",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בן יהודה 206",
+      "owner_name": "רונן",
+      "owner_phone": "0546657788",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אהרונוביץ 9",
+      "owner_name": "נוחי",
+      "owner_phone": "0542010766",
+      "tenant_name": "ניצן",
+      "tenant_phone": "0528021461",
+      "rooms": 1,
+      "monthly_rent": 3800,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "בן יהודה 68",
+      "owner_name": "עירית",
+      "owner_phone": "0544761032",
+      "monthly_rent": 3200,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "מגדל פרישמן",
+      "owner_name": "זוהר",
+      "owner_phone": "0505775772",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "דיזנגוף 146",
+      "owner_name": "דורון",
+      "owner_phone": "0525327771",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "מנדלשטם - קרקע",
+      "owner_name": "אבי",
+      "owner_phone": "0523600601",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "מלצ'ט",
+      "owner_name": "אבי",
+      "owner_phone": "0506413100",
+      "tenant_name": "עתליה",
+      "tenant_phone": "0507266827",
+      "rooms": 3,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "אוסישקין 64",
+      "owner_name": "עירית",
+      "owner_phone": "0543972782",
+      "rooms": 3,
+      "monthly_rent": 7500,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "הירקון 313",
+      "owner_name": "רונן",
+      "owner_phone": "0522539310",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "אבן גבירול 74",
+      "owner_name": "אברהם",
+      "owner_phone": "0544899424",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "בזל 56",
+      "owner_name": "לירון",
+      "owner_phone": "0522666751",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "יורדי הסירה 30",
+      "owner_name": "מוטי",
+      "owner_phone": "0505333755",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זנגביל 20",
+      "owner_name": "תיקי",
+      "owner_phone": "0547730773",
+      "rooms": 1.5,
+      "monthly_rent": 4800,
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    },
+    {
+      "address": "זנגביל 20",
+      "owner_name": "תיקי",
+      "owner_phone": "0547730773",
+      "tenant_name": "רעות",
+      "tenant_phone": "0549810820",
+      "rooms": 2,
+      "monthly_rent": 4700,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "נורדאו 14",
+      "owner_name": "חיים",
+      "owner_phone": "0544476646",
+      "tenant_name": "מורן",
+      "tenant_phone": "0547969601",
+      "rooms": 3,
+      "monthly_rent": 6500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "הכובשים 52",
+      "owner_name": "ענת",
+      "owner_phone": "0522348645",
+      "tenant_name": "עומרי",
+      "tenant_phone": "0506869030",
+      "rooms": 3.5,
+      "monthly_rent": 6500,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "ביירון 21",
+      "owner_name": "איל",
+      "tenant_name": "יעל",
+      "rooms": 3,
+      "monthly_rent": 6950,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "גליקסון 2",
+      "owner_name": "אורי",
+      "owner_phone": "0547977975",
+      "tenant_name": "דן",
+      "tenant_phone": "0547955383",
+      "rooms": 2.5,
+      "monthly_rent": 8000,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "סמטת מנדלשטם 4",
+      "owner_name": "אבי",
+      "owner_phone": "0523600601",
+      "tenant_name": "דבי",
+      "tenant_phone": "0548156696",
+      "rooms": 4,
+      "monthly_rent": 8000,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "דיזנגוף 172",
+      "owner_name": "מאיר",
+      "owner_phone": "0544362904",
+      "tenant_name": "עמית",
+      "tenant_phone": "0548119817",
+      "rooms": 2,
+      "monthly_rent": 5200,
+      "city": "תל אביב-יפו",
+      "status": "occupied"
+    },
+    {
+      "address": "מיכה 2",
+      "owner_name": "ברק",
+      "owner_phone": "0522501605",
+      "city": "תל אביב-יפו",
+      "status": "unknown"
+    }
+  ]
+}
