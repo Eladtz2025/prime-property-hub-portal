@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
-import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { startOfMonth, endOfMonth, format, differenceInMonths } from 'date-fns';
 import { useExpenseData } from './useExpenseData';
 
 export interface FinancialSummary {
@@ -37,18 +37,17 @@ export interface PropertyIncomeData {
   tenant_count: number;
 }
 
-export const useFinancialData = (selectedMonth?: Date) => {
+export const useFinancialData = (startDate?: Date, endDate?: Date, fromContract: boolean = false) => {
   const { user } = useAuth();
-  const currentMonth = selectedMonth || new Date();
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  const queryStart = startDate || new Date('2000-01-01'); // Very old date for "all time"
+  const queryEnd = endDate || new Date();
 
-  // Get expense data for the month
-  const { expenseSummary } = useExpenseData(selectedMonth);
+  // Get expense data for the range
+  const { expenseSummary } = useExpenseData(startDate, endDate);
 
-  // Fetch rent payments for the selected month
+  // Fetch rent payments for the selected date range
   const rentPaymentsQuery = useQuery({
-    queryKey: ['rent-payments', user?.id, format(currentMonth, 'yyyy-MM')],
+    queryKey: ['rent-payments', user?.id, queryStart.toISOString(), queryEnd.toISOString()],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
@@ -74,8 +73,8 @@ export const useFinancialData = (selectedMonth?: Date) => {
             city
           )
         `)
-        .gte('payment_date', monthStart.toISOString().split('T')[0])
-        .lte('payment_date', monthEnd.toISOString().split('T')[0])
+        .gte('payment_date', queryStart.toISOString().split('T')[0])
+        .lte('payment_date', queryEnd.toISOString().split('T')[0])
         .order('payment_date', { ascending: false });
 
       if (error) {
@@ -106,7 +105,8 @@ export const useFinancialData = (selectedMonth?: Date) => {
             name,
             monthly_rent,
             is_active,
-            property_id
+            property_id,
+            lease_start_date
           )
         `)
         .order('address');
@@ -127,11 +127,24 @@ export const useFinancialData = (selectedMonth?: Date) => {
     const payments = rentPaymentsQuery.data || [];
     const properties = propertiesQuery.data || [];
     
-    // Calculate expected income from active tenants
-    const expectedIncome = properties
-      .flatMap(p => p.tenants)
-      .filter(t => t.is_active && t.monthly_rent)
-      .reduce((sum, t) => sum + (t.monthly_rent || 0), 0);
+    // Calculate expected income based on date range
+    let expectedIncome = 0;
+    
+    if (fromContract) {
+      // Calculate total income from contract start to today
+      properties.flatMap(p => p.tenants).filter(t => t.is_active && t.monthly_rent && t.lease_start_date).forEach(tenant => {
+        const leaseStart = new Date(tenant.lease_start_date);
+        const today = queryEnd;
+        const monthsActive = Math.max(0, differenceInMonths(today, leaseStart) + 1);
+        expectedIncome += (tenant.monthly_rent || 0) * monthsActive;
+      });
+    } else {
+      // For current month/year, calculate monthly rent * months in range
+      const monthsInRange = differenceInMonths(queryEnd, queryStart) + 1;
+      properties.flatMap(p => p.tenants).filter(t => t.is_active && t.monthly_rent).forEach(tenant => {
+        expectedIncome += (tenant.monthly_rent || 0) * monthsInRange;
+      });
+    }
     
     // Calculate collected income from paid rent payments
     const collectedIncome = payments

@@ -45,27 +45,21 @@ interface IncomeTrackerProps {
   payments: RentPayment[];
   properties: Property[];
   tenants: Tenant[];
-  selectedMonth?: Date;
+  dateRangeType?: string;
 }
 
 export const IncomeTracker: React.FC<IncomeTrackerProps> = ({
   payments,
   properties,
   tenants,
-  selectedMonth = new Date()
+  dateRangeType = 'current-month'
 }) => {
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
   };
 
-  // Filter payments for selected month
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
-  
-  const monthlyPayments = payments.filter(payment => {
-    const paymentDate = new Date(payment.payment_date);
-    return isWithinInterval(paymentDate, { start: monthStart, end: monthEnd });
-  });
+  // All payments are already filtered by the hook based on date range
+  const monthlyPayments = payments;
 
   // Calculate income statistics
   const totalIncome = monthlyPayments
@@ -123,7 +117,10 @@ export const IncomeTracker: React.FC<IncomeTrackerProps> = ({
       <div className="text-right">
         <h2 className="text-2xl font-bold mb-2">מעקב הכנסות</h2>
         <p className="text-muted-foreground">
-          {format(selectedMonth, "MMMM yyyy", { locale: he })}
+          {dateRangeType === 'current-month' && 'החודש הנוכחי'}
+          {dateRangeType === 'current-year' && 'השנה הנוכחית'}
+          {dateRangeType === 'from-contract' && 'מתחילת החוזה'}
+          {dateRangeType === 'all-time' && 'כל התקופה'}
         </p>
       </div>
 

@@ -25,15 +25,14 @@ export interface ExpenseSummary {
   categorySummary: Record<string, number>;
 }
 
-export const useExpenseData = (selectedMonth?: Date) => {
+export const useExpenseData = (startDate?: Date, endDate?: Date) => {
   const { user } = useAuth();
-  const currentMonth = selectedMonth || new Date();
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  const queryStart = startDate || new Date('2000-01-01');
+  const queryEnd = endDate || new Date();
 
-  // Fetch expenses for the selected month
+  // Fetch expenses for the selected date range
   const expensesQuery = useQuery({
-    queryKey: ['expenses', user?.id, format(currentMonth, 'yyyy-MM')],
+    queryKey: ['expenses', user?.id, queryStart.toISOString(), queryEnd.toISOString()],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
@@ -56,8 +55,8 @@ export const useExpenseData = (selectedMonth?: Date) => {
           )
         `)
         .eq('type', 'expense')
-        .gte('transaction_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('transaction_date', format(monthEnd, 'yyyy-MM-dd'))
+        .gte('transaction_date', queryStart.toISOString().split('T')[0])
+        .lte('transaction_date', queryEnd.toISOString().split('T')[0])
         .order('transaction_date', { ascending: false });
 
       if (error) {

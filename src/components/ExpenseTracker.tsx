@@ -11,7 +11,8 @@ import { AddExpenseModal } from './AddExpenseModal';
 import { useExpenseData } from '@/hooks/useExpenseData';
 
 interface ExpenseTrackerProps {
-  selectedMonth: Date;
+  dateRangeStart?: Date;
+  dateRangeEnd?: Date;
   properties: any[];
 }
 
@@ -24,13 +25,13 @@ const expenseCategories = [
   { value: 'other', label: 'אחר', icon: Receipt, color: 'bg-gray-400' }
 ];
 
-export const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ selectedMonth, properties }) => {
+export const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ dateRangeStart, dateRangeEnd, properties }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
 
-  const { expenses, expenseSummary, isLoading, refetch } = useExpenseData(selectedMonth);
+  const { expenses, expenseSummary, isLoading, refetch } = useExpenseData(dateRangeStart, dateRangeEnd);
 
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
@@ -160,7 +161,10 @@ export const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ selectedMonth, p
         <CardHeader>
           <CardTitle>רשימת הוצאות</CardTitle>
           <CardDescription>
-            {format(selectedMonth, "MMMM yyyy", { locale: he })}
+            {expenseSummary.totalExpenses > 0 
+              ? `סה"כ ${expenseSummary.expenseCount} הוצאות`
+              : 'אין הוצאות להצגה'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>

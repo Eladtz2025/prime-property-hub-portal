@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   TrendingUp, 
   BarChart3,
@@ -8,9 +9,30 @@ import {
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { IncomeTracker } from './IncomeTracker';
 import { ExpenseTracker } from './ExpenseTracker';
+import { startOfMonth, startOfYear } from 'date-fns';
+
+type DateRangeType = 'current-month' | 'current-year' | 'from-contract' | 'all-time';
 
 export const FinancialDashboard: React.FC = () => {
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<DateRangeType>('current-month');
+  
+  // Calculate the date range based on selection
+  const getDateRange = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case 'current-month':
+        return { start: startOfMonth(now), end: now };
+      case 'current-year':
+        return { start: startOfYear(now), end: now };
+      case 'from-contract':
+      case 'all-time':
+        return { start: undefined, end: undefined }; // Will fetch all data
+      default:
+        return { start: startOfMonth(now), end: now };
+    }
+  };
+  
+  const dateRangeParams = getDateRange();
   
   const { 
     rentPayments, 
@@ -19,7 +41,7 @@ export const FinancialDashboard: React.FC = () => {
     incomeByProperty,
     isLoading, 
     isError 
-  } = useFinancialData(selectedMonth);
+  } = useFinancialData(dateRangeParams.start, dateRangeParams.end, dateRange === 'from-contract');
 
   if (isLoading) {
     return (
@@ -46,6 +68,22 @@ export const FinancialDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Date Range Selector */}
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">טווח תאריכים:</label>
+        <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRangeType)}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="current-month">החודש הנוכחי</SelectItem>
+            <SelectItem value="current-year">השנה הנוכחית</SelectItem>
+            <SelectItem value="from-contract">מתחילת החוזה</SelectItem>
+            <SelectItem value="all-time">כל התקופה</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Tabs */}
       <Tabs defaultValue="income" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -64,13 +102,14 @@ export const FinancialDashboard: React.FC = () => {
             payments={rentPayments}
             properties={properties}
             tenants={tenants}
-            selectedMonth={selectedMonth}
+            dateRangeType={dateRange}
           />
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-6">
           <ExpenseTracker
-            selectedMonth={selectedMonth}
+            dateRangeStart={dateRangeParams.start}
+            dateRangeEnd={dateRangeParams.end}
             properties={properties}
           />
         </TabsContent>
