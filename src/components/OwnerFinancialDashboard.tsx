@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Home, Plus, Building } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Home, Building } from 'lucide-react';
 import { useOwnerFinancialData, type DateRangeType } from '@/hooks/useOwnerFinancialData';
-import { AddExpenseModalOwner } from './AddExpenseModalOwner';
 import type { OwnerDashboardStats, PropertyWithTenant } from '@/types/owner-portal';
 
 interface OwnerFinancialDashboardProps {
@@ -15,7 +13,6 @@ interface OwnerFinancialDashboardProps {
 
 export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = ({ statsData, properties: propertiesData }) => {
   const [dateRange, setDateRange] = useState<DateRangeType>('current-month');
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const { financialSummary, properties, expenses, payments, isLoading, refetch } = useOwnerFinancialData(dateRange);
 
@@ -191,57 +188,6 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </CardContent>
         </Card>
       </div>
-
-      {/* Expenses Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base md:text-lg">הוצאות</CardTitle>
-              <CardDescription className="text-sm">{getDateRangeLabel()}</CardDescription>
-            </div>
-            <Button onClick={() => setIsAddExpenseOpen(true)} size="sm" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 ml-2" />
-              הוסף הוצאה
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredExpenses.length === 0 ? (
-            <p className="text-muted-foreground text-center py-6 md:py-8 text-sm md:text-base">
-              אין הוצאות לתקופה זו
-            </p>
-          ) : (
-            <div className="space-y-2 md:space-y-3">
-              {expenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-2 md:p-3 border rounded text-sm md:text-base">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{expense.category}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground truncate">{expense.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(expense.transaction_date).toLocaleDateString('he-IL')}
-                    </p>
-                  </div>
-                  <p className="font-bold text-red-600 text-sm md:text-base ml-2 flex-shrink-0">
-                    {formatCurrency(expense.amount)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add Expense Modal */}
-      <AddExpenseModalOwner
-        open={isAddExpenseOpen}
-        onOpenChange={setIsAddExpenseOpen}
-        properties={properties.map(p => ({
-          property_id: p.property_id,
-          property_address: p.property_address,
-        }))}
-        onSuccess={refetch}
-      />
     </div>
   );
 };
