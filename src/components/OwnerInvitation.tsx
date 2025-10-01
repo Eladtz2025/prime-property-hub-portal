@@ -56,9 +56,12 @@ export const OwnerInvitation: React.FC = () => {
         setError('שגיאה בקבלת ההזמנה');
         console.error('Error accepting invitation:', error);
       } else {
+        // Clear the pending invitation token from localStorage
+        localStorage.removeItem('pending_invitation_token');
+        
         setSuccess(true);
         setTimeout(() => {
-          navigate('/owner-dashboard');
+          navigate('/owner-portal');
         }, 2000);
       }
     } catch (error) {
@@ -70,6 +73,11 @@ export const OwnerInvitation: React.FC = () => {
   };
 
   if (!user) {
+    // Save the invitation token before redirecting to login
+    if (token) {
+      localStorage.setItem('pending_invitation_token', token);
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">

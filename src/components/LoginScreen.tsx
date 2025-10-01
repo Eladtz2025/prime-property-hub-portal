@@ -43,10 +43,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         }
 
         logger.info('User signed up successfully');
-        toast({
-          title: "הרשמה הצליחה",
-          description: "נרשמת בהצלחה! אנא בדוק את המייל שלך לאימות החשבון.",
-        });
+        
+        // Check if there's a pending invitation token
+        const pendingToken = localStorage.getItem('pending_invitation_token');
+        
+        if (pendingToken) {
+          // Don't clear the token yet - it will be cleared after successful login
+          toast({
+            title: "הרשמה הצליחה",
+            description: "כעת התחבר כדי לקבל את ההזמנה",
+          });
+        } else {
+          toast({
+            title: "הרשמה הצליחה",
+            description: "נרשמת בהצלחה! אנא בדוק את המייל שלך לאימות החשבון.",
+          });
+        }
+        
         setIsSignUp(false);
         setCredentials({ email: '', password: '', fullName: '' });
       } else {
@@ -60,11 +73,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
         if (data.user) {
           logger.info('User logged in successfully');
-          toast({
-            title: "התחברות הצליחה",
-            description: "ברוך הבא למערכת ניהול הנכסים",
-          });
-          onLogin?.();
+          
+          // Check if there's a pending invitation token
+          const pendingToken = localStorage.getItem('pending_invitation_token');
+          
+          if (pendingToken) {
+            // Clear the token from storage
+            localStorage.removeItem('pending_invitation_token');
+            
+            toast({
+              title: "התחברות הצליחה",
+              description: "מעביר אותך לקבלת ההזמנה...",
+            });
+            
+            // Redirect to invitation page with token
+            window.location.href = `/owner-invitation?token=${pendingToken}`;
+          } else {
+            toast({
+              title: "התחברות הצליחה",
+              description: "ברוך הבא למערכת ניהול הנכסים",
+            });
+            onLogin?.();
+          }
         }
       }
     } catch (error) {

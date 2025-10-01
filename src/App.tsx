@@ -35,6 +35,8 @@ const AppContent: React.FC = () => {
         {/* Auth callback route - needs to be outside authentication check */}
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/login" element={<LoginScreen />} />
+        {/* Owner invitation route - accessible without authentication */}
+        <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
         
         {loading ? (
           <Route path="*" element={
@@ -119,14 +121,6 @@ const AppContent: React.FC = () => {
                   <OwnerPortal />
                 </ProtectedRoute>
               } 
-            />
-            <Route 
-              path="/owner-invitation" 
-              element={<OwnerInvitationPage />} 
-            />
-            <Route 
-              path="/login" 
-              element={<Login />} 
             />
             <Route 
               path="/whatsapp" 
