@@ -15,7 +15,10 @@ import {
   Clock,
   Mail,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Phone,
+  User
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +38,7 @@ export const PropertyInvitationManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadData();
@@ -165,6 +169,19 @@ export const PropertyInvitationManager: React.FC = () => {
     return { text: 'ממתין', color: 'bg-yellow-500', icon: Clock };
   };
 
+  // Filter properties based on search query
+  const filteredProperties = properties.filter(property => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    if (!searchLower) return true;
+    
+    return (
+      property.address.toLowerCase().includes(searchLower) ||
+      property.city.toLowerCase().includes(searchLower) ||
+      property.owner_name?.toLowerCase().includes(searchLower) ||
+      property.owner_phone?.includes(searchLower)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Create New Invitation */}
@@ -202,8 +219,19 @@ export const PropertyInvitationManager: React.FC = () => {
                   </Button>
                 </div>
                 
+                {/* Search field */}
+                <div className="relative mb-3">
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="חפש לפי כתובת, עיר, שם בעל נכס או טלפון..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-10"
+                  />
+                </div>
+                
                 <div className="max-h-60 overflow-y-auto border rounded-lg p-3 space-y-2">
-                  {properties.map((property) => (
+                  {filteredProperties.map((property) => (
                     <div 
                       key={property.id}
                       className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-muted/50 rounded"
@@ -218,11 +246,25 @@ export const PropertyInvitationManager: React.FC = () => {
                           <Building className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{property.address}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {property.city}
-                          {property.rooms && (
-                            <span className="mr-2">• {property.rooms} חדרים</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {property.city}
+                            {property.rooms && (
+                              <span className="mr-2">• {property.rooms} חדרים</span>
+                            )}
+                          </div>
+                          {property.owner_name && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              {property.owner_name}
+                            </div>
+                          )}
+                          {property.owner_phone && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              {property.owner_phone}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -235,6 +277,13 @@ export const PropertyInvitationManager: React.FC = () => {
                       </Badge>
                     </div>
                   ))}
+                  
+                  {filteredProperties.length === 0 && properties.length > 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="h-8 w-8 mx-auto mb-2" />
+                      <p>לא נמצאו נכסים מתאימים לחיפוש</p>
+                    </div>
+                  )}
                   
                   {properties.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
