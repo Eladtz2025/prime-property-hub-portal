@@ -7,11 +7,12 @@ import { Building, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvitation } from '@/hooks/useInvitation';
 import type { PropertyInvitation } from '@/types/owner-portal';
+import { logger } from '@/utils/logger';
 
 export const OwnerInvitation: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { getInvitationByToken, acceptInvitation, loading: invitationLoading, error: invitationError } = useInvitation();
   const [invitation, setInvitation] = useState<PropertyInvitation | null>(null);
   const [loadingInvitation, setLoadingInvitation] = useState(false);
@@ -51,20 +52,31 @@ export const OwnerInvitation: React.FC = () => {
     if (!token || !user) return;
     
     try {
+      logger.info('Starting invitation acceptance', { token });
       const result = await acceptInvitation(token);
+      
       if (result.success) {
+        logger.info('Invitation accepted, refreshing profile');
+        
         // Clear the pending invitation token from localStorage
         localStorage.removeItem('pending_invitation_token');
         
+        // Refresh the user profile to get the updated role
+        await refreshProfile();
+        
         setSuccess(true);
+        
+        // Navigate after a short delay to show success message
         setTimeout(() => {
+          logger.info('Navigating to owner portal');
           navigate('/owner-portal');
         }, 2000);
       } else {
+        logger.error('Invitation acceptance failed', { error: invitationError });
         setError(invitationError || 'שגיאה בקבלת ההזמנה');
       }
     } catch (error) {
-      console.error('Error accepting invitation:', error);
+      logger.error('Unexpected error accepting invitation', error);
       setError('שגיאה בקבלת ההזמנה');
     }
   };
