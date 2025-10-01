@@ -10,16 +10,74 @@ import type {
   OwnerDashboardStats 
 } from '@/types/owner-portal';
 
+// Sync properties by phone - automatically links properties to owner based on phone number
+export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
+  // Get owner's phone from profile
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('phone')
+    .eq('id', ownerId)
+    .single();
+
+  if (profileError || !profile?.phone) {
+    console.log('No phone found for owner:', ownerId);
+    return;
+  }
+
+  // Find all properties with matching owner_phone
+  const { data: matchingProperties, error: propertiesError } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('owner_phone', profile.phone);
+
+  if (propertiesError || !matchingProperties || matchingProperties.length === 0) {
+    console.log('No matching properties found for phone:', profile.phone);
+    return;
+  }
+
+  // Get existing property_owners records
+  const { data: existingOwnership } = await supabase
+    .from('property_owners')
+    .select('property_id')
+    .eq('owner_id', ownerId);
+
+  const existingPropertyIds = new Set(existingOwnership?.map(o => o.property_id) || []);
+
+  // Create property_owners records for properties that aren't already linked
+  const newOwnershipRecords = matchingProperties
+    .filter(p => !existingPropertyIds.has(p.id))
+    .map(p => ({
+      property_id: p.id,
+      owner_id: ownerId,
+      ownership_percentage: 100,
+    }));
+
+  if (newOwnershipRecords.length > 0) {
+    const { error: insertError } = await supabase
+      .from('property_owners')
+      .insert(newOwnershipRecords);
+
+    if (insertError) {
+      console.error('Error creating property ownership:', insertError);
+    } else {
+      console.log(`Linked ${newOwnershipRecords.length} properties to owner ${ownerId}`);
+    }
+  }
+};
+
 // Property management functions
 export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithTenant[]> => {
-  // First get property IDs for this owner
+  // First, sync properties by phone number
+  await syncPropertiesByPhone(ownerId);
+
+  // Then get property IDs for this owner
   const { data: ownershipData, error: ownershipError } = await supabase
     .from('property_owners')
     .select('property_id')
     .eq('owner_id', ownerId);
 
   if (ownershipError || !ownershipData || ownershipData.length === 0) {
-    console.error('Error fetching ownership:', ownershipError);
+    console.log('No properties found for owner:', ownerId);
     return [];
   }
 
@@ -128,7 +186,10 @@ export const createFinancialRecord = async (record: Omit<FinancialRecord, 'id' |
 };
 
 export const getOwnerDashboardStats = async (ownerId: string): Promise<OwnerDashboardStats> => {
-  // First get property IDs for this owner
+  // First, sync properties by phone number
+  await syncPropertiesByPhone(ownerId);
+
+  // Then get property IDs for this owner
   const { data: ownershipData } = await supabase
     .from('property_owners')
     .select('property_id')
