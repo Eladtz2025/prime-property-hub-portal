@@ -16,8 +16,11 @@ export interface DatabaseProperty {
   acquisition_cost?: number;
   renovation_costs?: number;
   current_market_value?: number;
+  monthly_rent?: number;
   created_at: string;
   updated_at: string;
+  owner_name?: string;
+  owner_phone?: string;
 }
 
 export interface PropertyOwner {

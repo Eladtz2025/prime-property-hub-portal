@@ -308,6 +308,7 @@ export type Database = {
           floor: number | null
           id: string
           last_contact_date: string | null
+          monthly_rent: number | null
           notes: string | null
           owner_name: string | null
           owner_phone: string | null
@@ -329,6 +330,7 @@ export type Database = {
           floor?: number | null
           id?: string
           last_contact_date?: string | null
+          monthly_rent?: number | null
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
@@ -350,6 +352,7 @@ export type Database = {
           floor?: number | null
           id?: string
           last_contact_date?: string | null
+          monthly_rent?: number | null
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null

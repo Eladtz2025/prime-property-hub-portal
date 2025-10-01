@@ -129,8 +129,18 @@ export const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
                 )}
               </div>
             ) : (
-              <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 text-center">
-                <span className="text-sm text-red-700 dark:text-red-400">אין שוכר פעיל</span>
+              <div className="bg-white/50 dark:bg-white/5 rounded-lg p-3 space-y-2">
+                <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-2 text-center mb-2">
+                  <span className="text-sm text-red-700 dark:text-red-400">אין שוכר פעיל</span>
+                </div>
+                {property.monthly_rent && (
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <span className="text-sm">
+                      מחיר שכירות: {formatCurrency(property.monthly_rent)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

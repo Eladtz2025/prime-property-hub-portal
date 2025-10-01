@@ -39,7 +39,18 @@ export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithT
     return [];
   }
 
-  return (data || []) as PropertyWithTenant[];
+  return (data || []).map(property => {
+    const activeTenant = property.tenants && property.tenants.length > 0 
+      ? property.tenants.find((t: any) => t.is_active) 
+      : null;
+    
+    return {
+      ...property,
+      status: property.status as 'unknown' | 'occupied' | 'vacant' | 'maintenance',
+      contact_status: property.contact_status as 'not_contacted' | 'called_no_answer' | 'called_answered' | 'needs_callback',
+      tenant: activeTenant,
+    };
+  });
 };
 
 export const getPropertyTenant = async (propertyId: string): Promise<Tenant | null> => {
