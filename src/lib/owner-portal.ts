@@ -173,6 +173,15 @@ export const getOwnerDashboardStats = async (ownerId: string): Promise<OwnerDash
     p.contact_status === 'needs_callback'
   ).length;
 
+  // Calculate monthly income from active tenants
+  const { data: activeTenants } = await supabase
+    .from('tenants')
+    .select('monthly_rent')
+    .in('property_id', propertyIds)
+    .eq('is_active', true);
+
+  const monthlyIncomeFromTenants = activeTenants?.reduce((sum, t) => sum + (t.monthly_rent || 0), 0) || 0;
+
   // Get financial summary for current month
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const { data: financials } = await supabase
@@ -185,13 +194,16 @@ export const getOwnerDashboardStats = async (ownerId: string): Promise<OwnerDash
   const income = financials?.filter(f => f.type === 'income').reduce((sum, f) => sum + f.amount, 0) || 0;
   const expenses = financials?.filter(f => f.type === 'expense').reduce((sum, f) => sum + f.amount, 0) || 0;
 
+  // Total monthly income = recorded income + expected income from active tenants
+  const totalMonthlyIncome = income + monthlyIncomeFromTenants;
+
   return {
     total_properties: properties.length,
     occupied_properties: occupied,
     vacant_properties: vacant,
-    total_monthly_income: income,
+    total_monthly_income: totalMonthlyIncome,
     total_monthly_expenses: expenses,
-    net_monthly_profit: income - expenses,
+    net_monthly_profit: totalMonthlyIncome - expenses,
     properties_needing_attention: needing_attention,
   };
 };

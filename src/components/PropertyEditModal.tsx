@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { ImageUpload } from './ImageUpload';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { usePropertyData } from '@/hooks/usePropertyData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -59,24 +59,71 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     }));
   };
 
-  const handleSave = () => {
-    updateProperty(formData, {
-      onSuccess: () => {
-        toast({
-          title: "הנכס עודכן בהצלחה",
-          description: "השינויים נשמרו במערכת",
-        });
-        onSave(formData);
-        onClose();
-      },
-      onError: (error: any) => {
-        toast({
-          title: "שגיאה בעדכון הנכס",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    });
+  const handleSave = async () => {
+    try {
+      // Update property
+      await updateProperty(formData, {
+        onSuccess: async () => {
+          // If tenant info exists, create or update tenant
+          if (formData.tenantName || formData.tenantPhone || formData.tenantEmail) {
+            const tenantData = {
+              property_id: formData.id,
+              name: formData.tenantName || '',
+              phone: formData.tenantPhone,
+              email: formData.tenantEmail,
+              monthly_rent: formData.monthlyRent,
+              lease_start_date: formData.leaseStartDate,
+              lease_end_date: formData.leaseEndDate,
+              is_active: true,
+            };
+
+            // Check if tenant exists
+            const { data: existingTenants } = await supabase
+              .from('tenants')
+              .select('id')
+              .eq('property_id', formData.id)
+              .eq('is_active', true);
+
+            if (existingTenants && existingTenants.length > 0) {
+              // Update existing tenant
+              const { error: tenantError } = await supabase
+                .from('tenants')
+                .update(tenantData)
+                .eq('id', existingTenants[0].id);
+
+              if (tenantError) throw tenantError;
+            } else {
+              // Create new tenant
+              const { error: tenantError } = await supabase
+                .from('tenants')
+                .insert(tenantData);
+
+              if (tenantError) throw tenantError;
+            }
+          }
+
+          toast({
+            title: "הנכס עודכן בהצלחה",
+            description: "השינויים נשמרו במערכת",
+          });
+          onSave(formData);
+          onClose();
+        },
+        onError: (error: any) => {
+          toast({
+            title: "שגיאה בעדכון הנכס",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה בשמירת הנתונים",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
