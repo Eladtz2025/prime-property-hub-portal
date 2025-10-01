@@ -3,20 +3,23 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  AlertTriangle, 
-  MessageSquare, 
-  BarChart3, 
-  Users
+  Users,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Main navigation items
 const navigationItems = [
-  { title: "בית", url: "/", icon: Home },
+  { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
-  { title: "התראות", url: "/alerts", icon: AlertTriangle },
-  { title: "דוחות", url: "/reports", icon: BarChart3 },
+];
+
+// Admin-specific navigation items
+const adminItems = [
+  { title: "ניהול משתמשים", url: "/users", icon: Users },
+  { title: "הזמנות", url: "/property-invitations", icon: UserPlus },
 ];
 
 interface MobileBottomNavigationProps {
@@ -27,23 +30,24 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   notificationCount = 0 
 }) => {
   const location = useLocation();
-  const { hasPermission, profile } = useAuth();
+  const { hasPermission, profile, permissions } = useAuth();
 
-  const filteredNavItems = navigationItems.filter(item => {
-    if (item.url === '/users') {
-      return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
-    }
-    return true;
-  });
+  // Check if user has admin permissions
+  const hasAdminAccess = profile?.role === 'admin' || profile?.role === 'super_admin' || 
+    permissions.some(p => p.resource === 'users' && (p.action === 'create' || p.action === 'update'));
+
+  // Combine main navigation with admin items if user has access
+  const allNavItems = hasAdminAccess 
+    ? [...navigationItems, ...adminItems]
+    : navigationItems;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       <div className="bg-card/95 backdrop-blur-sm border-t border-border shadow-lg">
         <div className="flex items-center justify-around px-2 py-2 safe-area-padding-bottom">
-          {filteredNavItems.map((item) => {
+          {allNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.url;
-            const showBadge = item.url === '/alerts' && notificationCount > 0;
             
             return (
               <NavLink
@@ -56,20 +60,10 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
-                <div className="relative">
-                  <Icon className={cn(
-                    "h-5 w-5 transition-transform duration-200",
-                    isActive && "scale-110"
-                  )} />
-                  {showBadge && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs flex items-center justify-center min-w-[16px]"
-                    >
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </Badge>
-                  )}
-                </div>
+                <Icon className={cn(
+                  "h-5 w-5 transition-transform duration-200",
+                  isActive && "scale-110"
+                )} />
                 <span className={cn(
                   "text-xs font-medium mt-1 transition-colors duration-200",
                   isActive ? "text-primary" : "text-muted-foreground"
