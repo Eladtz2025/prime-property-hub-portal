@@ -104,8 +104,8 @@ export const OwnerDashboard: React.FC = () => {
         {profile?.role === 'property_owner' && (
           <div className="space-y-8">
             {/* Main Tabs for Property Details */}
-            <Tabs defaultValue="properties" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs dir="rtl" defaultValue="properties" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3" dir="rtl">
                 <TabsTrigger value="properties" className="gap-2">
                   <Building className="h-4 w-4" />
                   הנכסים שלי
@@ -174,8 +174,8 @@ export const OwnerDashboard: React.FC = () => {
         {profile?.role === 'super_admin' && (
           <div className="space-y-8">
             {/* Main Tabs */}
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+            <Tabs dir="rtl" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5" dir="rtl">
                 <TabsTrigger value="overview" className="gap-2">
                   <Home className="h-4 w-4" />
                   <span className="hidden sm:inline">סקירה</span>
