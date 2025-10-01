@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Building, 
   TrendingUp, 
@@ -9,7 +10,10 @@ import {
   DollarSign,
   Home,
   Bell,
-  FileText
+  FileText,
+  Image,
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } from '@/lib/owner-portal';
@@ -20,6 +24,9 @@ import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
 import { OwnerFinancialDashboard } from './OwnerFinancialDashboard';
 import { OwnerDocuments } from './OwnerDocuments';
+import { MarketInsights } from './MarketInsights';
+import { PropertyGallery } from './PropertyGallery';
+import { ExpensesView } from './ExpensesView';
 
 export const OwnerDashboard: React.FC = () => {
   const { user, profile } = useAuth();
@@ -28,6 +35,7 @@ export const OwnerDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'documents' | 'notifications'>('overview');
+  const [activeMainTab, setActiveMainTab] = useState<'property-details' | 'market-insights'>('property-details');
   const [editingProperty, setEditingProperty] = useState<PropertyWithTenant | null>(null);
   const [paymentProperty, setPaymentProperty] = useState<PropertyWithTenant | null>(null);
 
@@ -93,168 +101,191 @@ export const OwnerDashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Property Owners View - Simple list without tabs */}
+        {/* Property Owners View - With nested tabs */}
         {profile?.role === 'property_owner' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property) => (
-                <OwnerPropertyCard 
-                  key={property.id} 
-                  property={property}
-                  onEdit={setEditingProperty}
-                  onQuickPayment={setPaymentProperty}
-                />
-              ))}
-            </div>
+          <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="space-y-6">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="property-details">פרטי הנכס</TabsTrigger>
+              <TabsTrigger value="market-insights">מדדי השוק</TabsTrigger>
+            </TabsList>
 
-            {properties.length === 0 && (
-              <Card className="border-dashed border-2 border-muted-foreground/25">
-                <CardContent className="text-center py-12">
-                  <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            <TabsContent value="property-details" className="space-y-6">
+              <Tabs defaultValue="properties" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="properties" className="gap-2">
+                    <Building className="h-4 w-4" />
+                    הנכסים שלי
+                  </TabsTrigger>
+                  <TabsTrigger value="gallery" className="gap-2">
+                    <Image className="h-4 w-4" />
+                    תמונות
+                  </TabsTrigger>
+                  <TabsTrigger value="expenses" className="gap-2">
+                    <Receipt className="h-4 w-4" />
+                    הוצאות
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="properties">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {properties.map((property) => (
+                      <OwnerPropertyCard 
+                        key={property.id} 
+                        property={property}
+                        onEdit={setEditingProperty}
+                        onQuickPayment={setPaymentProperty}
+                      />
+                    ))}
+                  </div>
+
+                  {properties.length === 0 && (
+                    <Card className="border-dashed border-2 border-muted-foreground/25">
+                      <CardContent className="text-center py-12">
+                        <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                        <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="gallery">
+                  <PropertyGallery properties={properties} />
+                </TabsContent>
+
+                <TabsContent value="expenses">
+                  <ExpensesView properties={properties} />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="market-insights">
+              <MarketInsights />
+            </TabsContent>
+          </Tabs>
         )}
 
-        {/* Navigation Tabs - Only for Super Admin */}
+        {/* Super Admin View - With nested tabs */}
         {profile?.role === 'super_admin' && (
-          <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
-            <Button
-              variant={activeTab === 'overview' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('overview')}
-              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-              size="sm"
-            >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">סקירה כללית</span>
-              <span className="sm:hidden">סקירה</span>
-            </Button>
-            <Button
-              variant={activeTab === 'properties' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('properties')}
-              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-              size="sm"
-            >
-              <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">הנכסים שלי</span>
-              <span className="sm:hidden">נכסים</span>
-              <Badge variant="secondary" className="text-xs h-5">{properties.length}</Badge>
-            </Button>
-            <Button
-              variant={activeTab === 'documents' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('documents')}
-              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-              size="sm"
-            >
-              <FileText className="h-4 w-4" />
-              <span>מסמכים</span>
-            </Button>
-            <Button
-              variant={activeTab === 'notifications' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('notifications')}
-              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-              size="sm"
-            >
-              <Bell className="h-4 w-4" />
-              <span>התראות</span>
-              {notifications.filter(n => !n.is_read).length > 0 && (
-                <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
-                  {notifications.filter(n => !n.is_read).length}
-                </Badge>
-              )}
-            </Button>
-          </div>
-        )}
+          <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="space-y-6">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="property-details">פרטי הנכס</TabsTrigger>
+              <TabsTrigger value="market-insights">מדדי השוק</TabsTrigger>
+            </TabsList>
 
-        {/* Overview Tab - Only for Super Admin */}
-        {profile?.role === 'super_admin' && activeTab === 'overview' && stats && (
-          <div className="space-y-6">
-            {/* Date Range Selector */}
-            <OwnerFinancialDashboard statsData={stats} properties={properties} />
+            <TabsContent value="property-details" className="space-y-6">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+                  <TabsTrigger value="overview" className="gap-2">
+                    <Home className="h-4 w-4" />
+                    <span className="hidden sm:inline">סקירה</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="properties" className="gap-2">
+                    <Building className="h-4 w-4" />
+                    <span className="hidden sm:inline">נכסים</span>
+                    <Badge variant="secondary" className="text-xs h-5">{properties.length}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="gallery" className="gap-2">
+                    <Image className="h-4 w-4" />
+                    <span className="hidden sm:inline">תמונות</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="expenses" className="gap-2">
+                    <Receipt className="h-4 w-4" />
+                    <span className="hidden sm:inline">הוצאות</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="documents" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">מסמכים</span>
+                  </TabsTrigger>
+                </TabsList>
 
-            {/* Alerts */}
-            {stats.properties_needing_attention > 0 && (
-              <Card className="border-yellow-200 bg-yellow-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-yellow-800">
-                    <AlertTriangle className="h-5 w-5" />
-                    נכסים הדורשים תשומת לב
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-yellow-700">
-                    יש לך {stats.properties_needing_attention} נכסים הדורשים תשומת לב מיוחדת
-                  </p>
-                  <Button 
-                    className="mt-3" 
-                    variant="outline"
-                    onClick={() => setActiveTab('properties')}
-                  >
-                    בדוק נכסים
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+                <TabsContent value="overview">
+                  {stats && (
+                    <div className="space-y-6">
+                      <OwnerFinancialDashboard statsData={stats} properties={properties} />
 
-        {/* Properties Tab - Only for Super Admin */}
-        {profile?.role === 'super_admin' && activeTab === 'properties' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">הנכסים שלי</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property) => (
-                <OwnerPropertyCard 
-                  key={property.id} 
-                  property={property}
-                  onEdit={setEditingProperty}
-                  onQuickPayment={setPaymentProperty}
-                />
-              ))}
-            </div>
+                      {stats.properties_needing_attention > 0 && (
+                        <Card className="border-yellow-200 bg-yellow-50">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-yellow-800">
+                              <AlertTriangle className="h-5 w-5" />
+                              נכסים הדורשים תשומת לב
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-yellow-700">
+                              יש לך {stats.properties_needing_attention} נכסים הדורשים תשומת לב מיוחדת
+                            </p>
+                            <Button 
+                              className="mt-3" 
+                              variant="outline"
+                              onClick={() => setActiveTab('properties')}
+                            >
+                              בדוק נכסים
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
 
-            {properties.length === 0 && (
-              <Card className="border-dashed border-2 border-muted-foreground/25">
-                <CardContent className="text-center py-12">
-                  <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+                <TabsContent value="properties">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-bold">הנכסים שלי</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {properties.map((property) => (
+                        <OwnerPropertyCard 
+                          key={property.id} 
+                          property={property}
+                          onEdit={setEditingProperty}
+                          onQuickPayment={setPaymentProperty}
+                        />
+                      ))}
+                    </div>
 
-        {/* Documents Tab - Only for Super Admin */}
-        {profile?.role === 'super_admin' && activeTab === 'documents' && (
-          <OwnerDocuments 
-            properties={properties.map(p => ({
-              property_id: p.id,
-              property_address: p.address
-            }))}
-          />
-        )}
+                    {properties.length === 0 && (
+                      <Card className="border-dashed border-2 border-muted-foreground/25">
+                        <CardContent className="text-center py-12">
+                          <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                          <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
+                          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                            הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
 
-        {/* Notifications Tab - Only for Super Admin */}
-        {profile?.role === 'super_admin' && activeTab === 'notifications' && (
-          <NotificationPanel 
-            notifications={notifications}
-            onMarkAsRead={(id) => {
-              setNotifications(prev => 
-                prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-              );
-            }}
-          />
+                <TabsContent value="gallery">
+                  <PropertyGallery properties={properties} />
+                </TabsContent>
+
+                <TabsContent value="expenses">
+                  <ExpensesView properties={properties} />
+                </TabsContent>
+
+                <TabsContent value="documents">
+                  <OwnerDocuments 
+                    properties={properties.map(p => ({
+                      property_id: p.id,
+                      property_address: p.address
+                    }))}
+                  />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="market-insights">
+              <MarketInsights />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
 
