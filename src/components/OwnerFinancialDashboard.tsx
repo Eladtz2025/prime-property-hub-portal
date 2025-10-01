@@ -81,47 +81,6 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">סה"כ הכנסות</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(statsData.total_monthly_income)}
-            </div>
-            <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">סה"כ הוצאות</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(statsData.total_monthly_expenses)}
-            </div>
-            <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">רווח נקי</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${
-              statsData.net_monthly_profit >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {formatCurrency(statsData.net_monthly_profit)}
-            </div>
-            <p className="text-xs text-muted-foreground">הכנסות - הוצאות</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">הכנסה צפויה</CardTitle>
             <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -132,6 +91,51 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
             <p className="text-xs text-muted-foreground mt-1">
               {getDateRangeLabel()}
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">הכנסות בפועל</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {formatCurrency(financialSummary.totalActualIncome)}
+            </div>
+            <p className="text-xs text-muted-foreground">{getDateRangeLabel()}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">סה"כ הוצאות</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {formatCurrency(financialSummary.totalExpenses)}
+            </div>
+            <p className="text-xs text-muted-foreground">{getDateRangeLabel()}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">רווח נקי</CardTitle>
+            {financialSummary.netProfit >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${
+              financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {formatCurrency(financialSummary.netProfit)}
+            </div>
+            <p className="text-xs text-muted-foreground">הכנסות בפועל - הוצאות</p>
           </CardContent>
         </Card>
       </div>
