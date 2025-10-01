@@ -8,17 +8,17 @@ import {
   TrendingUp, 
   AlertTriangle,
   DollarSign,
-  Eye,
-  Edit,
-  Plus,
   Home,
   FileText,
   Bell
 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } from '@/lib/owner-portal';
 import type { OwnerDashboardStats, PropertyWithTenant, Notification } from '@/types/owner-portal';
-import { PropertyCard } from './PropertyCard';
+import { OwnerPropertyCard } from './OwnerPropertyCard';
+import { PropertyEditModal } from './PropertyEditModal';
+import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
 import { AddPropertyFlow } from './AddPropertyFlow';
 import { TenantsList } from './TenantsList';
@@ -31,6 +31,8 @@ export const OwnerDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'tenants' | 'finances' | 'notifications'>('overview');
+  const [editingProperty, setEditingProperty] = useState<PropertyWithTenant | null>(null);
+  const [paymentProperty, setPaymentProperty] = useState<PropertyWithTenant | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -71,6 +73,21 @@ export const OwnerDashboard: React.FC = () => {
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
   };
+
+  // Mock data for charts - in production, fetch from API
+  const incomeChartData = [
+    { month: 'ינואר', income: 15000, expenses: 8000 },
+    { month: 'פברואר', income: 16000, expenses: 7500 },
+    { month: 'מרץ', income: 15500, expenses: 9000 },
+    { month: 'אפריל', income: 17000, expenses: 8200 },
+    { month: 'מאי', income: 16500, expenses: 7800 },
+    { month: 'יוני', income: 18000, expenses: 8500 },
+  ];
+
+  const occupancyData = [
+    { name: 'מושכרים', value: stats?.occupied_properties || 0, fill: '#10b981' },
+    { name: 'פנויים', value: stats?.vacant_properties || 0, fill: '#ef4444' },
+  ];
 
   if (loading) {
     return (
@@ -205,6 +222,47 @@ export const OwnerDashboard: React.FC = () => {
               </Card>
             </div>
 
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Income vs Expenses Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>הכנסות והוצאות לאורך זמן</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={incomeChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => `₪${value.toLocaleString('he-IL')}`} />
+                      <Legend />
+                      <Line type="monotone" dataKey="income" stroke="#10b981" name="הכנסות" strokeWidth={2} />
+                      <Line type="monotone" dataKey="expenses" stroke="#ef4444" name="הוצאות" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Occupancy Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>תפוסת נכסים</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={occupancyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Recent Properties */}
             <Card>
               <CardHeader>
@@ -216,7 +274,12 @@ export const OwnerDashboard: React.FC = () => {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {properties.slice(0, 6).map((property) => (
-                    <PropertyCard key={property.id} property={property} />
+                    <OwnerPropertyCard 
+                      key={property.id} 
+                      property={property}
+                      onEdit={setEditingProperty}
+                      onQuickPayment={setPaymentProperty}
+                    />
                   ))}
                 </div>
                 {properties.length > 6 && (
@@ -267,7 +330,12 @@ export const OwnerDashboard: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} detailed />
+                <OwnerPropertyCard 
+                  key={property.id} 
+                  property={property}
+                  onEdit={setEditingProperty}
+                  onQuickPayment={setPaymentProperty}
+                />
               ))}
             </div>
 
@@ -317,6 +385,46 @@ export const OwnerDashboard: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Modals */}
+      {editingProperty && (
+        <PropertyEditModal
+          property={{
+            id: editingProperty.id,
+            address: editingProperty.address,
+            city: editingProperty.city,
+            ownerName: '', // Owner info managed separately in property_owners table
+            ownerPhone: '',
+            status: editingProperty.status,
+            contactStatus: editingProperty.contact_status,
+            contactAttempts: editingProperty.contact_attempts,
+            propertySize: editingProperty.property_size,
+            floor: editingProperty.floor,
+            rooms: editingProperty.rooms,
+            notes: editingProperty.notes,
+            lastContactDate: editingProperty.last_contact_date,
+            contactNotes: editingProperty.contact_notes,
+            tenantName: editingProperty.tenant?.name,
+            tenantPhone: editingProperty.tenant?.phone,
+            tenantEmail: editingProperty.tenant?.email,
+            monthlyRent: editingProperty.tenant?.monthly_rent,
+            leaseStartDate: editingProperty.tenant?.lease_start_date,
+            leaseEndDate: editingProperty.tenant?.lease_end_date,
+          }}
+          isOpen={true}
+          onClose={() => setEditingProperty(null)}
+          onSave={loadDashboardData}
+        />
+      )}
+
+      {paymentProperty && (
+        <QuickRentPaymentModal
+          property={paymentProperty}
+          isOpen={true}
+          onClose={() => setPaymentProperty(null)}
+          onSuccess={loadDashboardData}
+        />
+      )}
     </div>
   );
 };
