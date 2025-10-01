@@ -123,38 +123,49 @@ export const useFinancialData = (selectedMonth?: Date) => {
   });
 
   // Calculate financial summary
-  const financialSummary: FinancialSummary = {
-    totalIncome: rentPaymentsQuery.data
-      ?.filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + p.amount, 0) || 0,
+  const financialSummary: FinancialSummary = (() => {
+    const payments = rentPaymentsQuery.data || [];
+    const properties = propertiesQuery.data || [];
     
-    totalExpenses: expenseSummary.totalExpenses,
+    // Calculate expected income from active tenants
+    const expectedIncome = properties
+      .flatMap(p => p.tenants)
+      .filter(t => t.is_active && t.monthly_rent)
+      .reduce((sum, t) => sum + (t.monthly_rent || 0), 0);
     
-    netProfit: 0, // Will be calculated after expenses are implemented
+    // Calculate collected income from paid rent payments
+    const collectedIncome = payments
+      .filter(p => p.status === 'paid')
+      .reduce((sum, p) => sum + p.amount, 0);
     
-    collectionRate: (() => {
-      const payments = rentPaymentsQuery.data || [];
-      const properties = propertiesQuery.data || [];
-      
-      const expectedIncome = properties
-        .flatMap(p => p.tenants)
-        .filter(t => t.is_active && t.monthly_rent)
-        .reduce((sum, t) => sum + (t.monthly_rent || 0), 0);
-      
-      const collectedIncome = payments
-        .filter(p => p.status === 'paid')
-        .reduce((sum, p) => sum + p.amount, 0);
-      
-      return expectedIncome > 0 ? (collectedIncome / expectedIncome) * 100 : 0;
-    })(),
+    // Calculate pending and overdue
+    const pendingIncome = payments
+      .filter(p => p.status === 'pending')
+      .reduce((sum, p) => sum + p.amount, 0);
     
-    activeProperties: propertiesQuery.data
-      ?.filter(p => p.tenants.some(t => t.is_active)).length || 0,
+    const overdueIncome = payments
+      .filter(p => p.status === 'overdue')
+      .reduce((sum, p) => sum + p.amount, 0);
     
-    activeTenants: propertiesQuery.data
-      ?.flatMap(p => p.tenants)
-      .filter(t => t.is_active).length || 0
-  };
+    // Total income includes both collected and expected income from active tenants
+    // If there are no rent_payments records, we show expected income
+    const totalIncome = payments.length > 0 
+      ? collectedIncome + pendingIncome + overdueIncome
+      : expectedIncome;
+    
+    const collectionRate = expectedIncome > 0 
+      ? (collectedIncome / expectedIncome) * 100 
+      : 0;
+    
+    return {
+      totalIncome,
+      totalExpenses: expenseSummary.totalExpenses,
+      netProfit: totalIncome - expenseSummary.totalExpenses,
+      collectionRate,
+      activeProperties: properties.filter(p => p.tenants.some(t => t.is_active)).length,
+      activeTenants: properties.flatMap(p => p.tenants).filter(t => t.is_active).length
+    };
+  })();
 
   // Calculate income by property
   const incomeByProperty: PropertyIncomeData[] = (propertiesQuery.data || []).map(property => {
@@ -163,9 +174,11 @@ export const useFinancialData = (selectedMonth?: Date) => {
     
     const propertyPayments = (rentPaymentsQuery.data || []).filter(p => p.property_id === property.id);
     
-    const collectedIncome = propertyPayments
-      .filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + p.amount, 0);
+    // If no rent_payments exist but we have active tenants with rent, 
+    // show expected income as collected (to display in the UI)
+    const collectedIncome = propertyPayments.length > 0
+      ? propertyPayments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)
+      : expectedIncome; // Show expected as collected if no payments recorded yet
     
     const pendingIncome = propertyPayments
       .filter(p => p.status === 'pending')
