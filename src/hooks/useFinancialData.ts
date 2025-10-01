@@ -47,11 +47,11 @@ export const useFinancialData = (startDate?: Date, endDate?: Date, fromContract:
 
   // Fetch rent payments for the selected date range
   const rentPaymentsQuery = useQuery({
-    queryKey: ['rent-payments', user?.id, queryStart.toISOString(), queryEnd.toISOString()],
+    queryKey: ['rent-payments', user?.id, queryStart.toISOString(), queryEnd.toISOString(), fromContract],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('rent_payments')
         .select(`
           id,
@@ -72,10 +72,16 @@ export const useFinancialData = (startDate?: Date, endDate?: Date, fromContract:
             address,
             city
           )
-        `)
-        .gte('payment_date', queryStart.toISOString().split('T')[0])
-        .lte('payment_date', queryEnd.toISOString().split('T')[0])
-        .order('payment_date', { ascending: false });
+        `);
+
+      // Only apply date filter if we have specific dates (not "all time" or "from contract")
+      if (startDate && endDate && !fromContract) {
+        query = query
+          .gte('payment_date', queryStart.toISOString().split('T')[0])
+          .lte('payment_date', queryEnd.toISOString().split('T')[0]);
+      }
+
+      const { data, error } = await query.order('payment_date', { ascending: false });
 
       if (error) {
         logger.error('Failed to fetch rent payments', error, 'useFinancialData');

@@ -195,52 +195,6 @@ export const OwnerDashboard: React.FC = () => {
               </Card>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('properties')}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                      <Building className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">הנכסים שלי</h3>
-                      <p className="text-sm text-muted-foreground">צפה ונהל נכסים</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('finances')}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-500/10 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">כספים</h3>
-                      <p className="text-sm text-muted-foreground">מעקב הכנסות והוצאות</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('notifications')}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Bell className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">התראות</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {notifications.filter(n => !n.is_read).length} לא נקראו
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Alerts */}
             {stats.properties_needing_attention > 0 && (
