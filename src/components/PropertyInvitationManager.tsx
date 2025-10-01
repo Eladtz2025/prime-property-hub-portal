@@ -114,7 +114,7 @@ export const PropertyInvitationManager: React.FC = () => {
       if (error) throw error;
 
       if (data) {
-        const invitationUrl = `${window.location.origin}/owner-invitation?token=${data.invitation_token}`;
+        const invitationUrl = `https://prime-property-hub-portal.vercel.app/owner-invitation?token=${data.invitation_token}`;
         
         // Copy to clipboard
         await navigator.clipboard.writeText(invitationUrl);
@@ -144,7 +144,7 @@ export const PropertyInvitationManager: React.FC = () => {
   };
 
   const copyInvitationLink = async (token: string) => {
-    const invitationUrl = `${window.location.origin}/owner-invitation?token=${token}`;
+    const invitationUrl = `https://prime-property-hub-portal.vercel.app/owner-invitation?token=${token}`;
     try {
       await navigator.clipboard.writeText(invitationUrl);
       toast({
