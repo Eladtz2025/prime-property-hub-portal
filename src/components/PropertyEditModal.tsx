@@ -28,11 +28,11 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   onSave
 }) => {
   const [formData, setFormData] = useState<Property>(property);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
-  const { updateProperty, isUpdatingProperty } = usePropertyData();
 
   // If user can't edit, don't show the modal
   if (!canEdit) {
@@ -61,68 +61,85 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 
   const handleSave = async () => {
     try {
+      setLoading(true);
+      
       // Update property
-      await updateProperty(formData, {
-        onSuccess: async () => {
-          // If tenant info exists, create or update tenant
-          if (formData.tenantName || formData.tenantPhone || formData.tenantEmail) {
-            const tenantData = {
-              property_id: formData.id,
-              name: formData.tenantName || '',
-              phone: formData.tenantPhone,
-              email: formData.tenantEmail,
-              monthly_rent: formData.monthlyRent,
-              lease_start_date: formData.leaseStartDate,
-              lease_end_date: formData.leaseEndDate,
-              is_active: true,
-            };
+      const { error: propertyError } = await supabase
+        .from('properties')
+        .update({
+          address: formData.address,
+          city: formData.city,
+          owner_name: formData.ownerName,
+          owner_phone: formData.ownerPhone,
+          status: formData.status,
+          contact_status: formData.contactStatus,
+          contact_attempts: formData.contactAttempts,
+          last_contact_date: formData.lastContactDate ? new Date(formData.lastContactDate).toISOString() : null,
+          contact_notes: formData.contactNotes,
+          property_size: formData.propertySize,
+          floor: formData.floor,
+          rooms: formData.rooms,
+          monthly_rent: formData.monthlyRent,
+          notes: formData.notes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', formData.id);
 
-            // Check if tenant exists
-            const { data: existingTenants } = await supabase
-              .from('tenants')
-              .select('id')
-              .eq('property_id', formData.id)
-              .eq('is_active', true);
+      if (propertyError) throw propertyError;
 
-            if (existingTenants && existingTenants.length > 0) {
-              // Update existing tenant
-              const { error: tenantError } = await supabase
-                .from('tenants')
-                .update(tenantData)
-                .eq('id', existingTenants[0].id);
+      // If tenant info exists, create or update tenant
+      if (formData.tenantName || formData.tenantPhone || formData.tenantEmail) {
+        const tenantData = {
+          property_id: formData.id,
+          name: formData.tenantName || '',
+          phone: formData.tenantPhone,
+          email: formData.tenantEmail,
+          monthly_rent: formData.monthlyRent,
+          lease_start_date: formData.leaseStartDate,
+          lease_end_date: formData.leaseEndDate,
+          is_active: true,
+        };
 
-              if (tenantError) throw tenantError;
-            } else {
-              // Create new tenant
-              const { error: tenantError } = await supabase
-                .from('tenants')
-                .insert(tenantData);
+        // Check if tenant exists
+        const { data: existingTenants } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('property_id', formData.id)
+          .eq('is_active', true);
 
-              if (tenantError) throw tenantError;
-            }
-          }
+        if (existingTenants && existingTenants.length > 0) {
+          // Update existing tenant
+          const { error: tenantError } = await supabase
+            .from('tenants')
+            .update(tenantData)
+            .eq('id', existingTenants[0].id);
 
-          toast({
-            title: "הנכס עודכן בהצלחה",
-            description: "השינויים נשמרו במערכת",
-          });
-          onSave(formData);
-          onClose();
-        },
-        onError: (error: any) => {
-          toast({
-            title: "שגיאה בעדכון הנכס",
-            description: error.message,
-            variant: "destructive",
-          });
+          if (tenantError) throw tenantError;
+        } else {
+          // Create new tenant
+          const { error: tenantError } = await supabase
+            .from('tenants')
+            .insert(tenantData);
+
+          if (tenantError) throw tenantError;
         }
+      }
+
+      toast({
+        title: "הנכס עודכן בהצלחה",
+        description: "השינויים נשמרו במערכת",
       });
+      
+      onSave(formData);
+      onClose();
     } catch (error: any) {
       toast({
         title: "שגיאה בשמירת הנתונים",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -336,8 +353,8 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             ביטול
           </Button>
-          <Button onClick={handleSave} disabled={isUpdatingProperty}>
-            {isUpdatingProperty ? 'שומר...' : 'שמור'}
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? 'שומר...' : 'שמור'}
           </Button>
         </DialogFooter>
       </DialogContent>
