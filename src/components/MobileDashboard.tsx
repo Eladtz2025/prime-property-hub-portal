@@ -209,23 +209,23 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 
       {/* Urgent Alerts */}
       {urgentAlerts.length > 0 && (
-        <Card className="border-red-200/60 bg-red-50/80 animate-scale-in backdrop-blur-sm">
+        <Card className="border-destructive bg-destructive/10 animate-scale-in backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-red-700 text-base">
+            <CardTitle className="flex items-center gap-2 text-destructive text-base">
               <AlertTriangle className="h-4 w-4" />
               התראות דחופות ({urgentAlerts.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {urgentAlerts.slice(0, 2).map((alert) => (
-              <div key={alert.id} className="bg-white/60 rounded-lg p-3 border border-red-100 overflow-hidden">
+              <div key={alert.id} className="bg-card/60 rounded-lg p-3 border border-destructive/20 overflow-hidden">
                 <div className="flex items-start gap-3">
-                  <div className="bg-red-100 p-2 rounded-full flex-shrink-0">
-                    <AlertTriangle className="h-3 w-3 text-red-600" />
+                  <div className="bg-destructive/10 p-2 rounded-full flex-shrink-0">
+                    <AlertTriangle className="h-3 w-3 text-destructive" />
                   </div>
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="font-medium text-sm text-red-800 truncate">{alert.message}</div>
-                    <div className="text-xs text-red-600 mt-1 truncate">
+                    <div className="font-medium text-sm text-destructive truncate">{alert.message}</div>
+                    <div className="text-xs text-destructive/80 mt-1 truncate">
                       {alert.propertyAddress} • {alert.ownerName}
                     </div>
                   </div>
@@ -233,7 +233,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               </div>
             ))}
             {urgentAlerts.length > 2 && (
-              <Button variant="outline" size="sm" className="w-full text-xs border-red-200 text-red-700 hover:bg-red-50">
+              <Button variant="outline" size="sm" className="w-full text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
                 הצג עוד {urgentAlerts.length - 2}
               </Button>
             )}
@@ -301,10 +301,10 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 <Badge 
                   className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap px-2 py-1 ${
                     property.status === 'occupied' 
-                      ? 'bg-green-100 text-green-700 hover:bg-green-100' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30' 
                       : property.status === 'vacant'
-                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900/30'
                   }`}
                 >
                   {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
@@ -342,57 +342,57 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               <div className="space-y-3">
                 {alerts.slice(0, 5).map((alert, index) => (
                   <div 
-                    key={alert.id} 
+                     key={alert.id} 
                     className={`rounded-lg p-3 border overflow-hidden animate-fade-in ${
                       alert.priority === 'urgent' 
-                        ? 'bg-red-50/80 border-red-200/60' 
+                        ? 'bg-destructive/10 border-destructive/20' 
                         : alert.priority === 'high'
-                        ? 'bg-orange-50/80 border-orange-200/60'
-                        : 'bg-blue-50/80 border-blue-200/60'
+                        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/30'
+                        : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/30'
                     }`}
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-full flex-shrink-0 ${
                         alert.priority === 'urgent' 
-                          ? 'bg-red-100' 
+                          ? 'bg-destructive/10' 
                           : alert.priority === 'high'
-                          ? 'bg-orange-100'
-                          : 'bg-blue-100'
+                          ? 'bg-orange-100 dark:bg-orange-900/30'
+                          : 'bg-blue-100 dark:bg-blue-900/30'
                       }`}>
                         <AlertTriangle className={`h-3 w-3 ${
                           alert.priority === 'urgent' 
-                            ? 'text-red-600' 
+                            ? 'text-destructive' 
                             : alert.priority === 'high'
-                            ? 'text-orange-600'
-                            : 'text-blue-600'
+                            ? 'text-orange-600 dark:text-orange-400'
+                            : 'text-blue-600 dark:text-blue-400'
                         }`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <Badge variant="outline" className={`text-xs font-semibold mb-1 ${
                           alert.priority === 'urgent' 
-                            ? 'border-red-300 text-red-700' 
+                            ? 'border-destructive/30 text-destructive' 
                             : alert.priority === 'high'
-                            ? 'border-orange-300 text-orange-700'
-                            : 'border-blue-300 text-blue-700'
+                            ? 'border-orange-300 text-orange-700 dark:text-orange-400'
+                            : 'border-blue-300 text-blue-700 dark:text-blue-400'
                         }`}>
                           {alert.priority === 'urgent' ? 'דחוף' : alert.priority === 'high' ? 'חשוב' : 'רגיל'}
                         </Badge>
                         <div className={`font-medium text-sm truncate ${
                           alert.priority === 'urgent' 
-                            ? 'text-red-800' 
+                            ? 'text-destructive' 
                             : alert.priority === 'high'
-                            ? 'text-orange-800'
-                            : 'text-blue-800'
+                            ? 'text-orange-800 dark:text-orange-200'
+                            : 'text-blue-800 dark:text-blue-200'
                         }`}>
                           {alert.message}
                         </div>
                         <div className={`text-xs mt-1 truncate ${
                           alert.priority === 'urgent' 
-                            ? 'text-red-600' 
+                            ? 'text-destructive/80' 
                             : alert.priority === 'high'
-                            ? 'text-orange-600'
-                            : 'text-blue-600'
+                            ? 'text-orange-600 dark:text-orange-400'
+                            : 'text-blue-600 dark:text-blue-400'
                         }`}>
                           {alert.propertyAddress} • {alert.ownerName}
                         </div>
