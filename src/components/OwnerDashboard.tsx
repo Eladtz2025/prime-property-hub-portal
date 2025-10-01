@@ -13,7 +13,8 @@ import {
   FileText,
   Image,
   Receipt,
-  BarChart3
+  BarChart3,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } from '@/lib/owner-portal';
@@ -27,6 +28,7 @@ import { OwnerDocuments } from './OwnerDocuments';
 import { MarketInsights } from './MarketInsights';
 import { PropertyGallery } from './PropertyGallery';
 import { ExpensesView } from './ExpensesView';
+import { AddExpenseModalOwner } from './AddExpenseModalOwner';
 
 export const OwnerDashboard: React.FC = () => {
   const { user, profile } = useAuth();
@@ -37,6 +39,7 @@ export const OwnerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'documents' | 'notifications' | 'gallery' | 'expenses'>('overview');
   const [editingProperty, setEditingProperty] = useState<PropertyWithTenant | null>(null);
   const [paymentProperty, setPaymentProperty] = useState<PropertyWithTenant | null>(null);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -167,6 +170,35 @@ export const OwnerDashboard: React.FC = () => {
               </div>
               <MarketInsights />
             </div>
+
+            {/* Add Expense Card */}
+            <div className="mt-8">
+              <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Receipt className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">הוסף הוצאה חדשה</h3>
+                        <p className="text-sm text-muted-foreground">
+                          תעד הוצאות לנכסים שלך
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setIsAddExpenseOpen(true)}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <Plus className="h-5 w-5" />
+                      הוסף הוצאה
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
@@ -292,6 +324,35 @@ export const OwnerDashboard: React.FC = () => {
               </div>
               <MarketInsights />
             </div>
+
+            {/* Add Expense Card */}
+            <div className="mt-8">
+              <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Receipt className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">הוסף הוצאה חדשה</h3>
+                        <p className="text-sm text-muted-foreground">
+                          תעד הוצאות לנכסים שלך
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setIsAddExpenseOpen(true)}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <Plus className="h-5 w-5" />
+                      הוסף הוצאה
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
@@ -335,6 +396,17 @@ export const OwnerDashboard: React.FC = () => {
           onSuccess={loadDashboardData}
         />
       )}
+
+      {/* Add Expense Modal */}
+      <AddExpenseModalOwner
+        open={isAddExpenseOpen}
+        onOpenChange={setIsAddExpenseOpen}
+        properties={properties.map(p => ({
+          property_id: p.id,
+          property_address: p.address
+        }))}
+        onSuccess={loadDashboardData}
+      />
     </div>
   );
 };
