@@ -18,7 +18,6 @@ import { OwnerPropertyCard } from './OwnerPropertyCard';
 import { PropertyEditModal } from './PropertyEditModal';
 import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
-import { AddPropertyFlow } from './AddPropertyFlow';
 import { OwnerFinancialDashboard } from './OwnerFinancialDashboard';
 import { OwnerDocuments } from './OwnerDocuments';
 
@@ -186,16 +185,10 @@ export const OwnerDashboard: React.FC = () => {
               <Card className="border-dashed border-2 border-muted-foreground/25">
                 <CardContent className="text-center py-12">
                   <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold mb-4">התחל לנהל את הנכסים שלך!</h3>
+                  <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    הוסף את הנכס הראשון שלך כדי להתחיל לעקוב אחר ההכנסות, הוצאות ולנהל דיירים בקלות.
+                    הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
                   </p>
-                  <div className="space-y-3">
-                    <AddPropertyFlow onPropertyAdded={loadDashboardData} />
-                    <p className="text-sm text-muted-foreground">
-                      ⚡ תוכל להוסיף מספר נכסים, לעקוב אחר דיירים ולנהל את הכל במקום אחד
-                    </p>
-                  </div>
                 </CardContent>
               </Card>
             )}
