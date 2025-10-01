@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { differenceInMonths, startOfMonth, startOfYear } from 'date-fns';
 
-export type DateRangeType = 'current-month' | 'from-contract';
+export type DateRangeType = 'current-month' | 'from-contract' | 'next-year';
 
 interface PropertyFinancialData {
   property_id: string;
@@ -163,6 +163,9 @@ export const useOwnerFinancialData = (dateRangeType: DateRangeType = 'current-mo
       } else if (dateRangeType === 'current-month') {
         // Just this month
         totalExpectedIncome += prop.monthly_rent;
+      } else if (dateRangeType === 'next-year') {
+        // Next year - 12 months
+        totalExpectedIncome += prop.monthly_rent * 12;
       }
     });
 
