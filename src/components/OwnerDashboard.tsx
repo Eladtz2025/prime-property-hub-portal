@@ -21,7 +21,6 @@ import { PropertyEditModal } from './PropertyEditModal';
 import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
 import { AddPropertyFlow } from './AddPropertyFlow';
-import { TenantsList } from './TenantsList';
 import { FinancialDashboard } from './FinancialDashboard';
 
 export const OwnerDashboard: React.FC = () => {
@@ -30,7 +29,7 @@ export const OwnerDashboard: React.FC = () => {
   const [properties, setProperties] = useState<PropertyWithTenant[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'tenants' | 'finances' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'finances' | 'notifications'>('overview');
   const [editingProperty, setEditingProperty] = useState<PropertyWithTenant | null>(null);
   const [paymentProperty, setPaymentProperty] = useState<PropertyWithTenant | null>(null);
 
@@ -127,14 +126,6 @@ export const OwnerDashboard: React.FC = () => {
             <Building className="h-4 w-4" />
             הנכסים שלי
             <Badge variant="secondary">{properties.length}</Badge>
-          </Button>
-          <Button
-            variant={activeTab === 'tenants' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('tenants')}
-            className="gap-2"
-          >
-            <Users className="h-4 w-4" />
-            דיירים
           </Button>
           <Button
             variant={activeTab === 'finances' ? 'default' : 'outline'}
@@ -356,13 +347,6 @@ export const OwnerDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
-        )}
-
-        {/* Tenants Tab */}
-        {activeTab === 'tenants' && (
-          <div className="space-y-6">
-            <TenantsList />
           </div>
         )}
 
