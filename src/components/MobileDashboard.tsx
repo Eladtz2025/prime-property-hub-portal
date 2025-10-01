@@ -302,47 +302,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         </Card>
       </div>
 
-        {/* Recent Properties */}
-        <Card className="shadow-card animate-fade-in border border-border/50 bg-card overflow-hidden">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-base font-bold text-foreground truncate">נכסים אחרונים</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10 flex-shrink-0">
-                <Link to="/properties" className="font-semibold text-sm">הצג הכל ←</Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3 px-4 pb-4">
-            {properties.slice(0, 3).map((property, index) => (
-              <div 
-                key={property.id}
-                className="flex items-center justify-between p-3 bg-gradient-to-l from-muted/50 to-transparent rounded-lg hover:from-primary/5 hover:to-transparent transition-all duration-200 animate-fade-in border border-border/30 gap-3"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0 flex-container-mobile">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-sm flex-shrink-0">
-                    <MapPin className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0 flex-container-mobile">
-                    <p className="font-semibold text-sm text-foreground truncate block">{property.address}</p>
-                    <p className="text-xs text-muted-foreground truncate block">{property.ownerName}</p>
-                  </div>
-                </div>
-                <Badge 
-                  className={`text-xs font-semibold flex-shrink-0 whitespace-nowrap px-2 py-1 ${
-                    property.status === 'occupied' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30' 
-                      : property.status === 'vacant'
-                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900/30'
-                  }`}
-                >
-                  {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
 
         {/* Alerts Section */}
         <Card className="shadow-card animate-fade-in border border-border/50 bg-card">

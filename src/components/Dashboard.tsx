@@ -236,50 +236,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </CardContent>
       </Card>
 
-      {/* Properties Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>סקירת נכסים</span>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/properties">הצג הכל</Link>
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {properties.slice(0, 5).map((property) => (
-              <div key={property.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Building className="h-4 w-4 text-primary" />
-                  <div>
-                    <div className="font-medium">{property.address}</div>
-                    <div className="text-sm text-muted-foreground">
-                      בעלים: {property.ownerName}
-                      {property.tenantName && ` • דייר: ${property.tenantName}`}
-                    </div>
-                  </div>
-                </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  property.status === 'occupied' 
-                    ? 'bg-green-100 text-green-800' 
-                    : property.status === 'vacant'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {property.status === 'occupied' ? 'תפוס' : property.status === 'vacant' ? 'פנוי' : 'לא ידוע'}
-                </div>
-              </div>
-            ))}
-            {properties.length > 5 && (
-              <div className="text-center text-sm text-muted-foreground pt-2">
-                ועוד {properties.length - 5} נכסים נוספים
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Recent Activity */}
       <Card>
         <CardHeader>
