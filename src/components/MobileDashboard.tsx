@@ -122,21 +122,11 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-start justify-between mb-4 gap-3">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold mb-1 truncate">
-                  שלום{userName ? ` ${userName}` : ''}! 👋
-                </h1>
-                <p className="text-white/90 text-sm truncate">ברוך הבא למערכת ניהול הנכסים</p>
-              </div>
-              <Button
-                onClick={onAddProperty}
-                size="sm"
-                className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-3 py-2 flex-shrink-0"
-              >
-                <Plus className="h-4 w-4 ml-1" />
-                הוסף נכס
-              </Button>
+            <div className="mb-4">
+              <h1 className="text-xl font-bold mb-1">
+                שלום{userName ? ` ${userName}` : ''}! 👋
+              </h1>
+              <p className="text-white/90 text-sm">ברוך הבא למערכת ניהול הנכסים</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">

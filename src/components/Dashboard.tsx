@@ -87,22 +87,12 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </div>
         
         <div className="relative z-10">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold mb-2">
-                שלום{userName ? ` ${userName}` : ''}! 👋
-              </h1>
-              <p className="text-white/90 text-lg">ברוך הבא למערכת ניהול הנכסים</p>
-              <p className="text-white/70 text-sm mt-1">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
-            </div>
-            <Button
-              onClick={onAddProperty}
-              size="lg"
-              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-            >
-              <Plus className="h-5 w-5 ml-2" />
-              הוסף נכס חדש
-            </Button>
+          <div className="mb-6">
+            <h1 className="text-4xl font-bold mb-2">
+              שלום{userName ? ` ${userName}` : ''}! 👋
+            </h1>
+            <p className="text-white/90 text-lg">ברוך הבא למערכת ניהול הנכסים</p>
+            <p className="text-white/70 text-sm mt-1">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
