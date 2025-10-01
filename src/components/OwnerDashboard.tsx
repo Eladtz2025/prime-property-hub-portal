@@ -18,7 +18,7 @@ import { PropertyEditModal } from './PropertyEditModal';
 import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
 import { AddPropertyFlow } from './AddPropertyFlow';
-import { FinancialDashboard } from './FinancialDashboard';
+import { OwnerFinancialDashboard } from './OwnerFinancialDashboard';
 
 export const OwnerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -263,7 +263,7 @@ export const OwnerDashboard: React.FC = () => {
         {/* Finances Tab */}
         {activeTab === 'finances' && (
           <div className="space-y-6">
-            <FinancialDashboard />
+            <OwnerFinancialDashboard />
           </div>
         )}
 
