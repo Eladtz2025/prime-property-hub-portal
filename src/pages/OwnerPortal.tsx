@@ -5,11 +5,18 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 
 export const OwnerPortal: React.FC = () => {
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === 'super_admin';
+
   return (
     <ProtectedRoute requiredRole="property_owner">
-      <Layout>
+      {isSuperAdmin ? (
+        <Layout>
+          <OwnerDashboard />
+        </Layout>
+      ) : (
         <OwnerDashboard />
-      </Layout>
+      )}
     </ProtectedRoute>
   );
 };
