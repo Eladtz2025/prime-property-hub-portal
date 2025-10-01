@@ -3,14 +3,12 @@ import { NavLink } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  AlertTriangle, 
-  MessageSquare, 
-  BarChart3, 
   Phone, 
   LogOut, 
   Users,
   Settings,
-  ChevronDown
+  ChevronDown,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -28,11 +26,8 @@ import {
 const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
-  { title: "צור קשר", url: "/contact-queue", icon: Phone },
-  { title: "התראות", url: "/alerts", icon: AlertTriangle },
-  { title: "הודעות", url: "/messages", icon: MessageSquare },
-  { title: "דוחות", url: "/reports", icon: BarChart3 },
-  { title: "משתמשים", url: "/users", icon: Users },
+  { title: "ניהול משתמשים", url: "/users", icon: Users, adminOnly: true },
+  { title: "הזמנות", url: "/property-invitations", icon: UserPlus, adminOnly: true },
 ];
 
 interface EnhancedTopNavigationProps {
@@ -47,32 +42,42 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   const { hasPermission, profile } = useAuth();
 
   const filteredNavItems = navigationItems.filter(item => {
-    if (item.url === '/users') {
+    if (item.adminOnly) {
       return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
     }
     return true;
   });
 
-  if (isMobile) {
-    return (
-      <div className="flex items-center gap-2">
-        <UserAvatar size="sm" />
-        {onLogout && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onLogout}
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between gap-4 flex-1">
+      {/* Desktop Navigation in the center */}
+      {!isMobile && (
+        <div className="flex-1 flex justify-center">
+          <nav className="flex items-center gap-2">
+            {filteredNavItems.map((item) => (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                end={item.url === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.title}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {/* User Menu on the right */}
+      <div className="flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -80,7 +85,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               className="flex items-center gap-2 hover:bg-accent rounded-lg p-2"
             >
               <UserAvatar size="sm" />
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              {!isMobile && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-popover border shadow-lg">
@@ -106,5 +111,6 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    </div>
   );
 };
