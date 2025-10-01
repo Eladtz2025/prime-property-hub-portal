@@ -3,8 +3,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  Users,
-  UserPlus,
   LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,12 +18,6 @@ const navigationItems = [
 // Owner portal navigation item
 const ownerPortalItem = { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard };
 
-// Admin-specific navigation items
-const adminItems = [
-  { title: "ניהול משתמשים", url: "/users", icon: Users },
-  { title: "הזמנות", url: "/property-invitations", icon: UserPlus },
-];
-
 interface MobileBottomNavigationProps {
   notificationCount?: number;
 }
@@ -34,20 +26,15 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   notificationCount = 0 
 }) => {
   const location = useLocation();
-  const { hasPermission, profile, permissions } = useAuth();
-
-  // Check if user has admin permissions
-  const hasAdminAccess = profile?.role === 'admin' || profile?.role === 'super_admin' || 
-    permissions.some(p => p.resource === 'users' && (p.action === 'create' || p.action === 'update'));
+  const { profile } = useAuth();
 
   // Check if user is a property owner (has owner_phone in profile)
   const isPropertyOwner = profile?.phone;
 
-  // Combine main navigation with owner portal and admin items based on access
+  // Combine main navigation with owner portal based on access
   const allNavItems = [
     ...navigationItems,
-    ...(isPropertyOwner ? [ownerPortalItem] : []),
-    ...(hasAdminAccess ? adminItems : [])
+    ...(isPropertyOwner ? [ownerPortalItem] : [])
   ];
 
   return (

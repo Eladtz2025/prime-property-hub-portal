@@ -3,12 +3,9 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  Phone, 
   LogOut, 
-  Users,
   Settings,
   ChevronDown,
-  UserPlus,
   LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,8 +25,6 @@ const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
   { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard },
-  { title: "ניהול משתמשים", url: "/users", icon: Users, adminOnly: true },
-  { title: "הזמנות", url: "/property-invitations", icon: UserPlus, adminOnly: true },
 ];
 
 interface EnhancedTopNavigationProps {
@@ -41,15 +36,8 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   onLogout, 
   isMobile = false 
 }) => {
-  const { hasPermission, profile } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
-
-  const filteredNavItems = navigationItems.filter(item => {
-    if (item.adminOnly) {
-      return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
-    }
-    return true;
-  });
 
   return (
     <div className={cn(
@@ -60,7 +48,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
       {!isMobile && (
         <div className="flex-1 flex justify-center">
           <nav className="flex items-center gap-2">
-            {filteredNavItems.map((item) => (
+            {navigationItems.map((item) => (
               <NavLink
                 key={item.url}
                 to={item.url}
