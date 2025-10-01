@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
+import { ActivityLogsList } from './ActivityLogsList';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -241,7 +242,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         </Card>
       )}
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Row 1 */}
       <div className="grid grid-cols-2 gap-4 animate-fade-in">
         <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
           <CardContent className="p-5">
@@ -267,6 +268,45 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
                 <Users className="h-5 w-5 text-white" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Stats - Row 2 */}
+      <div className="grid grid-cols-3 gap-3 animate-fade-in">
+        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
+                <Phone className="h-4 w-4 text-white" />
+              </div>
+              <p className="text-xs text-blue-700/80 mb-1 font-medium">נוצר קשר</p>
+              <p className="text-xl font-bold text-blue-700">{stats.contactedProperties}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
+                <Clock className="h-4 w-4 text-white" />
+              </div>
+              <p className="text-xs text-purple-700/80 mb-1 font-medium">טרם קשר</p>
+              <p className="text-xl font-bold text-purple-700">{stats.notContactedProperties}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-gray-50 to-gray-100/50">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-gray-500 to-gray-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
+                <AlertTriangle className="h-4 w-4 text-white" />
+              </div>
+              <p className="text-xs text-gray-700/80 mb-1 font-medium">לא ידוע</p>
+              <p className="text-xl font-bold text-gray-700">{stats.unknownStatus}</p>
             </div>
           </CardContent>
         </Card>
@@ -409,6 +449,16 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 )}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <CardTitle className="text-base font-bold text-foreground">פעילות אחרונה</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ActivityLogsList limit={3} />
           </CardContent>
         </Card>
       </div>
