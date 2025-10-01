@@ -52,7 +52,10 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   });
 
   return (
-    <div className="flex items-center justify-between gap-4 flex-1">
+    <div className={cn(
+      "flex items-center gap-4 flex-1",
+      isMobile ? "justify-end" : "justify-between"
+    )}>
       {/* Desktop Navigation in the center */}
       {!isMobile && (
         <div className="flex-1 flex justify-center">
@@ -79,7 +82,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
         </div>
       )}
 
-      {/* User Menu on the right */}
+      {/* User Menu */}
       <div className="flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
