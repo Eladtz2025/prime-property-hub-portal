@@ -234,49 +234,39 @@ export const getOwnerDashboardStats = async (ownerId: string): Promise<OwnerDash
     p.contact_status === 'needs_callback'
   ).length;
 
-  // Calculate total income from active tenants based on lease duration
+  // Calculate expected monthly income from active tenants
   const { data: activeTenants } = await supabase
     .from('tenants')
-    .select('monthly_rent, lease_start_date')
+    .select('monthly_rent')
     .in('property_id', propertyIds)
     .eq('is_active', true);
 
-  const totalIncomeFromTenants = activeTenants?.reduce((sum, t) => {
-    if (!t.monthly_rent || !t.lease_start_date) return sum;
-    
-    const startDate = new Date(t.lease_start_date);
-    const today = new Date();
-    
-    // Calculate number of months from lease start to today
-    const monthsDiff = (today.getFullYear() - startDate.getFullYear()) * 12 + 
-                       (today.getMonth() - startDate.getMonth()) + 1; // +1 to include current month
-    
-    const totalRent = t.monthly_rent * Math.max(0, monthsDiff);
-    return sum + totalRent;
+  const expectedMonthlyIncome = activeTenants?.reduce((sum, t) => {
+    return sum + (t.monthly_rent || 0);
   }, 0) || 0;
 
-  // Get financial summary for current month
+  // Get financial records for current month
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const { data: financials } = await supabase
     .from('financial_records')
     .select('type, amount')
     .in('property_id', properties.map(p => p.id))
     .gte('transaction_date', `${currentMonth}-01`)
-    .lt('transaction_date', `${currentMonth}-32`);
+    .lte('transaction_date', `${currentMonth}-31`);
 
-  const income = financials?.filter(f => f.type === 'income').reduce((sum, f) => sum + f.amount, 0) || 0;
+  const additionalIncome = financials?.filter(f => f.type === 'income').reduce((sum, f) => sum + f.amount, 0) || 0;
   const expenses = financials?.filter(f => f.type === 'expense').reduce((sum, f) => sum + f.amount, 0) || 0;
 
-  // Total income = recorded income + calculated income from lease periods
-  const totalIncome = income + totalIncomeFromTenants;
+  // Total monthly income = expected rent + additional recorded income
+  const totalMonthlyIncome = expectedMonthlyIncome + additionalIncome;
 
   return {
     total_properties: properties.length,
     occupied_properties: occupied,
     vacant_properties: vacant,
-    total_monthly_income: totalIncome,
+    total_monthly_income: totalMonthlyIncome,
     total_monthly_expenses: expenses,
-    net_monthly_profit: totalIncome - expenses,
+    net_monthly_profit: totalMonthlyIncome - expenses,
     properties_needing_attention: needing_attention,
   };
 };
