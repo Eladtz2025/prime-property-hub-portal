@@ -22,7 +22,7 @@ import { OwnerFinancialDashboard } from './OwnerFinancialDashboard';
 import { OwnerDocuments } from './OwnerDocuments';
 
 export const OwnerDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [stats, setStats] = useState<OwnerDashboardStats | null>(null);
   const [properties, setProperties] = useState<PropertyWithTenant[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -88,59 +88,91 @@ export const OwnerDashboard: React.FC = () => {
         {/* Header */}
         <div className="mb-4 md:mb-8">
           <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">ברוך הבא לפורטל בעלי הנכסים</h1>
-          <p className="text-sm md:text-base text-muted-foreground">נהל את הנכסים שלך בקלות ובמהירות</p>
+          <p className="text-sm md:text-base text-muted-foreground">
+            {profile?.role === 'super_admin' ? 'נהל את הנכסים שלך בקלות ובמהירות' : 'הנכסים שלך'}
+          </p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
-          <Button
-            variant={activeTab === 'overview' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('overview')}
-            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-            size="sm"
-          >
-            <Home className="h-4 w-4" />
-            <span className="hidden sm:inline">סקירה כללית</span>
-            <span className="sm:hidden">סקירה</span>
-          </Button>
-          <Button
-            variant={activeTab === 'properties' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('properties')}
-            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-            size="sm"
-          >
-            <Building className="h-4 w-4" />
-            <span className="hidden sm:inline">הנכסים שלי</span>
-            <span className="sm:hidden">נכסים</span>
-            <Badge variant="secondary" className="text-xs h-5">{properties.length}</Badge>
-          </Button>
-          <Button
-            variant={activeTab === 'documents' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('documents')}
-            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-            size="sm"
-          >
-            <FileText className="h-4 w-4" />
-            <span>מסמכים</span>
-          </Button>
-          <Button
-            variant={activeTab === 'notifications' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('notifications')}
-            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
-            size="sm"
-          >
-            <Bell className="h-4 w-4" />
-            <span>התראות</span>
-            {notifications.filter(n => !n.is_read).length > 0 && (
-              <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
-                {notifications.filter(n => !n.is_read).length}
-              </Badge>
+        {/* Property Owners View - Simple list without tabs */}
+        {profile?.role === 'property_owner' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {properties.map((property) => (
+                <OwnerPropertyCard 
+                  key={property.id} 
+                  property={property}
+                  onEdit={setEditingProperty}
+                  onQuickPayment={setPaymentProperty}
+                />
+              ))}
+            </div>
+
+            {properties.length === 0 && (
+              <Card className="border-dashed border-2 border-muted-foreground/25">
+                <CardContent className="text-center py-12">
+                  <Building className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold mb-4">אין נכסים כרגע</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    הנכסים שלך יופיעו כאן לאחר שהמנהל יקצה אותם אליך
+                  </p>
+                </CardContent>
+              </Card>
             )}
-          </Button>
-        </div>
+          </div>
+        )}
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && stats && (
+        {/* Navigation Tabs - Only for Super Admin */}
+        {profile?.role === 'super_admin' && (
+          <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
+            <Button
+              variant={activeTab === 'overview' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('overview')}
+              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+              size="sm"
+            >
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">סקירה כללית</span>
+              <span className="sm:hidden">סקירה</span>
+            </Button>
+            <Button
+              variant={activeTab === 'properties' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('properties')}
+              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+              size="sm"
+            >
+              <Building className="h-4 w-4" />
+              <span className="hidden sm:inline">הנכסים שלי</span>
+              <span className="sm:hidden">נכסים</span>
+              <Badge variant="secondary" className="text-xs h-5">{properties.length}</Badge>
+            </Button>
+            <Button
+              variant={activeTab === 'documents' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('documents')}
+              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+              size="sm"
+            >
+              <FileText className="h-4 w-4" />
+              <span>מסמכים</span>
+            </Button>
+            <Button
+              variant={activeTab === 'notifications' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('notifications')}
+              className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+              size="sm"
+            >
+              <Bell className="h-4 w-4" />
+              <span>התראות</span>
+              {notifications.filter(n => !n.is_read).length > 0 && (
+                <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
+                  {notifications.filter(n => !n.is_read).length}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Overview Tab - Only for Super Admin */}
+        {profile?.role === 'super_admin' && activeTab === 'overview' && stats && (
           <div className="space-y-6">
             {/* Date Range Selector */}
             <OwnerFinancialDashboard statsData={stats} properties={properties} />
@@ -171,8 +203,8 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Properties Tab */}
-        {activeTab === 'properties' && (
+        {/* Properties Tab - Only for Super Admin */}
+        {profile?.role === 'super_admin' && activeTab === 'properties' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">הנכסים שלי</h2>
@@ -203,8 +235,8 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Documents Tab */}
-        {activeTab === 'documents' && (
+        {/* Documents Tab - Only for Super Admin */}
+        {profile?.role === 'super_admin' && activeTab === 'documents' && (
           <OwnerDocuments 
             properties={properties.map(p => ({
               property_id: p.id,
@@ -213,8 +245,8 @@ export const OwnerDashboard: React.FC = () => {
           />
         )}
 
-        {/* Notifications Tab */}
-        {activeTab === 'notifications' && (
+        {/* Notifications Tab - Only for Super Admin */}
+        {profile?.role === 'super_admin' && activeTab === 'notifications' && (
           <NotificationPanel 
             notifications={notifications}
             onMarkAsRead={(id) => {
