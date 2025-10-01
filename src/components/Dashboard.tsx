@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2 } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -12,6 +12,7 @@ import { StatsCard } from './StatsCard';
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardProps {
   properties: Property[];
@@ -22,6 +23,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, stats, alerts, onAddProperty }) => {
   const { isMobile } = useMobileOptimization();
+  const { profile } = useAuth();
   const urgentAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
   const highPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
   
@@ -61,20 +63,137 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
     return <MobileDashboard properties={properties} stats={stats} alerts={alerts} onAddProperty={onAddProperty} />;
   }
   
+  // Extract user's name for greeting
+  const getUserName = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ')[0]; // Get first name
+    }
+    if (profile?.email) {
+      return profile.email.split('@')[0]; // Get part before @
+    }
+    return '';
+  };
+  
+  const userName = getUserName();
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h2 className="text-4xl font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent">
-            לוח בקרה ראשי
-          </h2>
-          <p className="text-muted-foreground mt-1">סקירה כללית של הנכסים שלך</p>
+      {/* Header with greeting card */}
+      <div className="bg-gradient-primary rounded-2xl p-8 text-white shadow-elevated animate-fade-in relative isolate overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/20"></div>
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10"></div>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-muted-foreground">עודכן לאחרונה</div>
-          <div className="text-lg font-semibold text-foreground">
-            {new Date().toLocaleDateString('he-IL')}
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold mb-2">
+                שלום{userName ? ` ${userName}` : ''}! 👋
+              </h1>
+              <p className="text-white/90 text-lg">ברוך הבא למערכת ניהול הנכסים</p>
+              <p className="text-white/70 text-sm mt-1">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
+            </div>
+            <Button
+              onClick={onAddProperty}
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            >
+              <Plus className="h-5 w-5 ml-2" />
+              הוסף נכס חדש
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Building className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">סה״כ נכסים</span>
+              </div>
+              <div className="text-3xl font-bold number-display">{stats.totalProperties}</div>
+            </div>
+            
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">הכנסה חודשית</span>
+                {!isEditingIncome && (
+                  <Edit2 
+                    className="h-4 w-4 mr-auto cursor-pointer hover:scale-110 transition-transform" 
+                    onClick={() => setIsEditingIncome(true)}
+                  />
+                )}
+              </div>
+              {isEditingIncome ? (
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder="הזן סכום..."
+                    defaultValue={manualMonthlyIncome || autoCalculatedIncome}
+                    className="bg-white/20 border-white/30 text-white placeholder:text-white/70"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const value = Number((e.target as HTMLInputElement).value);
+                        saveManualIncome(value);
+                      }
+                      if (e.key === 'Escape') {
+                        setIsEditingIncome(false);
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <div className="text-2xl font-bold number-display">
+                  {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">תפוסים</span>
+              </div>
+              <div className="text-3xl font-bold number-display">{stats.confirmedOccupied}</div>
+            </div>
+
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Users className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">פנויים</span>
+              </div>
+              <div className="text-3xl font-bold number-display">{stats.confirmedVacant}</div>
+            </div>
+
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Phone className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">נוצר קשר</span>
+              </div>
+              <div className="text-3xl font-bold number-display">{stats.contactedProperties}</div>
+            </div>
+
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-semibold">טרם קשר</span>
+              </div>
+              <div className="text-3xl font-bold number-display">{stats.notContactedProperties}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -101,108 +220,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </Card>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        <StatsCard 
-          title="סה״כ נכסים"
-          value={stats.totalProperties}
-          icon={Building}
-          color="blue"
-        />
-        <StatsCard 
-          title="בעלים שנוצר קשר"
-          value={stats.contactedProperties}
-          icon={CheckCircle}
-          color="green"
-        />
-        <StatsCard 
-          title="טרם נוצר קשר"
-          value={stats.notContactedProperties}
-          icon={Phone}
-          color="orange"
-        />
-        <StatsCard 
-          title="נכסים תפוסים"
-          value={stats.confirmedOccupied}
-          icon={Users}
-          color="green"
-        />
-        <Card className="cursor-pointer hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-primary group" onClick={() => setIsEditingIncome(true)}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 transition-all duration-300 group-hover:scale-110 shadow-sm">
-                  <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">הכנסה חודשית כוללת</span>
-                </div>
-              </div>
-              <Edit2 className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-            {isEditingIncome ? (
-              <div className="mt-2 space-y-2">
-                <Input
-                  type="number"
-                  placeholder="הזן סכום בש״ח..."
-                  defaultValue={manualMonthlyIncome || autoCalculatedIncome}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const value = Number((e.target as HTMLInputElement).value);
-                      saveManualIncome(value);
-                    }
-                    if (e.key === 'Escape') {
-                      setIsEditingIncome(false);
-                    }
-                  }}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const input = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('input') as HTMLInputElement;
-                      const value = Number(input.value);
-                      saveManualIncome(value);
-                    }}
-                  >
-                    שמור
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingIncome(false);
-                    }}
-                  >
-                    ביטול
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3">
-                <div className="text-3xl font-bold text-foreground mb-1">₪{displayIncome.toLocaleString('he-IL')}</div>
-                {manualMonthlyIncome !== null && (
-                  <div className="text-xs text-muted-foreground">
-                    ערך ידני (אוטומטי: ₪{autoCalculatedIncome.toLocaleString('he-IL')})
-                  </div>
-                )}
-                <div className="h-1 w-full bg-muted rounded-full overflow-hidden mt-2">
-                  <div className="h-full bg-gradient-primary transition-all duration-500 group-hover:w-full w-0"></div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <StatsCard 
-          title="סטטוס לא ידוע"
-          value={stats.unknownStatus}
-          icon={Clock}
-          color="gray"
-        />
-      </div>
 
       {/* Alerts Section - Always Visible */}
       <Card>
