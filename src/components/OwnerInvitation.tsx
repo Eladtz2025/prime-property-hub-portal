@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getInvitationByToken, useInvitation } from '@/lib/owner-portal';
+import { useInvitation } from '@/hooks/useInvitation';
 import type { PropertyInvitation } from '@/types/owner-portal';
 
 export const OwnerInvitation: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { getInvitationByToken, acceptInvitation, loading: invitationLoading, error: invitationError } = useInvitation();
   const [invitation, setInvitation] = useState<PropertyInvitation | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   
@@ -30,11 +31,11 @@ export const OwnerInvitation: React.FC = () => {
   const loadInvitation = async () => {
     if (!token) return;
     
-    setLoading(true);
+    setLoadingInvitation(true);
     try {
       const invitationData = await getInvitationByToken(token);
       if (invitationData) {
-        setInvitation(invitationData);
+        setInvitation(invitationData as PropertyInvitation);
       } else {
         setError('הזמנה לא תקינה או שפגה תוקפה');
       }
@@ -42,20 +43,16 @@ export const OwnerInvitation: React.FC = () => {
       console.error('Error loading invitation:', error);
       setError('שגיאה בטעינת ההזמנה');
     } finally {
-      setLoading(false);
+      setLoadingInvitation(false);
     }
   };
 
   const handleAcceptInvitation = async () => {
     if (!token || !user) return;
     
-    setLoading(true);
     try {
-      const { error } = await useInvitation(token, user.id);
-      if (error) {
-        setError('שגיאה בקבלת ההזמנה');
-        console.error('Error accepting invitation:', error);
-      } else {
+      const result = await acceptInvitation(token);
+      if (result.success) {
         // Clear the pending invitation token from localStorage
         localStorage.removeItem('pending_invitation_token');
         
@@ -63,12 +60,12 @@ export const OwnerInvitation: React.FC = () => {
         setTimeout(() => {
           navigate('/owner-portal');
         }, 2000);
+      } else {
+        setError(invitationError || 'שגיאה בקבלת ההזמנה');
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
       setError('שגיאה בקבלת ההזמנה');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -97,7 +94,7 @@ export const OwnerInvitation: React.FC = () => {
     );
   }
 
-  if (loading) {
+  if (loadingInvitation || invitationLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
         <div className="text-center">
@@ -187,7 +184,7 @@ export const OwnerInvitation: React.FC = () => {
                 <div className="flex gap-3">
                   <Button 
                     onClick={handleAcceptInvitation}
-                    disabled={loading}
+                    disabled={invitationLoading}
                     className="flex-1"
                   >
                     קבל הזמנה
