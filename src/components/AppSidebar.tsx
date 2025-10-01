@@ -51,8 +51,8 @@ export function AppSidebar() {
   const hasAdminAccess = profile?.role === 'admin' || profile?.role === 'super_admin' || 
     permissions.some(p => p.resource === 'users' && (p.action === 'create' || p.action === 'update'));
 
-  // Check if user is a property owner
-  const isPropertyOwner = profile?.role === 'property_owner';
+  // Check if user is a property owner or admin
+  const isPropertyOwner = profile?.role === 'property_owner' || hasAdminAccess;
 
   return (
     <Sidebar
