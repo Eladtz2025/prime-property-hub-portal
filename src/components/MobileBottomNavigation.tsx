@@ -4,7 +4,8 @@ import {
   Home, 
   Building, 
   Users,
-  UserPlus
+  UserPlus,
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,9 @@ const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
 ];
+
+// Owner portal navigation item
+const ownerPortalItem = { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard };
 
 // Admin-specific navigation items
 const adminItems = [
@@ -36,10 +40,15 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   const hasAdminAccess = profile?.role === 'admin' || profile?.role === 'super_admin' || 
     permissions.some(p => p.resource === 'users' && (p.action === 'create' || p.action === 'update'));
 
-  // Combine main navigation with admin items if user has access
-  const allNavItems = hasAdminAccess 
-    ? [...navigationItems, ...adminItems]
-    : navigationItems;
+  // Check if user is a property owner (has owner_phone in profile)
+  const isPropertyOwner = profile?.phone;
+
+  // Combine main navigation with owner portal and admin items based on access
+  const allNavItems = [
+    ...navigationItems,
+    ...(isPropertyOwner ? [ownerPortalItem] : []),
+    ...(hasAdminAccess ? adminItems : [])
+  ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
