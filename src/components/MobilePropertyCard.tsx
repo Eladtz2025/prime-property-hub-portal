@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Eye, User, Calendar, Mail } from 'lucide-react';
+import { Phone, MapPin, Eye, User, Calendar, Mail, Edit } from 'lucide-react';
 import { Property } from '@/types/property';
 import { SearchHighlight } from './SearchHighlight';
 
@@ -13,15 +13,19 @@ import { canViewPhoneNumbers } from '@/utils/permissions';
 interface MobilePropertyCardProps {
   property: Property;
   onViewDetails: (id: string) => void;
+  onEdit?: (property: Property) => void;
   ownerPropertyCount?: number;
   searchTerm?: string;
+  canEdit?: boolean;
 }
 
 export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({ 
   property, 
   onViewDetails,
+  onEdit,
   ownerPropertyCount = 1,
-  searchTerm = ''
+  searchTerm = '',
+  canEdit = false
 }) => {
   const { permissions } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
@@ -139,11 +143,22 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
           </div>
         )}
 
-        {/* View Details Button */}
-        <div className="pt-2">
+        {/* Action Buttons */}
+        <div className="pt-2 flex gap-2">
+          {canEdit && onEdit && (
+            <Button 
+              onClick={() => onEdit(property)}
+              variant="outline"
+              className="flex-1 h-10"
+              size="sm"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              עריכה
+            </Button>
+          )}
           <Button 
             onClick={() => onViewDetails(property.id)}
-            className="w-full h-10"
+            className="flex-1 h-10"
             size="sm"
           >
             <Eye className="h-4 w-4 mr-2" />

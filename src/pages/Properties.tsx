@@ -329,8 +329,10 @@ export const Properties: React.FC = memo(() => {
                         key={property.id}
                         property={property}
                         onViewDetails={handleViewDetails}
+                        onEdit={setEditingProperty}
                         ownerPropertyCount={getOwnerPropertyCount(property)}
                         searchTerm={filters.searchTerm}
+                        canEdit={canEditProperties}
                       />
                     ))}
                   </div>
