@@ -153,20 +153,6 @@ export const OwnerDashboard: React.FC = () => {
                 <ExpensesView properties={properties} />
               </TabsContent>
             </Tabs>
-
-            {/* Market Insights Section */}
-            <div className="mt-12">
-              <div className="mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3">
-                  <BarChart3 className="h-7 w-7 text-primary" />
-                  מדדי השוק
-                </h2>
-                <p className="text-muted-foreground">
-                  תובנות ונתונים כלליים על שוק הנדל"ן
-                </p>
-              </div>
-              <MarketInsights />
-            </div>
           </div>
         )}
 
@@ -226,6 +212,20 @@ export const OwnerDashboard: React.FC = () => {
                         </CardContent>
                       </Card>
                     )}
+
+                    {/* Market Insights Section */}
+                    <div className="mt-8">
+                      <div className="mb-6">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3">
+                          <BarChart3 className="h-7 w-7 text-primary" />
+                          מדדי השוק
+                        </h2>
+                        <p className="text-muted-foreground">
+                          תובנות ונתונים כלליים על שוק הנדל"ן
+                        </p>
+                      </div>
+                      <MarketInsights />
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -278,20 +278,6 @@ export const OwnerDashboard: React.FC = () => {
                 />
               </TabsContent>
             </Tabs>
-
-            {/* Market Insights Section */}
-            <div className="mt-12">
-              <div className="mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3">
-                  <BarChart3 className="h-7 w-7 text-primary" />
-                  מדדי השוק
-                </h2>
-                <p className="text-muted-foreground">
-                  תובנות ונתונים כלליים על שוק הנדל"ן
-                </p>
-              </div>
-              <MarketInsights />
-            </div>
           </div>
         )}
       </div>
