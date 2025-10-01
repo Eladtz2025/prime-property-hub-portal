@@ -83,51 +83,59 @@ export const OwnerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-3 md:p-4 pb-20 md:pb-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">ברוך הבא לפורטל בעלי הנכסים</h1>
-          <p className="text-muted-foreground">נהל את הנכסים שלך בקלות ובמהירות</p>
+        <div className="mb-4 md:mb-8">
+          <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">ברוך הבא לפורטל בעלי הנכסים</h1>
+          <p className="text-sm md:text-base text-muted-foreground">נהל את הנכסים שלך בקלות ובמהירות</p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
           <Button
             variant={activeTab === 'overview' ? 'default' : 'outline'}
             onClick={() => setActiveTab('overview')}
-            className="gap-2"
+            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+            size="sm"
           >
             <Home className="h-4 w-4" />
-            סקירה כללית
+            <span className="hidden sm:inline">סקירה כללית</span>
+            <span className="sm:hidden">סקירה</span>
           </Button>
           <Button
             variant={activeTab === 'properties' ? 'default' : 'outline'}
             onClick={() => setActiveTab('properties')}
-            className="gap-2"
+            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+            size="sm"
           >
             <Building className="h-4 w-4" />
-            הנכסים שלי
-            <Badge variant="secondary">{properties.length}</Badge>
+            <span className="hidden sm:inline">הנכסים שלי</span>
+            <span className="sm:hidden">נכסים</span>
+            <Badge variant="secondary" className="text-xs h-5">{properties.length}</Badge>
           </Button>
           <Button
             variant={activeTab === 'documents' ? 'default' : 'outline'}
             onClick={() => setActiveTab('documents')}
-            className="gap-2"
+            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+            size="sm"
           >
             <FileText className="h-4 w-4" />
-            מסמכים
+            <span>מסמכים</span>
           </Button>
           <Button
             variant={activeTab === 'notifications' ? 'default' : 'outline'}
             onClick={() => setActiveTab('notifications')}
-            className="gap-2"
+            className="gap-1 md:gap-2 flex-1 md:flex-initial text-sm md:text-base h-9 md:h-10"
+            size="sm"
           >
             <Bell className="h-4 w-4" />
-            התראות
-            <Badge variant="destructive">
-              {notifications.filter(n => !n.is_read).length}
-            </Badge>
+            <span>התראות</span>
+            {notifications.filter(n => !n.is_read).length > 0 && (
+              <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
+                {notifications.filter(n => !n.is_read).length}
+              </Badge>
+            )}
           </Button>
         </div>
 
