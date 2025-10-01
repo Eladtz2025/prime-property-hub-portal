@@ -8,7 +8,8 @@ import {
   AlertTriangle,
   DollarSign,
   Home,
-  Bell
+  Bell,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } from '@/lib/owner-portal';
@@ -19,6 +20,7 @@ import { QuickRentPaymentModal } from './QuickRentPaymentModal';
 import { NotificationPanel } from './NotificationPanel';
 import { AddPropertyFlow } from './AddPropertyFlow';
 import { OwnerFinancialDashboard } from './OwnerFinancialDashboard';
+import { OwnerDocuments } from './OwnerDocuments';
 
 export const OwnerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +28,7 @@ export const OwnerDashboard: React.FC = () => {
   const [properties, setProperties] = useState<PropertyWithTenant[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'finances' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'documents' | 'notifications'>('overview');
   const [editingProperty, setEditingProperty] = useState<PropertyWithTenant | null>(null);
   const [paymentProperty, setPaymentProperty] = useState<PropertyWithTenant | null>(null);
 
@@ -110,12 +112,12 @@ export const OwnerDashboard: React.FC = () => {
             <Badge variant="secondary">{properties.length}</Badge>
           </Button>
           <Button
-            variant={activeTab === 'finances' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('finances')}
+            variant={activeTab === 'documents' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('documents')}
             className="gap-2"
           >
-            <DollarSign className="h-4 w-4" />
-            כספים
+            <FileText className="h-4 w-4" />
+            מסמכים
           </Button>
           <Button
             variant={activeTab === 'notifications' ? 'default' : 'outline'}
@@ -195,6 +197,9 @@ export const OwnerDashboard: React.FC = () => {
               </Card>
             </div>
 
+            {/* Financial Dashboard in Overview */}
+            <OwnerFinancialDashboard />
+
 
             {/* Alerts */}
             {stats.properties_needing_attention > 0 && (
@@ -260,11 +265,14 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Finances Tab */}
-        {activeTab === 'finances' && (
-          <div className="space-y-6">
-            <OwnerFinancialDashboard />
-          </div>
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <OwnerDocuments 
+            properties={properties.map(p => ({
+              property_id: p.id,
+              property_address: p.address
+            }))}
+          />
         )}
 
         {/* Notifications Tab */}
