@@ -12,13 +12,27 @@ import type {
 
 // Property management functions
 export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithTenant[]> => {
+  // First get property IDs for this owner
+  const { data: ownershipData, error: ownershipError } = await supabase
+    .from('property_owners')
+    .select('property_id')
+    .eq('owner_id', ownerId);
+
+  if (ownershipError || !ownershipData || ownershipData.length === 0) {
+    console.error('Error fetching ownership:', ownershipError);
+    return [];
+  }
+
+  const propertyIds = ownershipData.map(o => o.property_id);
+
+  // Then get properties with their tenants
   const { data, error } = await supabase
     .from('properties')
     .select(`
       *,
-      tenants:tenants!inner(*)
+      tenants(*)
     `)
-    .eq('property_owners.owner_id', ownerId);
+    .in('id', propertyIds);
 
   if (error) {
     console.error('Error fetching owner properties:', error);
@@ -103,14 +117,31 @@ export const createFinancialRecord = async (record: Omit<FinancialRecord, 'id' |
 };
 
 export const getOwnerDashboardStats = async (ownerId: string): Promise<OwnerDashboardStats> => {
+  // First get property IDs for this owner
+  const { data: ownershipData } = await supabase
+    .from('property_owners')
+    .select('property_id')
+    .eq('owner_id', ownerId);
+
+  if (!ownershipData || ownershipData.length === 0) {
+    return {
+      total_properties: 0,
+      occupied_properties: 0,
+      vacant_properties: 0,
+      total_monthly_income: 0,
+      total_monthly_expenses: 0,
+      net_monthly_profit: 0,
+      properties_needing_attention: 0,
+    };
+  }
+
+  const propertyIds = ownershipData.map(o => o.property_id);
+
   // Get owner's properties
   const { data: properties } = await supabase
     .from('properties')
-    .select(`
-      *,
-      property_owners!inner(owner_id)
-    `)
-    .eq('property_owners.owner_id', ownerId);
+    .select('*')
+    .in('id', propertyIds);
 
   if (!properties) {
     return {
