@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Building, 
@@ -40,6 +40,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   isMobile = false 
 }) => {
   const { hasPermission, profile } = useAuth();
+  const navigate = useNavigate();
 
   const filteredNavItems = navigationItems.filter(item => {
     if (item.adminOnly) {
@@ -94,7 +95,10 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               <div className="text-xs text-muted-foreground">{profile?.role}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+            <DropdownMenuItem 
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => navigate('/users')}
+            >
               <Settings className="h-4 w-4" />
               <span>הגדרות</span>
             </DropdownMenuItem>
