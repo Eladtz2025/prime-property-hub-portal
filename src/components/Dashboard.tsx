@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus, UserPlus } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
@@ -187,44 +187,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           </div>
         </div>
       </div>
-
-      {/* Admin Quick Actions */}
-      {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              פעולות אדמין מהירות
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Button asChild variant="outline" className="justify-start h-auto py-4">
-                <Link to="/users" className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-right flex-1">
-                    <div className="font-semibold">ניהול משתמשים</div>
-                    <div className="text-xs text-muted-foreground">נהל משתמשים והרשאות</div>
-                  </div>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start h-auto py-4">
-                <Link to="/users" className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <UserPlus className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-right flex-1">
-                    <div className="font-semibold">הזמנות בעלי נכסים</div>
-                    <div className="text-xs text-muted-foreground">הזמן בעלי נכסים חדשים</div>
-                  </div>
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Urgent Alerts */}
       {urgentAlerts.length > 0 && (

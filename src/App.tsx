@@ -7,7 +7,6 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
-import { UserManagement } from './pages/UserManagement';
 import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
@@ -71,24 +70,12 @@ const AppContent: React.FC = () => {
               path="/settings" 
               element={
                 <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
+                  <Settings />
                 </Layout>
               } 
             />
             <Route 
-              path="/users" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <UserManagement />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/admin-control" 
+              path="/admin-control"
               element={
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
