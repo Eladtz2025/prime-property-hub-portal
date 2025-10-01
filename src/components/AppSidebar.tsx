@@ -4,7 +4,6 @@ import {
   Home, 
   Building, 
   Users, 
-  UserPlus,
   Briefcase
 } from 'lucide-react';
 import {
@@ -29,7 +28,6 @@ const navigationItems = [
 // Admin-specific navigation items
 const adminItems = [
   { title: 'ניהול משתמשים', url: '/users', icon: Users, requiredRole: 'admin' },
-  { title: 'הזמנת בעלי נכס', url: '/property-invitations', icon: UserPlus, requiredRole: 'admin' },
 ];
 
 // Property owner navigation items

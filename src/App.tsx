@@ -8,7 +8,6 @@ import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
 import { UserManagement } from './pages/UserManagement';
-import { PropertyInvitations } from './pages/PropertyInvitations';
 import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
@@ -107,17 +106,7 @@ const AppContent: React.FC = () => {
               } 
             />
             <Route 
-              path="/property-invitations" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <PropertyInvitations />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/import-data" 
+              path="/import-data"
               element={
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
