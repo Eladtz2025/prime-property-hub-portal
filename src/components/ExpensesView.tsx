@@ -123,7 +123,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ properties }) => {
   const selectedPropertyData = properties.find(p => p.id === selectedProperty);
 
   return (
-    <div className="space-y-6">
+    <div dir="rtl" className="space-y-6">
       {/* Filters */}
       <Card>
         <CardHeader>

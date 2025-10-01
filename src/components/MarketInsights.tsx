@@ -45,7 +45,7 @@ export const MarketInsights: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div dir="rtl" className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Housing Price Index */}
         <Card className="hover:shadow-lg transition-shadow">

@@ -167,7 +167,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
   const selectedPropertyData = properties.find(p => p.id === selectedProperty);
 
   return (
-    <div className="space-y-6">
+    <div dir="rtl" className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

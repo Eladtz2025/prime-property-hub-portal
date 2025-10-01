@@ -43,7 +43,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div dir="rtl" className="space-y-4 md:space-y-6">
       {/* Date Range Selector */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
         <label className="text-sm font-medium">טווח תאריכים:</label>
