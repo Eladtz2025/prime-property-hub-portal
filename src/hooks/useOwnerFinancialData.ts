@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { differenceInMonths, startOfMonth, startOfYear } from 'date-fns';
 
-export type DateRangeType = 'current-month' | 'current-year' | 'from-contract' | 'all-time';
+export type DateRangeType = 'current-month' | 'from-contract';
 
 interface PropertyFinancialData {
   property_id: string;
@@ -101,10 +101,8 @@ export const useOwnerFinancialData = (dateRangeType: DateRangeType = 'current-mo
       if (dateRangeType === 'current-month') {
         const monthStart = startOfMonth(new Date()).toISOString().split('T')[0];
         query = query.gte('payment_date', monthStart);
-      } else if (dateRangeType === 'current-year') {
-        const yearStart = startOfYear(new Date()).toISOString().split('T')[0];
-        query = query.gte('payment_date', yearStart);
       }
+      // For 'from-contract', fetch all payments
 
       const { data, error } = await query.order('payment_date', { ascending: false });
 
@@ -131,10 +129,8 @@ export const useOwnerFinancialData = (dateRangeType: DateRangeType = 'current-mo
       if (dateRangeType === 'current-month') {
         const monthStart = startOfMonth(new Date()).toISOString().split('T')[0];
         query = query.gte('transaction_date', monthStart);
-      } else if (dateRangeType === 'current-year') {
-        const yearStart = startOfYear(new Date()).toISOString().split('T')[0];
-        query = query.gte('transaction_date', yearStart);
       }
+      // For 'from-contract', fetch all expenses
 
       const { data, error } = await query.order('transaction_date', { ascending: false });
 
@@ -167,16 +163,6 @@ export const useOwnerFinancialData = (dateRangeType: DateRangeType = 'current-mo
       } else if (dateRangeType === 'current-month') {
         // Just this month
         totalExpectedIncome += prop.monthly_rent;
-      } else if (dateRangeType === 'current-year') {
-        // Months from year start or lease start (whichever is later)
-        const yearStart = startOfYear(now);
-        const startDate = leaseStart > yearStart ? leaseStart : yearStart;
-        const monthsInYear = Math.max(0, differenceInMonths(now, startDate) + 1);
-        totalExpectedIncome += prop.monthly_rent * monthsInYear;
-      } else {
-        // all-time
-        const monthsActive = Math.max(0, differenceInMonths(now, leaseStart) + 1);
-        totalExpectedIncome += prop.monthly_rent * monthsActive;
       }
     });
 

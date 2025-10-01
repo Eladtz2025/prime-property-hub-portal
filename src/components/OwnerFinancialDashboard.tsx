@@ -16,9 +16,7 @@ export const OwnerFinancialDashboard: React.FC = () => {
   const getDateRangeLabel = () => {
     switch (dateRange) {
       case 'current-month': return 'החודש הנוכחי';
-      case 'current-year': return 'השנה הנוכחית';
       case 'from-contract': return 'מתחילת החוזה';
-      case 'all-time': return 'כל התקופה';
     }
   };
 
@@ -44,9 +42,7 @@ export const OwnerFinancialDashboard: React.FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="current-month">החודש הנוכחי</SelectItem>
-            <SelectItem value="current-year">השנה הנוכחית</SelectItem>
             <SelectItem value="from-contract">מתחילת החוזה</SelectItem>
-            <SelectItem value="all-time">כל התקופה</SelectItem>
           </SelectContent>
         </Select>
       </div>
