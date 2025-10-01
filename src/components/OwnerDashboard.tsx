@@ -4,15 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Building, 
-  Users, 
   TrendingUp, 
   AlertTriangle,
   DollarSign,
   Home,
-  FileText,
   Bell
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOwnerDashboardStats, getOwnerProperties, getOwnerNotifications } from '@/lib/owner-portal';
 import type { OwnerDashboardStats, PropertyWithTenant, Notification } from '@/types/owner-portal';
@@ -72,21 +69,6 @@ export const OwnerDashboard: React.FC = () => {
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
   };
-
-  // Mock data for charts - in production, fetch from API
-  const incomeChartData = [
-    { month: 'ינואר', income: 15000, expenses: 8000 },
-    { month: 'פברואר', income: 16000, expenses: 7500 },
-    { month: 'מרץ', income: 15500, expenses: 9000 },
-    { month: 'אפריל', income: 17000, expenses: 8200 },
-    { month: 'מאי', income: 16500, expenses: 7800 },
-    { month: 'יוני', income: 18000, expenses: 8500 },
-  ];
-
-  const occupancyData = [
-    { name: 'מושכרים', value: stats?.occupied_properties || 0, fill: '#10b981' },
-    { name: 'פנויים', value: stats?.vacant_properties || 0, fill: '#ef4444' },
-  ];
 
   if (loading) {
     return (
@@ -173,27 +155,27 @@ export const OwnerDashboard: React.FC = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">הכנסה חודשית</CardTitle>
+                  <CardTitle className="text-sm font-medium">סה"כ הכנסות</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
                     {formatCurrency(stats.total_monthly_income)}
                   </div>
-                  <p className="text-xs text-muted-foreground">החודש הנוכחי</p>
+                  <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">הוצאות חודשיות</CardTitle>
+                  <CardTitle className="text-sm font-medium">סה"כ הוצאות</CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
                     {formatCurrency(stats.total_monthly_expenses)}
                   </div>
-                  <p className="text-xs text-muted-foreground">החודש הנוכחי</p>
+                  <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
                 </CardContent>
               </Card>
 
@@ -208,83 +190,57 @@ export const OwnerDashboard: React.FC = () => {
                   }`}>
                     {formatCurrency(stats.net_monthly_profit)}
                   </div>
-                  <p className="text-xs text-muted-foreground">החודש הנוכחי</p>
+                  <p className="text-xs text-muted-foreground">הכנסות - הוצאות</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Income vs Expenses Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>הכנסות והוצאות לאורך זמן</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={incomeChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `₪${value.toLocaleString('he-IL')}`} />
-                      <Legend />
-                      <Line type="monotone" dataKey="income" stroke="#10b981" name="הכנסות" strokeWidth={2} />
-                      <Line type="monotone" dataKey="expenses" stroke="#ef4444" name="הוצאות" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Occupancy Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>תפוסת נכסים</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={occupancyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent Properties */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  הנכסים שלי
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {properties.slice(0, 6).map((property) => (
-                    <OwnerPropertyCard 
-                      key={property.id} 
-                      property={property}
-                      onEdit={setEditingProperty}
-                      onQuickPayment={setPaymentProperty}
-                    />
-                  ))}
-                </div>
-                {properties.length > 6 && (
-                  <div className="mt-4 text-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setActiveTab('properties')}
-                    >
-                      צפה בכל הנכסים ({properties.length})
-                    </Button>
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('properties')}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <Building className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">הנכסים שלי</h3>
+                      <p className="text-sm text-muted-foreground">צפה ונהל נכסים</p>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('finances')}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-500/10 rounded-lg">
+                      <DollarSign className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">כספים</h3>
+                      <p className="text-sm text-muted-foreground">מעקב הכנסות והוצאות</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('notifications')}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Bell className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">התראות</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {notifications.filter(n => !n.is_read).length} לא נקראו
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Alerts */}
             {stats.properties_needing_attention > 0 && (
