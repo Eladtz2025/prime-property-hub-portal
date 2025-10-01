@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
-import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export interface ExpenseData {
   id: string;
