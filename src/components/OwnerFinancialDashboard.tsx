@@ -16,7 +16,46 @@ interface OwnerFinancialDashboardProps {
 export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = ({ statsData, properties: propertiesData }) => {
   const [dateRange, setDateRange] = useState<DateRangeType>('current-month');
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const { financialSummary, properties, expenses, isLoading, refetch } = useOwnerFinancialData(dateRange);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
+  const { financialSummary, properties, expenses, payments, isLoading, refetch } = useOwnerFinancialData(dateRange);
+
+  // Filter data by selected property
+  const filteredProperties = selectedPropertyId === 'all' 
+    ? properties 
+    : properties.filter(p => p.property_id === selectedPropertyId);
+  
+  const filteredExpenses = selectedPropertyId === 'all'
+    ? expenses
+    : expenses.filter(e => e.property_id === selectedPropertyId);
+
+  const filteredPayments = selectedPropertyId === 'all'
+    ? payments
+    : payments.filter(p => p.property_id === selectedPropertyId);
+
+  const filteredSummary = selectedPropertyId === 'all' ? financialSummary : {
+    totalExpectedIncome: filteredProperties.reduce((sum, p) => sum + (p.monthly_rent || 0), 0),
+    totalActualIncome: filteredPayments
+      .filter(p => p.status === 'paid')
+      .reduce((sum, p) => sum + p.amount, 0),
+    totalExpenses: filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    netProfit: 0,
+    propertyCount: filteredProperties.length
+  };
+  filteredSummary.netProfit = filteredSummary.totalActualIncome - filteredSummary.totalExpenses;
+
+  const filteredStats = selectedPropertyId === 'all' ? statsData : {
+    total_properties: filteredProperties.length,
+    occupied_properties: filteredProperties.filter(p => 
+      propertiesData.find(pd => pd.id === p.property_id)?.tenant?.is_active
+    ).length,
+    vacant_properties: filteredProperties.filter(p => 
+      !propertiesData.find(pd => pd.id === p.property_id)?.tenant?.is_active
+    ).length,
+    total_monthly_income: statsData.total_monthly_income,
+    total_monthly_expenses: statsData.total_monthly_expenses,
+    net_monthly_profit: statsData.net_monthly_profit,
+    properties_needing_attention: statsData.properties_needing_attention
+  };
 
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
@@ -66,16 +105,29 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
             <CardTitle className="text-xs md:text-sm font-medium">סה"כ נכסים</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-xl md:text-2xl font-bold">{statsData.total_properties}</div>
-            <div className="flex gap-2 mt-2 flex-wrap">
+          <CardContent className="space-y-3">
+            <div className="text-xl md:text-2xl font-bold">{filteredStats.total_properties}</div>
+            <div className="flex gap-2 flex-wrap">
               <Badge className="bg-green-500 text-white text-xs">
-                {statsData.occupied_properties} מושכרים
+                {filteredStats.occupied_properties} מושכרים
               </Badge>
               <Badge className="bg-red-500 text-white text-xs">
-                {statsData.vacant_properties} פנויים
+                {filteredStats.vacant_properties} פנויים
               </Badge>
             </div>
+            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <SelectTrigger className="w-full h-8 text-xs">
+                <SelectValue placeholder="כל הנכסים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הנכסים</SelectItem>
+                {propertiesData.map((property) => (
+                  <SelectItem key={property.id} value={property.id}>
+                    {property.address}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
@@ -86,7 +138,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-xl md:text-2xl font-bold text-blue-600">
-              {formatCurrency(financialSummary.totalExpectedIncome)}
+              {formatCurrency(filteredSummary.totalExpectedIncome)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {getDateRangeLabel()}
@@ -101,7 +153,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-xl md:text-2xl font-bold text-green-600">
-              {formatCurrency(financialSummary.totalActualIncome)}
+              {formatCurrency(filteredSummary.totalActualIncome)}
             </div>
             <p className="text-xs text-muted-foreground">{getDateRangeLabel()}</p>
           </CardContent>
@@ -114,7 +166,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-xl md:text-2xl font-bold text-red-600">
-              {formatCurrency(financialSummary.totalExpenses)}
+              {formatCurrency(filteredSummary.totalExpenses)}
             </div>
             <p className="text-xs text-muted-foreground">{getDateRangeLabel()}</p>
           </CardContent>
@@ -123,7 +175,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs md:text-sm font-medium">רווח נקי</CardTitle>
-            {financialSummary.netProfit >= 0 ? (
+            {filteredSummary.netProfit >= 0 ? (
               <TrendingUp className="h-4 w-4 text-green-600" />
             ) : (
               <TrendingDown className="h-4 w-4 text-red-600" />
@@ -131,9 +183,9 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className={`text-xl md:text-2xl font-bold ${
-              financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'
+              filteredSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
-              {formatCurrency(financialSummary.netProfit)}
+              {formatCurrency(filteredSummary.netProfit)}
             </div>
             <p className="text-xs text-muted-foreground">הכנסות בפועל - הוצאות</p>
           </CardContent>
@@ -155,7 +207,7 @@ export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = (
           </div>
         </CardHeader>
         <CardContent>
-          {expenses.length === 0 ? (
+          {filteredExpenses.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 md:py-8 text-sm md:text-base">
               אין הוצאות לתקופה זו
             </p>
