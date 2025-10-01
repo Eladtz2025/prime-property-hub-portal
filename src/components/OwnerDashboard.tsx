@@ -135,71 +135,8 @@ export const OwnerDashboard: React.FC = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">סה"כ נכסים</CardTitle>
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.total_properties}</div>
-                  <div className="flex gap-2 mt-2">
-                    <Badge className="bg-green-500 text-white">
-                      {stats.occupied_properties} מושכרים
-                    </Badge>
-                    <Badge className="bg-red-500 text-white">
-                      {stats.vacant_properties} פנויים
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">סה"כ הכנסות</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(stats.total_monthly_income)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">סה"כ הוצאות</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(stats.total_monthly_expenses)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">רווח נקי</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${
-                    stats.net_monthly_profit >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {formatCurrency(stats.net_monthly_profit)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">הכנסות - הוצאות</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Financial Dashboard in Overview */}
-            <OwnerFinancialDashboard />
-
+            {/* Date Range Selector */}
+            <OwnerFinancialDashboard statsData={stats} properties={properties} />
 
             {/* Alerts */}
             {stats.properties_needing_attention > 0 && (

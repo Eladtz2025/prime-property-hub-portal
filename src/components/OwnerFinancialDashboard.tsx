@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, DollarSign, Home, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, TrendingDown, DollarSign, Home, Plus, Building } from 'lucide-react';
 import { useOwnerFinancialData, type DateRangeType } from '@/hooks/useOwnerFinancialData';
 import { AddExpenseModalOwner } from './AddExpenseModalOwner';
+import type { OwnerDashboardStats, PropertyWithTenant } from '@/types/owner-portal';
 
-export const OwnerFinancialDashboard: React.FC = () => {
+interface OwnerFinancialDashboardProps {
+  statsData: OwnerDashboardStats;
+  properties: PropertyWithTenant[];
+}
+
+export const OwnerFinancialDashboard: React.FC<OwnerFinancialDashboardProps> = ({ statsData, properties: propertiesData }) => {
   const [dateRange, setDateRange] = useState<DateRangeType>('current-month');
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const { financialSummary, properties, payments, expenses, isLoading, refetch } = useOwnerFinancialData(dateRange);
+  const { financialSummary, properties, expenses, isLoading, refetch } = useOwnerFinancialData(dateRange);
 
   const formatCurrency = (amount: number) => {
     return `₪${amount.toLocaleString('he-IL')}`;
@@ -53,7 +60,66 @@ export const OwnerFinancialDashboard: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">סה"כ נכסים</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsData.total_properties}</div>
+            <div className="flex gap-2 mt-2">
+              <Badge className="bg-green-500 text-white">
+                {statsData.occupied_properties} מושכרים
+              </Badge>
+              <Badge className="bg-red-500 text-white">
+                {statsData.vacant_properties} פנויים
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">סה"כ הכנסות</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {formatCurrency(statsData.total_monthly_income)}
+            </div>
+            <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">סה"כ הוצאות</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {formatCurrency(statsData.total_monthly_expenses)}
+            </div>
+            <p className="text-xs text-muted-foreground">מתחילת החוזה</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">רווח נקי</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${
+              statsData.net_monthly_profit >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {formatCurrency(statsData.net_monthly_profit)}
+            </div>
+            <p className="text-xs text-muted-foreground">הכנסות - הוצאות</p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">הכנסה צפויה</CardTitle>
@@ -64,54 +130,7 @@ export const OwnerFinancialDashboard: React.FC = () => {
               {formatCurrency(financialSummary.totalExpectedIncome)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              מ-{financialSummary.propertyCount} נכסים
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">הכנסות בפועל</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(financialSummary.totalActualIncome)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              תשלומים שהתקבלו
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">הוצאות</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(financialSummary.totalExpenses)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {expenses.length} הוצאות
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">רווח נקי</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${
-              financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {formatCurrency(financialSummary.netProfit)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              הכנסות - הוצאות
+              {getDateRangeLabel()}
             </p>
           </CardContent>
         </Card>
