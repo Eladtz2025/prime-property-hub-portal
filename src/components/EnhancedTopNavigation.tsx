@@ -97,7 +97,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate('/users')}
+              onClick={() => navigate('/settings')}
             >
               <Settings className="h-4 w-4" />
               <span>הגדרות</span>

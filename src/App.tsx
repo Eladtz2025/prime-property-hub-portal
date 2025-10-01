@@ -12,6 +12,7 @@ import { PropertyInvitations } from './pages/PropertyInvitations';
 import { AdminControl } from './pages/AdminControl';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
+import { Settings } from './pages/Settings';
 
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
@@ -63,6 +64,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute>
                     <Properties />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 </Layout>
               } 

@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name?: string;
+  phone?: string;
   role: UserRole;
   is_approved: boolean;
   created_at: string;
