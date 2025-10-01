@@ -17,7 +17,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     tenantName: tenant?.name || undefined,
     tenantPhone: tenant?.phone || undefined,
     tenantEmail: tenant?.email || undefined,
-    monthlyRent: tenant?.monthly_rent || undefined,
+    monthlyRent: tenant?.monthly_rent || dbProperty.monthly_rent || undefined,
     leaseStartDate: tenant?.lease_start_date || undefined,
     leaseEndDate: tenant?.lease_end_date || undefined,
     status: dbProperty.status || 'unknown',
@@ -106,6 +106,7 @@ export const useSupabasePropertyData = () => {
             property_size: updatedProperty.propertySize,
             floor: updatedProperty.floor,
             rooms: updatedProperty.rooms,
+            monthly_rent: updatedProperty.monthlyRent,
             notes: updatedProperty.notes,
             updated_at: new Date().toISOString(),
           })

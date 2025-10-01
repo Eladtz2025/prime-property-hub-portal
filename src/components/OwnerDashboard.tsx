@@ -393,8 +393,8 @@ export const OwnerDashboard: React.FC = () => {
             id: editingProperty.id,
             address: editingProperty.address,
             city: editingProperty.city,
-            ownerName: '', // Owner info managed separately in property_owners table
-            ownerPhone: '',
+            ownerName: editingProperty.owner_name || '',
+            ownerPhone: editingProperty.owner_phone || '',
             status: editingProperty.status,
             contactStatus: editingProperty.contact_status,
             contactAttempts: editingProperty.contact_attempts,
@@ -407,7 +407,7 @@ export const OwnerDashboard: React.FC = () => {
             tenantName: editingProperty.tenant?.name,
             tenantPhone: editingProperty.tenant?.phone,
             tenantEmail: editingProperty.tenant?.email,
-            monthlyRent: editingProperty.tenant?.monthly_rent,
+            monthlyRent: editingProperty.tenant?.monthly_rent || editingProperty.monthly_rent,
             leaseStartDate: editingProperty.tenant?.lease_start_date,
             leaseEndDate: editingProperty.tenant?.lease_end_date,
           }}
