@@ -139,7 +139,7 @@ const AppContent: React.FC = () => {
             <Route 
               path="/owner-portal"
               element={
-                <ProtectedRoute requiredRole="property_owner" requireApproval={false}>
+                <ProtectedRoute requireApproval={false}>
                   <OwnerPortal />
                 </ProtectedRoute>
               } 

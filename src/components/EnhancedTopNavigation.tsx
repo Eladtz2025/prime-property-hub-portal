@@ -8,7 +8,8 @@ import {
   Users,
   Settings,
   ChevronDown,
-  UserPlus
+  UserPlus,
+  LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ import {
 const navigationItems = [
   { title: "לוח בקרה", url: "/", icon: Home },
   { title: "נכסים", url: "/properties", icon: Building },
+  { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard },
   { title: "ניהול משתמשים", url: "/users", icon: Users, adminOnly: true },
   { title: "הזמנות", url: "/property-invitations", icon: UserPlus, adminOnly: true },
 ];
