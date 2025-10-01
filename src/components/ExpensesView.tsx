@@ -16,7 +16,8 @@ import {
   TrendingDown, 
   Calendar,
   DollarSign,
-  PieChart
+  PieChart,
+  Trash2
 } from 'lucide-react';
 import type { PropertyWithTenant } from '@/types/owner-portal';
 import { format } from 'date-fns';
@@ -89,6 +90,31 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ properties }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('financial_records')
+        .delete()
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'הצלחה',
+        description: 'ההוצאה נמחקה בהצלחה',
+      });
+      
+      loadExpenses();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה במחיקת ההוצאה',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -299,20 +325,30 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ properties }) => {
                         {format(new Date(expense.transaction_date), 'dd/MM/yyyy')}
                       </p>
                     </div>
-                    <div className="text-left">
-                      <p className="text-lg font-bold text-red-600">
-                        -₪{Number(expense.amount).toLocaleString('he-IL')}
-                      </p>
-                      {expense.receipt_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(expense.receipt_url, '_blank')}
-                          className="mt-1"
-                        >
-                          צפה בקבלה
-                        </Button>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className="text-left">
+                        <p className="text-lg font-bold text-red-600">
+                          -₪{Number(expense.amount).toLocaleString('he-IL')}
+                        </p>
+                        {expense.receipt_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(expense.receipt_url, '_blank')}
+                            className="mt-1"
+                          >
+                            צפה בקבלה
+                          </Button>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteExpense(expense.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 );
