@@ -3,8 +3,10 @@ import DivisionCard from '@/components/DivisionCard';
 import GoogleReviews from '@/components/GoogleReviews';
 import ContactSection from '@/components/ContactSection';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
-import { Building2, TrendingUp, Users } from 'lucide-react';
+import { Building2, TrendingUp, Users, Mail, Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import heroImage from '@/assets/hero-building.jpg';
 
 const Index = () => {
   const divisions = [
@@ -70,11 +72,35 @@ const Index = () => {
       
       {/* Hero Section */}
       <Hero
-        title="City Market Properties"
-        subtitle="סיטי מרקט נכסים"
-        description="מלב תל אביב הלבנה עד הבית החדש שלכם"
-        backgroundImage="/images/hero-building.jpg"
-      />
+        title="סיטי מרקט נכסים"
+        subtitle="מלב תל-אביב הלבנה עד הבית החדש שלכם"
+        description="הברכה ליישון. מוכנים עם ניסיון של שנים והתמקצעות בהשכרות, מכירות וניהול נכסים."
+        backgroundImage={heroImage}
+      >
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+          <Button
+            size="lg"
+            variant="secondary"
+            className="gap-2"
+            asChild
+          >
+            <a href="mailto:eladtz@gmail.com">
+              <Mail className="h-5 w-5" />
+              eladtz@gmail.com
+            </a>
+          </Button>
+          <Button
+            size="lg"
+            className="gap-2"
+            asChild
+          >
+            <a href="tel:054-550-3055">
+              <Phone className="h-5 w-5" />
+              054-550-3055
+            </a>
+          </Button>
+        </div>
+      </Hero>
 
       {/* Divisions Section */}
       <section className="py-16">
