@@ -79,10 +79,10 @@ const Sales = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'ייעוץ והערכת שווי', description: 'הערכת שווי מקצועית ומדויקת על ידי מומחים בתחום הנדל"ן' },
-    { icon: Check, title: 'ליווי משפטי מלא', description: 'ליווי משפטי מקצועי לאורך כל התהליך, מהבדיקה ועד החתימה' },
-    { icon: Check, title: 'מו"מ מקצועי', description: 'ניהול מו"מ מיטבי עבורכם להשגת המחיר והתנאים הטובים ביותר' },
-    { icon: Check, title: 'שיווק מתקדם', description: 'חשיפה מקסימלית בכל הפלטפורמות והערוצים הרלוונטיים' },
+    { icon: Check, title: 'ייעוץ והערכת שווי', description: 'הערכה מקצועית של שווי הנכס והכוונה לגבי מחיר המכירה האופטימלי' },
+    { icon: Check, title: 'ליווי משפטי מלא', description: 'טיפול בכל הנושאים המשפטיים, בדיקת הימצאות מאסרים ועיקולים' },
+    { icon: Check, title: 'מו"מ מקצועי', description: 'ניהול משא ומתן מקצועי עם קונים פוטנציאליים להשגת המחיר הטוב ביותר' },
+    { icon: Check, title: 'שיווק מתקדם', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות עם צילום מקצועי ותיאור מפורט' },
   ];
 
   const stats = [
@@ -96,8 +96,8 @@ const Sales = () => {
       <WhatsAppFloat />
       
       <CompactHero
-        title="נכסים למכירה"
-        subtitle="השקעה נבונה מתחילה כאן"
+        title="מכירת נכסים"
+        subtitle="מתמחים במכירת נכסים ברחבי הארץ"
         backgroundImage="/images/sales-villa.jpg"
       />
 
@@ -105,7 +105,7 @@ const Sales = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">נכסים למכירה</h2>
           <p className="text-center text-muted-foreground mb-8">
-            נכסים איכותיים למכירה עם ליווי מלא ותחזוקה שוטפת
+            נכסים איכותיים למכירה עם ייעוץ מקצועי וליווי מלא בתהליך הרכישה
           </p>
 
           {/* Filters */}
@@ -213,7 +213,7 @@ const Sales = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-4">השירותים שלנו במכירות</h2>
           <p className="text-center text-muted-foreground mb-12">
-            אנו מעניקים שירות מלא ומקצועי לאורך כל תהליך המכירה והרכישה
+            אנו מעניקים שירות מלא ומקצועי הכולל את כל השלבים מהערכת שווי ועד חתימה על חוזה המכירה
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
@@ -238,7 +238,7 @@ const Sales = () => {
       {/* Stats Section */}
       <section className="py-16 bg-primary/5">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">למה לבחור בנו למכירה?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">למה לבחור בנו למכירות?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">

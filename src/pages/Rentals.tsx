@@ -91,14 +91,14 @@ const Rentals = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'הערכת שווי מקצועית', description: 'הערכת שווי מדויקת לנכס שלכם' },
-    { icon: Check, title: 'שיווק יעיל', description: 'חשיפה מקסימלית בכל הערוצים' },
-    { icon: Check, title: 'בדיקת דיירים', description: 'בדיקה יסודית של דיירים פוטנציאליים' },
-    { icon: Check, title: 'ליווי ותמיכה', description: 'תמיכה מלאה לאורך כל התהליך' },
+    { icon: Check, title: 'הערכת שווי מקצועית', description: 'הערכה מדויקת של שווי הנכס והמלצה על מחיר השכירות האופטימלי' },
+    { icon: Check, title: 'שיווק יעיל', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות והבאת דיירים איכותיים' },
+    { icon: Check, title: 'בדיקת דיירים', description: 'בדיקה יסודית של דיירים פוטנציאליים כולל המלצות ויכולת פיננסית' },
+    { icon: Check, title: 'ליווי ותמיכה', description: 'ליווי מקצועי לאורך כל תקופת השכירות וטיפול בכל הבעיות שעולות' },
   ];
 
   const stats = [
-    { value: '95%', label: 'שיעור הצלחה' },
+    { value: '95%', label: 'שיעור הצלחה בהשכרות' },
     { value: '30', label: 'ימים ממוצע להשכרה' },
     { value: '200+', label: 'נכסים בהשכרה פעילה' },
   ];
@@ -108,8 +108,8 @@ const Rentals = () => {
       <WhatsAppFloat />
       
       <CompactHero
-        title="נכסים להשכרה"
-        subtitle="מצא את הדירה המושלמת שלך"
+        title="מומחי ההשכרות"
+        subtitle="השכירו את הנכס שלכם בביטחון ובמקצועיות"
         backgroundImage="/images/rental-interior.jpg"
       />
 
@@ -117,7 +117,7 @@ const Rentals = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">דירות להשכרה</h2>
           <p className="text-center text-muted-foreground mb-8">
-            מגוון רחב של דירות להשכרה עם שירות מלא ותחזוקה שוטפת
+            מגוון רחב של דירות להשכרה באזורים מבוקשים עם שירות מקצועי ואמין
           </p>
 
           {/* Filters */}
@@ -225,7 +225,7 @@ const Rentals = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-4">השירותים שלנו בהשכרות</h2>
           <p className="text-center text-muted-foreground mb-12">
-            אנו מעניקים שירות מלא ומקצועי לאורך כל התהליך
+            אנו מעניקים שירות מלא ומקצועי הכולל את כל השלבים מהערכת שווי ועד חתימה על חוזה השכירות
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
@@ -250,7 +250,7 @@ const Rentals = () => {
       {/* Stats Section */}
       <section className="py-16 bg-primary/5">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">למה לבחור בנו לניהול נכסים?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">למה לבחור בנו להשכרות?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">

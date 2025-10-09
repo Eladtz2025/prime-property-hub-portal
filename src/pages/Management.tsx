@@ -60,16 +60,16 @@ const Management = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'ניהול תחזוקה', description: 'ניהול תחזוקה שוטפת ומקיפה של הנכס כולל תיקונים ושיפוצים' },
-    { icon: Check, title: 'גביה ודיווח', description: 'גביה יעילה של דמי שכירות ודיווח חודשי מפורט לבעלי הנכסים' },
-    { icon: Check, title: 'ניהול דיירים', description: 'ניהול מקצועי של דיירים כולל טיפול בפניות ובקשות' },
-    { icon: Check, title: 'זמינות 24/7', description: 'מענה מהיר וזמינות בכל שעות היום לטיפול בכל בעיה שתתעורר' },
+    { icon: Check, title: 'ניהול תחזוקה', description: 'תיאום עבודות תחזוקה, שיפוצים וטיפול בכל הבעיות הטכניות בנכס' },
+    { icon: Check, title: 'גביה ודיווח', description: 'גביית דמי שכירות, ועד בית ודיווח מפורט לבעלי הנכסים מדי חודש' },
+    { icon: Check, title: 'ניהול דיירים', description: 'טיפול בפניות דיירים, חידוש חוזים וטיפול בכל הנושאים השוטפים' },
+    { icon: Check, title: 'זמינות 24/7', description: 'מענה מיידי לכל הבעיות והפניות בכל שעות היום והלילה' },
   ];
 
   const stats = [
     { value: '300+', label: 'נכסים בניהול' },
-    { value: '99%', label: 'שביעות רצון לקוחות' },
-    { value: '24', label: 'שעות זמינות ביום' },
+    { value: '99%', label: 'שיעור שביעות רצון' },
+    { value: '24', label: 'שעות מענה ביום' },
   ];
 
   return (
@@ -78,7 +78,7 @@ const Management = () => {
       
       <CompactHero
         title="ניהול נכסים"
-        subtitle="ניהול מקצועי ומלא עבור הנכס שלכם"
+        subtitle="ניהול מקצועי ומסור לנכס שלך"
         backgroundImage="/images/management-lobby.jpg"
       />
 
@@ -86,7 +86,7 @@ const Management = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">נכסים בניהול</h2>
           <p className="text-center text-muted-foreground mb-8">
-            מגוון רחב של נכסים שאנו מנהלים עם שירות מלא ותחזוקה שוטפת
+            פורטפוליו הנכסים שלנו בניהול מקצועי עם שירות מלא ותחזוקה שוטפת
           </p>
 
           {/* Filters */}
@@ -181,7 +181,7 @@ const Management = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-4">השירותים שלנו בניהול נכסים</h2>
           <p className="text-center text-muted-foreground mb-12">
-            אנו מעניקים שירות מלא ומקצועי לניהול הנכס שלכם באופן יעיל ומדויק
+            אנו מעניקים שירות מלא ומקצועי לניהול הנכסים שלכם, כדי שתוכלו להתרכז במה שחשוב לכם
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
