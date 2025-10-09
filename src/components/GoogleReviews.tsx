@@ -1,4 +1,61 @@
 import { Star } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const reviews = [
+  {
+    id: 1,
+    name: 'דוד כהן',
+    image: '',
+    rating: 5,
+    date: 'לפני 3 שבועות',
+    text: 'שירות מקצועי ואדיב! עזרו לי למצוא את הדירה המושלמת בלב תל אביב. ממליץ בחום!',
+    initials: 'דכ'
+  },
+  {
+    id: 2,
+    name: 'שרה לוי',
+    image: '',
+    rating: 5,
+    date: 'לפני חודש',
+    text: 'החברה הכי מקצועית שעבדתי איתה. תהליך מכירת הדירה היה חלק ויעיל. תודה רבה!',
+    initials: 'של'
+  },
+  {
+    id: 3,
+    name: 'יוסי אברהם',
+    image: '',
+    rating: 5,
+    date: 'לפני חודשיים',
+    text: 'שירות ניהול נכסים מעולה. תמיד זמינים ומטפלים בכל בעיה במהירות ובמקצועיות.',
+    initials: 'יא'
+  },
+  {
+    id: 4,
+    name: 'מיכל גולן',
+    image: '',
+    rating: 5,
+    date: 'לפני 3 חודשים',
+    text: 'מצאו לי דירה להשכרה בדיוק לפי מה שחיפשתי. צוות נעים ומקצועי!',
+    initials: 'מג'
+  },
+  {
+    id: 5,
+    name: 'רועי ישראלי',
+    image: '',
+    rating: 5,
+    date: 'לפני 4 חודשים',
+    text: 'הייעוץ שקיבלתי היה מצוין. עזרו לי להשקיע נכון ולמצוא נכס משתלם.',
+    initials: 'רי'
+  }
+];
 
 const GoogleReviews = () => {
   return (
@@ -16,10 +73,47 @@ const GoogleReviews = () => {
           </p>
         </div>
         
-        {/* Placeholder for future Google Reviews integration */}
-        <div className="text-center text-muted-foreground">
-          <p>ביקורות הלקוחות שלנו יופיעו כאן בקרוב</p>
-        </div>
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+            direction: "rtl",
+          }}
+          className="w-full max-w-5xl mx-auto"
+        >
+          <CarouselContent className="-ml-4">
+            {reviews.map((review) => (
+              <CarouselItem key={review.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                <Card className="h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={review.image} alt={review.name} />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {review.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{review.name}</h4>
+                        <div className="flex items-center gap-1 mt-1">
+                          {[...Array(review.rating)].map((_, i) => (
+                            <Star key={i} className="h-4 w-4 fill-secondary text-secondary" />
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {review.text}
+                    </p>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
       </div>
     </section>
   );
