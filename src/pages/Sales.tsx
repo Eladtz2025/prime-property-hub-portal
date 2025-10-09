@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Bed, Square, Wrench, Check } from 'lucide-react';
+import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 
 const Sales = () => {
@@ -79,10 +79,10 @@ const Sales = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'ייעוץ והערכת שווי', description: 'הערכה מקצועית של שווי הנכס והכוונה לגבי מחיר המכירה האופטימלי' },
-    { icon: Check, title: 'ליווי משפטי מלא', description: 'טיפול בכל הנושאים המשפטיים, בדיקת הימצאות מאסרים ועיקולים' },
-    { icon: Check, title: 'מו"מ מקצועי', description: 'ניהול משא ומתן מקצועי עם קונים פוטנציאליים להשגת המחיר הטוב ביותר' },
-    { icon: Check, title: 'שיווק מתקדם', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות עם צילום מקצועי ותיאור מפורט' },
+    { icon: TrendingUp, title: 'ייעוץ והערכת שווי', description: 'הערכה מקצועית של שווי הנכס והכוונה לגבי מחיר המכירה האופטימלי' },
+    { icon: Shield, title: 'ליווי משפטי מלא', description: 'טיפול בכל הנושאים המשפטיים, בדיקת הימצאות מאסרים ועיקולים' },
+    { icon: Users, title: 'מו"מ מקצועי', description: 'ניהול משא ומתן מקצועי עם קונים פוטנציאליים להשגת המחיר הטוב ביותר' },
+    { icon: Award, title: 'שיווק מתקדם', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות עם צילום מקצועי ותיאור מפורט' },
   ];
 
   const stats = [
@@ -140,7 +140,6 @@ const Sales = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <Button variant="outline" className="gap-2">
-              <Wrench className="h-4 w-4" />
               סינון מתקדם
             </Button>
           </div>
@@ -174,7 +173,7 @@ const Sales = () => {
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (
                         <div className="flex items-center gap-1">
-                          <Bed className="h-4 w-4" />
+                          <Home className="h-4 w-4" />
                           <span>{property.rooms}</span>
                         </div>
                       )}

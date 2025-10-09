@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Building2, Square, Wrench, Check } from 'lucide-react';
+import { MapPin, Home, Bath, Square, Building, Building2, Wrench, FileCheck, Users, ClipboardList } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 
 const Management = () => {
@@ -60,10 +60,10 @@ const Management = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'ניהול תחזוקה', description: 'תיאום עבודות תחזוקה, שיפוצים וטיפול בכל הבעיות הטכניות בנכס' },
-    { icon: Check, title: 'גביה ודיווח', description: 'גביית דמי שכירות, ועד בית ודיווח מפורט לבעלי הנכסים מדי חודש' },
-    { icon: Check, title: 'ניהול דיירים', description: 'טיפול בפניות דיירים, חידוש חוזים וטיפול בכל הנושאים השוטפים' },
-    { icon: Check, title: 'זמינות 24/7', description: 'מענה מיידי לכל הבעיות והפניות בכל שעות היום והלילה' },
+    { icon: Wrench, title: 'ניהול תחזוקה', description: 'תיאום עבודות תחזוקה, שיפוצים וטיפול בכל הבעיות הטכניות בנכס' },
+    { icon: FileCheck, title: 'גביה ודיווח', description: 'גביית דמי שכירות, ועד בית ודיווח מפורט לבעלי הנכסים מדי חודש' },
+    { icon: Users, title: 'ניהול דיירים', description: 'טיפול בפניות דיירים, חידוש חוזים וטיפול בכל הנושאים השוטפים' },
+    { icon: ClipboardList, title: 'זמינות 24/7', description: 'מענה מיידי לכל הבעיות והפניות בכל שעות היום והלילה' },
   ];
 
   const stats = [
@@ -108,7 +108,6 @@ const Management = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <Button variant="outline" className="gap-2">
-              <Wrench className="h-4 w-4" />
               סינון מתקדם
             </Button>
           </div>
@@ -142,7 +141,7 @@ const Management = () => {
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.building_floors && (
                         <div className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4" />
+                          <Building className="h-4 w-4" />
                           <span>{property.building_floors} קומות</span>
                         </div>
                       )}

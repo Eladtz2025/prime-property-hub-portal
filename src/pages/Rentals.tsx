@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Bed, Square, MessageCircle, X, Wrench, Check } from 'lucide-react';
+import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 
 const Rentals = () => {
@@ -91,10 +91,10 @@ const Rentals = () => {
   const cities = ['תל אביב'];
 
   const services = [
-    { icon: Check, title: 'הערכת שווי מקצועית', description: 'הערכה מדויקת של שווי הנכס והמלצה על מחיר השכירות האופטימלי' },
-    { icon: Check, title: 'שיווק יעיל', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות והבאת דיירים איכותיים' },
-    { icon: Check, title: 'בדיקת דיירים', description: 'בדיקה יסודית של דיירים פוטנציאליים כולל המלצות ויכולת פיננסית' },
-    { icon: Check, title: 'ליווי ותמיכה', description: 'ליווי מקצועי לאורך כל תקופת השכירות וטיפול בכל הבעיות שעולות' },
+    { icon: CheckCircle, title: 'הערכת שווי מקצועית', description: 'הערכה מדויקת של שווי הנכס והמלצה על מחיר השכירות האופטימלי' },
+    { icon: Star, title: 'שיווק יעיל', description: 'פרסום הנכס בכל הפלטפורמות הרלוונטיות והבאת דיירים איכותיים' },
+    { icon: Users, title: 'בדיקת דיירים', description: 'בדיקה יסודית של דיירים פוטנציאליים כולל המלצות ויכולת פיננסית' },
+    { icon: TrendingUp, title: 'ליווי ותמיכה', description: 'ליווי מקצועי לאורך כל תקופת השכירות וטיפול בכל הבעיות שעולות' },
   ];
 
   const stats = [
@@ -152,7 +152,6 @@ const Rentals = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <Button variant="outline" className="gap-2">
-              <Wrench className="h-4 w-4" />
               סינון מתקדם
             </Button>
           </div>
@@ -186,7 +185,7 @@ const Rentals = () => {
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (
                         <div className="flex items-center gap-1">
-                          <Bed className="h-4 w-4" />
+                          <Home className="h-4 w-4" />
                           <span>{property.rooms}</span>
                         </div>
                       )}
