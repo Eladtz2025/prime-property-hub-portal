@@ -6,13 +6,16 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
+import Rentals from './pages/Rentals';
+import Sales from './pages/Sales';
+import Management from './pages/Management';
+import PropertyDetailPage from './pages/PropertyDetailPage';
 import { Properties } from './pages/Properties';
 import { AdminControl } from './pages/AdminControl';
 import AdminDashboard from './pages/AdminDashboard';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
 import { Settings } from './pages/Settings';
-
 import { OwnerInvitationPage } from './pages/OwnerInvitationPage';
 import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
@@ -25,6 +28,8 @@ import { DataProvider } from './components/DataProvider';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 
 const AppContent: React.FC = () => {
@@ -39,8 +44,14 @@ const AppContent: React.FC = () => {
         {/* Owner invitation route - accessible without authentication */}
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
         
-        {/* Public home page - accessible to everyone */}
-        <Route path="/" element={<Index />} />
+        {/* Public pages - accessible to everyone */}
+        <Route path="/" element={<><Header /><Index /><Footer /></>} />
+        <Route path="/rentals" element={<><Header /><Rentals /><Footer /></>} />
+        <Route path="/sales" element={<><Header /><Sales /><Footer /></>} />
+        <Route path="/management" element={<><Header /><Management /><Footer /></>} />
+        <Route path="/rentals/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
+        <Route path="/sales/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
+        <Route path="/management/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
         
         {loading ? (
           <Route path="*" element={

@@ -97,6 +97,44 @@ export type Database = {
           },
         ]
       }
+      contact_leads: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          property_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          property_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_records: {
         Row: {
           amount: number
@@ -299,12 +337,21 @@ export type Database = {
         Row: {
           acquisition_cost: number | null
           address: string
+          available: boolean | null
+          balcony: boolean | null
+          bathrooms: number | null
+          building_floors: number | null
           city: string
           contact_attempts: number
+          contact_name: string | null
           contact_notes: string | null
+          contact_phone: string | null
           contact_status: string
           created_at: string
           current_market_value: number | null
+          description: string | null
+          elevator: boolean | null
+          featured: boolean | null
           floor: number | null
           id: string
           last_contact_date: string | null
@@ -312,21 +359,33 @@ export type Database = {
           notes: string | null
           owner_name: string | null
           owner_phone: string | null
+          parking: boolean | null
           property_size: number | null
+          property_type: string | null
           renovation_costs: number | null
           rooms: number | null
           status: string
+          title: string | null
           updated_at: string
         }
         Insert: {
           acquisition_cost?: number | null
           address: string
+          available?: boolean | null
+          balcony?: boolean | null
+          bathrooms?: number | null
+          building_floors?: number | null
           city: string
           contact_attempts?: number
+          contact_name?: string | null
           contact_notes?: string | null
+          contact_phone?: string | null
           contact_status?: string
           created_at?: string
           current_market_value?: number | null
+          description?: string | null
+          elevator?: boolean | null
+          featured?: boolean | null
           floor?: number | null
           id?: string
           last_contact_date?: string | null
@@ -334,21 +393,33 @@ export type Database = {
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          parking?: boolean | null
           property_size?: number | null
+          property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
           status?: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
           acquisition_cost?: number | null
           address?: string
+          available?: boolean | null
+          balcony?: boolean | null
+          bathrooms?: number | null
+          building_floors?: number | null
           city?: string
           contact_attempts?: number
+          contact_name?: string | null
           contact_notes?: string | null
+          contact_phone?: string | null
           contact_status?: string
           created_at?: string
           current_market_value?: number | null
+          description?: string | null
+          elevator?: boolean | null
+          featured?: boolean | null
           floor?: number | null
           id?: string
           last_contact_date?: string | null
@@ -356,10 +427,13 @@ export type Database = {
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          parking?: boolean | null
           property_size?: number | null
+          property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
           status?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -411,6 +485,44 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          is_main: boolean | null
+          order_index: number | null
+          property_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_main?: boolean | null
+          order_index?: number | null
+          property_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_main?: boolean | null
+          order_index?: number | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_images_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
