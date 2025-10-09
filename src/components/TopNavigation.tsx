@@ -9,12 +9,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserAvatar } from './UserAvatar';
 
 const navigationItems = [
-  { title: "לוח בקרה", url: "/", icon: Home },
+  { title: "דף הבית", url: "/", icon: Home },
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: BarChart3, requireAdmin: true },
   { title: "נכסים", url: "/properties", icon: Building },
   { title: "צור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },
   { title: "הודעות", url: "/messages", icon: MessageSquare },
-  { title: "דוחות", url: "/reports", icon: BarChart3 },
   { title: "משתמשים", url: "/users", icon: Users },
 ];
 
@@ -29,6 +29,9 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
   const filteredNavItems = navigationItems.filter(item => {
     if (item.url === '/users') {
       return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
+    }
+    if ('requireAdmin' in item && item.requireAdmin) {
+      return profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
     }
     return true;
   });

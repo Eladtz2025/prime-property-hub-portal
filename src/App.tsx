@@ -8,6 +8,7 @@ import { AuthCallback } from './components/AuthCallback';
 import Index from './pages/Index';
 import { Properties } from './pages/Properties';
 import { AdminControl } from './pages/AdminControl';
+import AdminDashboard from './pages/AdminDashboard';
 import { OwnerPortal } from './pages/OwnerPortal';
 import { OwnerFinancials } from './pages/OwnerFinancials';
 import { Settings } from './pages/Settings';
@@ -73,6 +74,16 @@ const AppContent: React.FC = () => {
               element={
                 <Layout onLogout={signOut}>
                   <Settings />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard"
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
                 </Layout>
               } 
             />

@@ -21,8 +21,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Main navigation items
 const navigationItems = [
-  { title: 'לוח בקרה', url: '/', icon: Home },
+  { title: 'דף הבית', url: '/', icon: Home },
   { title: 'נכסים', url: '/properties', icon: Building },
+];
+
+// Admin navigation items
+const adminItems = [
+  { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
 ];
 
 // Property owner navigation items
@@ -42,6 +47,7 @@ export function AppSidebar() {
 
   // Check if user is a property owner or admin
   const isPropertyOwner = profile?.role === 'property_owner' || profile?.role === 'super_admin' || profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
 
   return (
     <Sidebar
@@ -82,6 +88,40 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </div>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <div className="px-4 pb-4">
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider px-3 py-2 mb-3">
+                ניהול
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {adminItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink 
+                          to={item.url} 
+                          className={({ isActive }) => 
+                            `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                              isActive 
+                                ? 'bg-primary/10 text-primary shadow-sm font-medium' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:shadow-sm'
+                            }`
+                          }
+                        >
+                          <item.icon className="h-5 w-5 flex-shrink-0" />
+                          <span className="font-medium truncate">{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
+      )}
 
         {/* Property Owner Section */}
         {isPropertyOwner && (
