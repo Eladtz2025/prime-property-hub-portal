@@ -7,12 +7,19 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { usePublicProperties } from '@/hooks/usePublicProperties';
+
+// Toggle between mock data and real database data
+const USE_REAL_DATA = false;
 
 const Sales = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
   const [roomsFilter, setRoomsFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState('');
+  
+  // Fetch real data from database
+  const { data: realProperties, isLoading } = usePublicProperties({ propertyType: 'sale' });
 
   // Mock data - נכסים לדוגמה
   const mockProperties = [
@@ -66,7 +73,27 @@ const Sales = () => {
     }
   ];
 
-  const filteredProperties = mockProperties.filter((property) => {
+  // Use real data or mock data based on toggle
+  const properties = USE_REAL_DATA 
+    ? (realProperties || []).map(prop => ({
+        id: prop.id,
+        title: prop.title || '',
+        address: prop.address,
+        city: prop.city,
+        price: prop.monthly_rent || 0, // Will need to add price field later for sales
+        rooms: prop.rooms,
+        property_size: prop.property_size,
+        description: prop.description || '',
+        image: prop.images[0]?.image_url || '',
+        features: [
+          prop.parking ? 'חניה' : null,
+          prop.elevator ? 'מעלית' : null,
+          prop.balcony ? 'מרפסת' : null,
+        ].filter(Boolean) as string[]
+      }))
+    : mockProperties;
+
+  const filteredProperties = properties.filter((property) => {
     const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          property.city?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = cityFilter === 'all' || property.city === cityFilter;
@@ -103,7 +130,22 @@ const Sales = () => {
 
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">נכסים למכירה</h2>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-center">נכסים למכירה</h2>
+            {USE_REAL_DATA && isLoading && (
+              <Badge variant="secondary">טוען...</Badge>
+            )}
+            {USE_REAL_DATA && !isLoading && (
+              <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                דאטה אמיתי - {filteredProperties.length} נכסים
+              </Badge>
+            )}
+            {!USE_REAL_DATA && (
+              <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/20">
+                Mock Data
+              </Badge>
+            )}
+          </div>
           <p className="text-center text-muted-foreground mb-8">
             נכסים איכותיים למכירה עם ייעוץ מקצועי וליווי מלא בתהליך הרכישה
           </p>
