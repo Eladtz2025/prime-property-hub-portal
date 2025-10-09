@@ -21,13 +21,13 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-3">
             <img 
               src={logoImage} 
               alt="City Market Properties" 
-              className="h-10 w-auto"
+              className="h-14 w-auto"
             />
-            <span className="text-xl font-bold text-primary hidden sm:inline">City Market</span>
+            <span className="text-2xl font-bold text-primary hidden sm:inline">City Market</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -36,7 +36,7 @@ const Header = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-bold transition-colors hover:text-primary ${
+                className={`text-lg font-bold transition-colors hover:text-primary ${
                   isActive(link.path) ? 'text-primary' : 'text-foreground'
                 }`}
               >
@@ -59,7 +59,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-5 w-5" />
+                  <Instagram className="h-6 w-6" />
                 </a>
               </Button>
               <Button
@@ -73,7 +73,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
-                  <Facebook className="h-5 w-5" />
+                  <Facebook className="h-6 w-6" />
                 </a>
               </Button>
             </div>
@@ -100,7 +100,7 @@ const Header = () => {
                   key={link.path}
                   to={link.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`text-sm font-bold transition-colors hover:text-primary ${
+                  className={`text-lg font-bold transition-colors hover:text-primary ${
                     isActive(link.path) ? 'text-primary' : 'text-foreground'
                   }`}
                 >
@@ -119,7 +119,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Instagram"
                   >
-                    <Instagram className="h-5 w-5" />
+                    <Instagram className="h-6 w-6" />
                   </a>
                 </Button>
                 <Button
@@ -133,7 +133,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Facebook"
                   >
-                    <Facebook className="h-5 w-5" />
+                    <Facebook className="h-6 w-6" />
                   </a>
                 </Button>
               </div>
