@@ -18,63 +18,63 @@ const Rentals = () => {
   const mockProperties = [
     {
       id: '1',
-      title: 'דירת 4 חדרים משופצת בניהול מיינקן',
-      address: 'רחוב 26, תל אביב-יפו',
+      title: 'דירת 4 חדרים משופצת ברחוב דיזנגוף',
+      address: 'דיזנגוף 125, תל אביב',
       city: 'תל אביב',
-      monthly_rent: 5200,
+      monthly_rent: 8500,
       rooms: 4,
-      property_size: 100,
-      description: 'דירה מרווחת, מטבח מעוצב וריצוף שיש. מיקום מעולה, תחבורה ציבורית בקרבת מקום. התושלת המדויקת לבילוי בעיר.',
-      image: '/images/properties/rental-ben-yehuda-kitchen.jpg',
-      features: ['מעלית', 'חניה', 'מרפסת']
+      property_size: 95,
+      description: 'דירה יפהפייה ומשופצת בלב הצפון הישן, תקרות גבוהות, ריצוף מקורי, מרפסת גדולה עם נוף לשדרות. במרחק הליכה מהים, בתי קפה ומסעדות.',
+      image: '/images/properties/rental-dizengoff-interior.jpg',
+      features: ['חניה', 'מעלית', 'מרפסת']
     },
     {
       id: '2',
-      title: 'דירת 3 חדרים בניהול פרפרון',
-      address: 'בן יהודה 45, תל אביב-יפו',
-      city: 'תל אביב',
-      monthly_rent: 7500,
-      rooms: 3,
-      property_size: 85,
-      description: 'דירת 3 חדרים משופצת לחלוטין, קרוב לים ולשטחים ירוקים. מעולה למשפחות צעירות או צעירים מקצועיים.',
-      image: '/images/properties/rental-dizengoff-interior.jpg',
-      features: ['מעלית', 'מרפסת']
-    },
-    {
-      id: '3',
-      title: 'סטודיו מעוצב בניהול פרישמן',
-      address: 'פרישמן 30, תל אביב-יפו',
-      city: 'תל אביב',
-      monthly_rent: 5200,
-      rooms: 1,
-      property_size: 40,
-      description: 'סטודיו מודרני ומעוצב לחלוטין, במיקום מרכזי ונגיש. מושלם לסטודנטים ורווקים צעירים. קרוב לכל השירותים המרכזיים.',
-      image: '/images/properties/studio-frishman.jpg',
-      features: ['מעלית']
-    },
-    {
-      id: '4',
-      title: 'דירת 2 חדרים בניהול ביאליק',
-      address: 'ביאליק 28, תל אביב-יפו',
-      city: 'תל אביב',
-      monthly_rent: 6800,
-      rooms: 2,
-      property_size: 65,
-      description: 'דירה יפה ומשופצת, קרוב לים ולבתי קפה. מתאימה למשפחות קטנות או זוגות צעירים. אזור שקט ומרכזי.',
-      image: '/images/properties/2br-bialik.jpg',
-      features: ['חניה', 'מרפסת']
-    },
-    {
-      id: '5',
-      title: 'דירת 3 חדרים במעשה גן נעמה',
-      address: 'נעמה 12, תל אביב-יפו',
+      title: 'דירת 3 חדרים בשכונת בן יהודה',
+      address: 'בן יהודה 43, תל אביב',
       city: 'תל אביב',
       monthly_rent: 7200,
       rooms: 3,
-      property_size: 90,
-      description: 'דירה מושקעת ברחוב שקט, קרובה לגנים ולשירותים. מעולה למשפחות עם ילדים. חניה צמודה.',
-      image: '/images/properties/classic-nahmani.jpg',
-      features: ['מעלית', 'חניה', 'מרפסת']
+      property_size: 75,
+      description: 'דירה מקסימה עם אופי בשכונה שקטה, 2 חדרי שינה מרווחים, מטבח מודרני, מזגן בכל חדר. קרוב לתחבורה ציבורית ולכל השירותים.',
+      image: '/images/properties/rental-ben-yehuda-kitchen.jpg',
+      features: ['מרפסת']
+    },
+    {
+      id: '3',
+      title: 'דירת 3 חדרים משופצת ברחוב גורדון',
+      address: 'גורדון 18, תל אביב',
+      city: 'תל אביב',
+      monthly_rent: 6800,
+      rooms: 3,
+      property_size: 65,
+      description: 'דירה חמודה ומשופצת בשכונת נווה צדק, קרוב לחוף הים, 2 חדרי שינה, סלון מואר, מטבח מעוצב. מתאים לזוג או משפחה קטנה.',
+      image: '/images/properties/rental-gordon-bedroom.jpg',
+      features: ['מרפסת']
+    },
+    {
+      id: '4',
+      title: 'סטודיו מרוהט ברחוב פרישמן',
+      address: 'פרישמן 45, תל אביב',
+      city: 'תל אביב',
+      monthly_rent: 4500,
+      rooms: 1,
+      property_size: 32,
+      description: 'סטודיו מעוצב ומרוהט, מטבח פתוח, אזור מיטה מופרד, מרפסת קטנה. מתאים לעצמאי או זוג צעיר. במרחק הליכה מהים.',
+      image: '/images/properties/studio-frishman.jpg',
+      features: ['מעלית', 'מרפסת']
+    },
+    {
+      id: '5',
+      title: 'דירת 2 חדרים ברחוב ביאליק',
+      address: 'ביאליק 12, תל אביב',
+      city: 'תל אביב',
+      monthly_rent: 5500,
+      rooms: 2,
+      property_size: 55,
+      description: 'דירה נעימה במיקום מרכזי, חדר שינה אחד, סלון בהיר, מטבח מאובזר. קרוב לתחנת רכבת ולמרכזי קניות. מתאים ליחיד או זוג.',
+      image: '/images/properties/2br-bialik.jpg',
+      features: []
     }
   ];
 

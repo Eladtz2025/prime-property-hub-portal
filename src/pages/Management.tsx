@@ -16,36 +16,36 @@ const Management = () => {
   const mockProperties = [
     {
       id: '1',
-      title: 'בניין משרדים ומקסור בניהול אלנבי',
-      address: 'אלנבי 120, תל אביב-יפו',
+      title: 'בניין מגורים 12 יחידות ברחוב שיינקין',
+      address: 'שיינקין 87, תל אביב',
       city: 'תל אביב',
-      building_floors: 8,
+      building_floors: 3,
       property_size: 850,
-      description: 'בניין משרדים מרכזי המנוהל על ידינו. תחזוקה שוטפת, ניהול דיירים ומערכות. מיקום מרכזי במיוחד.',
-      image: '/images/properties/building-management-1.jpg',
-      features: ['מעלית', 'חניה', 'אבטחה']
+      description: 'בניין בוטיק מתחזק ומשופץ, 12 דירות להשכרה, כולן מושכרות, ניהול מלא כולל תחזוקה, גביה ודיווח. תפוסה 100%.',
+      image: '/images/properties/management-sheinkin-lobby.jpg',
+      features: ['חניה', 'תחזוקה שוטפת', 'ניהול מלא']
     },
     {
       id: '2',
-      title: 'בניין מגורים ב-8 יחידות בניהול שינקין',
-      address: 'שינקין 24, תל אביב-יפו',
+      title: 'בניין מגורים 8 יחידות ברחוב מונטיפיורי',
+      address: 'מונטיפיורי 23, תל אביב',
       city: 'תל אביב',
-      building_floors: 4,
-      property_size: 600,
-      description: 'בניין בוטיק עם 8 דירות בניהול מלא. גביית דמי שכירות, תחזוקה, תיקונים ומענה לדיירים 24/7.',
-      image: '/images/properties/management-sheinkin-lobby.jpg',
-      features: ['מעלית', 'חניה']
+      building_floors: 3,
+      property_size: 520,
+      description: 'בניין בוטיק משופץ ומתוחזק, 8 דירות, כולן מושכרות, ניהול מקצועי כולל גביה ותחזוקה שוטפת. דיירים איכותיים ויציבים.',
+      image: '/images/properties/building-management-1.jpg',
+      features: ['חניה', 'תחזוקה מלאה']
     },
     {
       id: '3',
-      title: 'בניין בסגנון באוהאוס בניהול',
-      address: 'דיזנגוף 100, תל אביב-יפו',
+      title: 'בניין משרדים ומסחר ברחוב אלנבי',
+      address: 'אלנבי 112, תל אביב',
       city: 'תל אביב',
-      building_floors: 5,
-      property_size: 720,
-      description: 'בניין היסטורי בסגנון באוהאוס המנוהל על ידינו. שמירה על אופי המבנה תוך תחזוקה מתמדת.',
-      image: '/images/properties/building-bauhaus-1.jpg',
-      features: ['אבטחה', 'תחזוקה 24/7']
+      building_floors: 4,
+      property_size: 650,
+      description: 'בניין היסטורי מתוחזק, משרדים וחנויות, ניהול מקצועי כולל אחזקה שוטפת, ליווי דיירים ותיאום עבודות. מיקום מרכזי.',
+      image: '/images/properties/management-sheinkin-lobby.jpg',
+      features: ['חניה', 'מעלית', 'אבטחה']
     }
   ];
 

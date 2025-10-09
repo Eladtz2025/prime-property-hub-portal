@@ -18,51 +18,51 @@ const Sales = () => {
   const mockProperties = [
     {
       id: '1',
-      title: 'פנטהאוז יוקרתי בניהול אלנבי',
-      address: 'אלנבי 62, תל אביב-יפו',
+      title: 'דירת 5 חדרים משופצת ברחוב רוטשילד',
+      address: 'רוטשילד 88, תל אביב',
       city: 'תל אביב',
-      price: 4500000,
+      price: 5200000,
       rooms: 5,
-      property_size: 160,
-      description: 'פנטהאוז מרהיב עם נוף פנורמי לים, מרפסת גדולה, עיצוב מודרני ויוקרתי. מעלית פרטית, חניה כפולה.',
-      image: '/images/properties/penthouse-allenby.jpg',
-      features: ['מעלית', 'חניה', 'מרפסת', 'נוף לים']
+      property_size: 130,
+      description: 'דירת יוקרה בבניין בוטיק משופץ, תקרות גבוהות, חלונות גדולים, מרפסת מרווחה. מיקום פרימיום על השדרה היוקרתית.',
+      image: '/images/properties/sale-rothschild-exterior.jpg',
+      features: ['חניה', 'מעלית', 'מרפסת']
     },
     {
       id: '2',
-      title: 'דירת 4 חדרים בניהול רוטשילד',
-      address: 'רוטשילד 45, תל אביב-יפו',
-      city: 'תל אביב',
-      price: 2900000,
-      rooms: 4,
-      property_size: 120,
-      description: 'דירה מושקעת בבניין בוטיק, שופצה ברמה גבוהה. מיקום יוקרתי בשדרת רוטשילד, קרוב לכל השירותים.',
-      image: '/images/properties/sale-rothschild-exterior.jpg',
-      features: ['מעלית', 'חניה', 'מרפסת']
-    },
-    {
-      id: '3',
-      title: 'דירת 3 חדרים במרכז דיזנגוף',
-      address: 'דיזנגוף 88, תל אביב-יפו',
-      city: 'תל אביב',
-      price: 3500000,
-      rooms: 3,
-      property_size: 95,
-      description: 'דירה מרווחת עם מרפסת גדולה, משופצת מהיסוד. מיקום מעולה במרכז תל אביב, קרוב לכל.',
-      image: '/images/properties/sale-dizengoff-terrace.jpg',
-      features: ['מעלית', 'מרפסת', 'חניה']
-    },
-    {
-      id: '4',
-      title: 'דירת 4 חדרים משופצת בניהול דיזנגוף',
-      address: 'דיזנגוף 120, תל אביב-יפו',
+      title: 'פנטהאוז 4 חדרים ברחוב אלנבי',
+      address: 'אלנבי 234, תל אביב',
       city: 'תל אביב',
       price: 6800000,
       rooms: 4,
       property_size: 140,
-      description: 'דירה מרווחת במיקום מעולה, שופצה ברמה גבוהה עם חומרים איכותיים. מרפסת שמש גדולה.',
-      image: '/images/properties/rental-dizengoff-interior.jpg',
-      features: ['מעלית', 'חניה', 'מרפסת']
+      description: 'פנטהאוז מדהים עם גג פרטי מרהיב, נוף לעיר, עיצוב מודרני, מטבח שף, 2 חדרי רחצה יוקרתיים. חניה כפולה.',
+      image: '/images/properties/penthouse-allenby.jpg',
+      features: ['חניה', 'מעלית', 'מרפסת', 'נוף פנורמי']
+    },
+    {
+      id: '3',
+      title: 'דירת 3 חדרים בסגנון באוהאוס ברחוב נחמני',
+      address: 'נחמני 14, תל אביב',
+      city: 'תל אביב',
+      price: 3900000,
+      rooms: 3,
+      property_size: 85,
+      description: 'דירה קלאסית בבניין באוהאוס משופץ, שימור אדריכלי, פרקט מקורי, תקרות גבוהות. קרוב לרוטשילד ולבתי קפה טרנדיים.',
+      image: '/images/properties/classic-nahmani.jpg',
+      features: ['מרפסת', 'סגנון באוהאוס']
+    },
+    {
+      id: '4',
+      title: 'דירת 4 חדרים עם מרפסת גדולה ברחוב דיזנגוף',
+      address: 'דיזנגוף 201, תל אביב',
+      city: 'תל אביב',
+      price: 4500000,
+      rooms: 4,
+      property_size: 120,
+      description: 'דירת גן משופצת, מרפסת ענקית 60 מ"ר, 3 חדרי שינה, סלון מרווח, מטבח חדש. אידיאלי למשפחה.',
+      image: '/images/properties/sale-dizengoff-terrace.jpg',
+      features: ['חניה', 'מעלית', 'מרפסת גדולה']
     }
   ];
 
