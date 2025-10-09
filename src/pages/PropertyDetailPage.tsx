@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { ImageCarousel } from '@/components/ImageCarousel';
+import { PropertyImage } from '@/types/property';
 import { useState } from 'react';
 
 const PropertyDetailPage = () => {
@@ -227,6 +229,45 @@ const PropertyDetailPage = () => {
   const allProperties = [...rentalProperties, ...saleProperties, ...managementProperties];
   const property = allProperties.find(p => p.id === id);
 
+  // תמונות מדומות לדוגמה - בפועל יגיעו מה-database
+  const propertyImages: PropertyImage[] = [
+    {
+      id: '1',
+      name: 'תמונה ראשית',
+      url: '/images/properties/rental-dizengoff-interior.jpg',
+      isPrimary: true,
+      uploadedAt: new Date().toISOString(),
+    },
+    {
+      id: '2',
+      name: 'סלון',
+      url: '/images/properties/living-bauhaus-1.jpg',
+      isPrimary: false,
+      uploadedAt: new Date().toISOString(),
+    },
+    {
+      id: '3',
+      name: 'חדר שינה',
+      url: '/images/properties/bedroom-master-1.jpg',
+      isPrimary: false,
+      uploadedAt: new Date().toISOString(),
+    },
+    {
+      id: '4',
+      name: 'מטבח',
+      url: '/images/properties/rental-ben-yehuda-kitchen.jpg',
+      isPrimary: false,
+      uploadedAt: new Date().toISOString(),
+    },
+    {
+      id: '5',
+      name: 'חדר רחצה',
+      url: '/images/properties/bathroom-modern-1.jpg',
+      isPrimary: false,
+      uploadedAt: new Date().toISOString(),
+    },
+  ];
+
   const handleWhatsApp = () => {
     const phone = '972545503055';
     const message = `שלום, מעוניין/ת במידע על ${property?.title}`;
@@ -327,6 +368,9 @@ const PropertyDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* עמודה ימנית - פרטי הנכס */}
           <div className="lg:col-span-2 space-y-6">
+            {/* גלריית תמונות */}
+            <ImageCarousel images={propertyImages} />
+
             {/* תגית וכותרת */}
             <div>
               <Badge className="mb-3 bg-primary">{getPropertyTypeLabel()}</Badge>
