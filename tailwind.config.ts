@@ -24,17 +24,22 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
-				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))',
-					hover: 'hsl(var(--primary-hover))',
-					muted: 'hsl(var(--primary-muted))'
-				},
-				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))',
-					hover: 'hsl(var(--secondary-hover))'
-				},
+			primary: {
+				DEFAULT: 'hsl(var(--primary))',
+				foreground: 'hsl(var(--primary-foreground))',
+				deep: 'hsl(var(--primary-deep))',
+				light: 'hsl(var(--primary-light))'
+			},
+			secondary: {
+				DEFAULT: 'hsl(var(--secondary))',
+				foreground: 'hsl(var(--secondary-foreground))',
+				light: 'hsl(var(--secondary-light))'
+			},
+			luxury: {
+				DEFAULT: 'hsl(var(--luxury))',
+				foreground: 'hsl(var(--luxury-foreground))',
+				light: 'hsl(var(--luxury-light))'
+			},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
