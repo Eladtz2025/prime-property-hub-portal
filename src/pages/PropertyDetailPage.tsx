@@ -1,318 +1,560 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowRight, MapPin, Bed, Bath, Square, Building2, Phone, Mail, Share2, Facebook, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  ArrowRight, MapPin, Bed, Bath, Square, Building2, Phone, MessageCircle,
-  Share2, ChevronLeft, ChevronRight, Facebook
-} from 'lucide-react';
-import { useState } from 'react';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import ContactForm from '@/components/ContactForm';
-import ContactSection from '@/components/ContactSection';
 import { useToast } from '@/hooks/use-toast';
+import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { useState } from 'react';
 
 const PropertyDetailPage = () => {
-  const { division, id } = useParams<{ division: string; id: string }>();
+  const { id, type } = useParams<{ id: string; type: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
 
-  const { data: property, isLoading } = useQuery({
-    queryKey: ['property-detail', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          *,
-          property_images (
-            id,
-            image_url,
-            alt_text,
-            is_main,
-            order_index
-          )
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data;
+  // Mock data - בפועל זה יגיע מה-database
+  const rentalProperties = [
+    {
+      id: '1',
+      title: 'דירת 4 חדרים משופצת ברחוב דיזנגוף',
+      address: 'דיזנגוף 125',
+      city: 'תל אביב',
+      monthly_rent: 8500,
+      rooms: 4,
+      bathrooms: 2,
+      property_size: 95,
+      floor: 3,
+      building_floors: 4,
+      description: 'דירה יפהפייה ומשופצת בלב הצפון הישן, תקרות גבוהות, ריצוף מקורי, מרפסת גדולה עם נוף לשדרות. במרחק הליכה מהים, בתי קפה ומסעדות.',
+      parking: true,
+      elevator: true,
+      balcony: true,
+      property_type: 'rental'
     },
-    enabled: !!id,
-  });
+    {
+      id: '2',
+      title: 'דירת 3 חדרים בשכונת בן יהודה',
+      address: 'בן יהודה 43',
+      city: 'תל אביב',
+      monthly_rent: 7200,
+      rooms: 3,
+      bathrooms: 1,
+      property_size: 75,
+      floor: 2,
+      building_floors: 3,
+      description: 'דירה מקסימה עם אופי בשכונה שקטה, 2 חדרי שינה מרווחים, מטבח מודרני, מזגן בכל חדר. קרוב לתחבורה ציבורית ולכל השירותים.',
+      parking: false,
+      elevator: false,
+      balcony: true,
+      property_type: 'rental'
+    },
+    {
+      id: '3',
+      title: 'דירת 3 חדרים משופצת ברחוב גורדון',
+      address: 'גורדון 18',
+      city: 'תל אביב',
+      monthly_rent: 6800,
+      rooms: 3,
+      bathrooms: 1,
+      property_size: 65,
+      floor: 1,
+      building_floors: 3,
+      description: 'דירה חמודה ומשופצת בשכונת נווה צדק, קרוב לחוף הים, 2 חדרי שינה, סלון מואר, מטבח מעוצב. מתאים לזוג או משפחה קטנה.',
+      parking: false,
+      elevator: false,
+      balcony: true,
+      property_type: 'rental'
+    },
+    {
+      id: '4',
+      title: 'סטודיו מרוהט ברחוב פרישמן',
+      address: 'פרישמן 45',
+      city: 'תל אביב',
+      monthly_rent: 4500,
+      rooms: 1,
+      bathrooms: 1,
+      property_size: 32,
+      floor: 4,
+      building_floors: 5,
+      description: 'סטודיו מעוצב ומרוהט, מטבח פתוח, אזור מיטה מופרד, מרפסת קטנה. מתאים לעצמאי או זוג צעיר. במרחק הליכה מהים.',
+      parking: false,
+      elevator: true,
+      balcony: true,
+      property_type: 'rental'
+    },
+    {
+      id: '5',
+      title: 'דירת 2 חדרים ברחוב ביאליק',
+      address: 'ביאליק 12',
+      city: 'תל אביב',
+      monthly_rent: 5500,
+      rooms: 2,
+      bathrooms: 1,
+      property_size: 55,
+      floor: 2,
+      building_floors: 4,
+      description: 'דירה נעימה במיקום מרכזי, חדר שינה אחד, סלון בהיר, מטבח מאובזר. קרוב לתחנת רכבת ולמרכזי קניות. מתאים ליחיד או זוג.',
+      parking: false,
+      elevator: false,
+      balcony: false,
+      property_type: 'rental'
+    }
+  ];
 
-  const images = property?.property_images?.sort((a, b) => {
-    if (a.is_main && !b.is_main) return -1;
-    if (!a.is_main && b.is_main) return 1;
-    return (a.order_index || 0) - (b.order_index || 0);
-  }) || [];
+  const saleProperties = [
+    {
+      id: '1',
+      title: 'דירת 5 חדרים משופצת ברחוב רוטשילד',
+      address: 'רוטשילד 88',
+      city: 'תל אביב',
+      price: 5200000,
+      rooms: 5,
+      bathrooms: 2,
+      property_size: 130,
+      floor: 3,
+      building_floors: 4,
+      description: 'דירת יוקרה בבניין בוטיק משופץ, תקרות גבוהות, חלונות גדולים, מרפסת מרווחה. מיקום פרימיום על השדרה היוקרתית.',
+      parking: true,
+      elevator: true,
+      balcony: true,
+      property_type: 'sale'
+    },
+    {
+      id: '2',
+      title: 'פנטהאוז 4 חדרים ברחוב אלנבי',
+      address: 'אלנבי 234',
+      city: 'תל אביב',
+      price: 6800000,
+      rooms: 4,
+      bathrooms: 2,
+      property_size: 140,
+      floor: 5,
+      building_floors: 5,
+      description: 'פנטהאוז מדהים עם גג פרטי מרהיב, נוף לעיר, עיצוב מודרני, מטבח שף, 2 חדרי רחצה יוקרתיים. חניה כפולה.',
+      parking: true,
+      elevator: true,
+      balcony: true,
+      property_type: 'sale'
+    },
+    {
+      id: '3',
+      title: 'דירת 3 חדרים בסגנון באוהאוס ברחוב נחמני',
+      address: 'נחמני 14',
+      city: 'תל אביב',
+      price: 3900000,
+      rooms: 3,
+      bathrooms: 1,
+      property_size: 85,
+      floor: 2,
+      building_floors: 3,
+      description: 'דירה קלאסית בבניין באוהאוס משופץ, שימור אדריכלי, פרקט מקורי, תקרות גבוהות. קרוב לרוטשילד ולבתי קפה טרנדיים.',
+      parking: false,
+      elevator: false,
+      balcony: true,
+      property_type: 'sale'
+    },
+    {
+      id: '4',
+      title: 'דירת 4 חדרים עם מרפסת גדולה ברחוב דיזנגוף',
+      address: 'דיזנגוף 201',
+      city: 'תל אביב',
+      price: 4500000,
+      rooms: 4,
+      bathrooms: 2,
+      property_size: 120,
+      floor: 1,
+      building_floors: 4,
+      description: 'דירת גן משופצת, מרפסת ענקית 60 מ"ר, 3 חדרי שינה, סלון מרווח, מטבח חדש. אידיאלי למשפחה.',
+      parking: true,
+      elevator: true,
+      balcony: true,
+      property_type: 'sale'
+    }
+  ];
 
-  const divisionLabels: Record<string, string> = {
-    rentals: 'השכרות',
-    sales: 'מכירות',
-    management: 'ניהול נכסים',
+  const managementProperties = [
+    {
+      id: '1',
+      title: 'בניין מגורים 12 יחידות ברחוב שיינקין',
+      address: 'שיינקין 87',
+      city: 'תל אביב',
+      units: 12,
+      bathrooms: 12,
+      property_size: 850,
+      floor: 0,
+      building_floors: 3,
+      description: 'בניין בוטיק מתחזק ומשופץ, 12 דירות להשכרה, כולן מושכרות, ניהול מלא כולל תחזוקה, גביה ודיווח. תפוסה 100%.',
+      parking: true,
+      elevator: false,
+      balcony: false,
+      property_type: 'management'
+    },
+    {
+      id: '2',
+      title: 'בניין מגורים 8 יחידות ברחוב מונטיפיורי',
+      address: 'מונטיפיורי 23',
+      city: 'תל אביב',
+      units: 8,
+      bathrooms: 8,
+      property_size: 520,
+      floor: 0,
+      building_floors: 3,
+      description: 'בניין בוטיק משופץ ומתוחזק, 8 דירות, כולן מושכרות, ניהול מקצועי כולל גביה ותחזוקה שוטפת. דיירים איכותיים ויציבים.',
+      parking: true,
+      elevator: false,
+      balcony: false,
+      property_type: 'management'
+    },
+    {
+      id: '3',
+      title: 'בניין משרדים ומסחר ברחוב אלנבי',
+      address: 'אלנבי 112',
+      city: 'תל אביב',
+      units: 8,
+      bathrooms: 8,
+      property_size: 650,
+      floor: 0,
+      building_floors: 4,
+      description: 'בניין היסטורי מתוחזק, משרדים וחנויות, ניהול מקצועי כולל אחזקה שוטפת, ליווי דיירים ותיאום עבודות. מיקום מרכזי.',
+      parking: true,
+      elevator: true,
+      balcony: false,
+      property_type: 'management'
+    }
+  ];
+
+  const allProperties = [...rentalProperties, ...saleProperties, ...managementProperties];
+  const property = allProperties.find(p => p.id === id);
+
+  const handleWhatsApp = () => {
+    const phone = '972545503055';
+    const message = `שלום, מעוניין/ת במידע על ${property?.title}`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleCall = () => {
+    window.location.href = 'tel:0507222221';
   };
 
   const handleShare = (platform: 'whatsapp' | 'facebook' | 'copy') => {
     const url = window.location.href;
-    const text = `${property?.title || property?.address} - City Market Properties`;
-
-    switch (platform) {
-      case 'whatsapp':
-        window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank');
-        break;
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-        break;
-      case 'copy':
-        navigator.clipboard.writeText(url);
-        toast({
-          title: 'הקישור הועתק',
-          description: 'הקישור הועתק ללוח',
-        });
-        break;
+    
+    if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({
+        title: "הקישור הועתק",
+        description: "הקישור הועתק ללוח",
+      });
+      setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-10 w-64 mb-6" />
-          <Skeleton className="h-96 w-full mb-8" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-            <Skeleton className="h-96" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!property) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">הנכס לא נמצא</h2>
-          <Button onClick={() => navigate(`/${division}`)}>חזרה לרשימה</Button>
+          <h1 className="text-2xl font-bold mb-4">נכס לא נמצא</h1>
+          <Button onClick={() => navigate('/')}>חזרה לעמוד הבית</Button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumbs & Back Button */}
-        <div className="mb-6">
-          <Breadcrumbs
-            items={[
-              { label: divisionLabels[division || 'rentals'], href: `/${division}` },
-              { label: property.title || property.address, href: '#' },
-            ]}
-          />
-          <Button
-            variant="ghost"
-            onClick={() => navigate(`/${division}`)}
-            className="mt-2"
-          >
-            <ArrowRight className="h-4 w-4 ml-2" />
-            חזרה לרשימה
-          </Button>
-        </div>
+  const getBackLink = () => {
+    if (window.location.pathname.includes('rentals')) return '/rentals';
+    if (window.location.pathname.includes('sales')) return '/sales';
+    if (window.location.pathname.includes('management')) return '/management';
+    return '/';
+  };
 
-        {/* Image Gallery */}
-        {images.length > 0 && (
-          <div className="mb-8">
-            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden mb-4">
-              <img
-                src={images[currentImageIndex]?.image_url}
-                alt={images[currentImageIndex]?.alt_text || property.title}
-                className="w-full h-full object-cover"
-              />
-              {images.length > 1 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background"
-                    onClick={prevImage}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background"
-                    onClick={nextImage}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/80 px-3 py-1 rounded-full text-sm">
-                    {currentImageIndex + 1} / {images.length}
-                  </div>
-                </>
-              )}
-            </div>
-            {images.length > 1 && (
-              <div className="grid grid-cols-5 gap-2">
-                {images.slice(0, 5).map((image, index) => (
-                  <button
-                    key={image.id}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`aspect-video rounded-lg overflow-hidden ${
-                      index === currentImageIndex ? 'ring-2 ring-primary' : ''
-                    }`}
-                  >
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || `תמונה ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+  const getPropertyTypeLabel = () => {
+    if (property.property_type === 'rental') return 'להשכרה';
+    if (property.property_type === 'sale') return 'למכירה';
+    if (property.property_type === 'management') return 'בניהול';
+    return '';
+  };
+
+  const getPriceDisplay = () => {
+    if (property.property_type === 'rental' && 'monthly_rent' in property) {
+      return `₪${property.monthly_rent.toLocaleString()}/חודש`;
+    }
+    if (property.property_type === 'sale' && 'price' in property) {
+      return `₪${property.price.toLocaleString()}`;
+    }
+    if (property.property_type === 'management') {
+      return 'ניהול מלא';
+    }
+    return '';
+  };
+
+  const getKeyPoints = () => {
+    const points = [
+      `מיקום מעולה ב${property.city}`,
+      'units' in property && property.property_type === 'management'
+        ? `${property.units} יח' דיור`
+        : 'rooms' in property ? `${property.rooms} חדרים מרווחים` : 'שטח מרווח',
+      `${property.property_size} מ"ר שטח`,
+    ];
+
+    if (property.parking) points.push('חניה פרטית');
+    if (property.elevator) points.push('מעלית בבניין');
+    if (property.balcony) points.push('מרפסת');
+
+    return points;
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <WhatsAppFloat />
+
+      <div className="container mx-auto px-4 py-8">
+        {/* כפתור חזרה */}
+        <Button
+          variant="ghost"
+          className="mb-6 gap-2"
+          onClick={() => navigate(getBackLink())}
+        >
+          <ArrowRight className="h-4 w-4" />
+          חזרה לרשימת נכסים
+        </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Property Details */}
+          {/* עמודה ימנית - פרטי הנכס */}
           <div className="lg:col-span-2 space-y-6">
+            {/* תגית וכותרת */}
             <div>
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className="text-3xl font-bold">{property.title || property.address}</h1>
-                <Badge>{division === 'rentals' ? 'להשכרה' : division === 'sales' ? 'למכירה' : 'בניהול'}</Badge>
-              </div>
+              <Badge className="mb-3 bg-primary">{getPropertyTypeLabel()}</Badge>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">{property.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-5 w-5" />
                 <span className="text-lg">{property.address}, {property.city}</span>
               </div>
-              {property.monthly_rent && (
-                <div className="text-4xl font-bold text-primary mb-6">
-                  ₪{property.monthly_rent.toLocaleString()}
-                  {division === 'rentals' && '/חודש'}
-                </div>
-              )}
+              <div className="text-3xl font-bold text-primary mb-6">
+                {getPriceDisplay()}
+              </div>
             </div>
 
-            {/* Property Features */}
+            {/* פרטים טכניים */}
             <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">פרטי הנכס</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {property.rooms && (
-                  <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                    <Bed className="h-6 w-6 text-primary mb-2" />
-                    <span className="text-sm text-muted-foreground">חדרים</span>
-                    <span className="font-bold">{property.rooms}</span>
+                <div className="flex items-center gap-2">
+                  {property.property_type === 'management' ? (
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <Bed className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      {property.property_type === 'management' ? 'יח\' דיור' : 'חדרים'}
+                    </div>
+                    <div className="font-semibold">
+                      {'units' in property && property.property_type === 'management'
+                        ? property.units
+                        : 'rooms' in property ? property.rooms : 0}
+                    </div>
                   </div>
-                )}
-                {property.bathrooms && (
-                  <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                    <Bath className="h-6 w-6 text-primary mb-2" />
-                    <span className="text-sm text-muted-foreground">חדרי רחצה</span>
-                    <span className="font-bold">{property.bathrooms}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Bath className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">חדרי רחצה</div>
+                    <div className="font-semibold">{property.bathrooms}</div>
                   </div>
-                )}
-                {property.property_size && (
-                  <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                    <Square className="h-6 w-6 text-primary mb-2" />
-                    <span className="text-sm text-muted-foreground">גודל</span>
-                    <span className="font-bold">{property.property_size} מ"ר</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Square className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">שטח</div>
+                    <div className="font-semibold">{property.property_size} מ"ר</div>
                   </div>
-                )}
-                {property.floor !== null && (
-                  <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                    <Building2 className="h-6 w-6 text-primary mb-2" />
-                    <span className="text-sm text-muted-foreground">קומה</span>
-                    <span className="font-bold">{property.floor}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">קומה</div>
+                    <div className="font-semibold">
+                      {property.floor === 0 ? 'קרקע' : `${property.floor} מתוך ${property.building_floors}`}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-              <div className="mt-4 flex gap-2 flex-wrap">
-                {property.parking && <Badge variant="outline">חניה</Badge>}
-                {property.elevator && <Badge variant="outline">מעלית</Badge>}
-                {property.balcony && <Badge variant="outline">מרפסת</Badge>}
+
+              <div className="flex gap-2 mt-6 flex-wrap">
+                {property.parking && (
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
+                    חניה
+                  </Badge>
+                )}
+                {property.elevator && (
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
+                    מעלית
+                  </Badge>
+                )}
+                {property.balcony && (
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
+                    מרפסת
+                  </Badge>
+                )}
               </div>
             </Card>
 
-            {/* Description */}
-            {property.description && (
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4">תיאור</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
-              </Card>
-            )}
-
-            {/* Contact Buttons */}
-            <div className="flex gap-4">
-              <Button size="lg" className="flex-1" asChild>
-                <a href={`tel:${property.contact_phone || '0545503055'}`}>
-                  <Phone className="h-5 w-5 ml-2" />
-                  התקשר עכשיו
-                </a>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  const phone = property.contact_phone?.replace(/\D/g, '') || '972545503055';
-                  const message = `שלום, מעוניין/ת במידע על ${property.title || property.address}`;
-                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-                }}
-              >
-                <MessageCircle className="h-5 w-5 ml-2" />
-                WhatsApp
-              </Button>
-            </div>
-
-            {/* Share Buttons */}
+            {/* אודות הנכס */}
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">שתף את הנכס</h2>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => handleShare('whatsapp')}>
-                  <MessageCircle className="h-4 w-4 ml-2" />
-                  WhatsApp
-                </Button>
-                <Button variant="outline" onClick={() => handleShare('facebook')}>
-                  <Facebook className="h-4 w-4 ml-2" />
-                  Facebook
-                </Button>
-                <Button variant="outline" onClick={() => handleShare('copy')}>
-                  <Share2 className="h-4 w-4 ml-2" />
-                  העתק קישור
-                </Button>
-              </div>
+              <h2 className="text-2xl font-bold mb-4">אודות הנכס</h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                {property.description}
+              </p>
+
+              <h3 className="text-xl font-semibold mb-4">נקודות מרכזיות</h3>
+              <ul className="space-y-2">
+                {getKeyPoints().map((point, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
             </Card>
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <ContactForm
-              propertyId={property.id}
-              propertyTitle={property.title || property.address}
-            />
+          {/* עמודה שמאלית - כפתורי פעולה ושיתוף */}
+          <div className="space-y-6">
+            {/* כפתורי פעולה */}
+            <Card className="p-6">
+              <h3 className="font-bold mb-4">צור קשר</h3>
+              <div className="space-y-3">
+                <Button className="w-full gap-2" onClick={handleWhatsApp}>
+                  <Phone className="h-4 w-4" />
+                  WhatsApp
+                </Button>
+                <Button variant="outline" className="w-full gap-2" onClick={handleCall}>
+                  <Phone className="h-4 w-4" />
+                  התקשר
+                </Button>
+              </div>
+            </Card>
+
+            {/* שיתוף */}
+            <Card className="p-6">
+              <h3 className="font-bold mb-4">שתף נכס זה</h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleShare('whatsapp')}
+                  className="flex-1"
+                >
+                  <Phone className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleShare('facebook')}
+                  className="flex-1"
+                >
+                  <Facebook className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleShare('copy')}
+                  className="flex-1"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </Card>
+
+            {/* פרטי קשר */}
+            <Card className="p-6">
+              <h3 className="font-bold mb-4">פרטי קשר</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">טלפון</div>
+                    <a href="tel:0507222221" className="font-medium hover:text-primary">
+                      050-722-2221
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">אימייל</div>
+                    <a href="mailto:info@citymarket.co.il" className="font-medium hover:text-primary">
+                      info@citymarket.co.il
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">WhatsApp</div>
+                    <button onClick={handleWhatsApp} className="font-medium hover:text-primary">
+                      שלחו לנו הודעה
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">כתובת</div>
+                    <div className="font-medium">תל אביב, ישראל</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* שעות פעילות */}
+            <Card className="p-6">
+              <h3 className="font-bold mb-4">שעות פעילות</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ראשון - חמישי:</span>
+                  <span className="font-medium">09:00 - 18:00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">שישי:</span>
+                  <span className="font-medium">09:00 - 13:00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">שבת:</span>
+                  <span className="font-medium">סגור</span>
+                </div>
+                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                  📞 זמינות טלפונית 24/7 במקרי חירום
+                </div>
+              </div>
+            </Card>
+
+            {/* קישורים מהירים */}
+            <Card className="p-6">
+              <h3 className="font-bold mb-4">קישורים מהירים</h3>
+              <div className="space-y-2">
+                <Link to="/" className="block hover:text-primary">
+                  עמוד הבית
+                </Link>
+                <Link to="/rentals" className="block hover:text-primary">
+                  השכרות
+                </Link>
+                <Link to="/sales" className="block hover:text-primary">
+                  מכירות
+                </Link>
+                <Link to="/management" className="block hover:text-primary">
+                  ניהול נכסים
+                </Link>
+              </div>
+            </Card>
           </div>
         </div>
       </div>
-
-      <ContactSection />
     </div>
   );
 };

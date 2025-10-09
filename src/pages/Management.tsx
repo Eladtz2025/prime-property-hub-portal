@@ -163,7 +163,9 @@ const Management = () => {
                         </Badge>
                       ))}
                     </div>
-                    <Button className="w-full">פרטים נוספים</Button>
+                    <Button asChild className="w-full">
+                      <a href={`/management/property/${property.id}`}>פרטים נוספים</a>
+                    </Button>
                   </div>
                 </Card>
               ))}
