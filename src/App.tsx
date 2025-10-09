@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -64,6 +64,9 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<LoginScreen />} />
         ) : (
           <>
+            {/* Redirect /admin to /admin-dashboard */}
+            <Route path="/admin" element={<Navigate to="/admin-dashboard" replace />} />
+            
             {/* Admin Dashboard - Main */}
             <Route 
               path="/admin-dashboard"
