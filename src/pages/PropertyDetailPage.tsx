@@ -1,12 +1,14 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Bed, Bath, Square, Building2, Phone, Mail, Share2, Facebook, Copy, Check } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Facebook, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { Input } from '@/components/ui/input';
 import { ImageCarousel } from '@/components/ImageCarousel';
 import { PropertyImage } from '@/types/property';
+import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 const PropertyDetailPage = () => {
@@ -366,141 +368,93 @@ const PropertyDetailPage = () => {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* עמודה ימנית - פרטי הנכס */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* גלריית תמונות */}
-            <ImageCarousel images={propertyImages} />
-
+          {/* עמודה שמאלית - פרטי הנכס */}
+          <div className="space-y-6 order-2 lg:order-1">
             {/* תגית וכותרת */}
             <div>
-              <Badge className="mb-3 bg-primary">{getPropertyTypeLabel()}</Badge>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{property.title}</h1>
+              <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
+              <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                <MapPin className="h-5 w-5" />
-                <span className="text-lg">{property.address}, {property.city}</span>
-              </div>
-              <div className="text-3xl font-bold text-primary mb-6">
-                {getPriceDisplay()}
+                <MapPin className="h-4 w-4" />
+                <span className="text-base">{property.address}, {property.city}</span>
               </div>
             </div>
 
             {/* פרטים טכניים */}
-            <Card className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  {property.property_type === 'management' ? (
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <Bed className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <div>
-                    <div className="text-sm text-muted-foreground">
-                      {property.property_type === 'management' ? 'יח\' דיור' : 'חדרים'}
-                    </div>
-                    <div className="font-semibold">
-                      {'units' in property && property.property_type === 'management'
-                        ? property.units
-                        : 'rooms' in property ? property.rooms : 0}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Bath className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">חדרי רחצה</div>
-                    <div className="font-semibold">{property.bathrooms}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Square className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">שטח</div>
-                    <div className="font-semibold">{property.property_size} מ"ר</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">קומה</div>
-                    <div className="font-semibold">
-                      {property.floor === 0 ? 'קרקע' : `${property.floor} מתוך ${property.building_floors}`}
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Bath className="h-5 w-5 text-primary" />
+                <span className="text-sm">
+                  {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
+                </span>
               </div>
-
-              <div className="flex gap-2 mt-6 flex-wrap">
-                {property.parking && (
-                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
-                    חניה
-                  </Badge>
-                )}
-                {property.elevator && (
-                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
-                    מעלית
-                  </Badge>
-                )}
-                {property.balcony && (
-                  <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500">
-                    מרפסת
-                  </Badge>
-                )}
+              {property.property_type !== 'management' && 'rooms' in property && (
+                <div className="flex items-center gap-3">
+                  <Home className="h-5 w-5 text-primary" />
+                  <span className="text-sm">{property.rooms} חדרים</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-primary" />
+                <span className="text-sm">
+                  קומה {property.floor === 0 ? 'קרקע' : `${property.floor} מתוך ${property.building_floors}`}
+                </span>
               </div>
-            </Card>
+              <div className="flex items-center gap-3">
+                <Square className="h-5 w-5 text-primary" />
+                <span className="text-sm">{property.property_size} מ"ר</span>
+              </div>
+            </div>
 
-            {/* אודות הנכס */}
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">אודות הנכס</h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                {property.description}
-              </p>
+            {/* תגיות */}
+            <div className="flex gap-2 flex-wrap">
+              {property.parking && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                  <Car className="h-3 w-3 ml-1" />
+                  חניה
+                </Badge>
+              )}
+              {property.elevator && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                  <MoveUp className="h-3 w-3 ml-1" />
+                  מעלית
+                </Badge>
+              )}
+              {property.balcony && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                  <TreePine className="h-3 w-3 ml-1" />
+                  מרפסת
+                </Badge>
+              )}
+            </div>
 
-              <h3 className="text-xl font-semibold mb-4">נקודות מרכזיות</h3>
-              <ul className="space-y-2">
-                {getKeyPoints().map((point, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <Check className="h-5 w-5 text-green-600" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          </div>
-
-          {/* עמודה שמאלית - כפתורי פעולה ושיתוף */}
-          <div className="space-y-6">
             {/* כפתורי פעולה */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4">צור קשר</h3>
-              <div className="space-y-3">
-                <Button className="w-full gap-2" onClick={handleWhatsApp}>
-                  <Phone className="h-4 w-4" />
-                  WhatsApp
-                </Button>
-                <Button variant="outline" className="w-full gap-2" onClick={handleCall}>
-                  <Phone className="h-4 w-4" />
-                  התקשר
-                </Button>
-              </div>
-            </Card>
+            <div className="space-y-3">
+              <Button className="w-full gap-2 bg-primary hover:bg-primary/90" onClick={handleWhatsApp}>
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </Button>
+              <Button variant="outline" className="w-full gap-2" onClick={handleCall}>
+                <Phone className="h-4 w-4" />
+                התקשר
+              </Button>
+            </div>
 
             {/* שיתוף */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4">שתף נכס זה</h3>
-              <div className="flex gap-2">
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3 text-sm">שתף נכס זה</h3>
+              <div className="flex gap-2 justify-center">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handleShare('whatsapp')}
-                  className="flex-1"
                 >
-                  <Phone className="h-4 w-4" />
+                  <Share2 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handleShare('facebook')}
-                  className="flex-1"
                 >
                   <Facebook className="h-4 w-4" />
                 </Button>
@@ -508,96 +462,81 @@ const PropertyDetailPage = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => handleShare('copy')}
-                  className="flex-1"
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </Card>
+          </div>
 
-            {/* פרטי קשר */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4">פרטי קשר</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">טלפון</div>
-                    <a href="tel:0507222221" className="font-medium hover:text-primary">
-                      050-722-2221
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">אימייל</div>
-                    <a href="mailto:info@citymarket.co.il" className="font-medium hover:text-primary">
-                      info@citymarket.co.il
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">WhatsApp</div>
-                    <button onClick={handleWhatsApp} className="font-medium hover:text-primary">
-                      שלחו לנו הודעה
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">כתובת</div>
-                    <div className="font-medium">תל אביב, ישראל</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* שעות פעילות */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4">שעות פעילות</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">ראשון - חמישי:</span>
-                  <span className="font-medium">09:00 - 18:00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">שישי:</span>
-                  <span className="font-medium">09:00 - 13:00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">שבת:</span>
-                  <span className="font-medium">סגור</span>
-                </div>
-                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                  📞 זמינות טלפונית 24/7 במקרי חירום
-                </div>
-              </div>
-            </Card>
-
-            {/* קישורים מהירים */}
-            <Card className="p-6">
-              <h3 className="font-bold mb-4">קישורים מהירים</h3>
-              <div className="space-y-2">
-                <Link to="/" className="block hover:text-primary">
-                  עמוד הבית
-                </Link>
-                <Link to="/rentals" className="block hover:text-primary">
-                  השכרות
-                </Link>
-                <Link to="/sales" className="block hover:text-primary">
-                  מכירות
-                </Link>
-                <Link to="/management" className="block hover:text-primary">
-                  ניהול נכסים
-                </Link>
-              </div>
-            </Card>
+          {/* עמודה ימנית - גלריית תמונות */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
           </div>
         </div>
+
+        {/* אודות הנכס */}
+        <Card className="p-8 mt-8">
+          <h2 className="text-2xl font-bold mb-4">אודות הנכס</h2>
+          <p className="text-muted-foreground leading-relaxed mb-6">
+            {property.description}
+          </p>
+
+          <h3 className="text-xl font-semibold mb-4">נקודות מרכזיות</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {getKeyPoints().map((point, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <span>{point}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* טופס יצירת קשר */}
+        <Card className="p-8 mt-8">
+          <h2 className="text-2xl font-bold mb-6">צור קשר</h2>
+          <p className="text-muted-foreground mb-6">
+            מעוניינים בנכס? דירת 4 חדרים משופצת ברחוב דיזנגוף? השאירו פרטים ואנחנו נחזור אליכם בהקדם
+          </p>
+          
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            toast({
+              title: "הטופס נשלח בהצלחה",
+              description: "נחזור אליך בהקדם",
+            });
+          }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-right">שם מלא *</label>
+                <Input placeholder="הכנס שם מלא" required className="text-right" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-right">אימייל *</label>
+                <Input type="email" placeholder="example@email.com" required className="text-right" />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2 text-right">טלפון</label>
+              <Input type="tel" placeholder="050-1234567" className="text-right" />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2 text-right">הודעה *</label>
+              <textarea 
+                className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-right text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="ספר לנו על מה אתה מחפש..."
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full">
+              שלח פנייה
+            </Button>
+          </form>
+        </Card>
       </div>
     </div>
   );

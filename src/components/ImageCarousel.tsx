@@ -9,11 +9,13 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 interface ImageCarouselProps {
   images: PropertyImage[];
   className?: string;
+  priceLabel?: string;
 }
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   images,
-  className = ""
+  className = "",
+  priceLabel
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -54,6 +56,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               decoding="async"
             />
             
+            {/* Price label on main image */}
+            {priceLabel && (
+              <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg">
+                {priceLabel}
+              </div>
+            )}
+            
             {/* Navigation arrows */}
             {images.length > 1 && (
               <>
@@ -88,7 +97,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             
             {/* Image counter */}
             {images.length > 1 && (
-              <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
+              <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-medium">
                 {currentIndex + 1} / {images.length}
               </div>
             )}
