@@ -15,53 +15,53 @@ const Index = () => {
       description: 'מחפשים דירה להשכרה? אנחנו כאן בשבילכם',
       image: '/images/rental-interior.jpg',
       features: [
-        'מגוון רחב של דירות להשכרה',
-        'ליווי מקצועי בכל שלב',
-        'בדיקת דיירים יסודית',
-        'ייעוץ משפטי מלא',
+        'ליווי מקצועי בחיפוש הנכס המתאים',
+        'בדיקת דיירים מקיפה',
+        'הכנת חוזים משפטיים',
+        'שירות אישי ומסור',
       ],
       link: '/rentals',
+      icon: 'users' as const,
     },
     {
       title: 'מכירות',
       description: 'קונים או מוכרים? אנחנו נדאג לעסקה המושלמת',
       image: '/images/sales-villa.jpg',
       features: [
-        'הערכת שווי מקצועית',
-        'שיווק מתקדם ויעיל',
-        'ליווי משפטי מלא',
-        'ניהול מו"מ מקצועי',
+        'הערכת שווי מקצועית ומדויקת',
+        'שיווק יעיל ומתקדם',
+        'ייעוץ משפטי ומיסוי מלא',
+        'ניהול מו"מ וליווי עד לסגירה',
       ],
       link: '/sales',
+      icon: 'trending' as const,
     },
     {
       title: 'ניהול נכסים',
       description: 'ניהול מקצועי ומלא עבור הנכס שלכם',
       image: '/images/management-lobby.jpg',
       features: [
-        'ניהול תחזוקה שוטפת',
+        'ניהול תחזוקה שוטפת ופתרונות מהירים',
         'גביה ודיווח חודשי',
         'ניהול דיירים מקצועי',
-        'זמינות 24/7',
+        'זמינות ושירות 24/7',
       ],
       link: '/management',
+      icon: 'building' as const,
     },
   ];
 
   const stats = [
     {
-      icon: Building2,
-      value: '15+',
+      icon: '+15',
       label: 'שנות ניסיון',
     },
     {
-      icon: TrendingUp,
-      value: '500+',
+      icon: '+500',
       label: 'עסקאות מוצלחות',
     },
     {
-      icon: Users,
-      value: '24/7',
+      icon: '24/7',
       label: 'זמינות מלאה',
     },
   ];
@@ -132,11 +132,12 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
-              <Card key={index} className="p-8 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <stat.icon className="h-8 w-8 text-primary" />
+              <Card key={index} className="p-8 text-center bg-primary-light/30 border-0">
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
+                  index === 0 ? 'bg-primary' : index === 1 ? 'bg-secondary' : 'bg-primary'
+                }`}>
+                  <div className="text-3xl font-bold text-white">{stat.icon}</div>
                 </div>
-                <div className="text-4xl font-bold text-primary mb-2">{stat.value}</div>
                 <div className="text-lg text-muted-foreground">{stat.label}</div>
               </Card>
             ))}
