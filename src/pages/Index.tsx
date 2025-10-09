@@ -1,7 +1,6 @@
 import Hero from '@/components/Hero';
 import DivisionCard from '@/components/DivisionCard';
 import GoogleReviews from '@/components/GoogleReviews';
-import ContactSection from '@/components/ContactSection';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { Building2, TrendingUp, Users, Mail, Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -81,7 +80,7 @@ const Index = () => {
           <Button
             size="lg"
             variant="outline"
-            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10"
+            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10 text-lg font-bold px-8 py-6"
             asChild
           >
             <a href="mailto:eladtz@gmail.com">
@@ -92,7 +91,7 @@ const Index = () => {
           <Button
             size="lg"
             variant="outline"
-            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10"
+            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10 text-lg font-bold px-8 py-6"
             asChild
           >
             <a href="tel:054-550-3055">
@@ -148,9 +147,6 @@ const Index = () => {
 
       {/* Google Reviews */}
       <GoogleReviews />
-
-      {/* Contact Section */}
-      <ContactSection />
     </div>
   );
 };
