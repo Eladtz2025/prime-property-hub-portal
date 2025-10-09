@@ -81,7 +81,7 @@ const AppContent: React.FC = () => {
               path="/admin-dashboard/properties" 
               element={
                 <Layout onLogout={signOut}>
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole="admin">
                     <Properties />
                   </ProtectedRoute>
                 </Layout>
@@ -139,7 +139,7 @@ const AppContent: React.FC = () => {
               path="/admin-dashboard/whatsapp" 
               element={
                 <Layout onLogout={signOut}>
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole="admin">
                     <WhatsAppCenter />
                   </ProtectedRoute>
                 </Layout>
@@ -149,7 +149,7 @@ const AppContent: React.FC = () => {
               path="/admin-dashboard/all-features" 
               element={
                 <Layout onLogout={signOut}>
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole="admin">
                     <AllFeatures />
                   </ProtectedRoute>
                 </Layout>
