@@ -39,6 +39,9 @@ const AppContent: React.FC = () => {
         {/* Owner invitation route - accessible without authentication */}
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
         
+        {/* Public home page - accessible to everyone */}
+        <Route path="/" element={<Index />} />
+        
         {loading ? (
           <Route path="*" element={
             <div className="min-h-screen flex items-center justify-center">
@@ -49,10 +52,6 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<LoginScreen />} />
         ) : (
           <>
-            <Route 
-              path="/" 
-              element={<Index />} 
-            />
             <Route 
               path="/properties" 
               element={
