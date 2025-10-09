@@ -27,12 +27,12 @@ const Hero = ({ title, subtitle, description, backgroundImage, children }: HeroP
           {title}
         </h1>
         {subtitle && (
-          <h2 className="text-2xl md:text-3xl text-secondary mb-6 animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-6 animate-fade-in">
             {subtitle}
           </h2>
         )}
         {description && (
-          <p className="text-lg md:text-xl text-luxury-foreground/90 max-w-3xl mx-auto mb-8 animate-fade-in">
+          <p className="text-base md:text-lg font-semibold text-luxury-foreground/90 max-w-3xl mx-auto mb-8 animate-fade-in">
             {description}
           </p>
         )}

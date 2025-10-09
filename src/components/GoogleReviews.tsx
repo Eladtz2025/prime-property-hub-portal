@@ -64,17 +64,26 @@ const reviews = [
 
 const GoogleReviews = () => {
   return (
-    <section className="py-16 bg-muted">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">מה הלקוחות שלנו אומרים</h2>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+              <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+              <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+              <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+            </svg>
+            <span className="text-4xl font-bold">Google</span>
+          </div>
           <div className="flex items-center justify-center gap-2 mb-2">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-6 w-6 fill-secondary text-secondary" />
+              <Star key={i} className="h-8 w-8 fill-secondary text-secondary" />
             ))}
+            <span className="text-4xl font-bold mr-2">5.0</span>
           </div>
           <p className="text-muted-foreground">
-            מבוסס על ביקורות Google
+            מבוסס על 150 ביקורות
           </p>
         </div>
         
@@ -89,35 +98,45 @@ const GoogleReviews = () => {
           <CarouselContent className="-ml-4">
             {reviews.map((review) => (
               <CarouselItem key={review.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                <Card className="h-full">
+                <Card className="h-full shadow-sm">
                   <CardContent className="p-6">
-                    <div className="flex items-start gap-4 mb-4">
-                      <Avatar className="h-12 w-12">
+                    <div className="flex items-start gap-3 mb-4">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
                         <AvatarImage src={review.image} alt={review.name} />
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {review.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{review.name}</h4>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[...Array(review.rating)].map((_, i) => (
-                            <Star key={i} className="h-4 w-4 fill-secondary text-secondary" />
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold truncate">{review.name}</h4>
+                        <p className="text-xs text-muted-foreground">{review.date}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-1 mb-3">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-secondary text-secondary" />
+                      ))}
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {review.text}
                     </p>
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        ביקורת Google
+                        <svg className="w-3 h-3" viewBox="0 0 48 48" fill="none">
+                          <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#4285F4"/>
+                        </svg>
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <div className="flex justify-center gap-2 mt-6">
+            <CarouselPrevious className="static" />
+            <CarouselNext className="static" />
+          </div>
         </Carousel>
       </div>
     </section>

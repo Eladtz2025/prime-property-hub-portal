@@ -74,14 +74,14 @@ const Index = () => {
       <Hero
         title="סיטי מרקט נכסים"
         subtitle="מלב תל-אביב הלבנה עד הבית החדש שלכם"
-        description="הברכה ליישון. מוכנים עם ניסיון של שנים והתמקצעות בהשכרות, מכירות וניהול נכסים."
+        description="חברת תיווך מובילה עם שלוש חטיבות המתמחות בהשכרות, מכירות וניהול נכסים"
         backgroundImage={heroImage}
       >
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
           <Button
             size="lg"
-            variant="secondary"
-            className="gap-2"
+            variant="outline"
+            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10"
             asChild
           >
             <a href="mailto:eladtz@gmail.com">
@@ -91,7 +91,8 @@ const Index = () => {
           </Button>
           <Button
             size="lg"
-            className="gap-2"
+            variant="outline"
+            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10"
             asChild
           >
             <a href="tel:054-550-3055">
@@ -106,9 +107,9 @@ const Index = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">השירותים שלנו</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">החטיבות שלנו</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים
+              ניהול, מכירה והשכרה במקום אחד
             </p>
           </div>
 
