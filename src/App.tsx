@@ -51,13 +51,7 @@ const AppContent: React.FC = () => {
           <>
             <Route 
               path="/" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                </Layout>
-              } 
+              element={<Index />} 
             />
             <Route 
               path="/properties" 
