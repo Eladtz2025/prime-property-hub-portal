@@ -21,6 +21,7 @@ import { AllFeatures } from './pages/AllFeatures';
 import { Login } from './pages/Login';
 import ImportData from './pages/ImportData';
 import ImportFromStorage from './pages/ImportFromStorage';
+import ImportMockProperties from './pages/ImportMockProperties';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -125,6 +126,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <ImportFromStorage />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/import-mock-properties" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportMockProperties />
                   </ProtectedRoute>
                 </Layout>
               } 
