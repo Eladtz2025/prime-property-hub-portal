@@ -147,22 +147,6 @@ const Index = () => {
 
       {/* Google Reviews */}
       <GoogleReviews />
-
-      {/* Admin Button */}
-      <section className="py-8 bg-muted/50">
-        <div className="container mx-auto px-4 text-center">
-          <Button
-            size="lg"
-            variant="outline"
-            className="gap-2"
-            asChild
-          >
-            <a href="/admin-dashboard">
-              עמוד מנהלים
-            </a>
-          </Button>
-        </div>
-      </section>
     </div>
   );
 };

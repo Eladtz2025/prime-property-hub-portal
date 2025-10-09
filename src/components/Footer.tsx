@@ -1,5 +1,6 @@
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -83,8 +84,19 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-luxury-foreground/20 mt-8 pt-8 text-center">
-          <p className="text-sm text-luxury-foreground/60">
+        <div className="border-t border-luxury-foreground/20 mt-8 pt-8">
+          <div className="text-center mb-6">
+            <Button
+              variant="outline"
+              className="border-luxury-foreground/30 text-luxury-foreground hover:bg-luxury-foreground/10"
+              asChild
+            >
+              <Link to="/admin-dashboard">
+                עמוד מנהלים
+              </Link>
+            </Button>
+          </div>
+          <p className="text-sm text-luxury-foreground/60 text-center">
             © {currentYear} City Market Properties. כל הזכויות שמורות.
           </p>
         </div>
