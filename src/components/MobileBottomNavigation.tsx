@@ -11,8 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Main navigation items
 const navigationItems = [
-  { title: "לוח בקרה", url: "/", icon: Home },
-  { title: "נכסים", url: "/properties", icon: Building },
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
+  { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
 ];
 
 // Owner portal navigation item

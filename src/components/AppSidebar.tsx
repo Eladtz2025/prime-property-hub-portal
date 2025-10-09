@@ -19,15 +19,15 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Main navigation items
+// Main navigation items (public pages)
 const navigationItems = [
   { title: 'דף הבית', url: '/', icon: Home },
-  { title: 'נכסים', url: '/properties', icon: Building },
 ];
 
 // Admin navigation items
 const adminItems = [
   { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
+  { title: 'נכסים', url: '/admin-dashboard/properties', icon: Building },
 ];
 
 // Property owner navigation items

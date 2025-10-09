@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navigationItems = [
-  { title: "לוח בקרה", url: "/", icon: Home },
-  { title: "נכסים", url: "/properties", icon: Building },
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
+  { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard },
 ];
 
@@ -90,7 +90,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/admin-dashboard/settings')}
             >
               <Settings className="h-4 w-4" />
               <span>הגדרות</span>

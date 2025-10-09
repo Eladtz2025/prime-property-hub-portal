@@ -16,14 +16,23 @@ interface BreadcrumbNavProps {
 }
 
 const routeLabels: Record<string, string> = {
-  '/': 'לוח בקרה',
-  '/properties': 'נכסים',
+  '/': 'דף הבית',
+  '/admin-dashboard': 'לוח בקרה',
+  '/admin-dashboard/properties': 'נכסים',
+  '/admin-dashboard/settings': 'הגדרות',
+  '/admin-dashboard/admin-control': 'בקרת מערכת',
+  '/admin-dashboard/whatsapp': 'WhatsApp',
+  '/admin-dashboard/all-features': 'כל הפיצ\'רים',
+  '/admin-dashboard/import-data': 'ייבוא נתונים',
+  '/admin-dashboard/import-from-storage': 'ייבוא מאחסון',
+  '/admin-dashboard/import-mock-properties': 'ייבוא נכסי דוגמה',
   '/alerts': 'התראות',
   '/messages': 'הודעות',
   '/reports': 'דוחות',
   '/users': 'משתמשים',
   '/contact-queue': 'צור קשר',
   '/owner-portal': 'פורטל בעלים',
+  '/owner-financials': 'כספים',
   '/property-invitations': 'הזמנות נכסים',
 };
 

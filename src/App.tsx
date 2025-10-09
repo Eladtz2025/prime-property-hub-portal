@@ -64,24 +64,7 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<LoginScreen />} />
         ) : (
           <>
-            <Route 
-              path="/properties" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <Properties />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <Layout onLogout={signOut}>
-                  <Settings />
-                </Layout>
-              } 
-            />
+            {/* Admin Dashboard - Main */}
             <Route 
               path="/admin-dashboard"
               element={
@@ -92,14 +75,94 @@ const AppContent: React.FC = () => {
                 </Layout>
               } 
             />
+            
+            {/* Admin Dashboard - Sub Pages */}
             <Route 
-              path="/admin-control"
+              path="/admin-dashboard/properties" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <Properties />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/settings" 
+              element={
+                <Layout onLogout={signOut}>
+                  <Settings />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/admin-control"
               element={
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminControl />
                   </ProtectedRoute>
                 </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/import-data"
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportData />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/import-from-storage" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportFromStorage />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/import-mock-properties" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <ImportMockProperties />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/whatsapp" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <WhatsAppCenter />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/all-features" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute>
+                    <AllFeatures />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            
+            {/* Owner Portal - Separate from Admin */}
+            <Route 
+              path="/owner-portal"
+              element={
+                <ProtectedRoute requireApproval={false}>
+                  <OwnerPortal />
+                </ProtectedRoute>
               } 
             />
             <Route 
@@ -110,64 +173,7 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/import-data"
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <ImportData />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/import-from-storage" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <ImportFromStorage />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/import-mock-properties" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <ImportMockProperties />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/owner-portal"
-              element={
-                <ProtectedRoute requireApproval={false}>
-                  <OwnerPortal />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/whatsapp" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <WhatsAppCenter />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/all-features" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute>
-                    <AllFeatures />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
+            
             <Route path="*" element={
               <Layout onLogout={signOut}>
                 <NotFound />
