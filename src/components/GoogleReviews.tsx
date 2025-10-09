@@ -8,12 +8,17 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import davidCohen from '@/assets/reviews/david-cohen.jpg';
+import sarahLevi from '@/assets/reviews/sarah-levi.jpg';
+import yossiAbraham from '@/assets/reviews/yossi-abraham.jpg';
+import michalGolan from '@/assets/reviews/michal-golan.jpg';
+import roiIsraeli from '@/assets/reviews/roi-israeli.jpg';
 
 const reviews = [
   {
     id: 1,
     name: 'דוד כהן',
-    image: '',
+    image: davidCohen,
     rating: 5,
     date: 'לפני 3 שבועות',
     text: 'שירות מקצועי ואדיב! עזרו לי למצוא את הדירה המושלמת בלב תל אביב. ממליץ בחום!',
@@ -22,7 +27,7 @@ const reviews = [
   {
     id: 2,
     name: 'שרה לוי',
-    image: '',
+    image: sarahLevi,
     rating: 5,
     date: 'לפני חודש',
     text: 'החברה הכי מקצועית שעבדתי איתה. תהליך מכירת הדירה היה חלק ויעיל. תודה רבה!',
@@ -31,7 +36,7 @@ const reviews = [
   {
     id: 3,
     name: 'יוסי אברהם',
-    image: '',
+    image: yossiAbraham,
     rating: 5,
     date: 'לפני חודשיים',
     text: 'שירות ניהול נכסים מעולה. תמיד זמינים ומטפלים בכל בעיה במהירות ובמקצועיות.',
@@ -40,7 +45,7 @@ const reviews = [
   {
     id: 4,
     name: 'מיכל גולן',
-    image: '',
+    image: michalGolan,
     rating: 5,
     date: 'לפני 3 חודשים',
     text: 'מצאו לי דירה להשכרה בדיוק לפי מה שחיפשתי. צוות נעים ומקצועי!',
@@ -49,7 +54,7 @@ const reviews = [
   {
     id: 5,
     name: 'רועי ישראלי',
-    image: '',
+    image: roiIsraeli,
     rating: 5,
     date: 'לפני 4 חודשים',
     text: 'הייעוץ שקיבלתי היה מצוין. עזרו לי להשקיע נכון ולמצוא נכס משתלם.',
