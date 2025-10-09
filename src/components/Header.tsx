@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Instagram, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logoImage from '@/assets/city-market-logo.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,12 +23,9 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img 
-              src="/images/city-market-logo.png" 
+              src={logoImage} 
               alt="City Market Properties" 
               className="h-10 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
             />
             <span className="text-xl font-bold text-primary hidden sm:inline">City Market</span>
           </Link>
