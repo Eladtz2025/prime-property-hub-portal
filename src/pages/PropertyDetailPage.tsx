@@ -277,7 +277,7 @@ const PropertyDetailPage = () => {
   };
 
   const handleCall = () => {
-    window.location.href = 'tel:0507222221';
+    window.location.href = 'tel:0545503055';
   };
 
   const handleShare = (platform: 'whatsapp' | 'facebook' | 'copy') => {

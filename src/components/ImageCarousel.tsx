@@ -6,6 +6,52 @@ import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon } from 'lucide-re
 import { PropertyImage } from '../types/property';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
+const ImageWithPlaceholder: React.FC<{
+  src: string;
+  alt: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+  sizes?: string;
+}> = ({ src, alt, className, loading = "lazy", sizes }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  // Generate srcset for responsive images
+  const generateSrcSet = (url: string) => {
+    if (url.startsWith('http')) {
+      return `${url}?w=640 640w, ${url}?w=1024 1024w, ${url}?w=1920 1920w`;
+    }
+    return url;
+  };
+
+  if (hasError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-muted`}>
+        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full">
+      {!isLoaded && (
+        <div className={`${className} absolute inset-0 bg-muted animate-pulse`} />
+      )}
+      <img
+        src={src}
+        srcSet={generateSrcSet(src)}
+        sizes={sizes || "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
+        alt={alt}
+        className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        loading={loading}
+        decoding="async"
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+};
+
 interface ImageCarouselProps {
   images: PropertyImage[];
   className?: string;
@@ -48,12 +94,12 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
       <Card className={className}>
         <CardContent className="p-0 relative">
           <div className="relative aspect-video bg-muted">
-            <img
+            <ImageWithPlaceholder
               src={currentImage.url}
               alt={currentImage.name}
               className="w-full h-full object-cover rounded-t"
-              loading="lazy"
-              decoding="async"
+              loading="eager"
+              sizes="(max-width: 768px) 100vw, 60vw"
             />
             
             {/* Price label on main image */}
@@ -114,12 +160,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                     index === currentIndex ? 'border-primary' : 'border-muted'
                   }`}
                 >
-                  <img
+                  <ImageWithPlaceholder
                     src={image.url}
                     alt={image.name}
                     className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
+                    sizes="80px"
                   />
                 </button>
               ))}
@@ -132,10 +177,12 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] p-0">
           <div className="relative">
-            <img
+            <ImageWithPlaceholder
               src={currentImage.url}
               alt={currentImage.name}
               className="w-full h-auto max-h-[90vh] object-contain"
+              loading="eager"
+              sizes="95vw"
             />
             
             {/* Navigation in fullscreen */}
