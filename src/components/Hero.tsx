@@ -23,16 +23,16 @@ const Hero = ({ title, subtitle, description, backgroundImage, children }: HeroP
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-luxury-foreground mb-4 animate-fade-in">
+        <h1 className="text-4xl md:text-6xl font-bold text-luxury-foreground mb-4 animate-fade-in text-center">
           {title}
         </h1>
         {subtitle && (
-          <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-6 animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-6 animate-fade-in text-center">
             {subtitle}
           </h2>
         )}
         {description && (
-          <p className="text-base md:text-lg font-semibold text-luxury-foreground/90 max-w-3xl mx-auto mb-8 animate-fade-in">
+          <p className="text-base md:text-lg font-semibold text-luxury-foreground/90 max-w-3xl mx-auto mb-8 animate-fade-in text-center">
             {description}
           </p>
         )}

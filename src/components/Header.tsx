@@ -21,13 +21,13 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 text-center">
             <img 
               src={logoImage} 
               alt="City Market Properties" 
               className="h-14 w-auto"
             />
-            <span className="text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
+            <span className="text-2xl font-bold text-foreground hidden sm:inline text-center">City Market Properties</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -93,14 +93,14 @@ const Header = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t animate-fade-in">
+          <div className="md:hidden py-4 border-t animate-fade-in text-center">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`text-lg font-bold transition-colors hover:text-primary ${
+                  className={`text-lg font-bold transition-colors hover:text-primary text-center ${
                     isActive(link.path) ? 'text-primary' : 'text-foreground'
                   }`}
                 >
