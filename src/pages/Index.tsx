@@ -76,27 +76,27 @@ const Index = () => {
         description="חברת תיווך מובילה עם שלוש חטיבות המתמחות בהשכרות, מכירות וניהול נכסים"
         backgroundImage={heroImage}
       >
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+        <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mt-8 pt-6 border-t border-white/20">
           <Button
             size="lg"
-            variant="outline"
-            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10 text-lg font-bold px-8 py-6"
+            variant="ghost"
+            className="space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-xl font-semibold px-6 py-3 rounded-lg transition-all duration-300"
             asChild
           >
             <a href="mailto:eladtz@gmail.com">
-              <Mail className="h-5 w-5" />
-              eladtz@gmail.com
+              <Mail className="h-6 w-6" />
+              <span>eladtz@gmail.com</span>
             </a>
           </Button>
           <Button
             size="lg"
-            variant="outline"
-            className="gap-2 bg-transparent border-white/50 text-white hover:bg-white/10 text-lg font-bold px-8 py-6"
+            variant="ghost"
+            className="space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-xl font-semibold px-6 py-3 rounded-lg transition-all duration-300"
             asChild
           >
             <a href="tel:054-550-3055">
-              <Phone className="h-5 w-5" />
-              054-550-3055
+              <Phone className="h-6 w-6" />
+              <span>054-550-3055</span>
             </a>
           </Button>
         </div>
