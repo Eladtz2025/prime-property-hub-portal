@@ -19,19 +19,19 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4">
-        <div className="relative flex items-center justify-between h-16">
+        <div className="relative flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2 md:gap-3">
             <img 
               src={logoImage} 
               alt="City Market Properties" 
-              className="h-14 w-auto"
+              className="h-10 w-auto md:h-14 md:w-auto"
             />
-            <span className="text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
+            <span className="text-xl md:text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
           </Link>
 
           {/* Desktop Navigation - Absolutely Centered */}
-          <nav className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -46,11 +46,11 @@ const Header = () => {
           </nav>
 
           {/* Social Media & Mobile Menu */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <Button
                 variant="ghost"
-                className="p-2"
+                className="p-1.5 md:p-2"
                 asChild
               >
                 <a
@@ -59,12 +59,12 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-5 w-5" />
+                  <Instagram className="h-4 w-4 md:h-5 md:w-5" />
                 </a>
               </Button>
               <Button
                 variant="ghost"
-                className="p-2"
+                className="p-1.5 md:p-2"
                 asChild
               >
                 <a
@@ -73,7 +73,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
-                  <Facebook className="h-5 w-5" />
+                  <Facebook className="h-4 w-4 md:h-5 md:w-5" />
                 </a>
               </Button>
             </div>
@@ -82,35 +82,35 @@ const Header = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden p-1.5 touch-target"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="תפריט"
             >
-              {isMenuOpen ? <X /> : <Menu />}
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t animate-fade-in text-center">
-            <nav className="flex flex-col gap-4">
+          <div className="md:hidden py-3 sm:py-4 border-t animate-fade-in text-center">
+            <nav className="flex flex-col gap-3 sm:gap-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`text-lg font-bold transition-colors hover:text-primary text-center ${
+                  className={`text-base sm:text-lg font-bold transition-colors hover:text-primary text-center touch-target ${
                     isActive(link.path) ? 'text-primary' : 'text-foreground'
                   }`}
                 >
                   {link.label}
                 </Link>
               ))}
-              <div className="flex items-center gap-2 pt-2 border-t">
+              <div className="flex items-center justify-center gap-2 pt-2 border-t sm:hidden">
                 <Button
                   variant="ghost"
-                  className="p-2"
+                  className="p-2 touch-target"
                   asChild
                 >
                   <a
@@ -124,7 +124,7 @@ const Header = () => {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="p-2"
+                  className="p-2 touch-target"
                   asChild
                 >
                   <a

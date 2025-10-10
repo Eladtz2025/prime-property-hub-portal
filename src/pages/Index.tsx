@@ -79,26 +79,26 @@ const Index = () => {
         description="חברת תיווך מובילה עם שלוש חטיבות המתמחות בהשכרות, מכירות וניהול נכסים"
         backgroundImage={heroImage}
       >
-        <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mt-8 pt-6 border-t border-white/20">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 md:gap-8 justify-center items-center mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 border-t border-white/20 w-full max-w-2xl mx-auto px-4">
           <Button
             size="lg"
             variant="ghost"
-            className="space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-xl font-semibold px-6 py-3 rounded-lg transition-all duration-300"
+            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
             asChild
           >
-            <a href="mailto:eladtz@gmail.com">
-              <Mail className="h-6 w-6" />
-              <span>eladtz@gmail.com</span>
+            <a href="mailto:eladtz@gmail.com" className="flex items-center justify-center gap-2">
+              <Mail className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+              <span className="truncate">eladtz@gmail.com</span>
             </a>
           </Button>
           <Button
             size="lg"
             variant="ghost"
-            className="space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-xl font-semibold px-6 py-3 rounded-lg transition-all duration-300"
+            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
             asChild
           >
-            <a href="tel:054-550-3055">
-              <Phone className="h-6 w-6" />
+            <a href="tel:054-550-3055" className="flex items-center justify-center gap-2">
+              <Phone className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
               <span>054-550-3055</span>
             </a>
           </Button>
@@ -106,16 +106,16 @@ const Index = () => {
       </Hero>
 
       {/* Divisions Section */}
-      <section className="py-16">
+      <section className="py-8 sm:py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">החטיבות שלנו</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">החטיבות שלנו</h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
               ניהול, מכירה והשכרה במקום אחד
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {divisions.map((division) => (
               <DivisionCard key={division.title} {...division} />
             ))}
@@ -124,16 +124,16 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-16 bg-muted">
+      <section className="py-8 sm:py-12 md:py-16 bg-muted">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">למה לבחור בנו?</h2>
-            <p className="text-lg text-muted-foreground">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">למה לבחור בנו?</h2>
+            <p className="text-base sm:text-lg text-muted-foreground px-4">
               הניסיון והמקצועיות שלנו עושים את ההבדל
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {stats.map((stat, index) => (
               <Card key={index} className="p-8 text-center bg-primary-light/30 border-0">
                 <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${stat.color}`}>
