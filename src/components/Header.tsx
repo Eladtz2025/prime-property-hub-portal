@@ -50,7 +50,7 @@ const Header = () => {
             <div className="hidden md:flex items-center gap-2">
               <Button
                 variant="ghost"
-                size="icon"
+                className="p-2"
                 asChild
               >
                 <a
@@ -64,7 +64,7 @@ const Header = () => {
               </Button>
               <Button
                 variant="ghost"
-                size="icon"
+                className="p-2"
                 asChild
               >
                 <a
@@ -110,7 +110,7 @@ const Header = () => {
               <div className="flex items-center gap-2 pt-2 border-t">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  className="p-2"
                   asChild
                 >
                   <a
@@ -124,7 +124,7 @@ const Header = () => {
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  className="p-2"
                   asChild
                 >
                   <a
