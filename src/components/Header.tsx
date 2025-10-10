@@ -59,7 +59,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-12 w-12" />
+                  <Instagram className="h-16 w-16" />
                 </a>
               </Button>
               <Button
@@ -73,7 +73,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
-                  <Facebook className="h-12 w-12" />
+                  <Facebook className="h-16 w-16" />
                 </a>
               </Button>
             </div>
@@ -119,7 +119,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Instagram"
                   >
-                    <Instagram className="h-12 w-12" />
+                    <Instagram className="h-16 w-16" />
                   </a>
                 </Button>
                 <Button
@@ -133,7 +133,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Facebook"
                   >
-                    <Facebook className="h-12 w-12" />
+                    <Facebook className="h-16 w-16" />
                   </a>
                 </Button>
               </div>
