@@ -52,16 +52,19 @@ const Index = () => {
 
   const stats = [
     {
-      icon: '+15',
-      label: 'שנות ניסיון',
+      icon: '24/7',
+      label: 'זמינות מלאה',
+      color: 'bg-primary',
     },
     {
       icon: '+500',
       label: 'עסקאות מוצלחות',
+      color: 'bg-secondary',
     },
     {
-      icon: '24/7',
-      label: 'זמינות מלאה',
+      icon: '+15',
+      label: 'שנות ניסיון',
+      color: 'bg-primary',
     },
   ];
 
@@ -133,9 +136,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <Card key={index} className="p-8 text-center bg-primary-light/30 border-0">
-                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-                  index === 0 ? 'bg-primary' : index === 1 ? 'bg-secondary' : 'bg-primary'
-                }`}>
+                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${stat.color}`}>
                   <div className="text-3xl font-bold text-white">{stat.icon}</div>
                 </div>
                 <div className="text-lg text-muted-foreground">{stat.label}</div>

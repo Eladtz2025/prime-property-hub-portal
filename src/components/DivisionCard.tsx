@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, TrendingUp, Users2 } from 'lucide-react';
+import { Building, TrendingUp, Users2, Check, Share2 } from 'lucide-react';
 
 interface DivisionCardProps {
   title: string;
@@ -24,6 +24,11 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
+        <div className="absolute top-4 left-4">
+          <Button size="icon" className="rounded-full bg-primary hover:bg-primary/90 shadow-lg">
+            <Share2 className="h-4 w-4 text-white" />
+          </Button>
+        </div>
         <div className="absolute bottom-4 right-4 w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
           <Icon className="h-6 w-6 text-primary-foreground" />
         </div>
@@ -34,13 +39,13 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
         <ul className="space-y-2 mb-6">
           {features.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <Check className="h-4 w-4 text-primary flex-shrink-0" />
               <span>{feature}</span>
             </li>
           ))}
         </ul>
         <Button asChild className="w-full">
-          <Link to={link}>למידע נוסף</Link>
+          <Link to={link}>קראו עוד</Link>
         </Button>
       </div>
     </Card>
