@@ -19,19 +19,19 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex flex-col md:flex-row items-center justify-between h-auto md:h-16 py-3 md:py-0">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 text-center">
+          <Link to="/" className="flex items-center gap-3 mb-3 md:mb-0">
             <img 
               src={logoImage} 
               alt="City Market Properties" 
               className="h-14 w-auto"
             />
-            <span className="text-2xl font-bold text-foreground hidden sm:inline text-center">City Market Properties</span>
+            <span className="text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Desktop Navigation - Centered */}
+          <nav className="hidden md:flex items-center justify-center gap-6 flex-1">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
