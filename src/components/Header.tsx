@@ -27,7 +27,7 @@ const Header = () => {
               alt="City Market Properties" 
               className="h-14 w-auto"
             />
-            <span className="text-2xl font-bold text-primary hidden sm:inline">City Market</span>
+            <span className="text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -59,7 +59,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-6 w-6" />
+                  <Instagram className="h-8 w-8" />
                 </a>
               </Button>
               <Button
@@ -73,7 +73,7 @@ const Header = () => {
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
-                  <Facebook className="h-6 w-6" />
+                  <Facebook className="h-8 w-8" />
                 </a>
               </Button>
             </div>
@@ -119,7 +119,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Instagram"
                   >
-                    <Instagram className="h-6 w-6" />
+                    <Instagram className="h-8 w-8" />
                   </a>
                 </Button>
                 <Button
@@ -133,7 +133,7 @@ const Header = () => {
                     rel="noopener noreferrer"
                     aria-label="Facebook"
                   >
-                    <Facebook className="h-6 w-6" />
+                    <Facebook className="h-8 w-8" />
                   </a>
                 </Button>
               </div>
