@@ -123,28 +123,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
-      <section className="py-8 sm:py-12 md:py-16 bg-muted">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">למה לבחור בנו?</h2>
-            <p className="text-base sm:text-lg text-muted-foreground px-4">
-              הניסיון והמקצועיות שלנו עושים את ההבדל
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            {stats.map((stat, index) => (
-              <Card key={index} className="p-8 text-center bg-primary-light/30 border-0">
-                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${stat.color}`}>
-                  <div className="text-3xl font-bold text-white">{stat.icon}</div>
-                </div>
-                <div className="text-lg text-muted-foreground">{stat.label}</div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Google Reviews */}
       <GoogleReviews />

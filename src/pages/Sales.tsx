@@ -137,7 +137,7 @@ const Sales = () => {
           {/* Search */}
           <div className="max-w-2xl mx-auto">
             <Input
-              placeholder="חיפוש לפי כתובת, עיר, מספר חדרים או כל פרט אחר..."
+              placeholder="חיפוש נכס..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="h-12 text-base"
