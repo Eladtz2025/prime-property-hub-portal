@@ -40,7 +40,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
       try {
         log.info(`Loading public ${propertyType} properties`);
 
-        // Get properties with images (left join to include properties without images)
+        // Get properties with images count
         const { data: propertiesWithImages, error: propertiesError } = await supabase
           .from('properties')
           .select(`
@@ -61,7 +61,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             featured,
             available,
             status,
-            property_images (
+            property_images!inner (
               id,
               image_url,
               alt_text,
@@ -71,6 +71,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           `)
           .eq('property_type', propertyType)
           .eq('available', true)
+          .eq('status', 'vacant')
           .order('featured', { ascending: false })
           .order('created_at', { ascending: false });
 
@@ -80,8 +81,23 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
         }
 
         // Transform data to match the interface
-        const transformedProperties: PublicProperty[] = (propertiesWithImages || []).map(property => {
-          const images = (property.property_images || [])
+        const transformedProperties: PublicProperty[] = (propertiesWithImages || []).map(property => ({
+          id: property.id,
+          title: property.title || `${property.rooms} חדרים ${property.address}`,
+          address: property.address,
+          city: property.city,
+          description: property.description,
+          property_type: property.property_type as 'rental' | 'sale',
+          rooms: property.rooms,
+          property_size: property.property_size,
+          bathrooms: property.bathrooms,
+          floor: property.floor,
+          parking: property.parking,
+          elevator: property.elevator,
+          balcony: property.balcony,
+          monthly_rent: property.monthly_rent,
+          featured: property.featured,
+          images: (property.property_images || [])
             .sort((a, b) => {
               // Sort by is_main first, then by order_index
               if (a.is_main && !b.is_main) return -1;
@@ -93,38 +109,16 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
               image_url: img.image_url,
               alt_text: img.alt_text,
               is_main: img.is_main || false
-            }));
+            }))
+        }));
 
-          // If no images, use a default placeholder
-          const finalImages = images.length > 0 ? images : [{
-            id: 'default',
-            image_url: propertyType === 'rental' ? '/images/rental-interior.jpg' : '/images/sales-villa.jpg',
-            alt_text: property.title || property.address,
-            is_main: true
-          }];
+        // Filter out properties without images (extra safety)
+        const propertiesWithValidImages = transformedProperties.filter(
+          property => property.images && property.images.length > 0
+        );
 
-          return {
-            id: property.id,
-            title: property.title || `${property.rooms || ''} חדרים ${property.address}`.trim(),
-            address: property.address,
-            city: property.city,
-            description: property.description,
-            property_type: property.property_type as 'rental' | 'sale',
-            rooms: property.rooms,
-            property_size: property.property_size,
-            bathrooms: property.bathrooms,
-            floor: property.floor,
-            parking: property.parking,
-            elevator: property.elevator,
-            balcony: property.balcony,
-            monthly_rent: property.monthly_rent,
-            featured: property.featured,
-            images: finalImages
-          };
-        });
-
-        log.info(`Successfully loaded ${transformedProperties.length} public ${propertyType} properties`);
-        return transformedProperties;
+        log.info(`Successfully loaded ${propertiesWithValidImages.length} public ${propertyType} properties`);
+        return propertiesWithValidImages;
 
       } catch (error) {
         log.error('Failed to load public properties:', error);
