@@ -130,52 +130,21 @@ const Sales = () => {
 
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="mb-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center">נכסים למכירה</h2>
-            {USE_REAL_DATA && isLoading && (
-              <Badge variant="secondary">טוען...</Badge>
-            )}
-            {USE_REAL_DATA && !isLoading && (
-              <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
-                דאטה אמיתי - {filteredProperties.length} נכסים
-              </Badge>
-            )}
           </div>
-          <p className="text-center text-muted-foreground mb-8 max-w-4xl mx-auto truncate">
+          <p className="text-center text-muted-foreground mb-8 max-w-4xl mx-auto text-sm md:text-base">
             נכסים איכותיים למכירה עם ייעוץ מקצועי וליווי מלא בתהליך הרכישה
           </p>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          {/* Search */}
+          <div className="max-w-2xl mx-auto">
             <Input
-              placeholder="חיפוש לפי כתובת או עיר..."
+              placeholder="חיפוש לפי כתובת, עיר, מספר חדרים או כל פרט אחר..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-12 text-base"
             />
-            <Select value={cityFilter} onValueChange={setCityFilter}>
-              <SelectTrigger className="bg-popover">
-                <SelectValue placeholder="באזור" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all">כל הערים</SelectItem>
-                {cities.map((city) => (
-                  <SelectItem key={city} value={city}>{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className="bg-popover">
-                <SelectValue placeholder="מספר חדרים" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all">כל מספרי החדרים</SelectItem>
-                <SelectItem value="1">1 חדר</SelectItem>
-                <SelectItem value="2">2 חדרים</SelectItem>
-                <SelectItem value="3">3 חדרים</SelectItem>
-                <SelectItem value="4">4 חדרים</SelectItem>
-                <SelectItem value="5">5+ חדרים</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </section>
