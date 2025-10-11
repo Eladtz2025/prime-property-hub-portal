@@ -221,7 +221,7 @@ const PropertyDetailPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 space-y-2">
+          <div className="space-y-2 pb-4">
             <Button className="w-full gap-2 bg-primary hover:bg-primary/90 h-12" onClick={handleWhatsApp}>
               <MessageCircle className="h-5 w-5" />
               WhatsApp
@@ -231,9 +231,6 @@ const PropertyDetailPage = () => {
               התקשר
             </Button>
           </div>
-
-          {/* Spacer for fixed buttons */}
-          <div className="h-32" />
         </div>
       </div>
 
