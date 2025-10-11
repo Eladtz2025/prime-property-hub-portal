@@ -31,6 +31,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     notes: dbProperty.notes || undefined,
     lastUpdated: dbProperty.updated_at,
     createdAt: dbProperty.created_at,
+    property_type: dbProperty.property_type || 'rental',
   };
 }
 
