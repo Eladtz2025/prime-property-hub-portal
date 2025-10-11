@@ -10,265 +10,27 @@ import { ImageCarousel } from '@/components/ImageCarousel';
 import { PropertyImage } from '@/types/property';
 import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { usePublicProperty } from '@/hooks/usePublicProperty';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PropertyDetailPage = () => {
-  const { id, type } = useParams<{ id: string; type: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  // Mock data - בפועל זה יגיע מה-database
-  const rentalProperties = [
-    {
-      id: '1',
-      title: 'דירת 4 חדרים משופצת ברחוב דיזנגוף',
-      address: 'דיזנגוף 125',
-      city: 'תל אביב',
-      monthly_rent: 8500,
-      rooms: 4,
-      bathrooms: 2,
-      property_size: 95,
-      floor: 3,
-      building_floors: 4,
-      description: 'דירה יפהפייה ומשופצת בלב הצפון הישן, תקרות גבוהות, ריצוף מקורי, מרפסת גדולה עם נוף לשדרות. במרחק הליכה מהים, בתי קפה ומסעדות.',
-      parking: true,
-      elevator: true,
-      balcony: true,
-      property_type: 'rental'
-    },
-    {
-      id: '2',
-      title: 'דירת 3 חדרים בשכונת בן יהודה',
-      address: 'בן יהודה 43',
-      city: 'תל אביב',
-      monthly_rent: 7200,
-      rooms: 3,
-      bathrooms: 1,
-      property_size: 75,
-      floor: 2,
-      building_floors: 3,
-      description: 'דירה מקסימה עם אופי בשכונה שקטה, 2 חדרי שינה מרווחים, מטבח מודרני, מזגן בכל חדר. קרוב לתחבורה ציבורית ולכל השירותים.',
-      parking: false,
-      elevator: false,
-      balcony: true,
-      property_type: 'rental'
-    },
-    {
-      id: '3',
-      title: 'דירת 3 חדרים משופצת ברחוב גורדון',
-      address: 'גורדון 18',
-      city: 'תל אביב',
-      monthly_rent: 6800,
-      rooms: 3,
-      bathrooms: 1,
-      property_size: 65,
-      floor: 1,
-      building_floors: 3,
-      description: 'דירה חמודה ומשופצת בשכונת נווה צדק, קרוב לחוף הים, 2 חדרי שינה, סלון מואר, מטבח מעוצב. מתאים לזוג או משפחה קטנה.',
-      parking: false,
-      elevator: false,
-      balcony: true,
-      property_type: 'rental'
-    },
-    {
-      id: '4',
-      title: 'סטודיו מרוהט ברחוב פרישמן',
-      address: 'פרישמן 45',
-      city: 'תל אביב',
-      monthly_rent: 4500,
-      rooms: 1,
-      bathrooms: 1,
-      property_size: 32,
-      floor: 4,
-      building_floors: 5,
-      description: 'סטודיו מעוצב ומרוהט, מטבח פתוח, אזור מיטה מופרד, מרפסת קטנה. מתאים לעצמאי או זוג צעיר. במרחק הליכה מהים.',
-      parking: false,
-      elevator: true,
-      balcony: true,
-      property_type: 'rental'
-    },
-    {
-      id: '5',
-      title: 'דירת 2 חדרים ברחוב ביאליק',
-      address: 'ביאליק 12',
-      city: 'תל אביב',
-      monthly_rent: 5500,
-      rooms: 2,
-      bathrooms: 1,
-      property_size: 55,
-      floor: 2,
-      building_floors: 4,
-      description: 'דירה נעימה במיקום מרכזי, חדר שינה אחד, סלון בהיר, מטבח מאובזר. קרוב לתחנת רכבת ולמרכזי קניות. מתאים ליחיד או זוג.',
-      parking: false,
-      elevator: false,
-      balcony: false,
-      property_type: 'rental'
-    }
-  ];
+  // Load property from database
+  const { data: property, isLoading, error } = usePublicProperty(id);
 
-  const saleProperties = [
-    {
-      id: '1',
-      title: 'דירת 5 חדרים משופצת ברחוב רוטשילד',
-      address: 'רוטשילד 88',
-      city: 'תל אביב',
-      price: 5200000,
-      rooms: 5,
-      bathrooms: 2,
-      property_size: 130,
-      floor: 3,
-      building_floors: 4,
-      description: 'דירת יוקרה בבניין בוטיק משופץ, תקרות גבוהות, חלונות גדולים, מרפסת מרווחה. מיקום פרימיום על השדרה היוקרתית.',
-      parking: true,
-      elevator: true,
-      balcony: true,
-      property_type: 'sale'
-    },
-    {
-      id: '2',
-      title: 'פנטהאוז 4 חדרים ברחוב אלנבי',
-      address: 'אלנבי 234',
-      city: 'תל אביב',
-      price: 6800000,
-      rooms: 4,
-      bathrooms: 2,
-      property_size: 140,
-      floor: 5,
-      building_floors: 5,
-      description: 'פנטהאוז מדהים עם גג פרטי מרהיב, נוף לעיר, עיצוב מודרני, מטבח שף, 2 חדרי רחצה יוקרתיים. חניה כפולה.',
-      parking: true,
-      elevator: true,
-      balcony: true,
-      property_type: 'sale'
-    },
-    {
-      id: '3',
-      title: 'דירת 3 חדרים בסגנון באוהאוס ברחוב נחמני',
-      address: 'נחמני 14',
-      city: 'תל אביב',
-      price: 3900000,
-      rooms: 3,
-      bathrooms: 1,
-      property_size: 85,
-      floor: 2,
-      building_floors: 3,
-      description: 'דירה קלאסית בבניין באוהאוס משופץ, שימור אדריכלי, פרקט מקורי, תקרות גבוהות. קרוב לרוטשילד ולבתי קפה טרנדיים.',
-      parking: false,
-      elevator: false,
-      balcony: true,
-      property_type: 'sale'
-    },
-    {
-      id: '4',
-      title: 'דירת 4 חדרים עם מרפסת גדולה ברחוב דיזנגוף',
-      address: 'דיזנגוף 201',
-      city: 'תל אביב',
-      price: 4500000,
-      rooms: 4,
-      bathrooms: 2,
-      property_size: 120,
-      floor: 1,
-      building_floors: 4,
-      description: 'דירת גן משופצת, מרפסת ענקית 60 מ"ר, 3 חדרי שינה, סלון מרווח, מטבח חדש. אידיאלי למשפחה.',
-      parking: true,
-      elevator: true,
-      balcony: true,
-      property_type: 'sale'
-    }
-  ];
 
-  const managementProperties = [
-    {
-      id: '1',
-      title: 'בניין מגורים 12 יחידות ברחוב שיינקין',
-      address: 'שיינקין 87',
-      city: 'תל אביב',
-      units: 12,
-      bathrooms: 12,
-      property_size: 850,
-      floor: 0,
-      building_floors: 3,
-      description: 'בניין בוטיק מתחזק ומשופץ, 12 דירות להשכרה, כולן מושכרות, ניהול מלא כולל תחזוקה, גביה ודיווח. תפוסה 100%.',
-      parking: true,
-      elevator: false,
-      balcony: false,
-      property_type: 'management'
-    },
-    {
-      id: '2',
-      title: 'בניין מגורים 8 יחידות ברחוב מונטיפיורי',
-      address: 'מונטיפיורי 23',
-      city: 'תל אביב',
-      units: 8,
-      bathrooms: 8,
-      property_size: 520,
-      floor: 0,
-      building_floors: 3,
-      description: 'בניין בוטיק משופץ ומתוחזק, 8 דירות, כולן מושכרות, ניהול מקצועי כולל גביה ותחזוקה שוטפת. דיירים איכותיים ויציבים.',
-      parking: true,
-      elevator: false,
-      balcony: false,
-      property_type: 'management'
-    },
-    {
-      id: '3',
-      title: 'בניין משרדים ומסחר ברחוב אלנבי',
-      address: 'אלנבי 112',
-      city: 'תל אביב',
-      units: 8,
-      bathrooms: 8,
-      property_size: 650,
-      floor: 0,
-      building_floors: 4,
-      description: 'בניין היסטורי מתוחזק, משרדים וחנויות, ניהול מקצועי כולל אחזקה שוטפת, ליווי דיירים ותיאום עבודות. מיקום מרכזי.',
-      parking: true,
-      elevator: true,
-      balcony: false,
-      property_type: 'management'
-    }
-  ];
-
-  const allProperties = [...rentalProperties, ...saleProperties, ...managementProperties];
-  const property = allProperties.find(p => p.id === id);
-
-  // תמונות מדומות לדוגמה - בפועל יגיעו מה-database
-  const propertyImages: PropertyImage[] = [
-    {
-      id: '1',
-      name: 'תמונה ראשית',
-      url: '/images/properties/rental-dizengoff-interior.jpg',
-      isPrimary: true,
-      uploadedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      name: 'סלון',
-      url: '/images/properties/living-bauhaus-1.jpg',
-      isPrimary: false,
-      uploadedAt: new Date().toISOString(),
-    },
-    {
-      id: '3',
-      name: 'חדר שינה',
-      url: '/images/properties/bedroom-master-1.jpg',
-      isPrimary: false,
-      uploadedAt: new Date().toISOString(),
-    },
-    {
-      id: '4',
-      name: 'מטבח',
-      url: '/images/properties/rental-ben-yehuda-kitchen.jpg',
-      isPrimary: false,
-      uploadedAt: new Date().toISOString(),
-    },
-    {
-      id: '5',
-      name: 'חדר רחצה',
-      url: '/images/properties/bathroom-modern-1.jpg',
-      isPrimary: false,
-      uploadedAt: new Date().toISOString(),
-    },
-  ];
+  // Convert property images to PropertyImage format
+  const propertyImages: PropertyImage[] = property?.images.map(img => ({
+    id: img.id,
+    name: img.alt_text || 'תמונת נכס',
+    url: img.image_url,
+    isPrimary: img.is_main,
+    uploadedAt: new Date().toISOString(),
+  })) || [];
 
   const handleWhatsApp = () => {
     const phone = '972545503055';
@@ -298,7 +60,15 @@ const PropertyDetailPage = () => {
     }
   };
 
-  if (!property) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Skeleton className="h-96 w-full max-w-4xl" />
+      </div>
+    );
+  }
+
+  if (!property || error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -319,19 +89,15 @@ const PropertyDetailPage = () => {
   const getPropertyTypeLabel = () => {
     if (property.property_type === 'rental') return 'להשכרה';
     if (property.property_type === 'sale') return 'למכירה';
-    if (property.property_type === 'management') return 'בניהול';
     return '';
   };
 
   const getPriceDisplay = () => {
-    if (property.property_type === 'rental' && 'monthly_rent' in property) {
+    if (property.property_type === 'rental' && property.monthly_rent) {
       return `₪${property.monthly_rent.toLocaleString()}/חודש`;
     }
-    if (property.property_type === 'sale' && 'price' in property) {
+    if (property.property_type === 'sale' && property.price) {
       return `₪${property.price.toLocaleString()}`;
-    }
-    if (property.property_type === 'management') {
-      return 'ניהול מלא';
     }
     return '';
   };
@@ -339,9 +105,7 @@ const PropertyDetailPage = () => {
   const getKeyPoints = () => {
     const points = [
       `מיקום מעולה ב${property.city}`,
-      'units' in property && property.property_type === 'management'
-        ? `${property.units} יח' דיור`
-        : 'rooms' in property ? `${property.rooms} חדרים מרווחים` : 'שטח מרווח',
+      property.rooms ? `${property.rooms} חדרים מרווחים` : 'שטח מרווח',
       `${property.property_size} מ"ר שטח`,
     ];
 
@@ -388,7 +152,7 @@ const PropertyDetailPage = () => {
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
                 </span>
               </div>
-              {property.property_type !== 'management' && 'rooms' in property && (
+              {property.rooms && (
                 <div className="flex items-center gap-3">
                   <Home className="h-5 w-5 text-primary" />
                   <span className="text-sm">{property.rooms} חדרים</span>
@@ -397,7 +161,7 @@ const PropertyDetailPage = () => {
               <div className="flex items-center gap-3">
                 <Building2 className="h-5 w-5 text-primary" />
                 <span className="text-sm">
-                  קומה {property.floor === 0 ? 'קרקע' : `${property.floor} מתוך ${property.building_floors}`}
+                  קומה {property.floor === 0 ? 'קרקע' : property.floor}
                 </span>
               </div>
               <div className="flex items-center gap-3">
