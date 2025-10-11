@@ -135,19 +135,18 @@ const Rentals = () => {
       <WhatsAppFloat />
       
       <CompactHero
-        title="מומחי ההשכרות"
+        title="השכרות"
         subtitle="השכירו את הנכס שלכם בביטחון ובמקצועיות"
         backgroundImage="/images/rental-interior.jpg"
       />
 
-      <section className="py-12 bg-background">
+      {/* Properties Grid */}
+      <section className="py-12 bg-muted">
         <div className="container mx-auto px-4">
-          <div className="mb-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center">דירות להשכרה</h2>
-          </div>
-
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">מומחי ההשכרות</h2>
+          
           {/* Search */}
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto mb-12">
             <Input
               placeholder="חיפוש נכס..."
               value={searchTerm}
@@ -155,12 +154,6 @@ const Rentals = () => {
               className="h-12 text-base"
             />
           </div>
-        </div>
-      </section>
-
-      {/* Properties Grid */}
-      <section className="py-12 bg-muted">
-        <div className="container mx-auto px-4">
           {filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
