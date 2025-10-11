@@ -49,6 +49,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { updateManagementPropertiesToElad } from '@/utils/updateManagementProperties';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
@@ -83,6 +84,19 @@ export const Properties: React.FC = memo(() => {
   const handleRefresh = async () => {
     await refetch();
   };
+
+  // Auto-update management properties on first load
+  useEffect(() => {
+    const updateManagementProps = async () => {
+      const result = await updateManagementPropertiesToElad();
+      if (result.success && result.updated && result.updated > 0) {
+        console.log(`Updated ${result.updated} management properties`);
+        await refetch();
+      }
+    };
+    
+    updateManagementProps();
+  }, []);
 
   const getOwnerPropertyCount = (property: Property) => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
