@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon } from 'lucide-react';
-import { Property } from '../types/property';
+import { Property, PropertyImage } from '../types/property';
 import { ImageCarousel } from './ImageCarousel';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -26,6 +27,48 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
+  const [images, setImages] = useState<PropertyImage[]>(property.images || []);
+
+  useEffect(() => {
+    if (isOpen && property.id) {
+      loadPropertyImages();
+    }
+  }, [property.id, isOpen]);
+
+  const loadPropertyImages = async () => {
+    try {
+      console.log('🔍 Loading images for property:', property.id);
+      const { data, error } = await supabase
+        .from('property_images')
+        .select('*')
+        .eq('property_id', property.id)
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error loading images:', error);
+        return;
+      }
+
+      console.log('✅ Loaded', data?.length || 0, 'images from DB');
+      
+      if (data && data.length > 0) {
+        const loadedImages: PropertyImage[] = data.map(img => ({
+          id: img.id,
+          name: img.alt_text || 'תמונת נכס',
+          url: img.image_url,
+          isPrimary: img.is_main || false,
+          uploadedAt: img.created_at || new Date().toISOString(),
+        }));
+
+        setImages(loadedImages);
+      } else {
+        setImages([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading property images:', error);
+    }
+  };
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'occupied': return 'bg-green-100 text-green-800 border-green-200';
@@ -236,7 +279,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ImageCarousel images={property.images || []} />
+                <ImageCarousel images={images} />
               </CardContent>
             </Card>
           </TabsContent>
