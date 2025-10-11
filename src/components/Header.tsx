@@ -60,31 +60,8 @@ const Header = () => {
 
           {/* Right Side - Logo (Mobile) + Social Media */}
           <div className="flex items-center gap-3 md:gap-4">
-            {/* Mobile Logo - Right on Mobile */}
-            <Link to="/" className="md:hidden flex items-center">
-              <img 
-                src={logoImage} 
-                alt="City Market Properties" 
-                className="h-14 w-auto"
-              />
-            </Link>
-
             {/* Social Media - Always Visible */}
             <div className="flex items-center gap-1 md:gap-2">
-              <Button
-                variant="ghost"
-                className="p-1.5 md:p-2"
-                asChild
-              >
-                <a
-                  href="https://www.instagram.com/citymarket/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-4 w-4 md:h-5 md:w-5" />
-                </a>
-              </Button>
               <Button
                 variant="ghost"
                 className="p-1.5 md:p-2"
@@ -99,7 +76,30 @@ const Header = () => {
                   <Facebook className="h-4 w-4 md:h-5 md:w-5" />
                 </a>
               </Button>
+              <Button
+                variant="ghost"
+                className="p-1.5 md:p-2"
+                asChild
+              >
+                <a
+                  href="https://www.instagram.com/citymarket/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-4 w-4 md:h-5 md:w-5" />
+                </a>
+              </Button>
             </div>
+
+            {/* Mobile Logo - Right on Mobile */}
+            <Link to="/" className="md:hidden flex items-center">
+              <img 
+                src={logoImage} 
+                alt="City Market Properties" 
+                className="h-14 w-auto"
+              />
+            </Link>
           </div>
         </div>
 
