@@ -37,7 +37,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
             current_market_value,
             featured,
             available,
-            property_images!inner (
+            property_images (
               id,
               image_url,
               alt_text,
