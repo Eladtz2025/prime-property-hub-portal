@@ -281,28 +281,27 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               {/* Property Details */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="address">כתובת</Label>
                   <Input
                     id="address"
+                    placeholder="כתובת"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="city">עיר</Label>
                   <Input
                     id="city"
+                    placeholder="עיר"
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="status">סטטוס</Label>
                   <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="סטטוס" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="occupied">תפוס</SelectItem>
@@ -313,121 +312,121 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 </div>
                 
                 <div>
-                  <Label htmlFor="propertySize">גודל (מ"ר)</Label>
                   <Input
                     id="propertySize"
                     type="number"
+                    placeholder='גודל (מ"ר)'
                     value={formData.propertySize || ''}
                     onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="floor">קומה</Label>
                   <Input
                     id="floor"
                     type="number"
+                    placeholder="קומה"
                     value={formData.floor || ''}
                     onChange={(e) => handleInputChange('floor', Number(e.target.value))}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="rooms">מספר חדרים</Label>
                   <Input
                     id="rooms"
                     type="number"
                     step="0.5"
+                    placeholder="מספר חדרים"
                     value={formData.rooms || ''}
                     onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="parking">חניה</Label>
-                  <Switch
-                    id="parking"
-                    checked={formData.parking || false}
-                    onCheckedChange={(checked) => handleInputChange('parking', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="elevator">מעלית</Label>
-                  <Switch
-                    id="elevator"
-                    checked={formData.elevator || false}
-                    onCheckedChange={(checked) => handleInputChange('elevator', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="balcony">מרפסת</Label>
-                  <Switch
-                    id="balcony"
-                    checked={formData.balcony || false}
-                    onCheckedChange={(checked) => handleInputChange('balcony', checked)}
-                  />
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="parking" className="text-xs">חניה</Label>
+                    <Switch
+                      id="parking"
+                      checked={formData.parking || false}
+                      onCheckedChange={(checked) => handleInputChange('parking', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="elevator" className="text-xs">מעלית</Label>
+                    <Switch
+                      id="elevator"
+                      checked={formData.elevator || false}
+                      onCheckedChange={(checked) => handleInputChange('elevator', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="balcony" className="text-xs">מרפסת</Label>
+                    <Switch
+                      id="balcony"
+                      checked={formData.balcony || false}
+                      onCheckedChange={(checked) => handleInputChange('balcony', checked)}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Owner & Tenant Details */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="ownerName">שם בעל הנכס</Label>
                   <Input
                     id="ownerName"
+                    placeholder="שם בעל הנכס"
                     value={formData.ownerName}
                     onChange={(e) => handleInputChange('ownerName', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="ownerPhone">טלפון בעל הנכס</Label>
                   <Input
                     id="ownerPhone"
+                    placeholder="טלפון בעל הנכס"
                     value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
                     onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
                     disabled={!canViewPhone}
-                    placeholder={!canViewPhone ? "אין הרשאה לצפייה" : ""}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="ownerEmail">אימייל בעל הנכס</Label>
                   <Input
                     id="ownerEmail"
                     type="email"
+                    placeholder="אימייל בעל הנכס"
                     value={formData.ownerEmail || ''}
                     onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="tenantName">שם השוכר</Label>
                   <Input
                     id="tenantName"
+                    placeholder="שם השוכר"
                     value={formData.tenantName || ''}
                     onChange={(e) => handleInputChange('tenantName', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="tenantPhone">טלפון השוכר</Label>
                   <Input
                     id="tenantPhone"
+                    placeholder="טלפון השוכר"
                     value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
                     onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
                     disabled={!canViewPhone}
-                    placeholder={!canViewPhone ? "אין הרשאה לצפייה" : ""}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="tenantEmail">אימייל השוכר</Label>
                   <Input
                     id="tenantEmail"
                     type="email"
+                    placeholder="אימייל השוכר"
                     value={formData.tenantEmail || ''}
                     onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
                   />
@@ -438,30 +437,30 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
             {/* Financial & Contract Details */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div>
-                <Label htmlFor="monthlyRent">שכירות חודשית (₪)</Label>
                 <Input
                   id="monthlyRent"
                   type="number"
+                  placeholder="שכירות חודשית (₪)"
                   value={formData.monthlyRent || ''}
                   onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
                 />
               </div>
               
               <div>
-                <Label htmlFor="leaseStartDate">תאריך התחלת חוזה</Label>
                 <Input
                   id="leaseStartDate"
                   type="date"
+                  placeholder="תאריך התחלת חוזה"
                   value={formData.leaseStartDate || ''}
                   onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
                 />
               </div>
               
               <div>
-                <Label htmlFor="leaseEndDate">תאריך סיום חוזה</Label>
                 <Input
                   id="leaseEndDate"
                   type="date"
+                  placeholder="תאריך סיום חוזה"
                   value={formData.leaseEndDate || ''}
                   onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
                 />
@@ -470,28 +469,22 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           </TabsContent>
 
           <TabsContent value="images" className="space-y-4">
-            <div>
-              <Label>תמונות הנכס</Label>
-              <ImageUpload
-                images={formData.images || []}
-                onImagesChange={handleImagesChange}
-                maxImages={10}
-                maxSizePerImage={5}
-              />
-            </div>
+            <ImageUpload
+              images={formData.images || []}
+              onImagesChange={handleImagesChange}
+              maxImages={10}
+              maxSizePerImage={5}
+            />
           </TabsContent>
 
           <TabsContent value="notes" className="space-y-4">
-            <div>
-              <Label htmlFor="notes">הערות</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                rows={6}
-                placeholder="הוסף הערות על הנכס..."
-              />
-            </div>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              rows={10}
+              placeholder="הוסף הערות על הנכס..."
+            />
           </TabsContent>
         </Tabs>
 
