@@ -141,17 +141,33 @@ const Sales = () => {
               </Badge>
             )}
           </div>
-          <p className="text-center text-muted-foreground mb-8">
+          <p className="text-center text-muted-foreground mb-8 max-w-4xl mx-auto truncate">
             נכסים איכותיים למכירה עם ייעוץ מקצועי וליווי מלא בתהליך הרכישה
           </p>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="טווח חדרים" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <Input
+              placeholder="חיפוש לפי כתובת או עיר..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="bg-popover">
+                <SelectValue placeholder="באזור" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">כל הערים</SelectItem>
+                {cities.map((city) => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
+              <SelectTrigger className="bg-popover">
+                <SelectValue placeholder="מספר חדרים" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
                 <SelectItem value="all">כל מספרי החדרים</SelectItem>
                 <SelectItem value="1">1 חדר</SelectItem>
                 <SelectItem value="2">2 חדרים</SelectItem>
@@ -160,25 +176,6 @@ const Sales = () => {
                 <SelectItem value="5">5+ חדרים</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={cityFilter} onValueChange={setCityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="באזור" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הערים</SelectItem>
-                {cities.map((city) => (
-                  <SelectItem key={city} value={city}>{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="חיפוש לפי כתובת או עיר..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Button variant="outline" className="gap-2">
-              סינון מתקדם
-            </Button>
           </div>
         </div>
       </section>
