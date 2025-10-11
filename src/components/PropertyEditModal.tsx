@@ -41,7 +41,47 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 
   useEffect(() => {
     setFormData(property);
-  }, [property]);
+    
+    // Load images from property_images table when modal opens
+    if (isOpen && property.id) {
+      loadPropertyImages();
+    }
+  }, [property, isOpen]);
+
+  const loadPropertyImages = async () => {
+    try {
+      console.log('🔍 Loading images for property:', property.id);
+      const { data, error } = await supabase
+        .from('property_images')
+        .select('*')
+        .eq('property_id', property.id)
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error loading images:', error);
+        return;
+      }
+
+      console.log('✅ Loaded', data?.length || 0, 'images from DB');
+      
+      if (data && data.length > 0) {
+        const images: PropertyImage[] = data.map(img => ({
+          id: img.id,
+          name: img.alt_text || 'תמונת נכס',
+          url: img.image_url,
+          isPrimary: img.is_main || false,
+          uploadedAt: img.created_at || new Date().toISOString(),
+        }));
+
+        setFormData(prev => ({
+          ...prev,
+          images
+        }));
+      }
+    } catch (error) {
+      console.error('❌ Error loading property images:', error);
+    }
+  };
 
   const handleInputChange = (field: keyof Property, value: string | number) => {
     setFormData(prev => ({
