@@ -313,33 +313,68 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 
                 <div>
                   <Input
-                    id="propertySize"
+                    id="monthlyRent"
                     type="number"
-                    placeholder='גודל (מ"ר)'
-                    value={formData.propertySize || ''}
-                    onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                    placeholder="שכירות חודשית (₪)"
+                    value={formData.monthlyRent || ''}
+                    onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
                   />
                 </div>
                 
                 <div>
                   <Input
-                    id="floor"
-                    type="number"
-                    placeholder="קומה"
-                    value={formData.floor || ''}
-                    onChange={(e) => handleInputChange('floor', Number(e.target.value))}
+                    id="leaseStartDate"
+                    type="date"
+                    placeholder="תאריך התחלת חוזה"
+                    value={formData.leaseStartDate || ''}
+                    onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
                   />
                 </div>
                 
                 <div>
                   <Input
-                    id="rooms"
-                    type="number"
-                    step="0.5"
-                    placeholder="מספר חדרים"
-                    value={formData.rooms || ''}
-                    onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                    id="leaseEndDate"
+                    type="date"
+                    placeholder="תאריך סיום חוזה"
+                    value={formData.leaseEndDate || ''}
+                    onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
                   />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      step="0.5"
+                      className="text-center h-8 w-16"
+                      value={formData.rooms || ''}
+                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="floor" className="text-xs">קומה</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      className="text-center h-8 w-16"
+                      value={formData.floor || ''}
+                      onChange={(e) => handleInputChange('floor', Number(e.target.value))}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
+                    <Input
+                      id="propertySize"
+                      type="number"
+                      className="text-center h-8 w-16"
+                      value={formData.propertySize || ''}
+                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -431,39 +466,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Financial & Contract Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <Input
-                  id="monthlyRent"
-                  type="number"
-                  placeholder="שכירות חודשית (₪)"
-                  value={formData.monthlyRent || ''}
-                  onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                />
-              </div>
-              
-              <div>
-                <Input
-                  id="leaseStartDate"
-                  type="date"
-                  placeholder="תאריך התחלת חוזה"
-                  value={formData.leaseStartDate || ''}
-                  onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Input
-                  id="leaseEndDate"
-                  type="date"
-                  placeholder="תאריך סיום חוזה"
-                  value={formData.leaseEndDate || ''}
-                  onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
-                />
               </div>
             </div>
           </TabsContent>
