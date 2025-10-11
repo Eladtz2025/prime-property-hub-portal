@@ -67,23 +67,43 @@ export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
 
 // Property management functions
 export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithTenant[]> => {
-  // First, sync properties by phone number
-  await syncPropertiesByPhone(ownerId);
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', ownerId)
+    .single();
 
-  // Then get property IDs for this owner
-  const { data: ownershipData, error: ownershipError } = await supabase
-    .from('property_owners')
-    .select('property_id')
-    .eq('owner_id', ownerId);
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
 
-  if (ownershipError || !ownershipData || ownershipData.length === 0) {
-    console.log('No properties found for owner:', ownerId);
-    return [];
+  let propertyIds: string[] = [];
+
+  if (isAdmin) {
+    // Admins see all properties
+    const { data: allProperties } = await supabase
+      .from('properties')
+      .select('id');
+    
+    propertyIds = allProperties?.map(p => p.id) || [];
+  } else {
+    // First, sync properties by phone number for regular owners
+    await syncPropertiesByPhone(ownerId);
+
+    // Then get property IDs for this owner
+    const { data: ownershipData, error: ownershipError } = await supabase
+      .from('property_owners')
+      .select('property_id')
+      .eq('owner_id', ownerId);
+
+    if (ownershipError || !ownershipData || ownershipData.length === 0) {
+      console.log('No properties found for owner:', ownerId);
+      return [];
+    }
+
+    propertyIds = ownershipData.map(o => o.property_id);
   }
 
-  const propertyIds = ownershipData.map(o => o.property_id);
-
-  // Then get properties with their tenants
+  // Get properties with their tenants
   const { data, error } = await supabase
     .from('properties')
     .select(`
