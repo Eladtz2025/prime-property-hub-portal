@@ -54,12 +54,14 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
     
     setLoading(true);
     try {
+      console.log('Loading images for property:', selectedProperty);
       const { data, error } = await supabase
         .from('property_images')
         .select('*')
         .eq('property_id', selectedProperty)
         .order('order_index', { ascending: true });
 
+      console.log('Images loaded:', data, 'Error:', error);
       if (error) throw error;
       setImages(data || []);
     } catch (error) {
