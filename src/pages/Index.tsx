@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import Hero from '@/components/Hero';
 import DivisionCard from '@/components/DivisionCard';
 import GoogleReviews from '@/components/GoogleReviews';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import LogoBackgroundRemover from '@/components/LogoBackgroundRemover';
 import { Building2, TrendingUp, Users, Mail, Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-building.jpg';
 
 const Index = () => {
+  const [showLogoRemover, setShowLogoRemover] = useState(false);
   const divisions = [
     {
       title: 'השכרות',
@@ -70,6 +73,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      {showLogoRemover && <LogoBackgroundRemover />}
       <WhatsAppFloat />
       
       {/* Hero Section */}
