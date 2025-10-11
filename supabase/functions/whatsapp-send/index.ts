@@ -150,7 +150,7 @@ async function sendSingleMessage(
     const formattedPhone = cleanPhone.startsWith('972') ? cleanPhone : `972${cleanPhone}`;
     const chatId = `${formattedPhone}@c.us`;
 
-    console.log(`Sending WhatsApp message to ${formattedPhone}`);
+    console.log('Sending WhatsApp message');
 
     // Send message via Green API
     const greenApiUrl = `https://api.green-api.com/waInstance${instanceId}/sendMessage/${apiToken}`;
@@ -173,7 +173,7 @@ async function sendSingleMessage(
     }
 
     const messageId = result.idMessage;
-    console.log(`Message sent successfully: ${messageId}`);
+    console.log('Message sent successfully');
 
     // Save to database
     const { data: dbRecord, error: dbError } = await supabase

@@ -144,7 +144,7 @@ serve(async (req) => {
         break;
       
       case 'incomingCall':
-        console.log('Incoming call received:', body);
+        console.log('Incoming call received');
         break;
       
       default:
@@ -176,7 +176,7 @@ async function handleIncomingMessage(webhookData: any) {
   const phone = senderData.chatId.replace('@c.us', '');
   const senderName = senderData.senderName || senderData.sender;
   
-  console.log(`Incoming message from ${phone}: ${messageData.textMessageData?.textMessage || 'Non-text message'}`);
+  console.log('Incoming message received');
 
   // Save incoming message to database
   const { error: dbError } = await supabase
@@ -217,7 +217,7 @@ async function handleMessageStatus(webhookData: any) {
     timestamp
   } = webhookData;
 
-  console.log(`Message status update: ${idMessage} -> ${status}`);
+  console.log('Message status update received');
 
   // Update message status in database
   const updateData: any = {
