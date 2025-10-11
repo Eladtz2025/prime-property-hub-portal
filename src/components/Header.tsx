@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Instagram, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logoImage from '@/assets/city-market-logo.png';
+import logoImage from '@/assets/city-market-logo-transparent.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,7 +25,7 @@ const Header = () => {
             <img 
               src={logoImage} 
               alt="City Market Properties" 
-              className="h-16 w-auto md:h-14 md:w-auto"
+              className="h-20 w-auto md:h-16 md:w-auto"
             />
             <span className="text-xl md:text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
           </Link>
