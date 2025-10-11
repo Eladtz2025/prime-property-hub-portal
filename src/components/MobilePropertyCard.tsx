@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Eye, User, Calendar, Mail, Edit } from 'lucide-react';
+import { Phone, MapPin, Eye, User, Calendar, Mail, Edit, Trash2 } from 'lucide-react';
 import { Property } from '@/types/property';
 import { SearchHighlight } from './SearchHighlight';
 
@@ -14,6 +14,7 @@ interface MobilePropertyCardProps {
   property: Property;
   onViewDetails: (id: string) => void;
   onEdit?: (property: Property) => void;
+  onDelete?: (property: Property) => void;
   ownerPropertyCount?: number;
   searchTerm?: string;
   canEdit?: boolean;
@@ -23,6 +24,7 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
   property, 
   onViewDetails,
   onEdit,
+  onDelete,
   ownerPropertyCount = 1,
   searchTerm = '',
   canEdit = false
@@ -164,6 +166,16 @@ export const MobilePropertyCard: React.FC<MobilePropertyCardProps> = memo(({
             <Eye className="h-4 w-4 mr-2" />
             צפה בפרטים
           </Button>
+          {canEdit && onDelete && (
+            <Button 
+              onClick={() => onDelete(property)}
+              variant="outline"
+              className="h-10 w-10 p-0 text-destructive hover:text-destructive flex-shrink-0"
+              size="sm"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

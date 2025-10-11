@@ -26,7 +26,8 @@ import {
   Map,
   Copy,
   Users,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
@@ -50,6 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { updateManagementPropertiesToElad } from '@/utils/updateManagementProperties';
+import { supabase } from '@/integrations/supabase/client';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
@@ -69,6 +71,7 @@ export const Properties: React.FC = memo(() => {
     isLoading,
     addProperty,
     updateProperty, 
+    deleteProperty,
     isUpdatingProperty,
     refetch 
   } = usePropertyData();
@@ -85,17 +88,42 @@ export const Properties: React.FC = memo(() => {
     await refetch();
   };
 
-  // Auto-update management properties on first load
+  // Auto-assign management properties and update owner info on first load
   useEffect(() => {
-    const updateManagementProps = async () => {
-      const result = await updateManagementPropertiesToElad();
-      if (result.success && result.updated && result.updated > 0) {
-        console.log(`Updated ${result.updated} management properties`);
-        await refetch();
+    const setupManagementProperties = async () => {
+      try {
+        // Update owner info for management properties
+        const updateResult = await updateManagementPropertiesToElad();
+        if (updateResult.success && updateResult.updated && updateResult.updated > 0) {
+          console.log(`Updated ${updateResult.updated} management properties`);
+        }
+
+        // Assign management properties to current user
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const response = await fetch(
+            `https://jswumsdymlooeobrxict.supabase.co/functions/v1/assign-management-properties`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          
+          const result = await response.json();
+          if (result.success && result.assigned > 0) {
+            console.log(`Assigned ${result.assigned} management properties`);
+            await refetch();
+          }
+        }
+      } catch (error) {
+        console.error('Error setting up management properties:', error);
       }
     };
     
-    updateManagementProps();
+    setupManagementProperties();
   }, []);
 
   const getOwnerPropertyCount = (property: Property) => {
@@ -267,6 +295,16 @@ export const Properties: React.FC = memo(() => {
     setEditingProperty(null);
   };
 
+  const handleDeleteProperty = (property: Property) => {
+    if (window.confirm(`האם אתה בטוח שברצונך למחוק את הנכס "${property.address}"?`)) {
+      deleteProperty(property.id);
+      toast({
+        title: "הנכס נמחק בהצלחה",
+        description: `הנכס ${property.address} נמחק מהמערכת`,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <TooltipProvider>
@@ -361,6 +399,7 @@ export const Properties: React.FC = memo(() => {
                         property={property}
                         onViewDetails={handleViewDetails}
                         onEdit={setEditingProperty}
+                        onDelete={handleDeleteProperty}
                         ownerPropertyCount={getOwnerPropertyCount(property)}
                         searchTerm={filters.searchTerm}
                         canEdit={canEditProperties}
@@ -517,22 +556,38 @@ export const Properties: React.FC = memo(() => {
                                      </Tooltip>
                                  )}
                                 
-                                {property.ownerEmail && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
-                                      >
-                                        <Mail className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </div>
-                            </TableCell>
+                                 {property.ownerEmail && (
+                                   <Tooltip>
+                                     <TooltipTrigger asChild>
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                                       >
+                                         <Mail className="h-4 w-4" />
+                                       </Button>
+                                     </TooltipTrigger>
+                                     <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
+                                   </Tooltip>
+                                 )}
+
+                                 {canEditProperties && (
+                                   <Tooltip>
+                                     <TooltipTrigger asChild>
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         onClick={() => handleDeleteProperty(property)}
+                                         className="text-destructive hover:text-destructive"
+                                       >
+                                         <Trash2 className="h-4 w-4" />
+                                       </Button>
+                                     </TooltipTrigger>
+                                     <TooltipContent>מחק נכס</TooltipContent>
+                                   </Tooltip>
+                                 )}
+                               </div>
+                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
