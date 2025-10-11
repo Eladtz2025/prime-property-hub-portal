@@ -364,6 +364,7 @@ export type Database = {
           property_type: string | null
           renovation_costs: number | null
           rooms: number | null
+          show_management_badge: boolean | null
           status: string
           title: string | null
           updated_at: string
@@ -398,6 +399,7 @@ export type Database = {
           property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
+          show_management_badge?: boolean | null
           status?: string
           title?: string | null
           updated_at?: string
@@ -432,6 +434,7 @@ export type Database = {
           property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
+          show_management_badge?: boolean | null
           status?: string
           title?: string | null
           updated_at?: string

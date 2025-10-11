@@ -125,6 +125,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           parking: formData.parking || false,
           elevator: formData.elevator || false,
           balcony: formData.balcony || false,
+          show_management_badge: formData.showManagementBadge !== false,
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -465,6 +466,17 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       onCheckedChange={(checked) => handleInputChange('balcony', checked)}
                     />
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-2 p-3 border rounded-md">
+                  <Switch
+                    id="showManagementBadge"
+                    checked={formData.showManagementBadge !== false}
+                    onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                  />
+                  <Label htmlFor="showManagementBadge" className="cursor-pointer">
+                    הצג תג "בניהול מלא"
+                  </Label>
                 </div>
               </div>
             </div>

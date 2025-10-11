@@ -25,6 +25,7 @@ export interface Property {
   parking?: boolean;
   elevator?: boolean;
   balcony?: boolean;
+  showManagementBadge?: boolean;
   notes?: string;
   documents?: PropertyDocument[];
   images?: PropertyImage[];

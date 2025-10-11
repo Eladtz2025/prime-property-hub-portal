@@ -71,7 +71,7 @@ const Management = () => {
           prop.parking ? 'חניה' : null,
           prop.elevator ? 'מעלית' : null,
           prop.balcony ? 'מרפסת' : null,
-          'ניהול מלא'
+          prop.show_management_badge !== false ? 'ניהול מלא' : null
         ].filter(Boolean) as string[]
       }))
     : mockProperties;
@@ -134,9 +134,11 @@ const Management = () => {
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
-                      בניהול מלא
-                    </div>
+                    {property.features.some(f => f === 'ניהול מלא') && (
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
+                        בניהול מלא
+                      </div>
+                    )}
                   </div>
                   <div className="p-6">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
