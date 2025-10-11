@@ -20,7 +20,6 @@ const Index = () => {
         'שירות אישי ומסור',
       ],
       link: '/rentals',
-      icon: 'users' as const,
     },
     {
       title: 'מכירות',
@@ -33,7 +32,6 @@ const Index = () => {
         'ניהול מו"מ וליווי עד לסגירה',
       ],
       link: '/sales',
-      icon: 'trending' as const,
     },
     {
       title: 'ניהול נכסים',
@@ -46,7 +44,6 @@ const Index = () => {
         'זמינות ושירות 24/7',
       ],
       link: '/management',
-      icon: 'building' as const,
     },
   ];
 
