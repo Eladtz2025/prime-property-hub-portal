@@ -306,7 +306,7 @@ export type Database = {
           is_approved: boolean
           last_login: string | null
           phone: string | null
-          role: string | null
+          role: string
           updated_at: string
         }
         Insert: {
@@ -317,7 +317,7 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string | null
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -328,7 +328,7 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string | null
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -777,27 +777,6 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
       whatsapp_contacts: {
         Row: {
           avatar_url: string | null
@@ -936,21 +915,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
-      app_role:
-        | "super_admin"
-        | "admin"
-        | "manager"
-        | "viewer"
-        | "property_owner"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1077,8 +1044,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["super_admin", "admin", "manager", "viewer", "property_owner"],
-    },
+    Enums: {},
   },
 } as const

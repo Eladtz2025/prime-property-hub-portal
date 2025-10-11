@@ -439,7 +439,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
                     <Label htmlFor="parking" className="text-xs">חניה</Label>
                     <Switch
@@ -466,15 +466,17 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       onCheckedChange={(checked) => handleInputChange('balcony', checked)}
                     />
                   </div>
-                  
-                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
-                    <Label htmlFor="showManagementBadge" className="text-xs text-center">תג "בניהול מלא"</Label>
-                    <Switch
-                      id="showManagementBadge"
-                      checked={formData.showManagementBadge !== false}
-                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                    />
-                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 p-3 border rounded-md">
+                  <Switch
+                    id="showManagementBadge"
+                    checked={formData.showManagementBadge !== false}
+                    onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                  />
+                  <Label htmlFor="showManagementBadge" className="cursor-pointer">
+                    הצג תג "בניהול מלא"
+                  </Label>
                 </div>
               </div>
             </div>

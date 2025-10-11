@@ -58,23 +58,14 @@ export const AdminControlDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Get system statistics - get profiles for property owners
-      const { data: ownerRoles } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'property_owner');
-      
-      const ownerIds = ownerRoles?.map(r => r.user_id) || [];
-      
+      // Get system statistics
       const [
         { data: owners },
         { data: properties },
         { data: invitations },
         { data: financials }
       ] = await Promise.all([
-        ownerIds.length > 0 
-          ? supabase.from('profiles').select('*').in('id', ownerIds)
-          : Promise.resolve({ data: [] }),
+        supabase.from('profiles').select('*').eq('role', 'property_owner'),
         supabase.from('properties').select('*'),
         supabase.from('property_invitations').select('*').is('used_at', null),
         supabase.from('financial_records').select('*')
@@ -100,7 +91,7 @@ export const AdminControlDashboard: React.FC = () => {
       setStats(systemStats);
 
       // Get detailed owner activity
-      if (owners && owners.length > 0) {
+      if (owners) {
         const ownerActivities = await Promise.all(
           owners.map(async (owner) => {
             // Get owner's properties

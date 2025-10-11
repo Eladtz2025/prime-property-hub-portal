@@ -5,18 +5,11 @@ export interface UserProfile {
   email: string;
   full_name?: string;
   phone?: string;
-  role: UserRole; // This is now fetched from user_roles table
+  role: UserRole;
   is_approved: boolean;
   created_at: string;
   updated_at: string;
   last_login?: string;
-}
-
-export interface UserRoleRecord {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  created_at: string;
 }
 
 export interface Permission {

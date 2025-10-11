@@ -58,13 +58,7 @@ ${property.status === 'vacant' ? 'הבנתי שהנכס פנוי כרגע.' : ''
     try {
       const finalMessage = message || createDefaultMessage(property, isOwner);
       
-      // Get current session for auth header
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`
-        },
         body: {
           phone,
           message: finalMessage,

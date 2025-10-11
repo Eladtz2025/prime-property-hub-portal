@@ -39,38 +39,18 @@ export const resetPassword = async (email: string) => {
 
 // Profile helpers
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
-  // Fetch profile data
-  const { data: profileData, error: profileError } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .single();
   
-  if (profileError) {
-    logger.error('Error fetching user profile:', profileError, 'getUserProfile');
+  if (error) {
+    logger.error('Error fetching user profile:', error, 'getUserProfile');
     return null;
   }
   
-  // Fetch user role from user_roles table
-  const { data: roleData, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  
-  if (roleError) {
-    logger.error('Error fetching user role:', roleError, 'getUserProfile');
-  }
-  
-  // Combine profile with role
-  const profile: UserProfile = {
-    ...profileData,
-    role: roleData?.role || 'viewer' // Default to viewer if no role found
-  };
-  
-  return profile;
+  return data as UserProfile;
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
