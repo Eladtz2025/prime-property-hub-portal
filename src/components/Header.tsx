@@ -20,8 +20,21 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4">
         <div className="relative flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 md:gap-3">
+          {/* Mobile Menu Button - Left on Mobile */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="p-1.5 touch-target"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="תפריט"
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+
+          {/* Logo - Right on Mobile, Left on Desktop */}
+          <Link to="/" className="flex items-center gap-2 md:gap-3 md:order-first">
             <img 
               src={logoImage} 
               alt="City Market Properties" 
@@ -45,48 +58,35 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Social Media & Mobile Menu */}
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="flex items-center gap-1 md:gap-2">
-              <Button
-                variant="ghost"
-                className="p-1.5 md:p-2"
-                asChild
-              >
-                <a
-                  href="https://www.instagram.com/citymarket/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-4 w-4 md:h-5 md:w-5" />
-                </a>
-              </Button>
-              <Button
-                variant="ghost"
-                className="p-1.5 md:p-2"
-                asChild
-              >
-                <a
-                  href="https://www.facebook.com/Ctmarket"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="h-4 w-4 md:h-5 md:w-5" />
-                </a>
-              </Button>
-            </div>
-
-            {/* Mobile Menu Button */}
+          {/* Social Media - Always Visible */}
+          <div className="flex items-center gap-1 md:gap-2">
             <Button
               variant="ghost"
-              size="icon"
-              className="md:hidden p-1.5 touch-target"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="תפריט"
+              className="p-1.5 md:p-2"
+              asChild
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <a
+                href="https://www.instagram.com/citymarket/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-4 w-4 md:h-5 md:w-5" />
+              </a>
+            </Button>
+            <Button
+              variant="ghost"
+              className="p-1.5 md:p-2"
+              asChild
+            >
+              <a
+                href="https://www.facebook.com/Ctmarket"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-4 w-4 md:h-5 md:w-5" />
+              </a>
             </Button>
           </div>
         </div>
