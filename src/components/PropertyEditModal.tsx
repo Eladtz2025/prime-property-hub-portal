@@ -125,6 +125,81 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         }
       }
 
+      // Save images to property_images table and storage
+      if (formData.images && formData.images.length > 0) {
+        console.log('💾 Saving', formData.images.length, 'images to property_images');
+        
+        // Delete existing images for this property
+        const { error: deleteError } = await supabase
+          .from('property_images')
+          .delete()
+          .eq('property_id', formData.id);
+
+        if (deleteError) {
+          console.error('❌ Error deleting old images:', deleteError);
+        }
+
+        // Insert new images
+        for (let i = 0; i < formData.images.length; i++) {
+          const image = formData.images[i];
+          let imageUrl = image.url;
+          
+          // If base64, upload to storage first
+          if (image.url.startsWith('data:')) {
+            console.log('📤 Uploading base64 image to storage:', image.name);
+            
+            try {
+              // Convert base64 to blob
+              const response = await fetch(image.url);
+              const blob = await response.blob();
+              
+              // Upload to storage
+              const fileExt = image.name.split('.').pop() || 'jpg';
+              const fileName = `${formData.id}/${Date.now()}_${i}.${fileExt}`;
+              
+              const { error: uploadError } = await supabase.storage
+                .from('property-images')
+                .upload(fileName, blob);
+
+              if (uploadError) {
+                console.error('❌ Storage upload error:', uploadError);
+                continue;
+              }
+
+              // Get public URL
+              const { data: { publicUrl } } = supabase.storage
+                .from('property-images')
+                .getPublicUrl(fileName);
+              
+              imageUrl = publicUrl;
+              console.log('✅ Uploaded to storage:', publicUrl);
+            } catch (uploadError) {
+              console.error('❌ Error uploading image:', uploadError);
+              continue;
+            }
+          }
+
+          const imageData = {
+            property_id: formData.id,
+            image_url: imageUrl,
+            alt_text: image.name || 'תמונת נכס',
+            is_main: image.isPrimary || i === 0,
+            order_index: i,
+          };
+
+          console.log('💾 Inserting image to DB:', imageData);
+          const { error: imageError } = await supabase
+            .from('property_images')
+            .insert(imageData);
+
+          if (imageError) {
+            console.error('❌ Error saving image to DB:', imageError);
+          } else {
+            console.log('✅ Image saved successfully');
+          }
+        }
+      }
+
       toast({
         title: "הנכס עודכן בהצלחה",
         description: "השינויים נשמרו במערכת",
