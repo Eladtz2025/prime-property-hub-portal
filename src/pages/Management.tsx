@@ -82,41 +82,20 @@ const Management = () => {
         backgroundImage="/images/management-lobby.jpg"
       />
 
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">נכסים בניהול</h2>
-          <p className="text-center text-muted-foreground mb-8">
-            פורטפוליו הנכסים שלנו בניהול מקצועי עם שירות מלא ותחזוקה שוטפת
-          </p>
-
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select value={cityFilter} onValueChange={setCityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="באזור" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הערים</SelectItem>
-                {cities.map((city) => (
-                  <SelectItem key={city} value={city}>{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="חיפוש לפי כתובת או עיר..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Button variant="outline" className="gap-2">
-              סינון מתקדם
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Properties Grid */}
       <section className="py-12 bg-muted">
         <div className="container mx-auto px-4">
+          
+          {/* Search */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <Input
+              placeholder="חיפוש נכס..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-12 text-base"
+            />
+          </div>
+
           {filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
