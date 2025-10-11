@@ -7,10 +7,17 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, Building, Building2, Wrench, FileCheck, Users, ClipboardList } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { usePublicProperties } from '@/hooks/usePublicProperties';
+
+// Use real database data
+const USE_REAL_DATA = true;
 
 const Management = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
+  
+  // Fetch real data from database
+  const { data: realProperties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
   // Mock data - נכסים לדוגמה
   const mockProperties = [
@@ -49,7 +56,27 @@ const Management = () => {
     }
   ];
 
-  const filteredProperties = mockProperties.filter((property) => {
+  // Use real data or mock data based on toggle
+  const properties = USE_REAL_DATA 
+    ? (realProperties || []).map(prop => ({
+        id: prop.id,
+        title: prop.title || '',
+        address: prop.address,
+        city: prop.city,
+        building_floors: prop.floor,
+        property_size: prop.property_size,
+        description: prop.description || '',
+        image: prop.images[0]?.image_url || '/images/properties/building-management-1.jpg',
+        features: [
+          prop.parking ? 'חניה' : null,
+          prop.elevator ? 'מעלית' : null,
+          prop.balcony ? 'מרפסת' : null,
+          'ניהול מלא'
+        ].filter(Boolean) as string[]
+      }))
+    : mockProperties;
+
+  const filteredProperties = properties.filter((property) => {
     const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          property.city?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = cityFilter === 'all' || property.city === cityFilter;

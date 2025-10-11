@@ -10,7 +10,7 @@ export interface PublicProperty {
   address: string;
   city: string;
   description?: string;
-  property_type: 'rental' | 'sale';
+  property_type: 'rental' | 'sale' | 'management';
   rooms?: number;
   property_size?: number;
   bathrooms?: number;
@@ -30,7 +30,7 @@ export interface PublicProperty {
 }
 
 interface UsePublicPropertiesOptions {
-  propertyType: 'rental' | 'sale';
+  propertyType: 'rental' | 'sale' | 'management';
 }
 
 export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions) => {
@@ -87,7 +87,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           address: property.address,
           city: property.city,
           description: property.description,
-          property_type: property.property_type as 'rental' | 'sale',
+          property_type: property.property_type as 'rental' | 'sale' | 'management',
           rooms: property.rooms,
           property_size: property.property_size,
           bathrooms: property.bathrooms,
