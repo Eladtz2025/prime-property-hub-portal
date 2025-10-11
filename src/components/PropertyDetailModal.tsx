@@ -271,17 +271,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
           {/* Images */}
           <TabsContent value="images" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  תמונות הנכס
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageCarousel images={images} />
-              </CardContent>
-            </Card>
+            <ImageCarousel images={images} />
           </TabsContent>
 
           {/* Contract Details */}
