@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { usePropertyData } from '@/hooks/usePropertyData';
 import { supabase } from '@/integrations/supabase/client';
+import { Switch } from "@/components/ui/switch";
 
 interface PropertyEditModalProps {
   property: Property;
@@ -83,7 +84,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof Property, value: string | number) => {
+  const handleInputChange = (field: keyof Property, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -121,6 +122,9 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           rooms: formData.rooms,
           monthly_rent: formData.monthlyRent,
           notes: formData.notes,
+          parking: formData.parking || false,
+          elevator: formData.elevator || false,
+          balcony: formData.balcony || false,
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -336,6 +340,33 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     step="0.5"
                     value={formData.rooms || ''}
                     onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="parking">חניה</Label>
+                  <Switch
+                    id="parking"
+                    checked={formData.parking || false}
+                    onCheckedChange={(checked) => handleInputChange('parking', checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="elevator">מעלית</Label>
+                  <Switch
+                    id="elevator"
+                    checked={formData.elevator || false}
+                    onCheckedChange={(checked) => handleInputChange('elevator', checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="balcony">מרפסת</Label>
+                  <Switch
+                    id="balcony"
+                    checked={formData.balcony || false}
+                    onCheckedChange={(checked) => handleInputChange('balcony', checked)}
                   />
                 </div>
               </div>

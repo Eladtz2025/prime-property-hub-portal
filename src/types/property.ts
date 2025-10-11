@@ -22,6 +22,9 @@ export interface Property {
   propertySize?: number; // in square meters
   floor?: number;
   rooms?: number;
+  parking?: boolean;
+  elevator?: boolean;
+  balcony?: boolean;
   notes?: string;
   documents?: PropertyDocument[];
   images?: PropertyImage[];
