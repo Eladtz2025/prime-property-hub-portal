@@ -133,7 +133,7 @@ const Sales = () => {
           <div className="mb-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center">נכסים למכירה</h2>
           </div>
-          <p className="text-center text-muted-foreground mb-8 max-w-4xl mx-auto text-sm md:text-base">
+          <p className="text-center text-muted-foreground mb-8 max-w-4xl mx-auto text-xs sm:text-sm md:text-base px-4">
             נכסים איכותיים למכירה עם ייעוץ מקצועי וליווי מלא בתהליך הרכישה
           </p>
 
