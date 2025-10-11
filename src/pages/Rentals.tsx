@@ -9,8 +9,8 @@ import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCir
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 
-// Toggle between mock data and real database data
-const USE_REAL_DATA = false;
+// Use real database data
+const USE_REAL_DATA = true;
 
 const Rentals = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -150,11 +150,6 @@ const Rentals = () => {
             {USE_REAL_DATA && !isLoading && (
               <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
                 דאטה אמיתי - {filteredProperties.length} נכסים
-              </Badge>
-            )}
-            {!USE_REAL_DATA && (
-              <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/20">
-                Mock Data
               </Badge>
             )}
           </div>
