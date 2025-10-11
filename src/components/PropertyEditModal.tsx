@@ -341,35 +341,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
                   />
                 </div>
-                
-                <div className="grid grid-cols-3 gap-3 pt-2">
-                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
-                    <Label htmlFor="parking" className="text-xs">חניה</Label>
-                    <Switch
-                      id="parking"
-                      checked={formData.parking || false}
-                      onCheckedChange={(checked) => handleInputChange('parking', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
-                    <Label htmlFor="elevator" className="text-xs">מעלית</Label>
-                    <Switch
-                      id="elevator"
-                      checked={formData.elevator || false}
-                      onCheckedChange={(checked) => handleInputChange('elevator', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
-                    <Label htmlFor="balcony" className="text-xs">מרפסת</Label>
-                    <Switch
-                      id="balcony"
-                      checked={formData.balcony || false}
-                      onCheckedChange={(checked) => handleInputChange('balcony', checked)}
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* Owner & Tenant Details */}
@@ -430,6 +401,35 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     value={formData.tenantEmail || ''}
                     onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
                   />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="parking" className="text-xs">חניה</Label>
+                    <Switch
+                      id="parking"
+                      checked={formData.parking || false}
+                      onCheckedChange={(checked) => handleInputChange('parking', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="elevator" className="text-xs">מעלית</Label>
+                    <Switch
+                      id="elevator"
+                      checked={formData.elevator || false}
+                      onCheckedChange={(checked) => handleInputChange('elevator', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 p-2 border rounded-md">
+                    <Label htmlFor="balcony" className="text-xs">מרפסת</Label>
+                    <Switch
+                      id="balcony"
+                      checked={formData.balcony || false}
+                      onCheckedChange={(checked) => handleInputChange('balcony', checked)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
