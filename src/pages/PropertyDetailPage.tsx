@@ -120,8 +120,126 @@ const PropertyDetailPage = () => {
     <div className="min-h-screen bg-background">
       <WhatsAppFloat />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* כפתור חזרה */}
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        {/* Back Button */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => navigate(getBackLink())}
+          >
+            <ArrowRight className="h-4 w-4" />
+            חזרה לרשימת נכסים
+          </Button>
+        </div>
+
+        {/* Image with Price Badge */}
+        <div className="relative">
+          <ImageCarousel images={propertyImages} priceLabel="" />
+          <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-bold text-lg">
+            {getPriceDisplay()}
+          </div>
+        </div>
+
+        {/* Property Info */}
+        <div className="px-4 py-6 space-y-6">
+          {/* Title and Address */}
+          <div>
+            <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
+            <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-5 w-5" />
+              <span>{property.address}, {property.city}</span>
+            </div>
+          </div>
+
+          {/* Technical Details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <Bath className="h-5 w-5 text-primary" />
+              <span>{property.bathrooms} חדרי רחצה</span>
+            </div>
+            {property.rooms && (
+              <div className="flex items-center gap-3">
+                <Home className="h-5 w-5 text-primary" />
+                <span>{property.rooms} חדרים</span>
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Square className="h-5 w-5 text-primary" />
+              <span>{property.property_size} מ"ר</span>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="flex gap-2 flex-wrap">
+            {property.parking && (
+              <Badge variant="secondary" className="text-sm">
+                <Car className="h-3 w-3 ml-1" />
+                חניה
+              </Badge>
+            )}
+            {property.elevator && (
+              <Badge variant="secondary" className="text-sm">
+                <MoveUp className="h-3 w-3 ml-1" />
+                מעלית
+              </Badge>
+            )}
+            {property.balcony && (
+              <Badge variant="secondary" className="text-sm">
+                <TreePine className="h-3 w-3 ml-1" />
+                מרפסת
+              </Badge>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">תיאור הנכס</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              {property.description}
+            </p>
+          </div>
+
+          {/* Key Points */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">נקודות מרכזיות</h3>
+            <div className="space-y-2">
+              {getKeyPoints().map((point, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span className="text-sm">{point}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 space-y-2">
+            <Button className="w-full gap-2 bg-primary hover:bg-primary/90 h-12" onClick={handleWhatsApp}>
+              <MessageCircle className="h-5 w-5" />
+              WhatsApp
+            </Button>
+            <Button variant="outline" className="w-full gap-2 h-12" onClick={handleCall}>
+              <Phone className="h-5 w-5" />
+              התקשר
+            </Button>
+          </div>
+
+          {/* Spacer for fixed buttons */}
+          <div className="h-32" />
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:block container mx-auto px-4 py-8">
+        {/* Back Button */}
         <Button
           variant="ghost"
           className="mb-6 gap-2"
@@ -132,9 +250,9 @@ const PropertyDetailPage = () => {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* עמודה שמאלית - פרטי הנכס */}
+          {/* Left Column - Property Details */}
           <div className="space-y-6 order-2 lg:order-1">
-            {/* תגית וכותרת */}
+            {/* Badge and Title */}
             <div>
               <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
               <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
@@ -144,7 +262,7 @@ const PropertyDetailPage = () => {
               </div>
             </div>
 
-            {/* פרטים טכניים */}
+            {/* Technical Details */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Bath className="h-5 w-5 text-primary" />
@@ -170,7 +288,7 @@ const PropertyDetailPage = () => {
               </div>
             </div>
 
-            {/* תגיות */}
+            {/* Tags */}
             <div className="flex gap-2 flex-wrap">
               {property.parking && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
@@ -192,7 +310,7 @@ const PropertyDetailPage = () => {
               )}
             </div>
 
-            {/* כפתורי פעולה */}
+            {/* Action Buttons */}
             <div className="space-y-3">
               <Button className="w-full gap-2 bg-primary hover:bg-primary/90" onClick={handleWhatsApp}>
                 <MessageCircle className="h-4 w-4" />
@@ -204,7 +322,7 @@ const PropertyDetailPage = () => {
               </Button>
             </div>
 
-            {/* שיתוף */}
+            {/* Share */}
             <Card className="p-4">
               <h3 className="font-semibold mb-3 text-sm">שתף נכס זה</h3>
               <div className="flex gap-2 justify-center">
@@ -233,7 +351,7 @@ const PropertyDetailPage = () => {
             </Card>
           </div>
 
-          {/* עמודה ימנית - גלריית תמונות */}
+          {/* Right Column - Image Gallery */}
           <div className="lg:col-span-2 order-1 lg:order-2">
             <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
           </div>
