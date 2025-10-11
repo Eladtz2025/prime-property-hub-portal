@@ -47,7 +47,7 @@ const Header = () => {
 
           {/* Social Media & Mobile Menu */}
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="hidden sm:flex items-center gap-1 md:gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               <Button
                 variant="ghost"
                 className="p-1.5 md:p-2"
@@ -107,36 +107,6 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex items-center justify-center gap-2 pt-2 border-t sm:hidden">
-                <Button
-                  variant="ghost"
-                  className="p-2 touch-target"
-                  asChild
-                >
-                  <a
-                    href="https://www.instagram.com/citymarket/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="h-5 w-5" />
-                  </a>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="p-2 touch-target"
-                  asChild
-                >
-                  <a
-                    href="https://www.facebook.com/Ctmarket"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                  >
-                    <Facebook className="h-5 w-5" />
-                  </a>
-                </Button>
-              </div>
             </nav>
           </div>
         )}
