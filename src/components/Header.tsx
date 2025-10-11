@@ -25,7 +25,7 @@ const Header = () => {
             <img 
               src={logoImage} 
               alt="City Market Properties" 
-              className="h-10 w-auto md:h-14 md:w-auto"
+              className="h-16 w-auto md:h-14 md:w-auto"
             />
             <span className="text-xl md:text-2xl font-bold text-foreground hidden sm:inline">City Market Properties</span>
           </Link>
