@@ -1,0 +1,61 @@
+-- Insert management properties
+INSERT INTO public.properties (
+  address,
+  city,
+  property_type,
+  title,
+  description,
+  property_size,
+  floor,
+  parking,
+  elevator,
+  balcony,
+  available,
+  status,
+  featured
+) VALUES 
+(
+  'שיינקין 87, תל אביב',
+  'תל אביב',
+  'management',
+  'בניין מגורים 12 יחידות ברחוב שיינקין',
+  'בניין בוטיק מתחזק ומשופץ, 12 דירות להשכרה, כולן מושכרות, ניהול מלא כולל תחזוקה, גביה ודיווח. תפוסה 100%.',
+  850,
+  3,
+  true,
+  false,
+  false,
+  true,
+  'occupied',
+  true
+),
+(
+  'מונטיפיורי 23, תל אביב',
+  'תל אביב',
+  'management',
+  'בניין מגורים 8 יחידות ברחוב מונטיפיורי',
+  'בניין בוטיק משופץ ומתוחזק, 8 דירות, כולן מושכרות, ניהול מקצועי כולל גביה ותחזוקה שוטפת. דיירים איכותיים ויציבים.',
+  520,
+  3,
+  true,
+  false,
+  false,
+  true,
+  'occupied',
+  true
+),
+(
+  'אלנבי 112, תל אביב',
+  'תל אביב',
+  'management',
+  'בניין משרדים ומסחר ברחוב אלנבי',
+  'בניין היסטורי מתוחזק, משרדים וחנויות, ניהול מקצועי כולל אחזקה שוטפת, ליווי דיירים ותיאום עבודות. מיקום מרכזי.',
+  650,
+  4,
+  true,
+  true,
+  false,
+  true,
+  'occupied',
+  true
+);
