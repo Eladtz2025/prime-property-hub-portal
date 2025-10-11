@@ -27,9 +27,10 @@ interface PropertyGalleryProps {
 interface PropertyImage {
   id: string;
   property_id: string;
-  name: string;
-  file_url: string;
-  uploaded_at: string;
+  image_url: string;
+  alt_text: string | null;
+  is_main: boolean | null;
+  order_index: number | null;
 }
 
 export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) => {
@@ -54,11 +55,10 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('property_documents')
+        .from('property_images')
         .select('*')
         .eq('property_id', selectedProperty)
-        .eq('type', 'image')
-        .order('uploaded_at', { ascending: false });
+        .order('order_index', { ascending: true });
 
       if (error) throw error;
       setImages(data || []);
@@ -95,17 +95,15 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           .from('property-images')
           .getPublicUrl(fileName);
 
-        // Save to database
+        // Save to property_images table
         const { error: dbError } = await supabase
-          .from('property_documents')
+          .from('property_images')
           .insert({
             property_id: selectedProperty,
-            name: file.name,
-            type: 'image',
-            file_url: publicUrl,
-            file_size: file.size,
-            mime_type: file.type,
-            uploaded_by: profile?.id || '',
+            image_url: publicUrl,
+            alt_text: file.name,
+            is_main: false,
+            order_index: images.length + 1,
           });
 
         if (dbError) throw dbError;
@@ -130,20 +128,20 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
 
   const handleDelete = async (image: PropertyImage) => {
     try {
-      // Extract file path from URL
-      const urlParts = image.file_url.split('/');
-      const filePath = urlParts.slice(-2).join('/');
+      // Extract file path from URL if it's from storage
+      if (image.image_url.includes('supabase')) {
+        const urlParts = image.image_url.split('/');
+        const filePath = urlParts.slice(-2).join('/');
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('property-images')
-        .remove([filePath]);
-
-      if (storageError) throw storageError;
+        // Delete from storage
+        await supabase.storage
+          .from('property-images')
+          .remove([filePath]);
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
-        .from('property_documents')
+        .from('property_images')
         .delete()
         .eq('id', image.id);
 
@@ -237,8 +235,8 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                 <div key={image.id} className="relative group">
                   <div className="aspect-square rounded-lg overflow-hidden bg-muted">
                     <img
-                      src={image.file_url}
-                      alt={image.name}
+                      src={image.image_url}
+                      alt={image.alt_text || 'תמונת נכס'}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -253,7 +251,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={() => window.open(image.file_url, '_blank')}
+                      onClick={() => window.open(image.image_url, '_blank')}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -278,13 +276,13 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       <Dialog open={!!viewImage} onOpenChange={(open) => !open && setViewImage(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{viewImage?.name}</DialogTitle>
+            <DialogTitle>{viewImage?.alt_text || 'תמונת נכס'}</DialogTitle>
           </DialogHeader>
           {viewImage && (
             <div className="w-full">
               <img
-                src={viewImage.file_url}
-                alt={viewImage.name}
+                src={viewImage.image_url}
+                alt={viewImage.alt_text || 'תמונת נכס'}
                 className="w-full h-auto rounded-lg"
               />
             </div>
