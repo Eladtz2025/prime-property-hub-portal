@@ -220,6 +220,23 @@ export const Properties: React.FC = memo(() => {
     }
   };
 
+  const getPropertyTypeText = (type: string | undefined) => {
+    switch (type) {
+      case 'rental': return 'השכרה';
+      case 'sale': return 'מכירה';
+      case 'management': return 'ניהול';
+      default: return 'השכרה';
+    }
+  };
+
+  const getPropertyTypeColor = (type: string | undefined) => {
+    switch (type) {
+      case 'sale': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'management': return 'bg-purple-100 text-purple-800 border-purple-200';
+      default: return 'bg-emerald-100 text-emerald-800 border-emerald-200'; // rental
+    }
+  };
+
   const handleSort = (field: 'address' | 'ownerName' | 'status' | 'leaseEndDate') => {
     setSortBy(field);
   };
@@ -359,7 +376,7 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right">דייר</TableHead>
+                          <TableHead className="text-right">סוג הנכס</TableHead>
                           <TableHead 
                             className="text-right cursor-pointer hover:bg-muted/50"
                             onClick={() => handleSort('status')}
@@ -419,29 +436,12 @@ export const Properties: React.FC = memo(() => {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              {property.tenantName ? (
-                                <div className="flex items-center justify-end gap-2">
-                                  <div>
-                                    <div className="font-medium">
-                                      <SearchHighlight 
-                                        text={property.tenantName} 
-                                        searchTerm={filters.searchTerm}
-                                      />
-                                    </div>
-                                     {property.tenantPhone && (
-                                        <div className="text-sm text-muted-foreground">
-                                          <SearchHighlight 
-                                            text={formatPhoneDisplay(property.tenantPhone, canViewPhone)} 
-                                            searchTerm={filters.searchTerm}
-                                          />
-                                        </div>
-                                     )}
-                                  </div>
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">—</span>
-                              )}
+                              <Badge 
+                                variant="outline" 
+                                className={getPropertyTypeColor(property.property_type)}
+                              >
+                                {getPropertyTypeText(property.property_type)}
+                              </Badge>
                             </TableCell>
                             <TableCell className="text-right">
                               <Badge className={getStatusColor(property.status)}>

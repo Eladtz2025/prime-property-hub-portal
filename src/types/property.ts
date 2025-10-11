@@ -30,6 +30,7 @@ export interface Property {
   images?: PropertyImage[];
   lastUpdated?: string;
   createdAt?: string;
+  property_type?: 'rental' | 'sale' | 'management';
 }
 
 export interface PropertyImage {
