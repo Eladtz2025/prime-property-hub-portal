@@ -82,33 +82,54 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
 
     setUploading(true);
     try {
+      console.log('🔵 Starting upload for', files.length, 'files');
+      console.log('🔵 Selected property:', selectedProperty);
+      
       for (const file of Array.from(files)) {
+        console.log('📤 Uploading file:', file.name);
+        
         // Upload to storage
         const fileExt = file.name.split('.').pop();
         const fileName = `${selectedProperty}/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
+        
+        console.log('📤 Storage path:', fileName);
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from('property-images')
           .upload(fileName, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('❌ Storage upload error:', uploadError);
+          throw uploadError;
+        }
+        console.log('✅ Storage upload success:', uploadData);
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('property-images')
           .getPublicUrl(fileName);
+        
+        console.log('🔗 Public URL:', publicUrl);
 
         // Save to property_images table
-        const { error: dbError } = await supabase
+        const insertData = {
+          property_id: selectedProperty,
+          image_url: publicUrl,
+          alt_text: file.name,
+          is_main: false,
+          order_index: images.length + 1,
+        };
+        
+        console.log('💾 Inserting to DB:', insertData);
+        const { data: dbData, error: dbError } = await supabase
           .from('property_images')
-          .insert({
-            property_id: selectedProperty,
-            image_url: publicUrl,
-            alt_text: file.name,
-            is_main: false,
-            order_index: images.length + 1,
-          });
+          .insert(insertData)
+          .select();
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          console.error('❌ Database insert error:', dbError);
+          throw dbError;
+        }
+        console.log('✅ Database insert success:', dbData);
       }
 
       toast({
@@ -117,10 +138,10 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       });
       loadImages();
     } catch (error) {
-      console.error('Error uploading images:', error);
+      console.error('❌❌❌ Error uploading images:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה בהעלאת התמונות',
+        description: error instanceof Error ? error.message : 'שגיאה בהעלאת התמונות',
         variant: 'destructive',
       });
     } finally {
