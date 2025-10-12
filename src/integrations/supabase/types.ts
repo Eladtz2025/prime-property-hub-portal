@@ -50,6 +50,66 @@ export type Database = {
         }
         Relationships: []
       }
+      brokerage_forms: {
+        Row: {
+          agent_id: string
+          agent_name: string
+          client_id: string
+          client_name: string
+          client_phone: string
+          client_signature: string
+          created_at: string
+          created_by: string | null
+          fee_type_rental: boolean | null
+          fee_type_sale: boolean | null
+          form_date: string
+          id: string
+          properties: Json | null
+          referred_by: string | null
+          special_terms: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          agent_name: string
+          client_id: string
+          client_name: string
+          client_phone: string
+          client_signature: string
+          created_at?: string
+          created_by?: string | null
+          fee_type_rental?: boolean | null
+          fee_type_sale?: boolean | null
+          form_date: string
+          id?: string
+          properties?: Json | null
+          referred_by?: string | null
+          special_terms?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          agent_name?: string
+          client_id?: string
+          client_name?: string
+          client_phone?: string
+          client_signature?: string
+          created_at?: string
+          created_by?: string | null
+          fee_type_rental?: boolean | null
+          fee_type_sale?: boolean | null
+          form_date?: string
+          id?: string
+          properties?: Json | null
+          referred_by?: string | null
+          special_terms?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bulk_sends: {
         Row: {
           completed_at: string | null
