@@ -143,10 +143,13 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
           </div>
 
           {/* הצהרות */}
-          <div className="bg-muted p-4 rounded-lg space-y-2">
+          <div className="bg-muted p-4 rounded-lg space-y-3">
             <h3 className="font-semibold">הצהרות</h3>
             <p className="text-sm text-muted-foreground">
-              אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר.
+              אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר. אנו מתחייבים שלא למסור לזולת ולא להשתמש בכל מידע הקשור בפנייה זו ללא תיאום מראש עם "סיטי מרקט".
+            </p>
+            <p className="text-sm text-muted-foreground">
+              הנני מאשר/ים כי הופניתי לראשונה על ידכם אל הנכסים/הצדדים המפורטים בטופס זה.
             </p>
           </div>
 
@@ -161,7 +164,7 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
                 }
               />
               <Label className="cursor-pointer">
-                השכרת דירה/משרד — 100% מדמי השכירות החודשיים בתוספת מע"מ
+                השכרת דירה/משרד — <strong>100%</strong> מדמי השכירות החודשיים <em>בתוספת מע"מ</em> במזומן.
               </Label>
             </div>
             <div className="flex items-center space-x-2 space-x-reverse">
@@ -172,13 +175,13 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
                 }
               />
               <Label className="cursor-pointer">
-                קניה או מכירה — 2% מהערך הכולל של העסקה בתוספת מע"מ
+                קניה או מכירה — <strong>2%</strong> מהערך הכולל של העסקה <em>בתוספת מע"מ</em> במזומן.
               </Label>
             </div>
             <div>
               <Label>תנאים מיוחדים ו/או נוספים</Label>
               <Textarea
-                placeholder="הקלידו תנאים מיוחדים..."
+                placeholder="הקלידו תנאים מיוחדים, יוצאי דופן, חריגים וכד'."
                 value={formData.specialTerms}
                 onChange={(e) => setFormData({ ...formData, specialTerms: e.target.value })}
               />
@@ -243,6 +246,20 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
             <Button variant="outline" size="sm" onClick={addPropertyRow}>
               הוסף נכס
             </Button>
+          </div>
+
+          {/* תנאים משלימים */}
+          <div className="bg-muted p-4 rounded-lg space-y-3">
+            <h3 className="font-semibold">תנאים משלימים</h3>
+            <ol className="text-sm text-muted-foreground space-y-2 pr-5">
+              <li>התחייבות זו תהיה תקפה גם במקרה של סיוע של צד שלישי לסיום העסקה.</li>
+              <li>התשלום יבוצע <strong>מיד</strong> עם עשיית ההסכם (זכרון דברים) ו/או חוזה ו/או עם קבלת החזקה בנכס – המוקדם מביניהם.</li>
+              <li>אי תשלום בתוך 5 ימים ממועד האירוע המזכה יחייב <strong>כפל דמי תיווך</strong> לתשלום בתוך 10 ימים ממועד האירוע.</li>
+              <li>"סיטי מרקט" לא תהיה אחראית לשינויים בעמדת המוכרים/משכירים, או למקרה שבו נמכר/הושכר הנכס לאחר.</li>
+              <li>העברת מידע לאדם אחר תחייב בתשלום מלוא שכר הטרחה כאילו אני/אנחנו ביצענו את העסקה בעצמנו.</li>
+              <li>אם קונים/שוכרים פנו תחילה למתווך אחר אך העסקה נסגרה באמצעותנו — דמי התיווך יחולו כרגיל לפי התנאים לעיל.</li>
+              <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
+            </ol>
           </div>
 
           {/* פרטי לקוח */}
