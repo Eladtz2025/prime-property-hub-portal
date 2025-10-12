@@ -143,11 +143,6 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
-      <div className="mb-6 space-y-6">
-        <BrokerageFormCard />
-        <BrokerageFormsList />
-      </div>
-      
       <Dashboard
         properties={properties} 
         stats={stats ? {
@@ -170,6 +165,11 @@ const AdminDashboard = memo(() => {
         alerts={alerts} 
         onAddProperty={() => setShowAddPropertyModal(true)}
       />
+      
+      <div className="mt-6 space-y-6">
+        <BrokerageFormCard />
+        <BrokerageFormsList />
+      </div>
       
       <AddPropertyModal
         isOpen={showAddPropertyModal}
