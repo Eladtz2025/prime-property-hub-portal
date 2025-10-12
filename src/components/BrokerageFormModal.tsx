@@ -81,20 +81,20 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
     const signatureData = signatureRef.current.toDataURL();
 
     try {
-      const { error } = await supabase.from('brokerage_forms').insert({
+      const { error } = await supabase.from('brokerage_forms').insert([{
         form_date: formData.date,
         referred_by: formData.referredBy,
         fee_type_rental: formData.feeTypeRental,
         fee_type_sale: formData.feeTypeSale,
         special_terms: formData.specialTerms,
-        properties: properties.filter(p => p.address),
+        properties: properties.filter(p => p.address) as any,
         client_name: formData.clientName,
         client_id: formData.clientId,
         client_phone: formData.clientPhone,
         agent_name: formData.agentName,
         agent_id: formData.agentId,
         client_signature: signatureData,
-      });
+      }]);
 
       if (error) throw error;
 
