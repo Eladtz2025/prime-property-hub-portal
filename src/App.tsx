@@ -23,7 +23,7 @@ import ImportData from './pages/ImportData';
 import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import NotFound from './pages/NotFound';
-import SignForm from './pages/SignForm';
+
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DataProvider } from './components/DataProvider';
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,8 +44,6 @@ const AppContent: React.FC = () => {
         <Route path="/login" element={<LoginScreen />} />
         {/* Owner invitation route - accessible without authentication */}
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
-        {/* Signature form route - accessible without authentication */}
-        <Route path="/sign/:token" element={<SignForm />} />
         
         {/* Public pages - accessible to everyone */}
         <Route path="/" element={<><Header /><Index /><Footer /></>} />
