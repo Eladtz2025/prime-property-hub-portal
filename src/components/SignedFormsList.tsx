@@ -64,7 +64,14 @@ export const SignedFormsList = () => {
   };
 
   const getFormTypeName = (type: string) => {
-    return type === "brokerage_order" ? "הזמנת שירותי תיווך" : type;
+    switch(type) {
+      case "memorandum":
+        return "זכרון דברים";
+      case "brokerage_order":
+        return "הזמנת שירותי תיווך";
+      default:
+        return type;
+    }
   };
 
   if (loading) {
