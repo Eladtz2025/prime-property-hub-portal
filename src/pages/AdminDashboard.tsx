@@ -9,6 +9,7 @@ import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BrokerageFormCard } from '../components/BrokerageFormCard';
+import { BrokerageFormsList } from '../components/BrokerageFormsList';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -142,8 +143,9 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6 space-y-6">
         <BrokerageFormCard />
+        <BrokerageFormsList />
       </div>
       
       <Dashboard
