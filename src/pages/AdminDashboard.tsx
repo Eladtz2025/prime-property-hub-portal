@@ -8,6 +8,8 @@ import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SignatureFormSender } from '../components/SignatureFormSender';
+import { SignedFormsList } from '../components/SignedFormsList';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -141,6 +143,15 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
+      <div className="mb-6 flex justify-end">
+        <SignatureFormSender 
+          properties={properties.map(p => ({ 
+            id: p.id, 
+            address: p.address 
+          }))} 
+        />
+      </div>
+      
       <Dashboard
         properties={properties} 
         stats={stats ? {
@@ -163,6 +174,11 @@ const AdminDashboard = memo(() => {
         alerts={alerts} 
         onAddProperty={() => setShowAddPropertyModal(true)}
       />
+      
+      <div className="mt-8">
+        <SignedFormsList />
+      </div>
+      
       <AddPropertyModal
         isOpen={showAddPropertyModal}
         onClose={() => setShowAddPropertyModal(false)}

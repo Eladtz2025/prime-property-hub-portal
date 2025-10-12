@@ -306,7 +306,7 @@ export type Database = {
           is_approved: boolean
           last_login: string | null
           phone: string | null
-          role: string
+          role: string | null
           updated_at: string
         }
         Insert: {
@@ -317,7 +317,7 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string
+          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -328,7 +328,7 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string
+          role?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -673,6 +673,74 @@ export type Database = {
           },
         ]
       }
+      signature_forms: {
+        Row: {
+          created_at: string | null
+          form_data: Json
+          form_type: string
+          id: string
+          pdf_url: string | null
+          property_id: string | null
+          sent_at: string | null
+          sent_by: string | null
+          sent_to_email: string | null
+          sent_to_phone: string | null
+          signature_data: string | null
+          signed_at: string | null
+          signed_by_id_number: string | null
+          signed_by_name: string | null
+          status: string
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          form_data: Json
+          form_type: string
+          id?: string
+          pdf_url?: string | null
+          property_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to_email?: string | null
+          sent_to_phone?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by_id_number?: string | null
+          signed_by_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          form_data?: Json
+          form_type?: string
+          id?: string
+          pdf_url?: string | null
+          property_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to_email?: string | null
+          sent_to_phone?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by_id_number?: string | null
+          signed_by_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signature_forms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_communications: {
         Row: {
           communication_type: string
@@ -776,6 +844,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       whatsapp_contacts: {
         Row: {
@@ -915,9 +1004,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "admin"
+        | "manager"
+        | "viewer"
+        | "property_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1044,6 +1145,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "admin", "manager", "viewer", "property_owner"],
+    },
   },
 } as const
