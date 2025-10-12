@@ -8,6 +8,7 @@ import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BrokerageFormCard } from '../components/BrokerageFormCard';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -141,6 +142,10 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
+      <div className="mb-6">
+        <BrokerageFormCard />
+      </div>
+      
       <Dashboard
         properties={properties} 
         stats={stats ? {

@@ -1,0 +1,313 @@
+import React, { useState, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import SignatureCanvas from 'react-signature-canvas';
+import { Trash2, Save } from 'lucide-react';
+
+interface BrokerageFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface PropertyRow {
+  address: string;
+  floor: string;
+  rooms: string;
+  price: string;
+}
+
+export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, onClose }) => {
+  const { toast } = useToast();
+  const signatureRef = useRef<SignatureCanvas>(null);
+  
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    referredBy: '',
+    feeTypeRental: false,
+    feeTypeSale: false,
+    specialTerms: '',
+    clientName: '',
+    clientId: '',
+    clientPhone: '',
+    agentName: 'אלעד צברי',
+    agentId: '036804805',
+  });
+
+  const [properties, setProperties] = useState<PropertyRow[]>([
+    { address: '', floor: '', rooms: '', price: '' },
+    { address: '', floor: '', rooms: '', price: '' },
+    { address: '', floor: '', rooms: '', price: '' },
+  ]);
+
+  const handlePropertyChange = (index: number, field: keyof PropertyRow, value: string) => {
+    const newProperties = [...properties];
+    newProperties[index][field] = value;
+    setProperties(newProperties);
+  };
+
+  const addPropertyRow = () => {
+    setProperties([...properties, { address: '', floor: '', rooms: '', price: '' }]);
+  };
+
+  const clearSignature = () => {
+    signatureRef.current?.clear();
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.clientName || !formData.clientId || !formData.clientPhone) {
+      toast({
+        title: 'שגיאה',
+        description: 'נא למלא את כל פרטי הלקוח',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!signatureRef.current || signatureRef.current.isEmpty()) {
+      toast({
+        title: 'שגיאה',
+        description: 'נא לחתום על הטופס',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const signatureData = signatureRef.current.toDataURL();
+
+    try {
+      const { error } = await supabase.from('brokerage_forms').insert({
+        form_date: formData.date,
+        referred_by: formData.referredBy,
+        fee_type_rental: formData.feeTypeRental,
+        fee_type_sale: formData.feeTypeSale,
+        special_terms: formData.specialTerms,
+        properties: properties.filter(p => p.address),
+        client_name: formData.clientName,
+        client_id: formData.clientId,
+        client_phone: formData.clientPhone,
+        agent_name: formData.agentName,
+        agent_id: formData.agentId,
+        client_signature: signatureData,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'הטופס נשמר בהצלחה',
+        description: 'הזמנת שירותי התיווך נשמרה במערכת',
+      });
+
+      onClose();
+    } catch (error) {
+      console.error('Error saving form:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שמירת הטופס נכשלה',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">הזמנת שירותי תיווך</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* תאריך */}
+          <div>
+            <Label>תאריך</Label>
+            <Input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            />
+          </div>
+
+          {/* מופנה ע"י */}
+          <div>
+            <Label>מופנה ע"י "סיטי מרקט"</Label>
+            <Input
+              placeholder="שם הלקוח/פונה"
+              value={formData.referredBy}
+              onChange={(e) => setFormData({ ...formData, referredBy: e.target.value })}
+            />
+          </div>
+
+          {/* הצהרות */}
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <h3 className="font-semibold">הצהרות</h3>
+            <p className="text-sm text-muted-foreground">
+              אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר.
+            </p>
+          </div>
+
+          {/* שכר טרחה */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">שכר טרחה</h3>
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox
+                checked={formData.feeTypeRental}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, feeTypeRental: checked as boolean })
+                }
+              />
+              <Label className="cursor-pointer">
+                השכרת דירה/משרד — 100% מדמי השכירות החודשיים בתוספת מע"מ
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox
+                checked={formData.feeTypeSale}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, feeTypeSale: checked as boolean })
+                }
+              />
+              <Label className="cursor-pointer">
+                קניה או מכירה — 2% מהערך הכולל של העסקה בתוספת מע"מ
+              </Label>
+            </div>
+            <div>
+              <Label>תנאים מיוחדים ו/או נוספים</Label>
+              <Textarea
+                placeholder="הקלידו תנאים מיוחדים..."
+                value={formData.specialTerms}
+                onChange={(e) => setFormData({ ...formData, specialTerms: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* רשימת נכסים */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">נכסים שהופניתי אליהם</h3>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="p-2 text-right text-sm">מס'</th>
+                    <th className="p-2 text-right text-sm">כתובת</th>
+                    <th className="p-2 text-right text-sm">קומה</th>
+                    <th className="p-2 text-right text-sm">חדרים</th>
+                    <th className="p-2 text-right text-sm">מחיר</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {properties.map((prop, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="p-2 text-sm">{index + 1}</td>
+                      <td className="p-2">
+                        <Input
+                          value={prop.address}
+                          onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
+                          placeholder="כתובת"
+                          className="h-8"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={prop.floor}
+                          onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
+                          placeholder="קומה"
+                          className="h-8"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={prop.rooms}
+                          onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
+                          placeholder="חדרים"
+                          className="h-8"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={prop.price}
+                          onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
+                          placeholder="מחיר"
+                          className="h-8"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Button variant="outline" size="sm" onClick={addPropertyRow}>
+              הוסף נכס
+            </Button>
+          </div>
+
+          {/* פרטי לקוח */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">פרטי הלקוח</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>שם מלא</Label>
+                <Input
+                  value={formData.clientName}
+                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                  placeholder="שם מלא"
+                />
+              </div>
+              <div>
+                <Label>ת.ז. / דרכון</Label>
+                <Input
+                  value={formData.clientId}
+                  onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                  placeholder="מספר זהות"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>טלפון</Label>
+              <Input
+                type="tel"
+                value={formData.clientPhone}
+                onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                placeholder="טלפון"
+              />
+            </div>
+          </div>
+
+          {/* חתימה */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>חתימת הלקוח</Label>
+              <Button variant="outline" size="sm" onClick={clearSignature}>
+                <Trash2 className="h-4 w-4 ml-2" />
+                נקה חתימה
+              </Button>
+            </div>
+            <div className="border rounded-lg bg-white">
+              <SignatureCanvas
+                ref={signatureRef}
+                canvasProps={{
+                  className: 'w-full h-40 rounded-lg',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* כפתורי פעולה */}
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={onClose}>
+              ביטול
+            </Button>
+            <Button onClick={handleSubmit}>
+              <Save className="h-4 w-4 ml-2" />
+              שמור טופס
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
