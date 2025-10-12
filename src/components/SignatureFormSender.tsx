@@ -48,10 +48,10 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
       return;
     }
 
-    if (formType === "brokerage_order" && (!propertyAddress || !price)) {
+    if (formType === "brokerage_order" && (!clientName || !clientPhone || !clientAddress || !propertyAddress || !price)) {
       toast({
         title: "שגיאה",
-        description: "נא למלא כתובת נכס ומחיר",
+        description: "נא למלא את כל השדות המסומנים בכוכבית",
         variant: "destructive",
       });
       return;
@@ -114,7 +114,7 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
           status: "sent",
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -279,6 +279,37 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
 
           {formType === "brokerage_order" && (
             <>
+              <div className="space-y-2">
+                <Label htmlFor="clientName">שם לקוח *</Label>
+                <Input
+                  id="clientName"
+                  placeholder="שם מלא"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientPhone">טלפון לקוח *</Label>
+                <Input
+                  id="clientPhone"
+                  type="tel"
+                  placeholder="050-1234567"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clientAddress">כתובת לקוח *</Label>
+                <Input
+                  id="clientAddress"
+                  placeholder="רחוב, מספר, עיר"
+                  value={clientAddress}
+                  onChange={(e) => setClientAddress(e.target.value)}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="transactionType">סוג עסקה *</Label>
                 <Select value={transactionType} onValueChange={(value: any) => setTransactionType(value)}>
