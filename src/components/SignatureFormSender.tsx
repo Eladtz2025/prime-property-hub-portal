@@ -15,22 +15,21 @@ interface SignatureFormSenderProps {
 
 export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProps) => {
   const [open, setOpen] = useState(false);
-  const [formType, setFormType] = useState<"memorandum" | "viewing">("memorandum");
+  const [formType] = useState<"brokerage_order">("brokerage_order");
   const [propertyId, setPropertyId] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Fields for memorandum form
-  const [rentalPrice, setRentalPrice] = useState("");
-  const [guarantees, setGuarantees] = useState("");
-  const [entryDate, setEntryDate] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [misc, setMisc] = useState("");
+  // Fields for brokerage order form
+  const [propertyAddress, setPropertyAddress] = useState("");
+  const [floor, setFloor] = useState("");
+  const [price, setPrice] = useState("");
+  const [transactionType, setTransactionType] = useState<"rental" | "sale">("rental");
 
   const handleSendForm = async () => {
-    if (!phone || !formType) {
+    if (!phone || !propertyAddress || !price) {
       toast({
         title: "שגיאה",
         description: "נא למלא את כל השדות הנדרשים",
@@ -53,25 +52,12 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
         return;
       }
 
-      // Get property address if property selected
-      let propertyAddress = "";
-      if (propertyId) {
-        const property = properties.find(p => p.id === propertyId);
-        propertyAddress = property?.address || "";
-      }
-
-      // Build form data based on form type
-      const formData: any = {
+      const formData = {
         property_address: propertyAddress,
+        floor,
+        price,
+        transaction_type: transactionType,
       };
-
-      if (formType === "memorandum") {
-        formData.rental_price = rentalPrice;
-        formData.guarantees = guarantees;
-        formData.entry_date = entryDate;
-        formData.payment_method = paymentMethod;
-        formData.misc = misc;
-      }
 
       const { data, error } = await supabase
         .from("signature_forms")
@@ -101,13 +87,11 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
       setPhone("");
       setEmail("");
       setPropertyId("");
-      setRentalPrice("");
-      setGuarantees("");
-      setEntryDate("");
-      setPaymentMethod("");
-      setMisc("");
+      setPropertyAddress("");
+      setFloor("");
+      setPrice("");
+      setTransactionType("rental");
     } catch (error: any) {
-      console.error("Error sending form:", error);
       toast({
         title: "שגיאה",
         description: error.message || "אירעה שגיאה בשליחת הטופס",
@@ -128,29 +112,59 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>שליחת טופס לחתימה דיגיטלית</DialogTitle>
+          <DialogTitle>הזמנת שירותי תיווך</DialogTitle>
           <DialogDescription>
-            מלא את הפרטים ושלח לחתימה
+            מלא פרטי הנכס והלקוח
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="formType">סוג טופס</Label>
-            <Select value={formType} onValueChange={(value: any) => setFormType(value)}>
+            <Label htmlFor="transactionType">סוג עסקה *</Label>
+            <Select value={transactionType} onValueChange={(value: any) => setTransactionType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="memorandum">זיכרון דברים</SelectItem>
-                <SelectItem value="viewing">טופס צפייה בנכס</SelectItem>
+                <SelectItem value="rental">שכירות</SelectItem>
+                <SelectItem value="sale">מכירה/קנייה</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="propertyAddress">כתובת הנכס *</Label>
+            <Input
+              id="propertyAddress"
+              placeholder="רחוב, מספר, עיר"
+              value={propertyAddress}
+              onChange={(e) => setPropertyAddress(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="floor">קומה</Label>
+            <Input
+              id="floor"
+              placeholder="3"
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">מחיר *</Label>
+            <Input
+              id="price"
+              placeholder="5000"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </div>
+
           {properties.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="property">נכס (אופציונלי)</Label>
+              <Label htmlFor="property">קישור לנכס (אופציונלי)</Label>
               <Select value={propertyId} onValueChange={setPropertyId}>
                 <SelectTrigger>
                   <SelectValue placeholder="בחר נכס" />
@@ -167,7 +181,7 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="phone">טלפון *</Label>
+            <Label htmlFor="phone">טלפון לקוח *</Label>
             <Input
               id="phone"
               type="tel"
@@ -178,7 +192,7 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">אימייל (אופציונלי)</Label>
+            <Label htmlFor="email">אימייל לקוח (אופציונלי)</Label>
             <Input
               id="email"
               type="email"
@@ -187,60 +201,6 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-
-          {formType === "memorandum" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="rentalPrice">דמי שכירות חודשי</Label>
-                <Input
-                  id="rentalPrice"
-                  placeholder="5000 ₪"
-                  value={rentalPrice}
-                  onChange={(e) => setRentalPrice(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="guarantees">ערבויות</Label>
-                <Input
-                  id="guarantees"
-                  placeholder="ערב אחד / שני ערבים"
-                  value={guarantees}
-                  onChange={(e) => setGuarantees(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="entryDate">תאריך כניסה</Label>
-                <Input
-                  id="entryDate"
-                  type="date"
-                  value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">אמצעי תשלום</Label>
-                <Input
-                  id="paymentMethod"
-                  placeholder="העברה בנקאית / צ'קים"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="misc">שונות</Label>
-                <Textarea
-                  id="misc"
-                  placeholder="מידע נוסף..."
-                  value={misc}
-                  onChange={(e) => setMisc(e.target.value)}
-                />
-              </div>
-            </>
-          )}
         </div>
 
         <div className="flex gap-2 justify-end">

@@ -19,6 +19,8 @@ export default function SignForm() {
   const [form, setForm] = useState<any>(null);
   const [name, setName] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [signatureDate] = useState(new Date().toLocaleDateString('he-IL'));
   const [isSigned, setIsSigned] = useState(false);
 
@@ -103,7 +105,7 @@ export default function SignForm() {
   };
 
   const generatePDF = async () => {
-    if (!form || !name || !idNumber) {
+    if (!form || !name || !idNumber || !phone || !address) {
       toast({
         title: "שגיאה",
         description: "נא למלא את כל השדות",
@@ -121,62 +123,66 @@ export default function SignForm() {
       format: "a4",
     });
 
-    // Add Hebrew font support
     pdf.setFont("helvetica");
-    pdf.setR2L(true);
-
-    // Title
-    pdf.setFontSize(20);
-    pdf.text("זיכרון דברים", 105, 20, { align: "center" });
-
-    // Content
+    
+    // Header
+    pdf.setFontSize(18);
+    pdf.text("City Market", 105, 20, { align: "center" });
     pdf.setFontSize(12);
-    let y = 40;
-    const lineHeight = 10;
-
-    pdf.text(`שם: ${name}`, 20, y);
-    y += lineHeight;
-    pdf.text(`ת.ז: ${idNumber}`, 20, y);
-    y += lineHeight;
-    pdf.text(`תאריך: ${signatureDate}`, 20, y);
-    y += lineHeight * 2;
-
-    if (form.form_data.property_address) {
-      pdf.text(`כתובת הנכס: ${form.form_data.property_address}`, 20, y);
-      y += lineHeight;
+    pdf.text("Real estate agency 1711", 105, 28, { align: "center" });
+    pdf.text("www.ctmarket.co.il | 077-9309400", 105, 35, { align: "center" });
+    
+    let y = 50;
+    pdf.setFontSize(14);
+    pdf.text("Brokerage Service Order", 105, y, { align: "center" });
+    
+    y += 15;
+    pdf.setFontSize(11);
+    
+    // Client details
+    pdf.text("Client Details:", 20, y);
+    y += 8;
+    pdf.text(`Name: ${name}`, 25, y);
+    y += 7;
+    pdf.text(`ID Number: ${idNumber}`, 25, y);
+    y += 7;
+    pdf.text(`Phone: ${phone}`, 25, y);
+    y += 7;
+    pdf.text(`Address: ${address}`, 25, y);
+    
+    y += 12;
+    
+    // Property details
+    if (form.form_data) {
+      pdf.text("Property Details:", 20, y);
+      y += 8;
+      
+      const data = form.form_data;
+      pdf.text(`Address: ${data.property_address || 'N/A'}`, 25, y);
+      y += 7;
+      if (data.floor) {
+        pdf.text(`Floor: ${data.floor}`, 25, y);
+        y += 7;
+      }
+      pdf.text(`Price: ${data.price || 'N/A'}`, 25, y);
+      y += 7;
+      pdf.text(`Transaction Type: ${data.transaction_type === 'rental' ? 'Rental' : 'Sale/Purchase'}`, 25, y);
+      y += 12;
     }
-
-    if (form.form_data.rental_price) {
-      pdf.text(`דמי שכירות חודשי: ${form.form_data.rental_price}`, 20, y);
-      y += lineHeight;
-    }
-
-    if (form.form_data.guarantees) {
-      pdf.text(`ערבויות: ${form.form_data.guarantees}`, 20, y);
-      y += lineHeight;
-    }
-
-    if (form.form_data.entry_date) {
-      pdf.text(`תאריך כניסה: ${form.form_data.entry_date}`, 20, y);
-      y += lineHeight;
-    }
-
-    if (form.form_data.payment_method) {
-      pdf.text(`אמצעי תשלום: ${form.form_data.payment_method}`, 20, y);
-      y += lineHeight;
-    }
-
-    if (form.form_data.misc) {
-      pdf.text(`שונות: ${form.form_data.misc}`, 20, y);
-      y += lineHeight * 2;
-    }
-
-    // Add signature
-    y += lineHeight;
+    
+    // Terms
+    pdf.setFontSize(10);
+    pdf.text("I hereby confirm that I was referred to the above property by City Market,", 20, y);
+    y += 6;
+    pdf.text("and I undertake to pay brokerage fees according to the terms.", 20, y);
+    
+    y += 15;
+    
+    // Signature
+    pdf.text("Signature:", 20, y);
     const signatureData = canvas.toDataURL("image/png");
-    pdf.text("חתימה:", 20, y);
     y += 5;
-    pdf.addImage(signatureData, "PNG", 20, y, 60, 30);
+    pdf.addImage(signatureData, "PNG", 20, y, 80, 40);
 
     return pdf;
   };
@@ -284,9 +290,7 @@ export default function SignForm() {
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <Card>
         <CardHeader>
-          <CardTitle>
-            {form.form_type === "memorandum" ? "זיכרון דברים" : "טופס צפייה בנכס"}
-          </CardTitle>
+          <CardTitle>הזמנת שירותי תיווך - City Market</CardTitle>
           <CardDescription>
             אנא מלא את הפרטים וחתום בתחתית הטופס
           </CardDescription>
@@ -309,7 +313,27 @@ export default function SignForm() {
                 id="idNumber"
                 value={idNumber}
                 onChange={(e) => setIdNumber(e.target.value)}
-                placeholder="הזן מספר תעודת זהות"
+                placeholder="9 ספרות"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">טלפון *</Label>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="050-1234567"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">כתובת *</Label>
+              <Input
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="רחוב, עיר"
               />
             </div>
 
@@ -318,45 +342,39 @@ export default function SignForm() {
               <Input value={signatureDate} disabled />
             </div>
 
-            {form.form_data.property_address && (
-              <div className="space-y-2">
-                <Label>כתובת הנכס</Label>
-                <Input value={form.form_data.property_address} disabled />
-              </div>
-            )}
-
-            {form.form_type === "memorandum" && (
+            {form.form_data && (
               <>
-                {form.form_data.rental_price && (
-                  <div className="space-y-2">
-                    <Label>דמי שכירות חודשי</Label>
-                    <Input value={form.form_data.rental_price} disabled />
-                  </div>
-                )}
-                {form.form_data.guarantees && (
-                  <div className="space-y-2">
-                    <Label>ערבויות</Label>
-                    <Input value={form.form_data.guarantees} disabled />
-                  </div>
-                )}
-                {form.form_data.entry_date && (
-                  <div className="space-y-2">
-                    <Label>תאריך כניסה</Label>
-                    <Input value={form.form_data.entry_date} disabled />
-                  </div>
-                )}
-                {form.form_data.payment_method && (
-                  <div className="space-y-2">
-                    <Label>אמצעי תשלום</Label>
-                    <Input value={form.form_data.payment_method} disabled />
-                  </div>
-                )}
-                {form.form_data.misc && (
-                  <div className="space-y-2">
-                    <Label>שונות</Label>
-                    <Input value={form.form_data.misc} disabled />
-                  </div>
-                )}
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-2">פרטי הנכס</h3>
+                  
+                  {form.form_data.property_address && (
+                    <div className="space-y-2">
+                      <Label>כתובת הנכס</Label>
+                      <Input value={form.form_data.property_address} disabled />
+                    </div>
+                  )}
+                  
+                  {form.form_data.floor && (
+                    <div className="space-y-2">
+                      <Label>קומה</Label>
+                      <Input value={form.form_data.floor} disabled />
+                    </div>
+                  )}
+                  
+                  {form.form_data.price && (
+                    <div className="space-y-2">
+                      <Label>מחיר</Label>
+                      <Input value={form.form_data.price} disabled />
+                    </div>
+                  )}
+                  
+                  {form.form_data.transaction_type && (
+                    <div className="space-y-2">
+                      <Label>סוג עסקה</Label>
+                      <Input value={form.form_data.transaction_type === 'rental' ? 'שכירות' : 'מכירה/קנייה'} disabled />
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -391,7 +409,7 @@ export default function SignForm() {
           <div className="flex gap-2">
             <Button
               onClick={handleSubmit}
-              disabled={submitting || !name || !idNumber}
+              disabled={submitting || !name || !idNumber || !phone || !address}
               className="flex-1"
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

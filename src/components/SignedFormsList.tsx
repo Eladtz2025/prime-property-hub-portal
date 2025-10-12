@@ -64,7 +64,7 @@ export const SignedFormsList = () => {
   };
 
   const getFormTypeName = (type: string) => {
-    return type === "memorandum" ? "זיכרון דברים" : "טופס צפייה בנכס";
+    return type === "brokerage_order" ? "הזמנת שירותי תיווך" : type;
   };
 
   if (loading) {
