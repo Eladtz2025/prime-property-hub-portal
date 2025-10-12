@@ -183,30 +183,31 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">טלפון לקוח *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="050-1234567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">אימייל לקוח (אופציונלי)</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
 
           {formType === "memorandum" && (
             <>
+              <div className="space-y-2">
+                <Label htmlFor="phone">טלפון לקוח *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="050-1234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">אימייל לקוח (אופציונלי)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
               {properties.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="property">נכס (אופציונלי)</Label>
@@ -279,6 +280,28 @@ export const SignatureFormSender = ({ properties = [] }: SignatureFormSenderProp
 
           {formType === "brokerage_order" && (
             <>
+              <div className="space-y-2">
+                <Label htmlFor="phone">טלפון ליצירת קשר *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="050-1234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">אימייל ליצירת קשר (אופציונלי)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="clientName">שם לקוח *</Label>
                 <Input
