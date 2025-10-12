@@ -114,7 +114,6 @@ export default function SignForm() {
       return null;
     }
 
-    // For brokerage_order, also require phone and address
     if (form.form_type === "brokerage_order" && (!phone || !address)) {
       toast({
         title: "שגיאה",
@@ -136,7 +135,7 @@ export default function SignForm() {
     pdf.setFont("helvetica");
     
     if (form.form_type === "brokerage_order") {
-      // Brokerage Order PDF
+      // Header
       pdf.setFontSize(18);
       pdf.text("City Market", 105, 20, { align: "center" });
       pdf.setFontSize(12);
@@ -144,100 +143,143 @@ export default function SignForm() {
       pdf.text("www.ctmarket.co.il | 077-9309400", 105, 35, { align: "center" });
       
       let y = 50;
-      pdf.setFontSize(14);
-      pdf.text("Brokerage Service Order", 105, y, { align: "center" });
+      pdf.setFontSize(10);
       
-      y += 15;
-      pdf.setFontSize(11);
+      // Terms in Hebrew (right-to-left)
+      pdf.text("I hereby confirm that the properties listed below were not previously known to me", 20, y);
+      y += 5;
+      pdf.text("from any other source, and I was referred to them by City Market.", 20, y);
+      y += 10;
       
-      pdf.text("Client Details:", 20, y);
-      y += 8;
-      pdf.text(`Name: ${name}`, 25, y);
-      y += 7;
-      pdf.text(`ID Number: ${idNumber}`, 25, y);
-      y += 7;
-      pdf.text(`Phone: ${phone}`, 25, y);
-      y += 7;
-      pdf.text(`Address: ${address}`, 25, y);
+      // Client signature section
+      pdf.setFontSize(12);
+      pdf.text("Client Signature", 20, y);
+      y += 10;
       
-      y += 12;
+      // Property details table
+      pdf.setFontSize(10);
+      pdf.text("Address", 20, y);
+      pdf.text("Floor", 80, y);
+      pdf.text("Price No.", 120, y);
+      y += 7;
       
       if (form.form_data) {
-        pdf.text("Property Details:", 20, y);
-        y += 8;
-        
-        const data = form.form_data;
-        pdf.text(`Address: ${data.property_address || 'N/A'}`, 25, y);
-        y += 7;
-        if (data.floor) {
-          pdf.text(`Floor: ${data.floor}`, 25, y);
-          y += 7;
-        }
-        pdf.text(`Price: ${data.price || 'N/A'}`, 25, y);
-        y += 7;
-        pdf.text(`Transaction Type: ${data.transaction_type === 'rental' ? 'Rental' : 'Sale/Purchase'}`, 25, y);
-        y += 12;
+        pdf.text(form.form_data.property_address || "", 20, y);
+        pdf.text(form.form_data.floor || "", 80, y);
+        pdf.text(form.form_data.price || "", 120, y);
       }
+      y += 10;
       
-      pdf.setFontSize(10);
-      pdf.text("I hereby confirm that I was referred to the above property by City Market,", 20, y);
+      // Transaction type
+      pdf.text(`For: ${form.form_data?.transaction_type === 'rental' ? 'Rental' : 'Purchase'}`, 20, y);
+      y += 10;
+      
+      // Brokerage fees terms
+      pdf.setFontSize(9);
+      pdf.text("I hereby undertake to pay you for brokerage as follows:", 20, y);
+      y += 7;
+      
+      if (form.form_data?.transaction_type === 'rental') {
+        pdf.text("For rental of apartment/office: 100% of monthly rent + VAT in cash", 25, y);
+      } else {
+        pdf.text("For purchase or sale: 2% of the total value + VAT in cash", 25, y);
+      }
       y += 6;
-      pdf.text("and I undertake to pay brokerage fees according to the terms.", 20, y);
+      pdf.text("D.M.P: 5% of key money including the part to be transferred to the landlord, in cash", 25, y);
+      y += 10;
       
+      // Additional terms
+      pdf.text("This undertaking is valid and binding even if I am assisted by a third party.", 20, y);
+      y += 6;
+      pdf.text("I undertake to pay the above amount immediately upon signing the agreement.", 20, y);
+      y += 10;
+      
+      // Client details
+      pdf.setFontSize(10);
+      pdf.text("Client Details:", 20, y);
+      y += 7;
+      pdf.text(`Name: ${name}`, 25, y);
+      y += 6;
+      pdf.text(`ID: ${idNumber}`, 25, y);
+      y += 6;
+      pdf.text(`Phone: ${phone}`, 25, y);
+      y += 6;
+      pdf.text(`Address: ${address}`, 25, y);
       y += 15;
       
+      // Signature
       pdf.text("Signature:", 20, y);
       const signatureData = canvas.toDataURL("image/png");
       y += 5;
       pdf.addImage(signatureData, "PNG", 20, y, 80, 40);
     } else {
-      // Memorandum PDF (original)
+      // Memorandum PDF (זכרון דברים)
       pdf.setR2L(true);
-      pdf.setFontSize(20);
+      pdf.setFontSize(16);
       pdf.text("זכרון דברים", 105, 20, { align: "center" });
 
-      pdf.setFontSize(12);
+      pdf.setFontSize(11);
       let y = 40;
-      const lineHeight = 10;
+      const lineHeight = 8;
 
-      pdf.text(`שם: ${name}`, 20, y);
+      // Main content
+      pdf.text(`אני החתום מטה ${name} ת.ז ${idNumber}`, 20, y);
       y += lineHeight;
-      pdf.text(`ת.ז: ${idNumber}`, 20, y);
+      pdf.text(`מאשר בזאת כי ברצוני לשכור את הדירה ברחוב`, 20, y);
       y += lineHeight;
-      pdf.text(`תאריך: ${signatureDate}`, 20, y);
-      y += lineHeight * 2;
-
+      
       if (form.form_data.property_address) {
-        pdf.text(`כתובת הנכס: ${form.form_data.property_address}`, 20, y);
+        pdf.text(`${form.form_data.property_address}`, 20, y);
         y += lineHeight;
       }
+      
+      pdf.text(`אשר הוצגה ע"י סיטי מרקט נכסים`, 20, y);
+      y += lineHeight;
+      pdf.text(`בתאריך ${signatureDate}`, 20, y);
+      y += lineHeight * 2;
+
+      // Terms
+      pdf.setFontSize(10);
+      pdf.text("ליידוע כי בחתימתי על זיכרון דברים זה אני מתחייב לשכור את הדירה", 20, y);
+      y += lineHeight;
+      pdf.text("לפי התנאים לעיל ולהלן", 20, y);
+      y += lineHeight * 2;
+
+      // Property details
+      pdf.setFontSize(11);
+      pdf.text("פרטים נוספים:", 20, y);
+      y += lineHeight;
 
       if (form.form_data.rental_price) {
-        pdf.text(`דמי שכירות חודשי: ${form.form_data.rental_price}`, 20, y);
+        pdf.text(`מחיר השכירות: ${form.form_data.rental_price}`, 25, y);
         y += lineHeight;
       }
 
       if (form.form_data.guarantees) {
-        pdf.text(`ערבויות: ${form.form_data.guarantees}`, 20, y);
+        pdf.text(`ערבויות: ${form.form_data.guarantees}`, 25, y);
         y += lineHeight;
       }
 
       if (form.form_data.entry_date) {
-        pdf.text(`תאריך כניסה: ${form.form_data.entry_date}`, 20, y);
+        pdf.text(`תאריך כניסה: ${form.form_data.entry_date}`, 25, y);
         y += lineHeight;
       }
 
       if (form.form_data.payment_method) {
-        pdf.text(`אמצעי תשלום: ${form.form_data.payment_method}`, 20, y);
+        pdf.text(`צורת תשלום: ${form.form_data.payment_method}`, 25, y);
         y += lineHeight;
       }
 
       if (form.form_data.misc) {
-        pdf.text(`שונות: ${form.form_data.misc}`, 20, y);
+        pdf.text(`שונות: ${form.form_data.misc}`, 25, y);
         y += lineHeight * 2;
       }
 
       y += lineHeight;
+      pdf.text(`השוכר: ${name}`, 20, y);
+      y += lineHeight * 2;
+
+      // Signature
       const signatureData = canvas.toDataURL("image/png");
       pdf.text("חתימה:", 20, y);
       y += 5;
