@@ -38,11 +38,18 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
   const [editName, setEditName] = useState('');
   const [editContent, setEditContent] = useState('');
   
+  // Filter by sent time
+  const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [customHours, setCustomHours] = useState<string>('');
+  const [customDays, setCustomDays] = useState<string>('');
+  const [sentMessages, setSentMessages] = useState<any[]>([]);
+  
   const { toast } = useToast();
   const { sendWhatsAppMessage } = useWhatsAppSender();
 
   useEffect(() => {
     loadTemplates();
+    loadSentMessages();
   }, []);
 
   const loadTemplates = async () => {
@@ -56,6 +63,21 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
       setTemplates(data || []);
     } catch (error) {
       console.error('Error loading templates:', error);
+    }
+  };
+
+  const loadSentMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_messages')
+        .select('*')
+        .eq('direction', 'outbound')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSentMessages(data || []);
+    } catch (error) {
+      console.error('Error loading sent messages:', error);
     }
   };
 
@@ -204,10 +226,71 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
       });
     } finally {
       setLoading(false);
+      loadSentMessages(); // Refresh sent messages after sending
     }
   };
 
-  const propertiesWithPhone = properties.filter(p => p.ownerPhone && p.ownerPhone.trim() !== '');
+  const formatPhone = (phone: string) => {
+    if (!phone) return '';
+    // Convert both 972xxxxxxxxx and 05xxxxxxxx to same format for comparison
+    const normalized = phone.startsWith('972') ? '0' + phone.substring(3) : phone;
+    return normalized;
+  };
+
+  const getFilteredProperties = () => {
+    const propertiesWithPhone = properties.filter(p => p.ownerPhone && p.ownerPhone.trim() !== '');
+    
+    if (timeFilter === 'all') {
+      return propertiesWithPhone;
+    }
+
+    let filterDate = new Date();
+    
+    switch (timeFilter) {
+      case '1hour':
+        filterDate.setHours(filterDate.getHours() - 1);
+        break;
+      case '2hours':
+        filterDate.setHours(filterDate.getHours() - 2);
+        break;
+      case '1day':
+        filterDate.setDate(filterDate.getDate() - 1);
+        break;
+      case '2days':
+        filterDate.setDate(filterDate.getDate() - 2);
+        break;
+      case 'customHours':
+        if (customHours) {
+          filterDate.setHours(filterDate.getHours() - parseInt(customHours));
+        } else {
+          return propertiesWithPhone;
+        }
+        break;
+      case 'customDays':
+        if (customDays) {
+          filterDate.setDate(filterDate.getDate() - parseInt(customDays));
+        } else {
+          return propertiesWithPhone;
+        }
+        break;
+      default:
+        return propertiesWithPhone;
+    }
+
+    // Filter properties that had messages sent in the timeframe
+    const sentToPhones = new Set(
+      sentMessages
+        .filter(msg => new Date(msg.created_at) >= filterDate)
+        .map(msg => formatPhone(msg.phone))
+    );
+
+    return propertiesWithPhone.filter(property => {
+      const normalizedPhone = formatPhone(property.ownerPhone);
+      return sentToPhones.has(normalizedPhone);
+    });
+  };
+
+  const propertiesWithPhone = getFilteredProperties();
 
   return (
     <div className="space-y-6 p-6">
@@ -336,7 +419,52 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
               <Badge variant="secondary">{propertiesWithPhone.length} נכסים</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Time Filter */}
+            <div className="space-y-3 pb-4 border-b">
+              <label className="text-sm font-medium">סנן לפי זמן שליחה</label>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר טווח זמן" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">כל הנכסים</SelectItem>
+                  <SelectItem value="1hour">שעה אחרונה</SelectItem>
+                  <SelectItem value="2hours">שעתיים אחרונות</SelectItem>
+                  <SelectItem value="1day">יום אחרון</SelectItem>
+                  <SelectItem value="2days">יומיים אחרונים</SelectItem>
+                  <SelectItem value="customHours">מספר שעות מותאם אישית</SelectItem>
+                  <SelectItem value="customDays">מספר ימים מותאם אישית</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {timeFilter === 'customHours' && (
+                <div>
+                  <label className="text-sm text-muted-foreground">כמות שעות</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={customHours}
+                    onChange={(e) => setCustomHours(e.target.value)}
+                    placeholder="הזן מספר שעות"
+                  />
+                </div>
+              )}
+
+              {timeFilter === 'customDays' && (
+                <div>
+                  <label className="text-sm text-muted-foreground">כמות ימים</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    placeholder="הזן מספר ימים"
+                  />
+                </div>
+              )}
+            </div>
+
             <ScrollArea className="h-[600px]">
               {propertiesWithPhone.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8 text-sm">
