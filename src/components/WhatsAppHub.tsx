@@ -52,6 +52,11 @@ export const WhatsAppHub: React.FC = () => {
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [bulkMessage, setBulkMessage] = useState('');
   
+  // Filter by sent time
+  const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [customHours, setCustomHours] = useState<string>('');
+  const [customDays, setCustomDays] = useState<string>('');
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -254,6 +259,62 @@ export const WhatsAppHub: React.FC = () => {
     );
   };
 
+  const getFilteredProperties = () => {
+    if (timeFilter === 'all') {
+      return properties;
+    }
+
+    let filterDate = new Date();
+    
+    switch (timeFilter) {
+      case '1hour':
+        filterDate.setHours(filterDate.getHours() - 1);
+        break;
+      case '2hours':
+        filterDate.setHours(filterDate.getHours() - 2);
+        break;
+      case '1day':
+        filterDate.setDate(filterDate.getDate() - 1);
+        break;
+      case '2days':
+        filterDate.setDate(filterDate.getDate() - 2);
+        break;
+      case 'customHours':
+        if (customHours) {
+          filterDate.setHours(filterDate.getHours() - parseInt(customHours));
+        } else {
+          return properties;
+        }
+        break;
+      case 'customDays':
+        if (customDays) {
+          filterDate.setDate(filterDate.getDate() - parseInt(customDays));
+        } else {
+          return properties;
+        }
+        break;
+      default:
+        return properties;
+    }
+
+    // Filter properties that had messages sent in the timeframe
+    const sentToPhones = new Set(
+      messages
+        .filter(msg => 
+          msg.direction === 'outbound' && 
+          new Date(msg.created_at) >= filterDate
+        )
+        .map(msg => msg.phone.replace(/^972/, '0'))
+    );
+
+    return properties.filter(property => {
+      const normalizedPhone = formatPhone(property.owner_phone);
+      return sentToPhones.has(normalizedPhone);
+    });
+  };
+
+  const filteredProperties = getFilteredProperties();
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
@@ -350,9 +411,56 @@ export const WhatsAppHub: React.FC = () => {
               </div>
 
               <div>
+                <label className="text-sm font-medium mb-2 block">סנן לפי זמן שליחה</label>
+                <div className="space-y-3 mb-4">
+                  <Select value={timeFilter} onValueChange={setTimeFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר טווח זמן" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל הנכסים</SelectItem>
+                      <SelectItem value="1hour">שעה אחרונה</SelectItem>
+                      <SelectItem value="2hours">שעתיים אחרונות</SelectItem>
+                      <SelectItem value="1day">יום אחרון</SelectItem>
+                      <SelectItem value="2days">יומיים אחרונים</SelectItem>
+                      <SelectItem value="customHours">מספר שעות מותאם אישית</SelectItem>
+                      <SelectItem value="customDays">מספר ימים מותאם אישית</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {timeFilter === 'customHours' && (
+                    <div>
+                      <label className="text-sm text-muted-foreground">כמות שעות</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={customHours}
+                        onChange={(e) => setCustomHours(e.target.value)}
+                        placeholder="הזן מספר שעות"
+                      />
+                    </div>
+                  )}
+
+                  {timeFilter === 'customDays' && (
+                    <div>
+                      <label className="text-sm text-muted-foreground">כמות ימים</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={customDays}
+                        onChange={(e) => setCustomDays(e.target.value)}
+                        placeholder="הזן מספר ימים"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">בחר נכסים ({selectedProperties.length} נבחרו)</label>
-                <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
-                  {properties.map(property => (
+                {filteredProperties.length > 0 ? (
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {filteredProperties.map(property => (
                     <div 
                       key={property.id}
                       className={`p-3 rounded cursor-pointer transition-colors ${
@@ -368,7 +476,12 @@ export const WhatsAppHub: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="border rounded-md p-8 text-center text-muted-foreground">
+                    לא נמצאו נכסים בטווח הזמן שנבחר
+                  </div>
+                )}
               </div>
 
               <div>
