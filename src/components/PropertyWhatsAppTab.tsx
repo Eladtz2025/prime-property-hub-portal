@@ -277,16 +277,17 @@ export const PropertyWhatsAppTab: React.FC<PropertyWhatsAppTabProps> = ({ proper
         return propertiesWithPhone;
     }
 
-    // Filter properties that had messages sent in the timeframe
+    // Get phones that received messages in the timeframe
     const sentToPhones = new Set(
       sentMessages
         .filter(msg => new Date(msg.created_at) >= filterDate)
         .map(msg => formatPhone(msg.phone))
     );
 
+    // FILTER OUT properties that already received messages (show only who DIDN'T get messages)
     return propertiesWithPhone.filter(property => {
       const normalizedPhone = formatPhone(property.ownerPhone);
-      return sentToPhones.has(normalizedPhone);
+      return !sentToPhones.has(normalizedPhone); // Changed from has to !has
     });
   };
 
