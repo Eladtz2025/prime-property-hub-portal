@@ -24,6 +24,11 @@ serve(async (req) => {
         await handleIncomingMessage(webhookData);
         break;
       
+      case 'outgoingAPIMessageReceived':
+      case 'outgoingMessageReceived':
+        await handleOutgoingMessage(webhookData);
+        break;
+      
       case 'outgoingMessageStatus':
         await handleMessageStatus(webhookData);
         break;
@@ -88,6 +93,49 @@ async function handleIncomingMessage(webhookData: any) {
     .upsert({
       phone: phone,
       name: senderName,
+      is_whatsapp_user: true,
+      last_seen: new Date(timestamp * 1000).toISOString()
+    }, {
+      onConflict: 'phone'
+    });
+}
+
+async function handleOutgoingMessage(webhookData: any) {
+  const { 
+    chatId,
+    idMessage,
+    timestamp,
+    messageData
+  } = webhookData;
+
+  // For outgoing messages, chatId is the recipient's phone number
+  const recipientPhone = chatId.replace('@c.us', '');
+  
+  console.log(`Outgoing message to ${recipientPhone}: ${messageData?.textMessageData?.textMessage || 'Non-text message'}`);
+
+  // Save outgoing message to database
+  const { error: dbError } = await supabase
+    .from('whatsapp_messages')
+    .insert({
+      phone: recipientPhone,
+      message: messageData?.textMessageData?.textMessage || '[Media/Other]',
+      whatsapp_message_id: idMessage,
+      status: 'sent',
+      direction: 'outbound',
+      api_source: 'green_api',
+      message_type: messageData?.typeMessage || 'textMessage',
+      timestamp: new Date(timestamp * 1000).toISOString()
+    });
+
+  if (dbError) {
+    console.error('Error saving outgoing message:', dbError);
+  }
+
+  // Update contact information
+  await supabase
+    .from('whatsapp_contacts')
+    .upsert({
+      phone: recipientPhone,
       is_whatsapp_user: true,
       last_seen: new Date(timestamp * 1000).toISOString()
     }, {
