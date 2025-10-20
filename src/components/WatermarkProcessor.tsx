@@ -54,28 +54,48 @@ export const WatermarkProcessor = () => {
         setProgress(((i + 1) / totalFiles) * 100);
 
         try {
+          console.log(`[${i + 1}/${totalFiles}] Processing: ${file.name}`);
+          console.log('File metadata:', file.metadata);
+          
           // Download the image data directly from storage
+          console.log('Downloading image from storage...');
           const { data: imageData, error: downloadError } = await supabase.storage
             .from('property-images')
             .download(file.name);
 
           if (downloadError) {
+            console.error('Download error:', downloadError);
             throw new Error(`Failed to download image: ${downloadError.message}`);
           }
+
+          console.log('Image downloaded successfully:', {
+            size: imageData.size,
+            type: imageData.type
+          });
           
           // Save original to property-images-original bucket
+          console.log('Saving original to property-images-original...');
           const { error: saveOriginalError } = await supabase.storage
             .from('property-images-original')
             .upload(file.name, imageData, { upsert: true });
 
           if (saveOriginalError) {
+            console.error('Save original error:', saveOriginalError);
             throw new Error(`Failed to save original: ${saveOriginalError.message}`);
           }
 
+          console.log('Original saved successfully');
+
           // Convert blob to File for watermarking
           const imageFile = new File([imageData], file.name, { type: imageData.type });
+          console.log('Created File object:', {
+            name: imageFile.name,
+            size: imageFile.size,
+            type: imageFile.type
+          });
 
           // Add watermark
+          console.log('Adding watermark...');
           const watermarkedBlob = await addWatermarkToImage(imageFile, {
             logoUrl,
             opacity: 0.4,
@@ -84,6 +104,8 @@ export const WatermarkProcessor = () => {
             offsetY: 20
           });
 
+          console.log('Watermark added successfully, blob size:', watermarkedBlob.size);
+
           // Upload watermarked image (replace original)
           const watermarkedFile = new File(
             [watermarkedBlob],
@@ -91,21 +113,24 @@ export const WatermarkProcessor = () => {
             { type: 'image/jpeg' }
           );
 
+          console.log('Uploading watermarked image...');
           const { error: uploadError } = await supabase.storage
             .from('property-images')
             .upload(file.name, watermarkedFile, { upsert: true });
 
           if (uploadError) {
+            console.error('Upload error:', uploadError);
             throw new Error(`Failed to upload watermarked image: ${uploadError.message}`);
           }
 
+          console.log('✅ Successfully processed:', file.name);
           processedResults.push({
             path: file.name,
             status: 'success',
             message: 'הוסף watermark בהצלחה'
           });
         } catch (error) {
-          console.error(`Error processing ${file.name}:`, error);
+          console.error(`❌ Error processing ${file.name}:`, error);
           processedResults.push({
             path: file.name,
             status: 'error',

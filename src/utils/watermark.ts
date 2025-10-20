@@ -41,16 +41,19 @@ export async function addWatermarkToImage(
     const reader = new FileReader();
     reader.onload = (e) => {
       const imageDataUrl = e.target?.result as string;
+      console.log('Image converted to base64, length:', imageDataUrl?.length);
       
       // Load the logo first
       const logoImage = new Image();
       logoImage.crossOrigin = 'anonymous';
       
       logoImage.onload = () => {
+        console.log('Logo loaded successfully:', logoUrl);
         // Now load the main image
         const mainImage = new Image();
         
         mainImage.onload = () => {
+          console.log('Main image loaded successfully, dimensions:', mainImage.width, 'x', mainImage.height);
           try {
             // Set canvas size to match image
             canvas.width = mainImage.width;
