@@ -85,7 +85,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         let finalDataUrl = compressedDataUrl;
         try {
           finalDataUrl = await addWatermark(compressedDataUrl, {
-            logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+            logoUrl: '/images/city-market-logo.png',
             position: 'bottom-right',
             opacity: 0.9,
             logoSize: 15,

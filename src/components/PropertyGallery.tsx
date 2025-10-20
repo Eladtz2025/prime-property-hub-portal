@@ -93,7 +93,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
         let watermarkedDataUrl: string;
         try {
           watermarkedDataUrl = await addWatermarkToFile(file, {
-            logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+            logoUrl: '/images/city-market-logo.png',
             position: 'bottom-right',
             opacity: 0.9,
             logoSize: 15,
