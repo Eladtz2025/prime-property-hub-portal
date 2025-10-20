@@ -153,38 +153,10 @@ async function ensureLogoInStorage(supabase: any, supabaseUrl: string) {
       return;
     }
 
-    console.log('Logo not found in storage, uploading...');
-
-    // Try to fetch logo from public folder
-    const publicLogoPath = '/images/city-market-logo.png';
-    const logoUrl = `${supabaseUrl}${publicLogoPath}`;
-    
-    console.log(`Fetching logo from: ${logoUrl}`);
-    
-    const logoResponse = await fetch(logoUrl);
-    if (!logoResponse.ok) {
-      throw new Error(`Failed to fetch logo from public folder: ${logoResponse.statusText}`);
-    }
-
-    const logoBlob = await logoResponse.blob();
-    const logoBuffer = await logoBlob.arrayBuffer();
-
-    // Upload to storage
-    const { error: uploadError } = await supabase
-      .storage
-      .from('property-images')
-      .upload(logoPath, logoBuffer, {
-        contentType: 'image/png',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    console.log('Logo uploaded successfully to storage');
+    console.log('Logo not found in storage, need to upload manually');
+    throw new Error('Logo not found. Please upload city-market-logo.png to the property-images bucket via Supabase Dashboard.');
   } catch (error) {
-    console.error('Error ensuring logo in storage:', error);
-    throw new Error(`Logo upload failed: ${error.message}. Please manually upload city-market-logo.png to property-images bucket.`);
+    console.error('Error checking logo in storage:', error);
+    throw error;
   }
 }
