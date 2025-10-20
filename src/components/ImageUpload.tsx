@@ -89,7 +89,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               position: 'bottom-right',
               opacity: 0.5,
               logoSize: 20,
-              padding: 15
+              padding: { x: 15, y: 45 }
             });
           console.log('✅ Watermark applied successfully');
         } catch (watermarkError) {

@@ -7,7 +7,7 @@ export interface WatermarkOptions {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
   opacity?: number;
   logoSize?: number; // percentage of image width (0-100)
-  padding?: number; // padding from edges in pixels
+  padding?: number | { x: number; y: number }; // padding from edges in pixels
 }
 
 /**
@@ -32,28 +32,31 @@ const calculatePosition = (
   logoWidth: number,
   logoHeight: number,
   position: string,
-  padding: number
+  padding: number | { x: number; y: number }
 ): { x: number; y: number } => {
+  const paddingX = typeof padding === 'number' ? padding : padding.x;
+  const paddingY = typeof padding === 'number' ? padding : padding.y;
+  
   switch (position) {
     case 'bottom-right':
       return {
-        x: canvasWidth - logoWidth - padding,
-        y: canvasHeight - logoHeight - padding
+        x: canvasWidth - logoWidth - paddingX,
+        y: canvasHeight - logoHeight - paddingY
       };
     case 'bottom-left':
       return {
-        x: padding,
-        y: canvasHeight - logoHeight - padding
+        x: paddingX,
+        y: canvasHeight - logoHeight - paddingY
       };
     case 'top-right':
       return {
-        x: canvasWidth - logoWidth - padding,
-        y: padding
+        x: canvasWidth - logoWidth - paddingX,
+        y: paddingY
       };
     case 'top-left':
       return {
-        x: padding,
-        y: padding
+        x: paddingX,
+        y: paddingY
       };
     case 'center':
       return {
@@ -62,8 +65,8 @@ const calculatePosition = (
       };
     default:
       return {
-        x: canvasWidth - logoWidth - padding,
-        y: canvasHeight - logoHeight - padding
+        x: canvasWidth - logoWidth - paddingX,
+        y: canvasHeight - logoHeight - paddingY
       };
   }
 };
