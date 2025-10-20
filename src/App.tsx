@@ -22,7 +22,7 @@ import { Login } from './pages/Login';
 import ImportData from './pages/ImportData';
 import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
-import WatermarkManager from './pages/WatermarkManager';
+
 import NotFound from './pages/NotFound';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -145,16 +145,6 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AllFeatures />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
-            <Route 
-              path="/admin-dashboard/watermark" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <WatermarkManager />
                   </ProtectedRoute>
                 </Layout>
               } 
