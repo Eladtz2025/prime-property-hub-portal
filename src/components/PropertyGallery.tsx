@@ -97,7 +97,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           position: 'bottom-right',
           opacity: 0.5,
           logoSize: 20,
-          padding: { x: 2, y: 45 }
+          padding: { x: 0.5, y: 45 }
         });
           console.log('✅ Watermark applied');
         } catch (watermarkError) {
