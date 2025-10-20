@@ -37,71 +37,84 @@ export async function addWatermarkToImage(
       return;
     }
 
-    // Load the logo first
-    const logoImage = new Image();
-    logoImage.crossOrigin = 'anonymous';
-    
-    logoImage.onload = () => {
-      // Now load the main image
-      const mainImage = new Image();
+    // Convert image file to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageDataUrl = e.target?.result as string;
       
-      const handleMainImageLoad = () => {
-        // Set canvas size to match image
-        canvas.width = mainImage.width;
-        canvas.height = mainImage.height;
+      // Load the logo first
+      const logoImage = new Image();
+      logoImage.crossOrigin = 'anonymous';
+      
+      logoImage.onload = () => {
+        // Now load the main image
+        const mainImage = new Image();
+        
+        mainImage.onload = () => {
+          try {
+            // Set canvas size to match image
+            canvas.width = mainImage.width;
+            canvas.height = mainImage.height;
 
-        // Draw the main image
-        ctx.drawImage(mainImage, 0, 0);
+            // Draw the main image
+            ctx.drawImage(mainImage, 0, 0);
 
-        // Calculate logo dimensions
-        const logoWidthPx = (canvas.width * logoWidth) / 100;
-        const logoHeightPx = (logoImage.height / logoImage.width) * logoWidthPx;
+            // Calculate logo dimensions
+            const logoWidthPx = (canvas.width * logoWidth) / 100;
+            const logoHeightPx = (logoImage.height / logoImage.width) * logoWidthPx;
 
-        // Calculate position (bottom-right corner)
-        const x = canvas.width - logoWidthPx - offsetX;
-        const y = canvas.height - logoHeightPx - offsetY;
+            // Calculate position (bottom-right corner)
+            const x = canvas.width - logoWidthPx - offsetX;
+            const y = canvas.height - logoHeightPx - offsetY;
 
-        // Set opacity
-        ctx.globalAlpha = opacity;
+            // Set opacity
+            ctx.globalAlpha = opacity;
 
-        // Draw the logo
-        ctx.drawImage(logoImage, x, y, logoWidthPx, logoHeightPx);
+            // Draw the logo
+            ctx.drawImage(logoImage, x, y, logoWidthPx, logoHeightPx);
 
-        // Reset opacity
-        ctx.globalAlpha = 1.0;
+            // Reset opacity
+            ctx.globalAlpha = 1.0;
 
-        // Convert canvas to blob
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('Failed to create watermarked image'));
-            }
-          },
-          'image/jpeg',
-          0.92
-        );
+            // Convert canvas to blob
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Failed to create watermarked image'));
+                }
+              },
+              'image/jpeg',
+              0.92
+            );
+          } catch (error) {
+            console.error('Error processing image:', error);
+            reject(new Error('Error processing image: ' + (error as Error).message));
+          }
+        };
+
+        mainImage.onerror = (error) => {
+          console.error('Failed to load main image:', error);
+          reject(new Error('Failed to load main image'));
+        };
+
+        mainImage.src = imageDataUrl;
       };
 
-      const handleMainImageError = (error: any) => {
-        console.error('Failed to load main image:', error);
-        reject(new Error('Failed to load main image'));
+      logoImage.onerror = (error) => {
+        console.error('Failed to load logo image:', error);
+        reject(new Error('Failed to load logo image'));
       };
 
-      mainImage.onload = handleMainImageLoad;
-      mainImage.onerror = handleMainImageError;
-
-      // Create object URL from file
-      mainImage.src = URL.createObjectURL(imageFile);
+      logoImage.src = logoUrl;
     };
 
-    logoImage.onerror = (error) => {
-      console.error('Failed to load logo image:', error);
-      reject(new Error('Failed to load logo image'));
+    reader.onerror = () => {
+      reject(new Error('Failed to read image file'));
     };
 
-    logoImage.src = logoUrl;
+    reader.readAsDataURL(imageFile);
   });
 }
 
