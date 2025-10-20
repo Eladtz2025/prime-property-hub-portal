@@ -6,7 +6,7 @@ import { Upload, X, Star, StarOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
-import { supabase } from '@/integrations/supabase/client';
+import { addWatermark } from '@/utils/watermark';
 
 interface ImageUploadProps {
   images: PropertyImage[];
@@ -81,25 +81,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       try {
         const compressedDataUrl = await compressImage(file);
         
-        // Add watermark
+        // Add watermark using client-side Canvas API
         let finalDataUrl = compressedDataUrl;
         try {
-          const { data: watermarkData, error: watermarkError } = await supabase.functions.invoke('add-watermark-on-upload', {
-            body: {
-              imageData: compressedDataUrl,
-              logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
-              position: 'bottom-right',
-              opacity: 0.9
-            }
+          finalDataUrl = await addWatermark(compressedDataUrl, {
+            logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+            position: 'bottom-right',
+            opacity: 0.9,
+            logoSize: 15,
+            padding: 20
           });
-
-          if (watermarkError) {
-            console.error('Watermark error:', watermarkError);
-            logger.error('Watermark failed, using original image', watermarkError, 'ImageUpload');
-          } else if (watermarkData?.watermarkedImage) {
-            finalDataUrl = watermarkData.watermarkedImage;
-            console.log('✅ Watermark applied successfully');
-          }
+          console.log('✅ Watermark applied successfully');
         } catch (watermarkError) {
           console.error('Watermark exception:', watermarkError);
           logger.error('Watermark exception, using original image', watermarkError, 'ImageUpload');

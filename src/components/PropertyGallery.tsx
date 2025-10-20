@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Image as ImageIcon, Trash2, Download, Eye } from 'lucide-react';
+import { addWatermarkToFile } from '@/utils/watermark';
 import {
   Dialog,
   DialogContent,
@@ -88,37 +89,31 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       for (const file of Array.from(files)) {
         console.log('📤 Processing file:', file.name);
         
-        // Convert to base64
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-        const imageData = await base64Promise;
-
-        // Add watermark
-        let finalFile: File = file;
+        // Add watermark using client-side Canvas API
+        let watermarkedDataUrl: string;
         try {
-          const { data: watermarkData, error: watermarkError } = await supabase.functions.invoke('add-watermark-on-upload', {
-            body: {
-              imageData,
-              logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
-              position: 'bottom-right',
-              opacity: 0.9
-            }
+          watermarkedDataUrl = await addWatermarkToFile(file, {
+            logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+            position: 'bottom-right',
+            opacity: 0.9,
+            logoSize: 15,
+            padding: 20
           });
-
-          if (!watermarkError && watermarkData?.watermarkedImage) {
-            const response = await fetch(watermarkData.watermarkedImage);
-            const blob = await response.blob();
-            finalFile = new File([blob], file.name, { type: file.type });
-            console.log('✅ Watermark applied');
-          } else {
-            console.error('⚠️ Watermark failed, using original:', watermarkError);
-          }
+          console.log('✅ Watermark applied');
         } catch (watermarkError) {
           console.error('⚠️ Watermark exception, using original:', watermarkError);
+          // Fallback to original file
+          const reader = new FileReader();
+          watermarkedDataUrl = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
         }
+        
+        // Convert watermarked base64 to File
+        const response = await fetch(watermarkedDataUrl);
+        const blob = await response.blob();
+        const finalFile = new File([blob], file.name, { type: 'image/jpeg' });
         
         // Upload to storage
         const fileExt = file.name.split('.').pop();
