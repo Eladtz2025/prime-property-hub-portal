@@ -46,8 +46,9 @@ serve(async (req) => {
       try {
         console.log(`Processing image ${image.id}: ${image.image_url}`);
 
-        // Skip if already watermarked
-        if (image.image_url.includes('watermarked-') || image.image_url.includes('/property-images/')) {
+        // Skip if already watermarked (check for watermarked- prefix in filename)
+        const filename = image.image_url.split('/').pop() || '';
+        if (filename.includes('watermarked-')) {
           console.log(`Skipping already watermarked image ${image.id}`);
           results.skipped++;
           continue;
