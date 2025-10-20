@@ -56,7 +56,13 @@ serve(async (req) => {
         // Build full image URL
         let fullImageUrl = image.image_url;
         if (!fullImageUrl.startsWith('http')) {
-          fullImageUrl = `${supabaseUrl}${fullImageUrl}`;
+          // Handle relative paths that start with /
+          if (fullImageUrl.startsWith('/')) {
+            fullImageUrl = `${supabaseUrl}${fullImageUrl}`;
+          } else {
+            // Handle storage paths without leading /
+            fullImageUrl = `${supabaseUrl}/storage/v1/object/public/${fullImageUrl}`;
+          }
         }
 
         // Call the add-watermark function
