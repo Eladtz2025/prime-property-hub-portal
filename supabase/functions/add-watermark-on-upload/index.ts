@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
+import sharp from "npm:sharp@0.33.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,77 +14,83 @@ serve(async (req) => {
   try {
     const { imageData, logoUrl, position = 'bottom-right', opacity = 0.9 } = await req.json();
 
-    console.log('🎨 Starting watermark process...');
+    console.log('🎨 Starting watermark process with Sharp...');
     console.log('📍 Position:', position, 'Opacity:', opacity);
 
-    // Load main image from base64
+    // Decode base64 image
     const base64Data = imageData.split(',')[1];
-    const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const mainImage = await loadImage(imageBuffer);
+    const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    console.log('✅ Main image loaded:', mainImage.width, 'x', mainImage.height);
+    console.log('✅ Image buffer created');
 
-    // Create canvas with same dimensions
-    const canvas = createCanvas(mainImage.width, mainImage.height);
-    const ctx = canvas.getContext('2d');
+    // Load logo from URL
+    const logoResponse = await fetch(logoUrl);
+    if (!logoResponse.ok) {
+      throw new Error(`Failed to fetch logo: ${logoResponse.statusText}`);
+    }
+    const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
 
-    // Draw main image
-    ctx.drawImage(mainImage, 0, 0);
+    console.log('✅ Logo loaded from URL');
 
-    // Load and draw logo watermark
-    try {
-      // Fetch logo from URL
-      const logoResponse = await fetch(logoUrl);
-      if (!logoResponse.ok) {
-        throw new Error(`Failed to fetch logo: ${logoResponse.statusText}`);
-      }
-      const logoBuffer = await logoResponse.arrayBuffer();
-      const logo = await loadImage(new Uint8Array(logoBuffer));
+    // Get image dimensions
+    const metadata = await sharp(imageBuffer).metadata();
+    const imageWidth = metadata.width!;
+    const imageHeight = metadata.height!;
 
-      console.log('✅ Logo loaded:', logo.width, 'x', logo.height);
+    // Calculate logo size (15% of image width)
+    const logoWidth = Math.floor(imageWidth * 0.15);
 
-      // Calculate logo size (15% of image width)
-      const logoWidth = mainImage.width * 0.15;
-      const logoHeight = (logo.height / logo.width) * logoWidth;
+    // Resize logo and apply opacity
+    const resizedLogo = await sharp(logoBuffer)
+      .resize(logoWidth)
+      .png() // Convert to PNG for alpha channel support
+      .ensureAlpha()
+      .toBuffer();
 
-      // Calculate position
-      const margin = 20;
-      let x = 0, y = 0;
+    // Get resized logo dimensions
+    const logoMeta = await sharp(resizedLogo).metadata();
+    const logoHeight = logoMeta.height!;
 
-      switch (position) {
-        case 'bottom-right':
-          x = mainImage.width - logoWidth - margin;
-          y = mainImage.height - logoHeight - margin;
-          break;
-        case 'bottom-left':
-          x = margin;
-          y = mainImage.height - logoHeight - margin;
-          break;
-        case 'top-right':
-          x = mainImage.width - logoWidth - margin;
-          y = margin;
-          break;
-        case 'top-left':
-          x = margin;
-          y = margin;
-          break;
-      }
+    // Calculate position
+    const margin = 20;
+    let x = 0, y = 0;
 
-      // Draw logo with opacity
-      ctx.globalAlpha = opacity;
-      ctx.drawImage(logo, x, y, logoWidth, logoHeight);
-      ctx.globalAlpha = 1.0;
-
-      console.log('✅ Watermark applied at position:', position);
-    } catch (logoError) {
-      console.error('⚠️ Logo watermark failed, returning original image:', logoError);
-      // Continue without watermark if logo fails
+    switch (position) {
+      case 'bottom-right':
+        x = imageWidth - logoWidth - margin;
+        y = imageHeight - logoHeight - margin;
+        break;
+      case 'bottom-left':
+        x = margin;
+        y = imageHeight - logoHeight - margin;
+        break;
+      case 'top-right':
+        x = imageWidth - logoWidth - margin;
+        y = margin;
+        break;
+      case 'top-left':
+        x = margin;
+        y = margin;
+        break;
     }
 
-    // Convert to base64
-    const watermarkedImage = canvas.toDataURL('image/jpeg', 0.9);
+    console.log('✅ Logo positioned at:', { x, y });
 
-    console.log('✅ Watermark process completed');
+    // Apply watermark using composite
+    const watermarkedBuffer = await sharp(imageBuffer)
+      .composite([{
+        input: resizedLogo,
+        top: y,
+        left: x,
+        blend: 'over'
+      }])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // Convert to base64
+    const watermarkedImage = `data:image/jpeg;base64,${watermarkedBuffer.toString('base64')}`;
+
+    console.log('✅ Watermark applied successfully');
 
     return new Response(
       JSON.stringify({ 
