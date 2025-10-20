@@ -22,8 +22,18 @@ serve(async (req) => {
 
     console.log(`Processing watermark for image: ${imageUrl}`);
 
-    // Fetch the original image
-    const imageResponse = await fetch(imageUrl);
+    // Fetch the original image with fallback
+    let imageResponse = await fetch(imageUrl);
+    
+    // If not found and it's a relative path, try fetching from app URL
+    if (!imageResponse.ok && imageUrl.startsWith('/')) {
+      console.log('Image not found in storage, trying app URL fallback');
+      const appUrl = 'https://jswumsdymlooeobrxict.lovableproject.com';
+      const fallbackUrl = `${appUrl}${imageUrl}`;
+      console.log('Trying fallback URL:', fallbackUrl);
+      imageResponse = await fetch(fallbackUrl);
+    }
+    
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
