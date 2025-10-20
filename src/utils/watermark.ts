@@ -43,17 +43,22 @@ export async function addWatermarkToImage(
       const imageDataUrl = e.target?.result as string;
       console.log('Image converted to base64, length:', imageDataUrl?.length);
       
-      // Load the logo first
-      const logoImage = new Image();
-      logoImage.crossOrigin = 'anonymous';
+      if (!imageDataUrl) {
+        reject(new Error('Failed to convert image to base64'));
+        return;
+      }
       
-      logoImage.onload = () => {
-        console.log('Logo loaded successfully:', logoUrl);
-        // Now load the main image
-        const mainImage = new Image();
+      // Load the main image first
+      const mainImage = new Image();
+      
+      mainImage.onload = () => {
+        console.log('Main image loaded successfully, dimensions:', mainImage.width, 'x', mainImage.height);
         
-        mainImage.onload = () => {
-          console.log('Main image loaded successfully, dimensions:', mainImage.width, 'x', mainImage.height);
+        // Now load the logo
+        const logoImage = new Image();
+        
+        logoImage.onload = () => {
+          console.log('Logo loaded successfully');
           try {
             // Set canvas size to match image
             canvas.width = mainImage.width;
@@ -83,6 +88,7 @@ export async function addWatermarkToImage(
             canvas.toBlob(
               (blob) => {
                 if (blob) {
+                  console.log('Watermark created successfully, size:', blob.size);
                   resolve(blob);
                 } else {
                   reject(new Error('Failed to create watermarked image'));
@@ -97,26 +103,30 @@ export async function addWatermarkToImage(
           }
         };
 
-        mainImage.onerror = (error) => {
-          console.error('Failed to load main image:', error);
-          reject(new Error('Failed to load main image'));
+        logoImage.onerror = (error) => {
+          console.error('Failed to load logo image:', logoUrl, error);
+          reject(new Error('Failed to load logo image from: ' + logoUrl));
         };
 
-        mainImage.src = imageDataUrl;
+        console.log('Loading logo from:', logoUrl);
+        logoImage.src = logoUrl;
       };
 
-      logoImage.onerror = (error) => {
-        console.error('Failed to load logo image:', error);
-        reject(new Error('Failed to load logo image'));
+      mainImage.onerror = (error) => {
+        console.error('Failed to load main image:', error);
+        reject(new Error('Failed to load main image'));
       };
 
-      logoImage.src = logoUrl;
+      console.log('Loading main image...');
+      mainImage.src = imageDataUrl;
     };
 
     reader.onerror = () => {
+      console.error('Failed to read image file');
       reject(new Error('Failed to read image file'));
     };
 
+    console.log('Starting to read image file...');
     reader.readAsDataURL(imageFile);
   });
 }
