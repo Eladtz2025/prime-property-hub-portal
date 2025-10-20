@@ -37,23 +37,22 @@ export async function addWatermarkToImage(
       return;
     }
 
-    // Load the main image
-    const mainImage = new Image();
-    mainImage.crossOrigin = 'anonymous';
+    // Load the logo first
+    const logoImage = new Image();
+    logoImage.crossOrigin = 'anonymous';
     
-    mainImage.onload = () => {
-      // Set canvas size to match image
-      canvas.width = mainImage.width;
-      canvas.height = mainImage.height;
-
-      // Draw the main image
-      ctx.drawImage(mainImage, 0, 0);
-
-      // Load and draw the logo
-      const logoImage = new Image();
-      logoImage.crossOrigin = 'anonymous';
+    logoImage.onload = () => {
+      // Now load the main image
+      const mainImage = new Image();
       
-      logoImage.onload = () => {
+      const handleMainImageLoad = () => {
+        // Set canvas size to match image
+        canvas.width = mainImage.width;
+        canvas.height = mainImage.height;
+
+        // Draw the main image
+        ctx.drawImage(mainImage, 0, 0);
+
         // Calculate logo dimensions
         const logoWidthPx = (canvas.width * logoWidth) / 100;
         const logoHeightPx = (logoImage.height / logoImage.width) * logoWidthPx;
@@ -85,19 +84,24 @@ export async function addWatermarkToImage(
         );
       };
 
-      logoImage.onerror = () => {
-        reject(new Error('Failed to load logo image'));
+      const handleMainImageError = (error: any) => {
+        console.error('Failed to load main image:', error);
+        reject(new Error('Failed to load main image'));
       };
 
-      logoImage.src = logoUrl;
+      mainImage.onload = handleMainImageLoad;
+      mainImage.onerror = handleMainImageError;
+
+      // Create object URL from file
+      mainImage.src = URL.createObjectURL(imageFile);
     };
 
-    mainImage.onerror = () => {
-      reject(new Error('Failed to load main image'));
+    logoImage.onerror = (error) => {
+      console.error('Failed to load logo image:', error);
+      reject(new Error('Failed to load logo image'));
     };
 
-    // Create object URL from file
-    mainImage.src = URL.createObjectURL(imageFile);
+    logoImage.src = logoUrl;
   });
 }
 
