@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, XCircle, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { addWatermarkToImageUrl } from '@/utils/watermark';
+import { addWatermarkToImage } from '@/utils/watermark';
 import logoUrl from '@/assets/city-market-logo.png';
 
 interface ProcessingResult {
@@ -54,25 +54,29 @@ export const WatermarkProcessor = () => {
         setProgress(((i + 1) / totalFiles) * 100);
 
         try {
-          // Get public URL of original image
-          const { data: { publicUrl } } = supabase.storage
+          // Download the image data directly from storage
+          const { data: imageData, error: downloadError } = await supabase.storage
             .from('property-images')
-            .getPublicUrl(file.name);
+            .download(file.name);
 
-          // Save original to property-images-original bucket
-          const response = await fetch(publicUrl);
-          const blob = await response.blob();
+          if (downloadError) {
+            throw new Error(`Failed to download image: ${downloadError.message}`);
+          }
           
+          // Save original to property-images-original bucket
           const { error: saveOriginalError } = await supabase.storage
             .from('property-images-original')
-            .upload(file.name, blob, { upsert: true });
+            .upload(file.name, imageData, { upsert: true });
 
           if (saveOriginalError) {
             throw new Error(`Failed to save original: ${saveOriginalError.message}`);
           }
 
+          // Convert blob to File for watermarking
+          const imageFile = new File([imageData], file.name, { type: imageData.type });
+
           // Add watermark
-          const watermarkedBlob = await addWatermarkToImageUrl(publicUrl, {
+          const watermarkedBlob = await addWatermarkToImage(imageFile, {
             logoUrl,
             opacity: 0.4,
             logoWidth: 15,
