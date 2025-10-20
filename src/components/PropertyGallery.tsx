@@ -86,7 +86,39 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       console.log('🔵 Selected property:', selectedProperty);
       
       for (const file of Array.from(files)) {
-        console.log('📤 Uploading file:', file.name);
+        console.log('📤 Processing file:', file.name);
+        
+        // Convert to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        const imageData = await base64Promise;
+
+        // Add watermark
+        let finalFile: File = file;
+        try {
+          const { data: watermarkData, error: watermarkError } = await supabase.functions.invoke('add-watermark-on-upload', {
+            body: {
+              imageData,
+              logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+              position: 'bottom-right',
+              opacity: 0.9
+            }
+          });
+
+          if (!watermarkError && watermarkData?.watermarkedImage) {
+            const response = await fetch(watermarkData.watermarkedImage);
+            const blob = await response.blob();
+            finalFile = new File([blob], file.name, { type: file.type });
+            console.log('✅ Watermark applied');
+          } else {
+            console.error('⚠️ Watermark failed, using original:', watermarkError);
+          }
+        } catch (watermarkError) {
+          console.error('⚠️ Watermark exception, using original:', watermarkError);
+        }
         
         // Upload to storage
         const fileExt = file.name.split('.').pop();
@@ -95,7 +127,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
         console.log('📤 Storage path:', fileName);
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('property-images')
-          .upload(fileName, file);
+          .upload(fileName, finalFile);
 
         if (uploadError) {
           console.error('❌ Storage upload error:', uploadError);

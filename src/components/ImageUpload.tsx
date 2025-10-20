@@ -6,6 +6,7 @@ import { Upload, X, Star, StarOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploadProps {
   images: PropertyImage[];
@@ -80,10 +81,34 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       try {
         const compressedDataUrl = await compressImage(file);
         
+        // Add watermark
+        let finalDataUrl = compressedDataUrl;
+        try {
+          const { data: watermarkData, error: watermarkError } = await supabase.functions.invoke('add-watermark-on-upload', {
+            body: {
+              imageData: compressedDataUrl,
+              logoUrl: 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png',
+              position: 'bottom-right',
+              opacity: 0.9
+            }
+          });
+
+          if (watermarkError) {
+            console.error('Watermark error:', watermarkError);
+            logger.error('Watermark failed, using original image', watermarkError, 'ImageUpload');
+          } else if (watermarkData?.watermarkedImage) {
+            finalDataUrl = watermarkData.watermarkedImage;
+            console.log('✅ Watermark applied successfully');
+          }
+        } catch (watermarkError) {
+          console.error('Watermark exception:', watermarkError);
+          logger.error('Watermark exception, using original image', watermarkError, 'ImageUpload');
+        }
+        
         const newImage: PropertyImage = {
           id: `img_${Date.now()}_${i}`,
           name: file.name,
-          url: compressedDataUrl,
+          url: finalDataUrl,
           isPrimary: images.length === 0 && newImages.length === 0,
           uploadedAt: new Date().toISOString(),
           size: file.size
