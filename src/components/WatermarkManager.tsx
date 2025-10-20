@@ -25,6 +25,27 @@ export const WatermarkManager: React.FC = () => {
     setResult(null);
 
     try {
+      // First, ensure logo is uploaded
+      toast({
+        title: "מעלה לוגו...",
+        description: "מוודא שהלוגו קיים ב-Storage",
+      });
+
+      const { error: logoError } = await supabase.functions.invoke('upload-logo', {
+        body: {}
+      });
+
+      if (logoError) {
+        console.error('Logo upload error:', logoError);
+        // Continue anyway - logo might already exist
+      }
+
+      // Now process watermarks
+      toast({
+        title: "מעבד תמונות...",
+        description: "מוסיף Watermark לכל התמונות",
+      });
+
       const { data, error } = await supabase.functions.invoke('batch-watermark-images', {
         body: {}
       });
