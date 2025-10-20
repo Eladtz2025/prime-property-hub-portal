@@ -10,7 +10,6 @@ import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BrokerageFormCard } from '../components/BrokerageFormCard';
 import { BrokerageFormsList } from '../components/BrokerageFormsList';
-import { WatermarkManager } from '../components/WatermarkManager';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -168,7 +167,6 @@ const AdminDashboard = memo(() => {
       />
       
       <div className="mt-6 space-y-6">
-        <WatermarkManager />
         <BrokerageFormCard />
         <BrokerageFormsList />
       </div>

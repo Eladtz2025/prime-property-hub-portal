@@ -1,11 +1,5 @@
 project_id = "jswumsdymlooeobrxict"
 
-[functions.add-watermark]
-verify_jwt = false
-
-[functions.batch-watermark-images]
-verify_jwt = false
-
 [functions.import-mock-properties]
 verify_jwt = false
 
