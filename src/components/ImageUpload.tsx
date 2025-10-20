@@ -84,13 +84,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         // Add watermark using client-side Canvas API
         let finalDataUrl = compressedDataUrl;
         try {
-          finalDataUrl = await addWatermark(compressedDataUrl, {
-            logoUrl: '/city-market-logo.png',
-            position: 'bottom-right',
-            opacity: 0.9,
-            logoSize: 15,
-            padding: 20
-          });
+            finalDataUrl = await addWatermark(compressedDataUrl, {
+              logoUrl: '/city-market-logo.png',
+              position: 'bottom-right',
+              opacity: 0.5,
+              logoSize: 20,
+              padding: 45
+            });
           console.log('✅ Watermark applied successfully');
         } catch (watermarkError) {
           console.error('Watermark exception:', watermarkError);

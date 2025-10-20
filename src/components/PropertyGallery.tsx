@@ -92,13 +92,13 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
         // Add watermark using client-side Canvas API
         let watermarkedDataUrl: string;
         try {
-          watermarkedDataUrl = await addWatermarkToFile(file, {
-            logoUrl: '/city-market-logo.png',
-            position: 'bottom-right',
-            opacity: 0.9,
-            logoSize: 15,
-            padding: 20
-          });
+        watermarkedDataUrl = await addWatermarkToFile(file, {
+          logoUrl: '/city-market-logo.png',
+          position: 'bottom-right',
+          opacity: 0.5,
+          logoSize: 20,
+          padding: 45
+        });
           console.log('✅ Watermark applied');
         } catch (watermarkError) {
           console.error('⚠️ Watermark exception, using original:', watermarkError);
