@@ -7,7 +7,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, XCircle, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { addWatermarkToImage } from '@/utils/watermark';
-import logoUrl from '@/assets/city-market-logo.png';
+// Use logo from public folder instead of assets to avoid bundling issues
+const logoUrl = '/images/city-market-logo.png';
 
 interface ProcessingResult {
   path: string;

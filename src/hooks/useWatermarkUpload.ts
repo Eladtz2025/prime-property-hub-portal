@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { addWatermarkToImage } from '@/utils/watermark';
 import { toast } from 'sonner';
-import logoUrl from '@/assets/city-market-logo.png';
+// Use logo from public folder instead of assets to avoid bundling issues
+const logoUrl = '/images/city-market-logo.png';
 
 export interface WatermarkUploadOptions {
   bucket: string;
