@@ -128,8 +128,8 @@ export const addWatermark = async (
     // Reset opacity
     ctx.globalAlpha = 1.0;
 
-    // Convert to base64
-    return canvas.toDataURL('image/jpeg', 0.9);
+    // Convert to base64 as PNG to preserve transparency
+    return canvas.toDataURL('image/png');
   } catch (error) {
     console.error('Error adding watermark:', error);
     throw error;
