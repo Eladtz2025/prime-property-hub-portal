@@ -89,32 +89,6 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       for (const file of Array.from(files)) {
         console.log('📤 Processing file:', file.name);
         
-        // Add watermark using client-side Canvas API
-        let watermarkedDataUrl: string;
-        try {
-        watermarkedDataUrl = await addWatermarkToFile(file, {
-          logoUrl: '/city-market-logo.png',
-          position: 'bottom-right',
-          opacity: 0.5,
-          logoSize: 20,
-          padding: { x: 0.5, y: 45 }
-        });
-          console.log('✅ Watermark applied');
-        } catch (watermarkError) {
-          console.error('⚠️ Watermark exception, using original:', watermarkError);
-          // Fallback to original file
-          const reader = new FileReader();
-          watermarkedDataUrl = await new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-          });
-        }
-        
-        // Convert watermarked base64 to File
-        const response = await fetch(watermarkedDataUrl);
-        const blob = await response.blob();
-        const finalFile = new File([blob], file.name, { type: 'image/jpeg' });
-        
         // Upload to storage
         const fileExt = file.name.split('.').pop();
         const fileName = `${selectedProperty}/${Date.now()}.${fileExt}`;
@@ -122,7 +96,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
         console.log('📤 Storage path:', fileName);
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('property-images')
-          .upload(fileName, finalFile);
+          .upload(fileName, file);
 
         if (uploadError) {
           console.error('❌ Storage upload error:', uploadError);

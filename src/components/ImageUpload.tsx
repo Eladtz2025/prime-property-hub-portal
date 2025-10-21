@@ -81,26 +81,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       try {
         const compressedDataUrl = await compressImage(file);
         
-        // Add watermark using client-side Canvas API
-        let finalDataUrl = compressedDataUrl;
-        try {
-            finalDataUrl = await addWatermark(compressedDataUrl, {
-              logoUrl: '/city-market-logo.png',
-              position: 'bottom-right',
-              opacity: 0.5,
-              logoSize: 20,
-              padding: { x: 0.5, y: 45 }
-            });
-          console.log('✅ Watermark applied successfully');
-        } catch (watermarkError) {
-          console.error('Watermark exception:', watermarkError);
-          logger.error('Watermark exception, using original image', watermarkError, 'ImageUpload');
-        }
-        
         const newImage: PropertyImage = {
           id: `img_${Date.now()}_${i}`,
           name: file.name,
-          url: finalDataUrl,
+          url: compressedDataUrl,
           isPrimary: images.length === 0 && newImages.length === 0,
           uploadedAt: new Date().toISOString(),
           size: file.size
