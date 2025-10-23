@@ -16,6 +16,9 @@ import EnglishSales from './pages/en/Sales';
 import EnglishManagement from './pages/en/Management';
 import EnglishNeighborhoods from './pages/en/Neighborhoods';
 import EnglishPropertyDetail from './pages/en/PropertyDetail';
+import EnglishAbout from './pages/en/About';
+import EnglishContact from './pages/en/Contact';
+import EnglishNewDevelopments from './pages/en/NewDevelopments';
 import RothschildNeighborhood from './pages/en/neighborhoods/Rothschild';
 import NeveTzedekNeighborhood from './pages/en/neighborhoods/NeveTzedek';
 import FlorentinNeighborhood from './pages/en/neighborhoods/Florentin';
@@ -75,6 +78,9 @@ const AppContent: React.FC = () => {
           <Route path="/en/neighborhoods/dizengoff" element={<DizengoffNeighborhood />} />
           <Route path="/en/neighborhoods/old-north" element={<OldNorthNeighborhood />} />
           <Route path="/en/property/:id" element={<EnglishPropertyDetail />} />
+          <Route path="/en/about" element={<EnglishAbout />} />
+          <Route path="/en/contact" element={<EnglishContact />} />
+          <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
         
         <Route path="/rentals/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
         <Route path="/sales/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
