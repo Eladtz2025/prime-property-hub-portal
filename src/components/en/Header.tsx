@@ -12,6 +12,7 @@ const EnglishHeader = () => {
     { label: "Home", path: "/en" },
     { label: "Buy", path: "/en/sales" },
     { label: "Rent", path: "/en/rentals" },
+    { label: "Management", path: "/en/management" },
     { label: "New Developments", path: "/en/new-developments" },
     { label: "Neighborhoods", path: "/en/neighborhoods" },
     { label: "About", path: "/en/about" },

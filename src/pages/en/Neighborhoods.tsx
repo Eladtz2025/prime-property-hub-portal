@@ -1,4 +1,5 @@
-import Hero from "@/components/Hero";
+import EnglishHeader from "@/components/en/Header";
+import EnglishFooter from "@/components/en/Footer";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -51,13 +52,31 @@ const EnglishNeighborhoods = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
-      <Hero
-        title="Tel Aviv Neighborhoods"
-        subtitle="Discover Your Perfect Location"
-        description="From historic charm to modern energy, explore Tel Aviv's most desirable neighborhoods"
-        backgroundImage="/images/en/hero-telaviv.jpg"
-      />
+    <div className="min-h-screen english-luxury" dir="ltr">
+      <EnglishHeader />
+
+      {/* Hero Section */}
+      <section className="relative h-[60vh] overflow-hidden">
+        <img
+          src="/images/en/hero-telaviv.jpg"
+          alt="Tel Aviv Neighborhoods"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <p className="font-montserrat text-sm tracking-widest uppercase text-white/80 mb-4">
+              Discover Tel Aviv
+            </p>
+            <h1 className="reliz-hero-title text-white">
+              Neighborhoods
+            </h1>
+            <p className="reliz-subtitle text-white/90 mt-6 max-w-2xl mx-auto">
+              From historic charm to modern energy, explore Tel Aviv's most desirable neighborhoods
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="py-20">
         <div className="container mx-auto px-4">
@@ -160,17 +179,7 @@ const EnglishNeighborhoods = () => {
         </div>
       </section>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      <EnglishFooter />
     </div>
   );
 };

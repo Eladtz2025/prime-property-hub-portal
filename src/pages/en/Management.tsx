@@ -1,4 +1,5 @@
-import Hero from "@/components/Hero";
+import EnglishHeader from "@/components/en/Header";
+import EnglishFooter from "@/components/en/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -41,13 +42,31 @@ const EnglishManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
-      <Hero
-        title="Property Management"
-        subtitle="Maximize Your Investment, Minimize Your Stress"
-        description="Comprehensive property management services designed to protect and grow your real estate portfolio"
-        backgroundImage="/images/en/hero-telaviv.jpg"
-      />
+    <div className="min-h-screen english-luxury" dir="ltr">
+      <EnglishHeader />
+
+      {/* Hero Section */}
+      <section className="relative h-[60vh] overflow-hidden">
+        <img
+          src="/images/en/hero-telaviv.jpg"
+          alt="Property Management"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <p className="font-montserrat text-sm tracking-widest uppercase text-white/80 mb-4">
+              Professional Services
+            </p>
+            <h1 className="reliz-hero-title text-white">
+              Property Management
+            </h1>
+            <p className="reliz-subtitle text-white/90 mt-6 max-w-2xl mx-auto">
+              Maximize Your Investment, Minimize Your Stress
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="py-20">
         <div className="container mx-auto px-4">
@@ -100,17 +119,7 @@ const EnglishManagement = () => {
         </div>
       </section>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/management')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      <EnglishFooter />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
+import EnglishHeader from "@/components/en/Header";
+import EnglishFooter from "@/components/en/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, Ruler, BedDouble, Bath, Car, Calendar, TrendingUp } from "lucide-react";
@@ -41,9 +43,11 @@ const EnglishPropertyDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
+    <div className="min-h-screen english-luxury" dir="ltr">
+      <EnglishHeader />
+      
       {/* Back Button */}
-      <div className="bg-background border-b">
+      <div className="bg-background border-b mt-20">
         <div className="container mx-auto px-4 py-4">
           <Button
             variant="ghost"
@@ -228,17 +232,7 @@ const EnglishPropertyDetail = () => {
         </div>
       </div>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      <EnglishFooter />
     </div>
   );
 };

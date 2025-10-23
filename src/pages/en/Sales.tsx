@@ -1,3 +1,5 @@
+import EnglishHeader from "@/components/en/Header";
+import EnglishFooter from "@/components/en/Footer";
 import Hero from "@/components/Hero";
 import { PropertyCard } from "@/components/en/PropertyCard";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +48,8 @@ const EnglishSales = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
+    <div className="min-h-screen english-luxury" dir="ltr">
+      <EnglishHeader />
       <Hero
         title="Properties for Sale"
         subtitle="Your Investment in Tel Aviv's Future"
@@ -68,17 +71,7 @@ const EnglishSales = () => {
         </div>
       </section>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/sales')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      <EnglishFooter />
     </div>
   );
 };
