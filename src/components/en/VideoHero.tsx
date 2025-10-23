@@ -32,8 +32,8 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         />
       )}
 
-      {/* Overlay Gradient - Lighter for daytime video */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
+      {/* Overlay Gradient - Very light for bright daytime */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4">

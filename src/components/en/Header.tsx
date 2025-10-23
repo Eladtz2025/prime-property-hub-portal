@@ -21,16 +21,16 @@ const EnglishHeader = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+    <header className="absolute top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <button
             onClick={() => navigate("/en")}
-            className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-primary"
+            className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
           >
             CITY MARKET
-            <div className="text-xs font-montserrat tracking-wider text-muted-foreground">
+            <div className="text-xs font-montserrat tracking-wider text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
               Luxury Real Estate
             </div>
           </button>
@@ -41,10 +41,10 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`font-montserrat text-sm tracking-wide uppercase transition-colors duration-200 ${
+                className={`font-montserrat text-sm tracking-wide uppercase transition-colors duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] ${
                   isActive(item.path)
-                    ? "text-primary font-medium"
-                    : "text-foreground/70 hover:text-primary"
+                    ? "text-white font-medium"
+                    : "text-white/90 hover:text-white"
                 }`}
               >
                 {item.label}
@@ -58,7 +58,7 @@ const EnglishHeader = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="font-montserrat text-sm tracking-wide"
+              className="font-montserrat text-sm tracking-wide text-white/90 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
             >
               עברית
             </Button>
@@ -69,9 +69,9 @@ const EnglishHeader = () => {
               className="lg:hidden p-2"
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-foreground" />
+                <X className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
               ) : (
-                <Menu className="w-6 h-6 text-foreground" />
+                <Menu className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
               )}
             </button>
           </div>
