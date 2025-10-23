@@ -64,11 +64,11 @@ const NewDevelopments = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              The Future of Luxury Living
+              The Future of Modern Living
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              Explore Tel Aviv's most anticipated new developments. Each project represents 
-              the pinnacle of modern design, sustainable architecture, and luxurious amenities.
+               Explore Tel Aviv's most anticipated new developments. Each project represents 
+              the pinnacle of modern design, sustainable architecture, and premium amenities.
             </p>
           </div>
         </div>
@@ -139,7 +139,7 @@ const NewDevelopments = () => {
                 CITY MARKET
               </h3>
               <p className="font-montserrat text-sm text-background/70">
-                Luxury Real Estate
+                 Real Estate
               </p>
             </div>
             <div>
@@ -176,7 +176,7 @@ const NewDevelopments = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Luxury Real Estate. All rights reserved.
+              © 2024 City Market Real Estate. All rights reserved.
             </p>
           </div>
         </div>

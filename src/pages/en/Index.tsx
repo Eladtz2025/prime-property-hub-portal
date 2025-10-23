@@ -11,7 +11,7 @@ const EnglishIndex = () => {
   const featuredProperties = [
     {
       id: "1",
-      title: "Luxury Rothschild Penthouse",
+      title: "Rothschild Penthouse",
       location: "Rothschild Boulevard",
       price: "₪8,500,000",
       imageUrl: "/images/en/properties/luxury-rothschild.jpg",
@@ -82,11 +82,11 @@ const EnglishIndex = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              City Market – Luxury Real Estate
+              City Market – Real Estate
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-8">
-              At <strong>City Market Luxury Real Estate</strong>, we offer personalized service to
-              guide you through every step of the luxury real estate journey. We help you find the
+              At <strong>City Market Real Estate</strong>, we offer personalized service to
+              guide you through every step of the real estate journey. We help you find the
               perfect property and finalize the sales agreement, ensuring a smooth and rewarding
               experience.
             </p>
@@ -273,7 +273,7 @@ const EnglishIndex = () => {
                 CITY MARKET
               </h3>
               <p className="font-montserrat text-sm text-background/70">
-                Luxury Real Estate
+                 Real Estate
               </p>
             </div>
             <div>
@@ -310,7 +310,7 @@ const EnglishIndex = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Luxury Real Estate. All rights reserved.
+              © 2024 City Market Real Estate. All rights reserved.
             </p>
           </div>
         </div>

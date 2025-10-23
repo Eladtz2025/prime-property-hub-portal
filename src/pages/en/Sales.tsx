@@ -9,7 +9,7 @@ const EnglishSales = () => {
   const salesProperties = [
     {
       id: "s1",
-      title: "Rothschild Luxury Villa",
+      title: "Rothschild Villa",
       address: "Rothschild Boulevard, Tel Aviv",
       price: "₪8.5M",
       priceLabel: "",
@@ -50,7 +50,7 @@ const EnglishSales = () => {
       <Hero
         title="Properties for Sale"
         subtitle="Your Investment in Tel Aviv's Future"
-        description="From iconic Bauhaus architecture to contemporary luxury, discover exceptional properties in Israel's cultural capital"
+        description="From iconic Bauhaus architecture to contemporary design, discover exceptional properties in Israel's cultural capital"
         backgroundImage="/images/en/hero-telaviv.jpg"
       />
 

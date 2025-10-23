@@ -34,8 +34,8 @@ const About = () => {
               Our Mission
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-6">
-              At City Market Luxury Real Estate, we are committed to providing unparalleled service 
-              in the luxury property market. With over 15 years of experience in Tel Aviv's most 
+               At City Market Real Estate, we are committed to providing unparalleled service 
+              in the property market. With over 15 years of experience in Tel Aviv's most
               prestigious neighborhoods, we connect discerning clients with their dream properties.
             </p>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
@@ -116,8 +116,8 @@ const About = () => {
 
           <div className="max-w-4xl mx-auto text-center">
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              Our team of experienced professionals brings together decades of combined expertise 
-              in Tel Aviv's luxury real estate market. Each member is dedicated to providing 
+               Our team of experienced professionals brings together decades of combined expertise 
+              in Tel Aviv's real estate market. Each member is dedicated to providing
               personalized service and expert guidance throughout your property journey.
             </p>
           </div>
@@ -133,7 +133,7 @@ const About = () => {
                 CITY MARKET
               </h3>
               <p className="font-montserrat text-sm text-background/70">
-                Luxury Real Estate
+                 Real Estate
               </p>
             </div>
             <div>
@@ -170,7 +170,7 @@ const About = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Luxury Real Estate. All rights reserved.
+              © 2024 City Market Real Estate. All rights reserved.
             </p>
           </div>
         </div>

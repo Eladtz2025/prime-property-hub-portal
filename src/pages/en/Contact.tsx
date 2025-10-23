@@ -50,7 +50,7 @@ const Contact = () => {
                 Let's Connect
               </h2>
               <p className="font-montserrat text-lg text-muted-foreground mb-12">
-                Whether you're looking to buy, sell, or rent luxury property in Tel Aviv, 
+                Whether you're looking to buy, sell, or rent property in Tel Aviv, 
                 our team is here to help. Reach out to us today.
               </p>
 
@@ -193,7 +193,7 @@ const Contact = () => {
                 CITY MARKET
               </h3>
               <p className="font-montserrat text-sm text-background/70">
-                Luxury Real Estate
+                 Real Estate
               </p>
             </div>
             <div>
@@ -230,7 +230,7 @@ const Contact = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Luxury Real Estate. All rights reserved.
+              © 2024 City Market Real Estate. All rights reserved.
             </p>
           </div>
         </div>

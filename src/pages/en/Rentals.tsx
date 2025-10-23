@@ -9,7 +9,7 @@ const EnglishRentals = () => {
   const rentalProperties = [
     {
       id: "1",
-      title: "Luxury Bauhaus Apartment",
+      title: "Bauhaus Apartment",
       address: "Rothschild Boulevard, Tel Aviv",
       price: "₪12,000",
       priceLabel: "/month",
