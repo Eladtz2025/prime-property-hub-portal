@@ -27,12 +27,13 @@ const EnglishHeader = () => {
           {/* Logo */}
           <button
             onClick={() => navigate("/en")}
-            className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+            className="transition-transform duration-200 hover:scale-105"
           >
-            CITY MARKET
-            <div className="text-xs font-montserrat tracking-wider text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-              Luxury Real Estate
-            </div>
+            <img 
+              src="/city-market-logo.png" 
+              alt="City Market" 
+              className="h-12 md:h-16 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+            />
           </button>
 
           {/* Desktop Navigation */}
@@ -41,10 +42,12 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`font-montserrat text-sm tracking-wide uppercase transition-colors duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] ${
+                className={`relative font-montserrat text-sm tracking-wide uppercase transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
+                  ${
                   isActive(item.path)
-                    ? "text-white font-medium"
-                    : "text-white/90 hover:text-white"
+                    ? "text-white font-semibold after:scale-x-100"
+                    : "text-white/90 font-medium hover:text-white after:scale-x-0 hover:after:scale-x-100"
                 }`}
               >
                 {item.label}
