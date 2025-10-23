@@ -221,3 +221,26 @@ All colors MUST be HSL.
     transform: scale(1);
   }
 }
+
+/* Smooth Scrolling */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Luxury Typography */
+.luxury-title {
+  @apply font-playfair text-4xl font-bold tracking-tight;
+}
+
+.body-text {
+  @apply font-montserrat text-base font-light leading-relaxed;
+}
+
+/* Hover Effects */
+.property-card-hover {
+  @apply transition-all duration-500 hover:shadow-2xl;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}

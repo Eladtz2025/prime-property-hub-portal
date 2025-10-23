@@ -10,6 +10,10 @@ import Rentals from './pages/Rentals';
 import Sales from './pages/Sales';
 import Management from './pages/Management';
 import PropertyDetailPage from './pages/PropertyDetailPage';
+import EnglishIndex from './pages/en/Index';
+import EnglishRentals from './pages/en/Rentals';
+import EnglishSales from './pages/en/Sales';
+import EnglishManagement from './pages/en/Management';
 import { Properties } from './pages/Properties';
 import { AdminControl } from './pages/AdminControl';
 import AdminDashboard from './pages/AdminDashboard';
@@ -51,6 +55,13 @@ const AppContent: React.FC = () => {
         <Route path="/rentals" element={<><Header /><Rentals /><Footer /></>} />
         <Route path="/sales" element={<><Header /><Sales /><Footer /></>} />
         <Route path="/management" element={<><Header /><Management /><Footer /></>} />
+        
+        {/* English Public Routes */}
+        <Route path="/en" element={<EnglishIndex />} />
+        <Route path="/en/rentals" element={<EnglishRentals />} />
+        <Route path="/en/sales" element={<EnglishSales />} />
+        <Route path="/en/management" element={<EnglishManagement />} />
+        
         <Route path="/rentals/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
         <Route path="/sales/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
         <Route path="/management/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
