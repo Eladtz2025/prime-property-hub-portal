@@ -74,7 +74,7 @@ const EnglishIndex = () => {
       <VideoHero
         title="WELCOME. HOME."
         subtitle="Find your ideal home. Explore our exclusive listings."
-        imageUrl="/images/en/hero-telaviv-morning.jpg"
+        imageUrl="/images/en/hero-telaviv-architecture.jpg"
       />
 
       {/* About Section */}
