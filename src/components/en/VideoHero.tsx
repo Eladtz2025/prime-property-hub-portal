@@ -32,15 +32,15 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         />
       )}
 
-      {/* Overlay Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
+      {/* Overlay Gradient - Lighter for daytime video */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
-        <h1 className="reliz-hero-title text-white mb-6 animate-fade-in">
+        <h1 className="reliz-hero-title text-white mb-6 animate-fade-in drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
           {title}
         </h1>
-        <p className="reliz-subtitle text-white/90 mb-12 max-w-2xl animate-fade-in animation-delay-200">
+        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
           {subtitle}
         </p>
 
