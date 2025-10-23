@@ -16,6 +16,11 @@ import EnglishSales from './pages/en/Sales';
 import EnglishManagement from './pages/en/Management';
 import EnglishNeighborhoods from './pages/en/Neighborhoods';
 import EnglishPropertyDetail from './pages/en/PropertyDetail';
+import RothschildNeighborhood from './pages/en/neighborhoods/Rothschild';
+import NeveTzedekNeighborhood from './pages/en/neighborhoods/NeveTzedek';
+import FlorentinNeighborhood from './pages/en/neighborhoods/Florentin';
+import DizengoffNeighborhood from './pages/en/neighborhoods/Dizengoff';
+import OldNorthNeighborhood from './pages/en/neighborhoods/OldNorth';
 import { Properties } from './pages/Properties';
 import { AdminControl } from './pages/AdminControl';
 import AdminDashboard from './pages/AdminDashboard';
@@ -59,13 +64,17 @@ const AppContent: React.FC = () => {
         <Route path="/management" element={<><Header /><Management /><Footer /></>} />
         
         {/* English Public Routes */}
-        <Route path="/en" element={<EnglishIndex />} />
-        <Route path="/en/rentals" element={<EnglishRentals />} />
-        <Route path="/en/sales" element={<EnglishSales />} />
-        <Route path="/en/management" element={<EnglishManagement />} />
-        <Route path="/en/neighborhoods" element={<EnglishNeighborhoods />} />
-        <Route path="/en/neighborhoods/:id" element={<EnglishNeighborhoods />} />
-        <Route path="/en/property/:id" element={<EnglishPropertyDetail />} />
+          <Route path="/en" element={<EnglishIndex />} />
+          <Route path="/en/rentals" element={<EnglishRentals />} />
+          <Route path="/en/sales" element={<EnglishSales />} />
+          <Route path="/en/management" element={<EnglishManagement />} />
+          <Route path="/en/neighborhoods" element={<EnglishNeighborhoods />} />
+          <Route path="/en/neighborhoods/rothschild" element={<RothschildNeighborhood />} />
+          <Route path="/en/neighborhoods/neve-tzedek" element={<NeveTzedekNeighborhood />} />
+          <Route path="/en/neighborhoods/florentin" element={<FlorentinNeighborhood />} />
+          <Route path="/en/neighborhoods/dizengoff" element={<DizengoffNeighborhood />} />
+          <Route path="/en/neighborhoods/old-north" element={<OldNorthNeighborhood />} />
+          <Route path="/en/property/:id" element={<EnglishPropertyDetail />} />
         
         <Route path="/rentals/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
         <Route path="/sales/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
