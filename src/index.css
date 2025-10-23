@@ -9,6 +9,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Hebrew version - keeping original colors */
     --background: 0 0% 100%;
     --foreground: 215 25% 27%;
 
@@ -227,6 +228,61 @@ All colors MUST be HSL.
   scroll-behavior: smooth;
 }
 
+/* RELIZ-inspired English version colors */
+.english-luxury {
+  --background: 40 20% 97%;  /* Warm beige/cream */
+  --foreground: 30 10% 15%;  /* Deep brown */
+  --card: 40 25% 98%;
+  --card-foreground: 30 10% 15%;
+  --popover: 40 25% 98%;
+  --popover-foreground: 30 10% 15%;
+  --primary: 38 60% 45%;  /* Warm gold */
+  --primary-foreground: 40 20% 97%;
+  --secondary: 35 25% 85%;  /* Light beige */
+  --secondary-foreground: 30 10% 15%;
+  --muted: 35 20% 90%;
+  --muted-foreground: 30 8% 40%;
+  --accent: 38 60% 45%;  /* Gold accent */
+  --accent-foreground: 40 20% 97%;
+  --border: 35 15% 85%;
+  --input: 35 15% 85%;
+  --ring: 38 60% 45%;
+  
+  /* Luxury gradients */
+  --gradient-luxury: linear-gradient(135deg, hsl(38 60% 45% / 0.9), hsl(30 50% 35% / 0.95));
+  --gradient-overlay: linear-gradient(180deg, transparent 0%, hsl(30 10% 15% / 0.3) 50%, hsl(30 10% 15% / 0.8) 100%);
+  --gradient-card: linear-gradient(to top, hsl(30 10% 15% / 0.95) 0%, hsl(30 10% 15% / 0.6) 40%, transparent 100%);
+  
+  /* Shadows */
+  --shadow-luxury: 0 20px 60px -15px hsl(38 60% 45% / 0.25);
+  --shadow-card: 0 10px 40px -10px hsl(30 10% 15% / 0.2);
+}
+
+/* RELIZ-inspired luxury styles */
+.reliz-hero-title {
+  @apply font-playfair text-5xl md:text-7xl font-normal tracking-wider uppercase;
+  letter-spacing: 0.15em;
+}
+
+.reliz-subtitle {
+  @apply font-montserrat text-lg md:text-xl font-light tracking-wide;
+}
+
+.reliz-button {
+  @apply font-montserrat text-sm tracking-widest uppercase border-2 border-primary/40 
+         hover:border-primary hover:bg-primary/10 transition-all duration-300
+         px-8 py-3 bg-transparent text-foreground;
+}
+
+.reliz-card-overlay {
+  @apply absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent
+         transition-all duration-500 group-hover:from-black/95 group-hover:via-black/50;
+}
+
+.reliz-property-title {
+  @apply font-playfair text-xl md:text-2xl font-normal tracking-wide;
+}
+
 /* Luxury Typography */
 .luxury-title {
   @apply font-playfair text-4xl font-bold tracking-tight;
@@ -243,4 +299,13 @@ All colors MUST be HSL.
 
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Animation delays */
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
 }
