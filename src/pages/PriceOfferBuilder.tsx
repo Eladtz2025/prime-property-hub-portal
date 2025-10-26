@@ -96,11 +96,13 @@ const PriceOfferBuilder = () => {
     try {
       const dataToSave = { ...offerData, is_active: activate };
       
-      if (offerId) {
+      let currentOfferId = offerId;
+      
+      if (currentOfferId) {
         const { error } = await supabase
           .from('price_offers')
           .update(dataToSave)
-          .eq('id', offerId);
+          .eq('id', currentOfferId);
         
         if (error) throw error;
       } else {
@@ -111,8 +113,36 @@ const PriceOfferBuilder = () => {
           .single();
         
         if (error) throw error;
+        currentOfferId = data.id;
         setOfferId(data.id);
         navigate(`/admin-dashboard/price-offers/edit/${data.id}`, { replace: true });
+      }
+
+      // שמירת בלוקים
+      if (currentOfferId) {
+        // מחיקת בלוקים ישנים
+        const { error: deleteError } = await supabase
+          .from('price_offer_blocks')
+          .delete()
+          .eq('offer_id', currentOfferId);
+        
+        if (deleteError) throw deleteError;
+
+        // הוספת בלוקים מעודכנים
+        if (blocks.length > 0) {
+          const blocksToInsert = blocks.map((block, index) => ({
+            offer_id: currentOfferId,
+            block_type: block.block_type,
+            block_order: index,
+            block_data: block.block_data,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('price_offer_blocks')
+            .insert(blocksToInsert);
+          
+          if (insertError) throw insertError;
+        }
       }
 
       toast({
