@@ -147,34 +147,34 @@ const PriceOfferView = () => {
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Logo and Title - Compact Side Design */}
         <div className="mb-12">
-          <div className="flex items-center gap-8 mb-6">
+          <div className="flex items-center gap-4 sm:gap-8">
             {/* לוגו בצד */}
             <div className="flex-shrink-0">
               <img 
                 src="/city-market-logo.png" 
                 alt="City Market Properties" 
-                className="h-20 sm:h-24 w-auto"
+                className="h-16 sm:h-20 w-auto"
               />
             </div>
             
-            {/* כותרת */}
-            <div className="flex-1">
-              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+            {/* כותרת ותגיות באותה שורה */}
+            <div className="flex-1 flex items-center gap-3 sm:gap-4 flex-wrap">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                 {isRTL ? 'הצעת מחיר' : 'Price Offer'}
               </h1>
-            </div>
-          </div>
-          
-          {/* תג ופרטים */}
-          <div className="inline-flex items-center gap-4 px-4 py-2 bg-primary/5 border border-primary/20 rounded-full">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-sm text-muted-foreground">{isRTL ? 'מאומת ומאושר' : 'Verified & Approved'}</span>
-            </div>
-            <div className="h-3 w-px bg-border"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-sm text-muted-foreground">{isRTL ? 'מותאם אישית' : 'Personalized'}</span>
+              
+              {/* תגיות */}
+              <div className="inline-flex items-center gap-3 px-3 py-1.5 bg-primary/5 border border-primary/20 rounded-full">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{isRTL ? 'מאומת ומאושר' : 'Verified & Approved'}</span>
+                </div>
+                <div className="h-3 w-px bg-border"></div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{isRTL ? 'מותאם אישית' : 'Personalized'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
