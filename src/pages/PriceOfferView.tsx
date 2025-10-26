@@ -148,6 +148,13 @@ const PriceOfferView = () => {
         {/* Logo and Title - Compact Side Design */}
         <div className="mb-6">
           <div className="flex items-center gap-4 sm:gap-8">
+            {/* כותרת */}
+            <div className="flex-1">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+                {isRTL ? 'הצעת מחיר' : 'Price Offer'}
+              </h1>
+            </div>
+            
             {/* לוגו בצד */}
             <div className="flex-shrink-0">
               <img 
@@ -155,13 +162,6 @@ const PriceOfferView = () => {
                 alt="City Market Properties" 
                 className="h-24 sm:h-32 w-auto"
               />
-            </div>
-            
-            {/* כותרת */}
-            <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
-                {isRTL ? 'הצעת מחיר' : 'Price Offer'}
-              </h1>
             </div>
           </div>
         </div>
