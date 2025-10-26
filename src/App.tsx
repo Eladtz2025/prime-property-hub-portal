@@ -36,6 +36,8 @@ import { Login } from './pages/Login';
 import ImportData from './pages/ImportData';
 import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
+import PriceOfferView from './pages/PriceOfferView';
+import AdminPriceOffers from './pages/AdminPriceOffers';
 
 import NotFound from './pages/NotFound';
 
@@ -65,6 +67,7 @@ const AppContent: React.FC = () => {
         <Route path="/rentals" element={<><Header /><Rentals /><Footer /></>} />
         <Route path="/sales" element={<><Header /><Sales /><Footer /></>} />
         <Route path="/management" element={<><Header /><Management /><Footer /></>} />
+        <Route path="/price-offer/:token" element={<PriceOfferView />} />
         
         {/* English Public Routes */}
           <Route path="/en" element={<EnglishIndex />} />
@@ -176,6 +179,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AllFeatures />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/price-offers" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPriceOffers />
                   </ProtectedRoute>
                 </Layout>
               } 
