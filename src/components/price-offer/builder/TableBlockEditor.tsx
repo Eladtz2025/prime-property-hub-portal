@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TableBlockEditorProps {
   open: boolean;
@@ -68,6 +69,23 @@ const TableBlockEditor = ({ open, onClose, onSave, initialData }: TableBlockEdit
     setData(newData);
   };
 
+  const handlePasteFromExcel = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.target.value;
+    
+    if (!pastedText.trim()) return;
+    
+    // Split by newlines to get rows
+    const lines = pastedText.split('\n').filter(line => line.trim());
+    
+    // Split each row by tabs
+    const parsedData = lines.map(line => line.split('\t'));
+    
+    // Update state
+    setData(parsedData);
+    setRows(parsedData.length);
+    setCols(parsedData[0]?.length || 3);
+  };
+
   const handleSave = () => {
     onSave({
       title,
@@ -89,8 +107,24 @@ const TableBlockEditor = ({ open, onClose, onSave, initialData }: TableBlockEdit
               id="table-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="השכרה לזמן קצר"
+              placeholder="דירות למכירה באזור"
             />
+          </div>
+
+          {/* Excel Paste Section */}
+          <div className="border rounded-lg p-4 bg-muted/20">
+            <Label htmlFor="excel-paste">הדבק טבלה מאקסל</Label>
+            <Textarea
+              id="excel-paste"
+              placeholder="העתק תאים מאקסל או גוגל שיטס והדבק כאן (Ctrl+V)"
+              rows={6}
+              dir="rtl"
+              onChange={handlePasteFromExcel}
+              className="mt-2 font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 טיפ: בחר תאים באקסל, העתק (Ctrl+C) והדבק כאן. הטבלה תעודכן אוטומטית!
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

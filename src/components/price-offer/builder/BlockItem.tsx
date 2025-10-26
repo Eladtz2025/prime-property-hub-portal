@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ChevronUp, ChevronDown, Trash2, Edit, FileText, Table2, Image, DollarSign, Minus, GripVertical, Video, Map } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Edit, FileText, Table2, Image, DollarSign, Minus, GripVertical, Video, Map, Receipt } from 'lucide-react';
 import { useState } from 'react';
 import TableBlockEditor from './TableBlockEditor';
 import ImageBlockEditor from './ImageBlockEditor';
@@ -8,6 +8,7 @@ import TextBlockEditor from './TextBlockEditor';
 import PriceCardEditor from './PriceCardEditor';
 import VideoBlockEditor from './VideoBlockEditor';
 import MapBlockEditor from './MapBlockEditor';
+import PriceQuoteBlockEditor from './PriceQuoteBlockEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSortable } from '@dnd-kit/sortable';
@@ -59,6 +60,8 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return <Video className="h-4 w-4" />;
       case 'map':
         return <Map className="h-4 w-4" />;
+      case 'price_quote':
+        return <Receipt className="h-4 w-4" />;
       default:
         return null;
     }
@@ -80,6 +83,8 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return block.block_data.title || 'וידאו';
       case 'map':
         return block.block_data.address || 'מפה';
+      case 'price_quote':
+        return 'הצעת מחיר';
       default:
         return 'בלוק';
     }
@@ -217,6 +222,15 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
 
       {isEditing && block.block_type === 'map' && (
         <MapBlockEditor
+          open={true}
+          onClose={() => setIsEditing(false)}
+          onSave={updateBlock}
+          initialData={block.block_data}
+        />
+      )}
+
+      {isEditing && block.block_type === 'price_quote' && (
+        <PriceQuoteBlockEditor
           open={true}
           onClose={() => setIsEditing(false)}
           onSave={updateBlock}

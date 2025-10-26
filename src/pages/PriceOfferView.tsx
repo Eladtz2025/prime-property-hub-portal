@@ -11,6 +11,7 @@ import PriceOfferPriceCard from '@/components/price-offer/PriceOfferPriceCard';
 import PriceOfferDivider from '@/components/price-offer/PriceOfferDivider';
 import PriceOfferVideoBlock from '@/components/price-offer/PriceOfferVideoBlock';
 import PriceOfferMapBlock from '@/components/price-offer/PriceOfferMapBlock';
+import PriceOfferPriceQuote from '@/components/price-offer/PriceOfferPriceQuote';
 
 interface PriceOffer {
   id: string;
@@ -224,6 +225,14 @@ const PriceOfferView = () => {
                     title={block.block_data.title}
                     address={block.block_data.address}
                     mapUrl={block.block_data.mapUrl}
+                  />
+                );
+
+              case 'price_quote':
+                return (
+                  <PriceOfferPriceQuote
+                    key={block.id}
+                    data={block.block_data}
                   />
                 );
 

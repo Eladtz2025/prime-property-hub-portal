@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { FileText, Table2, Image, DollarSign, Minus, Video, Map } from 'lucide-react';
+import { FileText, Table2, Image, DollarSign, Minus, Video, Map, Receipt } from 'lucide-react';
 import { useState } from 'react';
 import TableBlockEditor from './TableBlockEditor';
 import ImageBlockEditor from './ImageBlockEditor';
@@ -7,6 +7,7 @@ import TextBlockEditor from './TextBlockEditor';
 import PriceCardEditor from './PriceCardEditor';
 import VideoBlockEditor from './VideoBlockEditor';
 import MapBlockEditor from './MapBlockEditor';
+import PriceQuoteBlockEditor from './PriceQuoteBlockEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -104,6 +105,15 @@ const BlockSelector = ({ offerId, onBlockAdded }: BlockSelectorProps) => {
         
         <Button
           variant="outline"
+          onClick={() => setEditingType('price_quote')}
+          disabled={!offerId}
+        >
+          <Receipt className="h-4 w-4 ml-2" />
+          הצעת מחיר
+        </Button>
+        
+        <Button
+          variant="outline"
           onClick={() => setEditingType('price_card')}
           disabled={!offerId}
         >
@@ -185,6 +195,14 @@ const BlockSelector = ({ offerId, onBlockAdded }: BlockSelectorProps) => {
           open={true}
           onClose={() => setEditingType(null)}
           onSave={(data) => addBlock('map', data)}
+        />
+      )}
+
+      {editingType === 'price_quote' && (
+        <PriceQuoteBlockEditor
+          open={true}
+          onClose={() => setEditingType(null)}
+          onSave={(data) => addBlock('price_quote', data)}
         />
       )}
     </div>
