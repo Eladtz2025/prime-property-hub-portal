@@ -252,7 +252,16 @@ const PriceOfferView = () => {
 
         {/* Footer */}
         <div className="mt-12 text-center text-muted-foreground text-sm border-t border-border pt-6">
-          <p>City Market Properties</p>
+          <p>
+            <a 
+              href="https://www.ctmarketproperties.com/en" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              City Market Properties
+            </a>
+          </p>
         </div>
       </div>
     </div>
