@@ -185,10 +185,17 @@ const PriceOfferView = () => {
                 );
 
               case 'images':
-                return blockImages.length > 0 ? (
+                // Check both blockImages and block_data.images
+                const imagesToShow = blockImages.length > 0 
+                  ? blockImages.map(img => img.image_url)
+                  : (block.block_data.images || []);
+                
+                return imagesToShow.length > 0 ? (
                   <PriceOfferImageGallery
                     key={block.id}
-                    images={blockImages.map(img => img.image_url)}
+                    images={imagesToShow}
+                    title={block.block_data.title}
+                    imageSize={block.block_data.imageSize}
                   />
                 ) : null;
 
