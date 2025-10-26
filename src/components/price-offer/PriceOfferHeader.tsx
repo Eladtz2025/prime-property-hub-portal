@@ -15,19 +15,19 @@ const PriceOfferHeader = ({
 
   return (
     <div className="bg-card border border-border rounded-lg p-6 sm:p-8 shadow-card">
-      {/* Logo */}
-      <div className="flex justify-center mb-6">
+      {/* Title and Logo in same row */}
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-start gap-3 flex-1">
+          <Building2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
+        </div>
+        
+        {/* Logo */}
         <img 
           src="/city-market-logo.png" 
           alt="City Market Properties" 
-          className="h-16 sm:h-20 w-auto"
+          className="h-12 sm:h-16 w-auto flex-shrink-0"
         />
-      </div>
-
-      {/* Title */}
-      <div className="flex items-start gap-3 mb-4">
-        <Building2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
       </div>
 
       {/* Details */}
