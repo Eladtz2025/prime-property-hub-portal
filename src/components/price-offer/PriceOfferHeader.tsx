@@ -15,6 +15,15 @@ const PriceOfferHeader = ({
 
   return (
     <div className="bg-card border border-border rounded-lg p-6 sm:p-8 shadow-card">
+      {/* Logo */}
+      <div className="flex justify-center mb-6">
+        <img 
+          src="/city-market-logo.png" 
+          alt="City Market Properties" 
+          className="h-16 sm:h-20 w-auto"
+        />
+      </div>
+
       {/* Title */}
       <div className="flex items-start gap-3 mb-4">
         <Building2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
