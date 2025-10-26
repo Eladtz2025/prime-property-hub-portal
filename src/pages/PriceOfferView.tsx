@@ -145,53 +145,39 @@ const PriceOfferView = () => {
   return (
     <div className={`min-h-screen bg-background ${isRTL ? 'rtl' : ''}`}>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Logo and Title - Classic Impressive Design */}
-        <div className="mb-12 relative">
-          {/* רקע דקורטיבי */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-3xl blur-2xl -z-10"></div>
-          
-          <div className="relative bg-card border-2 border-primary/20 rounded-2xl shadow-xl p-10 sm:p-14 text-center">
-            {/* לוגו */}
-            <div className="flex justify-center mb-8">
-              <div className="relative">
-                <img 
-                  src="/images/city-market-logo.png" 
-                  alt="City Market Properties" 
-                  className="h-28 sm:h-36 w-auto relative z-10"
-                />
-                {/* הילה מאחורי הלוגו */}
-                <div className="absolute inset-0 bg-primary/20 blur-xl -z-10 scale-110"></div>
-              </div>
+        {/* Logo and Title - Compact Side Design */}
+        <div className="mb-12">
+          <div className="flex items-center gap-8 mb-6">
+            {/* לוגו בצד */}
+            <div className="flex-shrink-0">
+              <img 
+                src="/city-market-logo.png" 
+                alt="City Market Properties" 
+                className="h-20 sm:h-24 w-auto"
+              />
             </div>
             
-            {/* כותרת ראשית */}
-            <div className="space-y-2 mb-4">
-              <div className="inline-block px-4 py-1 bg-primary/10 rounded-full mb-3">
-                <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                  {isRTL ? 'מסמך רשמי' : 'Official Document'}
-                </span>
-              </div>
-              
-              <h1 className="text-5xl sm:text-6xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+            {/* כותרת */}
+            <div className="flex-1">
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                 {isRTL ? 'הצעת מחיר' : 'Price Offer'}
               </h1>
-              
-              <p className="text-xl text-muted-foreground font-medium">
+              <p className="text-lg text-muted-foreground font-medium mt-2">
                 {isRTL ? 'הצעה מקצועית מותאמת אישית' : 'Professional Personalized Offer'}
               </p>
             </div>
-            
-            {/* פרטים נוספים */}
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground pt-4 border-t border-border/50">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>{isRTL ? 'מאומת ומאושר' : 'Verified & Approved'}</span>
-              </div>
-              <div className="h-4 w-px bg-border"></div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>{isRTL ? 'מותאם אישית' : 'Personalized'}</span>
-              </div>
+          </div>
+          
+          {/* תג ופרטים */}
+          <div className="inline-flex items-center gap-4 px-4 py-2 bg-primary/5 border border-primary/20 rounded-full">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-sm text-muted-foreground">{isRTL ? 'מאומת ומאושר' : 'Verified & Approved'}</span>
+            </div>
+            <div className="h-3 w-px bg-border"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-sm text-muted-foreground">{isRTL ? 'מותאם אישית' : 'Personalized'}</span>
             </div>
           </div>
         </div>
