@@ -2,11 +2,23 @@ import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { usePublicProperties } from "@/hooks/usePublicProperties";
+import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp, MapPin, Home, Square, Building } from "lucide-react";
 
 const EnglishManagement = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
+
+  const filteredProperties = (properties || []).filter((property) => {
+    const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   const services = [
     {
@@ -65,6 +77,93 @@ const EnglishManagement = () => {
               Maximize Your Investment, Minimize Your Stress
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Properties Grid */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          {/* Search */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <Input
+              placeholder="Search properties..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-12 text-base"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">Loading properties...</p>
+            </div>
+          ) : filteredProperties && filteredProperties.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProperties.map((property) => (
+                <Card key={property.id} className="overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                  <div className="aspect-video relative">
+                    <img
+                      src={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
+                      alt={property.title || property.address}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {property.show_management_badge && (
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
+                        Full Management
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-playfair text-xl font-bold mb-2">
+                      {property.title || `${property.rooms} Rooms ${property.address}`}
+                    </h3>
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
+                      <MapPin className="h-4 w-4" />
+                      <span>{property.address}</span>
+                    </div>
+                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
+                      {property.floor && (
+                        <div className="flex items-center gap-1">
+                          <Building className="h-4 w-4" />
+                          <span>{property.floor} floors</span>
+                        </div>
+                      )}
+                      {property.property_size && (
+                        <div className="flex items-center gap-1">
+                          <Square className="h-4 w-4" />
+                          <span>{property.property_size} m²</span>
+                        </div>
+                      )}
+                    </div>
+                    {property.description && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {property.description}
+                      </p>
+                    )}
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {property.parking && (
+                        <Badge className="bg-primary hover:bg-primary/90">Parking</Badge>
+                      )}
+                      {property.elevator && (
+                        <Badge className="bg-primary hover:bg-primary/90">Elevator</Badge>
+                      )}
+                      {property.balcony && (
+                        <Badge className="bg-primary hover:bg-primary/90">Balcony</Badge>
+                      )}
+                    </div>
+                    <Button className="w-full font-montserrat">
+                      View Details
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">No properties found</p>
+            </div>
+          )}
         </div>
       </section>
 
