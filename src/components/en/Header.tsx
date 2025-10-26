@@ -8,12 +8,13 @@ const EnglishHeader = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
+  const leftNavItems = [
     { label: "Home", path: "/en" },
-    { label: "Buy", path: "/en/sales" },
-    { label: "Rent", path: "/en/rentals" },
     { label: "Management", path: "/en/management" },
     { label: "New Developments", path: "/en/new-developments" },
+  ];
+
+  const rightNavItems = [
     { label: "Neighborhoods", path: "/en/neighborhoods" },
     { label: "About", path: "/en/about" },
     { label: "Contact", path: "/en/contact" },
@@ -25,7 +26,26 @@ const EnglishHeader = () => {
     <header className="absolute top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+          {/* Left Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {leftNavItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`relative font-montserrat text-sm tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
+                  ${
+                  isActive(item.path)
+                    ? "text-white after:scale-x-100"
+                    : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Center Logo */}
           <button
             onClick={() => navigate("/en")}
             className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
@@ -40,9 +60,9 @@ const EnglishHeader = () => {
             </span>
           </button>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {navItems.map((item) => (
+          {/* Right Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
@@ -88,7 +108,7 @@ const EnglishHeader = () => {
         {mobileMenuOpen && (
           <nav className="lg:hidden py-6 border-t border-border/50">
             <div className="flex flex-col gap-4">
-              {navItems.map((item) => (
+              {[...leftNavItems, ...rightNavItems].map((item) => (
                 <button
                   key={item.path}
                   onClick={() => {
