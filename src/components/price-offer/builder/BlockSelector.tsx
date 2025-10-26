@@ -161,7 +161,7 @@ const BlockSelector = ({ offerId, onBlockAdded }: BlockSelectorProps) => {
         <ImageBlockEditor
           open={true}
           onClose={() => setEditingType(null)}
-          onSave={(data) => addBlock('image', data)}
+          onSave={(data) => addBlock('images', data)}
           offerId={offerId!}
         />
       )}

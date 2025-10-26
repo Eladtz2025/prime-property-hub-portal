@@ -50,7 +50,7 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return <FileText className="h-4 w-4" />;
       case 'table':
         return <Table2 className="h-4 w-4" />;
-      case 'image':
+      case 'images':
         return <Image className="h-4 w-4" />;
       case 'price_card':
         return <DollarSign className="h-4 w-4" />;
@@ -73,7 +73,7 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return block.block_data.title || 'בלוק טקסט';
       case 'table':
         return block.block_data.title || 'טבלה';
-      case 'image':
+      case 'images':
         return 'גלריית תמונות';
       case 'price_card':
         return 'קארד מחיר';
@@ -183,7 +183,7 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         />
       )}
 
-      {isEditing && block.block_type === 'image' && (
+      {isEditing && block.block_type === 'images' && (
         <ImageBlockEditor
           open={true}
           onClose={() => setIsEditing(false)}
