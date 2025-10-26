@@ -153,7 +153,7 @@ const PriceOfferView = () => {
               <img 
                 src="/city-market-logo.png" 
                 alt="City Market Properties" 
-                className="h-16 sm:h-20 w-auto"
+                className="h-24 sm:h-32 w-auto"
               />
             </div>
             
