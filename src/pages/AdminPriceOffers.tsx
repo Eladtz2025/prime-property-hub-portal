@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, Copy, Trash2, Edit } from 'lucide-react';
+import { Plus, Eye, Copy, Trash2, Edit, Share2, Files } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -60,8 +60,79 @@ const AdminPriceOffers = () => {
     toast.success('הלינק הועתק ללוח');
   };
 
+  const shareWhatsApp = (token: string, title: string) => {
+    const link = `${window.location.origin}/price-offer/${token}`;
+    const message = `שלום! הנה הצעת המחיר עבור ${title}:\n${link}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const openOffer = (token: string) => {
     window.open(`/price-offer/${token}`, '_blank');
+  };
+
+  const duplicateOffer = async (offerId: string) => {
+    try {
+      // Fetch original offer
+      const { data: originalOffer, error: offerError } = await supabase
+        .from('price_offers')
+        .select('*')
+        .eq('id', offerId)
+        .single();
+
+      if (offerError) throw offerError;
+
+      // Create new offer
+      const { data: newOffer, error: newOfferError } = await supabase
+        .from('price_offers')
+        .insert([{
+          property_title: `העתק של ${originalOffer.property_title}`,
+          property_details: originalOffer.property_details,
+          suggested_price_min: originalOffer.suggested_price_min,
+          suggested_price_max: originalOffer.suggested_price_max,
+          price_per_sqm_min: originalOffer.price_per_sqm_min,
+          price_per_sqm_max: originalOffer.price_per_sqm_max,
+          expected_income_min: originalOffer.expected_income_min,
+          expected_income_max: originalOffer.expected_income_max,
+          language: originalOffer.language,
+          is_active: false,
+          created_by: user?.id,
+        }])
+        .select()
+        .single();
+
+      if (newOfferError) throw newOfferError;
+
+      // Fetch and duplicate blocks
+      const { data: blocks, error: blocksError } = await supabase
+        .from('price_offer_blocks')
+        .select('*')
+        .eq('offer_id', offerId)
+        .order('block_order', { ascending: true });
+
+      if (blocksError) throw blocksError;
+
+      if (blocks && blocks.length > 0) {
+        const newBlocks = blocks.map(block => ({
+          offer_id: newOffer.id,
+          block_type: block.block_type,
+          block_order: block.block_order,
+          block_data: block.block_data,
+        }));
+
+        const { error: insertBlocksError } = await supabase
+          .from('price_offer_blocks')
+          .insert(newBlocks);
+
+        if (insertBlocksError) throw insertBlocksError;
+      }
+
+      toast.success('ההצעה שוכפלה בהצלחה');
+      navigate(`/admin-dashboard/price-offers/edit/${newOffer.id}`);
+    } catch (error) {
+      console.error('Error duplicating offer:', error);
+      toast.error('שגיאה בשכפול ההצעה');
+    }
   };
 
   const confirmDelete = async () => {
@@ -130,11 +201,21 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      onClick={() => navigate(`/admin-dashboard/price-offers/edit/${offer.id}`)}
+                      title="ערוך"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => openOffer(offer.token)}
                       title="תצוגה מקדימה"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    
                     <Button
                       variant="outline"
                       size="icon"
@@ -143,14 +224,25 @@ const AdminPriceOffers = () => {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
+                    
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => navigate(`/admin-dashboard/price-offers/edit/${offer.id}`)}
-                      title="ערוך"
+                      onClick={() => shareWhatsApp(offer.token, offer.property_title)}
+                      title="שתף ב-WhatsApp"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Share2 className="h-4 w-4" />
                     </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => duplicateOffer(offer.id)}
+                      title="שכפל הצעה"
+                    >
+                      <Files className="h-4 w-4" />
+                    </Button>
+                    
                     <Button
                       variant="outline"
                       size="icon"

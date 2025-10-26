@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Eye, Save, Share2, Loader2 } from 'lucide-react';
+import { Eye, Save, Share2, Loader2, Copy } from 'lucide-react';
 import BlockSelector from '@/components/price-offer/builder/BlockSelector';
 import BlockList from '@/components/price-offer/builder/BlockList';
 
@@ -178,6 +178,30 @@ const PriceOfferBuilder = () => {
 
     const { data } = await supabase
       .from('price_offers')
+      .select('token, property_title')
+      .eq('id', offerId)
+      .single();
+
+    if (data?.token) {
+      const url = `${window.location.origin}/price-offer/${data.token}`;
+      const message = `שלום! הנה הצעת המחיר עבור ${data.property_title}:\n${url}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!offerId) {
+      toast({
+        title: 'שמור קודם',
+        description: 'יש לשמור את ההצעה לפני העתקת הלינק',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { data } = await supabase
+      .from('price_offers')
       .select('token')
       .eq('id', offerId)
       .single();
@@ -211,9 +235,13 @@ const PriceOfferBuilder = () => {
             <Eye className="h-4 w-4 ml-2" />
             תצוגה מקדימה
           </Button>
+          <Button variant="outline" onClick={handleCopyLink}>
+            <Copy className="h-4 w-4 ml-2" />
+            העתק לינק
+          </Button>
           <Button variant="outline" onClick={handleShare}>
             <Share2 className="h-4 w-4 ml-2" />
-            העתק לינק
+            שתף ב-WhatsApp
           </Button>
           <Button variant="secondary" onClick={() => saveOffer(false)} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
