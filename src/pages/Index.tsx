@@ -1,11 +1,10 @@
-import Hero from '@/components/Hero';
+import VideoHero from '@/components/he/VideoHero';
+import HebrewHeader from '@/components/he/Header';
 import DivisionCard from '@/components/DivisionCard';
 import GoogleReviews from '@/components/GoogleReviews';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
-import { Building2, TrendingUp, Users, Mail, Phone } from 'lucide-react';
+import { Building2, TrendingUp, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/hero-building.jpg';
 
 const Index = () => {
   const divisions = [
@@ -69,41 +68,16 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen hebrew-luxury">
       <WhatsAppFloat />
+      <HebrewHeader />
       
       {/* Hero Section */}
-      <Hero
-        title="סיטי מרקט נכסים"
-        subtitle="מלב תל-אביב הלבנה עד הבית החדש שלכם"
-        description="חברת תיווך מובילה עם שלוש חטיבות המתמחות בהשכרות, מכירות וניהול נכסים"
-        backgroundImage={heroImage}
-      >
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 md:gap-8 justify-center items-center mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 border-t border-white/20 w-full max-w-2xl mx-auto px-4">
-          <Button
-            size="lg"
-            variant="ghost"
-            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
-            asChild
-          >
-            <a href="mailto:eladtz@gmail.com" className="flex items-center justify-center gap-2">
-              <Mail className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
-              <span className="truncate">eladtz@gmail.com</span>
-            </a>
-          </Button>
-          <Button
-            size="lg"
-            variant="ghost"
-            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
-            asChild
-          >
-            <a href="tel:054-550-3055" className="flex items-center justify-center gap-2">
-              <Phone className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
-              <span>054-550-3055</span>
-            </a>
-          </Button>
-        </div>
-      </Hero>
+      <VideoHero
+        title="ברוכים הבאים הביתה"
+        subtitle="מצאו את הבית האידיאלי שלכם. חקרו את הנכסים הבלעדיים שלנו בלב תל אביב"
+        imageUrl="/images/en/hero-last-one.png"
+      />
 
       {/* Divisions Section */}
       <section className="py-8 sm:py-12 md:py-16">
