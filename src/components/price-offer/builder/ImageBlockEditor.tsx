@@ -25,50 +25,17 @@ const ImageBlockEditor = ({ open, onClose, onSave, offerId, blockId, initialData
     }
   }, [initialData]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      // Save block data first
-      onSave({ images });
-
-      // If we have a blockId (after the block is created), save images to the database
-      if (blockId && images.length > 0) {
-        // Delete existing images for this block
-        await supabase
-          .from('price_offer_images')
-          .delete()
-          .eq('block_id', blockId);
-
-        // Insert new images
-        const imageRecords = images.map((url, index) => ({
-          offer_id: offerId,
-          block_id: blockId,
-          image_url: url,
-          image_order: index,
-        }));
-
-        const { error } = await supabase
-          .from('price_offer_images')
-          .insert(imageRecords);
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'נשמר!',
-        description: 'התמונות נשמרו בהצלחה',
-      });
-      
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: 'שגיאה',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = () => {
+    // Just save the images in block_data
+    // The actual database insert will happen when the offer is saved
+    onSave({ images });
+    
+    toast({
+      title: 'נשמר!',
+      description: 'התמונות נשמרו בהצלחה',
+    });
+    
+    onClose();
   };
 
   return (
@@ -86,9 +53,7 @@ const ImageBlockEditor = ({ open, onClose, onSave, offerId, blockId, initialData
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>ביטול</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'שומר...' : 'שמור'}
-          </Button>
+          <Button onClick={handleSave}>שמור</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

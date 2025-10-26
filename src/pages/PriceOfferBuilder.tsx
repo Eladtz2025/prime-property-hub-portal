@@ -137,11 +137,33 @@ const PriceOfferBuilder = () => {
             block_data: block.block_data,
           }));
 
-          const { error: insertError } = await supabase
+          const { data: insertedBlocks, error: insertError } = await supabase
             .from('price_offer_blocks')
-            .insert(blocksToInsert);
+            .insert(blocksToInsert)
+            .select();
           
           if (insertError) throw insertError;
+
+          // שמירת תמונות לבלוקים מסוג תמונות
+          if (insertedBlocks) {
+            for (let i = 0; i < insertedBlocks.length; i++) {
+              const block = insertedBlocks[i];
+              const originalBlock = blocks[i];
+              
+              if (block.block_type === 'images' && originalBlock.block_data?.images?.length > 0) {
+                const imageRecords = originalBlock.block_data.images.map((url: string, index: number) => ({
+                  offer_id: currentOfferId,
+                  block_id: block.id,
+                  image_url: url,
+                  image_order: index,
+                }));
+
+                await supabase
+                  .from('price_offer_images')
+                  .insert(imageRecords);
+              }
+            }
+          }
         }
       }
 
