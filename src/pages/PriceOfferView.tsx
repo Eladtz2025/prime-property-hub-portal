@@ -65,7 +65,6 @@ const PriceOfferView = () => {
           .from('price_offers')
           .select('*')
           .eq('token', token)
-          .eq('is_active', true)
           .single();
 
         if (offerError || !offerData) {
@@ -146,6 +145,15 @@ const PriceOfferView = () => {
   return (
     <div className={`min-h-screen bg-background ${isRTL ? 'rtl' : ''}`}>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Draft Warning */}
+        {!offer.is_active && (
+          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-yellow-800 dark:text-yellow-200 text-center font-medium">
+              ⚠️ {isRTL ? 'זו תצוגה מקדימה של טיוטה' : 'This is a draft preview'}
+            </p>
+          </div>
+        )}
+
         {/* Header */}
         <PriceOfferHeader
           title={offer.property_title}
