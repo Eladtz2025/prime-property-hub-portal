@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, Copy, Trash2, Edit, Share2, Files } from 'lucide-react';
+import { Plus, Eye, Copy, Trash2, Edit, Share2, Files, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import TemplateSelector from '@/components/price-offer/templates/TemplateSelector';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ const AdminPriceOffers = () => {
   const [offers, setOffers] = useState<PriceOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
     fetchOffers();
@@ -156,6 +158,48 @@ const AdminPriceOffers = () => {
     }
   };
 
+  const handleTemplateSelect = async (template: any) => {
+    try {
+      const { offerData, blocks } = template.template_data;
+
+      // Create new offer from template
+      const { data: newOffer, error: offerError } = await supabase
+        .from('price_offers')
+        .insert([{
+          ...offerData,
+          property_title: `${offerData.property_title} (מתבנית)`,
+          is_active: false,
+          created_by: user?.id,
+        }])
+        .select()
+        .single();
+
+      if (offerError) throw offerError;
+
+      // Create blocks if any
+      if (blocks && blocks.length > 0) {
+        const newBlocks = blocks.map((block: any) => ({
+          offer_id: newOffer.id,
+          block_type: block.block_type,
+          block_order: block.block_order,
+          block_data: block.block_data,
+        }));
+
+        const { error: blocksError } = await supabase
+          .from('price_offer_blocks')
+          .insert(newBlocks);
+
+        if (blocksError) throw blocksError;
+      }
+
+      toast.success('הצעה נוצרה מתבנית בהצלחה');
+      navigate(`/admin-dashboard/price-offers/edit/${newOffer.id}`);
+    } catch (error) {
+      console.error('Error creating from template:', error);
+      toast.error('שגיאה ביצירת הצעה מתבנית');
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center">טוען...</div>;
   }
@@ -165,10 +209,16 @@ const AdminPriceOffers = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">הצעות מחיר</h1>
-          <Button onClick={() => navigate('/admin-dashboard/price-offers/create')}>
-            <Plus className="h-4 w-4 ml-2" />
-            הצעה חדשה
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowTemplates(true)}>
+              <FileText className="h-4 w-4 ml-2" />
+              צור מתבנית
+            </Button>
+            <Button onClick={() => navigate('/admin-dashboard/price-offers/create')}>
+              <Plus className="h-4 w-4 ml-2" />
+              הצעה חדשה
+            </Button>
+          </div>
         </div>
 
         {offers.length === 0 ? (
@@ -275,6 +325,12 @@ const AdminPriceOffers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TemplateSelector
+        open={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={handleTemplateSelect}
+      />
     </div>
   );
 };

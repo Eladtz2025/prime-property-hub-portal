@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { FileText, Table2, Image, DollarSign, Minus } from 'lucide-react';
+import { FileText, Table2, Image, DollarSign, Minus, Video, Map } from 'lucide-react';
 import { useState } from 'react';
 import TableBlockEditor from './TableBlockEditor';
 import ImageBlockEditor from './ImageBlockEditor';
 import TextBlockEditor from './TextBlockEditor';
 import PriceCardEditor from './PriceCardEditor';
+import VideoBlockEditor from './VideoBlockEditor';
+import MapBlockEditor from './MapBlockEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -117,6 +119,24 @@ const BlockSelector = ({ offerId, onBlockAdded }: BlockSelectorProps) => {
           <Minus className="h-4 w-4 ml-2" />
           מפריד
         </Button>
+        
+        <Button
+          variant="outline"
+          onClick={() => setEditingType('video')}
+          disabled={!offerId}
+        >
+          <Video className="h-4 w-4 ml-2" />
+          וידאו
+        </Button>
+        
+        <Button
+          variant="outline"
+          onClick={() => setEditingType('map')}
+          disabled={!offerId}
+        >
+          <Map className="h-4 w-4 ml-2" />
+          מפה
+        </Button>
       </div>
 
       {editingType === 'table' && (
@@ -149,6 +169,22 @@ const BlockSelector = ({ offerId, onBlockAdded }: BlockSelectorProps) => {
           open={true}
           onClose={() => setEditingType(null)}
           onSave={(data) => addBlock('price_card', data)}
+        />
+      )}
+
+      {editingType === 'video' && (
+        <VideoBlockEditor
+          open={true}
+          onClose={() => setEditingType(null)}
+          onSave={(data) => addBlock('video', data)}
+        />
+      )}
+
+      {editingType === 'map' && (
+        <MapBlockEditor
+          open={true}
+          onClose={() => setEditingType(null)}
+          onSave={(data) => addBlock('map', data)}
         />
       )}
     </div>

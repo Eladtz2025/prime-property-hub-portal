@@ -1,13 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ChevronUp, ChevronDown, Trash2, Edit, FileText, Table2, Image, DollarSign, Minus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Edit, FileText, Table2, Image, DollarSign, Minus, GripVertical, Video, Map } from 'lucide-react';
 import { useState } from 'react';
 import TableBlockEditor from './TableBlockEditor';
 import ImageBlockEditor from './ImageBlockEditor';
 import TextBlockEditor from './TextBlockEditor';
 import PriceCardEditor from './PriceCardEditor';
+import VideoBlockEditor from './VideoBlockEditor';
+import MapBlockEditor from './MapBlockEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface BlockItemProps {
   block: any;
@@ -23,6 +27,21 @@ interface BlockItemProps {
 const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit, offerId }: BlockItemProps) => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const getBlockIcon = () => {
     switch (block.block_type) {
@@ -36,6 +55,10 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return <DollarSign className="h-4 w-4" />;
       case 'divider':
         return <Minus className="h-4 w-4" />;
+      case 'video':
+        return <Video className="h-4 w-4" />;
+      case 'map':
+        return <Map className="h-4 w-4" />;
       default:
         return null;
     }
@@ -53,6 +76,10 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
         return 'קארד מחיר';
       case 'divider':
         return 'מפריד';
+      case 'video':
+        return block.block_data.title || 'וידאו';
+      case 'map':
+        return block.block_data.address || 'מפה';
       default:
         return 'בלוק';
     }
@@ -85,9 +112,18 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
 
   return (
     <>
-      <Card className="p-3">
+      <Card ref={setNodeRef} style={style} className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="cursor-grab active:cursor-grabbing touch-none h-6 w-6"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </Button>
             <span className="text-muted-foreground text-sm">{index + 1}.</span>
             {getBlockIcon()}
             <span className="font-medium">{getBlockLabel()}</span>
@@ -163,6 +199,24 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
 
       {isEditing && block.block_type === 'price_card' && (
         <PriceCardEditor
+          open={true}
+          onClose={() => setIsEditing(false)}
+          onSave={updateBlock}
+          initialData={block.block_data}
+        />
+      )}
+
+      {isEditing && block.block_type === 'video' && (
+        <VideoBlockEditor
+          open={true}
+          onClose={() => setIsEditing(false)}
+          onSave={updateBlock}
+          initialData={block.block_data}
+        />
+      )}
+
+      {isEditing && block.block_type === 'map' && (
+        <MapBlockEditor
           open={true}
           onClose={() => setIsEditing(false)}
           onSave={updateBlock}

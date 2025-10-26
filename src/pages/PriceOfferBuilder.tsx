@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Eye, Save, Share2, Loader2, Copy } from 'lucide-react';
+import { Eye, Save, Share2, Loader2, Copy, FileText } from 'lucide-react';
 import BlockSelector from '@/components/price-offer/builder/BlockSelector';
 import BlockList from '@/components/price-offer/builder/BlockList';
+import SaveTemplateModal from '@/components/price-offer/templates/SaveTemplateModal';
 
 interface PriceOfferData {
   id?: string;
@@ -55,6 +56,8 @@ const PriceOfferBuilder = () => {
   
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [offerId, setOfferId] = useState<string | null>(id || null);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -216,6 +219,54 @@ const PriceOfferBuilder = () => {
     }
   };
 
+  const handleSaveAsTemplate = async (name: string, description: string, isPublic: boolean) => {
+    if (!offerId) {
+      toast({
+        title: 'שמור קודם',
+        description: 'יש לשמור את ההצעה לפני שמירה כתבנית',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+
+      const templateData = {
+        offerData,
+        blocks,
+      };
+
+      const { error } = await supabase
+        .from('price_offer_templates')
+        .insert([{
+          name,
+          description,
+          template_data: templateData as any,
+          created_by: userData.user?.id,
+          is_public: isPublic,
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'תבנית נשמרה!',
+        description: 'התבנית נשמרה בהצלחה וזמינה לשימוש',
+      });
+
+      setShowSaveTemplate(false);
+    } catch (error: any) {
+      toast({
+        title: 'שגיאה',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -242,6 +293,10 @@ const PriceOfferBuilder = () => {
           <Button variant="outline" onClick={handleShare}>
             <Share2 className="h-4 w-4 ml-2" />
             שתף ב-WhatsApp
+          </Button>
+          <Button variant="outline" onClick={() => setShowSaveTemplate(true)} disabled={!offerId}>
+            <FileText className="h-4 w-4 ml-2" />
+            שמור כתבנית
           </Button>
           <Button variant="secondary" onClick={() => saveOffer(false)} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
@@ -374,6 +429,13 @@ const PriceOfferBuilder = () => {
           )}
         </CardContent>
       </Card>
+
+      <SaveTemplateModal
+        open={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        onSave={handleSaveAsTemplate}
+        saving={savingTemplate}
+      />
     </div>
   );
 };

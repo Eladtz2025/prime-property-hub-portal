@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+
 interface PriceOfferTextBlockProps {
   title?: string;
   content: string;
@@ -9,8 +11,8 @@ const PriceOfferTextBlock = ({ title, content }: PriceOfferTextBlockProps) => {
       {title && (
         <h3 className="text-xl font-semibold text-foreground mb-4">{title}</h3>
       )}
-      <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
-        {content}
+      <div className="text-muted-foreground leading-relaxed prose prose-sm max-w-none rtl">
+        <ReactMarkdown>{content}</ReactMarkdown>
       </div>
     </div>
   );

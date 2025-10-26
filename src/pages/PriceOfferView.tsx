@@ -9,6 +9,8 @@ import PriceOfferImageGallery from '@/components/price-offer/PriceOfferImageGall
 import PriceOfferTextBlock from '@/components/price-offer/PriceOfferTextBlock';
 import PriceOfferPriceCard from '@/components/price-offer/PriceOfferPriceCard';
 import PriceOfferDivider from '@/components/price-offer/PriceOfferDivider';
+import PriceOfferVideoBlock from '@/components/price-offer/PriceOfferVideoBlock';
+import PriceOfferMapBlock from '@/components/price-offer/PriceOfferMapBlock';
 
 interface PriceOffer {
   id: string;
@@ -204,6 +206,26 @@ const PriceOfferView = () => {
 
               case 'divider':
                 return <PriceOfferDivider key={block.id} />;
+
+              case 'video':
+                return (
+                  <PriceOfferVideoBlock
+                    key={block.id}
+                    title={block.block_data.title}
+                    videoUrl={block.block_data.videoUrl}
+                    description={block.block_data.description}
+                  />
+                );
+
+              case 'map':
+                return (
+                  <PriceOfferMapBlock
+                    key={block.id}
+                    title={block.block_data.title}
+                    address={block.block_data.address}
+                    mapUrl={block.block_data.mapUrl}
+                  />
+                );
 
               default:
                 return null;

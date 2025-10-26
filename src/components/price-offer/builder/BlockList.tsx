@@ -2,6 +2,8 @@ import { useState } from 'react';
 import BlockItem from './BlockItem';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 interface Block {
   id: string;
@@ -19,6 +21,47 @@ interface BlockListProps {
 
 const BlockList = ({ offerId, blocks, onBlocksChange, onUpdate }: BlockListProps) => {
   const { toast } = useToast();
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const oldIndex = blocks.findIndex(b => b.id === active.id);
+    const newIndex = blocks.findIndex(b => b.id === over.id);
+    
+    const newBlocks = arrayMove(blocks, oldIndex, newIndex);
+    
+    const updates = newBlocks.map((block, idx) => ({
+      id: block.id,
+      block_order: idx,
+    }));
+
+    try {
+      for (const update of updates) {
+        await supabase
+          .from('price_offer_blocks')
+          .update({ block_order: update.block_order })
+          .eq('id', update.id);
+      }
+      
+      onUpdate();
+    } catch (error: any) {
+      toast({
+        title: 'שגיאה',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const moveBlock = async (index: number, direction: 'up' | 'down') => {
     const newBlocks = [...blocks];
@@ -86,19 +129,27 @@ const BlockList = ({ offerId, blocks, onBlocksChange, onUpdate }: BlockListProps
   return (
     <div className="space-y-2">
       <h3 className="font-semibold mb-4">בלוקים ({blocks.length})</h3>
-      {blocks.map((block, index) => (
-        <BlockItem
-          key={block.id}
-          block={block}
-          index={index}
-          total={blocks.length}
-          onMoveUp={() => moveBlock(index, 'up')}
-          onMoveDown={() => moveBlock(index, 'down')}
-          onDelete={() => deleteBlock(block.id)}
-          onEdit={onUpdate}
-          offerId={offerId}
-        />
-      ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+          {blocks.map((block, index) => (
+            <BlockItem
+              key={block.id}
+              block={block}
+              index={index}
+              total={blocks.length}
+              onMoveUp={() => moveBlock(index, 'up')}
+              onMoveDown={() => moveBlock(index, 'down')}
+              onDelete={() => deleteBlock(block.id)}
+              onEdit={onUpdate}
+              offerId={offerId}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };

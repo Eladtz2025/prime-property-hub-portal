@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import SimpleMDE from 'react-simplemde-editor';
+import 'easymde/dist/easymde.min.css';
 
 interface TextBlockEditorProps {
   open: boolean;
@@ -27,6 +28,15 @@ const TextBlockEditor = ({ open, onClose, onSave, initialData }: TextBlockEditor
     onSave({ title, content });
   };
 
+  const editorOptions = useMemo(() => ({
+    placeholder: 'כתוב כאן את התוכן... תמיכה ב-Markdown: **מודגש**, *נטוי*, ### כותרת',
+    spellChecker: false,
+    direction: 'rtl' as 'rtl',
+    toolbar: ['bold', 'italic', 'heading', '|', 'unordered-list', 'ordered-list', '|', 'link', 'preview'] as any,
+    status: false,
+    autofocus: true,
+  }), []);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl" dir="rtl">
@@ -47,13 +57,13 @@ const TextBlockEditor = ({ open, onClose, onSave, initialData }: TextBlockEditor
 
           <div>
             <Label htmlFor="text-content">תוכן</Label>
-            <Textarea
-              id="text-content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="כתוב כאן את התוכן..."
-              rows={10}
-            />
+            <div className="border rounded-md overflow-hidden">
+              <SimpleMDE
+                value={content}
+                onChange={setContent}
+                options={editorOptions}
+              />
+            </div>
           </div>
         </div>
 
