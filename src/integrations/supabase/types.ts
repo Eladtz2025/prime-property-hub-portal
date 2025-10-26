@@ -20,7 +20,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string
           user_agent: string | null
@@ -31,7 +31,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type: string
           user_agent?: string | null
@@ -42,7 +42,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string
           user_agent?: string | null
@@ -354,6 +354,149 @@ export type Database = {
           id?: string
           resource?: string
           role?: string
+        }
+        Relationships: []
+      }
+      price_offer_blocks: {
+        Row: {
+          block_data: Json
+          block_order: number
+          block_type: string
+          created_at: string
+          id: string
+          offer_id: string
+          updated_at: string
+        }
+        Insert: {
+          block_data?: Json
+          block_order: number
+          block_type: string
+          created_at?: string
+          id?: string
+          offer_id: string
+          updated_at?: string
+        }
+        Update: {
+          block_data?: Json
+          block_order?: number
+          block_type?: string
+          created_at?: string
+          id?: string
+          offer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_offer_blocks_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "price_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_offer_images: {
+        Row: {
+          block_id: string | null
+          created_at: string
+          id: string
+          image_order: number
+          image_url: string
+          offer_id: string
+        }
+        Insert: {
+          block_id?: string | null
+          created_at?: string
+          id?: string
+          image_order?: number
+          image_url: string
+          offer_id: string
+        }
+        Update: {
+          block_id?: string | null
+          created_at?: string
+          id?: string
+          image_order?: number
+          image_url?: string
+          offer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_offer_images_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "price_offer_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_offer_images_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "price_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_offers: {
+        Row: {
+          created_at: string
+          created_by: string
+          expected_income_max: number | null
+          expected_income_min: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          language: string
+          last_viewed_at: string | null
+          price_per_sqm_max: number | null
+          price_per_sqm_min: number | null
+          property_details: string | null
+          property_title: string
+          suggested_price_max: number | null
+          suggested_price_min: number | null
+          token: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expected_income_max?: number | null
+          expected_income_min?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_viewed_at?: string | null
+          price_per_sqm_max?: number | null
+          price_per_sqm_min?: number | null
+          property_details?: string | null
+          property_title: string
+          suggested_price_max?: number | null
+          suggested_price_min?: number | null
+          token?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expected_income_max?: number | null
+          expected_income_min?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_viewed_at?: string | null
+          price_per_sqm_max?: number | null
+          price_per_sqm_min?: number | null
+          property_details?: string | null
+          property_title?: string
+          suggested_price_max?: number | null
+          suggested_price_min?: number | null
+          token?: string
+          updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }
@@ -1060,10 +1203,7 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: Json
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
