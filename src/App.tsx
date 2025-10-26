@@ -38,6 +38,7 @@ import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import PriceOfferView from './pages/PriceOfferView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
+import PriceOfferBuilder from './pages/PriceOfferBuilder';
 
 import NotFound from './pages/NotFound';
 
@@ -189,6 +190,26 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminPriceOffers />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/price-offers/create" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <PriceOfferBuilder />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/price-offers/edit/:id" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <PriceOfferBuilder />
                   </ProtectedRoute>
                 </Layout>
               } 

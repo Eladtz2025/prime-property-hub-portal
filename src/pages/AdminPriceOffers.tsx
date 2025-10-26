@@ -94,7 +94,7 @@ const AdminPriceOffers = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">הצעות מחיר</h1>
-          <Button onClick={() => navigate('/admin/price-offers/new')}>
+          <Button onClick={() => navigate('/admin-dashboard/price-offers/create')}>
             <Plus className="h-4 w-4 ml-2" />
             הצעה חדשה
           </Button>
@@ -103,7 +103,7 @@ const AdminPriceOffers = () => {
         {offers.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-lg border border-border">
             <p className="text-muted-foreground mb-4">אין הצעות מחיר עדיין</p>
-            <Button onClick={() => navigate('/admin/price-offers/new')}>
+            <Button onClick={() => navigate('/admin-dashboard/price-offers/create')}>
               צור הצעה ראשונה
             </Button>
           </div>
@@ -146,7 +146,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => navigate(`/admin/price-offers/edit/${offer.id}`)}
+                      onClick={() => navigate(`/admin-dashboard/price-offers/edit/${offer.id}`)}
                       title="ערוך"
                     >
                       <Edit className="h-4 w-4" />
