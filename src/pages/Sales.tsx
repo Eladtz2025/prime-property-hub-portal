@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import HebrewHeader from '@/components/he/Header';
-import HebrewFooter from '@/components/he/Footer';
-import { RelizPropertyCard } from '@/components/he/RelizPropertyCard';
-import VideoHero from '@/components/he/VideoHero';
+import CompactHero from '@/components/CompactHero';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
-import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Shield, Users, Award } from 'lucide-react';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -118,30 +118,19 @@ const Sales = () => {
     { value: '150+', label: 'נכסים נמכרו השנה' },
   ];
 
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen hebrew-luxury" dir="rtl">
+    <div className="min-h-screen">
       <WhatsAppFloat />
-      <HebrewHeader />
       
-      <VideoHero
+      <CompactHero
         title="מכירות"
         subtitle="מתמחים במכירת נכסים ברחבי הארץ"
-        imageUrl="/images/sales-villa.jpg"
+        backgroundImage="/images/sales-villa.jpg"
       />
 
       {/* Properties Grid */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 bg-muted">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              נכסים זמינים למכירה
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              נכסים למכירה
-            </h2>
-          </div>
           
           {/* Search */}
           <div className="max-w-2xl mx-auto mb-12">
@@ -149,50 +138,80 @@ const Sales = () => {
               placeholder="חיפוש נכס..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-12 text-base px-6 bg-background border border-border focus:border-primary"
+              className="h-12 text-base"
             />
           </div>
 
           {filteredProperties && filteredProperties.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-                <RelizPropertyCard
-                  key={property.id}
-                  id={property.id}
-                  title={property.title}
-                  location={property.address}
-                  price={`₪${property.price.toLocaleString()}`}
-                  imageUrl={property.image}
-                  type="למכירה"
-                  onClick={() => navigate(`/sales/property/${property.id}`)}
-                />
+                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="aspect-video relative">
+                    <img
+                      src={property.image}
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
+                      ₪ {property.price.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold mb-2">{property.title}</h3>
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
+                      <MapPin className="h-4 w-4" />
+                      <span>{property.address}</span>
+                    </div>
+                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
+                      {property.rooms && (
+                        <div className="flex items-center gap-1">
+                          <Home className="h-4 w-4" />
+                          <span>{property.rooms}</span>
+                        </div>
+                      )}
+                      {property.property_size && (
+                        <div className="flex items-center gap-1">
+                          <Square className="h-4 w-4" />
+                          <span>{property.property_size} מ"ר</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {property.description}
+                    </p>
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {property.features.map((feature, idx) => (
+                        <Badge key={idx} className="bg-orange-500 hover:bg-orange-600 text-white">
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button asChild className="w-full">
+                      <a href={`/sales/property/${property.id}`}>פרטים נוספים</a>
+                    </Button>
+                  </div>
+                </Card>
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="font-montserrat text-lg text-muted-foreground">לא נמצאו נכסים התואמים את הסינון</p>
+              <p className="text-lg text-muted-foreground">לא נמצאו נכסים התואמים את הסינון</p>
             </div>
           )}
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="py-24 bg-background">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              השירותים שלנו
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              מכירות מקצועיות
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground max-w-2xl mx-auto">
-              שירות מלא ומקצועי הכולל את כל השלבים מהערכת שווי ועד חתימה על חוזה המכירה
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">השירותים שלנו במכירות</h2>
+          <p className="text-center text-muted-foreground mb-12">
+            אנו מעניקים שירות מלא ומקצועי הכולל את כל השלבים מהערכת שווי ועד חתימה על חוזה המכירה
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
-              <div key={index} className="p-8 border border-border hover:shadow-card transition-shadow">
+              <Card key={index} className="p-8">
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -200,17 +219,16 @@ const Sales = () => {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-playfair text-xl font-normal mb-2">{service.title}</h3>
-                    <p className="font-montserrat text-muted-foreground">{service.description}</p>
+                    <h3 className="font-bold text-lg mb-2">{service.title}</h3>
+                    <p className="text-muted-foreground">{service.description}</p>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      <HebrewFooter />
     </div>
   );
 };

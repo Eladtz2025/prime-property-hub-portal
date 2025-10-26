@@ -230,95 +230,32 @@ All colors MUST be HSL.
 
 /* RELIZ-inspired English version colors */
 .english-luxury {
-  --background: 0 0% 100%;      /* Pure white */
-  --foreground: 25 5% 14%;      /* Deep charcoal */
+  --background: 40 20% 97%;  /* Warm beige/cream */
+  --foreground: 30 10% 15%;  /* Deep brown */
+  --card: 40 25% 98%;
+  --card-foreground: 30 10% 15%;
+  --popover: 40 25% 98%;
+  --popover-foreground: 30 10% 15%;
+  --primary: 38 60% 45%;  /* Warm gold */
+  --primary-foreground: 40 20% 97%;
+  --secondary: 35 25% 85%;  /* Light beige */
+  --secondary-foreground: 30 10% 15%;
+  --muted: 35 20% 90%;
+  --muted-foreground: 30 8% 40%;
+  --accent: 38 60% 45%;  /* Gold accent */
+  --accent-foreground: 40 20% 97%;
+  --border: 35 15% 85%;
+  --input: 35 15% 85%;
+  --ring: 38 60% 45%;
   
-  --card: 0 0% 100%;
-  --card-foreground: 25 5% 14%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 25 5% 14%;
-  
-  --primary: 25 5% 14%;         /* Deep charcoal/black */
-  --primary-foreground: 0 0% 98%;
-  --primary-deep: 20 10% 8%;
-  --primary-light: 25 5% 20%;
-  
-  --secondary: 30 80% 52%;      /* Warm gold */
-  --secondary-foreground: 0 0% 98%;
-  --secondary-light: 30 75% 60%;
-  
-  --luxury: 0 0% 8%;
-  --luxury-foreground: 0 0% 98%;
-  --luxury-light: 0 0% 12%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  
-  --accent: 30 80% 52%;
-  --accent-foreground: 0 0% 98%;
-  
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 30 80% 52%;
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-deep)));
-  --gradient-luxury: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.3), rgba(0,0,0,0.9));
-  --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+  /* Luxury gradients */
+  --gradient-luxury: linear-gradient(135deg, hsl(38 60% 45% / 0.9), hsl(30 50% 35% / 0.95));
+  --gradient-overlay: linear-gradient(180deg, transparent 0%, hsl(30 10% 15% / 0.3) 50%, hsl(30 10% 15% / 0.8) 100%);
+  --gradient-card: linear-gradient(to top, hsl(30 10% 15% / 0.95) 0%, hsl(30 10% 15% / 0.6) 40%, transparent 100%);
   
   /* Shadows */
-  --shadow-elegant: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
-  --shadow-glow: 0 0 40px rgba(30, 30, 30, 0.1);
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* Hebrew Luxury Version with RTL support */
-.hebrew-luxury {
-  /* Same luxury color palette as English */
-  --background: 0 0% 100%;
-  --foreground: 25 5% 14%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 25 5% 14%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 25 5% 14%;
-  
-  --primary: 25 5% 14%;
-  --primary-foreground: 0 0% 98%;
-  --primary-deep: 20 10% 8%;
-  --primary-light: 25 5% 20%;
-  
-  --secondary: 30 80% 52%;
-  --secondary-foreground: 0 0% 98%;
-  --secondary-light: 30 75% 60%;
-  
-  --luxury: 0 0% 8%;
-  --luxury-foreground: 0 0% 98%;
-  --luxury-light: 0 0% 12%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  
-  --accent: 30 80% 52%;
-  --accent-foreground: 0 0% 98%;
-  
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 30 80% 52%;
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-deep)));
-  --gradient-luxury: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.3), rgba(0,0,0,0.9));
-  --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
-  
-  /* Shadows */
-  --shadow-elegant: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
-  --shadow-glow: 0 0 40px rgba(30, 30, 30, 0.1);
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-luxury: 0 20px 60px -15px hsl(38 60% 45% / 0.25);
+  --shadow-card: 0 10px 40px -10px hsl(30 10% 15% / 0.2);
 }
 
 /* RELIZ-inspired luxury styles */

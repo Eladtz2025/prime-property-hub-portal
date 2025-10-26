@@ -1,199 +1,151 @@
-import HebrewHeader from '@/components/he/Header';
-import VideoHero from '@/components/he/VideoHero';
-import HebrewFooter from '@/components/he/Footer';
-import { RelizPropertyCard } from '@/components/he/RelizPropertyCard';
+import Hero from '@/components/Hero';
+import DivisionCard from '@/components/DivisionCard';
+import GoogleReviews from '@/components/GoogleReviews';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
-import { useNavigate } from 'react-router-dom';
-import { Award, TrendingUp, Users } from 'lucide-react';
+import { Building2, TrendingUp, Users, Mail, Phone } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import heroImage from '@/assets/hero-building.jpg';
 
 const Index = () => {
-  const navigate = useNavigate();
-  const featuredProperties = [
+  const divisions = [
     {
-      id: "1",
-      title: "פנטהאוז ברוטשילד",
-      location: "שדרות רוטשילד",
-      price: "₪8,500,000",
-      imageUrl: "/images/properties/sale-rothschild-exterior.jpg",
-      type: "למכירה",
+      title: 'השכרות',
+      description: 'מחפשים דירה להשכרה? אנחנו כאן בשבילכם',
+      image: '/images/rental-interior.jpg',
+      features: [
+        'ליווי מקצועי בחיפוש הנכס המתאים',
+        'בדיקת דיירים מקיפה',
+        'הכנת חוזים משפטיים',
+        'שירות אישי ומסור',
+      ],
+      link: '/rentals',
+      icon: 'users' as const,
     },
     {
-      id: "2",
-      title: "דירת באוהאוס",
-      location: "רחוב דיזנגוף",
-      price: "₪12,000/חודש",
-      imageUrl: "/images/properties/living-bauhaus-1.jpg",
-      type: "להשכרה",
+      title: 'מכירות',
+      description: 'קונים או מוכרים? אנחנו נדאג לעסקה המושלמת',
+      image: '/images/sales-villa.jpg',
+      features: [
+        'הערכת שווי מקצועית ומדויקת',
+        'שיווק יעיל ומתקדם',
+        'ייעוץ משפטי ומיסוי מלא',
+        'ניהול מו"מ וליווי עד לסגירה',
+      ],
+      link: '/sales',
+      icon: 'trending' as const,
     },
     {
-      id: "3",
-      title: "וילה מודרנית",
-      location: "נווה צדק",
-      price: "₪15,000,000",
-      imageUrl: "/images/properties/penthouse-allenby.jpg",
-      type: "למכירה",
+      title: 'ניהול נכסים',
+      description: 'ניהול מקצועי ומלא עבור הנכס שלכם',
+      image: '/images/management-lobby.jpg',
+      features: [
+        'ניהול תחזוקה שוטפת ופתרונות מהירים',
+        'גביה ודיווח חודשי',
+        'ניהול דיירים מקצועי',
+        'זמינות ושירות 24/7',
+      ],
+      link: '/management',
+      icon: 'building' as const,
+    },
+  ];
+
+  const stats = [
+    {
+      icon: '24/7',
+      label: 'זמינות מלאה',
+      color: 'bg-primary',
     },
     {
-      id: "4",
-      title: "דירה עם מרפסת שמש",
-      location: "צפון הישן",
-      price: "₪10,500/חודש",
-      imageUrl: "/images/properties/balcony-sunny-1.jpg",
-      type: "להשכרה",
+      icon: '+500',
+      label: 'עסקאות מוצלחות',
+      color: 'bg-secondary',
+    },
+    {
+      icon: '+15',
+      label: 'שנות ניסיון',
+      color: 'bg-primary',
     },
   ];
 
   return (
-    <div className="min-h-screen hebrew-luxury" dir="rtl">
+    <div className="min-h-screen">
       <WhatsAppFloat />
-      <HebrewHeader />
+      
       {/* Hero Section */}
-      <VideoHero
-        title="ברוכים הבאים הביתה"
-        subtitle="מצאו את הבית האידיאלי. גלו את הנכסים האקסקלוסיביים שלנו."
-        imageUrl="/images/hero-building.jpg"
-      />
-
-      {/* About Section */}
-      <section className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              סיטי מרקט – נדל"ן
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-8">
-              ב<strong>סיטי מרקט נדל"ן</strong>, אנו מציעים שירות אישי ומותאם אישית שילווה אתכם בכל שלב בדרך
-              הנדל"ן. אנו עוזרים לכם למצוא את הנכס המושלם ולסגור את עסקת המכירה, תוך הבטחת חוויה חלקה ומתגמלת.
-            </p>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              בין אם אתם רוכשים את בית החלומות שלכם או משקיעים בנדל"ן פרימיום, הצוות המסור שלנו כאן כדי להפוך
-              את התהליך לחלק, מקצועי ומותאם לצרכים שלכם.
-            </p>
-          </div>
+      <Hero
+        title="סיטי מרקט נכסים"
+        subtitle="מלב תל-אביב הלבנה עד הבית החדש שלכם"
+        description="חברת תיווך מובילה עם שלוש חטיבות המתמחות בהשכרות, מכירות וניהול נכסים"
+        backgroundImage={heroImage}
+      >
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 md:gap-8 justify-center items-center mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 border-t border-white/20 w-full max-w-2xl mx-auto px-4">
+          <Button
+            size="lg"
+            variant="ghost"
+            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
+            asChild
+          >
+            <a href="mailto:eladtz@gmail.com" className="flex items-center justify-center gap-2">
+              <Mail className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+              <span className="truncate">eladtz@gmail.com</span>
+            </a>
+          </Button>
+          <Button
+            size="lg"
+            variant="ghost"
+            className="w-full sm:w-auto space-x-2 sm:space-x-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:text-secondary hover:scale-105 text-base sm:text-lg md:text-xl font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 touch-target"
+            asChild
+          >
+            <a href="tel:054-550-3055" className="flex items-center justify-center gap-2">
+              <Phone className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+              <span>054-550-3055</span>
+            </a>
+          </Button>
         </div>
-      </section>
+      </Hero>
 
-      {/* Featured Properties */}
-      <section className="py-24 bg-muted/30">
+      {/* Divisions Section */}
+      <section className="py-8 sm:py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              נבחרו במיוחד עבורכם
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">החטיבות שלנו</h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              ניהול, מכירה והשכרה במקום אחד
             </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              נכסים נבחרים
-            </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {featuredProperties.map((property) => (
-              <RelizPropertyCard
-                key={property.id}
-                {...property}
-                onClick={() => navigate(`/property/${property.id}`)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            {divisions.map((division) => (
+              <DivisionCard key={division.title} {...division} />
             ))}
           </div>
-
-          <div className="text-center">
-            <button
-              onClick={() => navigate("/sales")}
-              className="reliz-button"
-            >
-              צפה בכל הנכסים
-            </button>
-          </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-24 bg-background">
+
+      {/* Why Choose Us Section */}
+      <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
-            <div className="text-center">
-              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                15+ שנים
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                של מצוינות
-              </p>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                +500
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                עסקאות מוצלחות
-              </p>
-            </div>
-            <div className="text-center">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                24/7
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                זמינות
-              </p>
-            </div>
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">למה לבחור בנו?</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto">
+            {stats.map((stat, index) => (
+              <Card key={index} className="text-center p-6 hover:shadow-lg transition-shadow">
+                <div className={`${stat.color} text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold`}>
+                  {stat.icon}
+                </div>
+                <p className="text-lg font-semibold">{stat.label}</p>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-                צרו קשר
-              </p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-                בואו נמצא את בית החלומות שלכם
-              </h2>
-              <p className="font-montserrat text-lg text-muted-foreground">
-                צרו איתנו קשר היום כדי לתאם צפייה או ללמוד עוד על הנכסים האקסקלוסיביים שלנו.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="שם"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
-                <input
-                  type="email"
-                  placeholder="אימייל"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
-              </div>
-              <div className="space-y-4">
-                <input
-                  type="tel"
-                  placeholder="טלפון"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
-                <textarea
-                  placeholder="הודעה"
-                  rows={4}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="text-center mt-8">
-              <button className="reliz-button">
-                שלח הודעה
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <HebrewFooter />
+      {/* Google Reviews */}
+      <GoogleReviews />
     </div>
   );
 };
