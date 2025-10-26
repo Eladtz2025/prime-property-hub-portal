@@ -162,9 +162,6 @@ const PriceOfferView = () => {
               <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                 {isRTL ? 'הצעת מחיר' : 'Price Offer'}
               </h1>
-              <p className="text-lg text-muted-foreground font-medium mt-2">
-                {isRTL ? 'הצעה מקצועית מותאמת אישית' : 'Professional Personalized Offer'}
-              </p>
             </div>
           </div>
           
@@ -182,14 +179,6 @@ const PriceOfferView = () => {
           </div>
         </div>
 
-        {/* Draft Warning */}
-        {!offer.is_active && (
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-yellow-800 dark:text-yellow-200 text-center font-medium">
-              ⚠️ {isRTL ? 'זו תצוגה מקדימה של טיוטה' : 'This is a draft preview'}
-            </p>
-          </div>
-        )}
 
         {/* Header */}
         <PriceOfferHeader
