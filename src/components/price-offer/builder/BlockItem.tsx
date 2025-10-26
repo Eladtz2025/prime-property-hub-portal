@@ -189,6 +189,7 @@ const BlockItem = ({ block, index, total, onMoveUp, onMoveDown, onDelete, onEdit
           onClose={() => setIsEditing(false)}
           onSave={updateBlock}
           offerId={offerId}
+          blockId={block.id}
           initialData={block.block_data}
         />
       )}
