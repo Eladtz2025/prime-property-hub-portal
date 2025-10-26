@@ -5,12 +5,36 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface PriceOfferImageGalleryProps {
   images: string[];
+  title?: string;
+  imageSize?: 'small' | 'medium' | 'large';
 }
 
-const PriceOfferImageGallery = ({ images }: PriceOfferImageGalleryProps) => {
+const PriceOfferImageGallery = ({ images, title, imageSize = 'medium' }: PriceOfferImageGalleryProps) => {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
 
   if (!images || images.length === 0) return null;
+
+  const getGridCols = () => {
+    switch (imageSize) {
+      case 'small':
+        return 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5';
+      case 'large':
+        return 'grid-cols-1 sm:grid-cols-2';
+      default:
+        return 'grid-cols-2 sm:grid-cols-3';
+    }
+  };
+
+  const getImageHeight = () => {
+    switch (imageSize) {
+      case 'small':
+        return 'h-32 sm:h-40';
+      case 'large':
+        return 'h-64 sm:h-80';
+      default:
+        return 'h-48 sm:h-56';
+    }
+  };
 
   const openLightbox = (index: number) => {
     setSelectedImage(index);
@@ -29,17 +53,21 @@ const PriceOfferImageGallery = ({ images }: PriceOfferImageGalleryProps) => {
   };
 
   return (
-    <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div className="space-y-4">
+      {title && (
+        <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+      )}
+      
+      <div className={`grid ${getGridCols()} gap-4`}>
         {images.map((image, index) => (
           <div
             key={index}
-            className="aspect-square rounded-lg overflow-hidden cursor-pointer group"
+            className={`${getImageHeight()} rounded-lg overflow-hidden cursor-pointer group border-2 border-border/50 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg`}
             onClick={() => openLightbox(index)}
           >
             <img
               src={image}
-              alt={`תמונה ${index + 1}`}
+              alt={title ? `${title} - תמונה ${index + 1}` : `תמונה ${index + 1}`}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
             />
@@ -98,7 +126,7 @@ const PriceOfferImageGallery = ({ images }: PriceOfferImageGalleryProps) => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 
