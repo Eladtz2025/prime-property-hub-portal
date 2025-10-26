@@ -64,10 +64,10 @@ const AppContent: React.FC = () => {
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
         
         {/* Public pages - accessible to everyone */}
-        <Route path="/" element={<><Header /><Index /><Footer /></>} />
-        <Route path="/rentals" element={<><Header /><Rentals /><Footer /></>} />
-        <Route path="/sales" element={<><Header /><Sales /><Footer /></>} />
-        <Route path="/management" element={<><Header /><Management /><Footer /></>} />
+        <Route path="/" element={<><Index /><Footer /></>} />
+        <Route path="/rentals" element={<><Rentals /><Footer /></>} />
+        <Route path="/sales" element={<><Sales /><Footer /></>} />
+        <Route path="/management" element={<><Management /><Footer /></>} />
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
         
         {/* English Public Routes */}
@@ -86,9 +86,9 @@ const AppContent: React.FC = () => {
           <Route path="/en/contact" element={<EnglishContact />} />
           <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
         
-        <Route path="/rentals/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
-        <Route path="/sales/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
-        <Route path="/management/property/:id" element={<><Header /><PropertyDetailPage /><Footer /></>} />
+        <Route path="/rentals/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
+        <Route path="/sales/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
+        <Route path="/management/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
         
         {loading ? (
           <Route path="*" element={
