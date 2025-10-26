@@ -150,10 +150,6 @@ const PriceOfferView = () => {
         <PriceOfferHeader
           title={offer.property_title}
           details={offer.property_details}
-          priceMin={offer.suggested_price_min}
-          priceMax={offer.suggested_price_max}
-          incomeMin={offer.expected_income_min}
-          incomeMax={offer.expected_income_max}
           language={offer.language}
         />
 

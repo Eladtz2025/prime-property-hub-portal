@@ -17,12 +17,6 @@ interface PriceOfferData {
   id?: string;
   property_title: string;
   property_details: string;
-  suggested_price_min: number | null;
-  suggested_price_max: number | null;
-  price_per_sqm_min: number | null;
-  price_per_sqm_max: number | null;
-  expected_income_min: number | null;
-  expected_income_max: number | null;
   language: 'he' | 'en';
   is_active: boolean;
 }
@@ -44,12 +38,6 @@ const PriceOfferBuilder = () => {
   const [offerData, setOfferData] = useState<PriceOfferData>({
     property_title: '',
     property_details: '',
-    suggested_price_min: null,
-    suggested_price_max: null,
-    price_per_sqm_min: null,
-    price_per_sqm_max: null,
-    expected_income_min: null,
-    expected_income_max: null,
     language: 'he',
     is_active: false,
   });
@@ -79,12 +67,6 @@ const PriceOfferBuilder = () => {
       setOfferData({
         property_title: offer.property_title,
         property_details: offer.property_details,
-        suggested_price_min: offer.suggested_price_min,
-        suggested_price_max: offer.suggested_price_max,
-        price_per_sqm_min: offer.price_per_sqm_min,
-        price_per_sqm_max: offer.price_per_sqm_max,
-        expected_income_min: offer.expected_income_min,
-        expected_income_max: offer.expected_income_max,
         language: offer.language as 'he' | 'en',
         is_active: offer.is_active,
       });
@@ -335,52 +317,6 @@ const PriceOfferBuilder = () => {
               placeholder="קומה 2 | כיכר 2 | מגרש 902..."
               rows={3}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price-min">מחיר מוצע (מינימום)</Label>
-              <Input
-                id="price-min"
-                type="number"
-                value={offerData.suggested_price_min || ''}
-                onChange={(e) => setOfferData({ ...offerData, suggested_price_min: e.target.value ? Number(e.target.value) : null })}
-                placeholder="5,100,000"
-              />
-            </div>
-            <div>
-              <Label htmlFor="price-max">מחיר מוצע (מקסימום)</Label>
-              <Input
-                id="price-max"
-                type="number"
-                value={offerData.suggested_price_max || ''}
-                onChange={(e) => setOfferData({ ...offerData, suggested_price_max: e.target.value ? Number(e.target.value) : null })}
-                placeholder="5,350,000"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="income-min">הכנסה צפויה (מינימום)</Label>
-              <Input
-                id="income-min"
-                type="number"
-                value={offerData.expected_income_min || ''}
-                onChange={(e) => setOfferData({ ...offerData, expected_income_min: e.target.value ? Number(e.target.value) : null })}
-                placeholder="25,000"
-              />
-            </div>
-            <div>
-              <Label htmlFor="income-max">הכנסה צפויה (מקסימום)</Label>
-              <Input
-                id="income-max"
-                type="number"
-                value={offerData.expected_income_max || ''}
-                onChange={(e) => setOfferData({ ...offerData, expected_income_max: e.target.value ? Number(e.target.value) : null })}
-                placeholder="28,000"
-              />
-            </div>
           </div>
 
           <div>
