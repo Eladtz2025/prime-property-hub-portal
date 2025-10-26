@@ -50,14 +50,14 @@ const HebrewHeader = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
           >
-            <span className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-              CITY MARKET
-            </span>
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
               className="h-14 md:h-16 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] translate-y-1"
             />
+            <span className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              CITY MARKET
+            </span>
           </button>
 
           {/* Left Navigation (RTL) */}
@@ -106,7 +106,7 @@ const HebrewHeader = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-6 bg-background/95 backdrop-blur-sm rounded-lg mt-2">
+          <nav className="lg:hidden py-6 border-t border-border/50">
             <div className="flex flex-col gap-4 px-4">
               {[...rightNavItems, ...leftNavItems].map((item) => (
                 <button
