@@ -145,6 +145,18 @@ const PriceOfferView = () => {
   return (
     <div className={`min-h-screen bg-background ${isRTL ? 'rtl' : ''}`}>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Logo and Title */}
+        <div className="mb-8 text-center">
+          <img 
+            src="/images/city-market-logo.png" 
+            alt="City Market" 
+            className="h-16 mx-auto mb-4"
+          />
+          <h1 className="text-3xl font-bold text-foreground">
+            {isRTL ? 'הצעת מחיר' : 'Price Offer'}
+          </h1>
+        </div>
+
         {/* Draft Warning */}
         {!offer.is_active && (
           <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">

@@ -43,11 +43,11 @@ const PriceOfferPriceQuote = ({ data }: PriceOfferPriceQuoteProps) => {
             <div>
               <span className="font-semibold">מכירה:</span>
               {salePublication && (
-                <span> פרסום ₪{salePublication}</span>
+                <span> פרסום {salePublication}</span>
               )}
               {salePublication && saleExpected && <span> | </span>}
               {saleExpected && (
-                <span>צפי סגירה ₪{saleExpected}</span>
+                <span>צפי סגירה {saleExpected}</span>
               )}
             </div>
           </div>
@@ -59,11 +59,11 @@ const PriceOfferPriceQuote = ({ data }: PriceOfferPriceQuoteProps) => {
             <div>
               <span className="font-semibold">השכרה:</span>
               {rentalPublication && (
-                <span> פרסום ₪{rentalPublication}</span>
+                <span> פרסום {rentalPublication}</span>
               )}
               {rentalPublication && rentalExpected && <span> | </span>}
               {rentalExpected && (
-                <span>צפי סגירה ₪{rentalExpected} לחודש</span>
+                <span>צפי סגירה {rentalExpected} לחודש</span>
               )}
             </div>
           </div>
