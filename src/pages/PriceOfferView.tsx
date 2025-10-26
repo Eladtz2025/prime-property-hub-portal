@@ -60,12 +60,24 @@ const PriceOfferView = () => {
       }
 
       try {
-        // Fetch offer
-        const { data: offerData, error: offerError } = await supabase
+        // Try to fetch by slug first, then by token
+        let { data: offerData, error: offerError } = await supabase
           .from('price_offers')
           .select('*')
-          .eq('token', token)
-          .single();
+          .eq('slug', token)
+          .maybeSingle();
+
+        // If not found by slug, try by token
+        if (!offerData) {
+          const result = await supabase
+            .from('price_offers')
+            .select('*')
+            .eq('token', token)
+            .maybeSingle();
+          
+          offerData = result.data;
+          offerError = result.error;
+        }
 
         if (offerError || !offerData) {
           setNotFound(true);

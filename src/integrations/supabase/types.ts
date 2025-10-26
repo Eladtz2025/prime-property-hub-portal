@@ -485,6 +485,7 @@ export type Database = {
           price_per_sqm_min: number | null
           property_details: string | null
           property_title: string
+          slug: string | null
           suggested_price_max: number | null
           suggested_price_min: number | null
           token: string
@@ -505,6 +506,7 @@ export type Database = {
           price_per_sqm_min?: number | null
           property_details?: string | null
           property_title: string
+          slug?: string | null
           suggested_price_max?: number | null
           suggested_price_min?: number | null
           token?: string
@@ -525,6 +527,7 @@ export type Database = {
           price_per_sqm_min?: number | null
           property_details?: string | null
           property_title?: string
+          slug?: string | null
           suggested_price_max?: number | null
           suggested_price_min?: number | null
           token?: string

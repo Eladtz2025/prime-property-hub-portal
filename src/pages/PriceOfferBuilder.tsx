@@ -19,6 +19,7 @@ interface PriceOfferData {
   property_details: string;
   language: 'he' | 'en';
   is_active: boolean;
+  slug?: string;
 }
 
 interface Block {
@@ -40,6 +41,7 @@ const PriceOfferBuilder = () => {
     property_details: '',
     language: 'he',
     is_active: false,
+    slug: '',
   });
   
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -69,6 +71,7 @@ const PriceOfferBuilder = () => {
         property_details: offer.property_details,
         language: offer.language as 'he' | 'en',
         is_active: offer.is_active,
+        slug: offer.slug || '',
       });
       setOfferId(offer.id);
 
@@ -194,12 +197,13 @@ const PriceOfferBuilder = () => {
     
     const { data } = await supabase
       .from('price_offers')
-      .select('token')
+      .select('token, slug')
       .eq('id', offerId)
       .single();
     
-    if (data?.token) {
-      window.open(`/price-offer/${data.token}`, '_blank');
+    if (data) {
+      const identifier = data.slug || data.token;
+      window.open(`/price-offer/${identifier}`, '_blank');
     }
   };
 
@@ -215,12 +219,13 @@ const PriceOfferBuilder = () => {
 
     const { data } = await supabase
       .from('price_offers')
-      .select('token, property_title')
+      .select('token, slug, property_title')
       .eq('id', offerId)
       .single();
 
-    if (data?.token) {
-      const url = `${window.location.origin}/price-offer/${data.token}`;
+    if (data) {
+      const identifier = data.slug || data.token;
+      const url = `${window.location.origin}/price-offer/${identifier}`;
       const message = `שלום! הנה הצעת המחיר עבור ${data.property_title}:\n${url}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
@@ -239,12 +244,13 @@ const PriceOfferBuilder = () => {
 
     const { data } = await supabase
       .from('price_offers')
-      .select('token')
+      .select('token, slug')
       .eq('id', offerId)
       .single();
 
-    if (data?.token) {
-      const url = `${window.location.origin}/price-offer/${data.token}`;
+    if (data) {
+      const identifier = data.slug || data.token;
+      const url = `${window.location.origin}/price-offer/${identifier}`;
       navigator.clipboard.writeText(url);
       toast({
         title: 'הלינק הועתק!',
@@ -358,6 +364,20 @@ const PriceOfferBuilder = () => {
               onChange={(e) => setOfferData({ ...offerData, property_title: e.target.value })}
               placeholder="פנקס 67, תל אביב יפו"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="slug">Slug / קישור מותאם (אופציונלי)</Label>
+            <Input
+              id="slug"
+              value={offerData.slug || ''}
+              onChange={(e) => setOfferData({ ...offerData, slug: e.target.value })}
+              placeholder="penthouse-rothschild-67"
+              dir="ltr"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              הקישור יהיה: {window.location.origin}/price-offer/{offerData.slug || '[slug-שלך]'}
+            </p>
           </div>
 
           <div>
