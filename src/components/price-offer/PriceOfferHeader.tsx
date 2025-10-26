@@ -23,11 +23,18 @@ const PriceOfferHeader = ({
         </div>
         
         {/* Logo */}
-        <img 
-          src="/city-market-logo.png" 
-          alt="City Market Properties" 
-          className="h-12 sm:h-16 w-auto flex-shrink-0"
-        />
+        <a 
+          href="https://www.ctmarketproperties.com/en" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex-shrink-0"
+        >
+          <img 
+            src="/city-market-logo.png" 
+            alt="City Market Properties" 
+            className="h-12 sm:h-16 w-auto hover:opacity-80 transition-opacity cursor-pointer"
+          />
+        </a>
       </div>
 
       {/* Details */}
