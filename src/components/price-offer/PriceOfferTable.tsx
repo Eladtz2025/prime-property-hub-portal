@@ -81,20 +81,64 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
 
             {/* Grid for middle parameters (skip first 2 and last) */}
             {row.length > 3 && (
-              <div className="grid grid-cols-2 gap-3">
-                {row.slice(2, -1).map((cell, idx) => {
-                  const cellIndex = idx + 2;
+              <div className="space-y-3">
+                {/* Find parking and elevator indices */}
+                {(() => {
+                  const parkingIndex = headers.findIndex(h => h.toLowerCase().includes('חניה') || h.toLowerCase().includes('parking'));
+                  const elevatorIndex = headers.findIndex(h => h.toLowerCase().includes('מעלית') || h.toLowerCase().includes('elevator'));
+                  const middleParams = row.slice(2, -1);
+                  const middleHeaders = headers.slice(2, -1);
+                  
+                  // Separate parking/elevator from other params
+                  const parkingElevatorIndices = new Set([parkingIndex - 2, elevatorIndex - 2]);
+                  const otherParams: Array<{value: string, header: string, idx: number}> = [];
+                  const parkingElevatorParams: Array<{value: string, header: string}> = [];
+                  
+                  middleParams.forEach((cell, idx) => {
+                    const actualIdx = idx + 2;
+                    if (parkingElevatorIndices.has(idx)) {
+                      parkingElevatorParams.push({ value: cell, header: headers[actualIdx] });
+                    } else {
+                      otherParams.push({ value: cell, header: headers[actualIdx], idx: actualIdx });
+                    }
+                  });
+                  
                   return (
-                    <div key={cellIndex} className="space-y-1">
-                      <div className="text-xs font-medium text-muted-foreground">
-                        {headers[cellIndex]}
-                      </div>
-                      <div className="text-sm font-semibold text-foreground">
-                        {cell}
-                      </div>
-                    </div>
+                    <>
+                      {/* Other parameters in 2-column grid */}
+                      {otherParams.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {otherParams.map((param) => (
+                            <div key={param.idx} className="space-y-1">
+                              <div className="text-xs font-medium text-muted-foreground">
+                                {param.header}
+                              </div>
+                              <div className="text-sm font-semibold text-foreground">
+                                {param.value}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Parking & Elevator in same row */}
+                      {parkingElevatorParams.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {parkingElevatorParams.map((param, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <div className="text-xs font-medium text-muted-foreground">
+                                {param.header}
+                              </div>
+                              <div className="text-sm font-semibold text-foreground">
+                                {param.value}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   );
-                })}
+                })()}
               </div>
             )}
 
