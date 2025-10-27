@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Receipt } from 'lucide-react';
 import { BrokerageFormModal } from './BrokerageFormModal';
 
 export const BrokerageFormCard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -34,6 +36,15 @@ export const BrokerageFormCard: React.FC = () => {
             >
               <FileText className="h-4 w-4 ml-2" />
               הזמנת שירותי תיווך
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => navigate('/admin-dashboard/price-offers')}
+            >
+              <Receipt className="h-4 w-4 ml-2" />
+              הצעות מחיר
             </Button>
           </div>
         </CardContent>
