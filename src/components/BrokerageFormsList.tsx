@@ -4,11 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Calendar, User, Phone, CheckCircle2, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Calendar, User, Phone, CheckCircle2, Clock, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 export const BrokerageFormsList: React.FC = () => {
+  const { toast } = useToast();
+  
   const { data: forms, isLoading } = useQuery({
     queryKey: ['brokerage-forms'],
     queryFn: async () => {
@@ -21,6 +25,29 @@ export const BrokerageFormsList: React.FC = () => {
       return data;
     },
   });
+
+  const { data: pendingTokens } = useQuery({
+    queryKey: ['pending-brokerage-tokens'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('brokerage_form_tokens')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const copyTokenLink = (token: string) => {
+    const link = `${window.location.origin}/brokerage-form/${token}`;
+    navigator.clipboard.writeText(link);
+    toast({
+      title: 'הלינק הועתק',
+      description: 'כעת ניתן לשלוח את הלינק ללקוח',
+    });
+  };
 
   if (isLoading) {
     return (
@@ -62,10 +89,67 @@ export const BrokerageFormsList: React.FC = () => {
           <FileText className="h-5 w-5" />
           טפסי תיווך
         </CardTitle>
-        <CardDescription>רשימת כל הטפסים שנשלחו ({forms.length})</CardDescription>
+        <CardDescription>
+          טפסים חתומים: {forms.length} | בהמתנה לחתימה: {pendingTokens?.length || 0}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Pending tokens section */}
+          {pendingTokens && pendingTokens.length > 0 && (
+            <>
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  בהמתנה לחתימה מרחוק
+                </h3>
+                <div className="space-y-2">
+                  {pendingTokens.map((tokenRecord) => {
+                    const formData = tokenRecord.form_data as any || {};
+                    const properties = formData.properties as any[] || [];
+                    
+                    return (
+                      <Card key={tokenRecord.id} className="border-l-4 border-l-yellow-500">
+                        <CardContent className="pt-4 pb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <Badge variant="outline" className="gap-1">
+                                <Clock className="h-3 w-3" />
+                                ממתין לחתימה
+                              </Badge>
+                              <p className="text-sm text-muted-foreground">
+                                {properties.length > 0 && `${properties.length} נכסים`}
+                                {' · '}
+                                נוצר {format(new Date(tokenRecord.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                תוקף עד: {format(new Date(tokenRecord.expires_at), 'dd/MM/yyyy', { locale: he })}
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyTokenLink(tokenRecord.token)}
+                            >
+                              <Copy className="h-4 w-4 ml-2" />
+                              העתק לינק
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  טפסים חתומים
+                </h3>
+              </div>
+            </>
+          )}
           {forms.map((form) => {
             const properties = form.properties as any[] || [];
             

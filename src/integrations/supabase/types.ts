@@ -50,6 +50,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brokerage_form_tokens: {
+        Row: {
+          client_filled_at: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          form_data: Json
+          id: string
+          signed_at: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_filled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          form_data?: Json
+          id?: string
+          signed_at?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          client_filled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          form_data?: Json
+          id?: string
+          signed_at?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
       brokerage_forms: {
         Row: {
           agent_id: string

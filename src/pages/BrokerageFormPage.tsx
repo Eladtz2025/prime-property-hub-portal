@@ -1,0 +1,540 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import SignatureCanvas from 'react-signature-canvas';
+import { Trash2, Save, Send, Copy, Check } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface PropertyRow {
+  address: string;
+  floor: string;
+  rooms: string;
+  price: string;
+}
+
+type PageMode = 'fill' | 'create-remote' | 'remote-sign';
+
+export const BrokerageFormPage: React.FC = () => {
+  const { token } = useParams();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') as PageMode || (token ? 'remote-sign' : 'fill');
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const signatureRef = useRef<SignatureCanvas>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string>('');
+  const [linkCopied, setLinkCopied] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    referredBy: '',
+    feeTypeRental: false,
+    feeTypeSale: false,
+    specialTerms: '',
+    clientName: '',
+    clientId: '',
+    clientPhone: '',
+    agentName: 'אלעד צברי',
+    agentId: '036804805',
+  });
+
+  const [properties, setProperties] = useState<PropertyRow[]>([
+    { address: '', floor: '', rooms: '', price: '' },
+    { address: '', floor: '', rooms: '', price: '' },
+    { address: '', floor: '', rooms: '', price: '' },
+  ]);
+
+  // Load remote form data if in remote-sign mode
+  useEffect(() => {
+    if (mode === 'remote-sign' && token) {
+      loadRemoteFormData();
+    }
+  }, [mode, token]);
+
+  const loadRemoteFormData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('brokerage_form_tokens')
+        .select('*')
+        .eq('token', token)
+        .eq('status', 'pending')
+        .single();
+
+      if (error) throw error;
+
+      if (data && data.form_data) {
+        const savedData = data.form_data as any;
+        setFormData({
+          ...formData,
+          ...savedData,
+          clientName: '',
+          clientId: '',
+          clientPhone: '',
+        });
+        if (savedData.properties) {
+          setProperties(savedData.properties);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading form:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'הטופס לא נמצא או שפג תוקפו',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handlePropertyChange = (index: number, field: keyof PropertyRow, value: string) => {
+    const newProperties = [...properties];
+    newProperties[index][field] = value;
+    setProperties(newProperties);
+  };
+
+  const addPropertyRow = () => {
+    setProperties([...properties, { address: '', floor: '', rooms: '', price: '' }]);
+  };
+
+  const clearSignature = () => {
+    signatureRef.current?.clear();
+  };
+
+  const copyLinkToClipboard = () => {
+    navigator.clipboard.writeText(generatedLink);
+    setLinkCopied(true);
+    toast({
+      title: 'הלינק הועתק',
+      description: 'כעת ניתן לשלוח את הלינק ללקוח',
+    });
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleCreateRemoteForm = async () => {
+    if (!user) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש להתחבר כדי ליצור טופס',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('brokerage_form_tokens')
+        .insert([{
+          created_by: user.id,
+          form_data: {
+            date: formData.date,
+            referredBy: formData.referredBy,
+            feeTypeRental: formData.feeTypeRental,
+            feeTypeSale: formData.feeTypeSale,
+            specialTerms: formData.specialTerms,
+            agentName: formData.agentName,
+            agentId: formData.agentId,
+            properties: properties.filter(p => p.address),
+          } as any,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const link = `${window.location.origin}/brokerage-form/${data.token}`;
+      setGeneratedLink(link);
+
+      toast({
+        title: 'הלינק נוצר בהצלחה',
+        description: 'כעת ניתן לשלוח את הלינק ללקוח לחתימה',
+      });
+    } catch (error) {
+      console.error('Error creating remote form:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'יצירת הלינק נכשלה',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.clientName || !formData.clientId || !formData.clientPhone) {
+      toast({
+        title: 'שגיאה',
+        description: 'נא למלא את כל פרטי הלקוח',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!signatureRef.current || signatureRef.current.isEmpty()) {
+      toast({
+        title: 'שגיאה',
+        description: 'נא לחתום על הטופס',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const signatureData = signatureRef.current.toDataURL();
+    setIsSubmitting(true);
+
+    try {
+      // Insert to brokerage_forms table
+      const { error: formError } = await supabase.from('brokerage_forms').insert([{
+        form_date: formData.date,
+        referred_by: formData.referredBy,
+        fee_type_rental: formData.feeTypeRental,
+        fee_type_sale: formData.feeTypeSale,
+        special_terms: formData.specialTerms,
+        properties: properties.filter(p => p.address) as any,
+        client_name: formData.clientName,
+        client_id: formData.clientId,
+        client_phone: formData.clientPhone,
+        agent_name: formData.agentName,
+        agent_id: formData.agentId,
+        client_signature: signatureData,
+        created_by: user?.id,
+      }]);
+
+      if (formError) throw formError;
+
+      // If this was a remote form, update the token status
+      if (mode === 'remote-sign' && token) {
+        await supabase
+          .from('brokerage_form_tokens')
+          .update({
+            status: 'signed',
+            signed_at: new Date().toISOString(),
+            client_filled_at: new Date().toISOString(),
+          })
+          .eq('token', token);
+      }
+
+      toast({
+        title: 'הטופס נשמר בהצלחה',
+        description: 'הזמנת שירותי התיווך נשמרה במערכת',
+      });
+
+      // Navigate based on mode
+      if (mode === 'remote-sign') {
+        // Show success message for remote users
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        navigate('/admin-dashboard');
+      }
+    } catch (error) {
+      console.error('Error saving form:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שמירת הטופס נכשלה',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show link sharing UI after creating remote form
+  if (generatedLink) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>הלינק לטופס נוצר בהצלחה</CardTitle>
+              <CardDescription>
+                שלח את הלינק הבא ללקוח כדי שימלא את פרטיו ויחתום
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input value={generatedLink} readOnly className="font-mono text-sm" />
+                <Button onClick={copyLinkToClipboard} variant="outline">
+                  {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => navigate('/admin-dashboard')} 
+                  variant="outline"
+                  className="flex-1"
+                >
+                  חזרה לדשבורד
+                </Button>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="flex-1"
+                >
+                  צור טופס נוסף
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {mode === 'remote-sign' ? 'טופס הזמנת שירותי תיווך' : 'הזמנת שירותי תיווך'}
+            </CardTitle>
+            <CardDescription>
+              {mode === 'create-remote' && 'מלא את פרטי הנכסים והתנאים, ולאחר מכן שלח ללקוח'}
+              {mode === 'fill' && 'מלא את הטופס עם הלקוח וקבל חתימה מיידית'}
+              {mode === 'remote-sign' && 'נא למלא את פרטיך האישיים ולחתום על הטופס'}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {/* תאריך */}
+            <div>
+              <Label>תאריך</Label>
+              <Input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                disabled={mode === 'remote-sign'}
+              />
+            </div>
+
+            {/* מופנה ע"י */}
+            <div>
+              <Label>מופנה ע"י "סיטי מרקט"</Label>
+              <Input
+                placeholder="שם הלקוח/פונה"
+                value={formData.referredBy}
+                onChange={(e) => setFormData({ ...formData, referredBy: e.target.value })}
+                disabled={mode === 'remote-sign'}
+              />
+            </div>
+
+            {/* הצהרות */}
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold">הצהרות</h3>
+              <p className="text-sm text-muted-foreground">
+                אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר. אנו מתחייבים שלא למסור לזולת ולא להשתמש בכל מידע הקשור בפנייה זו ללא תיאום מראש עם "סיטי מרקט".
+              </p>
+              <p className="text-sm text-muted-foreground">
+                הנני מאשר/ים כי הופניתי לראשונה על ידכם אל הנכסים/הצדדים המפורטים בטופס זה.
+              </p>
+            </div>
+
+            {/* שכר טרחה */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">שכר טרחה</h3>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  checked={formData.feeTypeRental}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, feeTypeRental: checked as boolean })
+                  }
+                  disabled={mode === 'remote-sign'}
+                />
+                <Label className="cursor-pointer">
+                  השכרת דירה/משרד — <strong>100%</strong> מדמי השכירות החודשיים <em>בתוספת מע"מ</em> במזומן.
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  checked={formData.feeTypeSale}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, feeTypeSale: checked as boolean })
+                  }
+                  disabled={mode === 'remote-sign'}
+                />
+                <Label className="cursor-pointer">
+                  קניה או מכירה — <strong>2%</strong> מהערך הכולל של העסקה <em>בתוספת מע"מ</em> במזומן.
+                </Label>
+              </div>
+              <div>
+                <Label>תנאים מיוחדים ו/או נוספים</Label>
+                <Textarea
+                  placeholder="הקלידו תנאים מיוחדים, יוצאי דופן, חריגים וכד'."
+                  value={formData.specialTerms}
+                  onChange={(e) => setFormData({ ...formData, specialTerms: e.target.value })}
+                  disabled={mode === 'remote-sign'}
+                />
+              </div>
+            </div>
+
+            {/* רשימת נכסים */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">נכסים שהופניתי אליהם</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="p-2 text-right text-sm">מס'</th>
+                      <th className="p-2 text-right text-sm">כתובת</th>
+                      <th className="p-2 text-right text-sm">קומה</th>
+                      <th className="p-2 text-right text-sm">חדרים</th>
+                      <th className="p-2 text-right text-sm">מחיר</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {properties.map((prop, index) => (
+                      <tr key={index} className="border-t">
+                        <td className="p-2 text-sm">{index + 1}</td>
+                        <td className="p-2">
+                          <Input
+                            value={prop.address}
+                            onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
+                            placeholder="כתובת"
+                            className="h-8"
+                            disabled={mode === 'remote-sign'}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={prop.floor}
+                            onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
+                            placeholder="קומה"
+                            className="h-8"
+                            disabled={mode === 'remote-sign'}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={prop.rooms}
+                            onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
+                            placeholder="חדרים"
+                            className="h-8"
+                            disabled={mode === 'remote-sign'}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={prop.price}
+                            onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
+                            placeholder="מחיר"
+                            className="h-8"
+                            disabled={mode === 'remote-sign'}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {mode !== 'remote-sign' && (
+                <Button variant="outline" size="sm" onClick={addPropertyRow}>
+                  הוסף נכס
+                </Button>
+              )}
+            </div>
+
+            {/* תנאים משלימים */}
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold">תנאים משלימים</h3>
+              <ol className="text-sm text-muted-foreground space-y-2 pr-5">
+                <li>התחייבות זו תהיה תקפה גם במקרה של סיוע של צד שלישי לסיום העסקה.</li>
+                <li>התשלום יבוצע <strong>מיד</strong> עם עשיית ההסכם (זכרון דברים) ו/או חוזה ו/או עם קבלת החזקה בנכס – המוקדם מביניהם.</li>
+                <li>אי תשלום בתוך 5 ימים ממועד האירוע המזכה יחייב <strong>כפל דמי תיווך</strong> לתשלום בתוך 10 ימים ממועד האירוע.</li>
+                <li>"סיטי מרקט" לא תהיה אחראית לשינויים בעמדת המוכרים/משכירים, או למקרה שבו נמכר/הושכר הנכס לאחר.</li>
+                <li>העברת מידע לאדם אחר תחייב בתשלום מלוא שכר הטרחה כאילו אני/אנחנו ביצענו את העסקה בעצמנו.</li>
+                <li>אם קונים/שוכרים פנו תחילה למתווך אחר אך העסקה נסגרה באמצעותנו — דמי התיווך יחולו כרגיל לפי התנאים לעיל.</li>
+                <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
+              </ol>
+            </div>
+
+            {/* פרטי לקוח */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">פרטי הלקוח</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>שם מלא</Label>
+                  <Input
+                    value={formData.clientName}
+                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                    placeholder="שם מלא"
+                  />
+                </div>
+                <div>
+                  <Label>ת.ז. / דרכון</Label>
+                  <Input
+                    value={formData.clientId}
+                    onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                    placeholder="מספר זהות"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>טלפון</Label>
+                <Input
+                  type="tel"
+                  value={formData.clientPhone}
+                  onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                  placeholder="טלפון"
+                />
+              </div>
+            </div>
+
+            {/* חתימה */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>חתימת הלקוח</Label>
+                <Button variant="outline" size="sm" onClick={clearSignature}>
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  נקה חתימה
+                </Button>
+              </div>
+              <div className="border rounded-lg bg-white">
+                <SignatureCanvas
+                  ref={signatureRef}
+                  canvasProps={{
+                    className: 'w-full h-40 rounded-lg',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* כפתורי פעולה */}
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => mode === 'remote-sign' ? window.close() : navigate('/admin-dashboard')}
+              >
+                ביטול
+              </Button>
+              
+              {mode === 'create-remote' ? (
+                <Button onClick={handleCreateRemoteForm} disabled={isSubmitting}>
+                  <Send className="h-4 w-4 ml-2" />
+                  צור לינק לשליחה
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                  <Save className="h-4 w-4 ml-2" />
+                  שמור טופס
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default BrokerageFormPage;

@@ -39,6 +39,7 @@ import WhatsAppCenter from './pages/WhatsAppCenter';
 import PriceOfferView from './pages/PriceOfferView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
 import PriceOfferBuilder from './pages/PriceOfferBuilder';
+import BrokerageFormPage from './pages/BrokerageFormPage';
 
 import NotFound from './pages/NotFound';
 
@@ -62,6 +63,9 @@ const AppContent: React.FC = () => {
         <Route path="/login" element={<LoginScreen />} />
         {/* Owner invitation route - accessible without authentication */}
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
+        
+        {/* Public brokerage form - accessible with token */}
+        <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
         
         {/* Public pages - accessible to everyone */}
         <Route path="/" element={<><Index /><Footer /></>} />
@@ -210,6 +214,18 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <PriceOfferBuilder />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            
+            {/* Brokerage Form Routes */}
+            <Route 
+              path="/admin-dashboard/brokerage-form" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <BrokerageFormPage />
                   </ProtectedRoute>
                 </Layout>
               } 
