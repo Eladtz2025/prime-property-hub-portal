@@ -143,14 +143,14 @@ const Index = () => {
       <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-4 md:mb-6">
               City Market – נדל"ן
             </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6 md:mb-8">
+            <p className="font-montserrat text-base md:text-lg text-muted-foreground leading-relaxed mb-6 md:mb-8">
               ב-<strong>City Market Real Estate</strong> אנחנו מציעים שירות אישי שילווה אותך בכל שלב בתהליך הנדל"ני. 
               אנחנו עוזרים לך למצוא את הנכס המושלם ולסיים את הסכם המכירה, תוך הבטחת חוויה חלקה ומתגמלת.
             </p>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            <p className="font-montserrat text-base md:text-lg text-muted-foreground leading-relaxed">
               בין אם אתה קונה את בית החלומות שלך או משקיע בנדל"ן איכותי, הצוות המסור שלנו כאן כדי להפוך את התהליך לחלק, מקצועי ומותאם לצרכים שלך.
             </p>
           </div>
@@ -161,8 +161,11 @@ const Index = () => {
       <section className="py-12 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">החטיבות שלנו</h2>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+            <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
+              השירותים שלנו
+            </p>
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-3 md:mb-4">החטיבות שלנו</h2>
+            <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
               ניהול, מכירה והשכרה במקום אחד
             </p>
           </div>
@@ -179,10 +182,10 @@ const Index = () => {
       <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
-            <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
+            <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
               נבחרו במיוחד בשבילך
             </p>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground">
               נכסים מומלצים
             </h2>
           </div>
@@ -222,10 +225,10 @@ const Index = () => {
       <section className="py-12 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
-            <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
+            <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
               גלה את תל אביב
             </p>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground">
               מדריך שכונות
             </h2>
           </div>
@@ -244,7 +247,7 @@ const Index = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute inset-0 flex items-end justify-center p-4 md:p-8">
-                  <h3 className="text-2xl md:text-3xl font-bold text-white">
+                  <h3 className="font-playfair text-2xl md:text-3xl font-normal text-white tracking-wide">
                     {neighborhood.name}
                   </h3>
                 </div>
@@ -267,35 +270,31 @@ const Index = () => {
       {/* Stats Section */}
       <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">למה לבחור בנו?</h2>
-          </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
             <div className="text-center">
               <Award className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
                 +15 שנים
               </div>
-              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
                 של מצוינות
               </p>
             </div>
             <div className="text-center">
               <TrendingUp className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
                 +500
               </div>
-              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
                 עסקאות מוצלחות
               </p>
             </div>
             <div className="text-center">
               <Users className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
                 24/7
               </div>
-              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
                 זמינות מלאה
               </p>
             </div>
@@ -308,13 +307,13 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8 md:mb-12">
-              <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
+              <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
                 צור קשר
               </p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
+              <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-4 md:mb-6">
                 בואו נמצא את בית החלומות שלכם
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground px-4">
+              <p className="font-montserrat text-base md:text-lg text-muted-foreground px-4">
                 צרו קשר היום כדי לתאם צפייה או ללמוד עוד על הנכסים הבלעדיים שלנו.
               </p>
             </div>
@@ -326,14 +325,14 @@ const Index = () => {
                   placeholder="שם"
                   value={contactForm.name}
                   onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
-                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base"
                 />
                 <input
                   type="email"
                   placeholder="אימייל"
                   value={contactForm.email}
                   onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base"
                 />
               </div>
               <div className="space-y-4">
@@ -342,14 +341,14 @@ const Index = () => {
                   placeholder="טלפון"
                   value={contactForm.phone}
                   onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
-                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base"
                 />
                 <textarea
                   placeholder="הודעה"
                   rows={4}
                   value={contactForm.message}
                   onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
-                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors resize-none text-sm md:text-base"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none text-sm md:text-base"
                 />
               </div>
             </div>
