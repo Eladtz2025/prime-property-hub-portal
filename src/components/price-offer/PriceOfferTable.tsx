@@ -82,22 +82,23 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
             {/* Grid for middle parameters (skip first 2 and last) */}
             {row.length > 3 && (
               <div className="space-y-3">
-                {/* Find parking and elevator indices */}
+                {/* Find parking, elevator, and size indices */}
                 {(() => {
                   const parkingIndex = headers.findIndex(h => h.toLowerCase().includes('חניה') || h.toLowerCase().includes('parking'));
                   const elevatorIndex = headers.findIndex(h => h.toLowerCase().includes('מעלית') || h.toLowerCase().includes('elevator'));
+                  const sizeIndex = headers.findIndex(h => h.toLowerCase().includes('גודל') || h.toLowerCase().includes('size') || h.toLowerCase().includes('מ"ר'));
                   const middleParams = row.slice(2, -1);
                   const middleHeaders = headers.slice(2, -1);
                   
-                  // Separate parking/elevator from other params
-                  const parkingElevatorIndices = new Set([parkingIndex - 2, elevatorIndex - 2]);
+                  // Separate parking/elevator/size from other params
+                  const specialIndices = new Set([parkingIndex - 2, elevatorIndex - 2, sizeIndex - 2]);
                   const otherParams: Array<{value: string, header: string, idx: number}> = [];
-                  const parkingElevatorParams: Array<{value: string, header: string}> = [];
+                  const specialParams: Array<{value: string, header: string}> = [];
                   
                   middleParams.forEach((cell, idx) => {
                     const actualIdx = idx + 2;
-                    if (parkingElevatorIndices.has(idx)) {
-                      parkingElevatorParams.push({ value: cell, header: headers[actualIdx] });
+                    if (specialIndices.has(idx)) {
+                      specialParams.push({ value: cell, header: headers[actualIdx] });
                     } else {
                       otherParams.push({ value: cell, header: headers[actualIdx], idx: actualIdx });
                     }
@@ -121,10 +122,10 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
                         </div>
                       )}
                       
-                      {/* Parking & Elevator in same row */}
-                      {parkingElevatorParams.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3">
-                          {parkingElevatorParams.map((param, idx) => (
+                      {/* Parking, Elevator & Size in same row (3 columns) */}
+                      {specialParams.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3">
+                          {specialParams.map((param, idx) => (
                             <div key={idx} className="space-y-1">
                               <div className="text-xs font-medium text-muted-foreground">
                                 {param.header}
