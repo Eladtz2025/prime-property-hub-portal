@@ -55,20 +55,61 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
         {rows.map((row, rowIndex) => (
           <div 
             key={rowIndex} 
-            className="bg-card border border-border rounded-lg p-4 shadow-sm"
+            className="bg-card border border-border rounded-lg p-4 shadow-sm space-y-3"
           >
-            <div className="grid grid-cols-2 gap-3">
-              {row.map((cell, cellIndex) => (
-                <div key={cellIndex} className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    {headers[cellIndex]}
+            {/* First Row: Address + Price */}
+            <div className="flex justify-between items-start gap-3 pb-3 border-b border-border/50">
+              <div className="flex-1">
+                <div className="text-xs font-medium text-muted-foreground mb-1">
+                  {headers[0]}
+                </div>
+                <div className="text-base font-bold text-foreground">
+                  {row[0]}
+                </div>
+              </div>
+              {row.length > 1 && (
+                <div className="text-left">
+                  <div className="text-xs font-medium text-muted-foreground mb-1">
+                    {headers[1]}
                   </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {cell}
+                  <div className="text-lg font-bold text-primary">
+                    {row[1]}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
+
+            {/* Grid for middle parameters (skip first 2 and last) */}
+            {row.length > 3 && (
+              <div className="grid grid-cols-2 gap-3">
+                {row.slice(2, -1).map((cell, idx) => {
+                  const cellIndex = idx + 2;
+                  return (
+                    <div key={cellIndex} className="space-y-1">
+                      <div className="text-xs font-medium text-muted-foreground">
+                        {headers[cellIndex]}
+                      </div>
+                      <div className="text-sm font-semibold text-foreground">
+                        {cell}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Last Row: Full width for long values (like renovation level) */}
+            {row.length > 2 && (
+              <div className="pt-3 border-t border-border/50">
+                <div className="text-xs font-medium text-muted-foreground mb-1">
+                  {headers[row.length - 1]}
+                </div>
+                <div className="text-sm font-semibold text-foreground">
+                  {row[row.length - 1]}
+                </div>
+              </div>
+            )}
+
             {rowIndex < rows.length - 1 && (
               <div className="border-b border-border/30 mt-4" />
             )}
