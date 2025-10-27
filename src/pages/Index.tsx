@@ -22,19 +22,27 @@ const Index = () => {
     message: ''
   });
 
-  // Filter for featured properties (first 4 properties)
+  // Filter for featured properties - only rental or sale properties
   const featuredProperties = properties
+    .filter(property => property.property_type === 'rental' || property.property_type === 'sale')
     .slice(0, 4)
-    .map(property => ({
-      id: property.id,
-      title: property.address,
-      location: property.city || 'תל אביב',
-      price: property.monthlyRent 
-        ? `₪${property.monthlyRent.toLocaleString()}/חודש`
-        : 'מחיר לא זמין',
-      imageUrl: '/images/en/properties/luxury-rothschild.jpg',
-      type: property.property_type === 'rental' ? 'להשכרה' : property.property_type === 'sale' ? 'למכירה' : 'ניהול',
-    }));
+    .map(property => {
+      // Get main image or first available image
+      const mainImage = property.images?.find(img => img.isPrimary)?.url 
+        || property.images?.[0]?.url 
+        || '/images/rental-interior.jpg';
+      
+      return {
+        id: property.id,
+        title: property.address,
+        location: property.city || 'תל אביב',
+        price: property.monthlyRent 
+          ? `₪${property.monthlyRent.toLocaleString()}/חודש`
+          : 'מחיר לא זמין',
+        imageUrl: mainImage,
+        type: property.property_type === 'rental' ? 'להשכרה' : 'למכירה',
+      };
+    });
 
   const neighborhoods = [
     {
