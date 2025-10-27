@@ -51,17 +51,25 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="sm:hidden divide-y divide-border">
+      <div className="sm:hidden p-4 space-y-4">
         {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="p-4 space-y-2">
+          <div key={rowIndex} className="space-y-3">
             {row.map((cell, cellIndex) => (
-              <div key={cellIndex} className="flex justify-between items-center">
-                <span className="font-medium text-muted-foreground text-sm">
+              <div 
+                key={cellIndex} 
+                className="bg-muted/50 rounded-lg p-3 border border-border/50 shadow-sm"
+              >
+                <div className="text-xs font-medium text-muted-foreground mb-1">
                   {headers[cellIndex]}
-                </span>
-                <span className="text-foreground">{cell}</span>
+                </div>
+                <div className="text-base font-semibold text-foreground">
+                  {cell}
+                </div>
               </div>
             ))}
+            {rowIndex < rows.length - 1 && (
+              <div className="border-b border-border/30 pt-1" />
+            )}
           </div>
         ))}
       </div>
