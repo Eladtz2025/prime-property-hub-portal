@@ -150,17 +150,17 @@ const Index = () => {
       />
 
       {/* About Section */}
-      <section className="py-24 bg-background">
+      <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
               City Market – נדל"ן
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6 md:mb-8">
               ב-<strong>City Market Real Estate</strong> אנחנו מציעים שירות אישי שילווה אותך בכל שלב בתהליך הנדל"ני. 
               אנחנו עוזרים לך למצוא את הנכס המושלם ולסיים את הסכם המכירה, תוך הבטחת חוויה חלקה ומתגמלת.
             </p>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               בין אם אתה קונה את בית החלומות שלך או משקיע בנדל"ן איכותי, הצוות המסור שלנו כאן כדי להפוך את התהליך לחלק, מקצועי ומותאם לצרכים שלך.
             </p>
           </div>
@@ -168,16 +168,16 @@ const Index = () => {
       </section>
 
       {/* Divisions Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">החטיבות שלנו</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">החטיבות שלנו</h2>
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
               ניהול, מכירה והשכרה במקום אחד
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {divisions.map((division) => (
               <DivisionCard key={division.title} {...division} />
             ))}
@@ -186,18 +186,18 @@ const Index = () => {
       </section>
 
       {/* Featured Properties */}
-      <section className="py-24 bg-background">
+      <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+          <div className="text-center mb-12 md:mb-16">
+            <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
               נבחרו במיוחד בשבילך
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
               נכסים מומלצים
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
             {featuredProperties.map((property) => (
               <RelizPropertyCard
                 key={property.id}
@@ -219,18 +219,18 @@ const Index = () => {
       </section>
 
       {/* Neighborhoods Guide */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+          <div className="text-center mb-12 md:mb-16">
+            <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
               גלה את תל אביב
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
               מדריך שכונות
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
             {neighborhoods.map((neighborhood) => (
               <div
                 key={neighborhood.id}
@@ -243,8 +243,8 @@ const Index = () => {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex items-end justify-center p-8">
-                  <h3 className="text-3xl font-bold text-white">
+                <div className="absolute inset-0 flex items-end justify-center p-4 md:p-8">
+                  <h3 className="text-2xl md:text-3xl font-bold text-white">
                     {neighborhood.name}
                   </h3>
                 </div>
@@ -265,16 +265,16 @@ const Index = () => {
 
 
       {/* Stats Section */}
-      <section className="py-24 bg-background">
+      <section className="py-12 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold">למה לבחור בנו?</h2>
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">למה לבחור בנו?</h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
             <div className="text-center">
-              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold text-foreground mb-2">
+              <Award className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
+              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                 +15 שנים
               </div>
               <p className="text-sm text-muted-foreground tracking-wide uppercase">
@@ -282,8 +282,8 @@ const Index = () => {
               </p>
             </div>
             <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold text-foreground mb-2">
+              <TrendingUp className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
+              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                 +500
               </div>
               <p className="text-sm text-muted-foreground tracking-wide uppercase">
@@ -291,8 +291,8 @@ const Index = () => {
               </p>
             </div>
             <div className="text-center">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold text-foreground mb-2">
+              <Users className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
+              <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                 24/7
               </div>
               <p className="text-sm text-muted-foreground tracking-wide uppercase">
@@ -304,36 +304,36 @@ const Index = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+            <div className="text-center mb-8 md:mb-12">
+              <p className="text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
                 צור קשר
               </p>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
                 בואו נמצא את בית החלומות שלכם
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base md:text-lg text-muted-foreground px-4">
                 צרו קשר היום כדי לתאם צפייה או ללמוד עוד על הנכסים הבלעדיים שלנו.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-4">
                 <input
                   type="text"
                   placeholder="שם"
                   value={contactForm.name}
                   onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
                 />
                 <input
                   type="email"
                   placeholder="אימייל"
                   value={contactForm.email}
                   onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
                 />
               </div>
               <div className="space-y-4">
@@ -342,19 +342,19 @@ const Index = () => {
                   placeholder="טלפון"
                   value={contactForm.phone}
                   onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors text-sm md:text-base"
                 />
                 <textarea
                   placeholder="הודעה"
                   rows={4}
                   value={contactForm.message}
                   onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors resize-none"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors resize-none text-sm md:text-base"
                 />
               </div>
             </div>
 
-            <div className="text-center mt-8">
+            <div className="text-center mt-6 md:mt-8">
               <button className="reliz-button">
                 שלח הודעה
               </button>
