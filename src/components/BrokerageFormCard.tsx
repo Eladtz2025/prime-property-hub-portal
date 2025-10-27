@@ -1,11 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Send, Receipt, UserPlus } from 'lucide-react';
+import { FileText, Receipt } from 'lucide-react';
 
 export const BrokerageFormCard: React.FC = () => {
-  const navigate = useNavigate();
 
   return (
     <Card className="border-2 hover:shadow-lg transition-shadow">
@@ -23,19 +21,10 @@ export const BrokerageFormCard: React.FC = () => {
           <Button 
             variant="outline" 
             className="w-full justify-start"
-            onClick={() => navigate('/admin-dashboard/brokerage-form?mode=fill')}
+            onClick={() => window.open('/brokerage-form/new', '_blank')}
           >
-            <UserPlus className="h-4 w-4 ml-2" />
-            מילוי טופס עם לקוח
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="w-full justify-start"
-            onClick={() => navigate('/admin-dashboard/brokerage-form?mode=create-remote')}
-          >
-            <Send className="h-4 w-4 ml-2" />
-            שליחת טופס לחתימה מרחוק
+            <FileText className="h-4 w-4 ml-2" />
+            הזמנת שירותי תיווך
           </Button>
           
           <Button 

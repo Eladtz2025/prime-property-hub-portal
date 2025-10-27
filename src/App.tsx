@@ -64,7 +64,8 @@ const AppContent: React.FC = () => {
         {/* Owner invitation route - accessible without authentication */}
         <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
         
-        {/* Public brokerage form - accessible with token */}
+        {/* Brokerage Form Routes - Clean pages without layout */}
+        <Route path="/brokerage-form/new" element={<BrokerageFormPage />} />
         <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
         
         {/* Public pages - accessible to everyone */}
@@ -219,17 +220,6 @@ const AppContent: React.FC = () => {
               } 
             />
             
-            {/* Brokerage Form Routes */}
-            <Route 
-              path="/admin-dashboard/brokerage-form" 
-              element={
-                <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
-                    <BrokerageFormPage />
-                  </ProtectedRoute>
-                </Layout>
-              } 
-            />
             
             {/* Owner Portal - Separate from Admin */}
             <Route 
