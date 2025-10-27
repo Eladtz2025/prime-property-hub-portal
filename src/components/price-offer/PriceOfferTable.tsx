@@ -53,22 +53,24 @@ const PriceOfferTable = ({ title, data }: PriceOfferTableProps) => {
       {/* Mobile Cards */}
       <div className="sm:hidden p-4 space-y-4">
         {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="space-y-3">
-            {row.map((cell, cellIndex) => (
-              <div 
-                key={cellIndex} 
-                className="bg-muted/50 rounded-lg p-3 border border-border/50 shadow-sm"
-              >
-                <div className="text-xs font-medium text-muted-foreground mb-1">
-                  {headers[cellIndex]}
+          <div 
+            key={rowIndex} 
+            className="bg-card border border-border rounded-lg p-4 shadow-sm"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              {row.map((cell, cellIndex) => (
+                <div key={cellIndex} className="space-y-1">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {headers[cellIndex]}
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {cell}
+                  </div>
                 </div>
-                <div className="text-base font-semibold text-foreground">
-                  {cell}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
             {rowIndex < rows.length - 1 && (
-              <div className="border-b border-border/30 pt-1" />
+              <div className="border-b border-border/30 mt-4" />
             )}
           </div>
         ))}
