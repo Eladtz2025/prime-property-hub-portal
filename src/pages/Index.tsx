@@ -1,12 +1,82 @@
 import VideoHero from '@/components/he/VideoHero';
 import HebrewHeader from '@/components/he/Header';
+import HebrewFooter from '@/components/he/Footer';
 import DivisionCard from '@/components/DivisionCard';
 import GoogleReviews from '@/components/GoogleReviews';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
-import { Building2, TrendingUp, Users } from 'lucide-react';
+import { RelizPropertyCard } from '@/components/en/RelizPropertyCard';
+import { useNavigate } from 'react-router-dom';
+import { Award, TrendingUp, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useState } from 'react';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
+  const featuredProperties = [
+    {
+      id: "1",
+      title: "פנטהאוז רוטשילד",
+      location: "שדרות רוטשילד",
+      price: "₪8,500,000",
+      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
+      type: "למכירה",
+    },
+    {
+      id: "2",
+      title: "דירת באוהאוס",
+      location: "רחוב דיזנגוף",
+      price: "₪12,000/חודש",
+      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
+      type: "להשכרה",
+    },
+    {
+      id: "3",
+      title: "וילה מודרנית",
+      location: "נווה צדק",
+      price: "₪15,000,000",
+      imageUrl: "/images/en/properties/modern-penthouse.jpg",
+      type: "למכירה",
+    },
+    {
+      id: "4",
+      title: "דירה עם מרפסת שמש",
+      location: "צפון הישן",
+      price: "₪10,500/חודש",
+      imageUrl: "/images/en/properties/sunny-balcony.jpg",
+      type: "להשכרה",
+    },
+  ];
+
+  const neighborhoods = [
+    {
+      id: "rothschild",
+      name: "רוטשילד",
+      image: "/images/en/neighborhoods/rothschild.jpg",
+    },
+    {
+      id: "neve-tzedek",
+      name: "נווה צדק",
+      image: "/images/en/neighborhoods/neve-tzedek.jpg",
+    },
+    {
+      id: "florentin",
+      name: "פלורנטין",
+      image: "/images/en/neighborhoods/florentin.jpg",
+    },
+    {
+      id: "dizengoff",
+      name: "דיזנגוף",
+      image: "/images/en/neighborhoods/dizengoff.jpg",
+    },
+  ];
+
   const divisions = [
     {
       title: 'השכרות',
@@ -79,17 +149,35 @@ const Index = () => {
         imageUrl="/images/en/hero-last-one.png"
       />
 
-      {/* Divisions Section */}
-      <section className="py-8 sm:py-12 md:py-16">
+      {/* About Section */}
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">החטיבות שלנו</h2>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              City Market – נדל"ן
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+              ב-<strong>City Market Real Estate</strong> אנחנו מציעים שירות אישי שילווה אותך בכל שלב בתהליך הנדל"ני. 
+              אנחנו עוזרים לך למצוא את הנכס המושלם ולסיים את הסכם המכירה, תוך הבטחת חוויה חלקה ומתגמלת.
+            </p>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              בין אם אתה קונה את בית החלומות שלך או משקיע בנדל"ן איכותי, הצוות המסור שלנו כאן כדי להפוך את התהליך לחלק, מקצועי ומותאם לצרכים שלך.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Divisions Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">החטיבות שלנו</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               ניהול, מכירה והשכרה במקום אחד
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {divisions.map((division) => (
               <DivisionCard key={division.title} {...division} />
             ))}
@@ -97,29 +185,189 @@ const Index = () => {
         </div>
       </section>
 
-
-      {/* Why Choose Us Section */}
-      <section className="py-12 md:py-16 bg-muted/30">
+      {/* Featured Properties */}
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">למה לבחור בנו?</h2>
+          <div className="text-center mb-16">
+            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+              נבחרו במיוחד בשבילך
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              נכסים מומלצים
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {featuredProperties.map((property) => (
+              <RelizPropertyCard
+                key={property.id}
+                {...property}
+                onClick={() => navigate(`/property/${property.id}`)}
+              />
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/sales")}
+              className="reliz-button"
+            >
+              צפה בכל הנכסים
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Neighborhoods Guide */}
+      <section className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+              גלה את תל אביב
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              מדריך שכונות
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {neighborhoods.map((neighborhood) => (
+              <div
+                key={neighborhood.id}
+                onClick={() => navigate(`/neighborhoods/${neighborhood.id}`)}
+                className="group relative aspect-[3/4] overflow-hidden cursor-pointer"
+              >
+                <img
+                  src={neighborhood.image}
+                  alt={neighborhood.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute inset-0 flex items-end justify-center p-8">
+                  <h3 className="text-3xl font-bold text-white">
+                    {neighborhood.name}
+                  </h3>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/neighborhoods")}
+              className="reliz-button"
+            >
+              חקור את כל השכונות
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+      {/* Stats Section */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold">למה לבחור בנו?</h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <Card key={index} className="text-center p-6 hover:shadow-lg transition-shadow">
-                <div className={`${stat.color} text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold`}>
-                  {stat.icon}
-                </div>
-                <p className="text-lg font-semibold">{stat.label}</p>
-              </Card>
-            ))}
+          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+            <div className="text-center">
+              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-foreground mb-2">
+                +15 שנים
+              </div>
+              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+                של מצוינות
+              </p>
+            </div>
+            <div className="text-center">
+              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-foreground mb-2">
+                +500
+              </div>
+              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+                עסקאות מוצלחות
+              </p>
+            </div>
+            <div className="text-center">
+              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-foreground mb-2">
+                24/7
+              </div>
+              <p className="text-sm text-muted-foreground tracking-wide uppercase">
+                זמינות מלאה
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                צור קשר
+              </p>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                בואו נמצא את בית החלומות שלכם
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                צרו קשר היום כדי לתאם צפייה או ללמוד עוד על הנכסים הבלעדיים שלנו.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="שם"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                />
+                <input
+                  type="email"
+                  placeholder="אימייל"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                />
+              </div>
+              <div className="space-y-4">
+                <input
+                  type="tel"
+                  placeholder="טלפון"
+                  value={contactForm.phone}
+                  onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors"
+                />
+                <textarea
+                  placeholder="הודעה"
+                  rows={4}
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="text-center mt-8">
+              <button className="reliz-button">
+                שלח הודעה
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Google Reviews */}
       <GoogleReviews />
+
+      {/* Footer */}
+      <HebrewFooter />
     </div>
   );
 };
