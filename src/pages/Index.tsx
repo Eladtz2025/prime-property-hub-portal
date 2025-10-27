@@ -9,9 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import { Award, TrendingUp, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
+import { useSupabasePropertyData } from '@/hooks/useSupabasePropertyData';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { properties, isLoading } = useSupabasePropertyData();
+  
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -19,40 +22,19 @@ const Index = () => {
     message: ''
   });
 
-  const featuredProperties = [
-    {
-      id: "1",
-      title: "פנטהאוז רוטשילד",
-      location: "שדרות רוטשילד",
-      price: "₪8,500,000",
-      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
-      type: "למכירה",
-    },
-    {
-      id: "2",
-      title: "דירת באוהאוס",
-      location: "רחוב דיזנגוף",
-      price: "₪12,000/חודש",
-      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
-      type: "להשכרה",
-    },
-    {
-      id: "3",
-      title: "וילה מודרנית",
-      location: "נווה צדק",
-      price: "₪15,000,000",
-      imageUrl: "/images/en/properties/modern-penthouse.jpg",
-      type: "למכירה",
-    },
-    {
-      id: "4",
-      title: "דירה עם מרפסת שמש",
-      location: "צפון הישן",
-      price: "₪10,500/חודש",
-      imageUrl: "/images/en/properties/sunny-balcony.jpg",
-      type: "להשכרה",
-    },
-  ];
+  // Filter for featured properties (first 4 properties)
+  const featuredProperties = properties
+    .slice(0, 4)
+    .map(property => ({
+      id: property.id,
+      title: property.address,
+      location: property.city || 'תל אביב',
+      price: property.monthlyRent 
+        ? `₪${property.monthlyRent.toLocaleString()}/חודש`
+        : 'מחיר לא זמין',
+      imageUrl: '/images/en/properties/luxury-rothschild.jpg',
+      type: property.property_type === 'rental' ? 'להשכרה' : property.property_type === 'sale' ? 'למכירה' : 'ניהול',
+    }));
 
   const neighborhoods = [
     {
@@ -197,15 +179,25 @@ const Index = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
-            {featuredProperties.map((property) => (
-              <RelizPropertyCard
-                key={property.id}
-                {...property}
-                onClick={() => navigate(`/property/${property.id}`)}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">טוען נכסים...</p>
+            </div>
+          ) : featuredProperties.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">אין נכסים זמינים כרגע</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+              {featuredProperties.map((property) => (
+                <RelizPropertyCard
+                  key={property.id}
+                  {...property}
+                  onClick={() => navigate(`/property/${property.id}`)}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="text-center">
             <button
