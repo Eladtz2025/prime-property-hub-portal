@@ -32,6 +32,17 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     lastUpdated: dbProperty.updated_at,
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
+    images: dbProperty.property_images?.map((img: any) => ({
+      id: img.id,
+      name: img.alt_text || '',
+      url: img.image_url,
+      isPrimary: img.is_main || false,
+      uploadedAt: dbProperty.created_at,
+    })).sort((a: any, b: any) => {
+      if (a.isPrimary) return -1;
+      if (b.isPrimary) return 1;
+      return 0;
+    }) || [],
   };
 }
 
@@ -45,10 +56,19 @@ export const useSupabasePropertyData = () => {
       try {
         log.info('Loading properties from Supabase');
 
-        // Get all properties (owner data is now stored directly in properties table)
+        // Get all properties with their images
         const { data: properties, error: propertiesError } = await supabase
           .from('properties')
-          .select('*');
+          .select(`
+            *,
+            property_images (
+              id,
+              image_url,
+              is_main,
+              order_index,
+              alt_text
+            )
+          `);
 
         if (propertiesError) {
           log.error('Failed to load properties:', propertiesError);
