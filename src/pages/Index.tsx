@@ -9,11 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import { Award, TrendingUp, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
-import { useSupabasePropertyData } from '@/hooks/useSupabasePropertyData';
+import { usePublicProperties } from '@/hooks/usePublicProperties';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { properties, isLoading } = useSupabasePropertyData();
+  const { data: rentalProperties = [], isLoading: isLoadingRentals } = usePublicProperties({ propertyType: 'rental' });
+  const { data: saleProperties = [], isLoading: isLoadingSales } = usePublicProperties({ propertyType: 'sale' });
   
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -22,27 +23,26 @@ const Index = () => {
     message: ''
   });
 
-  // Filter for featured properties - only rental or sale properties
-  const featuredProperties = properties
-    .filter(property => property.property_type === 'rental' || property.property_type === 'sale')
-    .slice(0, 4)
-    .map(property => {
-      // Get main image or first available image
-      const mainImage = property.images?.find(img => img.isPrimary)?.url 
-        || property.images?.[0]?.url 
-        || '/images/rental-interior.jpg';
-      
-      return {
-        id: property.id,
-        title: property.address,
-        location: property.city || 'תל אביב',
-        price: property.monthlyRent 
-          ? `₪${property.monthlyRent.toLocaleString()}/חודש`
-          : 'מחיר לא זמין',
-        imageUrl: mainImage,
-        type: property.property_type === 'rental' ? 'להשכרה' : 'למכירה',
-      };
-    });
+  const isLoading = isLoadingRentals || isLoadingSales;
+  
+  // Filter for featured properties - only rental or sale properties with images
+  const featuredProperties = [...rentalProperties, ...saleProperties]
+    .sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return 0;
+    })
+    .slice(0, 6)
+    .map(property => ({
+      id: property.id,
+      title: property.title || property.address,
+      location: property.city || 'תל אביב',
+      price: property.monthly_rent 
+        ? `₪${property.monthly_rent.toLocaleString()}/חודש`
+        : 'מחיר לא זמין',
+      imageUrl: property.images[0]?.image_url || '/images/rental-interior.jpg',
+      type: property.property_type === 'rental' ? 'להשכרה' : 'למכירה',
+    }));
 
   const neighborhoods = [
     {
