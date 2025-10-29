@@ -199,13 +199,14 @@ const Index = () => {
               <p className="text-lg text-muted-foreground">אין נכסים זמינים כרגע</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+            <div className="flex overflow-x-auto gap-4 md:gap-6 mb-8 md:mb-12 pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
               {featuredProperties.map((property) => (
-                <RelizPropertyCard
-                  key={property.id}
-                  {...property}
-                  onClick={() => navigate(`/property/${property.id}`)}
-                />
+                <div key={property.id} className="flex-none w-[280px] sm:w-[320px] md:w-[360px] snap-center">
+                  <RelizPropertyCard
+                    {...property}
+                    onClick={() => navigate(`/property/${property.id}`)}
+                  />
+                </div>
               ))}
             </div>
           )}

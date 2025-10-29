@@ -309,3 +309,15 @@ All colors MUST be HSL.
 .animation-delay-400 {
   animation-delay: 400ms;
 }
+
+/* Scrollbar hide utility */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
