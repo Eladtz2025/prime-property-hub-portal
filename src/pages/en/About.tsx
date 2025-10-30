@@ -34,7 +34,7 @@ const About = () => {
               Our Mission
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-6">
-               At City Market Real Estate, we are committed to providing unparalleled service 
+               At City Market Properties, we are committed to providing unparalleled service 
               in the property market. With over 15 years of experience in Tel Aviv's most
               prestigious neighborhoods, we connect discerning clients with their dream properties.
             </p>
@@ -170,7 +170,7 @@ const About = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Real Estate. All rights reserved.
+              © 2024 City Market Properties. All rights reserved.
             </p>
           </div>
         </div>

@@ -12,7 +12,7 @@ const HebrewFooter = () => {
               CITY MARKET
             </h3>
             <p className="text-sm text-background/70">
-              נדל"ן
+              Properties
             </p>
           </div>
           <div>
@@ -84,7 +84,7 @@ const HebrewFooter = () => {
         </div>
         <div className="border-t border-background/20 pt-8 text-center">
           <p className="text-sm text-background/70">
-            © 2024 City Market Real Estate. כל הזכויות שמורות.
+            © 2024 City Market Properties. כל הזכויות שמורות.
           </p>
         </div>
       </div>

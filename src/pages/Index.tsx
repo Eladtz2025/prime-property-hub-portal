@@ -121,10 +121,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-4 md:mb-6">
-              City Market – נדל"ן
+              City Market Properties
             </h2>
             <p className="font-montserrat text-base md:text-lg text-muted-foreground leading-relaxed mb-6 md:mb-8">
-              ב-<strong>City Market Real Estate</strong> אנחנו מציעים שירות אישי שילווה אותך בכל שלב בתהליך הנדל"ני. 
+              ב-<strong>City Market Properties</strong> אנחנו מציעים שירות אישי שילווה אותך בכל שלב בתהליך הנדל"ני. 
               אנחנו עוזרים לך למצוא את הנכס המושלם ולסיים את הסכם המכירה, תוך הבטחת חוויה חלקה ומתגמלת.
             </p>
             <p className="font-montserrat text-base md:text-lg text-muted-foreground leading-relaxed">

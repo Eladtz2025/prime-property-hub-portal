@@ -82,10 +82,10 @@ const EnglishIndex = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              City Market – Real Estate
+              City Market Properties
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-8">
-              At <strong>City Market Real Estate</strong>, we offer personalized service to
+              At <strong>City Market Properties</strong>, we offer personalized service to
               guide you through every step of the real estate journey. We help you find the
               perfect property and finalize the sales agreement, ensuring a smooth and rewarding
               experience.
@@ -310,7 +310,7 @@ const EnglishIndex = () => {
           </div>
           <div className="border-t border-background/20 pt-8 text-center">
             <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Real Estate. All rights reserved.
+              © 2024 City Market Properties. All rights reserved.
             </p>
           </div>
         </div>
