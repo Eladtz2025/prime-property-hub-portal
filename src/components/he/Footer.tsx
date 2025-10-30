@@ -73,15 +73,21 @@ const HebrewFooter = () => {
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
+                onClick={() => navigate('/management')}
+              >
+                ניהול נכסים
+              </p>
+              <p 
+                className="cursor-pointer hover:text-background transition-colors"
                 onClick={() => navigate('/neighborhoods')}
               >
                 שכונות
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/management')}
+                onClick={() => navigate('/new-developments')}
               >
-                ניהול נכסים
+                פרויקטים חדשים
               </p>
             </div>
           </div>

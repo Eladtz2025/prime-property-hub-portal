@@ -10,11 +10,12 @@ const HebrewHeader = () => {
 
   const rightNavItems = [
     { label: "דף הבית", path: "/" },
-    { label: "ניהול נכסים", path: "/management" },
-    { label: "פרויקטים חדשים", path: "/new-developments" },
+    { label: "מכירות", path: "/sales" },
+    { label: "השכרות", path: "/rentals" },
   ];
 
   const leftNavItems = [
+    { label: "ניהול נכסים", path: "/management" },
     { label: "שכונות", path: "/neighborhoods" },
     { label: "אודות", path: "/about" },
     { label: "צור קשר", path: "/contact" },
