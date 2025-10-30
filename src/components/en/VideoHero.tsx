@@ -37,9 +37,14 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
-        <h1 className="reliz-hero-title text-white mb-6 animate-fade-in drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
-          {title}
-        </h1>
+        <div className="mb-6 animate-fade-in">
+          <h1 className="reliz-hero-title text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
+            {title}
+          </h1>
+          <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+            Properties
+          </p>
+        </div>
         <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
           {subtitle}
         </p>
