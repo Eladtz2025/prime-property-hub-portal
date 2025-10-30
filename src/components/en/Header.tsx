@@ -16,7 +16,7 @@ const EnglishHeader = () => {
 
   const rightNavItems = [
     { label: "Neighborhoods", path: "/en/neighborhoods" },
-    { label: "About", path: "/en/about" },
+    { label: "About Us", path: "/en/about" },
     { label: "Contact", path: "/en/contact" },
   ];
 

@@ -16,7 +16,7 @@ const HebrewHeader = () => {
 
   const rightNavItems = [
     { label: "שכונות", path: "/neighborhoods" },
-    { label: "אודות", path: "/about" },
+    { label: "קצת עלינו", path: "/about" },
     { label: "צור קשר", path: "/contact" },
   ];
 

@@ -18,7 +18,7 @@ const About = () => {
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <div>
             <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              אודות City Market
+              קצת עלינו
             </h1>
           </div>
         </div>
