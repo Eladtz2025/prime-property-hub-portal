@@ -24,6 +24,15 @@ import NeveTzedekNeighborhood from './pages/en/neighborhoods/NeveTzedek';
 import FlorentinNeighborhood from './pages/en/neighborhoods/Florentin';
 import DizengoffNeighborhood from './pages/en/neighborhoods/Dizengoff';
 import OldNorthNeighborhood from './pages/en/neighborhoods/OldNorth';
+import HebrewAbout from './pages/he/About';
+import HebrewContact from './pages/he/Contact';
+import HebrewNeighborhoods from './pages/he/Neighborhoods';
+import HebrewNewDevelopments from './pages/he/NewDevelopments';
+import HebrewRothschild from './pages/he/neighborhoods/Rothschild';
+import HebrewNeveTzedek from './pages/he/neighborhoods/NeveTzedek';
+import HebrewFlorentin from './pages/he/neighborhoods/Florentin';
+import HebrewDizengoff from './pages/he/neighborhoods/Dizengoff';
+import HebrewOldNorth from './pages/he/neighborhoods/OldNorth';
 import { Properties } from './pages/Properties';
 import { AdminControl } from './pages/AdminControl';
 import AdminDashboard from './pages/AdminDashboard';
@@ -73,6 +82,15 @@ const AppContent: React.FC = () => {
         <Route path="/rentals" element={<><Rentals /><Footer /></>} />
         <Route path="/sales" element={<><Sales /><Footer /></>} />
         <Route path="/management" element={<><Management /><Footer /></>} />
+        <Route path="/about" element={<HebrewAbout />} />
+        <Route path="/contact" element={<HebrewContact />} />
+        <Route path="/neighborhoods" element={<HebrewNeighborhoods />} />
+        <Route path="/neighborhoods/rothschild" element={<HebrewRothschild />} />
+        <Route path="/neighborhoods/neve-tzedek" element={<HebrewNeveTzedek />} />
+        <Route path="/neighborhoods/florentin" element={<HebrewFlorentin />} />
+        <Route path="/neighborhoods/dizengoff" element={<HebrewDizengoff />} />
+        <Route path="/neighborhoods/old-north" element={<HebrewOldNorth />} />
+        <Route path="/new-developments" element={<HebrewNewDevelopments />} />
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
         
         {/* English Public Routes */}
