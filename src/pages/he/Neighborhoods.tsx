@@ -56,9 +56,9 @@ const HebrewNeighborhoods = () => {
       <HebrewHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] overflow-hidden">
+      <section className="relative h-[30vh] overflow-hidden">
         <img
-          src="/images/en/hero-telaviv.jpg"
+          src="/images/hero-neighborhoods.jpg"
           alt="שכונות תל אביב"
           className="absolute inset-0 w-full h-full object-cover"
         />

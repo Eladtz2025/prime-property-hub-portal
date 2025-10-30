@@ -21,9 +21,9 @@ const Contact = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[50vh] overflow-hidden">
+      <section className="relative h-[30vh] overflow-hidden">
         <img
-          src="/images/en/hero-telaviv.jpg"
+          src="/images/hero-contact.jpg"
           alt="Contact Us"
           className="absolute inset-0 w-full h-full object-cover"
         />

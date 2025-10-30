@@ -38,9 +38,9 @@ const NewDevelopments = () => {
       <HebrewHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] overflow-hidden">
+      <section className="relative h-[30vh] overflow-hidden">
         <img
-          src="/images/en/hero-telaviv.jpg"
+          src="/images/hero-new-developments.jpg"
           alt="פרויקטים חדשים"
           className="absolute inset-0 w-full h-full object-cover"
         />
