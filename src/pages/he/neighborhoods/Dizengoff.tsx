@@ -60,7 +60,22 @@ const DizengoffNeighborhood = () => {
                   והמסעדות המובילות. השכונה משלבת אדריכלות באוהאוס מתחילת המאה ה-20 
                   עם מבנים מודרניים, ויוצרת אווירה עירונית דינמית וקוסמופוליטית.
                 </p>
+                <p>
+                  חיים בדיזנגוף משמעותם להיות במרכז הפעילות - קפה בוקר בכיכר, קניות 
+                  אחר הצהריים במותגים הטובים ביותר, וערבים בסינמטק או במסעדות גורמה. 
+                  זו שכונה שלא ישנה לעולם.
+                </p>
               </div>
+            </section>
+
+            {/* תמונת רחוב */}
+            <section>
+              <img
+                src="/images/neighborhoods/dizengoff-street.jpg"
+                alt="רחוב דיזנגוף"
+                className="w-full h-[400px] object-cover rounded-lg shadow-lg"
+                loading="lazy"
+              />
             </section>
 
             <section>
@@ -103,25 +118,46 @@ const DizengoffNeighborhood = () => {
           <div className="space-y-6">
             <Card className="p-6 sticky top-6">
               <h3 className="font-playfair text-2xl font-bold mb-6">
-                מחירים ממוצעים
+                מידע מהיר
               </h3>
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">מכירות</div>
+                  <div className="text-sm text-muted-foreground mb-1">מחירים ממוצעים</div>
                   <div className="font-playfair text-2xl font-bold text-primary">
                     ₪3M - ₪8M
                   </div>
-                </div>
-                <div className="border-t pt-4">
-                  <div className="text-sm text-muted-foreground mb-1">השכרות</div>
-                  <div className="font-playfair text-2xl font-bold text-primary">
-                    ₪6,000 - ₪15,000/חודש
+                  <div className="text-sm text-muted-foreground">
+                    השכרה: ₪6,000 - ₪15,000/חודש
                   </div>
                 </div>
+                <div className="border-t pt-4">
+                  <div className="text-sm text-muted-foreground mb-1">מיקום</div>
+                  <div className="font-montserrat text-sm">מרכז תל אביב</div>
+                  <div className="text-sm text-muted-foreground">צומת דיזנגוף-גורדון</div>
+                </div>
+                <div className="border-t pt-4">
+                  <div className="text-sm text-muted-foreground mb-1">סוגי נכסים</div>
+                  <div className="font-montserrat text-sm">דירות באוהאוס ובניינים מודרניים</div>
+                </div>
               </div>
-              <Button className="w-full mt-6" onClick={() => navigate("/contact")}>
-                קבעו צפייה
-              </Button>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="font-playfair text-xl font-bold mb-4">אטרקציות קרובות</h3>
+              <div className="space-y-3">
+                {[
+                  "דיזנגוף סנטר - מרכז קניות",
+                  "כיכר דיזנגוף - אייקון תרבותי",
+                  "מוזיאון תל אביב לאמנות",
+                  "שוק הכרמל - שוק מסורתי",
+                  "חוף גורדון - חוף ים פופולרי",
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                    <span className="font-montserrat text-sm text-muted-foreground">{item}</span>
+                  </div>
+                ))}
+              </div>
             </Card>
           </div>
         </div>

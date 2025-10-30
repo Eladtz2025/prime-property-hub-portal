@@ -213,9 +213,34 @@ const RothschildNeighborhood = () => {
                   <span className="font-semibold">מעורבת, מקצועית</span>
                 </div>
               </div>
-              <Button className="w-full mt-6" onClick={() => navigate("/contact")}>
-                קבעו צפייה
-              </Button>
+            </Card>
+
+            {/* תמונת השדרה */}
+            <Card className="p-0 overflow-hidden">
+              <img
+                src="/images/neighborhoods/rothschild-boulevard.jpg"
+                alt="שדרות רוטשילד"
+                className="w-full h-[250px] object-cover"
+                loading="lazy"
+              />
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="font-playfair text-xl font-bold mb-4">אטרקציות קרובות</h3>
+              <div className="space-y-3">
+                {[
+                  "אנדרטת עצמאות ישראל",
+                  "בית ראשונים - מוזיאון",
+                  "שוק נחלת בנימין - שוק אמנים",
+                  "שוק הכרמל - שוק אוכל",
+                  "מרכז סוזן דלל - מחול",
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                    <span className="font-montserrat text-sm text-muted-foreground">{item}</span>
+                  </div>
+                ))}
+              </div>
             </Card>
           </div>
         </div>
