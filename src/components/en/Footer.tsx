@@ -7,22 +7,22 @@ const EnglishFooter = () => {
   const currentYear = 2016;
 
   return (
-    <footer className="bg-foreground text-background py-16">
-      <div className="container mx-auto px-4">
+    <footer className="bg-foreground text-background">
+      <div className="container mx-auto px-4 py-16">
+        {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Company Info */}
           <div>
             <div className="mb-4">
-              <h3 className="font-playfair text-2xl font-normal tracking-wide text-center">
+              <h3 className="font-playfair text-2xl font-normal tracking-wide">
                 CITY MARKET
               </h3>
-              <p className="font-montserrat text-xs text-background/70 text-center tracking-widest">
+              <p className="font-montserrat text-xs text-background/70 tracking-widest">
                 Properties
               </p>
             </div>
-            <p className="font-montserrat text-sm text-background/70 mb-4">
+            <p className="font-montserrat text-sm text-background/70 mb-6">
               Experts in real estate brokerage, rentals, sales and property management in Tel Aviv.
-              15+ years of experience in the Israeli real estate market.
             </p>
             <div className="flex gap-3">
               <a
@@ -46,18 +46,12 @@ const EnglishFooter = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Services */}
           <div>
-            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-              Quick Links
+            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4 font-semibold">
+              Services
             </h4>
             <div className="space-y-2 font-montserrat text-sm text-background/70">
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en')}
-              >
-                Home
-              </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
                 onClick={() => navigate('/en/sales')}
@@ -72,43 +66,55 @@ const EnglishFooter = () => {
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods')}
-              >
-                Neighborhoods
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
                 onClick={() => navigate('/en/management')}
               >
                 Property Management
               </p>
+              <p 
+                className="cursor-pointer hover:text-background transition-colors"
+                onClick={() => navigate('/en/new-developments')}
+              >
+                New Developments
+              </p>
             </div>
           </div>
 
-          {/* Company */}
+          {/* Areas */}
           <div>
-            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-              Company
+            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4 font-semibold">
+              Areas
             </h4>
             <div className="space-y-2 font-montserrat text-sm text-background/70">
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/about')}
+                onClick={() => navigate('/en/neighborhoods')}
               >
-                About Us
+                Neve Tzedek
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/contact')}
+                onClick={() => navigate('/en/neighborhoods')}
               >
-                Contact
+                Rothschild
+              </p>
+              <p 
+                className="cursor-pointer hover:text-background transition-colors"
+                onClick={() => navigate('/en/neighborhoods')}
+              >
+                Dizengoff
+              </p>
+              <p 
+                className="cursor-pointer hover:text-background transition-colors"
+                onClick={() => navigate('/en/neighborhoods')}
+              >
+                Old North
               </p>
             </div>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact */}
           <div>
-            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
+            <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4 font-semibold">
               Contact
             </h4>
             <ul className="space-y-3 font-montserrat text-sm text-background/70">
@@ -128,17 +134,43 @@ const EnglishFooter = () => {
                 <MapPin className="h-4 w-4" />
                 <span>Tel Aviv, Israel</span>
               </li>
-              <li>
-                <Link to="/admin-dashboard" className="hover:text-background transition-colors">
-                  Management
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-background/20 pt-8 text-center">
-          <p className="font-montserrat text-sm text-background/70">
+        {/* Bottom Links Bar */}
+        <div className="border-t border-background/20 pt-6 mb-6">
+          <div className="flex flex-wrap justify-center gap-6 font-montserrat text-xs text-background/60">
+            <span 
+              className="cursor-pointer hover:text-background transition-colors"
+              onClick={() => navigate('/en')}
+            >
+              Home
+            </span>
+            <span className="text-background/30">|</span>
+            <span 
+              className="cursor-pointer hover:text-background transition-colors"
+              onClick={() => navigate('/en/about')}
+            >
+              About
+            </span>
+            <span className="text-background/30">|</span>
+            <span 
+              className="cursor-pointer hover:text-background transition-colors"
+              onClick={() => navigate('/en/contact')}
+            >
+              Contact
+            </span>
+            <span className="text-background/30">|</span>
+            <Link to="/admin-dashboard" className="hover:text-background transition-colors">
+              Management
+            </Link>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="text-center">
+          <p className="font-montserrat text-xs text-background/50">
             © {currentYear} City Market Properties. All rights reserved.
           </p>
         </div>
