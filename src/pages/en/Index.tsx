@@ -81,9 +81,14 @@ const EnglishIndex = () => {
       <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              City Market Properties
-            </h2>
+            <div className="mb-6">
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                CITY MARKET
+              </h2>
+              <p className="font-montserrat text-sm md:text-base text-muted-foreground tracking-widest">
+                Properties
+              </p>
+            </div>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-8">
               At <strong>City Market Properties</strong>, we offer personalized service to
               guide you through every step of the real estate journey. We help you find the

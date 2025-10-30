@@ -12,9 +12,14 @@ const EnglishFooter = () => {
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Company Info */}
           <div>
-            <h3 className="font-playfair text-2xl font-normal mb-4 tracking-wide">
-              CITY MARKET <span>Properties</span>
-            </h3>
+            <div className="mb-4">
+              <h3 className="font-playfair text-2xl font-normal tracking-wide text-center">
+                CITY MARKET
+              </h3>
+              <p className="font-montserrat text-xs text-background/70 text-center tracking-widest">
+                Properties
+              </p>
+            </div>
             <p className="font-montserrat text-sm text-background/70 mb-4">
               Experts in real estate brokerage, rentals, sales and property management in Tel Aviv.
               15+ years of experience in the Israeli real estate market.
