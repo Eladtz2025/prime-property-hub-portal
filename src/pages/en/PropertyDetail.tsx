@@ -136,7 +136,7 @@ const EnglishPropertyDetail = () => {
   const translatedCity = translations[property.city] || property.city;
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
+    <div className="min-h-screen english-luxury" dir="ltr">
       {/* Mobile Layout */}
       <div className="lg:hidden">
         {/* Back Button */}
@@ -197,19 +197,19 @@ const EnglishPropertyDetail = () => {
           {/* Features */}
           <div className="flex gap-2 flex-wrap">
             {property.parking && (
-              <Badge variant="secondary" className="text-sm">
+              <Badge variant="secondary" className="text-sm font-montserrat">
                 <Car className="h-3 w-3 mr-1" />
                 Parking
               </Badge>
             )}
             {property.elevator && (
-              <Badge variant="secondary" className="text-sm">
+              <Badge variant="secondary" className="text-sm font-montserrat">
                 <MoveUp className="h-3 w-3 mr-1" />
                 Elevator
               </Badge>
             )}
             {property.balcony && (
-              <Badge variant="secondary" className="text-sm">
+              <Badge variant="secondary" className="text-sm font-montserrat">
                 <TreePine className="h-3 w-3 mr-1" />
                 Balcony
               </Badge>
@@ -305,19 +305,19 @@ const EnglishPropertyDetail = () => {
             {/* Tags */}
             <div className="flex gap-2 flex-wrap">
               {property.parking && (
-                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
                   <Car className="h-3 w-3 mr-1" />
                   Parking
                 </Badge>
               )}
               {property.elevator && (
-                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
                   <MoveUp className="h-3 w-3 mr-1" />
                   Elevator
                 </Badge>
               )}
               {property.balcony && (
-                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
                   <TreePine className="h-3 w-3 mr-1" />
                   Balcony
                 </Badge>
