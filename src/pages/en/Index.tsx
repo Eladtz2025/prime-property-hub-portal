@@ -72,8 +72,8 @@ const EnglishIndex = () => {
 
       {/* Hero Section */}
       <VideoHero
-        title="WELCOME. HOME."
-        subtitle="Find your ideal home. Explore our exclusive listings."
+        title="CITY MARKET"
+        subtitle="Properties | Find your ideal home. Explore our exclusive listings."
         imageUrl="/images/en/hero-last-one.png"
       />
 

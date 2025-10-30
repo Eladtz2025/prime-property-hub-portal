@@ -111,8 +111,8 @@ const Index = () => {
       
       {/* Hero Section */}
       <VideoHero
-        title="ברוכים הבאים הביתה"
-        subtitle="מצאו את הבית האידיאלי שלכם. חקרו את הנכסים הבלעדיים שלנו בלב תל אביב"
+        title="CITY MARKET"
+        subtitle="Properties | מצאו את הבית האידיאלי שלכם. חקרו את הנכסים הבלעדיים שלנו בלב תל אביב"
         imageUrl="/images/en/hero-last-one.png"
       />
 
