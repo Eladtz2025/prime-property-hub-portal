@@ -136,12 +136,16 @@ const EnglishIndex = () => {
       <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
               Discover Tel Aviv
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              Neighborhoods Guide
             </h2>
+            <p className="font-montserrat text-lg text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed">
+              Tel Aviv is a vibrant and diverse city, where each neighborhood tells its own unique story. 
+              From the bohemian atmosphere of Neve Tzedek to the youthful energy of Florentin, from the 
+              elegance of Rothschild Boulevard to the rich culture of Dizengoff - every corner offers a 
+              different experience. Discover the perfect neighborhood for you, one that perfectly matches 
+              your lifestyle and dreams. Come explore with us the colorful mosaic of Tel Aviv.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
