@@ -7,14 +7,19 @@ const HebrewHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > window.innerHeight * 0.7);
+      const heroHeight = window.innerHeight;
+      const scrollStart = heroHeight - 150;
+      const scrollEnd = heroHeight;
+      const progress = Math.min(Math.max((window.scrollY - scrollStart) / (scrollEnd - scrollStart), 0), 1);
+      setScrollProgress(progress);
     };
 
     window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -32,39 +37,47 @@ const HebrewHeader = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const isScrolled = scrollProgress > 0.5;
+
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white shadow-md' : 'bg-transparent'
-    }`}>
-      <div className="container mx-auto px-4" style={{ paddingRight: '5rem' }}>
-        <div className="flex items-center justify-between h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16">
+      {/* Gradual white background */}
+      <div 
+        className="absolute inset-0 bg-white shadow-md transition-opacity duration-300"
+        style={{ opacity: scrollProgress }}
+      />
+      
+      <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
+        <div className="flex items-center justify-between h-full">
           {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300 ${
-                  scrolled 
-                    ? 'drop-shadow-none' 
-                    : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-                }
-                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300
-                  ${scrolled 
-                    ? 'after:bg-primary' 
-                    : 'after:bg-white'
-                  }
-                  ${
-                  isActive(item.path)
-                    ? scrolled 
-                      ? "text-primary after:scale-x-100" 
-                      : "text-white after:scale-x-100"
-                    : scrolled 
-                      ? "text-foreground/70 hover:text-primary after:scale-x-0 hover:after:scale-x-100"
-                      : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
-                }`}
+                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300 after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
+                style={{
+                  color: isScrolled 
+                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
+                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
               >
-                {item.label}
+                <span 
+                  className="after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
+                  style={{
+                    position: 'relative',
+                  }}
+                >
+                  {item.label}
+                  <span 
+                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                    style={{
+                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
+                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
+                    }}
+                  />
+                </span>
               </button>
             ))}
           </nav>
@@ -77,19 +90,28 @@ const HebrewHeader = () => {
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className={`h-10 md:h-12 w-auto translate-y-1 transition-all duration-300 ${
-                scrolled ? 'drop-shadow-none' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
-              }`}
+              className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
+              style={{
+                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
+              }}
             />
             <div className="text-center">
-              <div className={`font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300 ${
-                scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-              }`}>
+              <div 
+                className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
+                style={{
+                  color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 CITY MARKET
               </div>
-              <div className={`font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300 ${
-                scrolled ? 'text-foreground/70 drop-shadow-none' : 'text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-              }`}>
+              <div 
+                className="font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300"
+                style={{
+                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 Properties
               </div>
             </div>
@@ -101,27 +123,24 @@ const HebrewHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300 ${
-                  scrolled 
-                    ? 'drop-shadow-none' 
-                    : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-                }
-                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300
-                  ${scrolled 
-                    ? 'after:bg-primary' 
-                    : 'after:bg-white'
-                  }
-                  ${
-                  isActive(item.path)
-                    ? scrolled 
-                      ? "text-primary after:scale-x-100" 
-                      : "text-white after:scale-x-100"
-                    : scrolled 
-                      ? "text-foreground/70 hover:text-primary after:scale-x-0 hover:after:scale-x-100"
-                      : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
-                }`}
+                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
+                style={{
+                  color: isScrolled 
+                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
+                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
               >
-                {item.label}
+                <span style={{ position: 'relative' }}>
+                  {item.label}
+                  <span 
+                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                    style={{
+                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
+                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
+                    }}
+                  />
+                </span>
               </button>
             ))}
           </nav>
@@ -132,11 +151,11 @@ const HebrewHeader = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/en")}
-              className={`font-montserrat text-sm tracking-wide transition-all duration-300 ${
-                scrolled 
-                  ? 'text-foreground/70 hover:text-foreground drop-shadow-none' 
-                  : 'text-white/90 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-              }`}
+              className="font-montserrat text-sm tracking-wide transition-all duration-300"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
+                textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+              }}
             >
               English
             </Button>
@@ -147,13 +166,21 @@ const HebrewHeader = () => {
               className="lg:hidden p-2"
             >
               {mobileMenuOpen ? (
-                <X className={`w-6 h-6 transition-all duration-300 ${
-                  scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-                }`} />
+                <X 
+                  className="w-6 h-6 transition-all duration-300" 
+                  style={{
+                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                />
               ) : (
-                <Menu className={`w-6 h-6 transition-all duration-300 ${
-                  scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
-                }`} />
+                <Menu 
+                  className="w-6 h-6 transition-all duration-300"
+                  style={{
+                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                />
               )}
             </button>
           </div>
