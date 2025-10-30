@@ -114,7 +114,7 @@ const NeveTzedekNeighborhood = () => {
           </div>
 
           <div className="space-y-6">
-            <Card className="p-6 sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+            <Card className="p-6">
               <h3 className="font-playfair text-2xl font-bold mb-6">
                 מידע מהיר
               </h3>
