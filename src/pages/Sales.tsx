@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import CompactHero from '@/components/CompactHero';
+import HebrewHeader from '@/components/he/Header';
+import HebrewFooter from '@/components/he/Footer';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -119,14 +120,32 @@ const Sales = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen english-luxury" dir="rtl">
       <WhatsAppFloat />
+      <HebrewHeader />
       
-      <CompactHero
-        title="מכירות"
-        subtitle="מתמחים במכירת נכסים ברחבי הארץ"
-        backgroundImage="/images/sales-villa.jpg"
-      />
+      {/* Hero Section */}
+      <section className="relative h-[60vh] overflow-hidden">
+        <img
+          src="/images/sales-villa.jpg"
+          alt="מכירות"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <p className="font-montserrat text-sm tracking-widest uppercase text-white/80 mb-4">
+              שירותי מכירה
+            </p>
+            <h1 className="reliz-hero-title text-white">
+              מכירות
+            </h1>
+            <p className="reliz-subtitle text-white/90 mt-6 max-w-2xl mx-auto">
+              מתמחים במכירת נכסים ברחבי הארץ
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">
@@ -229,6 +248,7 @@ const Sales = () => {
         </div>
       </section>
 
+      <HebrewFooter />
     </div>
   );
 };

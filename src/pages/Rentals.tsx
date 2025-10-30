@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import CompactHero from '@/components/CompactHero';
+import HebrewHeader from '@/components/he/Header';
+import HebrewFooter from '@/components/he/Footer';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -131,14 +132,32 @@ const Rentals = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen english-luxury" dir="rtl">
       <WhatsAppFloat />
+      <HebrewHeader />
       
-      <CompactHero
-        title="השכרות"
-        subtitle="השכירו את הנכס שלכם בביטחון ובמקצועיות"
-        backgroundImage="/images/rental-interior.jpg"
-      />
+      {/* Hero Section */}
+      <section className="relative h-[60vh] overflow-hidden">
+        <img
+          src="/images/rental-interior.jpg"
+          alt="השכרות"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <p className="font-montserrat text-sm tracking-widest uppercase text-white/80 mb-4">
+              שירותי השכרה
+            </p>
+            <h1 className="reliz-hero-title text-white">
+              השכרות
+            </h1>
+            <p className="reliz-subtitle text-white/90 mt-6 max-w-2xl mx-auto">
+              השכירו את הנכס שלכם בביטחון ובמקצועיות
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">
@@ -240,6 +259,7 @@ const Rentals = () => {
         </div>
       </section>
 
+      <HebrewFooter />
     </div>
   );
 };
