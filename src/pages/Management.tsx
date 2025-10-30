@@ -196,17 +196,16 @@ const Management = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
+      <section className="py-14 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-4 text-foreground">
             מוכנים לשתף פעולה עם מומחים?
           </h2>
-          <p className="font-montserrat text-lg mb-8 max-w-2xl mx-auto opacity-90">
+          <p className="font-montserrat text-base mb-6 max-w-2xl mx-auto text-muted-foreground">
             תנו לנו לטפל בפרטים בזמן שאתם נהנים משקט נפשי ותשואות עקביות
           </p>
           <Button
             size="lg"
-            variant="secondary"
             className="font-montserrat font-semibold px-8"
           >
             קבלו ייעוץ חינם
