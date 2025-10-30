@@ -105,7 +105,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen hebrew-luxury">
+    <div className="min-h-screen english-luxury">
       <WhatsAppFloat />
       <HebrewHeader />
       
