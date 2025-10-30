@@ -58,9 +58,9 @@ const EnglishManagement = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] overflow-hidden">
+      <section className="relative h-[30vh] overflow-hidden">
         <img
-          src="/images/en/hero-telaviv.jpg"
+          src="/images/management-lobby.jpg"
           alt="Property Management"
           className="absolute inset-0 w-full h-full object-cover"
         />
