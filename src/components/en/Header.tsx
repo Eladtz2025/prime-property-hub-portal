@@ -11,8 +11,9 @@ const EnglishHeader = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Use a smaller threshold that works for both tall and short heroes
-      const scrollThreshold = 150;
+      // Use different scroll thresholds based on the page
+      const isHomePage = location.pathname === '/en';
+      const scrollThreshold = isHomePage ? window.innerHeight - 150 : 150;
       const progress = Math.min(window.scrollY / scrollThreshold, 1);
       setScrollProgress(progress);
     };
@@ -20,7 +21,7 @@ const EnglishHeader = () => {
     window.addEventListener('scroll', handleScroll);
     handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]);
 
   const leftNavItems = [
     { label: "Home", path: "/en" },
