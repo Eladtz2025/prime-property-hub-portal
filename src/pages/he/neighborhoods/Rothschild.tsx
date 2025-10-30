@@ -179,7 +179,7 @@ const RothschildNeighborhood = () => {
 
           {/* Right Column - Stats & Info */}
           <div className="space-y-6">
-            <Card className="p-6 sticky top-6">
+            <Card className="p-6 sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
               <h3 className="font-playfair text-2xl font-bold mb-6">
                 מחירים ממוצעים
               </h3>
