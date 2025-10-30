@@ -328,54 +328,70 @@ const BrokerageFormPage = () => {
               </div>
             </div>
 
-            {/* Fee Types */}
-            <div className="space-y-2">
-              <Label>סוג שירות</Label>
-              <div className="flex gap-6">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="rental"
-                    checked={feeTypeRental}
-                    onCheckedChange={(checked) => setFeeTypeRental(checked as boolean)}
-                    disabled={isFieldDisabled}
-                  />
-                  <Label htmlFor="rental" className="cursor-pointer">השכרה</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="sale"
-                    checked={feeTypeSale}
-                    onCheckedChange={(checked) => setFeeTypeSale(checked as boolean)}
-                    disabled={isFieldDisabled}
-                  />
-                  <Label htmlFor="sale" className="cursor-pointer">מכירה</Label>
-                </div>
+            {/* הצהרות */}
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold">הצהרות</h3>
+              <p className="text-sm text-muted-foreground">
+                אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר. אנו מתחייבים שלא למסור לזולת ולא להשתמש בכל מידע הקשור בפנייה זו ללא תיאום מראש עם "סיטי מרקט".
+              </p>
+              <p className="text-sm text-muted-foreground">
+                הנני מאשר/ים כי הופניתי לראשונה על ידכם אל הנכסים/הצדדים המפורטים בטופס זה.
+              </p>
+            </div>
+
+            {/* שכר טרחה */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">שכר טרחה</h3>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id="rental"
+                  checked={feeTypeRental}
+                  onCheckedChange={(checked) => setFeeTypeRental(checked as boolean)}
+                  disabled={isFieldDisabled}
+                />
+                <Label htmlFor="rental" className="cursor-pointer">
+                  השכרת דירה/משרד — <strong>100%</strong> מדמי השכירות החודשיים <em>בתוספת מע"מ</em> במזומן.
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id="sale"
+                  checked={feeTypeSale}
+                  onCheckedChange={(checked) => setFeeTypeSale(checked as boolean)}
+                  disabled={isFieldDisabled}
+                />
+                <Label htmlFor="sale" className="cursor-pointer">
+                  קניה או מכירה — <strong>2%</strong> מהערך הכולל של העסקה <em>בתוספת מע"מ</em> במזומן.
+                </Label>
               </div>
             </div>
 
-            {/* Properties Table */}
-            <div className="space-y-2">
-              <Label>נכסים</Label>
+            {/* רשימת נכסים */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">נכסים שהופניתי אליהם</h3>
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="p-2 text-right text-sm font-medium">כתובת</th>
-                      <th className="p-2 text-right text-sm font-medium w-20">קומה</th>
-                      <th className="p-2 text-right text-sm font-medium w-20">חדרים</th>
-                      <th className="p-2 text-right text-sm font-medium w-24">מחיר</th>
+                      <th className="p-2 text-right text-sm">מס'</th>
+                      <th className="p-2 text-right text-sm">כתובת</th>
+                      <th className="p-2 text-right text-sm">קומה</th>
+                      <th className="p-2 text-right text-sm">חדרים</th>
+                      <th className="p-2 text-right text-sm">מחיר</th>
                       {!isFieldDisabled && <th className="p-2 w-10"></th>}
                     </tr>
                   </thead>
                   <tbody>
                     {properties.map((property, index) => (
                       <tr key={index} className="border-t">
+                        <td className="p-2 text-sm">{index + 1}</td>
                         <td className="p-2">
                           <Input
                             value={property.address}
                             onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="כתובת הנכס"
+                            placeholder="כתובת"
+                            className="h-8"
                           />
                         </td>
                         <td className="p-2">
@@ -384,6 +400,7 @@ const BrokerageFormPage = () => {
                             onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
                             disabled={isFieldDisabled}
                             placeholder="קומה"
+                            className="h-8"
                           />
                         </td>
                         <td className="p-2">
@@ -392,6 +409,7 @@ const BrokerageFormPage = () => {
                             onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
                             disabled={isFieldDisabled}
                             placeholder="חדרים"
+                            className="h-8"
                           />
                         </td>
                         <td className="p-2">
@@ -400,6 +418,7 @@ const BrokerageFormPage = () => {
                             onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
                             disabled={isFieldDisabled}
                             placeholder="מחיר"
+                            className="h-8"
                           />
                         </td>
                         {!isFieldDisabled && (
@@ -422,23 +441,34 @@ const BrokerageFormPage = () => {
               </div>
               {!isFieldDisabled && (
                 <Button onClick={addPropertyRow} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 ml-2" />
                   הוסף נכס
                 </Button>
               )}
             </div>
 
             {/* Special Terms */}
-            <div className="space-y-2">
-              <Label htmlFor="terms">תנאים מיוחדים</Label>
+            <div>
+              <Label>תנאים מיוחדים ו/או נוספים</Label>
               <Textarea
-                id="terms"
+                placeholder="הקלידו תנאים מיוחדים, יוצאי דופן, חריגים וכד'."
                 value={specialTerms}
                 onChange={(e) => setSpecialTerms(e.target.value)}
                 disabled={isFieldDisabled}
-                placeholder="הזן תנאים מיוחדים (אופציונלי)"
-                rows={3}
               />
+            </div>
+
+            {/* תנאים משלימים */}
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold">תנאים משלימים</h3>
+              <ol className="text-sm text-muted-foreground space-y-2 pr-5">
+                <li>התחייבות זו תהיה תקפה גם במקרה של סיוע של צד שלישי לסיום העסקה.</li>
+                <li>התשלום יבוצע <strong>מיד</strong> עם עשיית ההסכם (זכרון דברים) ו/או חוזה ו/או עם קבלת החזקה בנכס – המוקדם מביניהם.</li>
+                <li>אי תשלום בתוך 5 ימים ממועד האירוע המזכה יחייב <strong>כפל דמי תיווך</strong> לתשלום בתוך 10 ימים ממועד האירוע.</li>
+                <li>"סיטי מרקט" לא תהיה אחראית לשינויים בעמדת המוכרים/משכירים, או למקרה שבו נמכר/הושכר הנכס לאחר.</li>
+                <li>העברת מידע לאדם אחר תחייב בתשלום מלוא שכר הטרחה כאילו אני/אנחנו ביצענו את העסקה בעצמנו.</li>
+                <li>אם קונים/שוכרים פנו תחילה למתווך אחר אך העסקה נסגרה באמצעותנו — דמי התיווך יחולו כרגיל לפי התנאים לעיל.</li>
+                <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
+              </ol>
             </div>
 
             <div className="border-t pt-6" />
