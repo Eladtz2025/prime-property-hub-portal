@@ -14,11 +14,8 @@ const HebrewFooter = () => {
           {/* Company Info */}
           <div>
             <h3 className="text-2xl font-bold mb-4 tracking-wide">
-              CITY MARKET
+              CITY MARKET <span className="font-normal">Properties</span>
             </h3>
-            <p className="text-sm text-background/70 mb-4">
-              Properties
-            </p>
             <p className="text-sm text-background/70 mb-4">
               מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
               15+ שנות ניסיון בשוק הנדל"ן הישראלי.

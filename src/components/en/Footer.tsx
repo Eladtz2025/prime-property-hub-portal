@@ -13,11 +13,8 @@ const EnglishFooter = () => {
           {/* Company Info */}
           <div>
             <h3 className="font-playfair text-2xl font-normal mb-4 tracking-wide">
-              CITY MARKET
+              CITY MARKET <span>Properties</span>
             </h3>
-            <p className="font-montserrat text-sm text-background/70 mb-4">
-              Properties
-            </p>
             <p className="font-montserrat text-sm text-background/70 mb-4">
               Experts in real estate brokerage, rentals, sales and property management in Tel Aviv.
               15+ years of experience in the Israeli real estate market.
