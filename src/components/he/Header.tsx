@@ -55,9 +55,14 @@ const HebrewHeader = () => {
               alt="City Market" 
               className="h-14 md:h-16 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] translate-y-1"
             />
-            <span className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-              CITY MARKET
-            </span>
+            <div className="text-center">
+              <div className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                CITY MARKET
+              </div>
+              <div className="font-montserrat text-[10px] md:text-xs tracking-widest text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                Properties
+              </div>
+            </div>
           </button>
 
           {/* Left Navigation (RTL) */}
