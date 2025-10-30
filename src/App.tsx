@@ -69,7 +69,7 @@ const AppContent: React.FC = () => {
         <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
         
         {/* Public pages - accessible to everyone */}
-        <Route path="/" element={<><Index /><Footer /></>} />
+        <Route path="/" element={<Index />} />
         <Route path="/rentals" element={<><Rentals /><Footer /></>} />
         <Route path="/sales" element={<><Sales /><Footer /></>} />
         <Route path="/management" element={<><Management /><Footer /></>} />
