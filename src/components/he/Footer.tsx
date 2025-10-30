@@ -127,23 +127,17 @@ const HebrewFooter = () => {
                 <MapPin className="h-4 w-4" />
                 <span>תל אביב, ישראל</span>
               </li>
+              <li>
+                <Link to="/admin-dashboard" className="hover:text-background transition-colors">
+                  ניהול
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-background/20 pt-8">
-          <div className="text-center mb-6">
-            <Button
-              variant="outline"
-              className="border-background/30 text-background hover:bg-background/10"
-              asChild
-            >
-              <Link to="/admin-dashboard">
-                עמוד מנהלים
-              </Link>
-            </Button>
-          </div>
-          <p className="text-sm text-background/70 text-center">
+        <div className="border-t border-background/20 pt-8 text-center">
+          <p className="text-sm text-background/70">
             © {currentYear} City Market Properties. כל הזכויות שמורות.
           </p>
         </div>
