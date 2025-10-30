@@ -5,8 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { usePublicProperties } from "@/hooks/usePublicProperties";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp, MapPin, Home, Square, Building } from "lucide-react";
 
 const EnglishManagement = () => {
@@ -14,9 +15,23 @@ const EnglishManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
+  // Collect all texts that need translation
+  const textsToTranslate = useMemo(() => {
+    if (!properties) return [];
+    const texts: string[] = [];
+    properties.forEach(prop => {
+      if (prop.title) texts.push(prop.title);
+      if (prop.address) texts.push(prop.address);
+      if (prop.description) texts.push(prop.description);
+    });
+    return [...new Set(texts)]; // Remove duplicates
+  }, [properties]);
+
+  const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
+
   const filteredProperties = (properties || []).filter((property) => {
-    const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const translatedAddress = translations[property.address || ''] || property.address || '';
+    const matchesSearch = translatedAddress.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -87,9 +102,11 @@ const EnglishManagement = () => {
             />
           </div>
 
-          {isLoading ? (
+          {isLoading || isTranslating ? (
             <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">Loading properties...</p>
+              <p className="text-lg text-muted-foreground">
+                {isLoading ? 'Loading properties...' : 'Translating...'}
+              </p>
             </div>
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -110,11 +127,11 @@ const EnglishManagement = () => {
                   </div>
                   <div className="p-6">
                     <h3 className="font-playfair text-xl font-bold mb-2">
-                      {property.title || `${property.rooms} Rooms ${property.address}`}
+                      {translations[property.title || ''] || property.title || `${property.rooms} Rooms ${translations[property.address || ''] || property.address}`}
                     </h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{property.address}</span>
+                      <span>{translations[property.address || ''] || property.address}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.floor && (
@@ -132,7 +149,7 @@ const EnglishManagement = () => {
                     </div>
                     {property.description && (
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {property.description}
+                        {translations[property.description] || property.description}
                       </p>
                     )}
                     <div className="flex gap-2 mb-4 flex-wrap">
