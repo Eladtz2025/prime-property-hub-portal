@@ -68,11 +68,9 @@ const Management = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              ניהול נכסים
-            </h1>
-          </div>
+          <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white tracking-wide">
+            ניהול נכסים
+          </h1>
         </div>
       </section>
 
