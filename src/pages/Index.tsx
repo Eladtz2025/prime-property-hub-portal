@@ -2,7 +2,6 @@ import VideoHero from '@/components/he/VideoHero';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
 import DivisionCard from '@/components/DivisionCard';
-import GoogleReviews from '@/components/GoogleReviews';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { RelizPropertyCard } from '@/components/en/RelizPropertyCard';
 import { useNavigate } from 'react-router-dom';
@@ -301,9 +300,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Google Reviews */}
-      <GoogleReviews />
 
       {/* Footer */}
       <HebrewFooter />
