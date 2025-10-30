@@ -32,7 +32,7 @@ const HebrewHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                className={`relative font-montserrat text-[17px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
                   after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
                   ${
                   isActive(item.path)
@@ -71,7 +71,7 @@ const HebrewHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                className={`relative font-montserrat text-[17px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
                   after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
                   ${
                   isActive(item.path)
