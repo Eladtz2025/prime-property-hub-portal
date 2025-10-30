@@ -8,14 +8,13 @@ const HebrewHeader = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const rightNavItems = [
+  const leftNavItems = [
     { label: "דף הבית", path: "/" },
-    { label: "מכירות", path: "/sales" },
-    { label: "השכרות", path: "/rentals" },
+    { label: "ניהול נכסים", path: "/management" },
+    { label: "בניינים חדשים", path: "/new-developments" },
   ];
 
-  const leftNavItems = [
-    { label: "ניהול נכסים", path: "/management" },
+  const rightNavItems = [
     { label: "שכונות", path: "/neighborhoods" },
     { label: "אודות", path: "/about" },
     { label: "צור קשר", path: "/contact" },
@@ -27,14 +26,14 @@ const HebrewHeader = () => {
     <header className="absolute top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Right Navigation (RTL) */}
+          {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
-            {rightNavItems.map((item) => (
+            {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[17px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
-                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-right after:transition-transform after:duration-300
+                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
                   ${
                   isActive(item.path)
                     ? "text-white after:scale-x-100"
@@ -66,13 +65,13 @@ const HebrewHeader = () => {
             </div>
           </button>
 
-          {/* Left Navigation (RTL) */}
+          {/* Right Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
-            {leftNavItems.map((item) => (
+            {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[17px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
                   after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
                   ${
                   isActive(item.path)
@@ -114,7 +113,7 @@ const HebrewHeader = () => {
         {mobileMenuOpen && (
           <nav className="lg:hidden py-6 border-t border-border/50">
             <div className="flex flex-col gap-4 px-4">
-              {[...rightNavItems, ...leftNavItems].map((item) => (
+              {[...leftNavItems, ...rightNavItems].map((item) => (
                 <button
                   key={item.path}
                   onClick={() => {
