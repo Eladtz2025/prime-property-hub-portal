@@ -13,9 +13,14 @@ const HebrewFooter = () => {
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Company Info */}
           <div>
-            <h3 className="text-2xl font-bold mb-4 tracking-wide">
-              CITY MARKET <span className="font-normal">Properties</span>
-            </h3>
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold tracking-wide text-center">
+                CITY MARKET
+              </h3>
+              <p className="text-xs text-background/70 text-center tracking-widest">
+                Properties
+              </p>
+            </div>
             <p className="text-sm text-background/70 mb-4">
               מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
               15+ שנות ניסיון בשוק הנדל"ן הישראלי.
