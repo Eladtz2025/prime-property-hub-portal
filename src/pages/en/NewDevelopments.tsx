@@ -52,7 +52,7 @@ const NewDevelopments = () => {
       </section>
 
       {/* Introduction */}
-      <section className="py-24 bg-background">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
@@ -67,7 +67,7 @@ const NewDevelopments = () => {
       </section>
 
       {/* Developments Grid */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {developments.map((dev) => (
@@ -82,7 +82,7 @@ const NewDevelopments = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-background">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
