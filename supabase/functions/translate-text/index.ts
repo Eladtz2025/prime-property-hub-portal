@@ -77,13 +77,21 @@ ${textsToTranslate.map((t: string, i: number) => `${i + 1}. ${t}`).join('\n')}`;
     const data = await response.json();
     const translatedText = data.choices[0]?.message?.content || "[]";
     
+    // Clean up markdown code blocks if present
+    let cleanedText = translatedText.trim();
+    if (cleanedText.startsWith('```json')) {
+      cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+    
     // Try to parse the JSON response
     let translations: string[];
     try {
-      translations = JSON.parse(translatedText);
-    } catch {
+      translations = JSON.parse(cleanedText.trim());
+    } catch (error) {
       // If JSON parsing fails, return original texts
-      console.error("Failed to parse translations:", translatedText);
+      console.error("Failed to parse translations:", cleanedText, error);
       translations = textsToTranslate;
     }
 
