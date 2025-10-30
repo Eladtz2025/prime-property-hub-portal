@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -7,6 +7,16 @@ const EnglishHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > window.innerHeight * 0.7);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const leftNavItems = [
     { label: "Home", path: "/en" },
@@ -23,21 +33,35 @@ const EnglishHeader = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-white shadow-md' : 'bg-transparent'
+    }`}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           {/* Left Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
-                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
+                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-300 ${
+                  scrolled 
+                    ? 'drop-shadow-none' 
+                    : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+                }
+                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300
+                  ${scrolled 
+                    ? 'after:bg-primary' 
+                    : 'after:bg-white'
+                  }
                   ${
                   isActive(item.path)
-                    ? "text-white after:scale-x-100"
-                    : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
+                    ? scrolled 
+                      ? "text-primary after:scale-x-100" 
+                      : "text-white after:scale-x-100"
+                    : scrolled 
+                      ? "text-foreground/70 hover:text-primary after:scale-x-0 hover:after:scale-x-100"
+                      : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
                 }`}
               >
                 {item.label}
@@ -53,13 +77,19 @@ const EnglishHeader = () => {
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className="h-14 md:h-16 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] translate-y-1"
+              className={`h-10 md:h-12 w-auto translate-y-1 transition-all duration-300 ${
+                scrolled ? 'drop-shadow-none' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+              }`}
             />
             <div className="text-center">
-              <div className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              <div className={`font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300 ${
+                scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+              }`}>
                 CITY MARKET
               </div>
-              <div className="font-montserrat text-[10px] md:text-xs tracking-widest text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              <div className={`font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300 ${
+                scrolled ? 'text-foreground/70 drop-shadow-none' : 'text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+              }`}>
                 Properties
               </div>
             </div>
@@ -71,12 +101,24 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]
-                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:bg-white after:origin-left after:transition-transform after:duration-300
+                className={`relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-300 ${
+                  scrolled 
+                    ? 'drop-shadow-none' 
+                    : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+                }
+                  after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300
+                  ${scrolled 
+                    ? 'after:bg-primary' 
+                    : 'after:bg-white'
+                  }
                   ${
                   isActive(item.path)
-                    ? "text-white after:scale-x-100"
-                    : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
+                    ? scrolled 
+                      ? "text-primary after:scale-x-100" 
+                      : "text-white after:scale-x-100"
+                    : scrolled 
+                      ? "text-foreground/70 hover:text-primary after:scale-x-0 hover:after:scale-x-100"
+                      : "text-white/90 hover:text-white after:scale-x-0 hover:after:scale-x-100"
                 }`}
               >
                 {item.label}
@@ -90,7 +132,11 @@ const EnglishHeader = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="font-montserrat text-sm tracking-wide text-white/90 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+              className={`font-montserrat text-sm tracking-wide transition-all duration-300 ${
+                scrolled 
+                  ? 'text-foreground/70 hover:text-foreground drop-shadow-none' 
+                  : 'text-white/90 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+              }`}
             >
               עברית
             </Button>
@@ -101,9 +147,13 @@ const EnglishHeader = () => {
               className="lg:hidden p-2"
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                <X className={`w-6 h-6 transition-all duration-300 ${
+                  scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+                }`} />
               ) : (
-                <Menu className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                <Menu className={`w-6 h-6 transition-all duration-300 ${
+                  scrolled ? 'text-foreground drop-shadow-none' : 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'
+                }`} />
               )}
             </button>
           </div>
