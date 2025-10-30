@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 const HebrewFooter = () => {
   const navigate = useNavigate();
-  const currentYear = new Date().getFullYear();
+  const currentYear = 2016;
 
   return (
     <footer className="bg-foreground text-background py-16">

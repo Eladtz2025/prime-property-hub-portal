@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const EnglishFooter = () => {
   const navigate = useNavigate();
-  const currentYear = new Date().getFullYear();
+  const currentYear = 2016;
 
   return (
     <footer className="bg-foreground text-background py-16">
