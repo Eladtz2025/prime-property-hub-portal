@@ -78,7 +78,7 @@ const EnglishIndex = () => {
       />
 
       {/* About Section */}
-      <section className="py-24 bg-background">
+      <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
@@ -100,7 +100,7 @@ const EnglishIndex = () => {
       </section>
 
       {/* Featured Properties */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
@@ -133,7 +133,7 @@ const EnglishIndex = () => {
       </section>
 
       {/* Neighborhoods Guide */}
-      <section className="py-24 bg-background">
+      <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
@@ -178,7 +178,7 @@ const EnglishIndex = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
             <div className="text-center">
@@ -213,7 +213,7 @@ const EnglishIndex = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-24 bg-background">
+      <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
