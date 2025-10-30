@@ -10,8 +10,6 @@ import { PropertyImage } from "@/types/property";
 import { useState } from "react";
 import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
-import EnglishHeader from "@/components/en/Header";
-import EnglishFooter from "@/components/en/Footer";
 
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -117,10 +115,8 @@ const EnglishPropertyDetail = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
-      <EnglishHeader />
-
       {/* Mobile Layout */}
-      <div className="lg:hidden mt-20">
+      <div className="lg:hidden">
         {/* Back Button */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
           <Button
@@ -234,7 +230,7 @@ const EnglishPropertyDetail = () => {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:block container mx-auto px-4 py-8 mt-20">
+      <div className="hidden lg:block container mx-auto px-4 py-8">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -416,8 +412,6 @@ const EnglishPropertyDetail = () => {
           </form>
         </Card>
       </div>
-
-      <EnglishFooter />
     </div>
   );
 };
