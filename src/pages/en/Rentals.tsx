@@ -62,12 +62,21 @@ const EnglishRentals = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <EnglishHeader />
-      <Hero
-        title="Rental Properties"
-        subtitle="Find Your Perfect Home"
-        description="Curated selection of premium rental apartments and penthouses in Tel Aviv's most sought-after neighborhoods"
-        backgroundImage="/images/en/hero-telaviv.jpg"
-      />
+      <section className="relative h-[30vh] overflow-hidden">
+        <img
+          src="/images/en/hero-telaviv.jpg"
+          alt="Rental Properties"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
+              Rental Properties
+            </h1>
+          </div>
+        </div>
+      </section>
 
       <section className="py-20">
         <div className="container mx-auto px-4">

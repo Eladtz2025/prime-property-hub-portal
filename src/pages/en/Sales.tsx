@@ -50,12 +50,21 @@ const EnglishSales = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <EnglishHeader />
-      <Hero
-        title="Properties for Sale"
-        subtitle="Your Investment in Tel Aviv's Future"
-        description="From iconic Bauhaus architecture to contemporary design, discover exceptional properties in Israel's cultural capital"
-        backgroundImage="/images/en/hero-telaviv.jpg"
-      />
+      <section className="relative h-[30vh] overflow-hidden">
+        <img
+          src="/images/en/hero-telaviv.jpg"
+          alt="Properties for Sale"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
+              Properties for Sale
+            </h1>
+          </div>
+        </div>
+      </section>
 
       <section className="py-20">
         <div className="container mx-auto px-4">
