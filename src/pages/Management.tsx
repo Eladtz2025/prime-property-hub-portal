@@ -148,9 +148,6 @@ const Management = () => {
                         <Badge className="bg-primary hover:bg-primary/90">מרפסת</Badge>
                       )}
                     </div>
-                    <Button className="w-full font-montserrat">
-                      פרטים נוספים
-                    </Button>
                   </div>
                 </Card>
               ))}

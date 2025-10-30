@@ -163,9 +163,6 @@ const EnglishManagement = () => {
                         <Badge className="bg-primary hover:bg-primary/90">Balcony</Badge>
                       )}
                     </div>
-                    <Button className="w-full font-montserrat">
-                      View Details
-                    </Button>
                   </div>
                 </Card>
               ))}
