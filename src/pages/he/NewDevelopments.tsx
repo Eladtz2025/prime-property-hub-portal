@@ -1,33 +1,75 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
-import { RelizPropertyCard } from "@/components/en/RelizPropertyCard";
-import { useNavigate } from "react-router-dom";
+import { FlippablePropertyCard } from "@/components/he/FlippablePropertyCard";
 
 const NewDevelopments = () => {
-  const navigate = useNavigate();
-
-  const developments = [
+  const telAvivDevelopments = [
     {
-      id: "dev-1",
       title: "מגדל רוטשילד",
-      location: "שדרות רוטשילד",
+      location: "תל אביב",
       price: "החל מ-₪12,000,000",
       imageUrl: "/images/en/properties/luxury-rothschild.jpg",
       type: "פרויקט חדש",
     },
     {
-      id: "dev-2",
       title: "נווה צדק רזידנסס",
-      location: "נווה צדק",
+      location: "תל אביב",
       price: "החל מ-₪8,500,000",
       imageUrl: "/images/en/properties/modern-penthouse.jpg",
       type: "פרויקט חדש",
     },
     {
-      id: "dev-3",
-      title: "רמות הים התיכון",
-      location: "צפון הישן",
-      price: "החל מ-₪6,800,000",
+      title: "דיזנגוף טאוור",
+      location: "תל אביב",
+      price: "החל מ-₪7,200,000",
+      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
+      type: "פרויקט חדש",
+    },
+  ];
+
+  const herzliyaDevelopments = [
+    {
+      title: "הרצליה פיתוח מרינה",
+      location: "הרצליה",
+      price: "החל מ-₪9,500,000",
+      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "מגדלי הים",
+      location: "הרצליה",
+      price: "החל מ-₪8,800,000",
+      imageUrl: "/images/en/properties/modern-penthouse.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "פארק הרצליה",
+      location: "הרצליה",
+      price: "החל מ-₪7,900,000",
+      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
+      type: "פרויקט חדש",
+    },
+  ];
+
+  const philadelphiaDevelopments = [
+    {
+      title: "ריטנהאוס רזידנסס",
+      location: "פילדלפיה",
+      price: "החל מ-$1,200,000",
+      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "סנטר סיטי טאוור",
+      location: "פילדלפיה",
+      price: "החל מ-$950,000",
+      imageUrl: "/images/en/properties/modern-penthouse.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "דלאוור ווטרפרונט",
+      location: "פילדלפיה",
+      price: "החל מ-$1,100,000",
       imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
       type: "פרויקט חדש",
     },
@@ -69,58 +111,59 @@ const NewDevelopments = () => {
         </div>
       </section>
 
-      {/* Developments Grid */}
+      {/* Tel Aviv Developments */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              תל אביב
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              פרויקטים בלב העיר הלבנה
+            </p>
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {developments.map((dev) => (
-              <RelizPropertyCard
-                key={dev.id}
-                {...dev}
-                onClick={() => navigate(`/property/${dev.id}`)}
-              />
+            {telAvivDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Herzliya Developments */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              מה מייחד אותנו
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              מאפייני הפיתוח
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              הרצליה
             </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              יוקרה על חוף הים
+            </p>
           </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {herzliyaDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                מיקומים
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                מובחרים
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                שירותים
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                בלעדיים
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                גימורים
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                פרימיום
-              </p>
-            </div>
+      {/* Philadelphia Developments */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              פילדלפיה
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              השקעה בארה"ב
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {philadelphiaDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
           </div>
         </div>
       </section>

@@ -1,32 +1,75 @@
 import EnglishHeader from "@/components/en/Header";
-import { RelizPropertyCard } from "@/components/en/RelizPropertyCard";
-import { useNavigate } from "react-router-dom";
+import EnglishFooter from "@/components/en/Footer";
+import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
 
 const NewDevelopments = () => {
-  const navigate = useNavigate();
-
-  const developments = [
+  const telAvivDevelopments = [
     {
-      id: "dev-1",
       title: "Rothschild Tower",
-      location: "Rothschild Boulevard",
+      location: "Tel Aviv",
       price: "From ₪12,000,000",
       imageUrl: "/images/en/properties/luxury-rothschild.jpg",
       type: "New Development",
     },
     {
-      id: "dev-2",
       title: "Neve Tzedek Residences",
-      location: "Neve Tzedek",
+      location: "Tel Aviv",
       price: "From ₪8,500,000",
       imageUrl: "/images/en/properties/modern-penthouse.jpg",
       type: "New Development",
     },
     {
-      id: "dev-3",
-      title: "Mediterranean Heights",
-      location: "Old North",
-      price: "From ₪6,800,000",
+      title: "Dizengoff Tower",
+      location: "Tel Aviv",
+      price: "From ₪7,200,000",
+      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
+      type: "New Development",
+    },
+  ];
+
+  const herzliyaDevelopments = [
+    {
+      title: "Herzliya Marina",
+      location: "Herzliya",
+      price: "From ₪9,500,000",
+      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
+      type: "New Development",
+    },
+    {
+      title: "Sea Towers",
+      location: "Herzliya",
+      price: "From ₪8,800,000",
+      imageUrl: "/images/en/properties/modern-penthouse.jpg",
+      type: "New Development",
+    },
+    {
+      title: "Herzliya Park",
+      location: "Herzliya",
+      price: "From ₪7,900,000",
+      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
+      type: "New Development",
+    },
+  ];
+
+  const philadelphiaDevelopments = [
+    {
+      title: "Rittenhouse Residences",
+      location: "Philadelphia",
+      price: "From $1,200,000",
+      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
+      type: "New Development",
+    },
+    {
+      title: "Center City Tower",
+      location: "Philadelphia",
+      price: "From $950,000",
+      imageUrl: "/images/en/properties/modern-penthouse.jpg",
+      type: "New Development",
+    },
+    {
+      title: "Delaware Waterfront",
+      location: "Philadelphia",
+      price: "From $1,100,000",
       imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
       type: "New Development",
     },
@@ -66,113 +109,65 @@ const NewDevelopments = () => {
         </div>
       </section>
 
-      {/* Developments Grid */}
+      {/* Tel Aviv Developments */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              Tel Aviv
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              Projects in the heart of the White City
+            </p>
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {developments.map((dev) => (
-              <RelizPropertyCard
-                key={dev.id}
-                {...dev}
-                onClick={() => navigate(`/en/property/${dev.id}`)}
-              />
+            {telAvivDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Herzliya Developments */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              What Sets Us Apart
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              Development Features
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              Herzliya
             </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              Luxury by the sea
+            </p>
           </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {herzliyaDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                Prime
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Locations
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                Exclusive
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Amenities
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                Premium
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Finishes
-              </p>
-            </div>
+      {/* Philadelphia Developments */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              Philadelphia
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              Investment in the USA
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {philadelphiaDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground text-background py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <h3 className="font-playfair text-2xl font-normal mb-4 tracking-wide">
-                CITY MARKET
-              </h3>
-              <p className="font-montserrat text-sm text-background/70">
-                 Real Estate
-              </p>
-            </div>
-            <div>
-              <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-                Quick Links
-              </h4>
-              <div className="space-y-2 font-montserrat text-sm text-background/70">
-                <p className="cursor-pointer hover:text-background transition-colors">Home</p>
-                <p className="cursor-pointer hover:text-background transition-colors">Buy</p>
-                <p className="cursor-pointer hover:text-background transition-colors">Rent</p>
-                <p className="cursor-pointer hover:text-background transition-colors">Neighborhoods</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-                Company
-              </h4>
-              <div className="space-y-2 font-montserrat text-sm text-background/70">
-                <p className="cursor-pointer hover:text-background transition-colors">About Us</p>
-                <p className="cursor-pointer hover:text-background transition-colors">Contact</p>
-                <p className="cursor-pointer hover:text-background transition-colors">Blog</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-                Contact
-              </h4>
-              <div className="space-y-2 font-montserrat text-sm text-background/70">
-                <p>Tel Aviv, Israel</p>
-                <p>info@citymarket.co.il</p>
-                <p>+972-XX-XXXXXXX</p>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-background/20 pt-8 text-center">
-            <p className="font-montserrat text-sm text-background/70">
-              © 2024 City Market Properties. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <EnglishFooter />
     </div>
   );
 };
