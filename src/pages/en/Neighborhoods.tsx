@@ -65,15 +65,9 @@ const EnglishNeighborhoods = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <div>
-            <p className="font-montserrat text-sm tracking-widest uppercase text-white/80 mb-4">
-              Discover Tel Aviv
-            </p>
-            <h1 className="reliz-hero-title text-white">
+            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
               Neighborhoods
             </h1>
-            <p className="reliz-subtitle text-white/90 mt-6 max-w-2xl mx-auto">
-              From historic charm to modern energy, explore Tel Aviv's most desirable neighborhoods
-            </p>
           </div>
         </div>
       </section>
