@@ -13,8 +13,6 @@ import { usePublicProperties } from '@/hooks/usePublicProperties';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { data: rentalProperties = [], isLoading: isLoadingRentals } = usePublicProperties({ propertyType: 'rental' });
-  const { data: saleProperties = [], isLoading: isLoadingSales } = usePublicProperties({ propertyType: 'sale' });
   
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -22,27 +20,6 @@ const Index = () => {
     phone: '',
     message: ''
   });
-
-  const isLoading = isLoadingRentals || isLoadingSales;
-  
-  // Filter for featured properties - only rental or sale properties with images
-  const featuredProperties = [...rentalProperties, ...saleProperties]
-    .sort((a, b) => {
-      if (a.featured && !b.featured) return -1;
-      if (!a.featured && b.featured) return 1;
-      return 0;
-    })
-    .slice(0, 6)
-    .map(property => ({
-      id: property.id,
-      title: property.title || property.address,
-      location: property.city || 'תל אביב',
-      price: property.monthly_rent 
-        ? `₪${property.monthly_rent.toLocaleString()}/חודש`
-        : 'מחיר לא זמין',
-      imageUrl: property.images[0]?.image_url || '/images/rental-interior.jpg',
-      type: property.property_type === 'rental' ? 'להשכרה' : 'למכירה',
-    }));
 
   const neighborhoods = [
     {
@@ -174,50 +151,6 @@ const Index = () => {
             {divisions.map((division) => (
               <DivisionCard key={division.title} {...division} />
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Properties */}
-      <section className="py-12 md:py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12 md:mb-16">
-            <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
-              נבחרו במיוחד בשבילך
-            </p>
-            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground">
-              נכסים מומלצים
-            </h2>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">טוען נכסים...</p>
-            </div>
-          ) : featuredProperties.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">אין נכסים זמינים כרגע</p>
-            </div>
-          ) : (
-            <div className="flex overflow-x-auto gap-4 md:gap-6 mb-8 md:mb-12 pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-              {featuredProperties.map((property) => (
-                <div key={property.id} className="flex-none w-[280px] sm:w-[320px] md:w-[360px] snap-center">
-                  <RelizPropertyCard
-                    {...property}
-                    onClick={() => navigate(`/property/${property.id}`)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="text-center">
-            <button
-              onClick={() => navigate("/sales")}
-              className="reliz-button"
-            >
-              צפה בכל הנכסים
-            </button>
           </div>
         </div>
       </section>
