@@ -67,7 +67,7 @@ const EnglishIndex = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury" dir="ltr">
+    <div className="min-h-screen" dir="ltr">
       <EnglishHeader />
 
       {/* Hero Section */}
