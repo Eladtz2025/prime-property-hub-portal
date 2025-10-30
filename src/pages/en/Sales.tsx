@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Home, Square } from 'lucide-react';
+import { MapPin, Home, Square, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -54,6 +54,19 @@ const EnglishSales = () => {
                          translatedTitle.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  const services = [
+    { icon: TrendingUp, title: 'Consultation & Valuation', description: 'Professional assessment of property value and guidance on optimal sale price' },
+    { icon: Shield, title: 'Full Legal Support', description: 'Handling all legal matters, checking for liens and encumbrances' },
+    { icon: Users, title: 'Professional Negotiation', description: 'Expert negotiation with potential buyers to achieve the best price' },
+    { icon: Award, title: 'Advanced Marketing', description: 'Advertising your property on all relevant platforms with professional photography' },
+  ];
+
+  const stats = [
+    { value: '98%', label: 'Success rate in sales' },
+    { value: '45', label: 'Average days to sale' },
+    { value: '150+', label: 'Properties sold this year' },
+  ];
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -154,6 +167,33 @@ const EnglishSales = () => {
               <p className="text-lg text-muted-foreground">No properties found</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-4">Our Sales Services</h2>
+          <p className="text-center text-muted-foreground mb-12">
+            We provide comprehensive professional service including all stages from valuation to signing the sales contract
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {services.map((service, index) => (
+              <Card key={index} className="p-8">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <service.icon className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">{service.title}</h3>
+                    <p className="text-muted-foreground">{service.description}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 

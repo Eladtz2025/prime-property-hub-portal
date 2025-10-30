@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Home, Square } from 'lucide-react';
+import { MapPin, Home, Square, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -54,6 +54,19 @@ const EnglishRentals = () => {
                          translatedTitle.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  const services = [
+    { icon: CheckCircle, title: 'Professional Valuation', description: 'Accurate property valuation and recommendation on optimal rental price' },
+    { icon: Star, title: 'Effective Marketing', description: 'Advertising the property on all relevant platforms and bringing quality tenants' },
+    { icon: Users, title: 'Tenant Screening', description: 'Thorough screening of potential tenants including references and financial capability' },
+    { icon: TrendingUp, title: 'Support & Management', description: 'Professional support throughout the rental period and handling all issues that arise' },
+  ];
+
+  const stats = [
+    { value: '95%', label: 'Success rate in rentals' },
+    { value: '30', label: 'Average days to rent' },
+    { value: '200+', label: 'Properties in active rental' },
+  ];
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -154,6 +167,33 @@ const EnglishRentals = () => {
               <p className="text-lg text-muted-foreground">No properties found</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-4">Our Rental Services</h2>
+          <p className="text-center text-muted-foreground mb-12">
+            We provide comprehensive professional service including all stages from valuation to signing the rental contract
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {services.map((service, index) => (
+              <Card key={index} className="p-8">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <service.icon className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">{service.title}</h3>
+                    <p className="text-muted-foreground">{service.description}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
