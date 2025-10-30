@@ -73,7 +73,7 @@ const EnglishSales = () => {
       <EnglishHeader />
       <section className="relative h-[30vh] overflow-hidden">
         <img
-          src="/images/en/hero-telaviv.jpg"
+          src="/images/sales-villa.jpg"
           alt="Properties for Sale"
           className="absolute inset-0 w-full h-full object-cover"
         />
