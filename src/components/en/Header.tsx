@@ -13,7 +13,7 @@ const EnglishHeader = () => {
     const handleScroll = () => {
       // Use different scroll thresholds based on the page
       const isHomePage = location.pathname === '/en';
-      const scrollThreshold = isHomePage ? window.innerHeight - 150 : 150;
+      const scrollThreshold = isHomePage ? window.innerHeight : 150;
       const progress = Math.min(window.scrollY / scrollThreshold, 1);
       setScrollProgress(progress);
     };
