@@ -161,10 +161,13 @@ const Sales = () => {
                 <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative">
                     <img
-                      src={property.image}
+                      src={property.image || '/images/sales-villa.jpg'}
                       alt={property.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/sales-villa.jpg';
+                      }}
                     />
                     <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
                       ₪ {property.price.toLocaleString()}
