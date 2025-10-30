@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { PropertyImage } from "@/types/property";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,20 @@ const EnglishPropertyDetail = () => {
 
   // Load property from database
   const { data: property, isLoading, error } = usePublicProperty(id);
+
+  // Prepare texts for translation
+  const textsToTranslate = useMemo(() => {
+    if (!property) return [];
+    return [
+      property.title || '',
+      property.description || '',
+      property.address || '',
+      property.city || ''
+    ].filter(Boolean);
+  }, [property]);
+
+  // Use translation hook
+  const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
 
   // Convert property images to PropertyImage format
   const propertyImages: PropertyImage[] = property?.images.map(img => ({
@@ -57,7 +72,7 @@ const EnglishPropertyDetail = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isTranslating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Skeleton className="h-96 w-full max-w-4xl" />
@@ -100,8 +115,9 @@ const EnglishPropertyDetail = () => {
   };
 
   const getKeyPoints = () => {
+    const translatedCity = translations[property.city] || property.city;
     const points = [
-      `Excellent location in ${property.city}`,
+      `Excellent location in ${translatedCity}`,
       property.rooms ? `${property.rooms} spacious rooms` : 'Spacious area',
       `${property.property_size} sqm`,
     ];
@@ -112,6 +128,12 @@ const EnglishPropertyDetail = () => {
 
     return points;
   };
+
+  // Get translated texts
+  const translatedTitle = translations[property.title] || property.title;
+  const translatedDescription = translations[property.description] || property.description;
+  const translatedAddress = translations[property.address] || property.address;
+  const translatedCity = translations[property.city] || property.city;
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -143,10 +165,10 @@ const EnglishPropertyDetail = () => {
           {/* Title and Address */}
           <div>
             <Badge className="mb-3 bg-primary text-white font-montserrat">{getPropertyTypeLabel()}</Badge>
-            <h1 className="text-2xl font-playfair font-bold mb-3">{property.title}</h1>
+            <h1 className="text-2xl font-playfair font-bold mb-3">{translatedTitle}</h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
-              <span className="font-montserrat">{property.address}, {property.city}</span>
+              <span className="font-montserrat">{translatedAddress}, {translatedCity}</span>
             </div>
           </div>
 
@@ -198,7 +220,7 @@ const EnglishPropertyDetail = () => {
           <div>
             <h3 className="text-lg font-playfair font-semibold mb-3">Property Description</h3>
             <p className="text-muted-foreground font-montserrat leading-relaxed">
-              {property.description}
+              {translatedDescription}
             </p>
           </div>
 
@@ -247,10 +269,10 @@ const EnglishPropertyDetail = () => {
             {/* Badge and Title */}
             <div>
               <Badge className="mb-3 bg-primary text-white font-montserrat">{getPropertyTypeLabel()}</Badge>
-              <h1 className="text-2xl font-playfair font-bold mb-2">{property.title}</h1>
+              <h1 className="text-2xl font-playfair font-bold mb-2">{translatedTitle}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4" />
-                <span className="text-base font-montserrat">{property.address}, {property.city}</span>
+                <span className="text-base font-montserrat">{translatedAddress}, {translatedCity}</span>
               </div>
             </div>
 
@@ -353,7 +375,7 @@ const EnglishPropertyDetail = () => {
         <Card className="p-8 mt-8">
           <h2 className="text-2xl font-playfair font-bold mb-4">About This Property</h2>
           <p className="text-muted-foreground font-montserrat leading-relaxed mb-6">
-            {property.description}
+            {translatedDescription}
           </p>
 
           <h3 className="text-xl font-playfair font-semibold mb-4">Key Features</h3>
