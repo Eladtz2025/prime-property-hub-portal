@@ -44,7 +44,7 @@ const NotFound = () => {
         
         {/* CTA Button */}
         <Link 
-          to="/" 
+          to="/en" 
           className="group inline-flex items-center gap-3 font-montserrat bg-gradient-to-l from-primary to-secondary text-white px-10 py-4 rounded-xl hover:shadow-glow transition-all duration-500 shadow-elegant hover:scale-105"
         >
           <Home size={20} />
