@@ -11,10 +11,9 @@ const HebrewHeader = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const heroHeight = window.innerHeight;
-      const scrollStart = heroHeight - 150;
-      const scrollEnd = heroHeight;
-      const progress = Math.min(Math.max((window.scrollY - scrollStart) / (scrollEnd - scrollStart), 0), 1);
+      // Use a smaller threshold that works for both tall and short heroes
+      const scrollThreshold = 150;
+      const progress = Math.min(window.scrollY / scrollThreshold, 1);
       setScrollProgress(progress);
     };
 
