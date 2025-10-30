@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, Trees, Users, Home } from "lucide-react";
-import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 
 const OldNorthNeighborhood = () => {
@@ -10,7 +9,6 @@ const OldNorthNeighborhood = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <HebrewHeader />
       
       <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-4">

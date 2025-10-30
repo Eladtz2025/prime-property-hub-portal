@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
-import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 
 const RothschildNeighborhood = () => {
@@ -39,7 +38,6 @@ const RothschildNeighborhood = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <HebrewHeader />
       
       {/* Back Button */}
       <div className="bg-background border-b">
