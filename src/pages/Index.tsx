@@ -138,9 +138,6 @@ const Index = () => {
       <section className="py-4 md:py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 md:mb-12">
-            <p className="font-montserrat text-xs md:text-sm tracking-widest uppercase text-muted-foreground mb-3 md:mb-4">
-              השירותים שלנו
-            </p>
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-3 md:mb-4">החטיבות שלנו</h2>
             <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
               ניהול, מכירה והשכרה במקום אחד
