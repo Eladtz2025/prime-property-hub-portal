@@ -46,7 +46,7 @@ const EnglishPropertyDetail = () => {
 
   const handleWhatsApp = () => {
     const phone = '972545503055';
-    const message = `Hello, I'm interested in ${property?.title}`;
+    const message = `שלום אנו מתעניינים לגבי הדירה ב${translatedTitle}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
