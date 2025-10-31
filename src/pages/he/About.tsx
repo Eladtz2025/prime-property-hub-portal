@@ -1,10 +1,19 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 import { Award, Users, TrendingUp, Heart } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const About = () => {
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <title>אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב</title>
+        <meta name="description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />
+        <meta property="og:title" content="אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב" />
+        <meta property="og:description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket-properties.com/about" />
+      </Helmet>
       <HebrewHeader />
 
       {/* Hero Section */}

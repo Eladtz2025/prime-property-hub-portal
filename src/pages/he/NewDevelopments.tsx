@@ -1,6 +1,7 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 import { FlippablePropertyCard } from "@/components/he/FlippablePropertyCard";
+import { Helmet } from "react-helmet";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -77,6 +78,14 @@ const NewDevelopments = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market</title>
+        <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
+        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market" />
+        <meta property="og:description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket-properties.com/new-developments" />
+      </Helmet>
       <HebrewHeader />
 
       {/* Hero Section */}

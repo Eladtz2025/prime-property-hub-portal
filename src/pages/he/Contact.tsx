@@ -169,7 +169,7 @@ const Contact = () => {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                    placeholder="+972-XX-XXXXXXX"
+                    placeholder="054-XXX-XXXX"
                   />
                 </div>
 

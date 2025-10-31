@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const HebrewNeighborhoods = () => {
   const navigate = useNavigate();
@@ -53,6 +54,14 @@ const HebrewNeighborhoods = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties</title>
+        <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין, דיזנגוף והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
+        <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties" />
+        <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין, דיזנגוף והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket-properties.com/neighborhoods" />
+      </Helmet>
       <HebrewHeader />
 
       {/* Hero Section */}
