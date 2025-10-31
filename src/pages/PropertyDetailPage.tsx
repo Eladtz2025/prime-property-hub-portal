@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Facebook, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Facebook, Instagram, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -42,13 +42,20 @@ const PropertyDetailPage = () => {
     window.location.href = 'tel:0545503055';
   };
 
-  const handleShare = (platform: 'whatsapp' | 'facebook' | 'copy') => {
+  const handleShare = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'copy') => {
     const url = window.location.href;
     
     if (platform === 'whatsapp') {
       window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
     } else if (platform === 'facebook') {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'instagram') {
+      // Instagram doesn't support direct link sharing, so we copy the link
+      navigator.clipboard.writeText(url);
+      toast({
+        title: "קישור הועתק",
+        description: "הקישור הועתק ללוח. אפשר להדביק באינסטגרם",
+      });
     } else if (platform === 'copy') {
       navigator.clipboard.writeText(url);
       setCopied(true);
@@ -322,11 +329,12 @@ const PropertyDetailPage = () => {
             {/* Share */}
             <Card className="p-4">
               <h3 className="font-semibold mb-3 text-sm">שתף נכס זה</h3>
-              <div className="flex gap-2 justify-center">
+              <div className="flex gap-2 justify-center flex-wrap">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handleShare('whatsapp')}
+                  title="שתף בווטסאפ"
                 >
                   <Share2 className="h-4 w-4" />
                 </Button>
@@ -334,13 +342,23 @@ const PropertyDetailPage = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => handleShare('facebook')}
+                  title="שתף בפייסבוק"
                 >
                   <Facebook className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
+                  onClick={() => handleShare('instagram')}
+                  title="שתף באינסטגרם"
+                >
+                  <Instagram className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={() => handleShare('copy')}
+                  title="העתק קישור"
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
