@@ -159,11 +159,21 @@ const EnglishIndex = () => {
                 key={neighborhood.id}
                 onClick={() => navigate(`/en/neighborhoods/${neighborhood.id}`)}
                 className="group relative aspect-[3/4] overflow-hidden cursor-pointer"
+                role="button"
+                aria-label={`Explore ${neighborhood.name} neighborhood`}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    navigate(`/en/neighborhoods/${neighborhood.id}`);
+                  }
+                }}
               >
                 <img
                   src={neighborhood.image}
-                  alt={neighborhood.name}
+                  alt={`${neighborhood.name} neighborhood - Tel Aviv neighborhoods guide`}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute inset-0 flex items-end justify-center p-8">
@@ -265,7 +275,15 @@ const EnglishIndex = () => {
             </div>
 
             <div className="text-center mt-8">
-              <button className="reliz-button">
+              <button 
+                className="reliz-button"
+                onClick={() => {
+                  const phone = '972545503055';
+                  const message = `Hello,\n\nName: [enter name]\nEmail: [enter email]\nPhone: [enter phone]\n\nMessage:\n[enter message]`;
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                }}
+                aria-label="Send WhatsApp message"
+              >
                 Send Message
               </button>
             </div>

@@ -17,6 +17,8 @@ const Hero = ({ title, subtitle, description, backgroundImage, children }: HeroP
         style={{ 
           backgroundImage: `url(${backgroundImage})`,
         }}
+        role="img"
+        aria-label={`${title} hero background`}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-luxury/80 via-luxury/60 to-luxury/80" />
       </div>

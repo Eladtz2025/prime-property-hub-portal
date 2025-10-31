@@ -33,9 +33,10 @@ export const PropertyCard = ({
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={imageUrl}
-          alt={title}
+          alt={`${title} - ${address} property for sale or rent`}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>
@@ -90,6 +91,7 @@ export const PropertyCard = ({
         <Button 
           onClick={onClick}
           className="w-full font-montserrat font-medium transition-all duration-300 hover:scale-105"
+          aria-label={`View details for ${title} property`}
         >
           View Details
         </Button>

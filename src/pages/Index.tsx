@@ -178,11 +178,21 @@ const Index = () => {
                 key={neighborhood.id}
                 onClick={() => navigate(`/neighborhoods/${neighborhood.id}`)}
                 className="group relative aspect-[3/4] overflow-hidden cursor-pointer"
+                role="button"
+                aria-label={`חקור את שכונת ${neighborhood.name}`}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    navigate(`/neighborhoods/${neighborhood.id}`);
+                  }
+                }}
               >
                 <img
                   src={neighborhood.image}
-                  alt={neighborhood.name}
+                  alt={`שכונת ${neighborhood.name} - תמונת מדריך שכונות תל אביב`}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute inset-0 flex items-end justify-center p-4 md:p-8">
@@ -293,7 +303,16 @@ const Index = () => {
             </div>
 
             <div className="text-center mt-6 md:mt-8">
-              <button className="reliz-button">
+              <button 
+                className="reliz-button"
+                onClick={() => {
+                  const phone = '972545503055';
+                  const message = `שלום,\n\nשם: ${contactForm.name}\nאימייל: ${contactForm.email}\nטלפון: ${contactForm.phone}\n\nהודעה:\n${contactForm.message}`;
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                  setContactForm({ name: "", email: "", phone: "", message: "" });
+                }}
+                aria-label="שלח הודעת WhatsApp"
+              >
                 שלח הודעה
               </button>
             </div>
