@@ -9,6 +9,7 @@ import { useState, useMemo } from "react";
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp, MapPin, Home, Square, Building } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const EnglishManagement = () => {
   const navigate = useNavigate();
@@ -70,15 +71,25 @@ const EnglishManagement = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>Property Management - City Market Properties | Tel Aviv</title>
+        <meta name="description" content="Professional property management services in Tel Aviv. Rent collection, maintenance, legal compliance, and tenant relations. Maximize your ROI with expert management." />
+        <meta property="og:title" content="Property Management - City Market Properties" />
+        <meta property="og:description" content="Expert property management services - from single apartments to entire buildings." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il/en/management" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
       <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/management-lobby.jpg"
-          alt="Property Management"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+         <img
+           src="/images/management-lobby.jpg"
+           alt="Property Management Services - Professional Lobby"
+           className="absolute inset-0 w-full h-full object-cover"
+           loading="eager"
+           decoding="async"
+         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <div>
@@ -113,12 +124,13 @@ const EnglishManagement = () => {
               {filteredProperties.map((property) => (
                 <Card key={property.id} className="overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
                   <div className="aspect-video relative">
-                    <img
-                      src={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
-                      alt={property.title || property.address}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                     <img
+                       src={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
+                       alt={`${property.title || property.address} - Property under management`}
+                       className="w-full h-full object-cover"
+                       loading="lazy"
+                       decoding="async"
+                     />
                     {property.show_management_badge && (
                       <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
                         Full Management
@@ -216,12 +228,13 @@ const EnglishManagement = () => {
           <p className="font-montserrat text-base mb-6 max-w-2xl mx-auto text-muted-foreground">
             Let us handle the details while you enjoy peace of mind and consistent returns
           </p>
-          <Button
-            size="lg"
-            className="font-montserrat font-semibold px-8"
-          >
-            Get a Free Consultation
-          </Button>
+           <Button
+             size="lg"
+             className="font-montserrat font-semibold px-8"
+             aria-label="Get a free property management consultation"
+           >
+             Get a Free Consultation
+           </Button>
         </div>
       </section>
 

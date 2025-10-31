@@ -1,18 +1,29 @@
 import EnglishHeader from "@/components/en/Header";
 import { Award, Users, TrendingUp, Heart } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const About = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>About Us - City Market Properties | Tel Aviv Real Estate Experts</title>
+        <meta name="description" content="Learn about City Market Properties - Over 15 years of experience in Tel Aviv's prestigious real estate market. Expert service in sales, rentals, and property management." />
+        <meta property="og:title" content="About Us - City Market Properties" />
+        <meta property="og:description" content="Tel Aviv's leading real estate experts with 15+ years of experience in luxury properties." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il/en/about" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
       <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-about.jpg"
-          alt="About City Market"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+         <img
+           src="/images/hero-about.jpg"
+           alt="About City Market Properties - Tel Aviv Real Estate"
+           className="absolute inset-0 w-full h-full object-cover"
+           loading="eager"
+           decoding="async"
+         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
@@ -153,14 +164,14 @@ const About = () => {
               </div>
             </div>
             <div>
-              <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
-                Contact
-              </h4>
-              <div className="space-y-2 font-montserrat text-sm text-background/70">
-                <p>Tel Aviv, Israel</p>
-                <p>info@citymarket.co.il</p>
-                <p>+972-XX-XXXXXXX</p>
-              </div>
+               <h4 className="font-montserrat text-sm tracking-widest uppercase mb-4">
+                 Contact
+               </h4>
+               <div className="space-y-2 font-montserrat text-sm text-background/70">
+                 <p>Tel Aviv, Israel</p>
+                 <p>info@citymarket.co.il</p>
+                 <p>054-550-3055</p>
+               </div>
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center">

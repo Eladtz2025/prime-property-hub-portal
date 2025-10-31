@@ -1,6 +1,7 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
+import { Helmet } from "react-helmet";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -77,15 +78,25 @@ const NewDevelopments = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>New Developments - City Market Properties | Tel Aviv & Herzliya</title>
+        <meta name="description" content="Explore luxury new developments in Tel Aviv, Herzliya, and Philadelphia. Modern design, premium amenities, and prime locations." />
+        <meta property="og:title" content="New Developments - City Market Properties" />
+        <meta property="og:description" content="The future of modern living - luxury developments in Israel's top locations." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il/en/new-developments" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
       <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-new-developments.jpg"
-          alt="New Developments"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+         <img
+           src="/images/hero-new-developments.jpg"
+           alt="New Developments in Tel Aviv and Herzliya"
+           className="absolute inset-0 w-full h-full object-cover"
+           loading="eager"
+           decoding="async"
+         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">

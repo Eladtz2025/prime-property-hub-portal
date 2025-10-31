@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const EnglishNeighborhoods = () => {
   const navigate = useNavigate();
@@ -53,15 +54,25 @@ const EnglishNeighborhoods = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>Tel Aviv Neighborhoods - City Market Properties</title>
+        <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, Dizengoff, and Old North. Find your perfect location in the White City." />
+        <meta property="og:title" content="Tel Aviv Neighborhoods - City Market Properties" />
+        <meta property="og:description" content="Discover Tel Aviv's most prestigious neighborhoods. Each area tells its own story." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il/en/neighborhoods" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
       <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-neighborhoods.jpg"
-          alt="Tel Aviv Neighborhoods"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+         <img
+           src="/images/hero-neighborhoods.jpg"
+           alt="Tel Aviv Neighborhoods - Rothschild, Neve Tzedek, Florentin"
+           className="absolute inset-0 w-full h-full object-cover"
+           loading="eager"
+           decoding="async"
+         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
@@ -89,12 +100,13 @@ const EnglishNeighborhoods = () => {
                 onClick={() => navigate(`/en/neighborhoods/${neighborhood.id}`)}
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={neighborhood.imageUrl}
-                    alt={neighborhood.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                   <img
+                     src={neighborhood.imageUrl}
+                     alt={`${neighborhood.name} - ${neighborhood.description}`}
+                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                     loading="lazy"
+                     decoding="async"
+                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                     <h3 className="font-playfair text-2xl font-bold mb-2">
@@ -123,9 +135,13 @@ const EnglishNeighborhoods = () => {
                     ))}
                   </div>
 
-                  <Button className="w-full font-montserrat" variant="outline">
-                    Explore Neighborhood
-                  </Button>
+                   <Button 
+                     className="w-full font-montserrat" 
+                     variant="outline"
+                     aria-label={`Explore ${neighborhood.name} neighborhood`}
+                   >
+                     Explore Neighborhood
+                   </Button>
                 </div>
               </Card>
             ))}
