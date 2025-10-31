@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Square, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Helmet } from "react-helmet";
 
 const EnglishSales = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +71,13 @@ const EnglishSales = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>Properties for Sale in Tel Aviv - CITY MARKET Properties</title>
+        <meta name="description" content="Apartments and properties for sale in Tel Aviv. Full professional service including consultation, valuation, legal support and negotiation with potential buyers." />
+        <meta property="og:title" content="Properties for Sale - CITY MARKET Properties" />
+        <meta property="og:description" content="Wide range of apartments and properties for sale in Tel Aviv with full professional service" />
+        <link rel="canonical" href="https://citymarket.co.il/en/sales" />
+      </Helmet>
       <EnglishHeader />
       <section className="relative h-[30vh] overflow-hidden">
         <img

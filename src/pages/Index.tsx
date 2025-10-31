@@ -9,6 +9,16 @@ import { Award, TrendingUp, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
+import { z } from "zod";
+import { toast } from "sonner";
+import { Helmet } from "react-helmet";
+
+const contactSchema = z.object({
+  name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
+  email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
+  phone: z.string().min(9, "מספר טלפון לא תקין").max(15, "מספר טלפון ארוך מדי"),
+  message: z.string().min(10, "הודעה חייבת להכיל לפחות 10 תווים").max(1000, "הודעה ארוכה מדי")
+});
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +29,25 @@ const Index = () => {
     phone: '',
     message: ''
   });
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      contactSchema.parse(contactForm);
+      
+      const phone = '972545503055';
+      const message = `שלום,\n\nשם: ${contactForm.name}\nאימייל: ${contactForm.email}\nטלפון: ${contactForm.phone}\n\nהודעה:\n${contactForm.message}`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      
+      setContactForm({ name: "", email: "", phone: "", message: "" });
+      toast.success("ההודעה נשלחה בהצלחה!");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+    }
+  };
 
   const neighborhoods = [
     {
@@ -105,6 +134,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen english-luxury">
+      <Helmet>
+        <title>CITY MARKET Properties - נדל"ן בתל אביב | השכרות, מכירות וניהול נכסים</title>
+        <meta name="description" content="מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. שירות מקצועי ומסור ללקוחות פרטיים ועסקיים." />
+        <meta property="og:title" content="CITY MARKET Properties - נדל&quot;ן בתל אביב" />
+        <meta property="og:description" content="מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il" />
+      </Helmet>
       <WhatsAppFloat />
       <HebrewHeader />
       
@@ -302,20 +339,15 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="text-center mt-6 md:mt-8">
+            <form onSubmit={handleContactSubmit} className="text-center mt-6 md:mt-8">
               <button 
+                type="submit"
                 className="reliz-button"
-                onClick={() => {
-                  const phone = '972545503055';
-                  const message = `שלום,\n\nשם: ${contactForm.name}\nאימייל: ${contactForm.email}\nטלפון: ${contactForm.phone}\n\nהודעה:\n${contactForm.message}`;
-                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-                  setContactForm({ name: "", email: "", phone: "", message: "" });
-                }}
                 aria-label="שלח הודעת WhatsApp"
               >
                 שלח הודעה
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </section>

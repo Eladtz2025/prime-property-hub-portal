@@ -4,9 +4,46 @@ import VideoHero from "@/components/en/VideoHero";
 import { RelizPropertyCard } from "@/components/en/RelizPropertyCard";
 import { useNavigate } from "react-router-dom";
 import { Award, TrendingUp, Users } from "lucide-react";
+import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { Helmet } from "react-helmet";
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
+  email: z.string().email("Invalid email address").max(255, "Email is too long"),
+  phone: z.string().min(9, "Invalid phone number").max(15, "Phone number is too long"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(1000, "Message is too long")
+});
 
 const EnglishIndex = () => {
   const navigate = useNavigate();
+  
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      contactSchema.parse(contactForm);
+      
+      const phone = '972545503055';
+      const message = `Hello,\n\nName: ${contactForm.name}\nEmail: ${contactForm.email}\nPhone: ${contactForm.phone}\n\nMessage:\n${contactForm.message}`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      
+      setContactForm({ name: "", email: "", phone: "", message: "" });
+      toast.success("Message sent successfully!");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+    }
+  };
 
   const featuredProperties = [
     {
@@ -68,6 +105,14 @@ const EnglishIndex = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>CITY MARKET Properties - Real Estate in Tel Aviv | Rentals, Sales & Property Management</title>
+        <meta name="description" content="Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Professional and dedicated service for private and corporate clients." />
+        <meta property="og:title" content="CITY MARKET Properties - Real Estate in Tel Aviv" />
+        <meta property="og:description" content="Experts in real estate brokerage, rentals, sales and property management in Tel Aviv" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://citymarket.co.il/en" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
@@ -247,46 +292,56 @@ const EnglishIndex = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
+            <form onSubmit={handleContactSubmit}>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    required
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    required
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <input
+                    type="tel"
+                    placeholder="Phone"
+                    required
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
+                  />
+                  <textarea
+                    placeholder="Message"
+                    required
+                    rows={4}
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none"
+                  />
+                </div>
               </div>
-              <div className="space-y-4">
-                <input
-                  type="tel"
-                  placeholder="Phone"
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                />
-                <textarea
-                  placeholder="Message"
-                  rows={4}
-                  className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none"
-                />
-              </div>
-            </div>
 
-            <div className="text-center mt-8">
-              <button 
-                className="reliz-button"
-                onClick={() => {
-                  const phone = '972545503055';
-                  const message = `Hello,\n\nName: [enter name]\nEmail: [enter email]\nPhone: [enter phone]\n\nMessage:\n[enter message]`;
-                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-                }}
-                aria-label="Send WhatsApp message"
-              >
-                Send Message
-              </button>
-            </div>
+              <div className="text-center mt-8">
+                <button 
+                  type="submit"
+                  className="reliz-button"
+                  aria-label="Send WhatsApp message"
+                >
+                  Send Message
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>

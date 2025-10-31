@@ -2,6 +2,16 @@ import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { Helmet } from "react-helmet";
+
+const contactSchema = z.object({
+  name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
+  email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
+  phone: z.string().min(9, "מספר טלפון לא תקין").max(15, "מספר טלפון ארוך מדי"),
+  message: z.string().min(10, "הודעה חייבת להכיל לפחות 10 תווים").max(1000, "הודעה ארוכה מדי")
+});
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -13,10 +23,21 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const phone = '972545503055';
-    const message = `שלום,\n\nשם: ${formData.name}\nאימייל: ${formData.email}\nטלפון: ${formData.phone}\n\nהודעה:\n${formData.message}`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-    setFormData({ name: "", email: "", phone: "", message: "" });
+    
+    try {
+      contactSchema.parse(formData);
+      
+      const phone = '972545503055';
+      const message = `שלום,\n\nשם: ${formData.name}\nאימייל: ${formData.email}\nטלפון: ${formData.phone}\n\nהודעה:\n${formData.message}`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      toast.success("ההודעה נשלחה בהצלחה!");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+    }
   };
 
   return (
@@ -75,7 +96,7 @@ const Contact = () => {
                       טלפון
                     </h3>
                     <p className="font-montserrat text-muted-foreground">
-                      +972-XX-XXXXXXX
+                      054-550-3055
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,16 @@
 import EnglishHeader from "@/components/en/Header";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { Helmet } from "react-helmet";
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
+  email: z.string().email("Invalid email address").max(255, "Email is too long"),
+  phone: z.string().min(9, "Invalid phone number").max(15, "Phone number is too long"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(1000, "Message is too long")
+});
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -12,14 +22,32 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const phone = '972545503055';
-    const message = `Hello,\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\nMessage:\n${formData.message}`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-    setFormData({ name: "", email: "", phone: "", message: "" });
+    
+    try {
+      contactSchema.parse(formData);
+      
+      const phone = '972545503055';
+      const message = `Hello,\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\nMessage:\n${formData.message}`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      toast.success("Message sent successfully!");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+    }
   };
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>Contact Us - CITY MARKET Properties | Real Estate in Tel Aviv</title>
+        <meta name="description" content="Contact CITY MARKET Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Phone: 054-550-3055" />
+        <meta property="og:title" content="Contact Us - CITY MARKET Properties" />
+        <meta property="og:description" content="Contact CITY MARKET real estate experts in Tel Aviv" />
+        <link rel="canonical" href="https://citymarket.co.il/en/contact" />
+      </Helmet>
       <EnglishHeader />
 
       {/* Hero Section */}
@@ -72,7 +100,7 @@ const Contact = () => {
                       Phone
                     </h3>
                     <p className="font-montserrat text-muted-foreground">
-                      +972-XX-XXXXXXX
+                      054-550-3055
                     </p>
                   </div>
                 </div>
@@ -221,7 +249,7 @@ const Contact = () => {
               <div className="space-y-2 font-montserrat text-sm text-background/70">
                 <p>Tel Aviv, Israel</p>
                 <p>info@citymarket.co.il</p>
-                <p>+972-XX-XXXXXXX</p>
+                <p>054-550-3055</p>
               </div>
             </div>
           </div>

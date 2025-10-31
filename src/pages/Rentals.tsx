@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
+import { Helmet } from "react-helmet";
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -215,7 +216,7 @@ const Rentals = () => {
                       ))}
                     </div>
                     <Button asChild className="w-full">
-                      <a href={`/rentals/property/${property.id}`}>פרטים נוספים</a>
+                      <a href={`/property/${property.id}`}>פרטים נוספים</a>
                     </Button>
                   </div>
                 </Card>
