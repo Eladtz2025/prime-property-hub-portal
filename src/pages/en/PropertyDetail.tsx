@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Share2, Facebook, Instagram, Copy, Check, Car, MoveUp, TreePine, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -266,7 +266,7 @@ const EnglishPropertyDetail = () => {
                 onClick={() => handleShare('whatsapp')}
                 title="Share on WhatsApp"
               >
-                <Share2 className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -275,14 +275,6 @@ const EnglishPropertyDetail = () => {
                 title="Share on Facebook"
               >
                 <Facebook className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('instagram')}
-                title="Share on Instagram"
-              >
-                <Instagram className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -392,7 +384,7 @@ const EnglishPropertyDetail = () => {
                   onClick={() => handleShare('whatsapp')}
                   title="Share on WhatsApp"
                 >
-                  <Share2 className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
@@ -401,14 +393,6 @@ const EnglishPropertyDetail = () => {
                   title="Share on Facebook"
                 >
                   <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('instagram')}
-                  title="Share on Instagram"
-                >
-                  <Instagram className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"

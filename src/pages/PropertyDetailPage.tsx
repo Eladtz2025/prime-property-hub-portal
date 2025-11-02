@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Facebook, Instagram, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -249,7 +249,7 @@ const PropertyDetailPage = () => {
                 onClick={() => handleShare('whatsapp')}
                 title="שתף בווטסאפ"
               >
-                <Share2 className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -258,14 +258,6 @@ const PropertyDetailPage = () => {
                 title="שתף בפייסבוק"
               >
                 <Facebook className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('instagram')}
-                title="שתף באינסטגרם"
-              >
-                <Instagram className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -375,7 +367,7 @@ const PropertyDetailPage = () => {
                   onClick={() => handleShare('whatsapp')}
                   title="שתף בווטסאפ"
                 >
-                  <Share2 className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
@@ -384,14 +376,6 @@ const PropertyDetailPage = () => {
                   title="שתף בפייסבוק"
                 >
                   <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('instagram')}
-                  title="שתף באינסטגרם"
-                >
-                  <Instagram className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
