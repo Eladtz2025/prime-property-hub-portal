@@ -86,11 +86,8 @@ const PropertyDetailPage = () => {
     );
   }
 
-  const getBackLink = () => {
-    if (window.location.pathname.includes('rentals')) return '/rentals';
-    if (window.location.pathname.includes('sales')) return '/sales';
-    if (window.location.pathname.includes('management')) return '/management';
-    return '/';
+  const handleBack = () => {
+    navigate(-1);
   };
 
   const getPropertyTypeLabel = () => {
@@ -135,7 +132,7 @@ const PropertyDetailPage = () => {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => navigate(getBackLink())}
+            onClick={handleBack}
           >
             <ArrowRight className="h-4 w-4" />
             חזרה לרשימת נכסים
@@ -278,7 +275,7 @@ const PropertyDetailPage = () => {
         <Button
           variant="ghost"
           className="mb-6 gap-2"
-          onClick={() => navigate(getBackLink())}
+          onClick={handleBack}
         >
           <ArrowRight className="h-4 w-4" />
           חזרה לרשימת נכסים

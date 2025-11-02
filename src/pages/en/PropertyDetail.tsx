@@ -98,11 +98,8 @@ const EnglishPropertyDetail = () => {
     );
   }
 
-  const getBackLink = () => {
-    if (window.location.pathname.includes('rentals')) return '/en/rentals';
-    if (window.location.pathname.includes('sales')) return '/en/sales';
-    if (window.location.pathname.includes('management')) return '/en/management';
-    return '/en';
+  const handleBack = () => {
+    navigate(-1);
   };
 
   const getPropertyTypeLabel = () => {
@@ -152,7 +149,7 @@ const EnglishPropertyDetail = () => {
             variant="ghost"
             size="sm"
             className="gap-2 font-montserrat"
-            onClick={() => navigate(getBackLink())}
+            onClick={handleBack}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Listings
@@ -295,7 +292,7 @@ const EnglishPropertyDetail = () => {
         <Button
           variant="ghost"
           className="mb-6 gap-2 font-montserrat"
-          onClick={() => navigate(getBackLink())}
+          onClick={handleBack}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Listings
