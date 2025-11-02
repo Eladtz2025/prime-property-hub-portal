@@ -121,6 +121,8 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           floor: formData.floor === 0 ? 0 : (formData.floor || null),
           rooms: formData.rooms,
           monthly_rent: formData.monthlyRent,
+          municipal_tax: formData.municipalTax || null,
+          building_committee_fee: formData.buildingCommitteeFee || null,
           notes: formData.notes,
           parking: formData.parking || false,
           elevator: formData.elevator || false,
@@ -285,66 +287,94 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               <div className="space-y-4">
                 <h3 className="font-semibold text-sm text-muted-foreground">פרטי הנכס</h3>
                 
-                <div>
-                  <Label htmlFor="address">כתובת</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="address">כתובת</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="city">עיר</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="city">עיר</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="status">סטטוס</Label>
+                    <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="occupied">תפוס</SelectItem>
+                        <SelectItem value="vacant">פנוי</SelectItem>
+                        <SelectItem value="maintenance">תחזוקה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="monthlyRent">שכירות חודשית</Label>
+                    <Input
+                      id="monthlyRent"
+                      type="number"
+                      value={formData.monthlyRent || ''}
+                      onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="status">סטטוס</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="occupied">תפוס</SelectItem>
-                      <SelectItem value="vacant">פנוי</SelectItem>
-                      <SelectItem value="maintenance">תחזוקה</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="leaseStartDate">תאריך התחלת חוזה</Label>
+                    <Input
+                      id="leaseStartDate"
+                      type="date"
+                      value={formData.leaseStartDate || ''}
+                      onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="leaseEndDate">תאריך סיום חוזה</Label>
+                    <Input
+                      id="leaseEndDate"
+                      type="date"
+                      value={formData.leaseEndDate || ''}
+                      onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="monthlyRent">שכירות חודשית</Label>
-                  <Input
-                    id="monthlyRent"
-                    type="number"
-                    value={formData.monthlyRent || ''}
-                    onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="leaseStartDate">תאריך התחלת חוזה</Label>
-                  <Input
-                    id="leaseStartDate"
-                    type="date"
-                    value={formData.leaseStartDate || ''}
-                    onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="leaseEndDate">תאריך סיום חוזה</Label>
-                  <Input
-                    id="leaseEndDate"
-                    type="date"
-                    value={formData.leaseEndDate || ''}
-                    onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="municipalTax">ארנונה</Label>
+                    <Input
+                      id="municipalTax"
+                      type="number"
+                      value={formData.municipalTax || ''}
+                      onChange={(e) => handleInputChange('municipalTax', e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="buildingCommitteeFee">ועד בית</Label>
+                    <Input
+                      id="buildingCommitteeFee"
+                      type="number"
+                      value={formData.buildingCommitteeFee || ''}
+                      onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3">
@@ -458,23 +488,25 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               <div className="space-y-4">
                 <h3 className="font-semibold text-sm text-muted-foreground">בעלים ושוכר</h3>
                 
-                <div>
-                  <Label htmlFor="ownerName">שם בעל הנכס</Label>
-                  <Input
-                    id="ownerName"
-                    value={formData.ownerName}
-                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="ownerPhone">טלפון בעל הנכס</Label>
-                  <Input
-                    id="ownerPhone"
-                    value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
-                    onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
-                    disabled={!canViewPhone}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="ownerName">שם בעל הנכס</Label>
+                    <Input
+                      id="ownerName"
+                      value={formData.ownerName}
+                      onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="ownerPhone">טלפון בעל הנכס</Label>
+                    <Input
+                      id="ownerPhone"
+                      value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
+                      onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                      disabled={!canViewPhone}
+                    />
+                  </div>
                 </div>
                 
                 <div>
@@ -490,7 +522,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 <div className="pt-4 border-t">
                   <h4 className="font-medium text-sm mb-3">פרטי שוכר</h4>
                   
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="tenantName">שם השוכר</Label>
                       <Input
@@ -507,16 +539,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                         value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
                         onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
                         disabled={!canViewPhone}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="tenantEmail">אימייל השוכר</Label>
-                      <Input
-                        id="tenantEmail"
-                        type="email"
-                        value={formData.tenantEmail || ''}
-                        onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
                       />
                     </div>
                   </div>

@@ -616,6 +616,7 @@ export type Database = {
           balcony: boolean | null
           balcony_yard_size: number | null
           bathrooms: number | null
+          building_committee_fee: number | null
           building_floors: number | null
           city: string
           contact_attempts: number
@@ -632,6 +633,7 @@ export type Database = {
           id: string
           last_contact_date: string | null
           monthly_rent: number | null
+          municipal_tax: number | null
           notes: string | null
           owner_name: string | null
           owner_phone: string | null
@@ -653,6 +655,7 @@ export type Database = {
           balcony?: boolean | null
           balcony_yard_size?: number | null
           bathrooms?: number | null
+          building_committee_fee?: number | null
           building_floors?: number | null
           city: string
           contact_attempts?: number
@@ -669,6 +672,7 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           monthly_rent?: number | null
+          municipal_tax?: number | null
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
@@ -690,6 +694,7 @@ export type Database = {
           balcony?: boolean | null
           balcony_yard_size?: number | null
           bathrooms?: number | null
+          building_committee_fee?: number | null
           building_floors?: number | null
           city?: string
           contact_attempts?: number
@@ -706,6 +711,7 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           monthly_rent?: number | null
+          municipal_tax?: number | null
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null

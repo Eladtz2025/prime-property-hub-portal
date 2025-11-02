@@ -27,6 +27,8 @@ export interface Property {
   balcony?: boolean;
   yard?: boolean;
   balconyYardSize?: number;
+  municipalTax?: number;
+  buildingCommitteeFee?: number;
   showManagementBadge?: boolean;
   notes?: string;
   documents?: PropertyDocument[];
