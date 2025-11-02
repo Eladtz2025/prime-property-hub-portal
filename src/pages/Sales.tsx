@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
 import { Input } from '@/components/ui/input';
@@ -205,7 +206,7 @@ const Sales = () => {
                       ))}
                     </div>
                     <Button asChild className="w-full">
-                      <a href={`/property/${property.id}`}>פרטים נוספים</a>
+                      <Link to={`/property/${property.id}`}>פרטים נוספים</Link>
                     </Button>
                   </div>
                 </Card>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import { Input } from '@/components/ui/input';
@@ -164,7 +165,7 @@ const EnglishRentals = () => {
                       ))}
                     </div>
                     <Button asChild className="w-full">
-                      <a href={`/en/property/${property.id}`}>View Details</a>
+                      <Link to={`/en/property/${property.id}`}>View Details</Link>
                     </Button>
                   </div>
                 </Card>
