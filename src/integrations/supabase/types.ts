@@ -614,6 +614,7 @@ export type Database = {
           address: string
           available: boolean | null
           balcony: boolean | null
+          balcony_yard_size: number | null
           bathrooms: number | null
           building_floors: number | null
           city: string
@@ -643,12 +644,14 @@ export type Database = {
           status: string
           title: string | null
           updated_at: string
+          yard: boolean | null
         }
         Insert: {
           acquisition_cost?: number | null
           address: string
           available?: boolean | null
           balcony?: boolean | null
+          balcony_yard_size?: number | null
           bathrooms?: number | null
           building_floors?: number | null
           city: string
@@ -678,12 +681,14 @@ export type Database = {
           status?: string
           title?: string | null
           updated_at?: string
+          yard?: boolean | null
         }
         Update: {
           acquisition_cost?: number | null
           address?: string
           available?: boolean | null
           balcony?: boolean | null
+          balcony_yard_size?: number | null
           bathrooms?: number | null
           building_floors?: number | null
           city?: string
@@ -713,6 +718,7 @@ export type Database = {
           status?: string
           title?: string | null
           updated_at?: string
+          yard?: boolean | null
         }
         Relationships: []
       }
