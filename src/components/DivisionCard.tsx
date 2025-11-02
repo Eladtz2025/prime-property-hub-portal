@@ -56,7 +56,7 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
 
           {/* Action */}
           <div className="flex items-center gap-2 text-white font-montserrat text-sm tracking-wide group-hover:gap-3 transition-all">
-            <span>קראו עוד</span>
+            <span>Learn More</span>
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           </div>
 
