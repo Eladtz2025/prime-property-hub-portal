@@ -1,7 +1,7 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import VideoHero from "@/components/en/VideoHero";
-import { RelizPropertyCard } from "@/components/en/RelizPropertyCard";
+import DivisionCard from "@/components/DivisionCard";
 import { useNavigate } from "react-router-dom";
 import { Award, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
@@ -45,38 +45,45 @@ const EnglishIndex = () => {
     }
   };
 
-  const featuredProperties = [
+  const divisions = [
     {
-      id: "1",
-      title: "Rothschild Penthouse",
-      location: "Rothschild Boulevard",
-      price: "₪8,500,000",
-      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
-      type: "For Sale",
+      title: 'Rentals',
+      description: 'Looking for a rental property? We are here for you',
+      image: '/images/rental-interior.jpg',
+      features: [
+        'Professional guidance in finding the right property',
+        'Comprehensive tenant screening',
+        'Legal contract preparation',
+        'Personal and dedicated service',
+      ],
+      link: '/en/rentals',
+      icon: 'users' as const,
     },
     {
-      id: "2",
-      title: "Bauhaus Apartment",
-      location: "Dizengoff Street",
-      price: "₪12,000/mo",
-      imageUrl: "/images/en/properties/bauhaus-bedroom.jpg",
-      type: "For Rent",
+      title: 'Sales',
+      description: 'Buying or selling? We ensure the perfect deal',
+      image: '/images/sales-villa.jpg',
+      features: [
+        'Professional and accurate property valuation',
+        'Efficient and advanced marketing',
+        'Full legal and tax consulting',
+        'Negotiation management and support until closing',
+      ],
+      link: '/en/sales',
+      icon: 'trending' as const,
     },
     {
-      id: "3",
-      title: "Modern Villa",
-      location: "Neve Tzedek",
-      price: "₪15,000,000",
-      imageUrl: "/images/en/properties/modern-penthouse.jpg",
-      type: "For Sale",
-    },
-    {
-      id: "4",
-      title: "Sunny Terrace Flat",
-      location: "Old North",
-      price: "₪10,500/mo",
-      imageUrl: "/images/en/properties/sunny-balcony.jpg",
-      type: "For Rent",
+      title: 'Property Management',
+      description: 'Professional and comprehensive management for your property',
+      image: '/images/management-lobby.jpg',
+      features: [
+        'Ongoing maintenance management and quick solutions',
+        'Monthly billing and reporting',
+        'Professional tenant management',
+        '24/7 availability and service',
+      ],
+      link: '/en/management',
+      icon: 'building' as const,
     },
   ];
 
@@ -149,35 +156,22 @@ const EnglishIndex = () => {
         </div>
       </section>
 
-      {/* Featured Properties */}
+      {/* Divisions Section */}
       <section className="py-8 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              Handpicked For You
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              Featured Properties
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-4">
+              Our Divisions
             </h2>
+            <p className="font-montserrat text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              Management, Sales and Rentals in One Place
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {featuredProperties.map((property) => (
-              <RelizPropertyCard
-                key={property.id}
-                {...property}
-                onClick={() => navigate(`/en/property/${property.id}`)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {divisions.map((division) => (
+              <DivisionCard key={division.title} {...division} />
             ))}
-          </div>
-
-          <div className="text-center">
-            <button
-              onClick={() => navigate("/en/sales")}
-              className="reliz-button"
-            >
-              View All Properties
-            </button>
           </div>
         </div>
       </section>
