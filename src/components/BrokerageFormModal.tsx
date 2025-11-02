@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import SignatureCanvas from 'react-signature-canvas';
 import { Trash2, Save } from 'lucide-react';
+import { brokerageFormSchema, propertyRowSchema, formatValidationErrors, sanitizeInput } from '@/utils/formValidation';
+import { z } from 'zod';
 
 interface BrokerageFormModalProps {
   isOpen: boolean;
@@ -60,15 +62,7 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
   };
 
   const handleSubmit = async () => {
-    if (!formData.clientName || !formData.clientId || !formData.clientPhone) {
-      toast({
-        title: 'שגיאה',
-        description: 'נא למלא את כל פרטי הלקוח',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    // Validate signature first
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
       toast({
         title: 'שגיאה',
@@ -78,21 +72,39 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
       return;
     }
 
-    const signatureData = signatureRef.current.toDataURL();
-
+    // Validate form data
     try {
+      const validatedData = brokerageFormSchema.parse(formData);
+      
+      // Validate properties
+      const validatedProperties = properties
+        .filter(p => p.address)
+        .map(p => {
+          try {
+            return propertyRowSchema.parse(p);
+          } catch (error) {
+            if (error instanceof z.ZodError) {
+              throw new Error(`שגיאה בפרטי נכס: ${formatValidationErrors(error)}`);
+            }
+            throw error;
+          }
+        });
+
+      const signatureData = signatureRef.current.toDataURL();
+
+      // Sanitize inputs before storing
       const { error } = await supabase.from('brokerage_forms').insert([{
-        form_date: formData.date,
-        referred_by: formData.referredBy,
-        fee_type_rental: formData.feeTypeRental,
-        fee_type_sale: formData.feeTypeSale,
-        special_terms: formData.specialTerms,
-        properties: properties.filter(p => p.address) as any,
-        client_name: formData.clientName,
-        client_id: formData.clientId,
-        client_phone: formData.clientPhone,
-        agent_name: formData.agentName,
-        agent_id: formData.agentId,
+        form_date: validatedData.date,
+        referred_by: sanitizeInput(validatedData.referredBy || ''),
+        fee_type_rental: validatedData.feeTypeRental,
+        fee_type_sale: validatedData.feeTypeSale,
+        special_terms: sanitizeInput(validatedData.specialTerms || ''),
+        properties: validatedProperties as any,
+        client_name: sanitizeInput(validatedData.clientName),
+        client_id: validatedData.clientId,
+        client_phone: validatedData.clientPhone,
+        agent_name: sanitizeInput(validatedData.agentName),
+        agent_id: validatedData.agentId,
         client_signature: signatureData,
       }]);
 
@@ -105,12 +117,20 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
 
       onClose();
     } catch (error) {
-      console.error('Error saving form:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'שמירת הטופס נכשלה',
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'שגיאת תקינות',
+          description: formatValidationErrors(error),
+          variant: 'destructive',
+        });
+      } else {
+        console.error('Error saving form:', error);
+        toast({
+          title: 'שגיאה',
+          description: error instanceof Error ? error.message : 'שמירת הטופס נכשלה',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -272,6 +292,8 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
                   value={formData.clientName}
                   onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                   placeholder="שם מלא"
+                  maxLength={100}
+                  required
                 />
               </div>
               <div>
@@ -279,7 +301,10 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
                 <Input
                   value={formData.clientId}
                   onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                  placeholder="מספר זהות"
+                  placeholder="מספר זהות (9 ספרות)"
+                  maxLength={9}
+                  pattern="\d{9}"
+                  required
                 />
               </div>
             </div>
@@ -289,7 +314,9 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
                 type="tel"
                 value={formData.clientPhone}
                 onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                placeholder="טלפון"
+                placeholder="טלפון (050-1234567)"
+                maxLength={15}
+                required
               />
             </div>
           </div>
