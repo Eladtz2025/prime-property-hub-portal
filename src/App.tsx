@@ -109,9 +109,10 @@ const AppContent: React.FC = () => {
           <Route path="/en/contact" element={<EnglishContact />} />
           <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
         
-        <Route path="/rentals/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
-        <Route path="/sales/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
-        <Route path="/management/property/:id" element={<><PropertyDetailPage /><Footer /></>} />
+        <Route path="/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/rentals/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/sales/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/management/property/:id" element={<PropertyDetailPage />} />
         
         {loading ? (
           <Route path="*" element={
