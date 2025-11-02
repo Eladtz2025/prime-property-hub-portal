@@ -19,20 +19,22 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   images,
   onImagesChange,
   maxImages = 10,
-  maxSizePerImage = 5
+  maxSizePerImage = 20 // Increased to 20MB for mobile photos
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const { toast } = useToast();
 
-  const compressImage = (file: File, quality: number = 0.8): Promise<string> => {
-    return new Promise((resolve) => {
+  // Convert HEIC to JPEG and compress image
+  const processImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
 
       img.onload = () => {
-        const maxWidth = 1200;
-        const maxHeight = 800;
+        const maxWidth = 1920;
+        const maxHeight = 1920;
         let { width, height } = img;
 
         if (width > maxWidth || height > maxHeight) {
@@ -45,9 +47,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         canvas.height = height;
         
         ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        
+        // Convert to JPEG with good quality
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(dataUrl);
       };
 
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+
+      // Create object URL for the file (works with HEIC on iOS)
       img.src = URL.createObjectURL(file);
     });
   };
@@ -55,31 +65,30 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
+    setIsCompressing(true);
     const newImages: PropertyImage[] = [];
+    const errors: string[] = [];
     
     for (let i = 0; i < files.length && (images.length + newImages.length) < maxImages; i++) {
       const file = files[i];
       
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "שגיאה",
-          description: `הקובץ ${file.name} אינו תמונה`,
-          variant: "destructive",
-        });
+      // Accept all common image formats including HEIC
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+      const isValidType = validTypes.some(type => file.type === type) || 
+                          file.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|heic|heif)$/);
+      
+      if (!isValidType) {
+        errors.push(`${file.name} - פורמט לא נתמך`);
         continue;
       }
 
       if (file.size > maxSizePerImage * 1024 * 1024) {
-        toast({
-          title: "שגיאה",
-          description: `הקובץ ${file.name} גדול מדי (מקסימום ${maxSizePerImage}MB)`,
-          variant: "destructive",
-        });
+        errors.push(`${file.name} - גדול מדי (מקסימום ${maxSizePerImage}MB)`);
         continue;
       }
 
       try {
-        const compressedDataUrl = await compressImage(file);
+        const compressedDataUrl = await processImage(file);
         
         const newImage: PropertyImage = {
           id: `img_${Date.now()}_${i}`,
@@ -92,13 +101,19 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
         newImages.push(newImage);
       } catch (error) {
-        logger.error('Error compressing image:', error, 'ImageUpload');
-        toast({
-          title: "שגיאה",
-          description: `לא הצלחנו לעבד את התמונה ${file.name}`,
-          variant: "destructive",
-        });
+        logger.error('Error processing image:', error, 'ImageUpload');
+        errors.push(`${file.name} - שגיאה בעיבוד`);
       }
+    }
+
+    setIsCompressing(false);
+
+    if (errors.length > 0) {
+      toast({
+        title: "שגיאות בהעלאה",
+        description: errors.join('\n'),
+        variant: "destructive",
+      });
     }
 
     if (newImages.length > 0) {
@@ -157,26 +172,42 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         onDragLeave={handleDragLeave}
       >
         <CardContent className="flex flex-col items-center justify-center py-8">
-          <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-center text-muted-foreground mb-4">
-            גרור תמונות לכאן או לחץ לבחירת קבצים
-          </p>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => handleFileUpload(e.target.files)}
-            className="hidden"
-            id="image-upload"
-          />
-          <Button 
-            variant="outline" 
-            onClick={() => document.getElementById('image-upload')?.click()}
-            disabled={images.length >= maxImages}
-          >
-            <ImageIcon className="h-4 w-4 mr-2" />
-            בחר תמונות ({images.length}/{maxImages})
-          </Button>
+          {isCompressing ? (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+              <p className="text-center text-muted-foreground">
+                מעבד תמונות...
+              </p>
+            </>
+          ) : (
+            <>
+              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-center text-muted-foreground mb-2 text-sm md:text-base">
+                גרור תמונות לכאן או צלם תמונה חדשה
+              </p>
+              <p className="text-xs text-muted-foreground/70 mb-4">
+                תומך ב-HEIC, JPEG, PNG, WebP (עד {maxSizePerImage}MB)
+              </p>
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
+                capture="environment"
+                onChange={(e) => handleFileUpload(e.target.files)}
+                className="hidden"
+                id="image-upload"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById('image-upload')?.click()}
+                disabled={images.length >= maxImages}
+                className="w-full md:w-auto"
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                צלם או בחר תמונות ({images.length}/{maxImages})
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
