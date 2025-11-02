@@ -245,7 +245,7 @@ const EnglishPropertyDetail = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-2 pb-4">
+          <div className="space-y-2">
             <Button className="w-full gap-2 bg-primary hover:bg-primary/90 h-12 font-montserrat" onClick={handleWhatsApp}>
               <MessageCircle className="h-5 w-5" />
               WhatsApp
@@ -255,6 +255,45 @@ const EnglishPropertyDetail = () => {
               Call Us
             </Button>
           </div>
+
+          {/* Share */}
+          <Card className="p-4">
+            <h3 className="font-playfair font-semibold mb-3 text-sm">Share This Property</h3>
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleShare('whatsapp')}
+                title="Share on WhatsApp"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleShare('facebook')}
+                title="Share on Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleShare('instagram')}
+                title="Share on Instagram"
+              >
+                <Instagram className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleShare('copy')}
+                title="Copy Link"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
 
