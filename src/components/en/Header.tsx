@@ -183,8 +183,8 @@ const EnglishHeader = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-6 border-t border-border/50">
-            <div className="flex flex-col gap-4">
+          <nav className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-border">
+            <div className="flex flex-col gap-2 py-4 px-4">
               {[...leftNavItems, ...rightNavItems].map((item) => (
                 <button
                   key={item.path}
@@ -192,10 +192,10 @@ const EnglishHeader = () => {
                     navigate(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`font-montserrat text-[15px] tracking-wide uppercase text-left py-2 transition-colors duration-200 ${
+                  className={`font-montserrat text-base tracking-wide uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 ${
                     isActive(item.path)
-                      ? "text-primary font-medium"
-                      : "text-foreground/70 hover:text-primary"
+                      ? "text-primary bg-primary/10 font-semibold"
+                      : "text-foreground hover:text-primary hover:bg-accent"
                   }`}
                 >
                   {item.label}
