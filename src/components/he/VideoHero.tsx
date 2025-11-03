@@ -36,7 +36,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 pt-16 md:pt-0">
         <div className="mb-6 animate-fade-in">
           <h1 className="reliz-hero-title text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
             {title}
