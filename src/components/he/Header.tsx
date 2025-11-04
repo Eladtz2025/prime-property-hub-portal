@@ -48,7 +48,7 @@ const HebrewHeader = () => {
       />
       
       <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
-        <div className="flex items-center justify-between h-full">
+        <div className="flex items-center justify-end lg:justify-between h-full gap-4">
           {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
             {leftNavItems.map((item) => (
@@ -85,7 +85,7 @@ const HebrewHeader = () => {
           {/* Center Logo */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto order-first lg:order-none"
           >
             <img 
               src="/images/city-market-icon.png" 
