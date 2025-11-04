@@ -21,6 +21,7 @@ const EnglishManagement = () => {
     const streetMap: Record<string, string> = {
       'אלנבי': 'Allenby',
       'שינקין': 'Sheinkin',
+      'שיינקין': 'Sheinkin',
       'דיזנגוף': 'Dizengoff',
       'רוטשילד': 'Rothschild',
       'בן יהודה': 'Ben Yehuda',
