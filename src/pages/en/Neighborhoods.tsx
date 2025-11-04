@@ -53,7 +53,7 @@ const EnglishNeighborhoods = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury" dir="ltr">
+    <div className="min-h-screen english-luxury pt-16" dir="ltr">
       <Helmet>
         <title>Tel Aviv Neighborhoods - City Market Properties</title>
         <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, Dizengoff, and Old North. Find your perfect location in the White City." />
