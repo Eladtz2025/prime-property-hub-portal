@@ -111,8 +111,7 @@ const HebrewHeader = () => {
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center justify-between w-full lg:w-auto">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
@@ -149,7 +148,6 @@ const HebrewHeader = () => {
                 />
               )}
             </button>
-            </div>
           </div>
 
           {/* Center Logo - Positioned last for mobile (left side), centered on desktop */}
