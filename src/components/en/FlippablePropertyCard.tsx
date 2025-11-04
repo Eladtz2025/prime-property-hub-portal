@@ -58,14 +58,14 @@ export const FlippablePropertyCard = ({
           <div className="reliz-card-overlay" />
           <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
             {type && (
-              <div className="font-montserrat text-xs tracking-widest uppercase text-white/80 mb-2">
+              <div className="font-montserrat text-[10px] tracking-widest uppercase text-white/80 mb-2">
                 {type}
               </div>
             )}
-            <h3 className="reliz-property-title mb-2">{title}</h3>
+            <h3 className="font-playfair text-xl md:text-2xl font-semibold mb-2">{title}</h3>
             <div className="flex items-center justify-between">
-              <p className="font-montserrat text-sm text-white/70">{location}</p>
-              <p className="font-playfair text-lg font-medium">{price}</p>
+              <p className="font-montserrat text-xs text-white/70">{location}</p>
+              <p className="font-playfair text-base font-medium">{price}</p>
             </div>
             <div className="mt-4 h-px bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
           </div>
@@ -74,10 +74,10 @@ export const FlippablePropertyCard = ({
         {/* Back Side */}
         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-background via-background to-muted p-6 flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            <h3 className="font-playfair text-2xl font-bold text-foreground mb-2">
+            <h3 className="font-playfair text-xl font-bold text-foreground mb-2">
               {title}
             </h3>
-            <p className="font-montserrat text-sm text-muted-foreground mb-4">
+            <p className="font-montserrat text-xs text-muted-foreground mb-4">
               Request Information
             </p>
 
