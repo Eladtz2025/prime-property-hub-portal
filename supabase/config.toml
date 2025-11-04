@@ -3,6 +3,9 @@ project_id = "jswumsdymlooeobrxict"
 [functions.add-watermark-on-upload]
 verify_jwt = false
 
+[functions.notify-admins]
+verify_jwt = false
+
 [functions.import-mock-properties]
 verify_jwt = false
 

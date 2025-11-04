@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FlippablePropertyCardProps {
   title: string;
@@ -27,14 +28,43 @@ export const FlippablePropertyCard = ({
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "הפנייה נשלחה",
-      description: "ניצור איתך קשר בקרוב לגבי " + title,
-    });
-    setFormData({ name: "", phone: "", email: "", message: "" });
-    setIsFlipped(false);
+
+    try {
+      // Save to contact_leads
+      const { error: leadError } = await supabase
+        .from('contact_leads')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message || `מתעניין/ת ב: ${title}`,
+        });
+
+      if (leadError) throw leadError;
+
+      // Notify admins
+      const { error: notifyError } = await supabase.functions.invoke('notify-admins', {
+        body: {
+          type: 'property_inquiry',
+          title: 'פנייה חדשה לנכס',
+          message: `${formData.name} מתעניין/ת ב: ${title}`,
+          action_url: '/admin-dashboard',
+        },
+      });
+
+      if (notifyError) {
+        console.error('Error notifying admins:', notifyError);
+      }
+
+      toast.success("ניצור איתך קשר בקרוב בנוגע ל" + title);
+      setFormData({ name: "", phone: "", email: "", message: "" });
+      setIsFlipped(false);
+    } catch (error) {
+      console.error('Error submitting inquiry:', error);
+      toast.error("שליחת הפנייה נכשלה. אנא נסה שוב.");
+    }
   };
 
   return (

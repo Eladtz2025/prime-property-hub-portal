@@ -2,6 +2,7 @@ import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import VideoHero from "@/components/en/VideoHero";
 import DivisionCard from "@/components/DivisionCard";
+import { ConsultationModal } from "@/components/en/ConsultationModal";
 import { useNavigate } from "react-router-dom";
 import { Award, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,7 @@ const contactSchema = z.object({
 
 const EnglishIndex = () => {
   const navigate = useNavigate();
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false);
   
   const [contactForm, setContactForm] = useState({
     name: "",
@@ -127,6 +129,12 @@ const EnglishIndex = () => {
         title="CITY MARKET"
         subtitle="Find your ideal home. Explore our exclusive listings."
         imageUrl="/images/en/hero-last-one.png"
+      />
+
+      {/* Consultation Modal */}
+      <ConsultationModal 
+        open={isConsultationOpen} 
+        onOpenChange={setIsConsultationOpen} 
       />
 
       {/* About Section */}
