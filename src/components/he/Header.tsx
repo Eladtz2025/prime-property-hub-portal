@@ -40,7 +40,7 @@ const HebrewHeader = () => {
   const isScrolled = scrollProgress > 0.5;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16" dir="rtl">
       {/* Gradual white background */}
       <div 
         className="absolute inset-0 bg-white shadow-md transition-opacity duration-300"
@@ -49,9 +49,9 @@ const HebrewHeader = () => {
       
       <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
         <div className="flex items-center justify-between h-full">
-          {/* Left Navigation (RTL) */}
+          {/* Right Navigation (RTL - swapped) */}
           <nav className="hidden lg:flex items-center gap-6">
-            {leftNavItems.map((item) => (
+            {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
@@ -71,7 +71,7 @@ const HebrewHeader = () => {
                 >
                   {item.label}
                   <span 
-                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                    className="absolute w-full h-0.5 bottom-0 right-0 origin-right transition-transform duration-300"
                     style={{
                       backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
                       transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
@@ -97,9 +97,9 @@ const HebrewHeader = () => {
             />
           </button>
 
-          {/* Right Navigation (RTL) */}
+          {/* Left Navigation (RTL - swapped) */}
           <nav className="hidden lg:flex items-center gap-6">
-            {rightNavItems.map((item) => (
+            {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
@@ -114,7 +114,7 @@ const HebrewHeader = () => {
                 <span style={{ position: 'relative' }}>
                   {item.label}
                   <span 
-                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                    className="absolute w-full h-0.5 bottom-0 right-0 origin-right transition-transform duration-300"
                     style={{
                       backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
                       transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
@@ -168,7 +168,7 @@ const HebrewHeader = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-border">
+          <nav className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-border" dir="rtl">
             <div className="flex flex-col gap-2 py-4 px-4">
               {[...leftNavItems, ...rightNavItems].map((item) => (
                 <button

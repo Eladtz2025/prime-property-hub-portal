@@ -76,7 +76,7 @@ const Contact = () => {
               </p>
 
               <div className="space-y-8">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 flex-row-reverse">
                   <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
@@ -89,7 +89,7 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 flex-row-reverse">
                   <Phone className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
@@ -101,7 +101,7 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 flex-row-reverse">
                   <Mail className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
@@ -113,7 +113,7 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 flex-row-reverse">
                   <Clock className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">

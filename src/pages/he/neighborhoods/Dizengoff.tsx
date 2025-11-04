@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, ShoppingBag, Coffee, Building } from "lucide-react";
+import { ArrowRight, MapPin, ShoppingBag, Coffee, Building } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 
 const DizengoffNeighborhood = () => {
@@ -15,10 +15,10 @@ const DizengoffNeighborhood = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/neighborhoods")}
-            className="font-montserrat"
+            className="font-montserrat flex items-center gap-2 flex-row-reverse"
           >
-            <ArrowLeft className="w-4 h-4 ml-2" />
-            חזרה לשכונות
+            <ArrowRight className="w-4 h-4" />
+            <span>חזרה לשכונות</span>
           </Button>
         </div>
       </div>
@@ -81,30 +81,38 @@ const DizengoffNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <ShoppingBag className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">קניות</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <ShoppingBag className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">קניות</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     דיזנגוף סנטר, בוטיקים יוקרתיים וחנויות מעצבים
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Coffee className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">תרבות קפה</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Coffee className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">תרבות קפה</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     בתי קפה אייקוניים וכיכר דיזנגוף המפורסמת
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Building className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">בידור</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Building className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">בידור</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     סינמטקים, תיאטראות ומרכזי תרבות מובילים
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <MapPin className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">מיקום מרכזי</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <MapPin className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">מיקום מרכזי</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     קרבה לחוף הים, שוק הכרמל ושדרות רוטשילד
                   </p>

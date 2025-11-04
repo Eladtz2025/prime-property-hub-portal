@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Heart, Coffee, Palette, Building2, Star } from "lucide-react";
+import { ArrowRight, MapPin, Heart, Coffee, Palette, Building2, Star } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 
 const NeveTzedekNeighborhood = () => {
@@ -15,10 +15,10 @@ const NeveTzedekNeighborhood = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/neighborhoods")}
-            className="font-montserrat"
+            className="font-montserrat flex items-center gap-2 flex-row-reverse"
           >
-            <ArrowLeft className="w-4 h-4 ml-2" />
-            חזרה לשכונות
+            <ArrowRight className="w-4 h-4" />
+            <span>חזרה לשכונות</span>
           </Button>
         </div>
       </div>
@@ -81,30 +81,38 @@ const NeveTzedekNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <Palette className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">אמנות ותרבות</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Palette className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">אמנות ותרבות</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     גלריות אמנות, תיאטרון סוזן דלל ומרכז האמנויות המפורסם
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Coffee className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">קפה ומסעדות</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Coffee className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">קפה ומסעדות</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     מסעדות שף מובילות ובתי קפה בוטיק בסמטאות הקסומות
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Heart className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">אווירה רומנטית</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Heart className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">אווירה רומנטית</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     סמטאות אבן, בתים היסטוריים וחצרות פנימיות מקסימות
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <MapPin className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">קרבה לחוף</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <MapPin className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">קרבה לחוף</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     דקות הליכה מטיילת תל אביב והים התיכון
                   </p>

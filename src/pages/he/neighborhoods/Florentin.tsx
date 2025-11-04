@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Music, Palette, Users } from "lucide-react";
+import { ArrowRight, MapPin, Music, Palette, Users } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 
 const FlorentinNeighborhood = () => {
@@ -15,10 +15,10 @@ const FlorentinNeighborhood = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/neighborhoods")}
-            className="font-montserrat"
+            className="font-montserrat flex items-center gap-2 flex-row-reverse"
           >
-            <ArrowLeft className="w-4 h-4 ml-2" />
-            חזרה לשכונות
+            <ArrowRight className="w-4 h-4" />
+            <span>חזרה לשכונות</span>
           </Button>
         </div>
       </div>
@@ -81,30 +81,38 @@ const FlorentinNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <Palette className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">אמנות רחוב</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Palette className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">אמנות רחוב</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     ציורי קיר מרהיבים וגרפיטי אמנותי בכל פינה
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Music className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">חיי לילה</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Music className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">חיי לילה</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     ברים, מועדונים ומקומות בילוי עד השעות הקטנות
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Users className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">קהילה צעירה</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Users className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">קהילה צעירה</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     אווירה דינמית של אמנים, סטודנטים ויזמים צעירים
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <MapPin className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">מיקום מרכזי</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <MapPin className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">מיקום מרכזי</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     קרבה לשוק הכרמל, נווה צדק ותחנת הרכבת המרכזית
                   </p>

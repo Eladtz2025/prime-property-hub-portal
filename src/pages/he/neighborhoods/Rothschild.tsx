@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
+import { ArrowRight, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 
 const RothschildNeighborhood = () => {
@@ -45,10 +45,10 @@ const RothschildNeighborhood = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/neighborhoods")}
-            className="font-montserrat"
+            className="font-montserrat flex items-center gap-2 flex-row-reverse"
           >
-            <ArrowLeft className="w-4 h-4 ml-2" />
-            חזרה לשכונות
+            <ArrowRight className="w-4 h-4" />
+            <span>חזרה לשכונות</span>
           </Button>
         </div>
       </div>
@@ -108,30 +108,38 @@ const RothschildNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <Coffee className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">תרבות קפה</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Coffee className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">תרבות קפה</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     בתי קפה אייקוניים ומסעדות עטורות פרסים לאורך כל השדרה
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Building2 className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">אדריכלות באוהאוס</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Building2 className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">אדריכלות באוהאוס</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     בתים בסגנון הבינלאומי המשוקמים היטב עם חזיתות מקוריות
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Home className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">מרכז עסקים</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Home className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">מרכז עסקים</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     ליבת סצנת הסטארט-אפים והיזמות של תל אביב
                   </p>
                 </Card>
-                <Card className="p-6">
-                  <Star className="w-8 h-8 text-primary mb-4" />
-                  <h3 className="font-playfair text-xl font-bold mb-2">אירועים תרבותיים</h3>
+                <Card className="p-6" dir="rtl">
+                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                    <Star className="w-8 h-8 text-primary" />
+                    <h3 className="font-playfair text-xl font-bold">אירועים תרבותיים</h3>
+                  </div>
                   <p className="font-montserrat text-sm text-muted-foreground">
                     פסטיבלים שנתיים, שווקי אמנות ואירועי רחוב
                   </p>
@@ -145,28 +153,28 @@ const RothschildNeighborhood = () => {
                 שירותים וגישה
               </h2>
               <div className="space-y-4 font-montserrat text-muted-foreground">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 flex-row-reverse">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">תחבורה ציבורית:</span> 
                     {" "}גישה מצוינת לאוטובוסים, שתי תחנות רכבת קלה, ורכבת העיר העתידית
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 flex-row-reverse">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">קניות:</span> 
                     {" "}שדרות רוטשילד ושוק הכרמל הסמוכים מציעים מגוון מותגים ייחודיים
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 flex-row-reverse">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">פארקים:</span> 
                     {" "}השדרה עצמה משמשת כפארק עירוני עם שבילי אופניים וספסלי ישיבה
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 flex-row-reverse">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">חינוך:</span> 

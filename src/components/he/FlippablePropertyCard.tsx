@@ -68,7 +68,7 @@ export const FlippablePropertyCard = ({
   };
 
   return (
-    <div className="group relative aspect-[4/5] perspective-1000">
+    <div className="group relative aspect-[4/5] perspective-1000" dir="rtl">
       <div
         className={`relative w-full h-full transition-all duration-700 transform-style-3d ${
           isFlipped ? "rotate-y-180" : ""
@@ -97,7 +97,7 @@ export const FlippablePropertyCard = ({
               <p className="font-montserrat text-sm text-white/70">{location}</p>
               <p className="font-playfair text-lg font-medium">{price}</p>
             </div>
-            <div className="mt-4 h-px bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+            <div className="mt-4 h-px bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
           </div>
         </div>
 
@@ -150,9 +150,6 @@ export const FlippablePropertyCard = ({
                 className="bg-background/50 min-h-[80px]"
               />
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  שלח
-                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -160,8 +157,12 @@ export const FlippablePropertyCard = ({
                     e.stopPropagation();
                     setIsFlipped(false);
                   }}
+                  className="flex-1"
                 >
                   חזור
+                </Button>
+                <Button type="submit" className="flex-1">
+                  שלח
                 </Button>
               </div>
             </form>

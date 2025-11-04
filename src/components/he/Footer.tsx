@@ -8,7 +8,7 @@ const HebrewFooter = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-foreground text-background">
+    <footer className="bg-foreground text-background" dir="rtl">
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
@@ -119,19 +119,19 @@ const HebrewFooter = () => {
               יצירת קשר
             </h4>
             <ul className="space-y-3 text-sm text-background/70">
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 flex-row-reverse">
                 <Phone className="h-4 w-4" />
                 <a href="tel:0545503055" className="hover:text-background transition-colors">
                   054-550-3055
                 </a>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 flex-row-reverse">
                 <Mail className="h-4 w-4" />
                 <a href="mailto:info@citymarket.co.il" className="hover:text-background transition-colors">
                   info@citymarket.co.il
                 </a>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 flex-row-reverse">
                 <MapPin className="h-4 w-4" />
                 <span>תל אביב, ישראל</span>
               </li>
