@@ -118,6 +118,16 @@ All colors MUST be HSL.
   
   /* Mobile optimizations and layout fixes */
   @media (max-width: 768px) {
+    /* Fix header positioning for mobile devices with notch */
+    header {
+      padding-top: env(safe-area-inset-top, 0px);
+      min-height: calc(4rem + env(safe-area-inset-top, 0px));
+    }
+
+    body {
+      padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+    }
+
     /* Container optimizations */
     .mobile-scroll {
       -webkit-overflow-scrolling: touch;

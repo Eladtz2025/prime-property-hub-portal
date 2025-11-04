@@ -40,7 +40,10 @@ const HebrewHeader = () => {
   const isScrolled = scrollProgress > 0.5;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16">
+    <header 
+      className="fixed top-0 left-0 right-0 z-50 h-16"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       {/* Gradual white background */}
       <div 
         className="absolute inset-0 bg-white shadow-md transition-opacity duration-300"
