@@ -121,16 +121,21 @@ const EnglishManagement = () => {
             </div>
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProperties.map((property) => (
-                <FlippablePropertyCard
-                  key={property.id}
-                  title={translations[property.title || ''] || property.title || `${property.rooms} Rooms ${translations[property.address || ''] || property.address}`}
-                  location={translations[property.address || ''] || property.address || ''}
-                  price={property.show_management_badge ? 'Full Management' : 'Property Management'}
-                  imageUrl={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
-                  type={property.property_size ? `${property.property_size} m²` : undefined}
-                />
-              ))}
+              {filteredProperties.map((property) => {
+                // Create a short title - just the address or title
+                const shortTitle = property.title || translations[property.address || ''] || property.address || '';
+                
+                return (
+                  <FlippablePropertyCard
+                    key={property.id}
+                    title={shortTitle}
+                    location={translations[property.address || ''] || property.address || ''}
+                    price={property.show_management_badge ? 'Full Management' : 'Property Management'}
+                    imageUrl={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
+                    type={property.property_size ? `${property.property_size} m²` : undefined}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
