@@ -121,10 +121,10 @@ All colors MUST be HSL.
     /* Fix header positioning for mobile devices with notch */
     header {
       padding-top: env(safe-area-inset-top, 0px);
-      min-height: calc(4rem + env(safe-area-inset-top, 0px));
+      height: calc(4rem + env(safe-area-inset-top, 0px)) !important;
     }
 
-    body {
+    main, .main-content, #root > div {
       padding-top: calc(4rem + env(safe-area-inset-top, 0px));
     }
 
