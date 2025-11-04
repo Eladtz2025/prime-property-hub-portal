@@ -95,6 +95,22 @@ const AppContent: React.FC = () => {
         <Route path="/new-developments" element={<HebrewNewDevelopments />} />
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
         
+        {/* Hebrew Routes with /he/ prefix */}
+        <Route path="/he" element={<Index />} />
+        <Route path="/he/rentals" element={<Rentals />} />
+        <Route path="/he/sales" element={<Sales />} />
+        <Route path="/he/management" element={<Management />} />
+        <Route path="/he/about" element={<HebrewAbout />} />
+        <Route path="/he/contact" element={<HebrewContact />} />
+        <Route path="/he/neighborhoods" element={<HebrewNeighborhoods />} />
+        <Route path="/he/neighborhoods/rothschild" element={<HebrewRothschild />} />
+        <Route path="/he/neighborhoods/neve-tzedek" element={<HebrewNeveTzedek />} />
+        <Route path="/he/neighborhoods/florentin" element={<HebrewFlorentin />} />
+        <Route path="/he/neighborhoods/dizengoff" element={<HebrewDizengoff />} />
+        <Route path="/he/neighborhoods/old-north" element={<HebrewOldNorth />} />
+        <Route path="/he/new-developments" element={<HebrewNewDevelopments />} />
+        <Route path="/he/property/:id" element={<PropertyDetailPage />} />
+        
         {/* English Public Routes */}
           <Route path="/en" element={<EnglishIndex />} />
           <Route path="/en/rentals" element={<EnglishRentals />} />
