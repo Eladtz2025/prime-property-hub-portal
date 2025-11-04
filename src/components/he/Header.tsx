@@ -82,74 +82,6 @@ const HebrewHeader = () => {
             ))}
           </nav>
 
-          {/* Right Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {rightNavItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
-                style={{
-                  color: isScrolled 
-                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
-                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
-                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-                }}
-              >
-                <span style={{ position: 'relative' }}>
-                  {item.label}
-                  <span 
-                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
-                    style={{
-                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
-                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                    }}
-                  />
-                </span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/en")}
-              className="font-montserrat text-sm tracking-wide transition-all duration-300"
-              style={{
-                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
-                textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-              }}
-            >
-              English
-            </Button>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2"
-            >
-              {mobileMenuOpen ? (
-                <X 
-                  className="w-6 h-6 transition-all duration-300" 
-                  style={{
-                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
-                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                  }}
-                />
-              ) : (
-                <Menu 
-                  className="w-6 h-6 transition-all duration-300"
-                  style={{
-                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
-                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                  }}
-                />
-              )}
-            </button>
-          </div>
-
           {/* Center Logo */}
           <button
             onClick={() => navigate("/")}
@@ -184,6 +116,77 @@ const HebrewHeader = () => {
               </div>
             </div>
           </button>
+
+          {/* Right Navigation + Language Switcher & Mobile Menu */}
+          <div className="flex items-center gap-6">
+            {/* Right Navigation (RTL) */}
+            <nav className="hidden lg:flex items-center gap-6">
+              {rightNavItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
+                  style={{
+                    color: isScrolled 
+                      ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
+                      : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
+                    textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <span style={{ position: 'relative' }}>
+                    {item.label}
+                    <span 
+                      className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                      style={{
+                        backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
+                        transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
+                      }}
+                    />
+                  </span>
+                </button>
+              ))}
+            </nav>
+
+            {/* Language Switcher & Mobile Menu */}
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/en")}
+                className="font-montserrat text-sm tracking-wide transition-all duration-300"
+                style={{
+                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
+                English
+              </Button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2"
+              >
+                {mobileMenuOpen ? (
+                  <X 
+                    className="w-6 h-6 transition-all duration-300" 
+                    style={{
+                      color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                      filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  />
+                ) : (
+                  <Menu 
+                    className="w-6 h-6 transition-all duration-300"
+                    style={{
+                      color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                      filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Mobile Menu */}
