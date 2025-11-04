@@ -40,14 +40,14 @@ const HebrewHeader = () => {
   const isScrolled = scrollProgress > 0.5;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 min-h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16">
       {/* Gradual white background */}
       <div 
         className="absolute inset-0 bg-white shadow-md transition-opacity duration-300"
         style={{ opacity: scrollProgress }}
       />
       
-      <div className="container mx-auto px-4 relative h-full">
+      <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
         <div className="flex items-center justify-between h-full">
           {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
@@ -85,7 +85,7 @@ const HebrewHeader = () => {
           {/* Center Logo */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
           >
             <img 
               src="/images/city-market-icon.png" 
@@ -95,7 +95,7 @@ const HebrewHeader = () => {
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="text-center hidden lg:block">
+            <div className="text-center">
               <div 
                 className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
                 style={{
@@ -117,75 +117,72 @@ const HebrewHeader = () => {
             </div>
           </button>
 
-          {/* Right Navigation + Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-6">
-            {/* Right Navigation (RTL) */}
-            <nav className="hidden lg:flex items-center gap-6">
-              {rightNavItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
-                  style={{
-                    color: isScrolled 
-                      ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
-                      : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
-                    textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <span style={{ position: 'relative' }}>
-                    {item.label}
-                    <span 
-                      className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
-                      style={{
-                        backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
-                        transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                      }}
-                    />
-                  </span>
-                </button>
-              ))}
-            </nav>
-
-            {/* Language Switcher & Mobile Menu */}
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/en")}
-                className="font-montserrat text-sm tracking-wide transition-all duration-300"
+          {/* Right Navigation (RTL) */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {rightNavItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
                 style={{
-                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
+                  color: isScrolled 
+                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
+                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               >
-                English
-              </Button>
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2"
-              >
-                {mobileMenuOpen ? (
-                  <X 
-                    className="w-6 h-6 transition-all duration-300" 
+                <span style={{ position: 'relative' }}>
+                  {item.label}
+                  <span 
+                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
                     style={{
-                      color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
-                      filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
+                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
                     }}
                   />
-                ) : (
-                  <Menu 
-                    className="w-6 h-6 transition-all duration-300"
-                    style={{
-                      color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
-                      filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                    }}
-                  />
-                )}
+                </span>
               </button>
-            </div>
+            ))}
+          </nav>
+
+          {/* Language Switcher & Mobile Menu */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/en")}
+              className="font-montserrat text-sm tracking-wide transition-all duration-300"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
+                textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+              }}
+            >
+              English
+            </Button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2"
+            >
+              {mobileMenuOpen ? (
+                <X 
+                  className="w-6 h-6 transition-all duration-300" 
+                  style={{
+                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                />
+              ) : (
+                <Menu 
+                  className="w-6 h-6 transition-all duration-300"
+                  style={{
+                    color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
+                    filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                />
+              )}
+            </button>
           </div>
         </div>
 
