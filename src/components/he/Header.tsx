@@ -116,7 +116,7 @@ const HebrewHeader = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/en")}
-              className="hidden lg:flex font-montserrat text-sm tracking-wide transition-all duration-300"
+              className="font-montserrat text-sm tracking-wide transition-all duration-300"
               style={{
                 color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
                 textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -125,10 +125,10 @@ const HebrewHeader = () => {
               English
             </Button>
 
-            {/* Mobile Menu Button - Positioned first (right side in RTL) */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 order-first"
+              className="lg:hidden p-2"
             >
               {mobileMenuOpen ? (
                 <X 
