@@ -95,7 +95,7 @@ const HebrewHeader = () => {
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="text-center">
+            <div className="text-center hidden lg:block">
               <div 
                 className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
                 style={{
