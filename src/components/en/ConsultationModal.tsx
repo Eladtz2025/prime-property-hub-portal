@@ -77,7 +77,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             Fill out the form below and we'll get back to you shortly.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 px-1">
           <Input
             placeholder="Full Name"
             value={formData.name}
