@@ -10,10 +10,12 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
+import { ConsultationModal } from "@/components/en/ConsultationModal";
 
 const EnglishManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [consultationModalOpen, setConsultationModalOpen] = useState(false);
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
   // Translate common Tel Aviv street names
@@ -224,11 +226,17 @@ const EnglishManagement = () => {
              size="lg"
              className="font-montserrat font-semibold px-8"
              aria-label="Get a free property management consultation"
+             onClick={() => setConsultationModalOpen(true)}
            >
              Get a Free Consultation
            </Button>
         </div>
       </section>
+
+      <ConsultationModal 
+        open={consultationModalOpen} 
+        onOpenChange={setConsultationModalOpen} 
+      />
 
       <EnglishFooter />
     </div>

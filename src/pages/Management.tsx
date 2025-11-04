@@ -8,9 +8,11 @@ import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { FlippablePropertyCard } from '@/components/he/FlippablePropertyCard';
+import { ConsultationModal } from '@/components/he/ConsultationModal';
 
 const Management = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [consultationModalOpen, setConsultationModalOpen] = useState(false);
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
   const filteredProperties = (properties || []).filter((property) => {
@@ -156,11 +158,17 @@ const Management = () => {
           <Button
             size="lg"
             className="font-montserrat font-semibold px-8"
+            onClick={() => setConsultationModalOpen(true)}
           >
             קבלו ייעוץ חינם
           </Button>
         </div>
       </section>
+
+      <ConsultationModal 
+        open={consultationModalOpen} 
+        onOpenChange={setConsultationModalOpen} 
+      />
 
       <HebrewFooter />
     </div>
