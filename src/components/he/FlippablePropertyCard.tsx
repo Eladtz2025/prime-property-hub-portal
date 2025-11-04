@@ -102,7 +102,7 @@ export const FlippablePropertyCard = ({
         </div>
 
         {/* Back Side */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-background via-background to-muted p-6 flex flex-col">
+        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-background via-background to-muted p-6 flex flex-col overflow-visible">
           <div className="flex-1 overflow-y-auto">
             <h3 className="font-playfair text-2xl font-bold text-foreground mb-2">
               {title}
@@ -111,7 +111,7 @@ export const FlippablePropertyCard = ({
               בקש מידע נוסף
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3 px-2">
               <Input
                 placeholder="שם מלא"
                 value={formData.name}
