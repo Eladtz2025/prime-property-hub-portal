@@ -85,7 +85,7 @@ const HebrewHeader = () => {
           {/* Center Logo */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
+            className="transition-transform duration-200 hover:scale-105"
           >
             <img 
               src="/images/city-market-icon.png" 
@@ -95,26 +95,6 @@ const HebrewHeader = () => {
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="text-center">
-              <div 
-                className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
-                style={{
-                  color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
-                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-                }}
-              >
-                CITY MARKET
-              </div>
-              <div 
-                className="font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300"
-                style={{
-                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
-                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-                }}
-              >
-                Properties
-              </div>
-            </div>
           </button>
 
           {/* Right Navigation (RTL) */}
