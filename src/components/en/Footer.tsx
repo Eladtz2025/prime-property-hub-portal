@@ -87,25 +87,25 @@ const EnglishFooter = () => {
             <div className="space-y-2 font-montserrat text-sm text-background/70">
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods')}
+                onClick={() => navigate('/en/neighborhoods/neve-tzedek')}
               >
                 Neve Tzedek
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods')}
+                onClick={() => navigate('/en/neighborhoods/rothschild')}
               >
                 Rothschild
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods')}
+                onClick={() => navigate('/en/neighborhoods/dizengoff')}
               >
                 Dizengoff
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods')}
+                onClick={() => navigate('/en/neighborhoods/old-north')}
               >
                 Old North
               </p>

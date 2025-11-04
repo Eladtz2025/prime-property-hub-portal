@@ -56,11 +56,6 @@ const Footer = () => {
                   ניהול נכסים
                 </Link>
               </li>
-              <li>
-                <Link to="/admin-dashboard" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
-                  עמוד מנהלים
-                </Link>
-              </li>
             </ul>
           </div>
 

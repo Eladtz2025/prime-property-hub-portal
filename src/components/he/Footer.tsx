@@ -55,25 +55,25 @@ const HebrewFooter = () => {
             <div className="space-y-2 text-sm text-background/70">
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/sales')}
+                onClick={() => navigate('/he/sales')}
               >
                 מכירות
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/rentals')}
+                onClick={() => navigate('/he/rentals')}
               >
                 השכרות
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/management')}
+                onClick={() => navigate('/he/management')}
               >
                 ניהול נכסים
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/new-developments')}
+                onClick={() => navigate('/he/new-developments')}
               >
                 פרויקטים חדשים
               </p>
@@ -88,25 +88,25 @@ const HebrewFooter = () => {
             <div className="space-y-2 text-sm text-background/70">
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/neighborhoods')}
+                onClick={() => navigate('/he/neighborhoods/neve-tzedek')}
               >
                 נווה צדק
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/neighborhoods')}
+                onClick={() => navigate('/he/neighborhoods/rothschild')}
               >
                 רוטשילד
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/neighborhoods')}
+                onClick={() => navigate('/he/neighborhoods/dizengoff')}
               >
                 דיזנגוף
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/neighborhoods')}
+                onClick={() => navigate('/he/neighborhoods/old-north')}
               >
                 הצפון הישן
               </p>
@@ -144,21 +144,21 @@ const HebrewFooter = () => {
           <div className="flex flex-wrap justify-center gap-6 text-xs text-background/60">
             <span 
               className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/he')}
             >
               בית
             </span>
             <span className="text-background/30">|</span>
             <span 
               className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/about')}
+              onClick={() => navigate('/he/about')}
             >
               אודות
             </span>
             <span className="text-background/30">|</span>
             <span 
               className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/contact')}
+              onClick={() => navigate('/he/contact')}
             >
               צור קשר
             </span>
