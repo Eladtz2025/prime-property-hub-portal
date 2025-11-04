@@ -39,7 +39,7 @@ const RothschildNeighborhood = () => {
   return (
     <div className="min-h-screen bg-background" dir="ltr">
       {/* Back Button */}
-      <div className="bg-background border-b">
+      <div className="relative bg-background border-b">
         <div className="container mx-auto px-4 py-4">
           <Button
             variant="ghost"
