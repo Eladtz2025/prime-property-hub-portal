@@ -49,40 +49,7 @@ const HebrewHeader = () => {
       
       <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
         <div className="flex items-center justify-between h-full">
-          {/* Left Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {leftNavItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300 after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
-                style={{
-                  color: isScrolled 
-                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
-                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
-                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-                }}
-              >
-                <span 
-                  className="after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
-                  style={{
-                    position: 'relative',
-                  }}
-                >
-                  {item.label}
-                  <span 
-                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
-                    style={{
-                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
-                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                    }}
-                  />
-                </span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Center Logo */}
+          {/* Logo - Always visible */}
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
@@ -117,9 +84,9 @@ const HebrewHeader = () => {
             </div>
           </button>
 
-          {/* Right Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {rightNavItems.map((item) => (
+          {/* Desktop Navigation - Hidden on mobile */}
+          <nav className="hidden lg:flex items-center gap-8">
+            {[...leftNavItems, ...rightNavItems].map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
