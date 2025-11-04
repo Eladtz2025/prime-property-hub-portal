@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
 import { PropertyCard } from "@/components/en/PropertyCard";
+import EnglishFooter from "@/components/en/Footer";
 
 const FlorentinNeighborhood = () => {
   const navigate = useNavigate();
@@ -164,6 +165,8 @@ const FlorentinNeighborhood = () => {
           עברית
         </Button>
       </div>
+
+      <EnglishFooter />
     </div>
   );
 };
