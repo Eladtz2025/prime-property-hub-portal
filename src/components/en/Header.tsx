@@ -49,22 +49,50 @@ const EnglishHeader = () => {
       
       <div className="container mx-auto px-4 relative h-full">
         <div className="flex items-center justify-between h-full">
-          {/* Logo - Always visible */}
+          {/* Left Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {leftNavItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-300"
+                style={{
+                  color: isScrolled 
+                    ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
+                    : (isActive(item.path) ? '#ffffff' : 'rgba(255,255,255,0.9)'),
+                  textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
+                <span style={{ position: 'relative' }}>
+                  {item.label}
+                  <span 
+                    className="absolute w-full h-0.5 bottom-0 left-0 origin-left transition-transform duration-300"
+                    style={{
+                      backgroundColor: isScrolled ? 'hsl(var(--primary))' : '#ffffff',
+                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
+                    }}
+                  />
+                </span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Center Logo */}
           <button
             onClick={() => navigate("/en")}
-            className="flex items-center gap-2 md:gap-3 transition-transform duration-200 hover:scale-105"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
           >
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className="h-10 md:h-12 w-auto transition-all duration-300"
+              className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
               style={{
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="hidden md:flex items-baseline gap-2">
+            <div className="text-center">
               <div 
-                className="font-playfair text-xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300 whitespace-nowrap"
+                className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
                 style={{
                   color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -73,7 +101,7 @@ const EnglishHeader = () => {
                 CITY MARKET
               </div>
               <div 
-                className="font-montserrat text-[8px] md:text-xs tracking-widest transition-all duration-300"
+                className="font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300"
                 style={{
                   color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -84,9 +112,9 @@ const EnglishHeader = () => {
             </div>
           </button>
 
-          {/* Desktop Navigation - Hidden on mobile */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {[...leftNavItems, ...rightNavItems].map((item) => (
+          {/* Right Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
