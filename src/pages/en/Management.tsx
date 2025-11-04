@@ -16,6 +16,31 @@ const EnglishManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
+  // Translate common Tel Aviv street names
+  const translateStreetName = (hebrewAddress: string): string => {
+    const streetMap: Record<string, string> = {
+      'אלנבי': 'Allenby',
+      'שינקין': 'Sheinkin',
+      'דיזנגוף': 'Dizengoff',
+      'רוטשילד': 'Rothschild',
+      'בן יהודה': 'Ben Yehuda',
+      'נחמני': 'Nahmani',
+      'ביאליק': 'Bialik',
+      'פרישמן': 'Frishman',
+      'גורדון': 'Gordon',
+      'מונטיפיורי': 'Montefiori',
+      'תל אביב': 'Tel Aviv',
+      'יפו': 'Jaffa',
+    };
+
+    let translated = hebrewAddress;
+    Object.entries(streetMap).forEach(([hebrew, english]) => {
+      translated = translated.replace(new RegExp(hebrew, 'g'), english);
+    });
+    
+    return translated;
+  };
+
   // Collect all texts that need translation
   const textsToTranslate = useMemo(() => {
     if (!properties) return [];
@@ -122,19 +147,22 @@ const EnglishManagement = () => {
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => {
+                // Translate the address
+                const translatedAddress = translateStreetName(property.address || '');
+                const streetName = translatedAddress.split(',')[0] || translatedAddress;
+                
                 // Create English titles based on property data
                 const buildingType = property.property_size && property.property_size > 400 
                   ? 'Commercial Building' 
                   : 'Residential Building';
                 
-                const streetName = property.address?.split(',')[0] || property.address || 'Building';
                 const englishTitle = `${buildingType} on ${streetName}`;
                 
                 return (
                   <FlippablePropertyCard
                     key={property.id}
                     title={englishTitle}
-                    location={streetName}
+                    location={translatedAddress}
                     price={property.show_management_badge ? 'Full Management' : 'Property Management'}
                     imageUrl={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
                     type={property.property_size ? `${property.property_size} m²` : undefined}
