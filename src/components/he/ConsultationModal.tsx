@@ -70,7 +70,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" dir="rtl">
         <DialogHeader>
           <DialogTitle className="font-playfair text-2xl">קבלו ייעוץ חינם</DialogTitle>
           <DialogDescription className="font-montserrat">
@@ -83,6 +83,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+            className="text-right"
           />
           <Input
             type="tel"
@@ -90,6 +91,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             required
+            className="text-right"
           />
           <Input
             type="email"
@@ -97,14 +99,15 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
+            className="text-right"
           />
           <Textarea
             placeholder="ההודעה שלך..."
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            className="min-h-[100px]"
+            className="min-h-[100px] text-right"
           />
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-row-reverse">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
               {isSubmitting ? "שולח..." : "שלח"}
             </Button>

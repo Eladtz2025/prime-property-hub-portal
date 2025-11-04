@@ -50,18 +50,18 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
-          <button
-            onClick={() => navigate("/sales")}
-            className="px-8 py-3 bg-white text-foreground font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/90"
-          >
-            קנייה
-          </button>
+        <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400" dir="rtl">
           <button
             onClick={() => navigate("/rentals")}
             className="px-8 py-3 border-2 border-white text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             השכרה
+          </button>
+          <button
+            onClick={() => navigate("/sales")}
+            className="px-8 py-3 bg-white text-foreground font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/90"
+          >
+            קנייה
           </button>
         </div>
       </div>

@@ -66,7 +66,7 @@ const About = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div className="text-center">
+            <div className="text-center" dir="rtl">
               <Award className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
                 מצוינות
@@ -76,7 +76,7 @@ const About = () => {
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center" dir="rtl">
               <Heart className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
                 יושרה
@@ -86,7 +86,7 @@ const About = () => {
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center" dir="rtl">
               <Users className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
                 מסירות
@@ -96,7 +96,7 @@ const About = () => {
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center" dir="rtl">
               <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
                 חדשנות

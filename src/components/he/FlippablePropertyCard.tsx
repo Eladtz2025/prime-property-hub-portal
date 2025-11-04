@@ -86,16 +86,16 @@ export const FlippablePropertyCard = ({
             loading="lazy"
           />
           <div className="reliz-card-overlay" />
-          <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
+          <div className="absolute inset-0 flex flex-col justify-end p-6 text-white" dir="rtl">
             {type && (
-              <div className="font-montserrat text-xs tracking-widest uppercase text-white/80 mb-2">
+              <div className="font-montserrat text-xs tracking-widest uppercase text-white/80 mb-2 text-right">
                 {type}
               </div>
             )}
-            <h3 className="reliz-property-title mb-2">{title}</h3>
-            <div className="flex items-center justify-between">
-              <p className="font-montserrat text-sm text-white/70">{location}</p>
+            <h3 className="reliz-property-title mb-2 text-right">{title}</h3>
+            <div className="flex items-center justify-between flex-row-reverse">
               <p className="font-playfair text-lg font-medium">{price}</p>
+              <p className="font-montserrat text-sm text-white/70">{location}</p>
             </div>
             <div className="mt-4 h-px bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
           </div>
@@ -111,7 +111,7 @@ export const FlippablePropertyCard = ({
               בקש מידע נוסף
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-3 px-2">
+            <form onSubmit={handleSubmit} className="space-y-3 px-2" dir="rtl">
               <Input
                 placeholder="שם מלא"
                 value={formData.name}
@@ -119,7 +119,7 @@ export const FlippablePropertyCard = ({
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
-                className="bg-background/50"
+                className="bg-background/50 text-right"
               />
               <Input
                 type="tel"
@@ -129,7 +129,7 @@ export const FlippablePropertyCard = ({
                   setFormData({ ...formData, phone: e.target.value })
                 }
                 required
-                className="bg-background/50"
+                className="bg-background/50 text-right"
               />
               <Input
                 type="email"
@@ -139,7 +139,7 @@ export const FlippablePropertyCard = ({
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                className="bg-background/50"
+                className="bg-background/50 text-right"
               />
               <Textarea
                 placeholder="ההודעה שלך..."
@@ -147,9 +147,12 @@ export const FlippablePropertyCard = ({
                 onChange={(e) =>
                   setFormData({ ...formData, message: e.target.value })
                 }
-                className="bg-background/50 min-h-[80px]"
+                className="bg-background/50 min-h-[80px] text-right"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-row-reverse">
+                <Button type="submit" className="flex-1">
+                  שלח
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -160,9 +163,6 @@ export const FlippablePropertyCard = ({
                   className="flex-1"
                 >
                   חזור
-                </Button>
-                <Button type="submit" className="flex-1">
-                  שלח
                 </Button>
               </div>
             </form>
