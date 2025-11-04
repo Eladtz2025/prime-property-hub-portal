@@ -5,7 +5,7 @@ import { Helmet } from "react-helmet";
 
 const About = () => {
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <title>אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב</title>
         <meta name="description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />

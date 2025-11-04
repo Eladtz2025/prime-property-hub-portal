@@ -41,7 +41,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <HebrewHeader />
 
       {/* Hero Section */}

@@ -77,7 +77,7 @@ const NewDevelopments = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <title>פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market</title>
         <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />

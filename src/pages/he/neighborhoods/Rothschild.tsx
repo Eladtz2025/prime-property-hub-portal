@@ -37,7 +37,7 @@ const RothschildNeighborhood = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       
       {/* Back Button */}
       <div className="sticky top-0 z-50 bg-background border-b">

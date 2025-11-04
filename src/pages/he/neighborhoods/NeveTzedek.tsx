@@ -8,7 +8,7 @@ const NeveTzedekNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">

@@ -53,7 +53,7 @@ const HebrewNeighborhoods = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury pt-16" dir="rtl">
+    <div className="min-h-screen hebrew-luxury pt-16" dir="rtl">
       <Helmet>
         <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties</title>
         <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין, דיזנגוף והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
