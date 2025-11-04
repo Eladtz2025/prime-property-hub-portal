@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
+import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import { PropertyCard } from "@/components/en/PropertyCard";
 import EnglishFooter from "@/components/en/Footer";
 
@@ -38,150 +38,164 @@ const RothschildNeighborhood = () => {
   ];
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       {/* Back Button */}
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/en/neighborhoods")}
-            className="font-montserrat"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Neighborhoods
-          </Button>
-        </div>
-      </div>
-
-      {/* Hero Section */}
-      <div className="relative h-[60vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/rothschild-hero.jpg"
-          alt="Rothschild Boulevard"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 container mx-auto px-4 py-12">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4">
-            Rothschild Boulevard
-          </h1>
-          <p className="font-montserrat text-xl text-white/90 max-w-2xl">
-            The heart of Tel Aviv's UNESCO World Heritage Bauhaus architecture
-          </p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-3 gap-12">
-          {/* Left Column - Content */}
-          <div className="lg:col-span-2 space-y-12">
-            {/* History & Character */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                History & Character
-              </h2>
-              <div className="space-y-4 font-montserrat text-muted-foreground leading-relaxed">
-                <p>
-                  Established in 1910, Rothschild Boulevard represents the pinnacle of Tel Aviv's
-                  architectural heritage. Named after the famous banking family, this tree-lined
-                  boulevard stretches 1.5 kilometers through the heart of the White City, featuring
-                  the world's largest concentration of International Style buildings.
-                </p>
-                <p>
-                  The boulevard became synonymous with Tel Aviv's cultural renaissance in the 1930s,
-                  when European Jewish architects brought the Bauhaus movement to the Middle East.
-                  Today, it seamlessly blends historic preservation with modern luxury, hosting
-                  innovative startups, Michelin-recommended restaurants, and exclusive residences.
-                </p>
-                <p>
-                  Living on Rothschild means waking up to the rustling of century-old Ficus trees,
-                  morning coffee at iconic cafés, and evening strolls past illuminated International
-                  Style facades. It's where Tel Aviv's past meets its future—a neighborhood that
-                  honors heritage while embracing innovation.
-                </p>
-              </div>
-            </section>
-
-            {/* Key Features */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Neighborhood Highlights
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  { icon: Star, text: "UNESCO World Heritage Site" },
-                  { icon: Building2, text: "Bauhaus architectural gems" },
-                  { icon: Coffee, text: "Iconic cafés and restaurants" },
-                  { icon: Home, text: "Central Tel Aviv location" },
-                  { icon: TrendingUp, text: "High investment value" },
-                  { icon: MapPin, text: "Walking distance to beaches" },
-                ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-                    <feature.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="font-montserrat text-sm">{feature.text}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Nearby Attractions */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Nearby Attractions
-              </h2>
-              <div className="space-y-3">
-                {[
-                  "Independence Hall - Historic declaration site",
-                  "Habima Theatre - Israel's national theater",
-                  "Dizengoff Center - Shopping and entertainment",
-                  "Carmel Market - Vibrant local market",
-                  "Tel Aviv Museum of Art - 5-minute walk",
-                  "Gordon Beach - 15-minute walk",
-                ].map((attraction, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    <span className="font-montserrat text-muted-foreground">{attraction}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Available Properties */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Available Properties
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {properties.map((property) => (
-                  <PropertyCard
-                    key={property.id}
-                    {...property}
-                    onClick={() => navigate(`/en/property/${property.id}`)}
-                  />
-                ))}
-              </div>
-            </section>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/en/neighborhoods')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Neighborhoods
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/he/neighborhoods/rothschild')}
+              className="gap-2"
+            >
+              עברית
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      {/* Hero Section */}
+      <section className="relative h-[40vh] overflow-hidden">
+        <img
+          src="/images/en/neighborhoods/rothschild-hero.jpg"
+          alt="Rothschild Boulevard"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
+              Rothschild Boulevard
+            </h1>
+            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
+              The heart of Tel Aviv's Bauhaus architecture and cultural scene
+            </p>
+          </div>
+        </div>
+      </section>
 
+      {/* History & Character */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-6">History & Character</h2>
+            <div className="space-y-4 text-muted-foreground">
+              <p>
+                Rothschild Boulevard is one of Tel Aviv's most iconic streets, running through the heart of the White City.
+                Built in the 1930s, it represents the pinnacle of Bauhaus architecture and is part of the UNESCO World
+                Heritage Site.
+              </p>
+              <p>
+                The boulevard is lined with mature trees, creating a shaded pedestrian path down the center. This unique
+                design combines residential buildings with cultural institutions, cafés, and public spaces, making it a
+                vibrant hub of city life.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Neighborhood Highlights */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8">Neighborhood Highlights</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex gap-4">
+                <Building2 className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">UNESCO Heritage</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Home to the world's largest concentration of Bauhaus buildings
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <TreePine className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Tree-lined Boulevard</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Central pedestrian walkway with mature trees and benches
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Coffee className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Café Culture</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Renowned cafés and restaurants line the boulevard
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Users className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Cultural Hub</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Museums, galleries, and cultural institutions
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Nearby Attractions */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8">Nearby Attractions</h2>
+            <div className="grid gap-4">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Independence Hall</h4>
+                  <p className="text-sm text-muted-foreground">Historic site where Israel's independence was declared</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Habima Theatre</h4>
+                  <p className="text-sm text-muted-foreground">National theatre of Israel</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Carmel Market</h4>
+                  <p className="text-sm text-muted-foreground">Vibrant outdoor market with fresh produce and street food</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Available Properties */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8 text-center">Available Properties</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} {...property} onClick={() => navigate(`/en/property/${property.id}`)} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 

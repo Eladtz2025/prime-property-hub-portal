@@ -41,7 +41,6 @@ const Contact = () => {
   };
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>Contact Us - CITY MARKET Properties | Real Estate in Tel Aviv</title>
@@ -211,9 +210,8 @@ const Contact = () => {
         </div>
       </section>
 
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 

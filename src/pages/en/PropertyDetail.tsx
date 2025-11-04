@@ -141,7 +141,6 @@ const EnglishPropertyDetail = () => {
   const translatedCity = translations[property.city] || property.city;
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       {/* Mobile Layout */}
       <div className="lg:hidden">
@@ -475,9 +474,8 @@ const EnglishPropertyDetail = () => {
         </Card>
       </div>
 
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 

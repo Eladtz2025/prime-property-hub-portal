@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
+import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import { PropertyCard } from "@/components/en/PropertyCard";
 import EnglishFooter from "@/components/en/Footer";
 
@@ -25,151 +25,164 @@ const NeveTzedekNeighborhood = () => {
   ];
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       {/* Back Button */}
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/en/neighborhoods")}
-            className="font-montserrat"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Neighborhoods
-          </Button>
-        </div>
-      </div>
-
-      {/* Hero Section */}
-      <div className="relative h-[60vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/neve-tzedek-hero.jpg"
-          alt="Neve Tzedek"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 container mx-auto px-4 py-12">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4">
-            Neve Tzedek
-          </h1>
-          <p className="font-montserrat text-xl text-white/90 max-w-2xl">
-            Tel Aviv's first neighborhood—where history meets artisan charm
-          </p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-3 gap-12">
-          {/* Left Column - Content */}
-          <div className="lg:col-span-2 space-y-12">
-            {/* History & Character */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                History & Character
-              </h2>
-              <div className="space-y-4 font-montserrat text-muted-foreground leading-relaxed">
-                <p>
-                  Founded in 1887, Neve Tzedek is Tel Aviv's original neighborhood—predating the
-                  city itself by 22 years. Its narrow cobblestone lanes and restored Ottoman-era
-                  buildings tell the story of Jewish settlement outside Jaffa's ancient walls,
-                  marking the birthplace of modern Tel Aviv.
-                </p>
-                <p>
-                  Once neglected and nearly demolished, Neve Tzedek underwent a stunning renaissance
-                  in the 1990s. Artists, designers, and visionaries transformed crumbling buildings
-                  into boutique galleries, intimate theaters, and architectural showcases. Today,
-                  it's Tel Aviv's most romantic quarter—a pedestrian-friendly village within the
-                  metropolis.
-                </p>
-                <p>
-                  Living in Neve Tzedek means morning pastries from artisan bakeries, afternoon
-                  strolls through hidden courtyards, and evenings at the Suzanne Dellal Centre.
-                  Every corner whispers history, yet pulses with contemporary creativity—a timeless
-                  neighborhood that refuses to age.
-                </p>
-              </div>
-            </section>
-
-            {/* Key Features */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Neighborhood Highlights
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  { icon: Star, text: "Tel Aviv's first neighborhood (1887)" },
-                  { icon: Building2, text: "Restored historic architecture" },
-                  { icon: Coffee, text: "Boutique shops and galleries" },
-                  { icon: Home, text: "Pedestrian-friendly streets" },
-                  { icon: TrendingUp, text: "Premium real estate" },
-                  { icon: MapPin, text: "Steps from the beach" },
-                ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-                    <feature.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="font-montserrat text-sm">{feature.text}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Nearby Attractions */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Nearby Attractions
-              </h2>
-              <div className="space-y-3">
-                {[
-                  "Suzanne Dellal Centre - Contemporary dance hub",
-                  "Shabazi Street - Artisan boutiques and cafés",
-                  "Rokach House Museum - Local heritage",
-                  "Old Jaffa - Ancient port city",
-                  "Tel Aviv Port - Modern waterfront",
-                  "Frishman Beach - 5-minute walk",
-                ].map((attraction, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    <span className="font-montserrat text-muted-foreground">{attraction}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Available Properties */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                Available Properties
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {properties.map((property) => (
-                  <PropertyCard
-                    key={property.id}
-                    {...property}
-                    onClick={() => navigate(`/en/property/${property.id}`)}
-                  />
-                ))}
-              </div>
-            </section>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/en/neighborhoods')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Neighborhoods
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/he/neighborhoods/neve-tzedek')}
+              className="gap-2"
+            >
+              עברית
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Language Switcher */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-montserrat shadow-lg"
-        >
-          עברית
-        </Button>
-      </div>
+      {/* Hero Section */}
+      <section className="relative h-[40vh] overflow-hidden">
+        <img
+          src="/images/en/neighborhoods/neve-tzedek-hero.jpg"
+          alt="Neve Tzedek"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative h-full flex items-center justify-center text-center px-4">
+          <div>
+            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
+              Neve Tzedek
+            </h1>
+            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
+              Tel Aviv's first neighborhood, charming and artistic
+            </p>
+          </div>
+        </div>
+      </section>
 
+      {/* History & Character */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-6">History & Character</h2>
+            <div className="space-y-4 text-muted-foreground">
+              <p>
+                Founded in 1887, Neve Tzedek (Hebrew for "Oasis of Justice") is Tel Aviv's oldest neighborhood.
+                Its narrow streets, low-rise buildings, and Mediterranean architecture create an intimate village
+                atmosphere within the bustling city.
+              </p>
+              <p>
+                Once neglected, Neve Tzedek has been lovingly restored and is now one of the city's most desirable
+                areas. Artists, designers, and creative professionals have made it their home, filling the neighborhood
+                with galleries, boutiques, and charming cafés.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Neighborhood Highlights */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8">Neighborhood Highlights</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex gap-4">
+                <Building2 className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Historic Charm</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Tel Aviv's first neighborhood, established in 1887
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Coffee className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Boutique Culture</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Unique shops, galleries, and artisan boutiques
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <TreePine className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Mediterranean Vibe</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Narrow streets and restored historic buildings
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Users className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold mb-2">Artistic Community</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Home to artists, designers, and creative professionals
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Nearby Attractions */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8">Nearby Attractions</h2>
+            <div className="grid gap-4">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Suzanne Dellal Center</h4>
+                  <p className="text-sm text-muted-foreground">Dance and theater performances in a historic square</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Nahum Gutman Museum</h4>
+                  <p className="text-sm text-muted-foreground">Museum dedicated to the famous Israeli artist</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <h4 className="font-bold">Jaffa Port</h4>
+                  <p className="text-sm text-muted-foreground">Historic port area, just a short walk away</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Available Properties */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8 text-center">Available Properties</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} {...property} onClick={() => navigate(`/en/property/${property.id}`)} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 

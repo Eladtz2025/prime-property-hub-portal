@@ -71,7 +71,6 @@ const EnglishRentals = () => {
   ];
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>Rental Properties in Tel Aviv - CITY MARKET Properties</title>
@@ -207,9 +206,8 @@ const EnglishRentals = () => {
         </div>
       </section>
 
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 

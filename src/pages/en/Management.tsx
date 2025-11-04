@@ -98,7 +98,6 @@ const EnglishManagement = () => {
   ];
 
   return (
-    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>Property Management - City Market Properties | Tel Aviv</title>
@@ -239,9 +238,8 @@ const EnglishManagement = () => {
         onOpenChange={setConsultationModalOpen} 
       />
 
+      <EnglishFooter />
     </div>
-    <EnglishFooter />
-    </>
   );
 };
 
