@@ -150,53 +150,6 @@ const FlorentinNeighborhood = () => {
               </div>
             </section>
           </div>
-
-          {/* Right Column - Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-4 shadow-lg">
-              <h3 className="font-playfair text-2xl font-bold text-foreground mb-4">
-                Quick Facts
-              </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="font-montserrat text-sm">Average Prices</span>
-                  </div>
-                  <p className="font-playfair text-xl font-bold">₪2.5M - ₪6M</p>
-                  <p className="font-montserrat text-sm text-muted-foreground">
-                    Rentals: ₪6,000 - ₪12,000/mo
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="font-montserrat text-sm">Location</span>
-                  </div>
-                  <p className="font-montserrat text-sm">South-Central Tel Aviv</p>
-                  <p className="font-montserrat text-sm text-muted-foreground">
-                    Adjacent to Neve Tzedek
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Building2 className="w-4 h-4" />
-                    <span className="font-montserrat text-sm">Property Types</span>
-                  </div>
-                  <p className="font-montserrat text-sm">Lofts, apartments, studios</p>
-                </div>
-
-                <div className="pt-6 border-t">
-                  <Button className="w-full font-montserrat font-semibold" size="lg">
-                    View All Properties
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
         </div>
       </div>
 
