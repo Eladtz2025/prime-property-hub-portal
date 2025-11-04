@@ -48,7 +48,7 @@ const HebrewHeader = () => {
       />
       
       <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
-        <div className="flex items-center justify-end lg:justify-between h-full gap-4">
+        <div className="flex items-center justify-start lg:justify-between h-full gap-4">
           {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
             {leftNavItems.map((item) => (
