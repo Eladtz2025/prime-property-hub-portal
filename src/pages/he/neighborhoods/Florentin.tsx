@@ -113,51 +113,6 @@ const FlorentinNeighborhood = () => {
             </section>
           </div>
 
-          <div className="space-y-6">
-            <Card className="p-6">
-              <h3 className="font-playfair text-2xl font-bold mb-6">
-                מידע מהיר
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">מחירים ממוצעים</div>
-                  <div className="font-playfair text-2xl font-bold text-primary">
-                    ₪2.5M - ₪6M
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    השכרה: ₪5,000 - ₪12,000/חודש
-                  </div>
-                </div>
-                <div className="border-t pt-4">
-                  <div className="text-sm text-muted-foreground mb-1">מיקום</div>
-                  <div className="font-montserrat text-sm">דרום תל אביב</div>
-                  <div className="text-sm text-muted-foreground">סמוך לשוק הכרמל</div>
-                </div>
-                <div className="border-t pt-4">
-                  <div className="text-sm text-muted-foreground mb-1">סוגי נכסים</div>
-                  <div className="font-montserrat text-sm">דירות משופצות, לופטים, סטודיו</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="font-playfair text-xl font-bold mb-4">אטרקציות קרובות</h3>
-              <div className="space-y-3">
-                {[
-                  "שוק הכרמל - שוק האוכל הגדול",
-                  "נווה צדק - שכונה היסטורית",
-                  "תחנה מרכזית - תחבורה ובילוי",
-                  "שוק הפשפשים ביפו",
-                  "טיילת תל אביב-יפו",
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                    <span className="font-montserrat text-sm text-muted-foreground">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
         </div>
       </div>
 
