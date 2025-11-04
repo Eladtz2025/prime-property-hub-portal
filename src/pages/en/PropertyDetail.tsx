@@ -11,6 +11,7 @@ import { useState, useMemo } from "react";
 import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/useTranslation";
+import EnglishFooter from "@/components/en/Footer";
 
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -472,6 +473,8 @@ const EnglishPropertyDetail = () => {
           </form>
         </Card>
       </div>
+
+      <EnglishFooter />
     </div>
   );
 };

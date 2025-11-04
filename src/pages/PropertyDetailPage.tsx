@@ -12,6 +12,7 @@ import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
+import HebrewFooter from '@/components/he/Footer';
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -455,6 +456,8 @@ const PropertyDetailPage = () => {
           </form>
         </Card>
       </div>
+
+      <HebrewFooter />
     </div>
   );
 };

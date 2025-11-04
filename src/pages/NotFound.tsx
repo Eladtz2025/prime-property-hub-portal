@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Construction, Home, ArrowRight } from "lucide-react";
+import HebrewFooter from "@/components/he/Footer";
 
 const NotFound = () => {
   return (
@@ -64,6 +65,8 @@ const NotFound = () => {
           </p>
         </div>
       </div>
+
+      <HebrewFooter />
     </div>
   );
 };
