@@ -80,7 +80,7 @@ const EnglishHeader = () => {
           {/* Center Logo */}
           <button
             onClick={() => navigate("/en")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto"
           >
             <img 
               src="/images/city-market-icon.png" 
