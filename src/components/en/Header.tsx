@@ -62,7 +62,7 @@ const EnglishHeader = () => {
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="flex items-baseline gap-2">
+            <div className="hidden md:flex items-baseline gap-2">
               <div 
                 className="font-playfair text-xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300 whitespace-nowrap"
                 style={{
@@ -114,12 +114,11 @@ const EnglishHeader = () => {
 
           {/* Language Switcher & Mobile Menu */}
           <div className="flex items-center gap-4">
-            {/* Desktop Language Switcher */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="hidden lg:block font-montserrat text-sm tracking-wide transition-all duration-300"
+              className="font-montserrat text-sm tracking-wide transition-all duration-300"
               style={{
                 color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
                 textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -174,15 +173,6 @@ const EnglishHeader = () => {
                   {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => {
-                  navigate("/");
-                  setMobileMenuOpen(false);
-                }}
-                className="font-montserrat text-base tracking-wide uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 text-foreground hover:text-primary hover:bg-accent border-t border-border mt-2 pt-4"
-              >
-                עברית
-              </button>
             </div>
           </nav>
         )}
