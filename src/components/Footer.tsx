@@ -7,14 +7,13 @@ const Footer = () => {
 
   return (
     <footer className="bg-luxury text-luxury-foreground mt-16">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-bold mb-4">City Market Properties</h3>
-            <p className="text-sm text-luxury-foreground/80 mb-4">
-              מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
-              15+ שנות ניסיון בשוק הנדל"ן הישראלי.
+            <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">City Market Properties</h3>
+            <p className="text-sm text-luxury-foreground/80 mb-3 md:mb-4 leading-relaxed">
+              מומחים בתיווך נדל"ן בתל אביב. 15+ שנות ניסיון.
             </p>
             <div className="flex gap-3">
               <a
@@ -40,7 +39,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold mb-4">קישורים מהירים</h3>
+            <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">קישורים מהירים</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/rentals" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
@@ -57,45 +56,39 @@ const Footer = () => {
                   ניהול נכסים
                 </Link>
               </li>
+              <li>
+                <Link to="/admin-dashboard" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
+                  עמוד מנהלים
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-bold mb-4">צור קשר</h3>
-            <ul className="space-y-3">
+            <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">צור קשר</h3>
+            <ul className="space-y-2 md:space-y-3">
               <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
-                <Phone className="h-4 w-4" />
+                <Phone className="h-4 w-4 flex-shrink-0" />
                 <a href="tel:0545503055" className="hover:text-secondary transition-colors">
                   054-550-3055
                 </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
-                <Mail className="h-4 w-4" />
-                <a href="mailto:info@citymarket.co.il" className="hover:text-secondary transition-colors">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <a href="mailto:info@citymarket.co.il" className="hover:text-secondary transition-colors break-all">
                   info@citymarket.co.il
                 </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-4 w-4 flex-shrink-0" />
                 <span>תל אביב, ישראל</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-luxury-foreground/20 mt-8 pt-8">
-          <div className="text-center mb-6">
-            <Button
-              variant="outline"
-              className="border-luxury-foreground/30 text-luxury-foreground hover:bg-luxury-foreground/10"
-              asChild
-            >
-              <Link to="/admin-dashboard">
-                עמוד מנהלים
-              </Link>
-            </Button>
-          </div>
+        <div className="border-t border-luxury-foreground/20 mt-6 md:mt-8 pt-6 md:pt-8">
           <p className="text-sm text-luxury-foreground/60 text-center">
             © {currentYear} City Market Properties. כל הזכויות שמורות.
           </p>
