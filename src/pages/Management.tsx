@@ -3,15 +3,13 @@ import HebrewFooter from '@/components/he/Footer';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { usePublicProperties } from "@/hooks/usePublicProperties";
-import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp, MapPin, Square, Building } from "lucide-react";
+import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { FlippablePropertyCard } from '@/components/he/FlippablePropertyCard';
 
 const Management = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
@@ -96,60 +94,14 @@ const Management = () => {
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
-                  <div className="aspect-video relative">
-                    <img
-                      src={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
-                      alt={property.title || property.address}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    {property.show_management_badge && (
-                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
-                        ניהול מלא
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-playfair text-xl font-bold mb-2">
-                      {property.title || `${property.rooms} חדרים ${property.address}`}
-                    </h3>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
-                      <MapPin className="h-4 w-4" />
-                      <span>{property.address}</span>
-                    </div>
-                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
-                      {property.floor && (
-                        <div className="flex items-center gap-1">
-                          <Building className="h-4 w-4" />
-                          <span>{property.floor} קומות</span>
-                        </div>
-                      )}
-                      {property.property_size && (
-                        <div className="flex items-center gap-1">
-                          <Square className="h-4 w-4" />
-                          <span>{property.property_size} מ²</span>
-                        </div>
-                      )}
-                    </div>
-                    {property.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {property.description}
-                      </p>
-                    )}
-                    <div className="flex gap-2 mb-4 flex-wrap">
-                      {property.parking && (
-                        <Badge className="bg-primary hover:bg-primary/90">חניה</Badge>
-                      )}
-                      {property.elevator && (
-                        <Badge className="bg-primary hover:bg-primary/90">מעלית</Badge>
-                      )}
-                      {property.balcony && (
-                        <Badge className="bg-primary hover:bg-primary/90">מרפסת</Badge>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+                <FlippablePropertyCard
+                  key={property.id}
+                  title={property.title || `${property.rooms} חדרים ${property.address}`}
+                  location={property.address || ''}
+                  price={property.show_management_badge ? 'ניהול מלא' : 'ניהול נכסים'}
+                  imageUrl={property.images?.[0]?.image_url || '/images/properties/building-management-1.jpg'}
+                  type={property.property_size ? `${property.property_size} מ²` : undefined}
+                />
               ))}
             </div>
           ) : (
