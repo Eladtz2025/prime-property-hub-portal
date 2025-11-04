@@ -38,7 +38,8 @@ const RothschildNeighborhood = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="ltr">
+    <>
+    <div className="min-h-screen english-luxury" dir="ltr">
       {/* Back Button */}
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
@@ -178,8 +179,9 @@ const RothschildNeighborhood = () => {
         </Button>
       </div>
 
-      <EnglishFooter />
     </div>
+    <EnglishFooter />
+    </>
   );
 };
 
