@@ -53,6 +53,7 @@ const EnglishNeighborhoods = () => {
   ];
 
   return (
+    <>
     <div className="min-h-screen english-luxury pt-16" dir="ltr">
       <Helmet>
         <title>Tel Aviv Neighborhoods - City Market Properties</title>
@@ -187,8 +188,9 @@ const EnglishNeighborhoods = () => {
         </div>
       </section>
 
-      <EnglishFooter />
     </div>
+    <EnglishFooter />
+    </>
   );
 };
 

@@ -230,6 +230,8 @@ All colors MUST be HSL.
 
 /* RELIZ-inspired English version colors */
 .english-luxury {
+  direction: ltr;
+  text-align: left;
   --background: 40 20% 97%;  /* Warm beige/cream */
   --foreground: 30 10% 15%;  /* Deep brown */
   --card: 40 25% 98%;

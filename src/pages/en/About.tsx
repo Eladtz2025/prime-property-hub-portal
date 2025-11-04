@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 
 const About = () => {
   return (
+    <>
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>About Us - City Market Properties | Tel Aviv Real Estate Experts</title>
@@ -131,9 +132,9 @@ const About = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <EnglishFooter />
     </div>
+    <EnglishFooter />
+    </>
   );
 };
 
