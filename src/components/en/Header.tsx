@@ -48,7 +48,7 @@ const EnglishHeader = () => {
       />
       
       <div className="container mx-auto px-4 relative h-full">
-        <div className="flex items-center h-full lg:justify-between">
+        <div className="flex items-center justify-between h-full">
           {/* Left Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
             {leftNavItems.map((item) => (
@@ -80,7 +80,7 @@ const EnglishHeader = () => {
           {/* Center Logo */}
           <button
             onClick={() => navigate("/en")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto"
           >
             <img 
               src="/images/city-market-icon.png" 
@@ -141,7 +141,7 @@ const EnglishHeader = () => {
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
