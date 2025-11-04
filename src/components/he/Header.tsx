@@ -47,7 +47,7 @@ const HebrewHeader = () => {
         style={{ opacity: scrollProgress }}
       />
       
-      <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
+      <div className="container mx-auto px-4 relative h-full">
         <div className="flex items-center justify-between h-full">
           {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-6">
@@ -111,8 +111,7 @@ const HebrewHeader = () => {
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center justify-between w-full lg:w-auto">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
@@ -149,13 +148,12 @@ const HebrewHeader = () => {
                 />
               )}
             </button>
-            </div>
           </div>
 
-          {/* Center Logo - Positioned last for mobile (left side), centered on desktop */}
+          {/* Center Logo */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 order-last lg:order-none lg:absolute lg:left-1/2 lg:-translate-x-1/2"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 lg:mx-auto"
           >
             <img 
               src="/images/city-market-icon.png" 
