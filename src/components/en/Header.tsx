@@ -52,19 +52,19 @@ const EnglishHeader = () => {
           {/* Logo - Always visible */}
           <button
             onClick={() => navigate("/en")}
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105"
+            className="flex items-center gap-2 md:gap-3 transition-transform duration-200 hover:scale-105"
           >
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
+              className="h-10 md:h-12 w-auto transition-all duration-300"
               style={{
                 filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
               }}
             />
-            <div className="text-center">
+            <div className="flex items-baseline gap-2">
               <div 
-                className="font-playfair text-2xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300"
+                className="font-playfair text-xl md:text-3xl font-normal tracking-widest uppercase transition-all duration-300 whitespace-nowrap"
                 style={{
                   color: isScrolled ? 'hsl(var(--foreground))' : '#ffffff',
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -73,7 +73,7 @@ const EnglishHeader = () => {
                 CITY MARKET
               </div>
               <div 
-                className="font-montserrat text-[10px] md:text-xs tracking-widest transition-all duration-300"
+                className="font-montserrat text-[8px] md:text-xs tracking-widest transition-all duration-300"
                 style={{
                   color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -114,11 +114,12 @@ const EnglishHeader = () => {
 
           {/* Language Switcher & Mobile Menu */}
           <div className="flex items-center gap-4">
+            {/* Desktop Language Switcher */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="font-montserrat text-sm tracking-wide transition-all duration-300"
+              className="hidden lg:block font-montserrat text-sm tracking-wide transition-all duration-300"
               style={{
                 color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
                 textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
@@ -173,6 +174,15 @@ const EnglishHeader = () => {
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  navigate("/");
+                  setMobileMenuOpen(false);
+                }}
+                className="font-montserrat text-base tracking-wide uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 text-foreground hover:text-primary hover:bg-accent border-t border-border mt-2 pt-4"
+              >
+                עברית
+              </button>
             </div>
           </nav>
         )}
