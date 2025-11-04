@@ -122,14 +122,19 @@ const EnglishManagement = () => {
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => {
-                // Create a short title - just the address or title
-                const shortTitle = property.title || translations[property.address || ''] || property.address || '';
+                // Create English titles based on property data
+                const buildingType = property.property_size && property.property_size > 400 
+                  ? 'Commercial Building' 
+                  : 'Residential Building';
+                
+                const streetName = property.address?.split(',')[0] || property.address || 'Building';
+                const englishTitle = `${buildingType} on ${streetName}`;
                 
                 return (
                   <FlippablePropertyCard
                     key={property.id}
-                    title={shortTitle}
-                    location={translations[property.address || ''] || property.address || ''}
+                    title={englishTitle}
+                    location={streetName}
                     price={property.show_management_badge ? 'Full Management' : 'Property Management'}
                     imageUrl={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
                     type={property.property_size ? `${property.property_size} m²` : undefined}
