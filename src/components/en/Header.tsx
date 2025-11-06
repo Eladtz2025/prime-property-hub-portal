@@ -123,7 +123,7 @@ const EnglishHeader = () => {
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
