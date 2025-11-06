@@ -127,8 +127,8 @@ const HebrewHeader = () => {
             ))}
           </nav>
 
-          {/* Language Switcher & Mobile Menu - Outside Grid on Small Screens */}
-          <div className="lg:hidden absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
+          {/* Language Switcher & Mobile Menu */}
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
