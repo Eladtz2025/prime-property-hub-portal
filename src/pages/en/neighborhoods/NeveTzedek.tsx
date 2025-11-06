@@ -1,27 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
+import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users, ChevronRight } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
+import { Link } from "react-router-dom";
 
 const NeveTzedekNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
-      {/* Back Button */}
+      {/* Breadcrumbs */}
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/en/neighborhoods')}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Neighborhoods
-            </Button>
+            <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+              <Link to="/en" className="hover:text-primary transition-colors">
+                Home
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+              <Link to="/en/neighborhoods" className="hover:text-primary transition-colors">
+                Neighborhoods
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-foreground">Neve Tzedek</span>
+            </nav>
             <Button
               variant="outline"
               onClick={() => navigate('/he/neighborhoods/neve-tzedek')}
