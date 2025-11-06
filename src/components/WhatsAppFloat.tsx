@@ -3,21 +3,14 @@ import { useState, useRef, useEffect } from 'react';
 
 const WhatsAppFloat = () => {
   const location = useLocation();
-  const [position, setPosition] = useState(() => {
-    const saved = localStorage.getItem('whatsapp-position');
-    return saved ? JSON.parse(saved) : { x: 24, y: 24 };
-  });
+  const [position, setPosition] = useState({ left: 24, bottom: 24 });
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; initialLeft: number; initialBottom: number } | null>(null);
   
   // Hide on property detail pages
   const isPropertyDetailPage = location.pathname.includes('/property/');
   
   if (isPropertyDetailPage) return null;
-
-  useEffect(() => {
-    localStorage.setItem('whatsapp-position', JSON.stringify(position));
-  }, [position]);
 
   const handleWhatsAppClick = () => {
     if (isDragging) return;
@@ -32,8 +25,8 @@ const WhatsAppFloat = () => {
     dragRef.current = {
       startX: clientX,
       startY: clientY,
-      initialX: position.x,
-      initialY: position.y,
+      initialLeft: position.left,
+      initialBottom: position.bottom,
     };
   };
 
@@ -44,8 +37,8 @@ const WhatsAppFloat = () => {
     const deltaY = clientY - dragRef.current.startY;
     
     setPosition({
-      x: dragRef.current.initialX + deltaX,
-      y: dragRef.current.initialY + deltaY,
+      left: dragRef.current.initialLeft + deltaX,
+      bottom: dragRef.current.initialBottom - deltaY, // Subtract because bottom decreases when moving down
     });
   };
 
@@ -107,8 +100,8 @@ const WhatsAppFloat = () => {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        left: `${position.left}px`,
+        bottom: `${position.bottom}px`,
         touchAction: 'none',
       }}
       className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-move flex items-center justify-center p-0 select-none"
