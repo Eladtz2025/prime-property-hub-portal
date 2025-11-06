@@ -170,14 +170,14 @@ const About = () => {
               delay={100}
             />
             <TeamCard
-              image="/images/properties/rental-dizengoff-interior.jpg"
+              image="/images/team/yossi-abraham.jpg"
               name="יוסי אברהם"
               role="מנהל השכרות"
               experience="8+ שנות ניסיון"
               delay={200}
             />
             <TeamCard
-              image="/images/team/yossi-abraham.jpg"
+              image="/images/team/michal-golan.jpg"
               name="מיכל גולן"
               role="מנהלת ניהול נכסים"
               experience="12+ שנות ניסיון"
