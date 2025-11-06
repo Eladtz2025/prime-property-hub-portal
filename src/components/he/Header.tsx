@@ -30,9 +30,9 @@ const HebrewHeader = () => {
   ];
 
   const rightNavItems = [
-    { label: "שכונות", path: "/neighborhoods" },
-    { label: "קצת עלינו", path: "/about" },
-    { label: "צור קשר", path: "/contact" },
+    { label: "דף הבית", path: "/" },
+    { label: "ניהול נכסים", path: "/management" },
+    { label: "בניינים חדשים", path: "/new-developments" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
