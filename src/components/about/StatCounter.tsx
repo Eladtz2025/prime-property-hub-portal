@@ -50,10 +50,10 @@ export const StatCounter = ({ end, label, suffix = "+", duration = 2000 }: StatC
 
   return (
     <div ref={ref} className="text-center">
-      <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
+      <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-2">
         {count}{suffix}
       </div>
-      <div className="text-sm md:text-base text-muted-foreground">{label}</div>
+      <div className="text-xs sm:text-sm md:text-base text-muted-foreground">{label}</div>
     </div>
   );
 };

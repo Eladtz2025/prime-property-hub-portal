@@ -31,7 +31,7 @@ const About = () => {
       <HebrewHeader />
 
       {/* Hero Section - Enhanced */}
-      <section className="relative h-[70vh] overflow-hidden">
+      <section className="relative h-[50vh] md:h-[70vh] overflow-hidden">
         <img
           src="/images/hero-about.jpg"
           alt="אודות City Market Properties"
@@ -42,15 +42,15 @@ const About = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <div className="animate-fade-in">
-            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4 animate-scale-in">
+            <h1 className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 animate-scale-in">
               אנחנו לא רק מוכרים נכסים
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-12 animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 md:mb-12 animate-fade-in" style={{ animationDelay: '200ms' }}>
               אנחנו משנים חיים
             </p>
             
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
               <StatCounter end={15} label="שנות ניסיון" />
               <StatCounter end={500} label="נכסים נמכרו" />
               <StatCounter end={12} label="שכונות בתל אביב" />
@@ -61,14 +61,14 @@ const About = () => {
       </section>
 
       {/* Our Story Section */}
-      <section className="py-24 bg-gradient-to-b from-background to-muted/30">
+      <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimated>
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
                 המסע שלנו
               </p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-foreground">
                 הסיפור שלנו
               </h2>
             </div>
@@ -76,7 +76,7 @@ const About = () => {
           
           {/* Timeline */}
           <div className="relative max-w-4xl mx-auto">
-            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2" />
+            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2 hidden md:block" />
             
             <TimelineItem 
               year="2008" 
@@ -111,14 +111,14 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimated>
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
                 מה מניע אותנו
               </p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-foreground">
                 הערכים שלנו
               </h2>
             </div>
@@ -154,14 +154,14 @@ const About = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-24 bg-background">
+      <section className="py-12 md:py-16 lg:py-24 bg-background">
         <div className="container mx-auto px-4">
           <ScrollAnimated>
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
                 פגשו את המומחים
               </p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-foreground">
                 הצוות שלנו
               </h2>
             </div>
@@ -201,14 +201,14 @@ const About = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimated>
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
                 מה הלקוחות שלנו אומרים
               </p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-foreground">
                 המלצות לקוחות
               </h2>
             </div>
@@ -258,13 +258,13 @@ const About = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
+      <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
         <div className="container mx-auto px-4 text-center relative z-10">
           <ScrollAnimated>
-            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-6">
               מוכנים למצוא את הנכס המושלם?
             </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
               בואו נתחיל את המסע שלכם היום
             </p>
             
