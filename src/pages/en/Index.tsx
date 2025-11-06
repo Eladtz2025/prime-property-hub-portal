@@ -9,6 +9,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
+import { supabase } from "@/integrations/supabase/client";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
@@ -28,21 +29,31 @@ const EnglishIndex = () => {
     message: "",
   });
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      contactSchema.parse(contactForm);
+      const validatedData = contactSchema.parse(contactForm);
       
-      const phone = '972545503055';
-      const message = `Hello,\n\nName: ${contactForm.name}\nEmail: ${contactForm.email}\nPhone: ${contactForm.phone}\n\nMessage:\n${contactForm.message}`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-      
+      const { error } = await supabase
+        .from('contact_leads')
+        .insert({
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone || null,
+          message: validatedData.message,
+          property_id: null,
+        });
+
+      if (error) throw error;
+
+      toast.success('Your inquiry has been sent successfully! We will contact you shortly');
       setContactForm({ name: "", email: "", phone: "", message: "" });
-      toast.success("Message sent successfully!");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else {
+        toast.error('An error occurred while sending your inquiry. Please try again.');
       }
     }
   };
