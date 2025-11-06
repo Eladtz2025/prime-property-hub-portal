@@ -83,6 +83,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+            className="text-left"
           />
           <Input
             type="tel"
@@ -90,6 +91,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             required
+            className="text-left"
           />
           <Input
             type="email"
@@ -97,12 +99,13 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
+            className="text-left"
           />
           <Textarea
             placeholder="Your message..."
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            className="min-h-[100px]"
+            className="min-h-[100px] text-left"
           />
           <div className="flex gap-2">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
