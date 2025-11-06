@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -144,17 +144,19 @@ const EnglishPropertyDetail = () => {
     <div className="min-h-screen english-luxury" dir="ltr">
       {/* Mobile Layout */}
       <div className="lg:hidden">
-        {/* Back Button */}
+        {/* Breadcrumbs */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 font-montserrat"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Listings
-          </Button>
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+            <Link to="/en" className="hover:text-primary transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link to={property.property_type === 'sale' ? '/en/sales' : '/en/rentals'} className="hover:text-primary transition-colors">
+              {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground">{translatedTitle}</span>
+          </nav>
         </div>
 
         {/* Image with Price Badge */}
@@ -289,15 +291,18 @@ const EnglishPropertyDetail = () => {
 
       {/* Desktop Layout */}
       <div className="hidden lg:block container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          className="mb-6 gap-2 font-montserrat"
-          onClick={handleBack}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Listings
-        </Button>
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6" aria-label="Breadcrumb">
+          <Link to="/en" className="hover:text-primary transition-colors">
+            Home
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link to={property.property_type === 'sale' ? '/en/sales' : '/en/rentals'} className="hover:text-primary transition-colors">
+            {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">{translatedTitle}</span>
+        </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Property Details */}

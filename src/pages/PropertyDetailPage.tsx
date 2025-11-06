@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -127,17 +127,19 @@ const PropertyDetailPage = () => {
 
       {/* Mobile Layout */}
       <div className="lg:hidden">
-        {/* Back Button */}
+        {/* Breadcrumbs */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleBack}
-          >
-            <ArrowRight className="h-4 w-4" />
-            חזרה לרשימת נכסים
-          </Button>
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse" aria-label="Breadcrumb" dir="rtl">
+            <Link to="/" className="hover:text-primary transition-colors">
+              דף הבית
+            </Link>
+            <ChevronLeft className="h-4 w-4" />
+            <Link to={property.property_type === 'sale' ? '/sales' : '/rentals'} className="hover:text-primary transition-colors">
+              {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
+            </Link>
+            <ChevronLeft className="h-4 w-4" />
+            <span className="text-foreground">{property.title}</span>
+          </nav>
         </div>
 
         {/* Image with Price Badge */}
@@ -272,15 +274,18 @@ const PropertyDetailPage = () => {
 
       {/* Desktop Layout */}
       <div className="hidden lg:block container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          className="mb-6 gap-2"
-          onClick={handleBack}
-        >
-          <ArrowRight className="h-4 w-4" />
-          חזרה לרשימת נכסים
-        </Button>
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse mb-6" aria-label="Breadcrumb" dir="rtl">
+          <Link to="/" className="hover:text-primary transition-colors">
+            דף הבית
+          </Link>
+          <ChevronLeft className="h-4 w-4" />
+          <Link to={property.property_type === 'sale' ? '/sales' : '/rentals'} className="hover:text-primary transition-colors">
+            {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
+          </Link>
+          <ChevronLeft className="h-4 w-4" />
+          <span className="text-foreground">{property.title}</span>
+        </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Property Details */}
