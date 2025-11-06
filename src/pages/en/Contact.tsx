@@ -96,9 +96,12 @@ const Contact = () => {
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       Phone
                     </h3>
-                    <p className="font-montserrat text-muted-foreground">
+                    <a 
+                      href="tel:+972545503055" 
+                      className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
+                    >
                       054-550-3055
-                    </p>
+                    </a>
                   </div>
                 </div>
 
@@ -108,9 +111,12 @@ const Contact = () => {
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       Email
                     </h3>
-                    <p className="font-montserrat text-muted-foreground">
+                    <a 
+                      href="mailto:info@citymarket.co.il" 
+                      className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
+                    >
                       info@citymarket.co.il
-                    </p>
+                    </a>
                   </div>
                 </div>
 
