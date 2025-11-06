@@ -156,14 +156,14 @@ const About = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <TeamCard
-              image="/images/properties/building-bauhaus-1.jpg"
+              image="/images/team/david-cohen.jpg"
               name="דוד כהן"
               role="מייסד ומנכ״ל"
               experience="15+ שנות ניסיון"
               delay={0}
             />
             <TeamCard
-              image="/images/properties/living-bauhaus-1.jpg"
+              image="/images/team/sarah-levi.jpg"
               name="שרה לוי"
               role="מנהלת מכירות"
               experience="10+ שנות ניסיון"
@@ -177,7 +177,7 @@ const About = () => {
               delay={200}
             />
             <TeamCard
-              image="/images/properties/penthouse-allenby.jpg"
+              image="/images/team/yossi-abraham.jpg"
               name="מיכל גולן"
               role="מנהלת ניהול נכסים"
               experience="12+ שנות ניסיון"
@@ -206,7 +206,7 @@ const About = () => {
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/sarah-levi.jpg"
+                    image="/images/team/sarah-levi.jpg"
                     name="שרה לוי"
                     rating={5}
                     text="City Market עזרו לנו למצוא את דירת החלומות שלנו בנווה צדק. שירות מקצועי ואדיב, המלצה בחום!"
@@ -214,7 +214,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/david-cohen.jpg"
+                    image="/images/team/david-cohen.jpg"
                     name="דוד כהן"
                     rating={5}
                     text="מקצועיות ברמה גבוהה. מכרתי דרכם דירה ברוטשילד במהירות ובמחיר מעולה. תודה רבה!"
@@ -222,7 +222,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/michal-golan.jpg"
+                    image="/images/team/michal-golan.jpg"
                     name="מיכל גולן"
                     rating={5}
                     text="ניהול הנכסים שלי בצורה מושלמת. תמיד זמינים, אמינים ומקצועיים. ממליצה בחום!"
@@ -230,7 +230,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/yossi-abraham.jpg"
+                    image="/images/team/yossi-abraham.jpg"
                     name="יוסי אברהם"
                     rating={5}
                     text="השכרתי דרכם דירה בדיזנגוף. התהליך היה חלק ומהיר, ממליץ בחום!"

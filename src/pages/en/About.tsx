@@ -156,14 +156,14 @@ const About = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <TeamCard
-              image="/images/properties/building-bauhaus-1.jpg"
+              image="/images/team/david-cohen.jpg"
               name="David Cohen"
               role="Founder & CEO"
               experience="15+ years experience"
               delay={0}
             />
             <TeamCard
-              image="/images/properties/living-bauhaus-1.jpg"
+              image="/images/team/sarah-levi.jpg"
               name="Sarah Levi"
               role="Sales Director"
               experience="10+ years experience"
@@ -177,7 +177,7 @@ const About = () => {
               delay={200}
             />
             <TeamCard
-              image="/images/properties/penthouse-allenby.jpg"
+              image="/images/team/yossi-abraham.jpg"
               name="Michal Golan"
               role="Property Management Director"
               experience="12+ years experience"
@@ -206,7 +206,7 @@ const About = () => {
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/sarah-levi.jpg"
+                    image="/images/team/sarah-levi.jpg"
                     name="Sarah Levi"
                     rating={5}
                     text="City Market helped us find our dream apartment in Neve Tzedek. Professional and caring service, highly recommended!"
@@ -214,7 +214,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/david-cohen.jpg"
+                    image="/images/team/david-cohen.jpg"
                     name="David Cohen"
                     rating={5}
                     text="High-level professionalism. Sold my apartment on Rothschild quickly and at an excellent price. Thank you!"
@@ -222,7 +222,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/michal-golan.jpg"
+                    image="/images/team/michal-golan.jpg"
                     name="Michal Golan"
                     rating={5}
                     text="Managing my properties perfectly. Always available, reliable and professional. Highly recommend!"
@@ -230,7 +230,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/src/assets/reviews/yossi-abraham.jpg"
+                    image="/images/team/yossi-abraham.jpg"
                     name="Yossi Abraham"
                     rating={5}
                     text="Rented an apartment on Dizengoff through them. The process was smooth and fast, highly recommend!"
