@@ -18,6 +18,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+// Import testimonial images
+import davidCohenReview from "@/assets/reviews/david-cohen.jpg";
+import sarahLeviReview from "@/assets/reviews/sarah-levi.jpg";
+import michalGolanReview from "@/assets/reviews/michal-golan.jpg";
+import yossiAbrahamReview from "@/assets/reviews/yossi-abraham.jpg";
+import roiIsraeliReview from "@/assets/reviews/roi-israeli.jpg";
+
 const About = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -206,7 +213,7 @@ const About = () => {
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/sarah-levi.jpg"
+                    image={sarahLeviReview}
                     name="Sarah Levi"
                     rating={5}
                     text="City Market helped us find our dream apartment in Neve Tzedek. Professional and caring service, highly recommended!"
@@ -214,7 +221,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/david-cohen.jpg"
+                    image={davidCohenReview}
                     name="David Cohen"
                     rating={5}
                     text="High-level professionalism. Sold my apartment on Rothschild quickly and at an excellent price. Thank you!"
@@ -222,7 +229,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/michal-golan.jpg"
+                    image={michalGolanReview}
                     name="Michal Golan"
                     rating={5}
                     text="Managing my properties perfectly. Always available, reliable and professional. Highly recommend!"
@@ -230,10 +237,18 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/yossi-abraham.jpg"
+                    image={yossiAbrahamReview}
                     name="Yossi Abraham"
                     rating={5}
                     text="Rented an apartment on Dizengoff through them. The process was smooth and fast, highly recommend!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image={roiIsraeliReview}
+                    name="Roi Israeli"
+                    rating={5}
+                    text="Exceptional service from start to finish. Found the perfect property for my family in record time!"
                   />
                 </CarouselItem>
               </CarouselContent>

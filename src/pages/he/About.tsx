@@ -18,6 +18,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+// Import testimonial images
+import davidCohenReview from "@/assets/reviews/david-cohen.jpg";
+import sarahLeviReview from "@/assets/reviews/sarah-levi.jpg";
+import michalGolanReview from "@/assets/reviews/michal-golan.jpg";
+import yossiAbrahamReview from "@/assets/reviews/yossi-abraham.jpg";
+import roiIsraeliReview from "@/assets/reviews/roi-israeli.jpg";
+
 const About = () => {
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
@@ -206,7 +213,7 @@ const About = () => {
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/sarah-levi.jpg"
+                    image={sarahLeviReview}
                     name="שרה לוי"
                     rating={5}
                     text="City Market עזרו לנו למצוא את דירת החלומות שלנו בנווה צדק. שירות מקצועי ואדיב, המלצה בחום!"
@@ -214,7 +221,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/david-cohen.jpg"
+                    image={davidCohenReview}
                     name="דוד כהן"
                     rating={5}
                     text="מקצועיות ברמה גבוהה. מכרתי דרכם דירה ברוטשילד במהירות ובמחיר מעולה. תודה רבה!"
@@ -222,7 +229,7 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/michal-golan.jpg"
+                    image={michalGolanReview}
                     name="מיכל גולן"
                     rating={5}
                     text="ניהול הנכסים שלי בצורה מושלמת. תמיד זמינים, אמינים ומקצועיים. ממליצה בחום!"
@@ -230,10 +237,18 @@ const About = () => {
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard
-                    image="/images/team/yossi-abraham.jpg"
+                    image={yossiAbrahamReview}
                     name="יוסי אברהם"
                     rating={5}
                     text="השכרתי דרכם דירה בדיזנגוף. התהליך היה חלק ומהיר, ממליץ בחום!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image={roiIsraeliReview}
+                    name="רועי ישראלי"
+                    rating={5}
+                    text="שירות יוצא דופן מההתחלה ועד הסוף. מצאו את הנכס המושלם למשפחה שלי בזמן שיא!"
                   />
                 </CarouselItem>
               </CarouselContent>
