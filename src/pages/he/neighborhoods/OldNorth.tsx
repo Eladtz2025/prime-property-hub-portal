@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, MapPin, Trees, Users, Home } from "lucide-react";
+import { ArrowRight, MapPin, Trees, Users, Home, ChevronLeft } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
+import { Link } from "react-router-dom";
 
 const OldNorthNeighborhood = () => {
   const navigate = useNavigate();
@@ -13,14 +14,17 @@ const OldNorthNeighborhood = () => {
       
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/neighborhoods")}
-            className="font-montserrat flex items-center gap-2 flex-row-reverse"
-          >
-            <ArrowRight className="w-4 h-4" />
-            <span>חזרה לשכונות</span>
-          </Button>
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse" aria-label="Breadcrumb" dir="rtl">
+            <Link to="/" className="hover:text-primary transition-colors">
+              דף הבית
+            </Link>
+            <ChevronLeft className="h-4 w-4" />
+            <Link to="/neighborhoods" className="hover:text-primary transition-colors">
+              שכונות
+            </Link>
+            <ChevronLeft className="h-4 w-4" />
+            <span className="text-foreground">צפון הישן</span>
+          </nav>
         </div>
       </div>
 
