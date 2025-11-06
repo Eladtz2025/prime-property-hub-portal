@@ -1,24 +1,117 @@
 import { useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
 
 const WhatsAppFloat = () => {
   const location = useLocation();
+  const [position, setPosition] = useState(() => {
+    const saved = localStorage.getItem('whatsapp-position');
+    return saved ? JSON.parse(saved) : { x: 24, y: 24 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
   
   // Hide on property detail pages
   const isPropertyDetailPage = location.pathname.includes('/property/');
   
   if (isPropertyDetailPage) return null;
 
+  useEffect(() => {
+    localStorage.setItem('whatsapp-position', JSON.stringify(position));
+  }, [position]);
+
   const handleWhatsAppClick = () => {
+    if (isDragging) return;
     const phone = '972545503055';
     const message = 'שלום, אני מעוניין/ת לקבל מידע נוסף';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
+  const handleDragStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragRef.current = {
+      startX: clientX,
+      startY: clientY,
+      initialX: position.x,
+      initialY: position.y,
+    };
+  };
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!dragRef.current) return;
+    
+    const deltaX = clientX - dragRef.current.startX;
+    const deltaY = clientY - dragRef.current.startY;
+    
+    setPosition({
+      x: dragRef.current.initialX + deltaX,
+      y: dragRef.current.initialY + deltaY,
+    });
+  };
+
+  const handleDragEnd = () => {
+    dragRef.current = null;
+    setTimeout(() => setIsDragging(false), 100);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      handleDragMove(e.clientX, e.clientY);
+    };
+
+    const handleMouseUp = () => {
+      if (!dragRef.current) return;
+      handleDragEnd();
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragStart(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragRef.current) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    handleDragMove(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
   return (
     <button
       onClick={handleWhatsAppClick}
-      className="fixed bottom-6 left-6 z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-pointer flex items-center justify-center p-0"
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        touchAction: 'none',
+      }}
+      className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-move flex items-center justify-center p-0 select-none"
       aria-label="צור קשר בוואטסאפ - WhatsApp"
     >
       <svg 
