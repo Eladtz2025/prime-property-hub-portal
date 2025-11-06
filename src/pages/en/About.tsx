@@ -9,6 +9,7 @@ import { ValueCard } from "@/components/about/ValueCard";
 import { TeamCard } from "@/components/about/TeamCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
 import { ScrollAnimated } from "@/components/about/ScrollAnimated";
+import { GenerateTeamImages } from "@/components/about/GenerateTeamImages";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -266,6 +267,11 @@ const About = () => {
             </div>
           </ScrollAnimated>
         </div>
+      </section>
+
+      {/* Team Images Generator */}
+      <section className="py-12 bg-muted/30">
+        <GenerateTeamImages />
       </section>
 
       <EnglishFooter />
