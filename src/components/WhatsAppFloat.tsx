@@ -25,7 +25,7 @@ const WhatsAppFloat = () => {
     >
       <svg 
         viewBox="0 0 32 32" 
-        className="h-11 w-11"
+        className="h-[3.25rem] w-[3.25rem]"
         fill="white"
         xmlns="http://www.w3.org/2000/svg"
       >
