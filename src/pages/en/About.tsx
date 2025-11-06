@@ -1,7 +1,21 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
-import { Award, Users, TrendingUp, Heart } from "lucide-react";
+import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
+import { StatCounter } from "@/components/about/StatCounter";
+import { TimelineItem } from "@/components/about/TimelineItem";
+import { ValueCard } from "@/components/about/ValueCard";
+import { TeamCard } from "@/components/about/TeamCard";
+import { TestimonialCard } from "@/components/about/TestimonialCard";
+import { ScrollAnimated } from "@/components/about/ScrollAnimated";
+import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const About = () => {
   return (
@@ -16,8 +30,8 @@ const About = () => {
       </Helmet>
       <EnglishHeader />
 
-      {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
+      {/* Hero Section - Enhanced */}
+      <section className="relative h-[70vh] overflow-hidden">
          <img
            src="/images/hero-about.jpg"
            alt="About City Market Properties - Tel Aviv Real Estate"
@@ -27,28 +41,71 @@ const About = () => {
          />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
-          <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-            About Us
-          </h1>
+          <div className="animate-fade-in">
+            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4 animate-scale-in">
+              We Don't Just Sell Properties
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 mb-12 animate-fade-in" style={{ animationDelay: '200ms' }}>
+              We Transform Lives
+            </p>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
+              <StatCounter end={15} label="Years Experience" />
+              <StatCounter end={500} label="Properties Sold" />
+              <StatCounter end={12} label="Tel Aviv Neighborhoods" />
+              <StatCounter end={98} label="Client Satisfaction" suffix="%" />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Mission Section */}
-      <section className="py-24 bg-background">
+      {/* Our Story Section */}
+      <section className="py-24 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-8">
-              Our Mission
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-6">
-               At City Market Properties, we are committed to providing unparalleled service 
-              in the property market. With over 15 years of experience in Tel Aviv's most
-              prestigious neighborhoods, we connect discerning clients with their dream properties.
-            </p>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              Our expertise spans across sales, rentals, and property management, ensuring a 
-              seamless experience from initial consultation to final transaction and beyond.
-            </p>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                Our Journey
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                Our Story
+              </h2>
+            </div>
+          </ScrollAnimated>
+          
+          {/* Timeline */}
+          <div className="relative max-w-4xl mx-auto">
+            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2" />
+            
+            <TimelineItem 
+              year="2008" 
+              title="Company Founded" 
+              description="Started as a small boutique agency with a big vision"
+              icon={<Building className="w-8 h-8" />} 
+              side="left" 
+            />
+            <TimelineItem 
+              year="2012" 
+              title="Expanded to 5 Neighborhoods" 
+              description="Extended operations to Tel Aviv's premier neighborhoods"
+              icon={<MapPin className="w-8 h-8" />} 
+              side="right" 
+            />
+            <TimelineItem 
+              year="2018" 
+              title="500+ Properties Milestone" 
+              description="Reached the 500 successfully sold properties mark"
+              icon={<Award className="w-8 h-8" />} 
+              side="left" 
+            />
+            <TimelineItem 
+              year="2023" 
+              title="Digital Transformation" 
+              description="Launched smart property management platform"
+              icon={<Sparkles className="w-8 h-8" />} 
+              side="right" 
+            />
           </div>
         </div>
       </section>
@@ -56,55 +113,42 @@ const About = () => {
       {/* Values Section */}
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              What Drives Us
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              Our Values
-            </h2>
-          </div>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                What Drives Us
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                Our Values
+              </h2>
+            </div>
+          </ScrollAnimated>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div className="text-center">
-              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                Excellence
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                We strive for perfection in every detail of our service
-              </p>
-            </div>
-
-            <div className="text-center">
-              <Heart className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                Integrity
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                Honesty and transparency guide all our relationships
-              </p>
-            </div>
-
-            <div className="text-center">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                Dedication
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                Your satisfaction is our highest priority
-              </p>
-            </div>
-
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                Innovation
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                Leveraging technology for superior results
-              </p>
-            </div>
+            <ValueCard 
+              icon={<Award className="w-full h-full" />}
+              title="Excellence"
+              description="We strive for perfection in every detail of our service"
+              delay={0}
+            />
+            <ValueCard 
+              icon={<Heart className="w-full h-full" />}
+              title="Integrity"
+              description="Honesty and transparency guide all our relationships"
+              delay={100}
+            />
+            <ValueCard 
+              icon={<Users className="w-full h-full" />}
+              title="Dedication"
+              description="Your satisfaction is our highest priority"
+              delay={200}
+            />
+            <ValueCard 
+              icon={<TrendingUp className="w-full h-full" />}
+              title="Innovation"
+              description="Leveraging technology for superior results"
+              delay={300}
+            />
           </div>
         </div>
       </section>
@@ -112,22 +156,128 @@ const About = () => {
       {/* Team Section */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              Meet The Experts
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              Our Team
-            </h2>
-          </div>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                Meet The Experts
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                Our Team
+              </h2>
+            </div>
+          </ScrollAnimated>
 
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-               Our team of experienced professionals brings together decades of combined expertise 
-              in Tel Aviv's real estate market. Each member is dedicated to providing
-              personalized service and expert guidance throughout your property journey.
-            </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            <TeamCard
+              image="/images/properties/building-bauhaus-1.jpg"
+              name="David Cohen"
+              role="Founder & CEO"
+              experience="15+ years experience"
+              delay={0}
+            />
+            <TeamCard
+              image="/images/properties/living-bauhaus-1.jpg"
+              name="Sarah Levi"
+              role="Sales Director"
+              experience="10+ years experience"
+              delay={100}
+            />
+            <TeamCard
+              image="/images/properties/rental-dizengoff-interior.jpg"
+              name="Yossi Abraham"
+              role="Rentals Manager"
+              experience="8+ years experience"
+              delay={200}
+            />
+            <TeamCard
+              image="/images/properties/penthouse-allenby.jpg"
+              name="Michal Golan"
+              role="Property Management Director"
+              experience="12+ years experience"
+              delay={300}
+            />
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                What Our Clients Say
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                Client Testimonials
+              </h2>
+            </div>
+          </ScrollAnimated>
+          
+          <div className="max-w-5xl mx-auto">
+            <Carousel className="w-full" opts={{ align: "start", loop: true }}>
+              <CarouselContent>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/sarah-levi.jpg"
+                    name="Sarah Levi"
+                    rating={5}
+                    text="City Market helped us find our dream apartment in Neve Tzedek. Professional and caring service, highly recommended!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/david-cohen.jpg"
+                    name="David Cohen"
+                    rating={5}
+                    text="High-level professionalism. Sold my apartment on Rothschild quickly and at an excellent price. Thank you!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/michal-golan.jpg"
+                    name="Michal Golan"
+                    rating={5}
+                    text="Managing my properties perfectly. Always available, reliable and professional. Highly recommend!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/yossi-abraham.jpg"
+                    name="Yossi Abraham"
+                    rating={5}
+                    text="Rented an apartment on Dizengoff through them. The process was smooth and fast, highly recommend!"
+                  />
+                </CarouselItem>
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <ScrollAnimated>
+            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Ready to Find Your Dream Property?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Let's start your journey today
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="hover-scale">
+                <Home className="mr-2 h-5 w-5" />
+                Schedule a Consultation
+              </Button>
+              <Button size="lg" variant="outline" className="hover-scale">
+                Contact Us Now
+              </Button>
+            </div>
+          </ScrollAnimated>
         </div>
       </section>
 

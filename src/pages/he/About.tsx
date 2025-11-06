@@ -1,7 +1,21 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
-import { Award, Users, TrendingUp, Heart } from "lucide-react";
+import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
+import { StatCounter } from "@/components/about/StatCounter";
+import { TimelineItem } from "@/components/about/TimelineItem";
+import { ValueCard } from "@/components/about/ValueCard";
+import { TeamCard } from "@/components/about/TeamCard";
+import { TestimonialCard } from "@/components/about/TestimonialCard";
+import { ScrollAnimated } from "@/components/about/ScrollAnimated";
+import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const About = () => {
   return (
@@ -16,39 +30,82 @@ const About = () => {
       </Helmet>
       <HebrewHeader />
 
-      {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
+      {/* Hero Section - Enhanced */}
+      <section className="relative h-[70vh] overflow-hidden">
         <img
           src="/images/hero-about.jpg"
-          alt="אודות City Market"
+          alt="אודות City Market Properties"
           className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              קצת עלינו
+          <div className="animate-fade-in">
+            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4 animate-scale-in">
+              אנחנו לא רק מוכרים נכסים
             </h1>
+            <p className="text-xl md:text-2xl text-white/90 mb-12 animate-fade-in" style={{ animationDelay: '200ms' }}>
+              אנחנו משנים חיים
+            </p>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
+              <StatCounter end={15} label="שנות ניסיון" />
+              <StatCounter end={500} label="נכסים נמכרו" />
+              <StatCounter end={12} label="שכונות בתל אביב" />
+              <StatCounter end={98} label="שביעות רצון" suffix="%" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Mission Section */}
-      <section className="py-24 bg-background">
+      {/* Our Story Section */}
+      <section className="py-24 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-8">
-              המשימה שלנו
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-6">
-              ב-City Market Properties, אנו מחויבים לספק שירות ללא תחרות בשוק הנדל"ן. 
-              עם למעלה מ-15 שנות ניסיון בשכונות היוקרתיות ביותר של תל אביב, אנו מחברים 
-              לקוחות מובחרים עם נכסי החלומות שלהם.
-            </p>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              המומחיות שלנו משתרעת על פני מכירות, השכרות וניהול נכסים, ומבטיחה חוויה 
-              חלקה מהייעוץ הראשוני ועד לעסקה הסופית ומעבר לה.
-            </p>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                המסע שלנו
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                הסיפור שלנו
+              </h2>
+            </div>
+          </ScrollAnimated>
+          
+          {/* Timeline */}
+          <div className="relative max-w-4xl mx-auto">
+            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2" />
+            
+            <TimelineItem 
+              year="2008" 
+              title="הקמת החברה" 
+              description="התחלנו כסוכנות בוטיק קטנה עם חזון גדול"
+              icon={<Building className="w-8 h-8" />} 
+              side="right" 
+            />
+            <TimelineItem 
+              year="2012" 
+              title="התרחבות ל-5 שכונות" 
+              description="הרחבת הפעילות לשכונות המובילות בתל אביב"
+              icon={<MapPin className="w-8 h-8" />} 
+              side="left" 
+            />
+            <TimelineItem 
+              year="2018" 
+              title="אבן דרך של 500+ נכסים" 
+              description="חצינו את רף ה-500 נכסים שנמכרו בהצלחה"
+              icon={<Award className="w-8 h-8" />} 
+              side="right" 
+            />
+            <TimelineItem 
+              year="2023" 
+              title="מהפכה דיגיטלית" 
+              description="השקת פלטפורמת ניהול נכסים חכמה ומתקדמת"
+              icon={<Sparkles className="w-8 h-8" />} 
+              side="left" 
+            />
           </div>
         </div>
       </section>
@@ -56,55 +113,42 @@ const About = () => {
       {/* Values Section */}
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              מה מניע אותנו
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              הערכים שלנו
-            </h2>
-          </div>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                מה מניע אותנו
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                הערכים שלנו
+              </h2>
+            </div>
+          </ScrollAnimated>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div className="text-center" dir="rtl">
-              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                מצוינות
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                אנו שואפים לשלמות בכל פרט בשירות שלנו
-              </p>
-            </div>
-
-            <div className="text-center" dir="rtl">
-              <Heart className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                יושרה
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                כנות ושקיפות מנחות את כל הקשרים שלנו
-              </p>
-            </div>
-
-            <div className="text-center" dir="rtl">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                מסירות
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                שביעות הרצון שלכם היא העדיפות הגבוהה ביותר שלנו
-              </p>
-            </div>
-
-            <div className="text-center" dir="rtl">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-playfair text-2xl font-normal text-foreground mb-3">
-                חדשנות
-              </h3>
-              <p className="font-montserrat text-sm text-muted-foreground">
-                מינוף טכנולוגיה לתוצאות מעולות
-              </p>
-            </div>
+            <ValueCard 
+              icon={<Award className="w-full h-full" />}
+              title="מצוינות"
+              description="אנו שואפים לשלמות בכל פרט בשירות שלנו"
+              delay={0}
+            />
+            <ValueCard 
+              icon={<Heart className="w-full h-full" />}
+              title="יושרה"
+              description="כנות ושקיפות מנחות את כל הקשרים שלנו"
+              delay={100}
+            />
+            <ValueCard 
+              icon={<Users className="w-full h-full" />}
+              title="מסירות"
+              description="שביעות הרצון שלכם היא העדיפות הגבוהה ביותר שלנו"
+              delay={200}
+            />
+            <ValueCard 
+              icon={<TrendingUp className="w-full h-full" />}
+              title="חדשנות"
+              description="מינוף טכנולוגיה לתוצאות מעולות"
+              delay={300}
+            />
           </div>
         </div>
       </section>
@@ -112,26 +156,131 @@ const About = () => {
       {/* Team Section */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              פגשו את המומחים
-            </p>
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-              הצוות שלנו
-            </h2>
-          </div>
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                פגשו את המומחים
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                הצוות שלנו
+              </h2>
+            </div>
+          </ScrollAnimated>
 
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              הצוות שלנו של אנשי מקצוע מנוסים מביא יחד עשרות שנות מומחיות משולבת 
-              בשוק הנדל"ן של תל אביב. כל חבר צוות מחויב לספק שירות אישי וייעוץ מקצועי 
-              לאורך כל המסע הנדל"ני שלכם.
-            </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            <TeamCard
+              image="/images/properties/building-bauhaus-1.jpg"
+              name="דוד כהן"
+              role="מייסד ומנכ״ל"
+              experience="15+ שנות ניסיון"
+              delay={0}
+            />
+            <TeamCard
+              image="/images/properties/living-bauhaus-1.jpg"
+              name="שרה לוי"
+              role="מנהלת מכירות"
+              experience="10+ שנות ניסיון"
+              delay={100}
+            />
+            <TeamCard
+              image="/images/properties/rental-dizengoff-interior.jpg"
+              name="יוסי אברהם"
+              role="מנהל השכרות"
+              experience="8+ שנות ניסיון"
+              delay={200}
+            />
+            <TeamCard
+              image="/images/properties/penthouse-allenby.jpg"
+              name="מיכל גולן"
+              role="מנהלת ניהול נכסים"
+              experience="12+ שנות ניסיון"
+              delay={300}
+            />
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Testimonials Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimated>
+            <div className="text-center mb-16">
+              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                מה הלקוחות שלנו אומרים
+              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground">
+                המלצות לקוחות
+              </h2>
+            </div>
+          </ScrollAnimated>
+          
+          <div className="max-w-5xl mx-auto">
+            <Carousel className="w-full" opts={{ align: "start", loop: true }}>
+              <CarouselContent>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/sarah-levi.jpg"
+                    name="שרה לוי"
+                    rating={5}
+                    text="City Market עזרו לנו למצוא את דירת החלומות שלנו בנווה צדק. שירות מקצועי ואדיב, המלצה בחום!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/david-cohen.jpg"
+                    name="דוד כהן"
+                    rating={5}
+                    text="מקצועיות ברמה גבוהה. מכרתי דרכם דירה ברוטשילד במהירות ובמחיר מעולה. תודה רבה!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/michal-golan.jpg"
+                    name="מיכל גולן"
+                    rating={5}
+                    text="ניהול הנכסים שלי בצורה מושלמת. תמיד זמינים, אמינים ומקצועיים. ממליצה בחום!"
+                  />
+                </CarouselItem>
+                <CarouselItem className="md:basis-1/2">
+                  <TestimonialCard
+                    image="/src/assets/reviews/yossi-abraham.jpg"
+                    name="יוסי אברהם"
+                    rating={5}
+                    text="השכרתי דרכם דירה בדיזנגוף. התהליך היה חלק ומהיר, ממליץ בחום!"
+                  />
+                </CarouselItem>
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <ScrollAnimated>
+            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foreground mb-6">
+              מוכנים למצוא את הנכס המושלם?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              בואו נתחיל את המסע שלכם היום
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="hover-scale">
+                <Home className="ml-2 h-5 w-5" />
+                קבעו פגישת ייעוץ
+              </Button>
+              <Button size="lg" variant="outline" className="hover-scale">
+                צרו קשר עכשיו
+              </Button>
+            </div>
+          </ScrollAnimated>
+        </div>
+      </section>
+
       <HebrewFooter />
     </div>
   );
