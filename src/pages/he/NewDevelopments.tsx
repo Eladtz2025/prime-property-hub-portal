@@ -2,6 +2,7 @@ import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 import { FlippablePropertyCard } from "@/components/he/FlippablePropertyCard";
 import { Helmet } from "react-helmet";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -88,22 +89,11 @@ const NewDevelopments = () => {
       </Helmet>
       <HebrewHeader />
 
-      {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-new-developments.jpg"
-          alt="פרויקטים חדשים"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              פרויקטים חדשים
-            </h1>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="פרויקטים חדשים"
+        backgroundImage="/images/hero-new-developments.jpg"
+        minHeight="100vh"
+      />
 
       {/* Introduction */}
       <section className="py-16 bg-background">

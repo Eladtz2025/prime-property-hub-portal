@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const EnglishNeighborhoods = () => {
   const navigate = useNavigate();
@@ -64,22 +65,11 @@ const EnglishNeighborhoods = () => {
       </Helmet>
       <EnglishHeader />
 
-      {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-         <img
-           src="/images/hero-neighborhoods.jpg"
-           alt="Tel Aviv Neighborhoods - Rothschild, Neve Tzedek, Florentin"
-           className="absolute inset-0 w-full h-full object-cover"
-           loading="eager"
-           decoding="async"
-         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-            Neighborhoods
-          </h1>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Neighborhoods"
+        backgroundImage="/images/hero-neighborhoods.jpg"
+        minHeight="100vh"
+      />
 
       <section className="py-20">
         <div className="container mx-auto px-4">
