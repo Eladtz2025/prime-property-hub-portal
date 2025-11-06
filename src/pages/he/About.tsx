@@ -156,28 +156,28 @@ const About = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <TeamCard
-              image="/images/team/david-cohen.jpg"
+              image="/team1/david-cohen.jpg"
               name="דוד כהן"
               role="מייסד ומנכ״ל"
               experience="15+ שנות ניסיון"
               delay={0}
             />
             <TeamCard
-              image="/images/team/sarah-levi.jpg"
+              image="/team1/sarah-levi.jpg"
               name="שרה לוי"
               role="מנהלת מכירות"
               experience="10+ שנות ניסיון"
               delay={100}
             />
             <TeamCard
-              image="/images/team/yossi-abraham.jpg"
+              image="/team1/yossi-abraham.jpg"
               name="יוסי אברהם"
               role="מנהל השכרות"
               experience="8+ שנות ניסיון"
               delay={200}
             />
             <TeamCard
-              image="/images/team/michal-golan.jpg"
+              image="/team1/michal-golan.jpg"
               name="מיכל גולן"
               role="מנהלת ניהול נכסים"
               experience="12+ שנות ניסיון"

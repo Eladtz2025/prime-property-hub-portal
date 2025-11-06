@@ -9,7 +9,6 @@ import { ValueCard } from "@/components/about/ValueCard";
 import { TeamCard } from "@/components/about/TeamCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
 import { ScrollAnimated } from "@/components/about/ScrollAnimated";
-import { GenerateTeamImages } from "@/components/about/GenerateTeamImages";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -157,28 +156,28 @@ const About = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <TeamCard
-              image="/images/team/david-cohen.jpg"
+              image="/team1/david-cohen.jpg"
               name="David Cohen"
               role="Founder & CEO"
               experience="15+ years experience"
               delay={0}
             />
             <TeamCard
-              image="/images/team/sarah-levi.jpg"
+              image="/team1/sarah-levi.jpg"
               name="Sarah Levi"
               role="Sales Director"
               experience="10+ years experience"
               delay={100}
             />
             <TeamCard
-              image="/images/team/yossi-abraham.jpg"
+              image="/team1/yossi-abraham.jpg"
               name="Yossi Abraham"
               role="Rentals Manager"
               experience="8+ years experience"
               delay={200}
             />
             <TeamCard
-              image="/images/team/michal-golan.jpg"
+              image="/team1/michal-golan.jpg"
               name="Michal Golan"
               role="Property Management Director"
               experience="12+ years experience"
@@ -267,11 +266,6 @@ const About = () => {
             </div>
           </ScrollAnimated>
         </div>
-      </section>
-
-      {/* Team Images Generator */}
-      <section className="py-12 bg-muted/30">
-        <GenerateTeamImages />
       </section>
 
       <EnglishFooter />
