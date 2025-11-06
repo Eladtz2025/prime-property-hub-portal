@@ -60,6 +60,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
+import WhatsAppFloat from './components/WhatsAppFloat';
 
 
 const AppContent: React.FC = () => {
@@ -68,6 +69,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <WhatsAppFloat />
       <Routes>
         {/* Auth callback route - needs to be outside authentication check */}
         <Route path="/auth/callback" element={<AuthCallback />} />
