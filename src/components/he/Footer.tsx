@@ -49,7 +49,7 @@ const HebrewFooter = () => {
 
           {/* Services */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               שירותים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
@@ -82,7 +82,7 @@ const HebrewFooter = () => {
 
           {/* Areas */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               אזורים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
@@ -115,7 +115,7 @@ const HebrewFooter = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               יצירת קשר
             </h4>
             <ul className="space-y-3 text-sm text-background/70">
