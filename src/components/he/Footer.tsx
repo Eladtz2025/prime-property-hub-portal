@@ -2,13 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 const HebrewFooter = () => {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
-
-  return (
-    <footer className="bg-foreground text-background" dir="rtl">
+  return <footer className="bg-foreground text-background" dir="rtl">
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
@@ -26,22 +23,10 @@ const HebrewFooter = () => {
               מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
             </p>
             <div className="flex gap-3">
-              <a
-                href="https://www.instagram.com/citymarket/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-background/90 transition-colors"
-                aria-label="Instagram"
-              >
+              <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Instagram">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a
-                href="https://www.facebook.com/Ctmarket"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-background/90 transition-colors"
-                aria-label="Facebook"
-              >
+              <a href="https://www.facebook.com/Ctmarket" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Facebook">
                 <Facebook className="h-5 w-5" />
               </a>
             </div>
@@ -53,28 +38,16 @@ const HebrewFooter = () => {
               שירותים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/sales')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/sales')}>
                 מכירות
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/rentals')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/rentals')}>
                 השכרות
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/management')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/management')}>
                 ניהול נכסים
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/new-developments')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/new-developments')}>
                 פרויקטים חדשים
               </p>
             </div>
@@ -86,28 +59,16 @@ const HebrewFooter = () => {
               אזורים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/neighborhoods/neve-tzedek')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
                 נווה צדק
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/neighborhoods/rothschild')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
                 רוטשילד
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/neighborhoods/dizengoff')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
                 דיזנגוף
               </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/he/neighborhoods/old-north')}
-              >
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
                 הצפון הישן
               </p>
             </div>
@@ -115,7 +76,7 @@ const HebrewFooter = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-left">
               יצירת קשר
             </h4>
             <ul className="space-y-3 text-sm text-background/70">
@@ -142,24 +103,15 @@ const HebrewFooter = () => {
         {/* Bottom Links Bar */}
         <div className="border-t border-background/20 pt-6 mb-6">
           <div className="flex flex-wrap justify-center gap-6 text-xs text-background/60">
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/he')}
-            >
+            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he')}>
               בית
             </span>
             <span className="text-background/30">|</span>
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/he/about')}
-            >
+            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/about')}>
               אודות
             </span>
             <span className="text-background/30">|</span>
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/he/contact')}
-            >
+            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/contact')}>
               צור קשר
             </span>
             <span className="text-background/30">|</span>
@@ -176,8 +128,6 @@ const HebrewFooter = () => {
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default HebrewFooter;
