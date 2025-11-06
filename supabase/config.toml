@@ -1,5 +1,8 @@
 project_id = "jswumsdymlooeobrxict"
 
+[functions.generate-team-images]
+verify_jwt = false
+
 [functions.add-watermark-on-upload]
 verify_jwt = false
 
