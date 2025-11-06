@@ -47,10 +47,10 @@ const HebrewHeader = () => {
         style={{ opacity: scrollProgress }}
       />
       
-      <div className="container mx-auto px-4 relative h-full" style={{ paddingRight: '5rem' }}>
-        <div className="flex items-center justify-between h-full">
-          {/* Right Navigation (RTL - swapped) */}
-          <nav className="hidden lg:flex items-center gap-6">
+      <div className="container mx-auto px-4 relative h-full">
+        <div className="grid grid-cols-3 items-center h-full">
+          {/* Right Navigation (RTL = right side) - Justify End */}
+          <nav className="hidden lg:flex items-center gap-6 justify-end">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -82,23 +82,25 @@ const HebrewHeader = () => {
             ))}
           </nav>
 
-          {/* Center Logo */}
-          <button
-            onClick={() => navigate("/")}
-            className="transition-transform duration-200 hover:scale-105"
-          >
-            <img 
-              src="/images/city-market-icon.png" 
-              alt="City Market" 
-              className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
-              style={{
-                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
-              }}
-            />
-          </button>
+          {/* Center Logo - Absolute Center */}
+          <div className="flex items-center justify-center">
+            <button
+              onClick={() => navigate("/")}
+              className="transition-transform duration-200 hover:scale-105"
+            >
+              <img 
+                src="/images/city-market-icon.png" 
+                alt="City Market" 
+                className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
+                style={{
+                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
+                }}
+              />
+            </button>
+          </div>
 
-          {/* Left Navigation (RTL - swapped) */}
-          <nav className="hidden lg:flex items-center gap-6">
+          {/* Left Navigation (RTL = left side) - Justify Start */}
+          <nav className="hidden lg:flex items-center gap-6 justify-start">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
@@ -125,8 +127,8 @@ const HebrewHeader = () => {
             ))}
           </nav>
 
-          {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-4">
+          {/* Language Switcher & Mobile Menu - Outside Grid on Small Screens */}
+          <div className="lg:hidden absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
