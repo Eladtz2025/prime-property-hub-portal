@@ -10,6 +10,9 @@ import { TeamCard } from "@/components/about/TeamCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
 import { ScrollAnimated } from "@/components/about/ScrollAnimated";
 import { Button } from "@/components/ui/button";
+import { ConsultationModal } from "@/components/he/ConsultationModal";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Carousel,
   CarouselContent,
@@ -26,6 +29,9 @@ import yossiAbrahamReview from "@/assets/reviews/yossi-abraham.jpg";
 import roiIsraeliReview from "@/assets/reviews/roi-israeli.jpg";
 
 const About = () => {
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false);
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
@@ -271,17 +277,19 @@ const About = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="hover-scale">
+              <Button size="lg" className="hover-scale" onClick={() => setIsConsultationOpen(true)}>
                 <Home className="ml-2 h-5 w-5" />
                 קבעו פגישת ייעוץ
               </Button>
-              <Button size="lg" variant="outline" className="hover-scale">
+              <Button size="lg" variant="outline" className="hover-scale" onClick={() => navigate('/he/contact')}>
                 צרו קשר עכשיו
               </Button>
             </div>
           </ScrollAnimated>
         </div>
       </section>
+
+      <ConsultationModal open={isConsultationOpen} onOpenChange={setIsConsultationOpen} />
 
       <HebrewFooter />
     </div>
