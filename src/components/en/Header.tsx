@@ -48,9 +48,9 @@ const EnglishHeader = () => {
       />
       
       <div className="container mx-auto px-4 relative h-full">
-        <div className="flex items-center justify-between h-full">
+        <div className="grid grid-cols-3 items-center h-full">
           {/* Left Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6 justify-start">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
@@ -77,23 +77,25 @@ const EnglishHeader = () => {
             ))}
           </nav>
 
-          {/* Center Logo */}
-          <button
-            onClick={() => navigate("/en")}
-            className="transition-transform duration-200 hover:scale-105"
-          >
-            <img 
-              src="/images/city-market-icon.png" 
-              alt="City Market" 
-              className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
-              style={{
-                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
-              }}
-            />
-          </button>
+          {/* Center Logo - Absolute Center */}
+          <div className="flex items-center justify-center">
+            <button
+              onClick={() => navigate("/en")}
+              className="transition-transform duration-200 hover:scale-105"
+            >
+              <img 
+                src="/images/city-market-icon.png" 
+                alt="City Market" 
+                className="h-10 md:h-12 w-auto translate-y-1 transition-all duration-300"
+                style={{
+                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
+                }}
+              />
+            </button>
+          </div>
 
           {/* Right Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6 justify-end">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -121,7 +123,7 @@ const EnglishHeader = () => {
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-4">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
