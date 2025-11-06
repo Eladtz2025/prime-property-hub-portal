@@ -67,18 +67,18 @@ const Contact = () => {
           <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
             {/* Contact Information */}
             <div>
-              <h2 className="font-playfair text-4xl font-normal tracking-wide text-foreground mb-8">
+              <h2 className="font-playfair text-4xl font-normal tracking-wide text-foreground mb-8 text-right">
                 בואו נתחבר
               </h2>
-              <p className="font-montserrat text-lg text-muted-foreground mb-12">
+              <p className="font-montserrat text-lg text-muted-foreground mb-12 text-right">
                 בין אם אתם מחפשים לקנות, למכור או להשכיר נכס בתל אביב, 
                 הצוות שלנו כאן כדי לעזור. צרו איתנו קשר היום.
               </p>
 
               <div className="space-y-8">
-                <div className="flex items-start gap-4 flex-row-reverse">
+                <div className="flex items-start gap-4">
                   <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       כתובת
                     </h3>
@@ -89,9 +89,9 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 flex-row-reverse">
+                <div className="flex items-start gap-4">
                   <Phone className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       טלפון
                     </h3>
@@ -101,9 +101,9 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 flex-row-reverse">
+                <div className="flex items-start gap-4">
                   <Mail className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       אימייל
                     </h3>
@@ -113,9 +113,9 @@ const Contact = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 flex-row-reverse">
+                <div className="flex items-start gap-4">
                   <Clock className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
                       שעות פעילות
                     </h3>
@@ -133,7 +133,7 @@ const Contact = () => {
             <div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     שם *
                   </label>
                   <input
@@ -141,13 +141,13 @@ const Contact = () => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
                     placeholder="שמך המלא"
                   />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     אימייל *
                   </label>
                   <input
@@ -155,26 +155,26 @@ const Contact = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
-                    placeholder="your@email.com"
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
+                    placeholder="הדוא״ל שלך"
                   />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     טלפון
                   </label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat"
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
                     placeholder="054-XXX-XXXX"
                   />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     הודעה *
                   </label>
                   <textarea
@@ -182,7 +182,7 @@ const Contact = () => {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     rows={6}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none"
+                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none text-right"
                     placeholder="ספרו לנו על צרכי הנדל״ן שלכם..."
                   />
                 </div>
