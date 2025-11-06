@@ -3,22 +3,24 @@ interface FullScreenHeroProps {
   subtitle?: string;
   backgroundImage: string;
   minHeight?: string;
+  children?: React.ReactNode;
 }
 
 const FullScreenHero = ({ 
   title, 
   subtitle, 
   backgroundImage,
-  minHeight = "70vh"
+  minHeight = "70vh",
+  children
 }: FullScreenHeroProps) => {
   return (
     <section 
       className="relative flex items-center justify-center overflow-hidden" 
-      style={{ minHeight }}
+      style={{ minHeight, height: minHeight }}
     >
       {/* Background Image - cover all screen */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 w-full h-full"
         style={{ 
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: 'cover',
@@ -39,6 +41,7 @@ const FullScreenHero = ({
             {subtitle}
           </p>
         )}
+        {children}
       </div>
     </section>
   );

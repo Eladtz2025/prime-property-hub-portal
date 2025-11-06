@@ -114,7 +114,7 @@ const EnglishManagement = () => {
       <FullScreenHero
         title="Property Management"
         backgroundImage="/images/management-lobby.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       {/* Properties Grid */}

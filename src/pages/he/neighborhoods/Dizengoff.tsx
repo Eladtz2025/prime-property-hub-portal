@@ -28,7 +28,7 @@ const DizengoffNeighborhood = () => {
         title="דיזנגוף"
         subtitle="הלב המסחרי התוסס - קניות, בידור ודופק העיר"
         backgroundImage="/images/en/neighborhoods/dizengoff-hero.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       <div className="container mx-auto px-4 py-16">

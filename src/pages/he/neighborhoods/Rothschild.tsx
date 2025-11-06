@@ -59,7 +59,7 @@ const RothschildNeighborhood = () => {
         title="שדרות רוטשילד"
         subtitle='לב אדריכלות הבאוהאוס של תל אביב - אתר מורשת עולמית של אונסק״ו'
         backgroundImage="/images/en/neighborhoods/rothschild-hero.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       {/* Main Content */}

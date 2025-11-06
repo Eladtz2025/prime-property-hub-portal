@@ -64,7 +64,7 @@ const Management = () => {
       <FullScreenHero
         title="ניהול נכסים"
         backgroundImage="/images/management-lobby.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       {/* Properties Grid */}

@@ -28,7 +28,7 @@ const NeveTzedekNeighborhood = () => {
         title="נווה צדק"
         subtitle="השכונה הראשונה של תל אביב - קסם היסטורי ואווירה בוהמית"
         backgroundImage="/images/en/neighborhoods/neve-tzedek-hero.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       <div className="container mx-auto px-4 py-16">

@@ -85,7 +85,7 @@ const EnglishRentals = () => {
       <FullScreenHero
         title="Rental Properties"
         backgroundImage="/images/rental-interior.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       {/* Properties Grid */}

@@ -1,5 +1,6 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { StatCounter } from "@/components/about/StatCounter";
@@ -31,34 +32,20 @@ const About = () => {
       <EnglishHeader />
 
       {/* Hero Section - Enhanced */}
-      <section className="relative h-[50vh] md:h-[70vh] overflow-hidden">
-         <img
-           src="/images/hero-about.jpg"
-           alt="About City Market Properties - Tel Aviv Real Estate"
-           className="absolute inset-0 w-full h-full object-cover"
-           loading="eager"
-           decoding="async"
-         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div className="animate-fade-in">
-            <h1 className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 animate-scale-in">
-              We Don't Just Sell Properties
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 md:mb-12 animate-fade-in" style={{ animationDelay: '200ms' }}>
-              We Transform Lives
-            </p>
-            
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
-              <StatCounter end={15} label="Years Experience" />
-              <StatCounter end={500} label="Properties Sold" />
-              <StatCounter end={12} label="Tel Aviv Neighborhoods" />
-              <StatCounter end={98} label="Client Satisfaction" suffix="%" />
-            </div>
-          </div>
+      <FullScreenHero
+        title="We Don't Just Sell Properties"
+        subtitle="We Transform Lives"
+        backgroundImage="/images/hero-about.jpg"
+        minHeight="50vh"
+      >
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto mt-8 md:mt-12 animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <StatCounter end={15} label="Years Experience" />
+          <StatCounter end={500} label="Properties Sold" />
+          <StatCounter end={12} label="Tel Aviv Neighborhoods" />
+          <StatCounter end={98} label="Client Satisfaction" suffix="%" />
         </div>
-      </section>
+      </FullScreenHero>
 
       {/* Our Story Section */}
       <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30">

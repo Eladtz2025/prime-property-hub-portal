@@ -131,7 +131,7 @@ const Sales = () => {
       <FullScreenHero
         title="מכירות"
         backgroundImage="/images/sales-villa.jpg"
-        minHeight="60vh"
+        minHeight="100vh"
       />
 
       {/* Properties Grid */}

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const FlorentinNeighborhood = () => {
   const navigate = useNavigate();
@@ -33,24 +34,12 @@ const FlorentinNeighborhood = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[40vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/florentin-hero.jpg"
-          alt="Florentin"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
-              Florentin
-            </h1>
-            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
-              Bohemian neighborhood with vibrant street art and nightlife
-            </p>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Florentin"
+        subtitle="Bohemian neighborhood with vibrant street art and nightlife"
+        backgroundImage="/images/en/neighborhoods/florentin-hero.jpg"
+        minHeight="100vh"
+      />
 
       {/* History & Character */}
       <section className="py-16 bg-background">
