@@ -1,5 +1,6 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
@@ -48,21 +49,15 @@ const Contact = () => {
       }
     }
   };
-  return <div className="min-h-screen hebrew-luxury" dir="rtl">
+    return <div className="min-h-screen hebrew-luxury" dir="rtl">
       <HebrewHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-        <img src="/images/hero-contact.jpg" alt="צור קשר" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              צור קשר
-            </h1>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="צור קשר"
+        backgroundImage="/images/hero-contact.jpg"
+        minHeight="50vh"
+      />
 
       {/* Contact Form & Info */}
       <section className="py-24 bg-background">

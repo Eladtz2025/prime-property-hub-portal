@@ -1,5 +1,6 @@
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
+import FullScreenHero from '@/components/FullScreenHero';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,21 +61,11 @@ const Management = () => {
       <HebrewHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/management-lobby.jpg"
-          alt="ניהול נכסים"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              ניהול נכסים
-            </h1>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="ניהול נכסים"
+        backgroundImage="/images/management-lobby.jpg"
+        minHeight="60vh"
+      />
 
       {/* Properties Grid */}
       <section className="py-16 bg-muted/50">

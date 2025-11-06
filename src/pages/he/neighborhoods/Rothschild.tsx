@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, MapPin, TrendingUp, Coffee, Building2, Home, Star } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
@@ -54,22 +55,12 @@ const RothschildNeighborhood = () => {
       </div>
 
       {/* Hero Section */}
-      <div className="relative h-[60vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/rothschild-hero.jpg"
-          alt="שדרות רוטשילד"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 container mx-auto px-4 py-12">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4">
-            שדרות רוטשילד
-          </h1>
-          <p className="font-montserrat text-xl text-white/90 max-w-2xl">
-            לב אדריכלות הבאוהאוס של תל אביב - אתר מורשת עולמית של אונסק״ו
-          </p>
-        </div>
-      </div>
+      <FullScreenHero
+        title="שדרות רוטשילד"
+        subtitle='לב אדריכלות הבאוהאוס של תל אביב - אתר מורשת עולמית של אונסק״ו'
+        backgroundImage="/images/en/neighborhoods/rothschild-hero.jpg"
+        minHeight="60vh"
+      />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-16">

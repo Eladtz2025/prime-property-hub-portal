@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const NeveTzedekNeighborhood = () => {
   const navigate = useNavigate();
@@ -33,24 +34,12 @@ const NeveTzedekNeighborhood = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[40vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/neve-tzedek-hero.jpg"
-          alt="Neve Tzedek"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
-              Neve Tzedek
-            </h1>
-            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
-              Tel Aviv's first neighborhood, charming and artistic
-            </p>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Neve Tzedek"
+        subtitle="Tel Aviv's first neighborhood, charming and artistic"
+        backgroundImage="/images/en/neighborhoods/neve-tzedek-hero.jpg"
+        minHeight="60vh"
+      />
 
       {/* History & Character */}
       <section className="py-16 bg-background">

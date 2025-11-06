@@ -1,5 +1,6 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
@@ -63,19 +64,11 @@ const Contact = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-contact.jpg"
-          alt="Contact Us"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-            Contact Us
-          </h1>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Contact Us"
+        backgroundImage="/images/hero-contact.jpg"
+        minHeight="50vh"
+      />
 
       {/* Contact Form & Info */}
       <section className="py-24 bg-background">

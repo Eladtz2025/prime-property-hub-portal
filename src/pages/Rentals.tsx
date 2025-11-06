@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
+import FullScreenHero from '@/components/FullScreenHero';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -139,21 +140,11 @@ const Rentals = () => {
       <HebrewHeader />
       
       {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/rental-interior.jpg"
-          alt="השכרות"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              השכרות
-            </h1>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="השכרות"
+        backgroundImage="/images/rental-interior.jpg"
+        minHeight="60vh"
+      />
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">

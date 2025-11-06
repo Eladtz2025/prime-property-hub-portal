@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
@@ -33,24 +34,12 @@ const DizengoffNeighborhood = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[40vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/dizengoff-hero.jpg"
-          alt="Dizengoff"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
-              Dizengoff
-            </h1>
-            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
-              Bustling commercial heart with shopping and entertainment
-            </p>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Dizengoff"
+        subtitle="Bustling commercial heart with shopping and entertainment"
+        backgroundImage="/images/en/neighborhoods/dizengoff-hero.jpg"
+        minHeight="60vh"
+      />
 
       {/* History & Character */}
       <section className="py-16 bg-background">

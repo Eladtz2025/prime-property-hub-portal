@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, MapPin, ShoppingBag, Coffee, Building } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
@@ -23,22 +24,12 @@ const DizengoffNeighborhood = () => {
         </div>
       </div>
 
-      <div className="relative h-[60vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/dizengoff-hero.jpg"
-          alt="דיזנגוף"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 container mx-auto px-4 py-12">
-          <h1 className="font-playfair text-5xl md:text-6xl font-bold text-white mb-4">
-            דיזנגוף
-          </h1>
-          <p className="font-montserrat text-xl text-white/90 max-w-2xl">
-            הלב המסחרי התוסס - קניות, בידור ודופק העיר
-          </p>
-        </div>
-      </div>
+      <FullScreenHero
+        title="דיזנגוף"
+        subtitle="הלב המסחרי התוסס - קניות, בידור ודופק העיר"
+        backgroundImage="/images/en/neighborhoods/dizengoff-hero.jpg"
+        minHeight="60vh"
+      />
 
       <div className="container mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-3 gap-12">

@@ -1,5 +1,6 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -110,23 +111,11 @@ const EnglishManagement = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <section className="relative h-[30vh] overflow-hidden">
-         <img
-           src="/images/management-lobby.jpg"
-           alt="Property Management Services - Professional Lobby"
-           className="absolute inset-0 w-full h-full object-cover"
-           loading="eager"
-           decoding="async"
-         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              Property Management
-            </h1>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Property Management"
+        backgroundImage="/images/management-lobby.jpg"
+        minHeight="60vh"
+      />
 
       {/* Properties Grid */}
       <section className="py-16 bg-muted/50">

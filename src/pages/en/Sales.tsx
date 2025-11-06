@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { Card } from '@/components/ui/card';
@@ -80,21 +81,12 @@ const EnglishSales = () => {
         <link rel="canonical" href="https://citymarket.co.il/en/sales" />
       </Helmet>
       <EnglishHeader />
-      <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/sales-villa.jpg"
-          alt="Properties for Sale"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-5xl font-bold text-white">
-              Properties for Sale
-            </h1>
-          </div>
-        </div>
-      </section>
+      
+      <FullScreenHero
+        title="Properties for Sale"
+        backgroundImage="/images/sales-villa.jpg"
+        minHeight="60vh"
+      />
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">

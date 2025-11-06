@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import FullScreenHero from "@/components/FullScreenHero";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
@@ -33,24 +34,12 @@ const RothschildNeighborhood = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[40vh] overflow-hidden">
-        <img
-          src="/images/en/neighborhoods/rothschild-hero.jpg"
-          alt="Rothschild Boulevard"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="font-playfair text-4xl md:text-6xl font-bold text-white mb-4">
-              Rothschild Boulevard
-            </h1>
-            <p className="font-montserrat text-lg text-white/90 max-w-2xl">
-              The heart of Tel Aviv's Bauhaus architecture and cultural scene
-            </p>
-          </div>
-        </div>
-      </section>
+      <FullScreenHero
+        title="Rothschild Boulevard"
+        subtitle="The heart of Tel Aviv's Bauhaus architecture and cultural scene"
+        backgroundImage="/images/en/neighborhoods/rothschild-hero.jpg"
+        minHeight="60vh"
+      />
 
       {/* History & Character */}
       <section className="py-16 bg-background">
