@@ -20,12 +20,12 @@ const WhatsAppFloat = () => {
     <Button
       onClick={handleWhatsAppClick}
       size="lg"
-      className="fixed bottom-6 left-6 z-[9999] h-16 w-16 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 bg-[#25D366] hover:bg-[#128C7E] p-0 border-0"
+      className="fixed bottom-6 left-6 z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 bg-[#25D366] hover:bg-[#128C7E] p-0 border-0"
       aria-label="צור קשר בוואטסאפ - WhatsApp"
     >
       <svg 
         viewBox="0 0 32 32" 
-        className="h-10 w-10"
+        className="h-11 w-11"
         fill="white"
         xmlns="http://www.w3.org/2000/svg"
       >
