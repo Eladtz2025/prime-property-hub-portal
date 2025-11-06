@@ -5,6 +5,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
+import { supabase } from "@/integrations/supabase/client";
 
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
@@ -21,21 +22,31 @@ const Contact = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      contactSchema.parse(formData);
+      const validatedData = contactSchema.parse(formData);
       
-      const phone = '972545503055';
-      const message = `שלום,\n\nשם: ${formData.name}\nאימייל: ${formData.email}\nטלפון: ${formData.phone}\n\nהודעה:\n${formData.message}`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      const { error } = await supabase
+        .from('contact_leads')
+        .insert({
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone || null,
+          message: validatedData.message,
+          property_id: null,
+        });
+      
+      if (error) throw error;
       
       setFormData({ name: "", email: "", phone: "", message: "" });
       toast.success("ההודעה נשלחה בהצלחה!");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else {
+        toast.error("אירעה שגיאה בשליחה");
       }
     }
   };
