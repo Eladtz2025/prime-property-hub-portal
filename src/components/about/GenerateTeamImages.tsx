@@ -45,10 +45,20 @@ export const GenerateTeamImages = () => {
         body: { prompt: member.prompt, name: member.name },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Function error:", error);
+        toast.error(`Failed to generate ${member.name}: ${error.message}`);
+        return;
+      }
 
       if (data.error) {
+        console.error("Data error:", data.error);
         toast.error(`Failed to generate ${member.name}: ${data.error}`);
+        return;
+      }
+
+      if (!data.imageUrl) {
+        toast.error(`No image received for ${member.name}`);
         return;
       }
 
@@ -60,7 +70,7 @@ export const GenerateTeamImages = () => {
       toast.success(`Generated image for ${member.name}`);
     } catch (error) {
       console.error("Error generating image:", error);
-      toast.error(`Failed to generate image for ${member.name}`);
+      toast.error(`Failed to generate image for ${member.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setGenerating(null);
     }
@@ -79,8 +89,10 @@ export const GenerateTeamImages = () => {
   const generateAll = async () => {
     for (const member of teamMembers) {
       await generateImage(member);
-      // Wait 2 seconds between generations to avoid rate limits
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait 3 seconds between generations to avoid rate limits and allow processing time
+      if (generating === null) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
     }
   };
 
