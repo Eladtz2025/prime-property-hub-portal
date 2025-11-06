@@ -106,7 +106,6 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
             className="min-h-[100px] text-left"
-            dir="auto"
           />
           <div className="flex gap-2">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
