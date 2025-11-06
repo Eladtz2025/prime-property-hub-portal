@@ -6,41 +6,39 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
-
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
   email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
   phone: z.string().min(9, "מספר טלפון לא תקין").max(15, "מספר טלפון ארוך מדי"),
   message: z.string().min(10, "הודעה חייבת להכיל לפחות 10 תווים").max(1000, "הודעה ארוכה מדי")
 });
-
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    message: "",
+    message: ""
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const validatedData = contactSchema.parse(formData);
-      
-      const { error } = await supabase
-        .from('contact_leads')
-        .insert({
-          name: validatedData.name,
-          email: validatedData.email,
-          phone: validatedData.phone || null,
-          message: validatedData.message,
-          property_id: null,
-        });
-      
+      const {
+        error
+      } = await supabase.from('contact_leads').insert({
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone || null,
+        message: validatedData.message,
+        property_id: null
+      });
       if (error) throw error;
-      
-      setFormData({ name: "", email: "", phone: "", message: "" });
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        message: ""
+      });
       toast.success("ההודעה נשלחה בהצלחה!");
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -50,18 +48,12 @@ const Contact = () => {
       }
     }
   };
-
-  return (
-    <div className="min-h-screen hebrew-luxury" dir="rtl">
+  return <div className="min-h-screen hebrew-luxury" dir="rtl">
       <HebrewHeader />
 
       {/* Hero Section */}
       <section className="relative h-[30vh] overflow-hidden">
-        <img
-          src="/images/hero-contact.jpg"
-          alt="צור קשר"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src="/images/hero-contact.jpg" alt="צור קשר" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
         <div className="relative h-full flex items-center justify-center text-center px-4">
           <div>
@@ -147,55 +139,40 @@ const Contact = () => {
                   <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     שם *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
-                    placeholder="שמך המלא"
-                  />
+                  <input type="text" required value={formData.name} onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right" placeholder="שמך המלא" />
                 </div>
 
                 <div>
                   <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     אימייל *
                   </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
-                    placeholder="הדוא״ל שלך"
-                  />
+                  <input type="email" required value={formData.email} onChange={e => setFormData({
+                  ...formData,
+                  email: e.target.value
+                })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right" placeholder="הדוא״ל שלך" />
                 </div>
 
                 <div>
                   <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     טלפון
                   </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right"
-                    placeholder="054-XXX-XXXX"
-                  />
+                  <input type="tel" value={formData.phone} onChange={e => setFormData({
+                  ...formData,
+                  phone: e.target.value
+                })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-right" placeholder="054-XXX-XXXX" />
                 </div>
 
                 <div>
                   <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block text-right">
                     הודעה *
                   </label>
-                  <textarea
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    rows={6}
-                    className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none text-right"
-                    placeholder="ספרו לנו על צרכי הנדל״ן שלכם..."
-                  />
+                  <textarea required value={formData.message} onChange={e => setFormData({
+                  ...formData,
+                  message: e.target.value
+                })} rows={6} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none text-right" placeholder="ספרו לנו על צרכי הנדל״ן שלכם..." />
                 </div>
 
                 <button type="submit" className="reliz-button w-full">
@@ -210,16 +187,12 @@ const Contact = () => {
       {/* Map Section (Placeholder) */}
       <section className="h-96 bg-muted/30">
         <div className="w-full h-full flex items-center justify-center">
-          <p className="font-montserrat text-muted-foreground">
-            שילוב מפה
-          </p>
+          
         </div>
       </section>
 
       {/* Footer */}
       <HebrewFooter />
-    </div>
-  );
+    </div>;
 };
-
 export default Contact;
