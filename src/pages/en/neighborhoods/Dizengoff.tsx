@@ -2,27 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
-import { PropertyCard } from "@/components/en/PropertyCard";
 import EnglishFooter from "@/components/en/Footer";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
-
-  const properties = [
-    {
-      id: "5",
-      title: "Modern City Apartment",
-      address: "Dizengoff Street 123",
-      neighborhood: "Dizengoff",
-      price: "₪3.2M",
-      priceLabel: "",
-      size: 85,
-      rooms: 2,
-      bathrooms: 1,
-      parking: true,
-      imageUrl: "/images/en/properties/modern-penthouse.jpg",
-    },
-  ];
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -165,18 +148,6 @@ const DizengoffNeighborhood = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Available Properties */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8 text-center">Available Properties</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} {...property} onClick={() => navigate(`/en/property/${property.id}`)} />
-            ))}
           </div>
         </div>
       </section>

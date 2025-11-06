@@ -2,40 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
-import { PropertyCard } from "@/components/en/PropertyCard";
 import EnglishFooter from "@/components/en/Footer";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
-
-  const properties = [
-    {
-      id: "1",
-      title: "Luxury Bauhaus Apartment",
-      address: "Rothschild Boulevard 45",
-      neighborhood: "Rothschild",
-      price: "₪12,000",
-      priceLabel: "/month",
-      size: 120,
-      rooms: 3,
-      bathrooms: 2,
-      parking: true,
-      imageUrl: "/images/en/properties/luxury-rothschild.jpg",
-    },
-    {
-      id: "2",
-      title: "Penthouse with Boulevard Views",
-      address: "Rothschild Boulevard 78",
-      neighborhood: "Rothschild",
-      price: "₪8.5M",
-      priceLabel: "",
-      size: 180,
-      rooms: 4,
-      bathrooms: 3,
-      parking: true,
-      imageUrl: "/images/en/properties/modern-penthouse.jpg",
-    },
-  ];
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -178,18 +148,6 @@ const RothschildNeighborhood = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Available Properties */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-8 text-center">Available Properties</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} {...property} onClick={() => navigate(`/en/property/${property.id}`)} />
-            ))}
           </div>
         </div>
       </section>
