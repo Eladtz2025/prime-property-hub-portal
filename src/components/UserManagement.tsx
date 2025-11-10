@@ -56,36 +56,49 @@ export const UserManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      // In a real app, you would send an invitation email
-      // For now, we'll create a pending user entry
-      // Generate a temporary ID for the invite (in real app, this would be handled by auth signup)
-      const tempId = crypto.randomUUID();
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_invitations')
         .insert([
           {
-            id: tempId,
             email: inviteEmail,
             role: inviteRole,
-            is_approved: false,
-            full_name: null
+            invited_by: profile?.id
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // יצירת קישור הרשמה
+      const signupUrl = `${window.location.origin}/login?invite=${data.invitation_token}&email=${encodeURIComponent(inviteEmail)}`;
+
       toast({
-        title: "הזמנה נשלחה",
-        description: `הזמנה נשלחה ל-${inviteEmail}`,
+        title: "הזמנה נוצרה",
+        description: "קישור ההזמנה הועתק ללוח. שלח אותו למשתמש החדש.",
+        action: (
+          <Button 
+            size="sm" 
+            onClick={() => {
+              navigator.clipboard.writeText(signupUrl);
+              toast({ title: "הקישור הועתק!" });
+            }}
+          >
+            העתק שוב
+          </Button>
+        ),
       });
+
+      // העתק אוטומטית ללוח
+      navigator.clipboard.writeText(signupUrl);
 
       setInviteEmail('');
       await fetchUsers();
     } catch (error) {
-      logger.error('Error inviting user:', error);
+      logger.error('Error creating invitation:', error);
       toast({
         title: "שגיאה",
-        description: "שגיאה בשליחת ההזמנה",
+        description: "שגיאה ביצירת ההזמנה",
         variant: "destructive"
       });
     } finally {

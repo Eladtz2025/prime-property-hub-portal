@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { signInWithEmail, signUp } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginScreenProps {
   onLogin?: () => void;
@@ -26,6 +27,62 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [invitedRole, setInvitedRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    // קריאת פרמטרים מה-URL
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invite');
+    const email = params.get('email');
+    
+    if (token) {
+      setInviteToken(token);
+      setIsSignUp(true); // מעבר אוטומטי להרשמה
+      
+      if (email) {
+        setCredentials(prev => ({ ...prev, email }));
+      }
+      
+      // טעינת פרטי ההזמנה
+      loadInvitationDetails(token);
+    }
+  }, []);
+
+  const loadInvitationDetails = async (token: string) => {
+    const { data, error } = await supabase
+      .from('user_invitations')
+      .select('*')
+      .eq('invitation_token', token)
+      .gt('expires_at', new Date().toISOString())
+      .is('used_at', null)
+      .single();
+      
+    if (data) {
+      setInvitedRole(data.role);
+      toast({
+        title: "הוזמנת להצטרף!",
+        description: `הוזמנת כ${getRoleLabel(data.role)}`,
+      });
+    } else {
+      toast({
+        title: "קישור לא תקף",
+        description: "ההזמנה פגה או כבר נוצלה",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      'super_admin': 'מנהל עליון',
+      'admin': 'מנהל',
+      'manager': 'מנהל תיקים',
+      'viewer': 'צופה',
+      'property_owner': 'בעל נכס'
+    };
+    return labels[role] || role;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,24 +101,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
         logger.info('User signed up successfully');
         
-        // Check if there's a pending invitation token
-        const pendingToken = localStorage.getItem('pending_invitation_token');
+        toast({
+          title: "הרשמה הצליחה!",
+          description: inviteToken 
+            ? "החשבון נוצר והתפקיד שלך אושר אוטומטית" 
+            : "נרשמת בהצלחה! החשבון שלך ממתין לאישור מנהל",
+        });
         
-        if (pendingToken) {
-          // Don't clear the token yet - it will be cleared after successful login
-          toast({
-            title: "הרשמה הצליחה",
-            description: "כעת התחבר כדי לקבל את ההזמנה",
-          });
-        } else {
-          toast({
-            title: "הרשמה הצליחה",
-            description: "נרשמת בהצלחה! אנא בדוק את המייל שלך לאימות החשבון.",
-          });
-        }
-        
+        // אם יש token, אישרנו אוטומטית ב-trigger
+        // עובר ל-login
         setIsSignUp(false);
-        setCredentials({ email: '', password: '', fullName: '' });
+        setCredentials(prev => ({ ...prev, password: '', fullName: '' }));
       } else {
         const { data, error } = await signInWithEmail(credentials.email, credentials.password);
         
@@ -74,27 +124,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         if (data.user) {
           logger.info('User logged in successfully');
           
-          // Check if there's a pending invitation token
-          const pendingToken = localStorage.getItem('pending_invitation_token');
+          toast({
+            title: "התחברות הצליחה",
+            description: "ברוך הבא למערכת ניהול הנכסים",
+          });
           
-          if (pendingToken) {
-            // Clear the token from storage
-            localStorage.removeItem('pending_invitation_token');
-            
-            toast({
-              title: "התחברות הצליחה",
-              description: "מעביר אותך לקבלת ההזמנה...",
-            });
-            
-            // Redirect to invitation page with token
-            window.location.href = `/owner-invitation?token=${pendingToken}`;
-          } else {
-            toast({
-              title: "התחברות הצליחה",
-              description: "ברוך הבא למערכת ניהול הנכסים",
-            });
-            onLogin?.();
-          }
+          onLogin?.();
         }
       }
     } catch (error) {
