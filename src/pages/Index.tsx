@@ -2,7 +2,6 @@ import VideoHero from '@/components/he/VideoHero';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
 import DivisionCard from '@/components/DivisionCard';
-import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { RelizPropertyCard } from '@/components/en/RelizPropertyCard';
 import { useNavigate } from 'react-router-dom';
 import { Award, TrendingUp, Users } from 'lucide-react';
@@ -153,7 +152,6 @@ const Index = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://citymarket.co.il" />
       </Helmet>
-      <WhatsAppFloat />
       <HebrewHeader />
       
       {/* Hero Section */}

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { Input } from '@/components/ui/input';
 import { ImageCarousel } from '@/components/ImageCarousel';
 import { PropertyImage } from '@/types/property';
@@ -123,7 +122,6 @@ const PropertyDetailPage = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
-      <WhatsAppFloat />
 
       {/* Mobile Layout */}
       <div className="lg:hidden">

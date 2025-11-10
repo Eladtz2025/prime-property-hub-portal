@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
-import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
 
@@ -136,7 +135,6 @@ const Rentals = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
-      <WhatsAppFloat />
       <HebrewHeader />
       
       {/* Hero Section */}

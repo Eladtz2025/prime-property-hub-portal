@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
-import WhatsAppFloat from '@/components/WhatsAppFloat';
 import { FlippablePropertyCard } from '@/components/he/FlippablePropertyCard';
 import { ConsultationModal } from '@/components/he/ConsultationModal';
 
@@ -57,7 +56,6 @@ const Management = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
-      <WhatsAppFloat />
       <HebrewHeader />
 
       {/* Hero Section */}
