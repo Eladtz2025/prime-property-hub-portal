@@ -6,11 +6,6 @@ const WhatsAppFloat = () => {
   const [position, setPosition] = useState({ left: 24, bottom: 24 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; initialLeft: number; initialBottom: number } | null>(null);
-  
-  // Hide on property detail pages
-  const isPropertyDetailPage = location.pathname.includes('/property/');
-  
-  if (isPropertyDetailPage) return null;
 
   const handleWhatsAppClick = () => {
     if (isDragging) return;
@@ -91,6 +86,10 @@ const WhatsAppFloat = () => {
   const handleTouchEnd = () => {
     handleDragEnd();
   };
+
+  // Hide on property detail pages
+  const isPropertyDetailPage = location.pathname.includes('/property/');
+  if (isPropertyDetailPage) return null;
 
   return (
     <button
