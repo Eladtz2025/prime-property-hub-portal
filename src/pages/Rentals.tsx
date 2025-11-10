@@ -208,7 +208,7 @@ const Rentals = () => {
                       ))}
                     </div>
                     <Button asChild className="w-full">
-                      <Link to={`/property/${property.id}`}>פרטים נוספים</Link>
+                      <Link to={`/he/property/${property.id}`}>פרטים נוספים</Link>
                     </Button>
                   </div>
                 </Card>
