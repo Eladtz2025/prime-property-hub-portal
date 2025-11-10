@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -130,9 +130,9 @@ const AppContent: React.FC = () => {
           <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
         
         {/* Old property routes - redirect to /he/property */}
-        <Route path="/rentals/property/:id" element={<Navigate to="/he/property/:id" replace />} />
-        <Route path="/sales/property/:id" element={<Navigate to="/he/property/:id" replace />} />
-        <Route path="/management/property/:id" element={<Navigate to="/he/property/:id" replace />} />
+        <Route path="/rentals/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
+        <Route path="/sales/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
+        <Route path="/management/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
         
         {loading ? (
           <Route path="*" element={
@@ -288,6 +288,13 @@ const AppContent: React.FC = () => {
       </Routes>
     </BrowserRouter>
   );
+};
+
+// Component to handle redirects with URL params
+const RedirectWithParams = ({ to }: { to: string }) => {
+  const params = useParams();
+  const resolvedPath = to.replace(':id', params.id || '');
+  return <Navigate to={resolvedPath} replace />;
 };
 
 function App() {

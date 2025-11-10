@@ -134,9 +134,9 @@ const PropertyDetailPage = () => {
               דף הבית
             </Link>
             <ChevronLeft className="h-4 w-4" />
-            <Link to={property.property_type === 'sale' ? '/sales' : '/rentals'} className="hover:text-primary transition-colors">
-              {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
-            </Link>
+          <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
+            {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
+          </Link>
             <ChevronLeft className="h-4 w-4" />
             <span className="text-foreground">{property.title}</span>
           </nav>
@@ -280,7 +280,7 @@ const PropertyDetailPage = () => {
             דף הבית
           </Link>
           <ChevronLeft className="h-4 w-4" />
-          <Link to={property.property_type === 'sale' ? '/sales' : '/rentals'} className="hover:text-primary transition-colors">
+          <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
           <ChevronLeft className="h-4 w-4" />
