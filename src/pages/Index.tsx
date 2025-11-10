@@ -94,7 +94,7 @@ const Index = () => {
         'הכנת חוזים משפטיים',
         'שירות אישי ומסור',
       ],
-      link: '/rentals',
+      link: '/he/rentals',
       icon: 'users' as const,
     },
     {
@@ -107,7 +107,7 @@ const Index = () => {
         'ייעוץ משפטי ומיסוי מלא',
         'ניהול מו"מ וליווי עד לסגירה',
       ],
-      link: '/sales',
+      link: '/he/sales',
       icon: 'trending' as const,
     },
     {
@@ -120,7 +120,7 @@ const Index = () => {
         'ניהול דיירים מקצועי',
         'זמינות ושירות 24/7',
       ],
-      link: '/management',
+      link: '/he/management',
       icon: 'building' as const,
     },
   ];
@@ -224,14 +224,14 @@ const Index = () => {
             {neighborhoods.map((neighborhood) => (
               <div
                 key={neighborhood.id}
-                onClick={() => navigate(`/neighborhoods/${neighborhood.id}`)}
+                onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)}
                 className="group relative aspect-[3/4] overflow-hidden cursor-pointer"
                 role="button"
                 aria-label={`חקור את שכונת ${neighborhood.name}`}
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/neighborhoods/${neighborhood.id}`);
+                    navigate(`/he/neighborhoods/${neighborhood.id}`);
                   }
                 }}
               >
@@ -254,7 +254,7 @@ const Index = () => {
 
           <div className="text-center">
             <button
-              onClick={() => navigate("/neighborhoods")}
+              onClick={() => navigate("/he/neighborhoods")}
               className="reliz-button"
             >
               חקור את כל השכונות

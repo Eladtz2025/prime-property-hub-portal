@@ -87,7 +87,7 @@ const HebrewNeighborhoods = () => {
               <Card
                 key={neighborhood.id}
                 className="group overflow-hidden border-0 shadow-card hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2"
-                onClick={() => navigate(`/neighborhoods/${neighborhood.id}`)}
+                onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)}
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img

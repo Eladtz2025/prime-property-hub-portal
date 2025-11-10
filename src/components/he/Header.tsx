@@ -30,9 +30,9 @@ const HebrewHeader = () => {
   ];
 
   const rightNavItems = [
-    { label: "דף הבית", path: "/" },
-    { label: "ניהול נכסים", path: "/management" },
-    { label: "בניינים חדשים", path: "/new-developments" },
+    { label: "דף הבית", path: "/he" },
+    { label: "ניהול נכסים", path: "/he/management" },
+    { label: "בניינים חדשים", path: "/he/new-developments" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -85,7 +85,7 @@ const HebrewHeader = () => {
           {/* Center Logo - Absolute Center */}
           <div className="flex items-center justify-center">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/he")}
               className="transition-transform duration-200 hover:scale-105"
             >
               <img 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -81,21 +81,21 @@ const AppContent: React.FC = () => {
         <Route path="/brokerage-form/new" element={<BrokerageFormPage />} />
         <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
         
-        {/* Public pages - accessible to everyone */}
-        <Route path="/" element={<Index />} />
-        <Route path="/rentals" element={<Rentals />} />
-        <Route path="/sales" element={<Sales />} />
-        <Route path="/management" element={<Management />} />
-        <Route path="/about" element={<HebrewAbout />} />
-        <Route path="/contact" element={<HebrewContact />} />
-        <Route path="/neighborhoods" element={<HebrewNeighborhoods />} />
-        <Route path="/neighborhoods/rothschild" element={<HebrewRothschild />} />
-        <Route path="/neighborhoods/neve-tzedek" element={<HebrewNeveTzedek />} />
-        <Route path="/neighborhoods/florentin" element={<HebrewFlorentin />} />
-        <Route path="/neighborhoods/dizengoff" element={<HebrewDizengoff />} />
-        <Route path="/neighborhoods/old-north" element={<HebrewOldNorth />} />
-        <Route path="/new-developments" element={<HebrewNewDevelopments />} />
-        <Route path="/price-offer/:token" element={<PriceOfferView />} />
+        {/* Public pages - Redirects to /he/ */}
+        <Route path="/" element={<Navigate to="/he" replace />} />
+        <Route path="/rentals" element={<Navigate to="/he/rentals" replace />} />
+        <Route path="/sales" element={<Navigate to="/he/sales" replace />} />
+        <Route path="/management" element={<Navigate to="/he/management" replace />} />
+        <Route path="/about" element={<Navigate to="/he/about" replace />} />
+        <Route path="/contact" element={<Navigate to="/he/contact" replace />} />
+        <Route path="/neighborhoods" element={<Navigate to="/he/neighborhoods" replace />} />
+        <Route path="/neighborhoods/rothschild" element={<Navigate to="/he/neighborhoods/rothschild" replace />} />
+        <Route path="/neighborhoods/neve-tzedek" element={<Navigate to="/he/neighborhoods/neve-tzedek" replace />} />
+        <Route path="/neighborhoods/florentin" element={<Navigate to="/he/neighborhoods/florentin" replace />} />
+        <Route path="/neighborhoods/dizengoff" element={<Navigate to="/he/neighborhoods/dizengoff" replace />} />
+        <Route path="/neighborhoods/old-north" element={<Navigate to="/he/neighborhoods/old-north" replace />} />
+        <Route path="/new-developments" element={<Navigate to="/he/new-developments" replace />} />
+        <Route path="/property/:id" element={<Navigate to="/he/property/:id" replace />} />
         
         {/* Hebrew Routes with /he/ prefix */}
         <Route path="/he" element={<Index />} />
@@ -129,10 +129,10 @@ const AppContent: React.FC = () => {
           <Route path="/en/contact" element={<EnglishContact />} />
           <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
         
-        <Route path="/property/:id" element={<PropertyDetailPage />} />
-        <Route path="/rentals/property/:id" element={<PropertyDetailPage />} />
-        <Route path="/sales/property/:id" element={<PropertyDetailPage />} />
-        <Route path="/management/property/:id" element={<PropertyDetailPage />} />
+        {/* Old property routes - redirect to /he/property */}
+        <Route path="/rentals/property/:id" element={<Navigate to="/he/property/:id" replace />} />
+        <Route path="/sales/property/:id" element={<Navigate to="/he/property/:id" replace />} />
+        <Route path="/management/property/:id" element={<Navigate to="/he/property/:id" replace />} />
         
         {loading ? (
           <Route path="*" element={
