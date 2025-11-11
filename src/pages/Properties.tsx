@@ -60,7 +60,9 @@ export const Properties: React.FC = memo(() => {
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
+  const canCreateProperties = hasPermission('properties', 'create');
   const canEditProperties = hasPermission('properties', 'update');
+  const canDeleteProperties = hasPermission('properties', 'delete');
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -342,7 +344,7 @@ export const Properties: React.FC = memo(() => {
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {startIndex}-{endIndex} מתוך {totalItems} נכסים
             </div>
-            {canEditProperties && (
+            {canCreateProperties && (
               <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
                 <Plus className="h-4 w-4 mr-2" />
                 הוסף נכס
