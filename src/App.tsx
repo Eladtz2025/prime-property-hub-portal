@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
               path="/admin-dashboard/properties" 
               element={
                 <Layout onLogout={signOut}>
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute requiredRole="manager">
                     <Properties />
                   </ProtectedRoute>
                 </Layout>
