@@ -103,7 +103,7 @@ const WhatsAppFloat = () => {
         bottom: `${position.bottom}px`,
         touchAction: 'none',
       }}
-      className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-move flex items-center justify-center p-0 select-none"
+      className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-pointer hover:cursor-pointer flex items-center justify-center p-0 select-none"
       aria-label="צור קשר בוואטסאפ - WhatsApp"
     >
       <svg 
