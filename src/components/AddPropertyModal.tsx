@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
   AccordionContent,
@@ -251,37 +252,42 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Accordion type="single" collapsible defaultValue="basic" className="w-full">
-            {/* Basic Property Details */}
-            <AccordionItem value="basic">
-              <AccordionTrigger>📋 פרטי נכס בסיסיים</AccordionTrigger>
+          <Accordion type="single" collapsible defaultValue="property" className="w-full">
+            {/* Property Details - Merged Basic + Features */}
+            <AccordionItem value="property">
+              <AccordionTrigger>🏠 פרטי הנכס</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
-                <div>
-                  <Label htmlFor="property_type">סוג נכס *</Label>
-                  <Select value={formData.property_type} onValueChange={(value) => handleInputChange('property_type', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rental">השכרה</SelectItem>
-                      <SelectItem value="sale">מכירה</SelectItem>
-                      <SelectItem value="management">ניהול נכסים</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Row 1: Property Type, Status, City */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="address">כתובת *</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="רחוב ומספר בית"
-                      required
-                    />
+                    <Label htmlFor="property_type">סוג נכס *</Label>
+                    <Select value={formData.property_type} onValueChange={(value) => handleInputChange('property_type', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rental">השכרה</SelectItem>
+                        <SelectItem value="sale">מכירה</SelectItem>
+                        <SelectItem value="management">ניהול נכסים</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
+
+                  <div>
+                    <Label htmlFor="status">סטטוס</Label>
+                    <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unknown">לא ידוע</SelectItem>
+                        <SelectItem value="vacant">פנוי</SelectItem>
+                        <SelectItem value="occupied">תפוס</SelectItem>
+                        <SelectItem value="maintenance">תחזוקה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div>
                     <Label htmlFor="city">עיר *</Label>
                     <Input
@@ -294,6 +300,19 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </div>
                 </div>
 
+                {/* Row 2: Address */}
+                <div>
+                  <Label htmlFor="address">כתובת *</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="רחוב ומספר בית"
+                    required
+                  />
+                </div>
+
+                {/* Row 3: Title */}
                 <div>
                   <Label htmlFor="title">כותרת</Label>
                   <Input
@@ -304,6 +323,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   />
                 </div>
 
+                {/* Row 4: Description */}
                 <div>
                   <Label htmlFor="description">תיאור</Label>
                   <Textarea
@@ -311,31 +331,13 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="תיאור מפורט של הנכס..."
-                    rows={3}
+                    rows={2}
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="status">סטטוס</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unknown">לא ידוע</SelectItem>
-                      <SelectItem value="vacant">פנוי</SelectItem>
-                      <SelectItem value="occupied">תפוס</SelectItem>
-                      <SelectItem value="maintenance">תחזוקה</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+                <Separator className="my-4" />
 
-            {/* Property Features */}
-            <AccordionItem value="features">
-              <AccordionTrigger>🏠 מאפייני הנכס</AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
+                {/* Row 5: Rooms, Bathrooms, Size, Floor */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="rooms">חדרים</Label>
@@ -348,7 +350,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       placeholder="3.5"
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="bathrooms">חדרי רחצה</Label>
                     <Input
@@ -359,9 +361,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       placeholder="1"
                     />
                   </div>
-                  
+
                   <div>
-                    <Label htmlFor="propertySize">גודל (מ״ר)</Label>
+                    <Label htmlFor="propertySize">גודל מ״ר</Label>
                     <Input
                       id="propertySize"
                       type="number"
@@ -370,7 +372,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       placeholder="80"
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="floor">קומה</Label>
                     <Input
@@ -383,7 +385,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Row 6: Building Floors */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="buildingFloors">קומות בבניין</Label>
                     <Input
@@ -396,56 +399,53 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                {/* Row 7: Checkboxes */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
                       id="parking"
                       checked={formData.parking}
-                      onCheckedChange={(checked) => handleInputChange('parking', checked.toString())}
+                      onCheckedChange={(checked) => handleInputChange('parking', !!checked)}
                     />
                     <Label htmlFor="parking" className="cursor-pointer">חניה</Label>
                   </div>
-
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
                       id="elevator"
                       checked={formData.elevator}
-                      onCheckedChange={(checked) => handleInputChange('elevator', checked.toString())}
+                      onCheckedChange={(checked) => handleInputChange('elevator', !!checked)}
                     />
                     <Label htmlFor="elevator" className="cursor-pointer">מעלית</Label>
                   </div>
-
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
                       id="balcony"
                       checked={formData.balcony}
-                      onCheckedChange={(checked) => handleInputChange('balcony', checked.toString())}
+                      onCheckedChange={(checked) => handleInputChange('balcony', !!checked)}
                     />
                     <Label htmlFor="balcony" className="cursor-pointer">מרפסת</Label>
                   </div>
-
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <Checkbox
                       id="yard"
                       checked={formData.yard}
-                      onCheckedChange={(checked) => handleInputChange('yard', checked.toString())}
+                      onCheckedChange={(checked) => handleInputChange('yard', !!checked)}
                     />
                     <Label htmlFor="yard" className="cursor-pointer">חצר</Label>
                   </div>
+                  {(formData.balcony || formData.yard) && (
+                    <div>
+                      <Label htmlFor="balconyYardSize" className="text-xs">גודל מרפסת/חצר</Label>
+                      <Input
+                        id="balconyYardSize"
+                        type="number"
+                        value={formData.balconyYardSize}
+                        onChange={(e) => handleInputChange('balconyYardSize', e.target.value)}
+                        placeholder="מ״ר"
+                      />
+                    </div>
+                  )}
                 </div>
-
-                {(formData.balcony || formData.yard) && (
-                  <div>
-                    <Label htmlFor="balconyYardSize">גודל מרפסת/חצר (מ״ר)</Label>
-                    <Input
-                      id="balconyYardSize"
-                      type="number"
-                      value={formData.balconyYardSize}
-                      onChange={(e) => handleInputChange('balconyYardSize', e.target.value)}
-                      placeholder="15"
-                    />
-                  </div>
-                )}
               </AccordionContent>
             </AccordionItem>
 
@@ -489,6 +489,47 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </AccordionContent>
             </AccordionItem>
 
+            {/* Tenant Details - Only for Rental */}
+            {formData.property_type === 'rental' && (
+              <AccordionItem value="tenant">
+                <AccordionTrigger>👤 פרטי השוכר</AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="tenantName">שם השוכר</Label>
+                    <Input
+                      id="tenantName"
+                      value={formData.tenantName}
+                      onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                      placeholder="שם מלא"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="tenantPhone">טלפון</Label>
+                      <Input
+                        id="tenantPhone"
+                        value={formData.tenantPhone}
+                        onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                        placeholder="050-1234567"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="tenantEmail">אימייל</Label>
+                      <Input
+                        id="tenantEmail"
+                        type="email"
+                        value={formData.tenantEmail}
+                        onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
+                        placeholder="email@example.com"
+                      />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
             {/* Rental/Sale Details */}
             <AccordionItem value="rental-sale">
               <AccordionTrigger>
@@ -497,54 +538,18 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <AccordionContent className="space-y-4 pt-4">
                 {formData.property_type === 'rental' && (
                   <>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">פרטי שוכר</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="tenantName">שם השוכר</Label>
-                          <Input
-                            id="tenantName"
-                            value={formData.tenantName}
-                            onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                            placeholder="שם מלא"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="tenantPhone">טלפון שוכר</Label>
-                          <Input
-                            id="tenantPhone"
-                            value={formData.tenantPhone}
-                            onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
-                            placeholder="050-1234567"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="tenantEmail">אימייל שוכר</Label>
-                        <Input
-                          id="tenantEmail"
-                          type="email"
-                          value={formData.tenantEmail}
-                          onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="monthlyRent">שכר דירה חודשי (₪)</Label>
+                        <Label htmlFor="monthlyRent">שכר דירה חודשי</Label>
                         <Input
                           id="monthlyRent"
                           type="number"
                           value={formData.monthlyRent}
                           onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
-                          placeholder="5000"
+                          placeholder="₪"
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="leaseStartDate">תחילת חוזה</Label>
                         <Input
@@ -554,7 +559,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="leaseEndDate">סיום חוזה</Label>
                         <Input
@@ -568,24 +573,24 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="municipalTax">ארנונה חודשית (₪)</Label>
+                        <Label htmlFor="municipalTax">ארנונה חודשית</Label>
                         <Input
                           id="municipalTax"
                           type="number"
                           value={formData.municipalTax}
                           onChange={(e) => handleInputChange('municipalTax', e.target.value)}
-                          placeholder="500"
+                          placeholder="₪"
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי (₪)</Label>
+                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי</Label>
                         <Input
                           id="buildingCommitteeFee"
                           type="number"
                           value={formData.buildingCommitteeFee}
                           onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value)}
-                          placeholder="300"
+                          placeholder="₪"
                         />
                       </div>
                     </div>
@@ -596,70 +601,70 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="acquisitionCost">עלות רכישה (₪)</Label>
+                        <Label htmlFor="acquisitionCost">עלות רכישה</Label>
                         <Input
                           id="acquisitionCost"
                           type="number"
                           value={formData.acquisitionCost}
                           onChange={(e) => handleInputChange('acquisitionCost', e.target.value)}
-                          placeholder="1500000"
+                          placeholder="₪"
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor="renovationCosts">עלויות שיפוץ (₪)</Label>
+                        <Label htmlFor="renovationCosts">עלויות שיפוץ</Label>
                         <Input
                           id="renovationCosts"
                           type="number"
                           value={formData.renovationCosts}
                           onChange={(e) => handleInputChange('renovationCosts', e.target.value)}
-                          placeholder="200000"
+                          placeholder="₪"
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor="currentMarketValue">שווי שוק נוכחי (₪)</Label>
+                        <Label htmlFor="currentMarketValue">שווי שוק נוכחי</Label>
                         <Input
                           id="currentMarketValue"
                           type="number"
                           value={formData.currentMarketValue}
                           onChange={(e) => handleInputChange('currentMarketValue', e.target.value)}
-                          placeholder="2000000"
+                          placeholder="₪"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="municipalTax">ארנונה חודשית (₪)</Label>
+                        <Label htmlFor="municipalTax">ארנונה חודשית</Label>
                         <Input
                           id="municipalTax"
                           type="number"
                           value={formData.municipalTax}
                           onChange={(e) => handleInputChange('municipalTax', e.target.value)}
-                          placeholder="500"
+                          placeholder="₪"
                         />
                       </div>
-                      
+
                       <div>
-                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי (₪)</Label>
+                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי</Label>
                         <Input
                           id="buildingCommitteeFee"
                           type="number"
                           value={formData.buildingCommitteeFee}
                           onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value)}
-                          placeholder="300"
+                          placeholder="₪"
                         />
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id="featured"
-                        checked={formData.featured}
-                        onCheckedChange={(checked) => handleInputChange('featured', checked.toString())}
-                      />
-                      <Label htmlFor="featured" className="cursor-pointer">נכס מומלץ</Label>
+                      <div className="flex items-center space-x-2 space-x-reverse pt-7">
+                        <Checkbox
+                          id="featured"
+                          checked={formData.featured}
+                          onCheckedChange={(checked) => handleInputChange('featured', !!checked)}
+                        />
+                        <Label htmlFor="featured" className="cursor-pointer">נכס מומלץ</Label>
+                      </div>
                     </div>
                   </>
                 )}
