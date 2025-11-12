@@ -456,7 +456,7 @@ export const Properties: React.FC = memo(() => {
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <TableRow key={property.id} className="hover:bg-muted/50">
-                            <TableCell className="font-semibold text-base text-foreground text-right px-4 py-3">
+                            <TableCell className="font-semibold text-base text-foreground text-right px-4 py-3 border-l border-border">
                               <SearchHighlight 
                                 text={property.address} 
                                 searchTerm={filters.searchTerm}
