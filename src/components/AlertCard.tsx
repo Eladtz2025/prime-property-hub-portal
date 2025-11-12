@@ -27,11 +27,19 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 
   return (
     <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm">
+          טופל
+        </Button>
+        <Button variant="ghost" size="sm">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex items-center gap-3 flex-row-reverse">
         <div className={`h-8 w-8 rounded-full flex items-center justify-center ${priorityColors[alert.priority]}`}>
           <Icon className="h-4 w-4" />
         </div>
-        <div>
+        <div className="text-right">
           <div className="font-medium text-sm">{alert.message}</div>
           <div className="text-xs text-muted-foreground">
             {alert.propertyAddress && `כתובת: ${alert.propertyAddress}`}
@@ -43,14 +51,6 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
             )}
           </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">
-          טופל
-        </Button>
-        <Button variant="ghost" size="sm">
-          <X className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );

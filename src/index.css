@@ -38,6 +38,19 @@
     margin-right: 0;
     margin-left: 0.5rem;
   }
+  
+  .rtl .flex-row {
+    flex-direction: row-reverse;
+  }
+  
+  .rtl .border-l-4 {
+    border-left-width: 0;
+    border-right-width: 4px;
+  }
+  
+  .rtl .gap-3 {
+    gap: 0.75rem;
+  }
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
