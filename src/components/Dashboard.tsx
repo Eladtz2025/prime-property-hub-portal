@@ -208,7 +208,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <Button 
               variant="outline" 
               className="w-full justify-start"
-              onClick={() => navigate('/brokerage-form/new')}
+              onClick={() => window.open('/brokerage-form/new', '_blank')}
             >
               <FileText className="h-4 w-4 ml-2" />
               הזמנת תיווך
