@@ -6,15 +6,19 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { MessageSquare } from 'lucide-react';
 
-export const ContactLeadsListCompact = () => {
+interface ContactLeadsListCompactProps {
+  limit?: number;
+}
+
+export const ContactLeadsListCompact: React.FC<ContactLeadsListCompactProps> = ({ limit = 5 }) => {
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['contact-leads'],
+    queryKey: ['contact-leads', limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contact_leads')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(limit);
       
       if (error) throw error;
       return data;

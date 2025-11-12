@@ -30,6 +30,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const navigate = useNavigate();
   const urgentAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
   const highPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
+  const mediumPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'medium'), [alerts]);
+  const lowPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'low'), [alerts]);
   
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
@@ -195,7 +197,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* שורה 2: התראות, פעילות ופניות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* התראות ומעקב */}
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-fit">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>התראות ומעקב</CardTitle>
             <Button 
@@ -208,26 +210,25 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent className="h-full overflow-y-auto">
+          <CardContent>
             {urgentAlerts.length === 0 && highPriorityAlerts.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 אין התראות דחופות כרגע
               </div>
             ) : (
               <div className="space-y-2">
-                {urgentAlerts.slice(0, 3).map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
-                {highPriorityAlerts.slice(0, 2).map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
+                {[...urgentAlerts, ...highPriorityAlerts, ...mediumPriorityAlerts, ...lowPriorityAlerts]
+                  .slice(0, 3)
+                  .map((alert) => (
+                    <AlertCard key={alert.id} alert={alert} />
+                  ))}
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* פעילות אחרונה */}
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-fit">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>פעילות אחרונה</CardTitle>
             <Button 
@@ -240,13 +241,13 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent className="h-full overflow-y-auto">
-            <ActivityLogsList limit={10} />
+          <CardContent>
+            <ActivityLogsList limit={3} />
           </CardContent>
         </Card>
 
         {/* פניות מהאתר */}
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-fit">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>פניות מהאתר</CardTitle>
             <Button 
@@ -259,8 +260,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent className="h-full overflow-y-auto">
-            <ContactLeadsListCompact />
+          <CardContent>
+            <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
       </div>

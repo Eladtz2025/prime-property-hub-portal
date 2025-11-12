@@ -69,7 +69,7 @@ export interface PropertyStats {
 export interface Alert {
   id: string;
   type: 'lease_expiry' | 'vacancy' | 'maintenance' | 'payment';
-  priority: 'urgent' | 'high' | 'medium';
+  priority: 'urgent' | 'high' | 'medium' | 'low';
   message: string;
   propertyAddress: string;
   ownerName: string;
