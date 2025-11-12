@@ -11,6 +11,7 @@ import { StatsCard } from './StatsCard';
 
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
+import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -188,8 +189,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </div>
       </div>
 
-      {/* שורה 2: התראות ופעילות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* שורה 2: התראות, פעילות ופניות */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* התראות ומעקב */}
         <Card className="h-fit">
           <CardHeader>
@@ -226,6 +227,16 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           </CardHeader>
           <CardContent className="max-h-[400px] overflow-y-auto">
             <ActivityLogsList limit={5} />
+          </CardContent>
+        </Card>
+
+        {/* פניות מהאתר */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>פניות מהאתר</CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-[400px] overflow-y-auto">
+            <ContactLeadsListCompact />
           </CardContent>
         </Card>
       </div>
