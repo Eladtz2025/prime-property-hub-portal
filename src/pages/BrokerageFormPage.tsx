@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
@@ -34,6 +35,7 @@ const BrokerageFormPage = () => {
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [hasSignature, setHasSignature] = useState(false);
+  const [activeSection, setActiveSection] = useState<'properties' | 'client' | 'signature'>('properties');
   
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
@@ -342,6 +344,22 @@ const BrokerageFormPage = () => {
           </CardHeader>
           
           <CardContent className="space-y-6">
+            {/* Mobile Section Selector */}
+            <div className="md:hidden">
+              <Select value={activeSection} onValueChange={(value) => setActiveSection(value as any)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="properties">נכסים ותנאים</SelectItem>
+                  <SelectItem value="client">פרטי לקוח</SelectItem>
+                  <SelectItem value="signature">חתימה ושמירה</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Properties Section */}
+            <div className={activeSection !== 'properties' ? 'hidden md:block' : ''}>
             {/* Date and Referral */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -572,8 +590,11 @@ const BrokerageFormPage = () => {
                 <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
               </ol>
             </div>
+            </div>
 
-            <div className="border-t pt-6" />
+            {/* Client Details Section */}
+            <div className={activeSection !== 'client' ? 'hidden md:block' : ''}>
+            <div className="border-t pt-6 md:block hidden" />
 
             {/* Client Details */}
             <div className="space-y-4">
@@ -608,7 +629,10 @@ const BrokerageFormPage = () => {
                 </div>
               </div>
             </div>
+            </div>
 
+            {/* Signature Section */}
+            <div className={activeSection !== 'signature' ? 'hidden md:block' : ''}>
             {/* Signature */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -667,6 +691,7 @@ const BrokerageFormPage = () => {
                   צור לינק לשליחה ללקוח
                 </Button>
               )}
+            </div>
             </div>
           </CardContent>
         </Card>
