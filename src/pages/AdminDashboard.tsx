@@ -4,7 +4,7 @@ import { Dashboard } from '../components/Dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
@@ -147,63 +147,49 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
-      <Tabs defaultValue="dashboard" className="w-full" dir="rtl">
-        <TabsList className="mb-6 justify-start">
-          <TabsTrigger value="dashboard">דשבורד</TabsTrigger>
-          <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <Dashboard
+          properties={properties} 
+          stats={stats ? {
+            totalProperties: stats.total,
+            contactedProperties: stats.contacted || 0,
+            notContactedProperties: stats.notContacted || 0,
+            confirmedOccupied: stats.occupied,
+            confirmedVacant: stats.vacant,
+            unknownStatus: stats.unknown || 0,
+            upcomingRenewals: stats.upcomingRenewals
+          } : { 
+            totalProperties: 0, 
+            contactedProperties: 0, 
+            notContactedProperties: 0, 
+            confirmedOccupied: 0, 
+            confirmedVacant: 0, 
+            unknownStatus: 0, 
+            upcomingRenewals: 0 
+          }}
+          alerts={alerts} 
+          onAddProperty={() => setShowAddPropertyModal(true)}
+        />
 
-        <TabsContent value="dashboard">
-          <div className="space-y-6">
-            <Dashboard
-              properties={properties} 
-              stats={stats ? {
-                totalProperties: stats.total,
-                contactedProperties: stats.contacted || 0,
-                notContactedProperties: stats.notContacted || 0,
-                confirmedOccupied: stats.occupied,
-                confirmedVacant: stats.vacant,
-                unknownStatus: stats.unknown || 0,
-                upcomingRenewals: stats.upcomingRenewals
-              } : { 
-                totalProperties: 0, 
-                contactedProperties: 0, 
-                notContactedProperties: 0, 
-                confirmedOccupied: 0, 
-                confirmedVacant: 0, 
-                unknownStatus: 0, 
-                upcomingRenewals: 0 
-              }}
-              alerts={alerts} 
-              onAddProperty={() => setShowAddPropertyModal(true)}
-            />
+        {/* שורה 3: פניות וטפסים */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* פניות מהאתר */}
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>פניות מהאתר</CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[400px] overflow-y-auto">
+              <ContactLeadsListCompact />
+            </CardContent>
+          </Card>
 
-            {/* שורה 3: פניות וטפסים */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* פניות מהאתר */}
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle>פניות מהאתר</CardTitle>
-                </CardHeader>
-                <CardContent className="max-h-[400px] overflow-y-auto">
-                  <ContactLeadsListCompact />
-                </CardContent>
-              </Card>
-
-              {/* טפסי תיווך */}
-              <div className="space-y-4">
-                <BrokerageFormCard />
-                <BrokerageFormsList />
-              </div>
-            </div>
+          {/* טפסי תיווך */}
+          <div className="space-y-4">
+            <BrokerageFormCard />
+            <BrokerageFormsList />
           </div>
-        </TabsContent>
-
-        <TabsContent value="leads">
-          <ContactLeadsList />
-        </TabsContent>
-
-      </Tabs>
+        </div>
+      </div>
       
       <AddPropertyModal
         isOpen={showAddPropertyModal}
