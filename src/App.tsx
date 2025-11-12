@@ -49,6 +49,9 @@ import PriceOfferView from './pages/PriceOfferView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
 import PriceOfferBuilder from './pages/PriceOfferBuilder';
 import BrokerageFormPage from './pages/BrokerageFormPage';
+import AdminAlerts from './pages/AdminAlerts';
+import AdminActivity from './pages/AdminActivity';
+import AdminLeads from './pages/AdminLeads';
 
 import NotFound from './pages/NotFound';
 
@@ -254,6 +257,38 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <PriceOfferBuilder />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            
+            {/* Admin Dashboard - Full Pages */}
+            <Route 
+              path="/admin/alerts" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminAlerts />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin/activity" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminActivity />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin/leads" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLeads />
                   </ProtectedRoute>
                 </Layout>
               } 

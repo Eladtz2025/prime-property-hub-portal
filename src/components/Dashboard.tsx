@@ -14,6 +14,8 @@ import { ActivityLogsList } from './ActivityLogsList';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 interface DashboardProps {
   properties: Property[];
@@ -24,7 +26,8 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, stats, alerts, onAddProperty }) => {
   const { isMobile } = useMobileOptimization();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const urgentAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
   const highPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
   
@@ -192,50 +195,71 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* שורה 2: התראות, פעילות ופניות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* התראות ומעקב */}
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              התראות ומעקב
-            </CardTitle>
+        <Card className="h-[600px] flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>התראות ומעקב</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/admin/alerts')}
+              className="gap-1"
+            >
+              <span className="text-sm">ראה הכל</span>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </CardHeader>
-          <CardContent className="max-h-[400px] overflow-y-auto">
-            {alerts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <p>אין התראות פעילות</p>
+          <CardContent className="h-full overflow-y-auto">
+            {urgentAlerts.length === 0 && highPriorityAlerts.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                אין התראות דחופות כרגע
               </div>
             ) : (
-              <div className="space-y-3">
-                {alerts.slice(0, 5).map((alert) => (
+              <div className="space-y-2">
+                {urgentAlerts.slice(0, 3).map((alert) => (
                   <AlertCard key={alert.id} alert={alert} />
                 ))}
-                {alerts.length > 5 && (
-                  <p className="text-xs text-center text-muted-foreground pt-2">
-                    +{alerts.length - 5} התראות נוספות
-                  </p>
-                )}
+                {highPriorityAlerts.slice(0, 2).map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+                ))}
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* פעילות אחרונה */}
-        <Card className="h-fit">
-          <CardHeader>
+        <Card className="h-[600px] flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>פעילות אחרונה</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/admin/activity')}
+              className="gap-1"
+            >
+              <span className="text-sm">ראה הכל</span>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </CardHeader>
-          <CardContent className="max-h-[400px] overflow-y-auto">
-            <ActivityLogsList limit={5} />
+          <CardContent className="h-full overflow-y-auto">
+            <ActivityLogsList limit={10} />
           </CardContent>
         </Card>
 
         {/* פניות מהאתר */}
-        <Card className="h-fit">
-          <CardHeader>
+        <Card className="h-[600px] flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>פניות מהאתר</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/admin/leads')}
+              className="gap-1"
+            >
+              <span className="text-sm">ראה הכל</span>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </CardHeader>
-          <CardContent className="max-h-[400px] overflow-y-auto">
+          <CardContent className="h-full overflow-y-auto">
             <ContactLeadsListCompact />
           </CardContent>
         </Card>
