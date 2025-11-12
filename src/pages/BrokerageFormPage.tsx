@@ -61,7 +61,8 @@ const BrokerageFormPage = () => {
       toast.error('אין לך הרשאה ליצור טפסי תיווך');
       navigate('/admin-dashboard');
     }
-  }, [mode, hasPermission, navigate, authLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, authLoading]);
 
   useEffect(() => {
     const initPage = async () => {
