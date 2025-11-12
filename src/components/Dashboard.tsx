@@ -97,24 +97,24 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Building className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">סה״כ נכסים</span>
+                <span className="text-sm font-semibold text-right">סה״כ נכסים</span>
               </div>
-              <div className="text-3xl font-bold number-display">{stats.totalProperties}</div>
+              <div className="text-3xl font-bold number-display text-right">{stats.totalProperties}</div>
             </div>
             
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <TrendingUp className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">הכנסה חודשית</span>
+                <span className="text-sm font-semibold text-right">הכנסה חודשית</span>
                 {!isEditingIncome && (
                   <Edit2 
-                    className="h-4 w-4 mr-auto cursor-pointer hover:scale-110 transition-transform" 
+                    className="h-4 w-4 ml-auto cursor-pointer hover:scale-110 transition-transform" 
                     onClick={() => setIsEditingIncome(true)}
                   />
                 )}
@@ -139,50 +139,50 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
                   />
                 </div>
               ) : (
-                <div className="text-2xl font-bold number-display">
+                <div className="text-2xl font-bold number-display text-right">
                   {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
                 </div>
               )}
             </div>
 
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <CheckCircle className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">תפוסים</span>
+                <span className="text-sm font-semibold text-right">תפוסים</span>
               </div>
-              <div className="text-3xl font-bold number-display">{stats.confirmedOccupied}</div>
+              <div className="text-3xl font-bold number-display text-right">{stats.confirmedOccupied}</div>
             </div>
 
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Users className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">פנויים</span>
+                <span className="text-sm font-semibold text-right">פנויים</span>
               </div>
-              <div className="text-3xl font-bold number-display">{stats.confirmedVacant}</div>
+              <div className="text-3xl font-bold number-display text-right">{stats.confirmedVacant}</div>
             </div>
 
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Phone className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">נוצר קשר</span>
+                <span className="text-sm font-semibold text-right">נוצר קשר</span>
               </div>
-              <div className="text-3xl font-bold number-display">{stats.contactedProperties}</div>
+              <div className="text-3xl font-bold number-display text-right">{stats.contactedProperties}</div>
             </div>
 
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Clock className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold">טרם קשר</span>
+                <span className="text-sm font-semibold text-right">טרם קשר</span>
               </div>
-              <div className="text-3xl font-bold number-display">{stats.notContactedProperties}</div>
+              <div className="text-3xl font-bold number-display text-right">{stats.notContactedProperties}</div>
             </div>
           </div>
         </div>

@@ -145,11 +145,11 @@ const AdminDashboard = memo(() => {
 
   return (
     <>
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="dashboard">דשבורד</TabsTrigger>
-          <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
+      <Tabs defaultValue="dashboard" className="w-full" dir="rtl">
+        <TabsList className="mb-6 justify-start">
           <TabsTrigger value="brokerage">טפסי תיווך</TabsTrigger>
+          <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
+          <TabsTrigger value="dashboard">דשבורד</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
