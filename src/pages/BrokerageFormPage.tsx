@@ -29,7 +29,7 @@ const BrokerageFormPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, loading: authLoading } = useAuth();
   
   const [mode, setMode] = useState<PageMode>('new');
   const [loading, setLoading] = useState(false);
@@ -54,11 +54,14 @@ const BrokerageFormPage = () => {
 
   // Auth protection
   useEffect(() => {
+    // Wait for auth to finish loading before checking permissions
+    if (authLoading) return;
+    
     if (mode === 'new' && !hasPermission('brokerage_forms', 'create')) {
       toast.error('אין לך הרשאה ליצור טפסי תיווך');
       navigate('/admin-dashboard');
     }
-  }, [mode, hasPermission, navigate]);
+  }, [mode, hasPermission, navigate, authLoading]);
 
   useEffect(() => {
     const initPage = async () => {
@@ -278,10 +281,14 @@ const BrokerageFormPage = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  if (loading) {
+  // Show loading screen while auth is loading or while data is loading
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">טוען...</p>
+        </div>
       </div>
     );
   }
