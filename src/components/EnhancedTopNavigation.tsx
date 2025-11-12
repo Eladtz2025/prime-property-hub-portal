@@ -47,7 +47,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
       {/* Desktop Navigation in the center */}
       {!isMobile && (
         <div className="flex-1 flex justify-center">
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-2 flex-row-reverse" dir="rtl">
             {navigationItems.map((item) => (
               <NavLink
                 key={item.url}
@@ -82,29 +82,31 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               {!isMobile && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-popover border shadow-lg">
-            <DropdownMenuLabel className="text-right">
-              <div className="text-sm font-medium">{profile?.full_name || profile?.email}</div>
-              <div className="text-xs text-muted-foreground">{profile?.role}</div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate('/admin-dashboard/settings')}
-            >
-              <Settings className="h-4 w-4" />
-              <span>הגדרות</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {onLogout && (
+          <DropdownMenuContent align="start" className="w-56 bg-popover border shadow-lg">
+            <div dir="rtl">
+              <DropdownMenuLabel className="text-right">
+                <div className="text-sm font-medium">{profile?.full_name || profile?.email}</div>
+                <div className="text-xs text-muted-foreground">{profile?.role}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
-                className="flex items-center gap-2 cursor-pointer text-destructive hover:text-destructive"
-                onClick={onLogout}
+                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                onClick={() => navigate('/admin-dashboard/settings')}
               >
-                <LogOut className="h-4 w-4" />
-                <span>יציאה</span>
+                <Settings className="h-4 w-4" />
+                <span>הגדרות</span>
               </DropdownMenuItem>
-            )}
+              <DropdownMenuSeparator />
+              {onLogout && (
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 cursor-pointer text-destructive hover:text-destructive flex-row-reverse justify-end"
+                  onClick={onLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>יציאה</span>
+                </DropdownMenuItem>
+              )}
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
