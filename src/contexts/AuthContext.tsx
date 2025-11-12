@@ -39,8 +39,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = async () => {
-    if (!user) {
+  const refreshProfile = async (currentUser: User | null) => {
+    if (!currentUser) {
       setLoading(false);
       return;
     }
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data: userProfile, error } = await supabase
         .from('user_profiles_with_roles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single();
       
       if (error) {
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await refreshProfile();
+        await refreshProfile(session.user);
       } else {
         setLoading(false);
       }
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await refreshProfile();
+        await refreshProfile(session.user);
       } else {
         setProfile(null);
         setPermissions([]);
@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isApproved: profile?.is_approved ?? false,
     hasPermission: hasPermissionCheck,
     signOut: handleSignOut,
-    refreshProfile,
+    refreshProfile: () => refreshProfile(user),
   };
 
   return (
