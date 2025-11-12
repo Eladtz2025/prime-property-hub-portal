@@ -50,14 +50,6 @@ const BrokerageFormPage = () => {
   const [clientId, setClientId] = useState('');
   const [clientPhone, setClientPhone] = useState('');
 
-  // Auth protection
-  useEffect(() => {
-    if (mode === 'new' && !hasPermission('brokerage_forms', 'create')) {
-      toast.error('אין לך הרשאה ליצור טפסי תיווך');
-      navigate('/admin-dashboard');
-    }
-  }, [mode, hasPermission, navigate]);
-
   useEffect(() => {
     const initPage = async () => {
       if (token) {
