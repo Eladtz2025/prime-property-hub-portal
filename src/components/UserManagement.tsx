@@ -222,8 +222,8 @@ export const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="text-right">
+          <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
             <UserPlus className="h-5 w-5" />
             הזמן משתמש חדש
           </CardTitle>
@@ -270,8 +270,8 @@ export const UserManagement: React.FC = () => {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="text-right">
+          <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
             <Settings className="h-5 w-5" />
             ניהול משתמשים
           </CardTitle>
