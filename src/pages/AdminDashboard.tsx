@@ -12,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BrokerageFormCard } from '../components/BrokerageFormCard';
 import { BrokerageFormsList } from '../components/BrokerageFormsList';
 import { ContactLeadsList } from '../components/ContactLeadsList';
-import { AdminLayout } from '../components/AdminLayout';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -145,12 +144,12 @@ const AdminDashboard = memo(() => {
   }
 
   return (
-    <AdminLayout>
-      <Tabs defaultValue="dashboard" className="w-full" dir="rtl">
-        <TabsList className="mb-6 grid w-full grid-cols-3 justify-items-end">
-          <TabsTrigger value="brokerage" className="text-right">טפסי תיווך</TabsTrigger>
-          <TabsTrigger value="leads" className="text-right">פניות מהאתר</TabsTrigger>
-          <TabsTrigger value="dashboard" className="text-right">דשבורד</TabsTrigger>
+    <>
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="dashboard">דשבורד</TabsTrigger>
+          <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
+          <TabsTrigger value="brokerage">טפסי תיווך</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -195,7 +194,7 @@ const AdminDashboard = memo(() => {
         onClose={() => setShowAddPropertyModal(false)}
         onPropertyAdded={handlePropertyAdded}
       />
-    </AdminLayout>
+    </>
   );
 });
 

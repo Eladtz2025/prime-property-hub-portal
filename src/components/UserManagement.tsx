@@ -222,8 +222,8 @@ export const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="text-right">
-          <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
             הזמן משתמש חדש
           </CardTitle>
@@ -246,7 +246,7 @@ export const UserManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100]">
+                <SelectContent>
                   <SelectItem value="viewer">צופה</SelectItem>
                   <SelectItem value="manager">מנהל תיקים</SelectItem>
                   <SelectItem value="admin">מנהל</SelectItem>
@@ -270,8 +270,8 @@ export const UserManagement: React.FC = () => {
       </Card>
 
       <Card>
-        <CardHeader className="text-right">
-          <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             ניהול משתמשים
           </CardTitle>
@@ -285,30 +285,30 @@ export const UserManagement: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">אימייל</TableHead>
-                  <TableHead className="text-right">שם</TableHead>
-                  <TableHead className="text-right">תפקיד</TableHead>
-                  <TableHead className="text-right">סטטוס</TableHead>
-                  <TableHead className="text-right">פעולות</TableHead>
+                  <TableHead>אימייל</TableHead>
+                  <TableHead>שם</TableHead>
+                  <TableHead>תפקיד</TableHead>
+                  <TableHead>סטטוס</TableHead>
+                  <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="text-right">{user.email}</TableCell>
-                    <TableCell className="text-right">{user.full_name || '-'}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.full_name || '-'}</TableCell>
+                    <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {getRoleLabel(user.role)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                       <Badge variant={user.is_approved ? 'default' : 'secondary'}>
                         {user.is_approved ? 'מאושר' : 'ממתין לאישור'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
                         {!user.is_approved && (
                           <>
                             <Button
@@ -335,7 +335,7 @@ export const UserManagement: React.FC = () => {
                             <SelectTrigger className="w-32">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="z-[100]">
+                            <SelectContent>
                               <SelectItem value="viewer">צופה</SelectItem>
                               <SelectItem value="manager">מנהל תיקים</SelectItem>
                               <SelectItem value="admin">מנהל</SelectItem>

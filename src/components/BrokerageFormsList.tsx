@@ -84,7 +84,7 @@ export const BrokerageFormsList: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="text-right">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           טפסי תיווך
@@ -94,7 +94,7 @@ export const BrokerageFormsList: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 text-right">
+        <div className="space-y-4">
           {/* Pending tokens section */}
           {pendingTokens && pendingTokens.length > 0 && (
             <>
@@ -109,10 +109,10 @@ export const BrokerageFormsList: React.FC = () => {
                     const properties = formData.properties as any[] || [];
                     
                     return (
-                      <Card key={tokenRecord.id} className="border-r-4 border-r-yellow-500 border-l-0">
+                      <Card key={tokenRecord.id} className="border-l-4 border-l-yellow-500">
                         <CardContent className="pt-4 pb-4">
-                          <div className="flex items-center justify-between text-right">
-                            <div className="space-y-1 text-right">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
                               <Badge variant="outline" className="gap-1">
                                 <Clock className="h-3 w-3" />
                                 ממתין לחתימה
@@ -154,8 +154,8 @@ export const BrokerageFormsList: React.FC = () => {
             const properties = form.properties as any[] || [];
             
             return (
-              <Card key={form.id} className="border-r-4 border-r-primary border-l-0">
-                <CardContent className="pt-6 text-right">
+              <Card key={form.id} className="border-l-4 border-l-primary">
+                <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Right Column - Client Info */}
                     <div className="space-y-3">

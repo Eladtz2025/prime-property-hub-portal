@@ -20,8 +20,8 @@ const colorClasses = {
   };
 
   return (
-    <Card className="hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-r-4 border-l-0 border-r-transparent hover:border-r-primary group">
-      <CardHeader className="flex flex-row-reverse items-center justify-end gap-4 space-y-0 pb-3 text-right">
+    <Card className="hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-primary group">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           {title}
         </CardTitle>

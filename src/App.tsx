@@ -61,15 +61,13 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 import WhatsAppFloat from './components/WhatsAppFloat';
-import { useLanguageDirection } from './hooks/useLanguageDirection';
 
 
+const AppContent: React.FC = () => {
+  const { isAuthenticated, loading, signOut } = useAuth();
 
-const RouterContent: React.FC<{ isAuthenticated: boolean; loading: boolean; signOut: () => void }> = ({ isAuthenticated, loading, signOut }) => {
-  useLanguageDirection();
-  
   return (
-    <>
+    <BrowserRouter>
       <ScrollToTop />
       <WhatsAppFloat />
       <Routes>
@@ -288,16 +286,6 @@ const RouterContent: React.FC<{ isAuthenticated: boolean; loading: boolean; sign
           </>
         )}
       </Routes>
-    </>
-  );
-};
-
-const AppContent: React.FC = () => {
-  const { isAuthenticated, loading, signOut } = useAuth();
-
-  return (
-    <BrowserRouter>
-      <RouterContent isAuthenticated={isAuthenticated} loading={loading} signOut={signOut} />
     </BrowserRouter>
   );
 };
