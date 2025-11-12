@@ -43,11 +43,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return;
     
     try {
-      const userProfile = await getUserProfile(user.id);
-      setProfile(userProfile);
+      // Fetch from view that includes role
+      const { data: userProfile, error } = await supabase
+        .from('user_profiles_with_roles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        logger.error('Error fetching profile:', error);
+        return;
+      }
+      
+      setProfile(userProfile as UserProfile);
       
       if (userProfile?.role) {
-        const { data: userPermissions } = await getUserPermissions(userProfile.role);
+        const { data: userPermissions } = await getUserPermissions(userProfile.role as any);
         logger.debug('User profile and permissions loaded', {
           email: userProfile.email,
           role: userProfile.role,

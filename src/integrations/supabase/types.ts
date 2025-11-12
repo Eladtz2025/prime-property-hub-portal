@@ -277,6 +277,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "financial_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "financial_records_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
@@ -365,6 +372,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
             referencedColumns: ["id"]
           },
         ]
@@ -581,7 +595,6 @@ export type Database = {
           is_approved: boolean
           last_login: string | null
           phone: string | null
-          role: string | null
           updated_at: string
         }
         Insert: {
@@ -592,7 +605,6 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -603,7 +615,6 @@ export type Database = {
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
-          role?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -777,6 +788,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "property_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       property_images: {
@@ -856,6 +874,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "property_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       property_owners: {
@@ -886,6 +911,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_owners_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
             referencedColumns: ["id"]
           },
           {
@@ -1313,7 +1345,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_profiles_with_roles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          is_approved: boolean | null
+          last_login: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          last_login?: string | null
+          phone?: string | null
+          role?: never
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          last_login?: string | null
+          phone?: string | null
+          role?: never
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_property_invitation: {

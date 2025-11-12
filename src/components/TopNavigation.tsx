@@ -28,10 +28,10 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onLogout }) => {
 
   const filteredNavItems = navigationItems.filter(item => {
     if (item.url === '/users') {
-      return hasPermission('users', 'read') || profile?.role === 'admin' || profile?.role === 'super_admin';
+      return hasPermission('users', 'read');
     }
     if ('requireAdmin' in item && item.requireAdmin) {
-      return profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
+      return hasPermission('dashboard', 'read');
     }
     return true;
   });

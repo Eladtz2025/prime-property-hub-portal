@@ -94,17 +94,37 @@ serve(async (req) => {
       console.log('Deleted existing properties');
     }
 
-    // Delete existing profiles (except current admin)
-    const { error: deleteProfilesError } = await supabase
-      .from('profiles')
+    // Delete existing user_roles for property_owner
+    const { error: deleteRolesError } = await supabase
+      .from('user_roles')
       .delete()
-      .neq('role', 'super_admin')
-      .neq('role', 'admin');
+      .eq('role', 'property_owner');
     
-    if (deleteProfilesError) {
-      console.error('Error deleting profiles:', deleteProfilesError);
+    if (deleteRolesError) {
+      console.error('Error deleting user_roles:', deleteRolesError);
     } else {
-      console.log('Deleted existing property owner profiles');
+      console.log('Deleted existing property owner roles');
+    }
+    
+    // Delete existing profiles (except admins by checking user_roles)
+    const { data: adminUsers } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .in('role', ['super_admin', 'admin', 'manager']);
+    
+    const adminIds = adminUsers?.map(u => u.user_id) || [];
+    
+    if (adminIds.length > 0) {
+      const { error: deleteProfilesError } = await supabase
+        .from('profiles')
+        .delete()
+        .not('id', 'in', `(${adminIds.map(id => `'${id}'`).join(',')})`);
+      
+      if (deleteProfilesError) {
+        console.error('Error deleting profiles:', deleteProfilesError);
+      } else {
+        console.log('Deleted existing property owner profiles');
+      }
     }
 
     // Step 3: Process properties in batches
@@ -129,13 +149,12 @@ serve(async (req) => {
             email: `owner-${property.owner_phone.replace(/[^0-9]/g, '')}@temp.com`,
             full_name: property.owner_name,
             phone: property.owner_phone,
-            role: 'property_owner',
             is_approved: true
           });
         }
       }
 
-      // Insert new owner profiles
+      // Insert new owner profiles (without role column)
       if (newOwners.length > 0) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -145,7 +164,23 @@ serve(async (req) => {
           console.error('Error inserting profiles:', profileError);
           continue;
         }
-        console.log(`Created ${newOwners.length} new owner profiles`);
+        
+        // Insert roles into user_roles table
+        const roleInserts = newOwners.map(owner => ({
+          user_id: owner.id,
+          role: 'property_owner'
+        }));
+        
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert(roleInserts);
+        
+        if (roleError) {
+          console.error('Error inserting user_roles:', roleError);
+          continue;
+        }
+        
+        console.log(`Created ${newOwners.length} new owner profiles and roles`);
       }
 
       // Insert properties
@@ -206,7 +241,7 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true });
 
     const { count: finalProfileCount } = await supabase
-      .from('profiles')
+      .from('user_roles')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'property_owner');
 

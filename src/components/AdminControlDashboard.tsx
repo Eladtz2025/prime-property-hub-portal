@@ -65,7 +65,7 @@ export const AdminControlDashboard: React.FC = () => {
         { data: invitations },
         { data: financials }
       ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('role', 'property_owner'),
+        supabase.from('user_profiles_with_roles').select('*').eq('role', 'property_owner'),
         supabase.from('properties').select('*'),
         supabase.from('property_invitations').select('*').is('used_at', null),
         supabase.from('financial_records').select('*')

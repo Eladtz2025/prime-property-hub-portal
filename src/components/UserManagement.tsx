@@ -21,7 +21,7 @@ export const UserManagement: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('viewer');
 
-  const canManageUsers = hasPermission('users', 'update') || profile?.role === 'super_admin';
+  const canManageUsers = hasPermission('users', 'update');
 
   useEffect(() => {
     if (canManageUsers) {
@@ -33,7 +33,7 @@ export const UserManagement: React.FC = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles_with_roles')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -158,12 +158,20 @@ export const UserManagement: React.FC = () => {
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+      // Delete existing roles for this user
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // Insert new role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
+
+      if (insertError) throw insertError;
 
       toast({
         title: "תפקיד עודכן",
@@ -181,25 +189,26 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const getRoleBadgeVariant = (role: UserRole) => {
+  const getRoleBadgeVariant = (role?: string) => {
     switch (role) {
       case 'super_admin': return 'destructive';
       case 'admin': return 'default';
       case 'manager': return 'secondary';
       case 'viewer': return 'outline';
+      case 'property_owner': return 'outline';
       default: return 'outline';
     }
   };
 
-  const getRoleLabel = (role: UserRole) => {
-    const labels: Record<UserRole, string> = {
+  const getRoleLabel = (role?: string) => {
+    const labels: Record<string, string> = {
       'super_admin': 'מנהל עליון',
       'admin': 'מנהל',
       'manager': 'מנהל תיקים',
       'viewer': 'צופה',
       'property_owner': 'בעל נכס'
     };
-    return labels[role];
+    return labels[role || 'viewer'] || role || 'צופה';
   };
 
   if (!canManageUsers) {

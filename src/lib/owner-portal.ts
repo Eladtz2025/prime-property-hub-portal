@@ -68,13 +68,12 @@ export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
 // Property management functions
 export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithTenant[]> => {
   // Check if user is admin
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: userRoles } = await supabase
+    .from('user_roles')
     .select('role')
-    .eq('id', ownerId)
-    .single();
+    .eq('user_id', ownerId);
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
+  const isAdmin = userRoles?.some(r => ['admin', 'super_admin', 'manager'].includes(r.role));
 
   let propertyIds: string[] = [];
 
@@ -390,9 +389,10 @@ export const useInvitation = async (token: string, userId: string) => {
 
   // Update user role to property_owner
   const { error: roleError } = await supabase
-    .from('profiles')
-    .update({ role: 'property_owner' })
-    .eq('id', userId);
+    .from('user_roles')
+    .insert({ user_id: userId, role: 'property_owner' })
+    .select()
+    .single();
 
   if (roleError) {
     return { error: roleError };

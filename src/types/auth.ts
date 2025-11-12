@@ -5,11 +5,11 @@ export interface UserProfile {
   email: string;
   full_name?: string;
   phone?: string;
-  role: UserRole;
   is_approved: boolean;
   created_at: string;
   updated_at: string;
   last_login?: string;
+  role?: string; // comes from user_profiles_with_roles view
 }
 
 export interface Permission {
