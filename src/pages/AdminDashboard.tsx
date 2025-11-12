@@ -171,23 +171,10 @@ const AdminDashboard = memo(() => {
           onAddProperty={() => setShowAddPropertyModal(true)}
         />
 
-        {/* שורה 3: פניות וטפסים */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* פניות מהאתר */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle>פניות מהאתר</CardTitle>
-            </CardHeader>
-            <CardContent className="max-h-[400px] overflow-y-auto">
-              <ContactLeadsListCompact />
-            </CardContent>
-          </Card>
-
-          {/* טפסי תיווך */}
-          <div className="space-y-4">
-            <BrokerageFormCard />
-            <BrokerageFormsList />
-          </div>
+        {/* טפסי תיווך */}
+        <div className="space-y-4">
+          <BrokerageFormCard />
+          <BrokerageFormsList />
         </div>
       </div>
       
