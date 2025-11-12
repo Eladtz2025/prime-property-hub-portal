@@ -409,7 +409,7 @@ export const Properties: React.FC = memo(() => {
                     ))}
                   </div>
                 ) : (
-                  <Card>
+                  <Card className="max-w-[1400px] mx-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -450,7 +450,7 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right px-4 py-3 border-l border-border">פעולות</TableHead>
+                          <TableHead className="text-right px-4 py-3 border-l border-border w-[200px]">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -513,7 +513,7 @@ export const Properties: React.FC = memo(() => {
                                 <span className="text-muted-foreground text-sm">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                            <TableCell className="text-right px-4 py-3 border-l border-border w-[200px]">
                               <div className="flex items-center justify-end gap-3">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
