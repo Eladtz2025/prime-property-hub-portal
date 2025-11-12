@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
@@ -29,13 +28,12 @@ const BrokerageFormPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
-  const { user, hasPermission, loading: authLoading } = useAuth();
+  const { user, hasPermission } = useAuth();
   
   const [mode, setMode] = useState<PageMode>('new');
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [hasSignature, setHasSignature] = useState(false);
-  const [activeSection, setActiveSection] = useState<'properties' | 'client' | 'signature'>('properties');
   
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
@@ -54,15 +52,11 @@ const BrokerageFormPage = () => {
 
   // Auth protection
   useEffect(() => {
-    // Wait for auth to finish loading before checking permissions
-    if (authLoading) return;
-    
     if (mode === 'new' && !hasPermission('brokerage_forms', 'create')) {
       toast.error('אין לך הרשאה ליצור טפסי תיווך');
       navigate('/admin-dashboard');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, authLoading]);
+  }, [mode, hasPermission, navigate]);
 
   useEffect(() => {
     const initPage = async () => {
@@ -282,14 +276,10 @@ const BrokerageFormPage = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // Show loading screen while auth is loading or while data is loading
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">טוען...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -352,22 +342,6 @@ const BrokerageFormPage = () => {
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* Mobile Section Selector */}
-            <div className="md:hidden">
-              <Select value={activeSection} onValueChange={(value) => setActiveSection(value as any)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="properties">נכסים ותנאים</SelectItem>
-                  <SelectItem value="client">פרטי לקוח</SelectItem>
-                  <SelectItem value="signature">חתימה ושמירה</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Properties Section */}
-            <div className={activeSection !== 'properties' ? 'hidden md:block' : ''}>
             {/* Date and Referral */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -598,11 +572,8 @@ const BrokerageFormPage = () => {
                 <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
               </ol>
             </div>
-            </div>
 
-            {/* Client Details Section */}
-            <div className={activeSection !== 'client' ? 'hidden md:block' : ''}>
-            <div className="border-t pt-6 md:block hidden" />
+            <div className="border-t pt-6" />
 
             {/* Client Details */}
             <div className="space-y-4">
@@ -637,10 +608,7 @@ const BrokerageFormPage = () => {
                 </div>
               </div>
             </div>
-            </div>
 
-            {/* Signature Section */}
-            <div className={activeSection !== 'signature' ? 'hidden md:block' : ''}>
             {/* Signature */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -699,7 +667,6 @@ const BrokerageFormPage = () => {
                   צור לינק לשליחה ללקוח
                 </Button>
               )}
-            </div>
             </div>
           </CardContent>
         </Card>

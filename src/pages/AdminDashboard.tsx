@@ -20,9 +20,7 @@ const AdminDashboard = memo(() => {
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
   const { 
     properties, 
-    isLoading,
-    isError,
-    error,
+    isLoading, 
     addProperty, 
     isAddingProperty 
   } = usePropertyData();
@@ -134,32 +132,7 @@ const AdminDashboard = memo(() => {
     );
   }
 
-  if (isError) {
-    console.error('❌ AdminDashboard - Error loading properties:', error);
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-destructive">שגיאה בטעינת נכסים</CardTitle>
-            <CardDescription>
-              {error?.message || 'אירעה שגיאה בטעינת הנכסים. אנא נסה שוב מאוחר יותר.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => window.location.reload()} 
-              className="w-full"
-            >
-              רענן דף
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (isLoading) {
-    console.log('⏳ AdminDashboard - Loading properties...');
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -171,8 +144,6 @@ const AdminDashboard = memo(() => {
       </div>
     );
   }
-
-  console.log('✅ AdminDashboard - Properties loaded:', properties.length);
 
   return (
     <>

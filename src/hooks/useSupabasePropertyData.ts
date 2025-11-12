@@ -54,7 +54,6 @@ export const useSupabasePropertyData = () => {
     queryKey: ['supabase-properties'],
     queryFn: async (): Promise<Property[]> => {
       try {
-        console.log('🔍 useSupabasePropertyData - Starting to load properties...');
         log.info('Loading properties from Supabase');
 
         // Get all properties with their images
@@ -71,14 +70,7 @@ export const useSupabasePropertyData = () => {
             )
           `);
 
-        console.log('📦 Properties query result:', { 
-          count: properties?.length || 0, 
-          hasError: !!propertiesError,
-          error: propertiesError 
-        });
-
         if (propertiesError) {
-          console.error('❌ useSupabasePropertyData - Properties error:', propertiesError);
           log.error('Failed to load properties:', propertiesError);
           throw propertiesError;
         }
@@ -89,14 +81,7 @@ export const useSupabasePropertyData = () => {
           .select('*')
           .eq('is_active', true);
 
-        console.log('👥 Tenants query result:', { 
-          count: tenants?.length || 0, 
-          hasError: !!tenantsError,
-          error: tenantsError 
-        });
-
         if (tenantsError) {
-          console.error('❌ useSupabasePropertyData - Tenants error:', tenantsError);
           log.error('Failed to load tenants:', tenantsError);
           throw tenantsError;
         }
@@ -109,12 +94,10 @@ export const useSupabasePropertyData = () => {
           transformedProperties.push(transformSupabaseProperty(property, tenant));
         }
 
-        console.log('✅ useSupabasePropertyData - Successfully loaded properties:', transformedProperties.length);
         log.info(`Successfully loaded ${transformedProperties.length} properties from Supabase`);
         return transformedProperties;
 
       } catch (error) {
-        console.error('❌ useSupabasePropertyData - Fatal error:', error);
         log.error('Failed to load properties from Supabase:', error);
         throw error;
       }

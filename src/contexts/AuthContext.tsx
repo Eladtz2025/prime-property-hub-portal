@@ -39,23 +39,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = async (currentUser: User | null) => {
-    if (!currentUser) {
-      setLoading(false);
-      return;
-    }
+  const refreshProfile = async () => {
+    if (!user) return;
     
     try {
       // Fetch from view that includes role
       const { data: userProfile, error } = await supabase
         .from('user_profiles_with_roles')
         .select('*')
-        .eq('id', currentUser.id)
+        .eq('id', user.id)
         .single();
       
       if (error) {
         logger.error('Error fetching profile:', error);
-        setLoading(false);
         return;
       }
       
@@ -70,11 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }, 'AuthContext');
         setPermissions((userPermissions || []) as Permission[]);
       }
-      
-      setLoading(false);
     } catch (error) {
       logger.error('Error refreshing profile:', error);
-      setLoading(false);
     }
   };
 
@@ -97,15 +90,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await refreshProfile(session.user);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     });
 
     // Listen for auth changes
@@ -114,22 +102,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.info('Auth state changed:', { event, userId: session?.user?.id });
       
-      setLoading(true);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await refreshProfile(session.user);
+        await refreshProfile();
       } else {
         setProfile(null);
         setPermissions([]);
-        setLoading(false);
       }
+      
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Fetch profile when user changes
+  useEffect(() => {
+    if (user && !profile) {
+      refreshProfile();
+    }
+  }, [user]);
 
   const value: AuthContextType = {
     user,
@@ -141,7 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isApproved: profile?.is_approved ?? false,
     hasPermission: hasPermissionCheck,
     signOut: handleSignOut,
-    refreshProfile: () => refreshProfile(user),
+    refreshProfile,
   };
 
   return (
