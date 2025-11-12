@@ -173,7 +173,6 @@ const AdminDashboard = memo(() => {
 
         {/* טפסי תיווך */}
         <div className="space-y-4">
-          <BrokerageFormCard />
           <BrokerageFormsList />
         </div>
       </div>
