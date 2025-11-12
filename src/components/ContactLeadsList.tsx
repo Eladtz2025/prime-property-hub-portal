@@ -64,13 +64,13 @@ export const ContactLeadsList = () => {
               <TableBody>
                 {leads.map((lead) => (
                   <TableRow key={lead.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-right">
                       {lead.created_at && format(new Date(lead.created_at), 'dd/MM/yy HH:mm', { locale: he })}
                     </TableCell>
-                    <TableCell>{lead.name}</TableCell>
-                    <TableCell className="text-sm">{lead.email}</TableCell>
-                    <TableCell className="text-sm">{lead.phone || '-'}</TableCell>
-                    <TableCell className="max-w-md truncate text-sm">
+                    <TableCell className="text-right">{lead.name}</TableCell>
+                    <TableCell className="text-sm text-right">{lead.email}</TableCell>
+                    <TableCell className="text-sm text-right">{lead.phone || '-'}</TableCell>
+                    <TableCell className="max-w-md truncate text-sm text-right">
                       {lead.message}
                     </TableCell>
                   </TableRow>

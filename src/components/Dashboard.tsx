@@ -77,7 +77,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const userName = getUserName();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-right">
       {/* Header with greeting card */}
       <div className="bg-gradient-primary rounded-2xl p-8 text-white shadow-elevated animate-fade-in relative isolate overflow-hidden">
         {/* Background Pattern */}
@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Building className="h-5 w-5" />
@@ -106,7 +106,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <div className="text-3xl font-bold number-display">{stats.totalProperties}</div>
             </div>
             
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <TrendingUp className="h-5 w-5" />
@@ -114,7 +114,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
                 <span className="text-sm font-semibold">הכנסה חודשית</span>
                 {!isEditingIncome && (
                   <Edit2 
-                    className="h-4 w-4 mr-auto cursor-pointer hover:scale-110 transition-transform" 
+                    className="h-4 w-4 ml-auto cursor-pointer hover:scale-110 transition-transform" 
                     onClick={() => setIsEditingIncome(true)}
                   />
                 )}
@@ -145,7 +145,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               )}
             </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <CheckCircle className="h-5 w-5" />
@@ -155,7 +155,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <div className="text-3xl font-bold number-display">{stats.confirmedOccupied}</div>
             </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Users className="h-5 w-5" />
@@ -165,7 +165,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <div className="text-3xl font-bold number-display">{stats.confirmedVacant}</div>
             </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Phone className="h-5 w-5" />
@@ -175,7 +175,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <div className="text-3xl font-bold number-display">{stats.contactedProperties}</div>
             </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10">
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-right">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-white/20 p-2 rounded-lg">
                   <Clock className="h-5 w-5" />
