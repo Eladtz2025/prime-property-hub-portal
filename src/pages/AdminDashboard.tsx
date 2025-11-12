@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BrokerageFormCard } from '../components/BrokerageFormCard';
 import { BrokerageFormsList } from '../components/BrokerageFormsList';
 import { ContactLeadsList } from '../components/ContactLeadsList';
+import { ContactLeadsListCompact } from '../components/ContactLeadsListCompact';
+import { BrokerageFormsListCompact } from '../components/BrokerageFormsListCompact';
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -153,28 +155,53 @@ const AdminDashboard = memo(() => {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <Dashboard
-            properties={properties} 
-            stats={stats ? {
-              totalProperties: stats.total,
-              contactedProperties: stats.contacted || 0,
-              notContactedProperties: stats.notContacted || 0,
-              confirmedOccupied: stats.occupied,
-              confirmedVacant: stats.vacant,
-              unknownStatus: stats.unknown || 0,
-              upcomingRenewals: stats.upcomingRenewals
-            } : { 
-              totalProperties: 0, 
-              contactedProperties: 0, 
-              notContactedProperties: 0, 
-              confirmedOccupied: 0, 
-              confirmedVacant: 0, 
-              unknownStatus: 0, 
-              upcomingRenewals: 0 
-            }}
-            alerts={alerts} 
-            onAddProperty={() => setShowAddPropertyModal(true)}
-          />
+          <div className="space-y-6">
+            <Dashboard
+              properties={properties} 
+              stats={stats ? {
+                totalProperties: stats.total,
+                contactedProperties: stats.contacted || 0,
+                notContactedProperties: stats.notContacted || 0,
+                confirmedOccupied: stats.occupied,
+                confirmedVacant: stats.vacant,
+                unknownStatus: stats.unknown || 0,
+                upcomingRenewals: stats.upcomingRenewals
+              } : { 
+                totalProperties: 0, 
+                contactedProperties: 0, 
+                notContactedProperties: 0, 
+                confirmedOccupied: 0, 
+                confirmedVacant: 0, 
+                unknownStatus: 0, 
+                upcomingRenewals: 0 
+              }}
+              alerts={alerts} 
+              onAddProperty={() => setShowAddPropertyModal(true)}
+            />
+
+            {/* שורה 3: פניות וטפסים */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* פניות מהאתר */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>פניות מהאתר</CardTitle>
+                </CardHeader>
+                <CardContent className="max-h-[400px] overflow-y-auto">
+                  <ContactLeadsListCompact />
+                </CardContent>
+              </Card>
+
+              {/* טפסי תיווך */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>טפסי תיווך</CardTitle>
+                </CardHeader>
+                <CardContent className="max-h-[400px] overflow-y-auto">
+                  <BrokerageFormsListCompact />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="leads">

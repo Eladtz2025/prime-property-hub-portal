@@ -188,63 +188,47 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </div>
       </div>
 
-      {/* Urgent Alerts */}
-      {urgentAlerts.length > 0 && (
-        <Card className="border-destructive bg-destructive/10">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              התראות דחופות ({urgentAlerts.length})
+      {/* שורה 2: התראות ופעילות */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* התראות ומעקב */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              התראות ומעקב
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {urgentAlerts.slice(0, 3).map((alert) => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))}
-            {urgentAlerts.length > 3 && (
-              <Button variant="outline" size="sm" className="w-full">
-                הצג עוד {urgentAlerts.length - 3} התראות
-              </Button>
+          <CardContent className="max-h-[400px] overflow-y-auto">
+            {alerts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <p>אין התראות פעילות</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alerts.slice(0, 5).map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+                ))}
+                {alerts.length > 5 && (
+                  <p className="text-xs text-center text-muted-foreground pt-2">
+                    +{alerts.length - 5} התראות נוספות
+                  </p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
-      )}
 
-
-      {/* Alerts Section - Always Visible */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            התראות ומעקב
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {alerts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <p>אין התראות פעילות</p>
-              <p className="text-sm mt-2">כל הנכסים תקינים</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {alerts.map((alert) => (
-                <AlertCard key={alert.id} alert={alert} />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>פעילות אחרונה</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ActivityLogsList limit={5} />
-        </CardContent>
-      </Card>
+        {/* פעילות אחרונה */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>פעילות אחרונה</CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-[400px] overflow-y-auto">
+            <ActivityLogsList limit={5} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 });
