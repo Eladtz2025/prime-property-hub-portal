@@ -10,10 +10,6 @@ export const useMobileOptimization = () => {
       setIsMobile(window.innerWidth < 768);
       setOrientation(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
     };
-
-    // Set RTL for Hebrew support
-    document.documentElement.classList.add('rtl');
-    document.dir = 'rtl';
     
     checkMobile();
     window.addEventListener('resize', checkMobile);

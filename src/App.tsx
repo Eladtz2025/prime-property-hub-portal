@@ -61,10 +61,12 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 import WhatsAppFloat from './components/WhatsAppFloat';
+import { useLanguageDirection } from './hooks/useLanguageDirection';
 
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, signOut } = useAuth();
+  useLanguageDirection();
 
   return (
     <BrowserRouter>
