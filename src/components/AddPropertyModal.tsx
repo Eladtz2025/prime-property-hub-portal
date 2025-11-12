@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Property } from '../types/property';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
@@ -27,21 +34,48 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   onPropertyAdded
 }) => {
   const [formData, setFormData] = useState({
+    // Basic property
     address: '',
     city: 'תל אביב-יפו',
+    property_type: 'rental' as 'rental' | 'sale' | 'management',
+    title: '',
+    description: '',
+    status: 'vacant' as Property['status'],
+    
+    // Property features
+    rooms: '',
+    bathrooms: '',
+    propertySize: '',
+    floor: '',
+    buildingFloors: '',
+    parking: false,
+    elevator: false,
+    balcony: false,
+    yard: false,
+    balconyYardSize: '',
+    
+    // Owner
     ownerName: '',
     ownerPhone: '',
     ownerEmail: '',
+    
+    // Tenant
     tenantName: '',
     tenantPhone: '',
     tenantEmail: '',
-    status: 'vacant' as Property['status'],
+    
+    // Rental/Sale
     monthlyRent: '',
     leaseStartDate: '',
     leaseEndDate: '',
-    rooms: '',
-    propertySize: '',
-    floor: '',
+    municipalTax: '',
+    buildingCommitteeFee: '',
+    acquisitionCost: '',
+    renovationCosts: '',
+    currentMarketValue: '',
+    featured: false,
+    
+    // Notes
     notes: ''
   });
 
@@ -53,36 +87,94 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     e.preventDefault();
     
     // Validation
-    if (!formData.address.trim() || !formData.ownerName.trim()) {
+    if (!formData.address.trim() || !formData.city.trim() || !formData.ownerName.trim()) {
       toast({
         title: "שגיאה",
-        description: "יש למלא כתובת ושם בעלים",
+        description: "יש למלא כתובת, עיר ושם בעלים",
         variant: "destructive"
       });
       return;
     }
 
+    // Email validation
+    if (formData.ownerEmail && !formData.ownerEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      toast({
+        title: "שגיאה",
+        description: "כתובת אימייל בעלים לא תקינה",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.tenantEmail && !formData.tenantEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      toast({
+        title: "שגיאה",
+        description: "כתובת אימייל שוכר לא תקינה",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Date validation
+    if (formData.leaseStartDate && formData.leaseEndDate) {
+      if (new Date(formData.leaseEndDate) <= new Date(formData.leaseStartDate)) {
+        toast({
+          title: "שגיאה",
+          description: "תאריך סיום החוזה חייב להיות אחרי תאריך ההתחלה",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      const newProperty: Omit<Property, 'id'> = {
+      const newProperty: Omit<Property, 'id'> & any = {
+        // Basic
         address: formData.address.trim(),
         city: formData.city,
-        ownerName: formData.ownerName.trim(),
-        ownerPhone: formData.ownerPhone || undefined,
-        ownerEmail: formData.ownerEmail || undefined,
-        tenantName: formData.tenantName || undefined,
-        tenantPhone: formData.tenantPhone || undefined,
-        tenantEmail: formData.tenantEmail || undefined,
+        property_type: formData.property_type,
+        title: formData.title || undefined,
+        description: formData.description || undefined,
         status: formData.status,
         contactStatus: 'not_contacted' as const,
         contactAttempts: 0,
+        
+        // Features
+        rooms: formData.rooms ? parseFloat(formData.rooms) : undefined,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+        propertySize: formData.propertySize ? parseFloat(formData.propertySize) : undefined,
+        floor: formData.floor ? parseInt(formData.floor) : undefined,
+        buildingFloors: formData.buildingFloors ? parseInt(formData.buildingFloors) : undefined,
+        parking: formData.parking,
+        elevator: formData.elevator,
+        balcony: formData.balcony,
+        yard: formData.yard,
+        balconyYardSize: (formData.balcony || formData.yard) && formData.balconyYardSize ? parseFloat(formData.balconyYardSize) : undefined,
+        
+        // Owner
+        ownerName: formData.ownerName.trim(),
+        ownerPhone: formData.ownerPhone || undefined,
+        ownerEmail: formData.ownerEmail || undefined,
+        
+        // Tenant
+        tenantName: formData.tenantName || undefined,
+        tenantPhone: formData.tenantPhone || undefined,
+        tenantEmail: formData.tenantEmail || undefined,
+        
+        // Rental/Sale
         monthlyRent: formData.monthlyRent ? parseFloat(formData.monthlyRent) : undefined,
         leaseStartDate: formData.leaseStartDate || undefined,
         leaseEndDate: formData.leaseEndDate || undefined,
-        rooms: formData.rooms ? parseFloat(formData.rooms) : undefined,
-        propertySize: formData.propertySize ? parseFloat(formData.propertySize) : undefined,
-        floor: formData.floor ? parseInt(formData.floor) : undefined,
+        municipalTax: formData.municipalTax ? parseFloat(formData.municipalTax) : undefined,
+        buildingCommitteeFee: formData.buildingCommitteeFee ? parseFloat(formData.buildingCommitteeFee) : undefined,
+        acquisitionCost: formData.acquisitionCost ? parseFloat(formData.acquisitionCost) : undefined,
+        renovationCosts: formData.renovationCosts ? parseFloat(formData.renovationCosts) : undefined,
+        currentMarketValue: formData.currentMarketValue ? parseFloat(formData.currentMarketValue) : undefined,
+        featured: formData.featured,
+        
+        // Notes
         notes: formData.notes || undefined,
         createdAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
@@ -99,19 +191,35 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       setFormData({
         address: '',
         city: 'תל אביב-יפו',
+        property_type: 'rental',
+        title: '',
+        description: '',
+        status: 'vacant',
+        rooms: '',
+        bathrooms: '',
+        propertySize: '',
+        floor: '',
+        buildingFloors: '',
+        parking: false,
+        elevator: false,
+        balcony: false,
+        yard: false,
+        balconyYardSize: '',
         ownerName: '',
         ownerPhone: '',
         ownerEmail: '',
         tenantName: '',
         tenantPhone: '',
         tenantEmail: '',
-        status: 'vacant',
         monthlyRent: '',
         leaseStartDate: '',
         leaseEndDate: '',
-        rooms: '',
-        propertySize: '',
-        floor: '',
+        municipalTax: '',
+        buildingCommitteeFee: '',
+        acquisitionCost: '',
+        renovationCosts: '',
+        currentMarketValue: '',
+        featured: false,
         notes: ''
       });
       
@@ -127,8 +235,12 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: string, value: string | boolean) => {
+    if (typeof value === 'boolean') {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   return (
@@ -138,213 +250,439 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           <DialogTitle>הוספת נכס חדש</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">פרטי הנכס</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="address">כתובת *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="רחוב ומספר בית"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="city">עיר *</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="תל אביב-יפו"
-                  required
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Accordion type="single" collapsible defaultValue="basic" className="w-full">
+            {/* Basic Property Details */}
+            <AccordionItem value="basic">
+              <AccordionTrigger>📋 פרטי נכס בסיסיים</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="property_type">סוג נכס *</Label>
+                  <Select value={formData.property_type} onValueChange={(value) => handleInputChange('property_type', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rental">השכרה</SelectItem>
+                      <SelectItem value="sale">מכירה</SelectItem>
+                      <SelectItem value="management">ניהול נכסים</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="status">סטטוס</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unknown">לא ידוע</SelectItem>
-                    <SelectItem value="vacant">פנוי</SelectItem>
-                    <SelectItem value="occupied">תפוס</SelectItem>
-                    <SelectItem value="maintenance">תחזוקה</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="rooms">חדרים</Label>
-                <Input
-                  id="rooms"
-                  type="number"
-                  step="0.5"
-                  value={formData.rooms}
-                  onChange={(e) => handleInputChange('rooms', e.target.value)}
-                  placeholder="3.5"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="floor">קומה</Label>
-                <Input
-                  id="floor"
-                  type="number"
-                  value={formData.floor}
-                  onChange={(e) => handleInputChange('floor', e.target.value)}
-                  placeholder="2"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="propertySize">גודל (מ״ר)</Label>
-                <Input
-                  id="propertySize"
-                  type="number"
-                  value={formData.propertySize}
-                  onChange={(e) => handleInputChange('propertySize', e.target.value)}
-                  placeholder="80"
-                />
-              </div>
-            </div>
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="address">כתובת *</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      placeholder="רחוב ומספר בית"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="city">עיר *</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      placeholder="תל אביב-יפו"
+                      required
+                    />
+                  </div>
+                </div>
 
-          {/* Owner Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">פרטי הבעלים</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="ownerName">שם הבעלים *</Label>
-                <Input
-                  id="ownerName"
-                  value={formData.ownerName}
-                  onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                  placeholder="שם מלא"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="ownerPhone">טלפון בעלים</Label>
-                <Input
-                  id="ownerPhone"
-                  value={formData.ownerPhone}
-                  onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
-                  placeholder="050-1234567"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="ownerEmail">אימייל בעלים</Label>
-              <Input
-                id="ownerEmail"
-                type="email"
-                value={formData.ownerEmail}
-                onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
+                <div>
+                  <Label htmlFor="title">כותרת</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    placeholder="דירת 3 חדרים מרווחת בלב העיר"
+                  />
+                </div>
 
-          {/* Tenant Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">פרטי השוכר (אופציונלי)</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tenantName">שם השוכר</Label>
-                <Input
-                  id="tenantName"
-                  value={formData.tenantName}
-                  onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                  placeholder="שם מלא"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="tenantPhone">טלפון שוכר</Label>
-                <Input
-                  id="tenantPhone"
-                  value={formData.tenantPhone}
-                  onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
-                  placeholder="050-1234567"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="tenantEmail">אימייל שוכר</Label>
-              <Input
-                id="tenantEmail"
-                type="email"
-                value={formData.tenantEmail}
-                onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
+                <div>
+                  <Label htmlFor="description">תיאור</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="תיאור מפורט של הנכס..."
+                    rows={3}
+                  />
+                </div>
 
-          {/* Lease Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">פרטי השכירות</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="monthlyRent">שכר דירה חודשי (₪)</Label>
-                <Input
-                  id="monthlyRent"
-                  type="number"
-                  value={formData.monthlyRent}
-                  onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
-                  placeholder="5000"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="leaseStartDate">תחילת חוזה</Label>
-                <Input
-                  id="leaseStartDate"
-                  type="date"
-                  value={formData.leaseStartDate}
-                  onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="leaseEndDate">סיום חוזה</Label>
-                <Input
-                  id="leaseEndDate"
-                  type="date"
-                  value={formData.leaseEndDate}
-                  onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+                <div>
+                  <Label htmlFor="status">סטטוס</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unknown">לא ידוע</SelectItem>
+                      <SelectItem value="vacant">פנוי</SelectItem>
+                      <SelectItem value="occupied">תפוס</SelectItem>
+                      <SelectItem value="maintenance">תחזוקה</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* Notes */}
-          <div>
-            <Label htmlFor="notes">הערות</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="הערות נוספות על הנכס..."
-              rows={3}
-            />
-          </div>
+            {/* Property Features */}
+            <AccordionItem value="features">
+              <AccordionTrigger>🏠 מאפייני הנכס</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="rooms">חדרים</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      step="0.5"
+                      value={formData.rooms}
+                      onChange={(e) => handleInputChange('rooms', e.target.value)}
+                      placeholder="3.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="bathrooms">חדרי רחצה</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      value={formData.bathrooms}
+                      onChange={(e) => handleInputChange('bathrooms', e.target.value)}
+                      placeholder="1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="propertySize">גודל (מ״ר)</Label>
+                    <Input
+                      id="propertySize"
+                      type="number"
+                      value={formData.propertySize}
+                      onChange={(e) => handleInputChange('propertySize', e.target.value)}
+                      placeholder="80"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="floor">קומה</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      value={formData.floor}
+                      onChange={(e) => handleInputChange('floor', e.target.value)}
+                      placeholder="2"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="buildingFloors">קומות בבניין</Label>
+                    <Input
+                      id="buildingFloors"
+                      type="number"
+                      value={formData.buildingFloors}
+                      onChange={(e) => handleInputChange('buildingFloors', e.target.value)}
+                      placeholder="4"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="parking"
+                      checked={formData.parking}
+                      onCheckedChange={(checked) => handleInputChange('parking', checked.toString())}
+                    />
+                    <Label htmlFor="parking" className="cursor-pointer">חניה</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="elevator"
+                      checked={formData.elevator}
+                      onCheckedChange={(checked) => handleInputChange('elevator', checked.toString())}
+                    />
+                    <Label htmlFor="elevator" className="cursor-pointer">מעלית</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="balcony"
+                      checked={formData.balcony}
+                      onCheckedChange={(checked) => handleInputChange('balcony', checked.toString())}
+                    />
+                    <Label htmlFor="balcony" className="cursor-pointer">מרפסת</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="yard"
+                      checked={formData.yard}
+                      onCheckedChange={(checked) => handleInputChange('yard', checked.toString())}
+                    />
+                    <Label htmlFor="yard" className="cursor-pointer">חצר</Label>
+                  </div>
+                </div>
+
+                {(formData.balcony || formData.yard) && (
+                  <div>
+                    <Label htmlFor="balconyYardSize">גודל מרפסת/חצר (מ״ר)</Label>
+                    <Input
+                      id="balconyYardSize"
+                      type="number"
+                      value={formData.balconyYardSize}
+                      onChange={(e) => handleInputChange('balconyYardSize', e.target.value)}
+                      placeholder="15"
+                    />
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Owner Details */}
+            <AccordionItem value="owner">
+              <AccordionTrigger>👤 פרטי הבעלים</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="ownerName">שם הבעלים *</Label>
+                  <Input
+                    id="ownerName"
+                    value={formData.ownerName}
+                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                    placeholder="שם מלא"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ownerPhone">טלפון בעלים</Label>
+                    <Input
+                      id="ownerPhone"
+                      value={formData.ownerPhone}
+                      onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                      placeholder="050-1234567"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="ownerEmail">אימייל בעלים</Label>
+                    <Input
+                      id="ownerEmail"
+                      type="email"
+                      value={formData.ownerEmail}
+                      onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Rental/Sale Details */}
+            <AccordionItem value="rental-sale">
+              <AccordionTrigger>
+                {formData.property_type === 'rental' ? '🔑 פרטי השכירות' : '💰 פרטי מכירה'}
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                {formData.property_type === 'rental' && (
+                  <>
+                    <div className="space-y-4">
+                      <h4 className="font-medium">פרטי שוכר</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="tenantName">שם השוכר</Label>
+                          <Input
+                            id="tenantName"
+                            value={formData.tenantName}
+                            onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                            placeholder="שם מלא"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="tenantPhone">טלפון שוכר</Label>
+                          <Input
+                            id="tenantPhone"
+                            value={formData.tenantPhone}
+                            onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                            placeholder="050-1234567"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="tenantEmail">אימייל שוכר</Label>
+                        <Input
+                          id="tenantEmail"
+                          type="email"
+                          value={formData.tenantEmail}
+                          onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="monthlyRent">שכר דירה חודשי (₪)</Label>
+                        <Input
+                          id="monthlyRent"
+                          type="number"
+                          value={formData.monthlyRent}
+                          onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
+                          placeholder="5000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="leaseStartDate">תחילת חוזה</Label>
+                        <Input
+                          id="leaseStartDate"
+                          type="date"
+                          value={formData.leaseStartDate}
+                          onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="leaseEndDate">סיום חוזה</Label>
+                        <Input
+                          id="leaseEndDate"
+                          type="date"
+                          value={formData.leaseEndDate}
+                          onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="municipalTax">ארנונה חודשית (₪)</Label>
+                        <Input
+                          id="municipalTax"
+                          type="number"
+                          value={formData.municipalTax}
+                          onChange={(e) => handleInputChange('municipalTax', e.target.value)}
+                          placeholder="500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי (₪)</Label>
+                        <Input
+                          id="buildingCommitteeFee"
+                          type="number"
+                          value={formData.buildingCommitteeFee}
+                          onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value)}
+                          placeholder="300"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {formData.property_type === 'sale' && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="acquisitionCost">עלות רכישה (₪)</Label>
+                        <Input
+                          id="acquisitionCost"
+                          type="number"
+                          value={formData.acquisitionCost}
+                          onChange={(e) => handleInputChange('acquisitionCost', e.target.value)}
+                          placeholder="1500000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="renovationCosts">עלויות שיפוץ (₪)</Label>
+                        <Input
+                          id="renovationCosts"
+                          type="number"
+                          value={formData.renovationCosts}
+                          onChange={(e) => handleInputChange('renovationCosts', e.target.value)}
+                          placeholder="200000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="currentMarketValue">שווי שוק נוכחי (₪)</Label>
+                        <Input
+                          id="currentMarketValue"
+                          type="number"
+                          value={formData.currentMarketValue}
+                          onChange={(e) => handleInputChange('currentMarketValue', e.target.value)}
+                          placeholder="2000000"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="municipalTax">ארנונה חודשית (₪)</Label>
+                        <Input
+                          id="municipalTax"
+                          type="number"
+                          value={formData.municipalTax}
+                          onChange={(e) => handleInputChange('municipalTax', e.target.value)}
+                          placeholder="500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="buildingCommitteeFee">ועד בית חודשי (₪)</Label>
+                        <Input
+                          id="buildingCommitteeFee"
+                          type="number"
+                          value={formData.buildingCommitteeFee}
+                          onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value)}
+                          placeholder="300"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="featured"
+                        checked={formData.featured}
+                        onCheckedChange={(checked) => handleInputChange('featured', checked.toString())}
+                      />
+                      <Label htmlFor="featured" className="cursor-pointer">נכס מומלץ</Label>
+                    </div>
+                  </>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Notes */}
+            <AccordionItem value="notes">
+              <AccordionTrigger>📝 הערות נוספות</AccordionTrigger>
+              <AccordionContent className="pt-4">
+                <div>
+                  <Label htmlFor="notes">הערות</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    placeholder="הערות נוספות על הנכס..."
+                    rows={3}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
           {/* Submit Buttons */}
           <div className="flex gap-3 justify-end pt-4">

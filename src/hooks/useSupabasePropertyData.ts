@@ -161,7 +161,7 @@ export const useSupabasePropertyData = () => {
 
         const propertyId = crypto.randomUUID();
         
-        // Insert property with owner data
+        // Insert property with all data
         const { error: propertyError } = await supabase
           .from('properties')
           .insert({
@@ -177,11 +177,50 @@ export const useSupabasePropertyData = () => {
             floor: newProperty.floor,
             rooms: newProperty.rooms,
             notes: newProperty.notes,
+            // Missing fields that weren't being saved
+            monthly_rent: newProperty.monthlyRent || null,
+            property_type: newProperty.property_type || 'rental',
+            bathrooms: (newProperty as any).bathrooms || null,
+            parking: (newProperty as any).parking || false,
+            elevator: (newProperty as any).elevator || false,
+            balcony: (newProperty as any).balcony || false,
+            yard: (newProperty as any).yard || false,
+            balcony_yard_size: (newProperty as any).balconyYardSize || null,
+            building_floors: (newProperty as any).buildingFloors || null,
+            municipal_tax: (newProperty as any).municipalTax || null,
+            building_committee_fee: (newProperty as any).buildingCommitteeFee || null,
+            title: (newProperty as any).title || null,
+            description: (newProperty as any).description || null,
+            acquisition_cost: (newProperty as any).acquisitionCost || null,
+            renovation_costs: (newProperty as any).renovationCosts || null,
+            current_market_value: (newProperty as any).currentMarketValue || null,
+            featured: (newProperty as any).featured || false,
           });
 
         if (propertyError) {
           log.error('Failed to insert property:', propertyError);
           throw propertyError;
+        }
+
+        // Create tenant record if tenant data exists
+        if (newProperty.tenantName && newProperty.monthlyRent) {
+          const { error: tenantError } = await supabase
+            .from('tenants')
+            .insert({
+              property_id: propertyId,
+              name: newProperty.tenantName,
+              phone: newProperty.tenantPhone || null,
+              email: newProperty.tenantEmail || null,
+              monthly_rent: newProperty.monthlyRent,
+              lease_start_date: newProperty.leaseStartDate || null,
+              lease_end_date: newProperty.leaseEndDate || null,
+              is_active: true,
+            });
+
+          if (tenantError) {
+            log.error('Failed to insert tenant:', tenantError);
+            // Continue anyway - property was created successfully
+          }
         }
 
         return { ...newProperty, id: propertyId };
