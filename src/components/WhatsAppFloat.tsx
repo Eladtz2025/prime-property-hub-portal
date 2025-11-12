@@ -87,9 +87,10 @@ const WhatsAppFloat = () => {
     handleDragEnd();
   };
 
-  // Hide on property detail pages
+  // Hide on property detail pages and admin pages
   const isPropertyDetailPage = location.pathname.includes('/property/');
-  if (isPropertyDetailPage) return null;
+  const isAdminPage = location.pathname.startsWith('/admin-dashboard');
+  if (isPropertyDetailPage || isAdminPage) return null;
 
   return (
     <button
