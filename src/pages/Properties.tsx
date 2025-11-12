@@ -414,56 +414,57 @@ export const Properties: React.FC = memo(() => {
                       <TableHeader>
                         <TableRow>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3" 
+                            className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3" 
                             onClick={() => handleSort('address')}
                           >
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               כתובת
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
+                            className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('ownerName')}
                           >
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               בעל הנכס
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right px-4 py-3 border-l border-border">סוג הנכס</TableHead>
+                          <TableHead className="text-center px-4 py-3 border-l border-border">סוג הנכס</TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
+                            className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('status')}
                           >
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               סטטוס
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
+                            className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('leaseEndDate')}
                           >
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               סיום חוזה
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right px-4 py-3 border-l border-border">פעולות</TableHead>
+                          <TableHead className="text-center px-4 py-3 border-l border-border">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <TableRow key={property.id} className="hover:bg-muted/50">
-                            <TableCell className="font-semibold text-base text-foreground text-right px-4 py-3 border-l border-border">
+                            <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
                               <SearchHighlight 
                                 text={property.address} 
                                 searchTerm={filters.searchTerm}
                               />
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
-                              <div className="flex items-center justify-end gap-2">
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
+                              <div className="flex items-center justify-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <div className="font-medium">
@@ -487,10 +488,9 @@ export const Properties: React.FC = memo(() => {
                                       </div>
                                    )}
                                 </div>
-                                <User className="h-4 w-4 text-muted-foreground" />
                               </div>
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
                               <Badge 
                                 variant="outline" 
                                 className={`${getPropertyTypeColor(property.property_type)} text-sm`}
@@ -498,23 +498,23 @@ export const Properties: React.FC = memo(() => {
                                 {getPropertyTypeText(property.property_type)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
                               <Badge className={`${getStatusColor(property.status)} text-sm`}>
                                 {getStatusText(property.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
                               {property.leaseEndDate ? (
-                                <div className="flex items-center justify-end gap-2">
-                                  <span className="text-sm">{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
+                                <div className="flex items-center justify-center gap-2">
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground text-sm">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right px-4 py-3 border-l border-border">
-                              <div className="flex items-center justify-end gap-3">
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
+                              <div className="flex items-center justify-center gap-3">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
