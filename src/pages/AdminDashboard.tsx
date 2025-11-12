@@ -146,7 +146,7 @@ const AdminDashboard = memo(() => {
   return (
     <>
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-row-reverse">
           <TabsTrigger value="brokerage">טפסי תיווך</TabsTrigger>
           <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
           <TabsTrigger value="dashboard">דשבורד</TabsTrigger>

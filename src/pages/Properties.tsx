@@ -376,18 +376,18 @@ export const Properties: React.FC = memo(() => {
         {/* Main Content */}
         <Card>
           <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">
-                {isMobile ? "הודעות" : "שליחת הודעות"}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="text-xs md:text-sm">
-                {isMobile ? "היסטוריה" : "היסטורית שיחות"}
+            <TabsList className="grid w-full grid-cols-4 [&>*]:order-1 [&>*:first-child]:order-4 [&>*:nth-child(2)]:order-3 [&>*:nth-child(3)]:order-2">
+              <TabsTrigger value="list" className="text-xs md:text-sm">
+                {isMobile ? "רשימה" : "רשימה"}
               </TabsTrigger>
               <TabsTrigger value="automations" className="text-xs md:text-sm">
                 {isMobile ? "אוטומציות" : "אוטומציות ווטסאפ"}
               </TabsTrigger>
-              <TabsTrigger value="list" className="text-xs md:text-sm">
-                {isMobile ? "רשימה" : "רשימה"}
+              <TabsTrigger value="history" className="text-xs md:text-sm">
+                {isMobile ? "היסטוריה" : "היסטורית שיחות"}
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">
+                {isMobile ? "הודעות" : "שליחת הודעות"}
               </TabsTrigger>
             </TabsList>
 
