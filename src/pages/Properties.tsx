@@ -375,8 +375,8 @@ export const Properties: React.FC = memo(() => {
 
         {/* Main Content */}
         <Card>
-          <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full" dir="rtl">
-            <TabsList className="grid w-full grid-cols-4 justify-start">
+          <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="whatsapp" className="text-xs md:text-sm">
                 {isMobile ? "הודעות" : "שליחת הודעות"}
               </TabsTrigger>
