@@ -13,7 +13,7 @@ import { BrokerageFormCard } from '../components/BrokerageFormCard';
 import { BrokerageFormsList } from '../components/BrokerageFormsList';
 import { ContactLeadsList } from '../components/ContactLeadsList';
 import { ContactLeadsListCompact } from '../components/ContactLeadsListCompact';
-import { BrokerageFormsListCompact } from '../components/BrokerageFormsListCompact';
+
 
 const AdminDashboard = memo(() => {
   const { isAuthenticated } = useAuth();
@@ -151,7 +151,6 @@ const AdminDashboard = memo(() => {
         <TabsList className="mb-6 justify-start">
           <TabsTrigger value="dashboard">דשבורד</TabsTrigger>
           <TabsTrigger value="leads">פניות מהאתר</TabsTrigger>
-          <TabsTrigger value="brokerage">טפסי תיווך</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -192,14 +191,10 @@ const AdminDashboard = memo(() => {
               </Card>
 
               {/* טפסי תיווך */}
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle>טפסי תיווך</CardTitle>
-                </CardHeader>
-                <CardContent className="max-h-[400px] overflow-y-auto">
-                  <BrokerageFormsListCompact />
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                <BrokerageFormCard />
+                <BrokerageFormsList />
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -208,12 +203,6 @@ const AdminDashboard = memo(() => {
           <ContactLeadsList />
         </TabsContent>
 
-        <TabsContent value="brokerage">
-          <div className="space-y-6">
-            <BrokerageFormCard />
-            <BrokerageFormsList />
-          </div>
-        </TabsContent>
       </Tabs>
       
       <AddPropertyModal
