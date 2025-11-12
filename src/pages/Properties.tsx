@@ -414,7 +414,7 @@ export const Properties: React.FC = memo(() => {
                       <TableHeader>
                         <TableRow>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50" 
+                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3" 
                             onClick={() => handleSort('address')}
                           >
                             <div className="flex items-center justify-end gap-2">
@@ -423,7 +423,7 @@ export const Properties: React.FC = memo(() => {
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50"
+                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('ownerName')}
                           >
                             <div className="flex items-center justify-end gap-2">
@@ -431,9 +431,9 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right">סוג הנכס</TableHead>
+                          <TableHead className="text-right px-4 py-3 border-l border-border">סוג הנכס</TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50"
+                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('status')}
                           >
                             <div className="flex items-center justify-end gap-2">
@@ -442,7 +442,7 @@ export const Properties: React.FC = memo(() => {
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted/50"
+                            className="text-right cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('leaseEndDate')}
                           >
                             <div className="flex items-center justify-end gap-2">
@@ -450,19 +450,19 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right">פעולות</TableHead>
+                          <TableHead className="text-right px-4 py-3 border-l border-border">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paginatedProperties.map((property) => (
-                          <TableRow key={property.id}>
-                            <TableCell className="font-medium text-right">
+                          <TableRow key={property.id} className="hover:bg-muted/50">
+                            <TableCell className="font-semibold text-base text-foreground text-right px-4 py-3">
                               <SearchHighlight 
                                 text={property.address} 
                                 searchTerm={filters.searchTerm}
                               />
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right px-4 py-3 border-l border-border">
                               <div className="flex items-center justify-end gap-2">
                                 <div>
                                   <div className="flex items-center gap-2">
@@ -490,39 +490,40 @@ export const Properties: React.FC = memo(() => {
                                 <User className="h-4 w-4 text-muted-foreground" />
                               </div>
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right px-4 py-3 border-l border-border">
                               <Badge 
                                 variant="outline" 
-                                className={getPropertyTypeColor(property.property_type)}
+                                className={`${getPropertyTypeColor(property.property_type)} text-sm`}
                               >
                                 {getPropertyTypeText(property.property_type)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right">
-                              <Badge className={getStatusColor(property.status)}>
+                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                              <Badge className={`${getStatusColor(property.status)} text-sm`}>
                                 {getStatusText(property.status)}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right px-4 py-3 border-l border-border">
                               {property.leaseEndDate ? (
                                 <div className="flex items-center justify-end gap-2">
-                                  <span>{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
+                                  <span className="text-sm">{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground">—</span>
+                                <span className="text-muted-foreground text-sm">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
+                            <TableCell className="text-right px-4 py-3 border-l border-border">
+                              <div className="flex items-center justify-end gap-3">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant="ghost"
-                                      size="sm"
+                                      size="icon"
                                       onClick={() => handleViewDetails(property.id)}
+                                      className="h-9 w-9"
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-4 w-4 text-primary" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>צפה בפרטי הנכס</TooltipContent>
@@ -533,10 +534,11 @@ export const Properties: React.FC = memo(() => {
                                     <TooltipTrigger asChild>
                                       <Button
                                         variant="ghost"
-                                        size="sm"
+                                        size="icon"
                                         onClick={() => setEditingProperty(property)}
+                                        className="h-9 w-9"
                                       >
-                                        <Edit className="h-4 w-4" />
+                                        <Edit className="h-4 w-4 text-primary" />
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>עריכת פרטי הנכס</TooltipContent>
@@ -548,10 +550,11 @@ export const Properties: React.FC = memo(() => {
                                        <TooltipTrigger asChild>
                                          <Button
                                            variant="ghost"
-                                           size="sm"
+                                           size="icon"
                                            onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                           className="h-9 w-9"
                                          >
-                                           <Phone className="h-4 w-4" />
+                                           <Phone className="h-4 w-4 text-primary" />
                                          </Button>
                                        </TooltipTrigger>
                                        <TooltipContent>התקשר לבעל הנכס</TooltipContent>
@@ -563,10 +566,11 @@ export const Properties: React.FC = memo(() => {
                                      <TooltipTrigger asChild>
                                        <Button
                                          variant="ghost"
-                                         size="sm"
+                                         size="icon"
                                          onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
+                                         className="h-9 w-9"
                                        >
-                                         <Mail className="h-4 w-4" />
+                                         <Mail className="h-4 w-4 text-primary" />
                                        </Button>
                                      </TooltipTrigger>
                                      <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
@@ -578,9 +582,9 @@ export const Properties: React.FC = memo(() => {
                                      <TooltipTrigger asChild>
                                        <Button
                                          variant="ghost"
-                                         size="sm"
+                                         size="icon"
                                          onClick={() => handleDeleteProperty(property)}
-                                         className="text-destructive hover:text-destructive"
+                                         className="text-destructive hover:text-destructive h-9 w-9"
                                        >
                                          <Trash2 className="h-4 w-4" />
                                        </Button>
