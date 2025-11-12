@@ -6,7 +6,7 @@ import { Upload, X, Star, StarOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
-import { addWatermark } from '@/utils/watermark';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploadProps {
   images: PropertyImage[];
@@ -25,14 +25,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const { toast } = useToast();
 
-  // Convert HEIC to JPEG and compress image
-  const processImage = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Convert HEIC to JPEG, compress, and upload to Supabase Storage
+  const processAndUploadImage = async (file: File): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
 
-      img.onload = () => {
+      img.onload = async () => {
         const maxWidth = 1920;
         const maxHeight = 1920;
         let { width, height } = img;
@@ -48,9 +48,40 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         
         ctx?.drawImage(img, 0, 0, width, height);
         
-        // Convert to JPEG with good quality
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        resolve(dataUrl);
+        // Convert to blob instead of data URL
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to convert image'));
+            return;
+          }
+
+          try {
+            // Upload to Supabase Storage
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const { data, error } = await supabase.storage
+              .from('property-images')
+              .upload(fileName, blob, {
+                contentType: 'image/jpeg',
+                cacheControl: '3600'
+              });
+
+            if (error) {
+              logger.error('Upload error:', error, 'ImageUpload');
+              reject(error);
+              return;
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('property-images')
+              .getPublicUrl(fileName);
+
+            resolve(publicUrl);
+          } catch (error) {
+            logger.error('Storage error:', error, 'ImageUpload');
+            reject(error);
+          }
+        }, 'image/jpeg', 0.85);
       };
 
       img.onerror = () => {
@@ -88,12 +119,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       try {
-        const compressedDataUrl = await processImage(file);
+        const imageUrl = await processAndUploadImage(file);
         
         const newImage: PropertyImage = {
           id: `img_${Date.now()}_${i}`,
           name: file.name,
-          url: compressedDataUrl,
+          url: imageUrl,
           isPrimary: images.length === 0 && newImages.length === 0,
           uploadedAt: new Date().toISOString(),
           size: file.size
@@ -102,7 +133,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         newImages.push(newImage);
       } catch (error) {
         logger.error('Error processing image:', error, 'ImageUpload');
-        errors.push(`${file.name} - שגיאה בעיבוד`);
+        errors.push(`${file.name} - שגיאה בהעלאה`);
       }
     }
 
