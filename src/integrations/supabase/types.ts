@@ -646,6 +646,7 @@ export type Database = {
           monthly_rent: number | null
           municipal_tax: number | null
           notes: string | null
+          owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
           parking: boolean | null
@@ -685,6 +686,7 @@ export type Database = {
           monthly_rent?: number | null
           municipal_tax?: number | null
           notes?: string | null
+          owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null
@@ -724,6 +726,7 @@ export type Database = {
           monthly_rent?: number | null
           municipal_tax?: number | null
           notes?: string | null
+          owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null

@@ -18,7 +18,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Property } from '../types/property';
+import { Property, PropertyImage } from '../types/property';
+import { ImageUpload } from './ImageUpload';
+import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -81,6 +83,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<PropertyImage[]>([]);
   const { logActivity } = useActivityLogger();
   const { toast } = useToast();
 
@@ -183,10 +186,51 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
       onPropertyAdded(newProperty);
       
-      toast({
-        title: "הנכס נוסף בהצלחה!",
-        description: `הנכס ${newProperty.address} נוסף למערכת`,
-      });
+      // Save images if uploaded
+      if (uploadedImages.length > 0) {
+        const { data: properties } = await supabase
+          .from('properties')
+          .select('id')
+          .eq('address', formData.address.trim())
+          .eq('city', formData.city)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (properties && properties.length > 0) {
+          const propertyId = properties[0].id;
+          
+          const imageInserts = uploadedImages.map((img, index) => ({
+            property_id: propertyId,
+            image_url: img.url,
+            order_index: index,
+            is_main: img.isPrimary,
+            alt_text: img.name
+          }));
+
+          const { error: imageError } = await supabase
+            .from('property_images')
+            .insert(imageInserts);
+
+          if (imageError) {
+            logger.error('Error saving images:', imageError, 'AddPropertyModal');
+            toast({
+              title: "שגיאה בשמירת תמונות",
+              description: "הנכס נשמר אך התמונות לא נשמרו",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "הצלחה!",
+              description: `הנכס נוסף עם ${uploadedImages.length} תמונות`,
+            });
+          }
+        }
+      } else {
+        toast({
+          title: "הנכס נוסף בהצלחה!",
+          description: `הנכס ${newProperty.address} נוסף למערכת`,
+        });
+      }
 
       // Reset form
       setFormData({
@@ -223,6 +267,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         featured: false,
         notes: ''
       });
+      setUploadedImages([]);
       
     } catch (error) {
       logger.error('Error adding property:', error, 'AddPropertyModal');
@@ -685,6 +730,19 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     rows={3}
                   />
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Images */}
+            <AccordionItem value="images">
+              <AccordionTrigger>📸 תמונות הנכס</AccordionTrigger>
+              <AccordionContent className="pt-4">
+                <ImageUpload
+                  images={uploadedImages}
+                  onImagesChange={setUploadedImages}
+                  maxImages={10}
+                  maxSizePerImage={20}
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
