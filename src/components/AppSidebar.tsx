@@ -26,7 +26,7 @@ const navigationItems = [
 
 // Admin navigation items
 const adminItems = [
-  { title: 'פורטל בעלים', url: '/owner-portal', icon: Briefcase, requiredRole: 'admin' },
+  { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
   { title: 'נכסים', url: '/admin-dashboard/properties', icon: Building },
 ];
 
