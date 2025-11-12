@@ -23,7 +23,15 @@ export const brokerageFormSchema = z.object({
     .regex(hebrewNameRegex, 'שם מכיל תווים לא חוקיים'),
   clientId: z.string()
     .trim()
-    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות'),
+    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות')
+    .refine((id) => {
+      const digits = id.split('').map(Number);
+      const sum = digits.reduce((acc, digit, index) => {
+        const step = digit * ((index % 2) + 1);
+        return acc + (step > 9 ? step - 9 : step);
+      }, 0);
+      return sum % 10 === 0;
+    }, 'מספר תעודת הזהות אינו תקין'),
   clientPhone: z.string()
     .trim()
     .regex(israeliPhoneRegex, 'מספר טלפון לא תקין'),
@@ -33,7 +41,15 @@ export const brokerageFormSchema = z.object({
     .max(100, 'שם ארוך מדי'),
   agentId: z.string()
     .trim()
-    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות'),
+    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות')
+    .refine((id) => {
+      const digits = id.split('').map(Number);
+      const sum = digits.reduce((acc, digit, index) => {
+        const step = digit * ((index % 2) + 1);
+        return acc + (step > 9 ? step - 9 : step);
+      }, 0);
+      return sum % 10 === 0;
+    }, 'מספר תעודת הזהות אינו תקין'),
 });
 
 // Property row validation
@@ -44,6 +60,19 @@ export const propertyRowSchema = z.object({
   price: z.string().max(50, 'מחיר ארוך מדי').optional(),
 });
 
+// Validate Israeli ID using Luhn algorithm
+const validateIsraeliID = (id: string): boolean => {
+  if (!/^\d{9}$/.test(id)) return false;
+  
+  const digits = id.split('').map(Number);
+  const sum = digits.reduce((acc, digit, index) => {
+    const step = digit * ((index % 2) + 1);
+    return acc + (step > 9 ? step - 9 : step);
+  }, 0);
+  
+  return sum % 10 === 0;
+};
+
 // Signature form validation schema
 export const signatureFormSchema = z.object({
   name: z.string()
@@ -53,7 +82,8 @@ export const signatureFormSchema = z.object({
     .regex(hebrewNameRegex, 'שם מכיל תווים לא חוקיים'),
   idNumber: z.string()
     .trim()
-    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות'),
+    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות')
+    .refine(validateIsraeliID, 'מספר תעודת הזהות אינו תקין (בדיקת לוהן)'),
   phone: z.string()
     .trim()
     .regex(israeliPhoneRegex, 'מספר טלפון לא תקין'),

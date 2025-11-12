@@ -1,15 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
+
+const MAX_PROPERTIES = 10;
 
 interface PropertyRow {
   address: string;
@@ -24,10 +28,12 @@ const BrokerageFormPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
+  const { user, hasPermission } = useAuth();
   
   const [mode, setMode] = useState<PageMode>('new');
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
+  const [hasSignature, setHasSignature] = useState(false);
   
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
@@ -43,6 +49,14 @@ const BrokerageFormPage = () => {
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientPhone, setClientPhone] = useState('');
+
+  // Auth protection
+  useEffect(() => {
+    if (mode === 'new' && !hasPermission('brokerage_forms', 'create')) {
+      toast.error('אין לך הרשאה ליצור טפסי תיווך');
+      navigate('/admin-dashboard');
+    }
+  }, [mode, hasPermission, navigate]);
 
   useEffect(() => {
     const initPage = async () => {
@@ -96,6 +110,10 @@ const BrokerageFormPage = () => {
   };
 
   const addPropertyRow = () => {
+    if (properties.length >= MAX_PROPERTIES) {
+      toast.error(`ניתן להוסיף עד ${MAX_PROPERTIES} נכסים בטופס אחד`);
+      return;
+    }
     setProperties([...properties, { address: '', floor: '', rooms: '', price: '' }]);
   };
 
@@ -107,6 +125,11 @@ const BrokerageFormPage = () => {
 
   const clearSignature = () => {
     signatureRef.current?.clear();
+    setHasSignature(false);
+  };
+
+  const checkSignature = () => {
+    setHasSignature(!signatureRef.current?.isEmpty());
   };
 
   const validatePropertyData = () => {
@@ -206,6 +229,21 @@ const BrokerageFormPage = () => {
         });
 
       if (error) throw error;
+
+      // Activity logging
+      await supabase.from('activity_logs').insert({
+        user_id: user?.id,
+        action: 'create_brokerage_form',
+        resource_type: 'brokerage_form',
+        details: {
+          client_name: clientName,
+          properties_count: properties.filter(p => p.address).length,
+          fee_types: {
+            rental: feeTypeRental,
+            sale: feeTypeSale
+          }
+        }
+      });
 
       // If remote sign, update token status
       if (mode === 'remote-sign' && token) {
@@ -369,7 +407,9 @@ const BrokerageFormPage = () => {
             {/* רשימת נכסים */}
             <div className="space-y-3">
               <h3 className="font-semibold">נכסים שהופניתי אליהם</h3>
-              <div className="border rounded-lg overflow-hidden">
+              
+              {/* Desktop view - table */}
+              <div className="hidden md:block border rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted">
                     <tr>
@@ -439,8 +479,70 @@ const BrokerageFormPage = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile view - cards */}
+              <div className="md:hidden space-y-3">
+                {properties.map((property, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">נכס {index + 1}</span>
+                        {!isFieldDisabled && properties.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePropertyRow(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">כתובת</Label>
+                        <Input
+                          value={property.address}
+                          onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
+                          disabled={isFieldDisabled}
+                          placeholder="כתובת"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-2">
+                          <Label className="text-xs">קומה</Label>
+                          <Input
+                            value={property.floor}
+                            onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
+                            disabled={isFieldDisabled}
+                            placeholder="קומה"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">חדרים</Label>
+                          <Input
+                            value={property.rooms}
+                            onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
+                            disabled={isFieldDisabled}
+                            placeholder="חדרים"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">מחיר</Label>
+                          <Input
+                            value={property.price}
+                            onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
+                            disabled={isFieldDisabled}
+                            placeholder="מחיר"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
               {!isFieldDisabled && (
                 <Button onClick={addPropertyRow} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 ml-2" />
                   הוסף נכס
                 </Button>
               )}
@@ -509,18 +611,30 @@ const BrokerageFormPage = () => {
 
             {/* Signature */}
             <div className="space-y-2">
-              <Label>חתימת הלקוח</Label>
+              <div className="flex items-center justify-between">
+                <Label>חתימת הלקוח</Label>
+                <div className="flex items-center gap-2">
+                  {hasSignature && (
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      <CheckCircle2 className="h-3 w-3 ml-1" />
+                      נחתם
+                    </Badge>
+                  )}
+                  <Button onClick={clearSignature} variant="outline" size="sm">
+                    <Trash2 className="h-4 w-4 ml-2" />
+                    נקה חתימה
+                  </Button>
+                </div>
+              </div>
               <div className="border rounded-lg overflow-hidden bg-white">
                 <SignatureCanvas
                   ref={signatureRef}
+                  onEnd={checkSignature}
                   canvasProps={{
                     className: 'w-full h-40',
                   }}
                 />
               </div>
-              <Button onClick={clearSignature} variant="outline" size="sm">
-                נקה חתימה
-              </Button>
             </div>
 
             {/* Action Buttons */}
