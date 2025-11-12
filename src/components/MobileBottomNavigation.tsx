@@ -11,12 +11,12 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Main navigation items
 const navigationItems = [
-  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
+  { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
 ];
 
-// Owner portal navigation item
-const ownerPortalItem = { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard };
+// Admin dashboard navigation item
+const adminDashboardItem = { title: "לוח בקרה", url: "/admin-dashboard", icon: Home };
 
 interface MobileBottomNavigationProps {
   notificationCount?: number;
@@ -28,13 +28,13 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   const location = useLocation();
   const { profile } = useAuth();
 
-  // Check if user is a property owner (has owner_phone in profile)
-  const isPropertyOwner = profile?.phone;
+  // Check if user is admin
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
 
-  // Combine main navigation with owner portal based on access
+  // Combine main navigation with admin dashboard based on access
   const allNavItems = [
     ...navigationItems,
-    ...(isPropertyOwner ? [ownerPortalItem] : [])
+    ...(isAdmin ? [adminDashboardItem] : [])
   ];
 
   return (

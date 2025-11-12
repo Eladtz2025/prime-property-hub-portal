@@ -24,15 +24,15 @@ const navigationItems = [
   { title: 'דף הבית', url: '/', icon: Home },
 ];
 
-// Admin navigation items
-const adminItems = [
-  { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
-  { title: 'נכסים', url: '/admin-dashboard/properties', icon: Building },
-];
-
 // Property owner navigation items
 const ownerItems = [
   { title: 'הפורטל שלי', url: '/owner-portal', icon: Briefcase, requiredRole: 'property_owner' },
+  { title: 'נכסים', url: '/admin-dashboard/properties', icon: Building },
+];
+
+// Admin navigation items
+const adminItems = [
+  { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
 ];
 
 export function AppSidebar() {
@@ -46,7 +46,7 @@ export function AppSidebar() {
     isActive ? 'bg-accent text-accent-foreground font-medium' : 'hover:bg-accent/50';
 
   // Check if user is a property owner or admin
-  const isPropertyOwner = profile?.role === 'property_owner' || profile?.role === 'super_admin' || profile?.role === 'admin';
+  const isPropertyOwner = profile?.role === 'property_owner' || profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'manager';
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
 
   return (

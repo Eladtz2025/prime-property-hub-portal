@@ -22,9 +22,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navigationItems = [
-  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
-  { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "פורטל בעלים", url: "/owner-portal", icon: LayoutDashboard },
+  { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];
 
 interface EnhancedTopNavigationProps {
