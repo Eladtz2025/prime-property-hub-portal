@@ -246,7 +246,7 @@ export const UserManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100]">
                   <SelectItem value="viewer">צופה</SelectItem>
                   <SelectItem value="manager">מנהל תיקים</SelectItem>
                   <SelectItem value="admin">מנהל</SelectItem>
@@ -285,30 +285,30 @@ export const UserManagement: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>אימייל</TableHead>
-                  <TableHead>שם</TableHead>
-                  <TableHead>תפקיד</TableHead>
-                  <TableHead>סטטוס</TableHead>
-                  <TableHead>פעולות</TableHead>
+                  <TableHead className="text-right">אימייל</TableHead>
+                  <TableHead className="text-right">שם</TableHead>
+                  <TableHead className="text-right">תפקיד</TableHead>
+                  <TableHead className="text-right">סטטוס</TableHead>
+                  <TableHead className="text-right">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.full_name || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">{user.email}</TableCell>
+                    <TableCell className="text-right">{user.full_name || '-'}</TableCell>
+                    <TableCell className="text-right">
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {getRoleLabel(user.role)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       <Badge variant={user.is_approved ? 'default' : 'secondary'}>
                         {user.is_approved ? 'מאושר' : 'ממתין לאישור'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <TableCell className="text-right">
+                      <div className="flex items-center gap-2 justify-end">
                         {!user.is_approved && (
                           <>
                             <Button
@@ -335,7 +335,7 @@ export const UserManagement: React.FC = () => {
                             <SelectTrigger className="w-32">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[100]">
                               <SelectItem value="viewer">צופה</SelectItem>
                               <SelectItem value="manager">מנהל תיקים</SelectItem>
                               <SelectItem value="admin">מנהל</SelectItem>

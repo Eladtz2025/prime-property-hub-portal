@@ -82,7 +82,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               {!isMobile && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-popover border shadow-lg">
+          <DropdownMenuContent align="end" className="w-56 bg-popover border shadow-lg z-[100]">
             <DropdownMenuLabel className="text-right">
               <div className="text-sm font-medium">{profile?.full_name || profile?.email}</div>
               <div className="text-xs text-muted-foreground">{profile?.role}</div>
