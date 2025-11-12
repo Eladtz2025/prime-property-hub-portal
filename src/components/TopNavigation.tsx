@@ -10,7 +10,7 @@ import { UserAvatar } from './UserAvatar';
 
 const navigationItems = [
   { title: "דף הבית", url: "/", icon: Home },
-  { title: "לוח בקרה", url: "/admin-dashboard", icon: BarChart3, requireAdmin: true },
+  { title: "פורטל בעלים", url: "/owner-portal", icon: BarChart3, requireAdmin: true },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "צור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },

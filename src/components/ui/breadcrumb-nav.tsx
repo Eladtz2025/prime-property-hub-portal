@@ -17,7 +17,7 @@ interface BreadcrumbNavProps {
 
 const routeLabels: Record<string, string> = {
   '/': 'דף הבית',
-  '/admin-dashboard': 'לוח בקרה',
+  '/admin-dashboard': 'פורטל בעלים',
   '/admin-dashboard/properties': 'נכסים',
   '/admin-dashboard/settings': 'הגדרות',
   '/admin-dashboard/admin-control': 'בקרת מערכת',
