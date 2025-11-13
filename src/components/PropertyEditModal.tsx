@@ -385,7 +385,28 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="title">כותרת</Label>
+                  <Input
+                    id="title"
+                    value={(formData as any).title || ''}
+                    onChange={(e) => handleInputChange('title' as any, e.target.value)}
+                    placeholder="דירת גן מהממת בצפון הישן"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description">תיאור</Label>
+                  <Textarea
+                    id="description"
+                    value={(formData as any).description || ''}
+                    onChange={(e) => handleInputChange('description' as any, e.target.value)}
+                    placeholder="3 חדרים עם גישה לחצר..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 gap-3">
                   <div>
                     <Label htmlFor="rooms" className="text-xs">חדרים</Label>
                     <Input
@@ -395,6 +416,18 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       className="text-center"
                       value={formData.rooms || ''}
                       onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      min="0"
+                      className="text-center"
+                      value={(formData as any).bathrooms || ''}
+                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
                   
@@ -412,7 +445,21 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       }}
                     />
                   </div>
-                  
+
+                  <div>
+                    <Label htmlFor="buildingFloors" className="text-xs">קומות בבניין</Label>
+                    <Input
+                      id="buildingFloors"
+                      type="number"
+                      min="0"
+                      className="text-center"
+                      value={(formData as any).buildingFloors || ''}
+                      onChange={(e) => handleInputChange('buildingFloors' as any, e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <Label htmlFor="propertySize" className="text-xs">מ"ר דירה</Label>
                     <Input
