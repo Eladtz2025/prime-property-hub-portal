@@ -22,14 +22,22 @@ export interface Property {
   propertySize?: number; // in square meters
   floor?: number;
   rooms?: number;
+  bathrooms?: number;
   parking?: boolean;
   elevator?: boolean;
   balcony?: boolean;
   yard?: boolean;
   balconyYardSize?: number;
+  buildingFloors?: number;
   municipalTax?: number;
   buildingCommitteeFee?: number;
   showManagementBadge?: boolean;
+  title?: string;
+  description?: string;
+  acquisitionCost?: number;
+  renovationCosts?: number;
+  currentMarketValue?: number;
+  featured?: boolean;
   notes?: string;
   documents?: PropertyDocument[];
   images?: PropertyImage[];
