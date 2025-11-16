@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -116,6 +116,7 @@ const PropertyDetailPage = () => {
     if (property.parking) points.push('חניה פרטית');
     if (property.elevator) points.push('מעלית בבניין');
     if (property.balcony) points.push('מרפסת');
+    if (property.yard) points.push('חצר פרטית');
 
     return points;
   };
@@ -199,7 +200,13 @@ const PropertyDetailPage = () => {
             {property.balcony && (
               <Badge variant="secondary" className="text-sm">
                 <TreePine className="h-3 w-3 ml-1" />
-                מרפסת
+                מרפסת{property.balcony_yard_size ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+              </Badge>
+            )}
+            {property.yard && (
+              <Badge variant="secondary" className="text-sm">
+                <Trees className="h-3 w-3 ml-1" />
+                חצר{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} מ"ר)` : ''}
               </Badge>
             )}
           </div>
@@ -341,7 +348,13 @@ const PropertyDetailPage = () => {
               {property.balcony && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
                   <TreePine className="h-3 w-3 ml-1" />
-                  מרפסת
+                  מרפסת{property.balcony_yard_size ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+                </Badge>
+              )}
+              {property.yard && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                  <Trees className="h-3 w-3 ml-1" />
+                  חצר{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} מ"ר)` : ''}
                 </Badge>
               )}
             </div>
