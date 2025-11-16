@@ -18,6 +18,8 @@ export interface PublicProperty {
   parking?: boolean;
   elevator?: boolean;
   balcony?: boolean;
+  yard?: boolean;
+  balcony_yard_size?: number;
   show_management_badge?: boolean;
   monthly_rent?: number;
   price?: number;
@@ -58,6 +60,8 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             parking,
             elevator,
             balcony,
+            yard,
+            balcony_yard_size,
             show_management_badge,
             monthly_rent,
             featured,
@@ -97,6 +101,8 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           parking: property.parking,
           elevator: property.elevator,
           balcony: property.balcony,
+          yard: property.yard,
+          balcony_yard_size: property.balcony_yard_size,
           show_management_badge: property.show_management_badge,
           monthly_rent: property.monthly_rent,
           featured: property.featured,

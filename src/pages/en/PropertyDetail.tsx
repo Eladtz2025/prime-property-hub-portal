@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -130,6 +130,7 @@ const EnglishPropertyDetail = () => {
     if (property.parking) points.push('Private parking');
     if (property.elevator) points.push('Elevator in building');
     if (property.balcony) points.push('Balcony');
+    if (property.yard) points.push('Private yard');
 
     return points;
   };
@@ -218,7 +219,13 @@ const EnglishPropertyDetail = () => {
             {property.balcony && (
               <Badge variant="secondary" className="text-sm font-montserrat">
                 <TreePine className="h-3 w-3 mr-1" />
-                Balcony
+                Balcony{property.balcony_yard_size ? ` (${property.balcony_yard_size} sqm)` : ''}
+              </Badge>
+            )}
+            {property.yard && (
+              <Badge variant="secondary" className="text-sm font-montserrat">
+                <Trees className="h-3 w-3 mr-1" />
+                Yard{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} sqm)` : ''}
               </Badge>
             )}
           </div>
@@ -360,7 +367,13 @@ const EnglishPropertyDetail = () => {
               {property.balcony && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
                   <TreePine className="h-3 w-3 mr-1" />
-                  Balcony
+                  Balcony{property.balcony_yard_size ? ` (${property.balcony_yard_size} sqm)` : ''}
+                </Badge>
+              )}
+              {property.yard && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
+                  <Trees className="h-3 w-3 mr-1" />
+                  Yard{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} sqm)` : ''}
                 </Badge>
               )}
             </div>
