@@ -66,10 +66,10 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         </div>
       </div>
 
-      {/* Language Switcher - Bottom Left (opposite side from WhatsApp) */}
+      {/* Language Switcher - Bottom Right (opposite side from WhatsApp) */}
       <button
         onClick={() => navigate("/en")}
-        className="absolute bottom-8 left-8 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/20 hover:border-white/30 z-50"
+        className="absolute bottom-8 right-8 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/20 hover:border-white/30 z-50"
         style={{
           textShadow: '0 2px 4px rgba(0,0,0,0.3)',
         }}
