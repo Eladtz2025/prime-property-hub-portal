@@ -127,21 +127,8 @@ const HebrewHeader = () => {
             ))}
           </nav>
 
-          {/* Language Switcher & Mobile Menu */}
+          {/* Mobile Menu */}
           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/en")}
-              className="font-montserrat text-sm tracking-wide transition-all duration-300"
-              style={{
-                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : 'rgba(255,255,255,0.9)',
-                textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
-              }}
-            >
-              English
-            </Button>
-
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
