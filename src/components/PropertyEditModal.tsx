@@ -597,6 +597,17 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       />
                     </div>
                   </div>
+                  
+                  <div>
+                    <Label htmlFor="tenantEmail">אימייל השוכר</Label>
+                    <Input
+                      id="tenantEmail"
+                      type="email"
+                      value={formData.tenantEmail || ''}
+                      onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
+                      placeholder="email@example.com"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

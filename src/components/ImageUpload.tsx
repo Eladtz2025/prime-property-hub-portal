@@ -2,11 +2,14 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ImageUploadProps {
   images: PropertyImage[];
@@ -191,6 +194,40 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     onImagesChange(updatedImages);
   };
 
+  const moveImageUp = (index: number) => {
+    if (index === 0) return;
+    const newImages = [...images];
+    [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
+    onImagesChange(newImages);
+  };
+
+  const moveImageDown = (index: number) => {
+    if (index === images.length - 1) return;
+    const newImages = [...images];
+    [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+    onImagesChange(newImages);
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = images.findIndex(img => img.id === active.id);
+      const newIndex = images.findIndex(img => img.id === over.id);
+      
+      onImagesChange(arrayMove(images, oldIndex, newIndex));
+    }
+  };
+
+
   return (
     <div className="space-y-4">
       {/* Upload Area */}
@@ -244,57 +281,159 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {/* Image Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {images.map((image) => (
-            <Card key={image.id} className="relative group">
-              <CardContent className="p-2">
-                <div className="relative aspect-square">
-                  <img
-                    src={image.url}
-                    alt={image.name}
-                    className="w-full h-full object-cover rounded"
-                  />
-                  
-                  {/* Primary indicator */}
-                  {image.isPrimary && (
-                    <div className="absolute top-1 left-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
-                      ראשית
-                    </div>
-                  )}
-                  
-                  {/* Controls */}
-                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setPrimaryImage(image.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      {image.isPrimary ? (
-                        <Star className="h-3 w-3 text-yellow-500" />
-                      ) : (
-                        <StarOff className="h-3 w-3" />
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => removeImage(image.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <p className="text-xs text-muted-foreground mt-1 truncate">
-                  {image.name}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={images.map(img => img.id)} strategy={verticalListSortingStrategy}>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {images.map((image, index) => (
+                <SortableImageCard
+                  key={image.id}
+                  image={image}
+                  index={index}
+                  totalImages={images.length}
+                  onRemove={removeImage}
+                  onSetPrimary={setPrimaryImage}
+                  onMoveUp={moveImageUp}
+                  onMoveDown={moveImageDown}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
+  );
+};
+
+interface SortableImageCardProps {
+  image: PropertyImage;
+  index: number;
+  totalImages: number;
+  onRemove: (id: string) => void;
+  onSetPrimary: (id: string) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+}
+
+const SortableImageCard: React.FC<SortableImageCardProps> = ({
+  image,
+  index,
+  totalImages,
+  onRemove,
+  onSetPrimary,
+  onMoveUp,
+  onMoveDown
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: image.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card 
+      ref={setNodeRef} 
+      style={style} 
+      className="relative group cursor-move"
+    >
+      <CardContent className="p-2">
+        <div 
+          className="relative aspect-square"
+          {...attributes}
+          {...listeners}
+        >
+          <img
+            src={image.url}
+            alt={image.name}
+            className="w-full h-full object-cover rounded"
+          />
+          
+          {/* Primary indicator */}
+          {image.isPrimary && (
+            <div className="absolute top-1 left-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
+              ראשית
+            </div>
+          )}
+          
+          {/* Controls */}
+          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetPrimary(image.id);
+              }}
+              className="h-6 w-6 p-0"
+            >
+              {image.isPrimary ? (
+                <Star className="h-3 w-3 text-yellow-500" />
+              ) : (
+                <StarOff className="h-3 w-3" />
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(image.id);
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+
+          {/* Reorder Buttons */}
+          <div className="absolute bottom-1 left-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            {index > 0 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveUp(index);
+                }}
+                className="h-6 w-6 p-0"
+                title="הזז למעלה"
+              >
+                <MoveUp className="h-3 w-3" />
+              </Button>
+            )}
+            {index < totalImages - 1 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveDown(index);
+                }}
+                className="h-6 w-6 p-0"
+                title="הזז למטה"
+              >
+                <MoveDown className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        <p className="text-xs text-muted-foreground mt-1 truncate">
+          {image.name}
+        </p>
+      </CardContent>
+    </Card>
   );
 };
