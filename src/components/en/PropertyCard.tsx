@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Home, MapPin, Ruler, BedDouble, Bath, Car } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Home, MapPin, Ruler, BedDouble, Bath, Car, MoveUp, TreePine, Trees } from "lucide-react";
 
 interface PropertyCardProps {
   id: string;
@@ -12,6 +13,10 @@ interface PropertyCardProps {
   rooms?: number;
   bathrooms?: number;
   parking?: boolean;
+  elevator?: boolean;
+  balcony?: boolean;
+  yard?: boolean;
+  balconyYardSize?: number;
   imageUrl: string;
   onClick: () => void;
 }
@@ -25,6 +30,10 @@ export const PropertyCard = ({
   rooms,
   bathrooms,
   parking,
+  elevator,
+  balcony,
+  yard,
+  balconyYardSize,
   imageUrl,
   onClick,
 }: PropertyCardProps) => {
@@ -80,15 +89,39 @@ export const PropertyCard = ({
               <span className="font-montserrat text-sm">{bathrooms} BA</span>
             </div>
           )}
-          {parking && (
-            <div className="flex items-center gap-1.5">
-              <Car className="w-4 h-4" />
-              <span className="font-montserrat text-sm">Parking</span>
-            </div>
-          )}
         </div>
 
-        <Button 
+        {/* Features Badges */}
+        {(parking || elevator || balcony || yard) && (
+          <div className="flex gap-2 flex-wrap mb-4">
+            {parking && (
+              <Badge variant="outline" className="text-xs">
+                <Car className="h-3 w-3 mr-1" />
+                Parking
+              </Badge>
+            )}
+            {elevator && (
+              <Badge variant="outline" className="text-xs">
+                <MoveUp className="h-3 w-3 mr-1" />
+                Elevator
+              </Badge>
+            )}
+            {balcony && (
+              <Badge variant="outline" className="text-xs">
+                <TreePine className="h-3 w-3 mr-1" />
+                Balcony{balconyYardSize ? ` (${balconyYardSize}m²)` : ''}
+              </Badge>
+            )}
+            {yard && (
+              <Badge variant="outline" className="text-xs">
+                <Trees className="h-3 w-3 mr-1" />
+                Yard{balconyYardSize && !balcony ? ` (${balconyYardSize}m²)` : ''}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        <Button
           onClick={onClick}
           className="w-full font-montserrat font-medium transition-all duration-300 hover:scale-105"
           aria-label={`View details for ${title} property`}
