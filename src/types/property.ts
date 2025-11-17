@@ -44,6 +44,7 @@ export interface Property {
   lastUpdated?: string;
   createdAt?: string;
   property_type?: 'rental' | 'sale' | 'management';
+  assignedUserId?: string;
 }
 
 export interface PropertyImage {

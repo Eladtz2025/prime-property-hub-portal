@@ -48,6 +48,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     lastUpdated: dbProperty.updated_at,
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
+    assignedUserId: dbProperty.assigned_user_id || undefined,
     images: dbProperty.property_images?.map((img: any) => ({
       id: img.id,
       name: img.alt_text || '',
