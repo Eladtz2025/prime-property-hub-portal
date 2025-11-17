@@ -47,13 +47,18 @@ const EnglishPropertyDetail = () => {
   })) || [];
 
   const handleWhatsApp = () => {
-    const phone = '972545503055';
-    const message = `שלום אנו מתעניינים לגבי הדירה ב${translatedTitle}`;
+    // Use assigned user's phone if available, otherwise use default
+    const phone = property?.assignedUserPhone 
+      ? property.assignedUserPhone.replace(/^0/, '972') 
+      : '972545503055';
+    const message = `Hello, I'm interested in the property at ${translatedTitle}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCall = () => {
-    window.location.href = 'tel:0545503055';
+    // Use assigned user's phone if available, otherwise use default
+    const phone = property?.assignedUserPhone || '0545503055';
+    window.location.href = `tel:${phone}`;
   };
 
   const handleShare = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'copy') => {

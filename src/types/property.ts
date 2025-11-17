@@ -44,6 +44,11 @@ export interface Property {
   lastUpdated?: string;
   createdAt?: string;
   property_type?: 'rental' | 'sale' | 'management';
+  // Assigned user (agent) fields
+  assignedUserId?: string;
+  assignedUserName?: string;
+  assignedUserPhone?: string;
+  assignedUserEmail?: string;
 }
 
 export interface PropertyImage {
