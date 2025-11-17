@@ -412,17 +412,17 @@ const PropertyDetailPage = () => {
 
         {/* אודות הנכס */}
         <Card className="p-8 mt-8">
-          <h2 className="text-2xl font-bold mb-4">אודות הנכס</h2>
-          <p className="text-muted-foreground leading-relaxed mb-6">
+          <h2 className="text-2xl font-bold mb-4 text-right">אודות הנכס</h2>
+          <p className="text-muted-foreground leading-relaxed mb-6 text-right">
             {property.description}
           </p>
 
-          <h3 className="text-xl font-semibold mb-4">נקודות מרכזיות</h3>
+          <h3 className="text-xl font-semibold mb-4 text-right">נקודות מרכזיות</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {getKeyPoints().map((point, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <div key={index} className="flex items-center gap-2 flex-row-reverse">
                 <span>{point}</span>
+                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
               </div>
             ))}
           </div>
@@ -430,8 +430,8 @@ const PropertyDetailPage = () => {
 
         {/* טופס יצירת קשר */}
         <Card className="p-8 mt-8">
-          <h2 className="text-2xl font-bold mb-6">צור קשר</h2>
-          <p className="text-muted-foreground mb-6">
+          <h2 className="text-2xl font-bold mb-6 text-right">צור קשר</h2>
+          <p className="text-muted-foreground mb-6 text-right">
             מעוניינים בנכס? דירת 4 חדרים משופצת ברחוב דיזנגוף? השאירו פרטים ואנחנו נחזור אליכם בהקדם
           </p>
           
