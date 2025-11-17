@@ -114,7 +114,7 @@ const AppContent: React.FC = () => {
         <Route path="/he/neighborhoods/dizengoff" element={<HebrewDizengoff />} />
         <Route path="/he/neighborhoods/old-north" element={<HebrewOldNorth />} />
         <Route path="/he/new-developments" element={<HebrewNewDevelopments />} />
-        <Route path="/he/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/he/property/:slug" element={<PropertyDetailPage />} />
         
         {/* English Public Routes */}
           <Route path="/en" element={<EnglishIndex />} />
