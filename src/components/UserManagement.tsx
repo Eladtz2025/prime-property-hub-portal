@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Check, X, Settings } from 'lucide-react';
+import { UserPlus, Check, X, Settings, Pencil, Phone } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { logger } from '@/utils/logger';
 
 export const UserManagement: React.FC = () => {
@@ -20,6 +22,13 @@ export const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('viewer');
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    phone: '',
+    role: 'viewer' as UserRole,
+    is_approved: false
+  });
 
   const canManageUsers = hasPermission('users', 'update');
 
@@ -211,6 +220,54 @@ export const UserManagement: React.FC = () => {
     return labels[role || 'viewer'] || role || 'צופה';
   };
 
+  const handleEditUser = (user: UserProfile) => {
+    setEditingUser(user);
+    setEditForm({
+      full_name: user.full_name || '',
+      phone: user.phone || '',
+      role: (user.role || 'viewer') as UserRole,
+      is_approved: user.is_approved
+    });
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      // עדכון טבלת profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name,
+          phone: editForm.phone,
+          is_approved: editForm.is_approved
+        })
+        .eq('id', editingUser.id);
+
+      if (profileError) throw profileError;
+
+      // עדכון תפקיד אם השתנה
+      if (editForm.role !== editingUser.role) {
+        await handleRoleChange(editingUser.id, editForm.role);
+      }
+
+      toast({
+        title: "המשתמש עודכן בהצלחה",
+        description: "השינויים נשמרו במערכת"
+      });
+
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (error) {
+      logger.error('Error updating user:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בעדכון המשתמש",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!canManageUsers) {
     return (
       <div className="text-center p-6">
@@ -287,6 +344,7 @@ export const UserManagement: React.FC = () => {
                 <TableRow>
                   <TableHead>אימייל</TableHead>
                   <TableHead>שם</TableHead>
+                  <TableHead>טלפון</TableHead>
                   <TableHead>תפקיד</TableHead>
                   <TableHead>סטטוס</TableHead>
                   <TableHead>פעולות</TableHead>
@@ -297,6 +355,12 @@ export const UserManagement: React.FC = () => {
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.full_name || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm">{user.phone || '-'}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {getRoleLabel(user.role)}
@@ -309,6 +373,13 @@ export const UserManagement: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         {!user.is_approved && (
                           <>
                             <Button
@@ -327,24 +398,6 @@ export const UserManagement: React.FC = () => {
                             </Button>
                           </>
                         )}
-                        {user.is_approved && user.id !== profile?.id && (
-                          <Select
-                            value={user.role}
-                            onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="viewer">צופה</SelectItem>
-                              <SelectItem value="manager">מנהל תיקים</SelectItem>
-                              <SelectItem value="admin">מנהל</SelectItem>
-                              {profile?.role === 'super_admin' && (
-                                <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -354,6 +407,98 @@ export const UserManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>ערוך משתמש</DialogTitle>
+            <DialogDescription>
+              עדכן את פרטי המשתמש בטופס למטה
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Email - Read only */}
+            <div className="grid gap-2">
+              <Label>אימייל</Label>
+              <Input value={editingUser?.email || ''} disabled className="bg-muted" />
+            </div>
+
+            {/* Full Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">שם מלא</Label>
+              <Input
+                id="edit-name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                placeholder="הזן שם מלא"
+              />
+            </div>
+
+            {/* Phone */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-phone">טלפון</Label>
+              <div className="relative">
+                <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="edit-phone"
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="054-1234567"
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* Role */}
+            <div className="grid gap-2">
+              <Label>תפקיד</Label>
+              <Select
+                value={editForm.role}
+                onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">צופה</SelectItem>
+                  <SelectItem value="manager">מנהל תיקים</SelectItem>
+                  <SelectItem value="admin">מנהל</SelectItem>
+                  {profile?.role === 'super_admin' && (
+                    <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Approval Status */}
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-approved">משתמש מאושר</Label>
+                <div className="text-sm text-muted-foreground">
+                  {editForm.is_approved ? 'המשתמש יכול להתחבר למערכת' : 'המשתמש ממתין לאישור'}
+                </div>
+              </div>
+              <Switch
+                id="edit-approved"
+                checked={editForm.is_approved}
+                onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>
+              ביטול
+            </Button>
+            <Button onClick={handleUpdateUser}>
+              שמור שינויים
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
