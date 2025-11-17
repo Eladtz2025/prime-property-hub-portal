@@ -8,7 +8,6 @@ export interface Property {
   ownerEmail?: string;
   tenantName?: string;
   tenantPhone?: string;
-  tenantEmail?: string;
   monthlyRent?: number;
   leaseStartDate?: string;
   leaseEndDate?: string;
@@ -26,6 +25,7 @@ export interface Property {
   parking?: boolean;
   elevator?: boolean;
   balcony?: boolean;
+  mamad?: boolean;
   yard?: boolean;
   balconyYardSize?: number;
   buildingFloors?: number;

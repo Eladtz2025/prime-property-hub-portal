@@ -232,17 +232,9 @@ export const PropertyDetail: React.FC = React.memo(() => {
                           </a>
                         ) : (
                           <span className="text-muted-foreground">{formatPhoneDisplay(property.tenantPhone, canViewPhone)}</span>
-                        )}
-                      </div>
                     )}
-                    {property.tenantEmail && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <a href={`mailto:${property.tenantEmail}`} className="text-blue-600 hover:underline">
-                          {property.tenantEmail}
-                        </a>
-                      </div>
-                    )}
+                  </div>
+                )}
                   </>
                 ) : (
                   <p className="text-muted-foreground">אין שוכר כרגע</p>

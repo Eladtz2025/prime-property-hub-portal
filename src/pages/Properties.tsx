@@ -220,7 +220,6 @@ export const Properties: React.FC = memo(() => {
         `"${property.ownerEmail || ''}"`,
         `"${property.tenantName || ''}"`,
         `"${property.tenantPhone || ''}"`,
-        `"${property.tenantEmail || ''}"`,
         `"${getStatusText(property.status)}"`,
         `"${property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : ''}"`,
         `"${property.monthlyRent || ''}"`,

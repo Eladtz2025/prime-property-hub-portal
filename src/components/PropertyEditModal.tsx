@@ -168,12 +168,11 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
       if (propertyError) throw propertyError;
 
       // If tenant info exists, create or update tenant
-      if (formData.tenantName || formData.tenantPhone || formData.tenantEmail) {
+      if (formData.tenantName || formData.tenantPhone) {
         const tenantData = {
           property_id: formData.id,
           name: formData.tenantName || '',
           phone: formData.tenantPhone,
-          email: formData.tenantEmail,
           monthly_rent: formData.monthlyRent,
           lease_start_date: formData.leaseStartDate,
           lease_end_date: formData.leaseEndDate,
@@ -528,6 +527,15 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       />
                       <Label htmlFor="balcony" className="cursor-pointer text-sm">מרפסת</Label>
                     </div>
+                    
+                    <div className="flex items-center gap-2 p-3 border rounded-md">
+                      <Switch
+                        id="mamad"
+                        checked={formData.mamad || false}
+                        onCheckedChange={(checked) => handleInputChange('mamad', checked)}
+                      />
+                      <Label htmlFor="mamad" className="cursor-pointer text-sm">חדר ממ"ד</Label>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -643,17 +651,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                         disabled={!canViewPhone}
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="tenantEmail">אימייל השוכר</Label>
-                    <Input
-                      id="tenantEmail"
-                      type="email"
-                      value={formData.tenantEmail || ''}
-                      onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
-                      placeholder="email@example.com"
-                    />
                   </div>
                 </div>
               </div>

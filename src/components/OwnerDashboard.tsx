@@ -302,7 +302,6 @@ export const OwnerDashboard: React.FC = () => {
             contactNotes: editingProperty.contact_notes,
             tenantName: editingProperty.tenant?.name,
             tenantPhone: editingProperty.tenant?.phone,
-            tenantEmail: editingProperty.tenant?.email,
             monthlyRent: editingProperty.tenant?.monthly_rent || editingProperty.monthly_rent,
             leaseStartDate: editingProperty.tenant?.lease_start_date,
             leaseEndDate: editingProperty.tenant?.lease_end_date,

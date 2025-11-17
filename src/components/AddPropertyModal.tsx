@@ -69,7 +69,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     // Tenant
     tenantName: '',
     tenantPhone: '',
-    tenantEmail: '',
     
     // Rental/Sale
     monthlyRent: '',
@@ -129,15 +128,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       return;
     }
 
-    if (formData.tenantEmail && !formData.tenantEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      toast({
-        title: "שגיאה",
-        description: "כתובת אימייל שוכר לא תקינה",
-        variant: "destructive"
-      });
-      return;
-    }
-
     // Date validation
     if (formData.leaseStartDate && formData.leaseEndDate) {
       if (new Date(formData.leaseEndDate) <= new Date(formData.leaseStartDate)) {
@@ -187,7 +177,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         // Tenant
         tenantName: formData.tenantName || undefined,
         tenantPhone: formData.tenantPhone || undefined,
-        tenantEmail: formData.tenantEmail || undefined,
         
         // Rental/Sale
         monthlyRent: formData.monthlyRent ? parseFloat(formData.monthlyRent) : undefined,
@@ -278,7 +267,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         assignedUserId: null,
         tenantName: '',
         tenantPhone: '',
-        tenantEmail: '',
         monthlyRent: '',
         leaseStartDate: '',
         leaseEndDate: '',
@@ -606,17 +594,6 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         value={formData.tenantPhone}
                         onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
                         placeholder="050-1234567"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="tenantEmail">אימייל</Label>
-                      <Input
-                        id="tenantEmail"
-                        type="email"
-                        value={formData.tenantEmail}
-                        onChange={(e) => handleInputChange('tenantEmail', e.target.value)}
-                        placeholder="email@example.com"
                       />
                     </div>
                   </div>
