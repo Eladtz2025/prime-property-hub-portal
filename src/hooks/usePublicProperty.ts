@@ -104,7 +104,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
       }
     },
     enabled: !!propertyId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds - faster refresh for admin edits
     gcTime: 10 * 60 * 1000,
   });
 };

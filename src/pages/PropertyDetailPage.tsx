@@ -23,11 +23,11 @@ const PropertyDetailPage = () => {
   const { data: property, isLoading, error } = usePublicProperty(id);
 
 
-  // Convert property images to PropertyImage format
+  // Convert property images to PropertyImage format with cache busting
   const propertyImages: PropertyImage[] = property?.images.map(img => ({
     id: img.id,
     name: img.alt_text || 'תמונת נכס',
-    url: img.image_url,
+    url: `${img.image_url}?t=${Date.now()}`,
     isPrimary: img.is_main,
     uploadedAt: new Date().toISOString(),
   })) || [];
