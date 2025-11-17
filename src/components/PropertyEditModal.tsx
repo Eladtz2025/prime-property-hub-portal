@@ -14,6 +14,7 @@ import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { usePropertyData } from '@/hooks/usePropertyData';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -34,6 +35,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
+  const queryClient = useQueryClient();
 
   // If user can't edit, don't show the modal
   if (!canEdit) {
@@ -261,6 +263,10 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         title: "הנכס עודכן בהצלחה",
         description: "השינויים נשמרו במערכת",
       });
+      
+      // Invalidate cache to refresh public pages immediately
+      queryClient.invalidateQueries({ queryKey: ['public-property', property.id] });
+      queryClient.invalidateQueries({ queryKey: ['public-properties'] });
       
       onSave(formData);
       onClose();
