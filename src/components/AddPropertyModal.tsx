@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { useQuery } from '@tanstack/react-query';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -62,6 +63,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     ownerPhone: '',
     ownerEmail: '',
     
+    // Agent
+    assignedUserId: null as string | null,
+    
     // Tenant
     tenantName: '',
     tenantPhone: '',
@@ -86,6 +90,21 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const [uploadedImages, setUploadedImages] = useState<PropertyImage[]>([]);
   const { logActivity } = useActivityLogger();
   const { toast } = useToast();
+
+  // Load approved users for agent selection
+  const { data: users = [] } = useQuery({
+    queryKey: ['approved-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('is_approved', true)
+        .order('full_name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +180,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         ownerName: formData.ownerName.trim(),
         ownerPhone: formData.ownerPhone || undefined,
         ownerEmail: formData.ownerEmail || undefined,
+        
+        // Agent
+        assigned_user_id: formData.assignedUserId || undefined,
         
         // Tenant
         tenantName: formData.tenantName || undefined,
@@ -253,6 +275,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         ownerName: '',
         ownerPhone: '',
         ownerEmail: '',
+        assignedUserId: null,
         tenantName: '',
         tenantPhone: '',
         tenantEmail: '',
@@ -530,6 +553,32 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       placeholder="email@example.com"
                     />
                   </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Agent Assignment */}
+            <AccordionItem value="agent">
+              <AccordionTrigger>👨‍💼 סוכן מופיע</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="assignedUser">סוכן מופיע</Label>
+                  <Select 
+                    value={formData.assignedUserId || 'none'} 
+                    onValueChange={(value) => handleInputChange('assignedUserId', value === 'none' ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סוכן" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">אין סוכן</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </AccordionContent>
             </AccordionItem>

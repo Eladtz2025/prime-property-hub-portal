@@ -15,6 +15,7 @@ import { usePropertyData } from '@/hooks/usePropertyData';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -37,13 +38,32 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   const canEdit = hasPermission('properties', 'update');
   const queryClient = useQueryClient();
 
+  // Load approved users for agent selection
+  const { data: users = [] } = useQuery({
+    queryKey: ['approved-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('is_approved', true)
+        .order('full_name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   // If user can't edit, don't show the modal
   if (!canEdit) {
     return null;
   }
 
   useEffect(() => {
-    setFormData(property);
+    const updatedProperty = {
+      ...property,
+      assignedUserId: (property as any).assigned_user_id
+    };
+    setFormData(updatedProperty as any);
     
     // Load images from property_images table when modal opens
     if (isOpen && property.id) {
@@ -114,6 +134,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           city: formData.city,
           owner_name: formData.ownerName,
           owner_phone: formData.ownerPhone,
+          assigned_user_id: (formData as any).assignedUserId || null,
           status: formData.status,
           contact_status: formData.contactStatus,
           contact_attempts: formData.contactAttempts,
@@ -578,6 +599,26 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     value={formData.ownerEmail || ''}
                     onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
                   />
+                </div>
+                
+                <div>
+                  <Label htmlFor="assignedUser">סוכן מופיע</Label>
+                  <Select 
+                    value={(formData as any).assignedUserId || 'none'} 
+                    onValueChange={(value) => handleInputChange('assignedUserId' as any, value === 'none' ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סוכן" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">אין סוכן</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="pt-4 border-t">
