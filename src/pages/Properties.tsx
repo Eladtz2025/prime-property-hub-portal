@@ -64,6 +64,7 @@ export const Properties: React.FC = memo(() => {
   const canEditProperties = hasPermission('properties', 'update');
   const canDeleteProperties = hasPermission('properties', 'delete');
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -138,23 +139,30 @@ export const Properties: React.FC = memo(() => {
 
     // Sort properties
     filtered.sort((a, b) => {
+      let comparison = 0;
+      
       switch (sortBy) {
         case 'leaseEndDate':
-          if (!a.leaseEndDate && !b.leaseEndDate) return 0;
-          if (!a.leaseEndDate) return 1;
-          if (!b.leaseEndDate) return -1;
-          return new Date(a.leaseEndDate).getTime() - new Date(b.leaseEndDate).getTime();
+          if (!a.leaseEndDate && !b.leaseEndDate) comparison = 0;
+          else if (!a.leaseEndDate) comparison = 1;
+          else if (!b.leaseEndDate) comparison = -1;
+          else comparison = new Date(a.leaseEndDate).getTime() - new Date(b.leaseEndDate).getTime();
+          break;
         case 'ownerName':
-          return a.ownerName.localeCompare(b.ownerName, 'he');
+          comparison = a.ownerName.localeCompare(b.ownerName, 'he');
+          break;
         case 'status':
-          return a.status.localeCompare(b.status);
+          comparison = a.status.localeCompare(b.status);
+          break;
         default: // address
-          return a.address.localeCompare(b.address, 'he');
+          comparison = a.address.localeCompare(b.address, 'he');
       }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
     return filtered;
-  }, [searchFilteredProperties, sortBy]);
+  }, [searchFilteredProperties, sortBy, sortDirection]);
 
   const {
     currentPage,
@@ -282,7 +290,14 @@ export const Properties: React.FC = memo(() => {
   };
 
   const handleSort = (field: 'address' | 'ownerName' | 'status' | 'leaseEndDate') => {
-    setSortBy(field);
+    if (sortBy === field) {
+      // Toggle direction if clicking same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column - start with ascending
+      setSortBy(field);
+      setSortDirection('asc');
+    }
   };
 
   const handleViewDetails = (id: string) => {
