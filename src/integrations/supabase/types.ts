@@ -623,6 +623,7 @@ export type Database = {
         Row: {
           acquisition_cost: number | null
           address: string
+          assigned_user_id: string | null
           available: boolean | null
           balcony: boolean | null
           balcony_yard_size: number | null
@@ -663,6 +664,7 @@ export type Database = {
         Insert: {
           acquisition_cost?: number | null
           address: string
+          assigned_user_id?: string | null
           available?: boolean | null
           balcony?: boolean | null
           balcony_yard_size?: number | null
@@ -703,6 +705,7 @@ export type Database = {
         Update: {
           acquisition_cost?: number | null
           address?: string
+          assigned_user_id?: string | null
           available?: boolean | null
           balcony?: boolean | null
           balcony_yard_size?: number | null
@@ -740,7 +743,22 @@ export type Database = {
           updated_at?: string
           yard?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_documents: {
         Row: {
