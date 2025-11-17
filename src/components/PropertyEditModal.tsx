@@ -61,7 +61,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   useEffect(() => {
     const updatedProperty = {
       ...property,
-      assignedUserId: (property as any).assigned_user_id
+      assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId
     };
     setFormData(updatedProperty as any);
     

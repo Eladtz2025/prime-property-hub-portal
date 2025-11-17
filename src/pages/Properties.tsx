@@ -27,7 +27,8 @@ import {
   Copy,
   Users,
   Plus,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
@@ -52,12 +53,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { updateManagementPropertiesToElad } from '@/utils/updateManagementProperties';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canCreateProperties = hasPermission('properties', 'create');
@@ -89,6 +92,14 @@ export const Properties: React.FC = memo(() => {
 
   const handleRefresh = async () => {
     await refetch();
+  };
+
+  const handleRefreshProperties = async () => {
+    queryClient.invalidateQueries({ queryKey: ['supabase-properties'] });
+    toast({
+      title: "הנתונים עודכנו",
+      description: "הנכסים נטענו מחדש מהשרת",
+    });
   };
 
   // Auto-assign management properties and update owner info on first load
@@ -359,6 +370,14 @@ export const Properties: React.FC = memo(() => {
             <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {startIndex}-{endIndex} מתוך {totalItems} נכסים
             </div>
+            <Button 
+              onClick={handleRefreshProperties}
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+            >
+              <RefreshCw className="h-4 w-4 ml-2" />
+              רענן נתונים
+            </Button>
             {canCreateProperties && (
               <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
                 <Plus className="h-4 w-4 mr-2" />
