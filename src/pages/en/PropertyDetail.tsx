@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/useTranslation";
 import EnglishFooter from "@/components/en/Footer";
 import { removeAddressNumber } from "@/lib/utils";
+import { Helmet } from "react-helmet";
 
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -147,8 +148,28 @@ const EnglishPropertyDetail = () => {
   const translatedAddress = translations[property.address] || property.address;
   const translatedCity = translations[property.city] || property.city;
 
+  const ogImage = propertyImages[0]?.url || `${window.location.origin}/city-market-logo.png`;
+  const ogDescription = translatedDescription || `${property.rooms} rooms in ${translatedAddress}, ${translatedCity}`;
+  
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <title>{translatedTitle} - City Market Properties</title>
+        <meta name="description" content={ogDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={translatedTitle} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={window.location.href} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={translatedTitle} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
       {/* Mobile Layout */}
       <div className="lg:hidden">
         {/* Breadcrumbs */}

@@ -13,6 +13,7 @@ import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';
 import { removeAddressNumber } from '@/lib/utils';
+import { Helmet } from 'react-helmet';
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -127,8 +128,28 @@ const PropertyDetailPage = () => {
     return points;
   };
 
+  const ogImage = propertyImages[0]?.url || `${window.location.origin}/city-market-logo.png`;
+  const ogDescription = property.description || `${property.rooms} חדרים ב${property.address}, ${property.city}`;
+  
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <title>{property.title} - City Market Properties</title>
+        <meta name="description" content={ogDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={property.title} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={window.location.href} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={property.title} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
 
       {/* Mobile Layout */}
       <div className="lg:hidden">
