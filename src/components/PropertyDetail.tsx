@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History } from 'lucide-react';
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, Car, MoveUp, TreePine, Trees } from 'lucide-react';
 import { Property } from '../types/property';
 import { PropertyEditModal } from './PropertyEditModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,6 +96,34 @@ export const PropertyDetail: React.FC = React.memo(() => {
             עריכה
           </Button>
         </div>
+      </div>
+
+      {/* Feature Badges */}
+      <div className="flex gap-2 flex-wrap">
+        {property.parking && (
+          <Badge variant="secondary" className="text-sm flex items-center gap-1">
+            <Car className="h-3 w-3" />
+            חניה
+          </Badge>
+        )}
+        {property.elevator && (
+          <Badge variant="secondary" className="text-sm flex items-center gap-1">
+            <MoveUp className="h-3 w-3" />
+            מעלית
+          </Badge>
+        )}
+        {property.balcony && (
+          <Badge variant="secondary" className="text-sm flex items-center gap-1">
+            <TreePine className="h-3 w-3" />
+            מרפסת{property.balconyYardSize ? ` (${property.balconyYardSize} מ"ר)` : ''}
+          </Badge>
+        )}
+        {property.yard && (
+          <Badge variant="secondary" className="text-sm flex items-center gap-1">
+            <Trees className="h-3 w-3" />
+            חצר{property.balconyYardSize && !property.balcony ? ` (${property.balconyYardSize} מ"ר)` : ''}
+          </Badge>
+        )}
       </div>
 
       {/* Property Details Tabs */}
