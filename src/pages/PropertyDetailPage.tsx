@@ -303,8 +303,10 @@ const PropertyDetailPage = () => {
           <div className="space-y-6 order-2 lg:order-2">
             {/* Badge and Title */}
             <div className="text-right">
-              <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
-              <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
+              <div className="mb-3">
+                <Badge className="bg-primary text-white">{getPropertyTypeLabel()}</Badge>
+              </div>
+              <h1 className="text-2xl font-bold mb-2 text-right">{property.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4 flex-row-reverse justify-end">
                 <span className="text-base">{removeAddressNumber(property.address)}, {property.city}</span>
                 <MapPin className="h-4 w-4" />
