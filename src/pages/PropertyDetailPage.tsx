@@ -294,8 +294,13 @@ const PropertyDetailPage = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Right Column - Image Gallery */}
+          <div className="lg:col-span-2 order-1 lg:order-1">
+            <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
+          </div>
+
           {/* Left Column - Property Details */}
-          <div className="space-y-6 order-2 lg:order-1">
+          <div className="space-y-6 order-2 lg:order-2">
             {/* Badge and Title */}
             <div>
               <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
@@ -402,11 +407,6 @@ const PropertyDetailPage = () => {
                 </Button>
               </div>
             </Card>
-          </div>
-
-          {/* Right Column - Image Gallery */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
           </div>
         </div>
 
