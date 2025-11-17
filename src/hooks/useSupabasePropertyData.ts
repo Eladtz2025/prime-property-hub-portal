@@ -48,11 +48,6 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     lastUpdated: dbProperty.updated_at,
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
-    // Assigned user fields
-    assignedUserId: dbProperty.assigned_user_id || undefined,
-    assignedUserName: dbProperty.assigned_user?.full_name || undefined,
-    assignedUserPhone: dbProperty.assigned_user?.phone || undefined,
-    assignedUserEmail: dbProperty.assigned_user?.email || undefined,
     images: dbProperty.property_images?.map((img: any) => ({
       id: img.id,
       name: img.alt_text || '',
@@ -77,7 +72,7 @@ export const useSupabasePropertyData = () => {
       try {
         log.info('Loading properties from Supabase');
 
-        // Get all properties with their images and assigned user
+        // Get all properties with their images
         const { data: properties, error: propertiesError } = await supabase
           .from('properties')
           .select(`
@@ -88,12 +83,6 @@ export const useSupabasePropertyData = () => {
               is_main,
               order_index,
               alt_text
-            ),
-            assigned_user:profiles!assigned_user_id (
-              id,
-              full_name,
-              phone,
-              email
             )
           `);
 

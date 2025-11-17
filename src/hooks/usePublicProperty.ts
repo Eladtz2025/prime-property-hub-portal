@@ -39,10 +39,6 @@ export const usePublicProperty = (propertyId: string | undefined) => {
             current_market_value,
             featured,
             available,
-            assigned_user:profiles!assigned_user_id (
-              full_name,
-              phone
-            ),
             property_images (
               id,
               image_url,
@@ -85,8 +81,6 @@ export const usePublicProperty = (propertyId: string | undefined) => {
           monthly_rent: property.monthly_rent,
           price: property.current_market_value,
           featured: property.featured,
-          assignedUserPhone: (property as any).assigned_user?.phone,
-          assignedUserName: (property as any).assigned_user?.full_name,
           images: (property.property_images || [])
             .sort((a, b) => {
               if (a.is_main && !b.is_main) return -1;

@@ -24,8 +24,6 @@ export interface PublicProperty {
   monthly_rent?: number;
   price?: number;
   featured?: boolean;
-  assignedUserPhone?: string;
-  assignedUserName?: string;
   images: {
     id: string;
     image_url: string;
@@ -69,10 +67,6 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             featured,
             available,
             status,
-            assigned_user:profiles!assigned_user_id (
-              full_name,
-              phone
-            ),
             property_images!inner (
               id,
               image_url,
@@ -112,8 +106,6 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           show_management_badge: property.show_management_badge,
           monthly_rent: property.monthly_rent,
           featured: property.featured,
-          assignedUserPhone: (property as any).assigned_user?.phone,
-          assignedUserName: (property as any).assigned_user?.full_name,
           images: (property.property_images || [])
             .sort((a, b) => {
               // Sort by is_main first, then by order_index

@@ -12,7 +12,6 @@ import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
-import { createPropertySlug } from '@/utils/slugify';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -197,7 +196,7 @@ const Sales = () => {
                       ))}
                     </div>
                     <Button asChild className="w-full">
-                      <Link to={`/he/property/${createPropertySlug(property.title, property.id)}`}>פרטים נוספים</Link>
+                      <Link to={`/he/property/${property.id}`}>פרטים נוספים</Link>
                     </Button>
                   </div>
                 </Card>

@@ -31,7 +31,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<Property>(property);
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<Array<{ id: string; full_name: string; phone: string; email: string }>>([]);
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
@@ -49,27 +48,8 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     // Load images from property_images table when modal opens
     if (isOpen && property.id) {
       loadPropertyImages();
-      loadUsers();
     }
   }, [property, isOpen]);
-
-  const loadUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, phone, email')
-        .order('full_name', { ascending: true });
-
-      if (error) {
-        console.error('Error loading users:', error);
-        return;
-      }
-
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Error loading users:', error);
-    }
-  };
 
   const loadPropertyImages = async () => {
     try {
@@ -160,7 +140,6 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           current_market_value: (formData as any).currentMarketValue || null,
           featured: (formData as any).featured || false,
           show_management_badge: formData.showManagementBadge !== false,
-          assigned_user_id: formData.assignedUserId || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -389,27 +368,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                     />
                   </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="assignedUser">משתמש אחראי (סוכן)</Label>
-                  <Select 
-                    value={formData.assignedUserId || ''} 
-                    onValueChange={(value) => handleInputChange('assignedUserId', value || undefined)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר משתמש אחראי" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">ללא משתמש אחראי</SelectItem>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.full_name} {user.phone ? `(${user.phone})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="municipalTax">ארנונה</Label>

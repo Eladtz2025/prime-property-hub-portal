@@ -1,5 +1,4 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +13,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/useTranslation";
 import EnglishFooter from "@/components/en/Footer";
 import { removeAddressNumber } from "@/lib/utils";
-import { extractIdFromSlug, createPropertySlug } from "@/utils/slugify";
 
 const EnglishPropertyDetail = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  
-  // Extract ID from slug
-  const id = slug ? extractIdFromSlug(slug) : undefined;
 
   // Load property from database
   const { data: property, isLoading, error } = usePublicProperty(id);
@@ -52,18 +47,13 @@ const EnglishPropertyDetail = () => {
   })) || [];
 
   const handleWhatsApp = () => {
-    // Use assigned user's phone if available, otherwise use default
-    const phone = property?.assignedUserPhone 
-      ? property.assignedUserPhone.replace(/^0/, '972') 
-      : '972545503055';
-    const message = `Hello, I'm interested in the property at ${translatedTitle}`;
+    const phone = '972545503055';
+    const message = `שלום אנו מתעניינים לגבי הדירה ב${translatedTitle}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCall = () => {
-    // Use assigned user's phone if available, otherwise use default
-    const phone = property?.assignedUserPhone || '0545503055';
-    window.location.href = `tel:${phone}`;
+    window.location.href = 'tel:0545503055';
   };
 
   const handleShare = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'copy') => {
@@ -152,41 +142,8 @@ const EnglishPropertyDetail = () => {
   const translatedAddress = translations[property.address] || property.address;
   const translatedCity = translations[property.city] || property.city;
 
-  // Prepare meta tags
-  const mainImage = property.images.find(img => img.is_main)?.image_url 
-    || property.images[0]?.image_url 
-    || '/city-market-logo.png';
-  
-  const pageTitle = `${translatedTitle} - City Market Properties`;
-  const pageDescription = translatedDescription?.substring(0, 160) || 
-    `${property.rooms} bedrooms in ${translatedAddress}, ${translatedCity}. ${getPriceDisplay()}`;
-  
-  const currentUrl = window.location.href;
-
   return (
-    <>
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={currentUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={mainImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/jpeg" />
-        
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={mainImage} />
-      </Helmet>
-      
-      <div className="min-h-screen english-luxury" dir="ltr">
+    <div className="min-h-screen english-luxury" dir="ltr">
       {/* Mobile Layout */}
       <div className="lg:hidden">
         {/* Breadcrumbs */}
@@ -538,7 +495,6 @@ const EnglishPropertyDetail = () => {
 
       <EnglishFooter />
     </div>
-    </>
   );
 };
 
