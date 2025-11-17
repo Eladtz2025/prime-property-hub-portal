@@ -302,65 +302,65 @@ const PropertyDetailPage = () => {
           {/* Left Column - Property Details */}
           <div className="space-y-6 order-2 lg:order-2">
             {/* Badge and Title */}
-            <div>
+            <div className="text-right">
               <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
               <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                <MapPin className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground mb-4 flex-row-reverse justify-end">
                 <span className="text-base">{removeAddressNumber(property.address)}, {property.city}</span>
+                <MapPin className="h-4 w-4" />
               </div>
             </div>
 
             {/* Technical Details */}
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Bath className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 flex-row-reverse justify-end">
                 <span className="text-sm">
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
                 </span>
+                <Bath className="h-5 w-5 text-primary" />
               </div>
               {property.rooms && (
-                <div className="flex items-center gap-3">
-                  <Home className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-3 flex-row-reverse justify-end">
                   <span className="text-sm">{property.rooms} חדרים</span>
+                  <Home className="h-5 w-5 text-primary" />
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 flex-row-reverse justify-end">
                 <span className="text-sm">
                   קומה {property.floor === 0 ? 'קרקע' : property.floor}
                 </span>
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex items-center gap-3">
-                <Square className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 flex-row-reverse justify-end">
                 <span className="text-sm">{property.property_size} מ"ר</span>
+                <Square className="h-5 w-5 text-primary" />
               </div>
             </div>
 
             {/* Tags */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap justify-end">
               {property.parking && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
-                  <Car className="h-3 w-3 ml-1" />
                   חניה
+                  <Car className="h-3 w-3 mr-1" />
                 </Badge>
               )}
               {property.elevator && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
-                  <MoveUp className="h-3 w-3 ml-1" />
                   מעלית
+                  <MoveUp className="h-3 w-3 mr-1" />
                 </Badge>
               )}
               {property.balcony && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
-                  <TreePine className="h-3 w-3 ml-1" />
                   מרפסת{property.balcony_yard_size ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+                  <TreePine className="h-3 w-3 mr-1" />
                 </Badge>
               )}
               {property.yard && (
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
-                  <Trees className="h-3 w-3 ml-1" />
                   חצר{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+                  <Trees className="h-3 w-3 mr-1" />
                 </Badge>
               )}
             </div>
@@ -379,7 +379,7 @@ const PropertyDetailPage = () => {
 
             {/* Share */}
             <Card className="p-4">
-              <h3 className="font-semibold mb-3 text-sm">שתף נכס זה</h3>
+              <h3 className="font-semibold mb-3 text-sm text-right">שתף נכס זה</h3>
               <div className="flex gap-2 justify-center flex-wrap">
                 <Button
                   variant="outline"
