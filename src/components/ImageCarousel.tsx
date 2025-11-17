@@ -97,7 +97,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             <ImageWithPlaceholder
               src={currentImage.url}
               alt={currentImage.name}
-              className="w-full h-full object-cover rounded-t"
+              className="w-full h-full object-contain rounded-t"
               loading="eager"
               sizes="(max-width: 768px) 100vw, 60vw"
             />
