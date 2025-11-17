@@ -36,7 +36,10 @@ const Rentals = () => {
       property_size: 95,
       description: 'דירה יפהפייה ומשופצת בלב הצפון הישן, תקרות גבוהות, ריצוף מקורי, מרפסת גדולה עם נוף לשדרות. במרחק הליכה מהים, בתי קפה ומסעדות.',
       image: '/images/properties/rental-dizengoff-interior.jpg',
-      features: ['חניה', 'מעלית', 'מרפסת']
+      parking: true,
+      elevator: true,
+      balcony: true,
+      yard: false
     },
     {
       id: '2',
@@ -48,7 +51,10 @@ const Rentals = () => {
       property_size: 75,
       description: 'דירה מקסימה עם אופי בשכונה שקטה, 2 חדרי שינה מרווחים, מטבח מודרני, מזגן בכל חדר. קרוב לתחבורה ציבורית ולכל השירותים.',
       image: '/images/properties/rental-ben-yehuda-kitchen.jpg',
-      features: ['מרפסת']
+      parking: false,
+      elevator: false,
+      balcony: true,
+      yard: false
     },
     {
       id: '3',
@@ -60,7 +66,10 @@ const Rentals = () => {
       property_size: 65,
       description: 'דירה חמודה ומשופצת בשכונת נווה צדק, קרוב לחוף הים, 2 חדרי שינה, סלון מואר, מטבח מעוצב. מתאים לזוג או משפחה קטנה.',
       image: '/images/properties/rental-gordon-bedroom.jpg',
-      features: ['מרפסת']
+      parking: false,
+      elevator: false,
+      balcony: true,
+      yard: false
     },
     {
       id: '4',
@@ -72,7 +81,10 @@ const Rentals = () => {
       property_size: 32,
       description: 'סטודיו מעוצב ומרוהט, מטבח פתוח, אזור מיטה מופרד, מרפסת קטנה. מתאים לעצמאי או זוג צעיר. במרחק הליכה מהים.',
       image: '/images/properties/studio-frishman.jpg',
-      features: ['מעלית', 'מרפסת']
+      parking: false,
+      elevator: true,
+      balcony: true,
+      yard: false
     },
     {
       id: '5',
@@ -84,7 +96,10 @@ const Rentals = () => {
       property_size: 55,
       description: 'דירה נעימה במיקום מרכזי, חדר שינה אחד, סלון בהיר, מטבח מאובזר. קרוב לתחנת רכבת ולמרכזי קניות. מתאים ליחיד או זוג.',
       image: '/images/properties/2br-bialik.jpg',
-      features: []
+      parking: false,
+      elevator: false,
+      balcony: false,
+      yard: false
     }
   ];
 
@@ -100,11 +115,10 @@ const Rentals = () => {
         property_size: prop.property_size,
         description: prop.description || '',
         image: prop.images[0]?.image_url || '',
-        features: [
-          prop.parking ? 'חניה' : null,
-          prop.elevator ? 'מעלית' : null,
-          prop.balcony ? 'מרפסת' : null,
-        ].filter(Boolean) as string[]
+        parking: prop.parking,
+        elevator: prop.elevator,
+        balcony: prop.balcony,
+        yard: prop.yard
       }))
     : mockProperties;
 
@@ -199,11 +213,26 @@ const Rentals = () => {
                       {property.description}
                     </p>
                     <div className="flex gap-2 mb-4 flex-wrap">
-                      {property.features.map((feature, idx) => (
-                        <Badge key={idx} className="bg-orange-500 hover:bg-orange-600 text-white">
-                          {feature}
+                      {property.parking && (
+                        <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                          חניה
                         </Badge>
-                      ))}
+                      )}
+                      {property.elevator && (
+                        <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                          מעלית
+                        </Badge>
+                      )}
+                      {property.balcony && (
+                        <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                          מרפסת
+                        </Badge>
+                      )}
+                      {property.yard && (
+                        <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                          חצר
+                        </Badge>
+                      )}
                     </div>
                     <Button asChild className="w-full">
                       <Link to={`/he/property/${property.id}`}>פרטים נוספים</Link>
