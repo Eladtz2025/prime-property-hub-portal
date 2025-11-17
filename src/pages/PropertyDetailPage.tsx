@@ -128,7 +128,7 @@ const PropertyDetailPage = () => {
     return points;
   };
 
-  const ogImage = propertyImages[0]?.url || `${window.location.origin}/city-market-logo.png`;
+  const ogImage = property.images[0]?.image_url || 'https://www.ctmarketproperties.com/city-market-logo.png';
   const ogDescription = property.description || `${property.rooms} חדרים ב${property.address}, ${property.city}`;
   
   return (

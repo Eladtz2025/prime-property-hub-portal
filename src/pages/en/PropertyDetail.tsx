@@ -148,7 +148,7 @@ const EnglishPropertyDetail = () => {
   const translatedAddress = translations[property.address] || property.address;
   const translatedCity = translations[property.city] || property.city;
 
-  const ogImage = propertyImages[0]?.url || `${window.location.origin}/city-market-logo.png`;
+  const ogImage = property.images[0]?.image_url || 'https://www.ctmarketproperties.com/city-market-logo.png';
   const ogDescription = translatedDescription || `${property.rooms} rooms in ${translatedAddress}, ${translatedCity}`;
   
   return (
