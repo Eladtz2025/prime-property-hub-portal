@@ -37,7 +37,6 @@ export const useAdvancedSearch = (properties: Property[]) => {
         property.ownerPhone || '',
         property.tenantPhone || '',
         property.ownerEmail || '',
-        property.tenantEmail || '',
         property.notes || ''
       ];
 

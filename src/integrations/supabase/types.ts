@@ -644,6 +644,7 @@ export type Database = {
           floor: number | null
           id: string
           last_contact_date: string | null
+          mamad: boolean | null
           monthly_rent: number | null
           municipal_tax: number | null
           notes: string | null
@@ -685,6 +686,7 @@ export type Database = {
           floor?: number | null
           id?: string
           last_contact_date?: string | null
+          mamad?: boolean | null
           monthly_rent?: number | null
           municipal_tax?: number | null
           notes?: string | null
@@ -726,6 +728,7 @@ export type Database = {
           floor?: number | null
           id?: string
           last_contact_date?: string | null
+          mamad?: boolean | null
           monthly_rent?: number | null
           municipal_tax?: number | null
           notes?: string | null
