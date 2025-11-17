@@ -24,6 +24,11 @@ export interface PublicProperty {
   monthly_rent?: number;
   price?: number;
   featured?: boolean;
+  agent?: {
+    id: string;
+    name: string | null;
+    phone: string | null;
+  } | null;
   images: {
     id: string;
     image_url: string;
