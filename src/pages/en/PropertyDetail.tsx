@@ -12,6 +12,7 @@ import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/useTranslation";
 import EnglishFooter from "@/components/en/Footer";
+import { removeAddressNumber } from "@/lib/utils";
 
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -176,7 +177,7 @@ const EnglishPropertyDetail = () => {
             <h1 className="text-2xl font-playfair font-bold mb-3">{translatedTitle}</h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
-              <span className="font-montserrat">{translatedAddress}, {translatedCity}</span>
+              <span className="font-montserrat">{removeAddressNumber(translatedAddress)}, {translatedCity}</span>
             </div>
           </div>
 
@@ -320,7 +321,7 @@ const EnglishPropertyDetail = () => {
               <h1 className="text-2xl font-playfair font-bold mb-2">{translatedTitle}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4" />
-                <span className="text-base font-montserrat">{translatedAddress}, {translatedCity}</span>
+                <span className="text-base font-montserrat">{removeAddressNumber(translatedAddress)}, {translatedCity}</span>
               </div>
             </div>
 

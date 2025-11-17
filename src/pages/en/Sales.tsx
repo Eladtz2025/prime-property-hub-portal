@@ -11,6 +11,7 @@ import { MapPin, Home, Square, TrendingUp, Shield, Users, Award } from 'lucide-r
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Helmet } from "react-helmet";
+import { removeAddressNumber } from '@/lib/utils';
 
 const EnglishSales = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,7 +131,7 @@ const EnglishSales = () => {
                     <h3 className="text-lg font-bold mb-2">{translations[property.title] || property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{translations[property.address] || property.address}</span>
+                      <span>{removeAddressNumber(translations[property.address] || property.address)}, {translations[property.city] || property.city}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (

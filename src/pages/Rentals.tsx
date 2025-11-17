@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
+import { removeAddressNumber } from '@/lib/utils';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -193,7 +194,7 @@ const Rentals = () => {
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{property.address}</span>
+                      <span>{removeAddressNumber(property.address)}, {property.city}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (

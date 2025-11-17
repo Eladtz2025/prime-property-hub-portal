@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';
+import { removeAddressNumber } from '@/lib/utils';
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -157,7 +158,7 @@ const PropertyDetailPage = () => {
             <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
-              <span>{property.address}, {property.city}</span>
+              <span>{removeAddressNumber(property.address)}, {property.city}</span>
             </div>
           </div>
 
@@ -301,7 +302,7 @@ const PropertyDetailPage = () => {
               <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4" />
-                <span className="text-base">{property.address}, {property.city}</span>
+                <span className="text-base">{removeAddressNumber(property.address)}, {property.city}</span>
               </div>
             </div>
 
