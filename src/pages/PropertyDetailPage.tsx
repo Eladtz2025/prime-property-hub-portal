@@ -307,7 +307,7 @@ const PropertyDetailPage = () => {
                 <Badge className="bg-primary text-white">{getPropertyTypeLabel()}</Badge>
               </div>
               <h1 className="text-2xl font-bold mb-2 text-right">{property.title}</h1>
-              <div className="flex items-center gap-2 text-muted-foreground mb-4 flex-row-reverse justify-end">
+              <div className="flex items-center gap-2 text-muted-foreground mb-4 flex-row-reverse">
                 <span className="text-base">{removeAddressNumber(property.address)}, {property.city}</span>
                 <MapPin className="h-4 w-4" />
               </div>
