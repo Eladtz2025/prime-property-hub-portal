@@ -314,26 +314,26 @@ const PropertyDetailPage = () => {
             </div>
 
             {/* Technical Details */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
+            <div className="space-y-3 text-right">
+              <div className="flex items-center gap-3 flex-row-reverse">
                 <span className="text-sm">
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
                 </span>
                 <Bath className="h-5 w-5 text-primary" />
               </div>
               {property.rooms && (
-                <div className="flex items-center gap-3 flex-row-reverse justify-end">
+                <div className="flex items-center gap-3 flex-row-reverse">
                   <span className="text-sm">{property.rooms} חדרים</span>
                   <Home className="h-5 w-5 text-primary" />
                 </div>
               )}
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
+              <div className="flex items-center gap-3 flex-row-reverse">
                 <span className="text-sm">
                   קומה {property.floor === 0 ? 'קרקע' : property.floor}
                 </span>
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
+              <div className="flex items-center gap-3 flex-row-reverse">
                 <span className="text-sm">{property.property_size} מ"ר</span>
                 <Square className="h-5 w-5 text-primary" />
               </div>
