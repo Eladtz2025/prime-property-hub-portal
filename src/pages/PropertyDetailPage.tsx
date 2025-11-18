@@ -168,20 +168,20 @@ const PropertyDetailPage = () => {
           </nav>
         </div>
 
-        {/* Image with Price Badge */}
-        <div className="relative">
-          <ImageCarousel images={propertyImages} priceLabel="" />
-          <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-bold text-lg">
-            {getPriceDisplay()}
-          </div>
-        </div>
+        {/* Image Gallery */}
+        <ImageCarousel images={propertyImages} priceLabel="" />
 
         {/* Property Info */}
         <div className="px-4 py-6 space-y-6">
-          {/* Title and Address */}
+          {/* Title, Price Badge and Address */}
           <div>
-            <Badge className="mb-3 bg-primary text-white">{getPropertyTypeLabel()}</Badge>
-            <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
+            <div className="flex items-start gap-3 mb-3">
+              <h1 className="text-2xl font-bold flex-1">{property.title}</h1>
+              <Badge className="bg-primary text-primary-foreground px-4 py-2 text-lg font-bold whitespace-nowrap">
+                {getPriceDisplay()}
+              </Badge>
+            </div>
+            <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">{getPropertyTypeLabel()}</Badge>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
               <span>{removeAddressNumber(property.address)}, {property.city}</span>
