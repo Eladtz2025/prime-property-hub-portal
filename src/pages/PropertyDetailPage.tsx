@@ -343,30 +343,30 @@ const PropertyDetailPage = () => {
             <div className="space-y-3 text-right">
               {/* מחיר */}
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
-                <span className="text-lg font-bold">{getPriceDisplay()}</span>
                 <DollarSign className="h-5 w-5 text-primary" />
+                <span className="text-lg font-bold">{getPriceDisplay()}</span>
               </div>
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
+                <Bath className="h-5 w-5 text-primary" />
                 <span className="text-sm">
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
                 </span>
-                <Bath className="h-5 w-5 text-primary" />
               </div>
               {property.rooms && (
                 <div className="flex items-center gap-3 flex-row-reverse justify-start">
-                  <span className="text-sm">{property.rooms} חדרים</span>
                   <Home className="h-5 w-5 text-primary" />
+                  <span className="text-sm">{property.rooms} חדרים</span>
                 </div>
               )}
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
+                <Building2 className="h-5 w-5 text-primary" />
                 <span className="text-sm">
                   קומה {property.floor === 0 ? 'קרקע' : property.floor}
                 </span>
-                <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
-                <span className="text-sm">{property.property_size} מ"ר</span>
                 <Square className="h-5 w-5 text-primary" />
+                <span className="text-sm">{property.property_size} מ"ר</span>
               </div>
             </div>
 
