@@ -116,17 +116,17 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   variant="secondary"
                   size="icon"
                   className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={prevImage}
+                  onClick={nextImage}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="secondary"
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={nextImage}
+                  onClick={prevImage}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </>
             )}
@@ -151,7 +151,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
           
           {/* Thumbnail strip */}
           {images.length > 1 && (
-            <div className="flex gap-2 p-3 overflow-x-auto">
+            <div className="flex gap-2 p-3 overflow-x-auto" dir="rtl">
               {images.map((image, index) => (
                 <button
                   key={image.id}
@@ -192,17 +192,17 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   variant="secondary"
                   size="icon"
                   className="absolute left-4 top-1/2 -translate-y-1/2"
-                  onClick={prevImage}
+                  onClick={nextImage}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="secondary"
                   size="icon"
                   className="absolute right-4 top-1/2 -translate-y-1/2"
-                  onClick={nextImage}
+                  onClick={prevImage}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
                 
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-2 rounded">
