@@ -159,11 +159,11 @@ const PropertyDetailPage = () => {
             <Link to="/" className="hover:text-primary transition-colors">
               דף הבית
             </Link>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
             <span className="text-foreground">{property.title}</span>
           </nav>
         </div>
@@ -186,27 +186,27 @@ const PropertyDetailPage = () => {
           {/* Technical Details */}
           <div className="grid grid-cols-2 gap-4">
             {/* מחיר */}
-            <div className="flex items-center gap-3 col-span-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 col-span-2 flex-row-reverse justify-start">
               <span className="text-lg font-bold">{getPriceDisplay()}</span>
+              <DollarSign className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex items-center gap-3">
-              <Bath className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 flex-row-reverse justify-start">
               <span>{property.bathrooms} חדרי רחצה</span>
+              <Bath className="h-5 w-5 text-primary" />
             </div>
             {property.rooms && (
-              <div className="flex items-center gap-3">
-                <Home className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 flex-row-reverse justify-start">
                 <span>{property.rooms} חדרים</span>
+                <Home className="h-5 w-5 text-primary" />
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 flex-row-reverse justify-start">
               <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
+              <Building2 className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex items-center gap-3">
-              <Square className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 flex-row-reverse justify-start">
               <span>{property.property_size} מ"ר</span>
+              <Square className="h-5 w-5 text-primary" />
             </div>
           </div>
 
@@ -311,11 +311,11 @@ const PropertyDetailPage = () => {
           <Link to="/" className="hover:text-primary transition-colors">
             דף הבית
           </Link>
-          <ChevronRight className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
-          <ChevronRight className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           <span className="text-foreground">{property.title}</span>
         </nav>
 
