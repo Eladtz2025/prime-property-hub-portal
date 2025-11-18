@@ -307,7 +307,7 @@ const PropertyDetailPage = () => {
       {/* Desktop Layout */}
       <div className="hidden lg:block container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse mb-6" aria-label="Breadcrumb" dir="rtl">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse justify-end mb-6" aria-label="Breadcrumb" dir="rtl">
           <Link to="/" className="hover:text-primary transition-colors">
             דף הבית
           </Link>
