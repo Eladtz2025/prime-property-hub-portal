@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, Trees, DollarSign } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -159,11 +159,11 @@ const PropertyDetailPage = () => {
             <Link to="/" className="hover:text-primary transition-colors">
               דף הבית
             </Link>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
             <span className="text-foreground">{property.title}</span>
           </nav>
         </div>
@@ -177,9 +177,9 @@ const PropertyDetailPage = () => {
           <div>
             <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">{getPropertyTypeLabel()}</Badge>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-5 w-5" />
+            <div className="flex items-center gap-2 text-muted-foreground flex-row-reverse justify-start">
               <span>{removeAddressNumber(property.address)}, {property.city}</span>
+              <MapPin className="h-5 w-5" />
             </div>
           </div>
 
@@ -214,26 +214,26 @@ const PropertyDetailPage = () => {
           <div className="flex gap-2 flex-wrap">
             {property.parking && (
               <Badge variant="secondary" className="text-sm">
-                <Car className="h-3 w-3 ml-1" />
                 חניה
+                <Car className="h-3 w-3 mr-1" />
               </Badge>
             )}
             {property.elevator && (
               <Badge variant="secondary" className="text-sm">
-                <MoveUp className="h-3 w-3 ml-1" />
                 מעלית
+                <MoveUp className="h-3 w-3 mr-1" />
               </Badge>
             )}
             {property.balcony && (
               <Badge variant="secondary" className="text-sm">
-                <TreePine className="h-3 w-3 ml-1" />
                 מרפסת{property.balcony_yard_size ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+                <TreePine className="h-3 w-3 mr-1" />
               </Badge>
             )}
             {property.yard && (
               <Badge variant="secondary" className="text-sm">
-                <Trees className="h-3 w-3 ml-1" />
                 חצר{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} מ"ר)` : ''}
+                <Trees className="h-3 w-3 mr-1" />
               </Badge>
             )}
           </div>
@@ -311,11 +311,11 @@ const PropertyDetailPage = () => {
           <Link to="/" className="hover:text-primary transition-colors">
             דף הבית
           </Link>
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
           <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
           <span className="text-foreground">{property.title}</span>
         </nav>
 
@@ -453,8 +453,8 @@ const PropertyDetailPage = () => {
           <h3 className="text-xl font-semibold mb-4 text-right">נקודות מרכזיות</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {getKeyPoints().map((point, index) => (
-              <div key={index} className="flex items-center gap-2 flex-row-reverse">
-                <span>{point}</span>
+              <div key={index} className="flex items-center gap-3 flex-row-reverse justify-start">
+                <span className="text-right">{point}</span>
                 <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
               </div>
             ))}
