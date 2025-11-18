@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees, DollarSign } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -186,10 +186,10 @@ const PropertyDetailPage = () => {
           {/* Technical Details */}
           <div className="grid grid-cols-2 gap-4">
             {/* מחיר */}
-            <div className="flex items-center gap-3 col-span-2 flex-row-reverse justify-start">
-              <span className="text-lg font-bold">{getPriceDisplay()}</span>
-              <DollarSign className="h-5 w-5 text-primary" />
-            </div>
+              <div className="flex items-center gap-3 col-span-2 flex-row-reverse justify-start">
+                <span className="text-lg font-bold">{getPriceDisplay()}</span>
+                <span className="text-xl font-bold text-primary">₪</span>
+              </div>
             <div className="flex items-center gap-3 flex-row-reverse justify-start">
               <span>{property.bathrooms} חדרי רחצה</span>
               <Bath className="h-5 w-5 text-primary" />
@@ -342,10 +342,10 @@ const PropertyDetailPage = () => {
             {/* Technical Details */}
             <div className="space-y-3 text-right">
               {/* מחיר */}
-              <div className="flex items-center gap-3 flex-row-reverse justify-start">
-                <DollarSign className="h-5 w-5 text-primary" />
-                <span className="text-lg font-bold">{getPriceDisplay()}</span>
-              </div>
+            <div className="flex items-center gap-3 flex-row-reverse justify-start">
+              <span className="text-xl font-bold text-primary">₪</span>
+              <span className="text-lg font-bold">{getPriceDisplay()}</span>
+            </div>
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
                 <Bath className="h-5 w-5 text-primary" />
                 <span className="text-sm">
