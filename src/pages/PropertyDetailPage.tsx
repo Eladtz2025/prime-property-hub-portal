@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, Trees } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, Trees, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -173,14 +173,9 @@ const PropertyDetailPage = () => {
 
         {/* Property Info */}
         <div className="px-4 py-6 space-y-6">
-          {/* Title, Price Badge and Address */}
+          {/* Title and Address */}
           <div>
-            <div className="flex items-start gap-3 mb-3">
-              <h1 className="text-2xl font-bold flex-1">{property.title}</h1>
-              <Badge className="bg-primary text-primary-foreground px-4 py-2 text-lg font-bold whitespace-nowrap">
-                {getPriceDisplay()}
-              </Badge>
-            </div>
+            <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">{getPropertyTypeLabel()}</Badge>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
@@ -190,6 +185,11 @@ const PropertyDetailPage = () => {
 
           {/* Technical Details */}
           <div className="grid grid-cols-2 gap-4">
+            {/* מחיר */}
+            <div className="flex items-center gap-3 col-span-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <span className="text-lg font-bold">{getPriceDisplay()}</span>
+            </div>
             <div className="flex items-center gap-3">
               <Bath className="h-5 w-5 text-primary" />
               <span>{property.bathrooms} חדרי רחצה</span>
@@ -341,6 +341,11 @@ const PropertyDetailPage = () => {
 
             {/* Technical Details */}
             <div className="space-y-3 text-right">
+              {/* מחיר */}
+              <div className="flex items-center gap-3 flex-row-reverse justify-start">
+                <span className="text-lg font-bold">{getPriceDisplay()}</span>
+                <DollarSign className="h-5 w-5 text-primary" />
+              </div>
               <div className="flex items-center gap-3 flex-row-reverse justify-start">
                 <span className="text-sm">
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
