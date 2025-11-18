@@ -322,7 +322,7 @@ const PropertyDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Right Column - Image Gallery */}
           <div className="lg:col-span-2 order-1 lg:order-1">
-            <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
+            <ImageCarousel images={propertyImages} priceLabel="" />
           </div>
 
           {/* Left Column - Property Details */}
