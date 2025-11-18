@@ -55,7 +55,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
           `)
           .eq('id', propertyId)
           .eq('available', true)
-          .eq('status', 'vacant')
+          .in('status', ['vacant', 'unknown'])
           .single();
 
         if (error) {
