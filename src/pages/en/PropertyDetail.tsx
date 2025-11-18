@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees } from "lucide-react";
+import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -192,14 +192,9 @@ const EnglishPropertyDetail = () => {
 
         {/* Property Info */}
         <div className="px-4 py-6 space-y-6">
-          {/* Title, Price Badge and Address */}
+          {/* Title and Address */}
           <div>
-            <div className="flex items-start gap-3 mb-3">
-              <h1 className="text-2xl font-playfair font-bold flex-1">{translatedTitle}</h1>
-              <Badge className="bg-primary text-primary-foreground px-4 py-2 text-lg font-bold font-montserrat whitespace-nowrap">
-                {getPriceDisplay()}
-              </Badge>
-            </div>
+            <h1 className="text-2xl font-playfair font-bold mb-3">{translatedTitle}</h1>
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20 font-montserrat">{getPropertyTypeLabel()}</Badge>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
@@ -209,6 +204,11 @@ const EnglishPropertyDetail = () => {
 
           {/* Technical Details */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Price */}
+            <div className="flex items-center gap-3 col-span-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <span className="text-lg font-bold font-montserrat">{getPriceDisplay()}</span>
+            </div>
             <div className="flex items-center gap-3">
               <Bath className="h-5 w-5 text-primary" />
               <span className="font-montserrat">{property.bathrooms} Bathrooms</span>
@@ -353,6 +353,11 @@ const EnglishPropertyDetail = () => {
 
             {/* Technical Details */}
             <div className="space-y-3">
+              {/* Price */}
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-5 w-5 text-primary" />
+                <span className="text-lg font-bold font-montserrat">{getPriceDisplay()}</span>
+              </div>
               <div className="flex items-center gap-3">
                 <Bath className="h-5 w-5 text-primary" />
                 <span className="text-sm font-montserrat">
