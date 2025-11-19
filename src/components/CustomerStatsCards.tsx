@@ -72,8 +72,8 @@ export const CustomerStatsCards = ({ customers }: CustomerStatsCardsProps) => {
         const Icon = stat.icon;
         return (
           <Card key={stat.title} className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-row-reverse items-center justify-between">
+              <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-1">{stat.title}</p>
                 <p className="text-3xl font-bold">{stat.value}</p>
               </div>

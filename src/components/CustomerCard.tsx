@@ -66,9 +66,9 @@ export const CustomerCard = ({ customer, onEdit, onUpdateStatus, onUpdatePriorit
 
   return (
     <Card className="p-6 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
+      <div className="flex flex-row-reverse justify-between items-start mb-4">
+        <div className="flex-1 text-right">
+          <div className="flex flex-row-reverse items-center gap-2 mb-2">
             <h3 className="text-lg font-semibold">{customer.name}</h3>
             <Badge className={statusColors[customer.status]}>
               {statusLabels[customer.status]}
@@ -79,17 +79,17 @@ export const CustomerCard = ({ customer, onEdit, onUpdateStatus, onUpdatePriorit
           </div>
           
           <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-row-reverse items-center gap-2">
               <Mail className="h-4 w-4" />
               <span>{customer.email}</span>
             </div>
             {customer.phone && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-row-reverse items-center gap-2">
                 <Phone className="h-4 w-4" />
                 <span>{customer.phone}</span>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-row-reverse items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span>נוצר: {format(new Date(customer.created_at), 'dd/MM/yyyy', { locale: he })}</span>
             </div>
@@ -121,28 +121,28 @@ export const CustomerCard = ({ customer, onEdit, onUpdateStatus, onUpdatePriorit
 
       <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
         {customer.budget_min && customer.budget_max && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row-reverse items-center gap-2">
             <Coins className="h-4 w-4 text-muted-foreground" />
             <span>תקציב: ₪{customer.budget_min.toLocaleString()} - ₪{customer.budget_max.toLocaleString()}</span>
           </div>
         )}
         
         {customer.rooms_min && customer.rooms_max && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row-reverse items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span>חדרים: {customer.rooms_min} - {customer.rooms_max}</span>
           </div>
         )}
 
         {customer.preferred_cities && customer.preferred_cities.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row-reverse items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span>ערים: {customer.preferred_cities.join(', ')}</span>
           </div>
         )}
 
         {customer.move_in_date && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row-reverse items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>כניסה: {format(new Date(customer.move_in_date), 'dd/MM/yyyy', { locale: he })}</span>
           </div>
@@ -150,7 +150,7 @@ export const CustomerCard = ({ customer, onEdit, onUpdateStatus, onUpdatePriorit
       </div>
 
       {customer.notes && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-right">
           <p className="text-sm font-medium mb-1">הערות:</p>
           <p className="text-sm">{customer.notes}</p>
         </div>
@@ -158,7 +158,7 @@ export const CustomerCard = ({ customer, onEdit, onUpdateStatus, onUpdatePriorit
 
       {customer.next_followup_date && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex flex-row-reverse items-center gap-2 text-sm">
             <Calendar className="h-4 w-4" />
             <span className="font-medium">מעקב הבא:</span>
             <span>{format(new Date(customer.next_followup_date), 'dd/MM/yyyy HH:mm', { locale: he })}</span>
