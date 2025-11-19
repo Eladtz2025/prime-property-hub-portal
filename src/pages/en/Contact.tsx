@@ -52,7 +52,7 @@ const Contact = () => {
   return <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>Contact Us - CITY MARKET Properties | Real Estate in Tel Aviv</title>
-        <meta name="description" content="Contact CITY MARKET Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Phone: 054-550-3055" />
+        <meta name="description" content="Contact CITY MARKET Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Phone: 054-228-4477" />
         <meta property="og:title" content="Contact Us - CITY MARKET Properties" />
         <meta property="og:description" content="Contact CITY MARKET real estate experts in Tel Aviv" />
         <link rel="canonical" href="https://citymarket.co.il/en/contact" />
@@ -97,10 +97,10 @@ const Contact = () => {
                       Phone
                     </h3>
                     <a 
-                      href="tel:+972545503055" 
+                      href="tel:+972542284477" 
                       className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
                     >
-                      054-550-3055
+                      054-228-4477
                     </a>
                   </div>
                 </div>
