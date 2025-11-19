@@ -76,7 +76,7 @@ const HebrewFooter = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-left">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
               יצירת קשר
             </h4>
             <ul className="space-y-3 text-sm text-background/70">
