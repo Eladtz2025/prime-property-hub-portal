@@ -37,7 +37,7 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
     clientName: '',
     clientId: '',
     clientPhone: '',
-    agentName: 'אלעד צברי',
+    agentName: 'טלי לויט',
     agentId: '036804805',
   });
 
