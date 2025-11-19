@@ -3,11 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Download } from "lucide-react";
+import { Search, Filter, Download, Plus } from "lucide-react";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { CustomerStatsCards } from "@/components/CustomerStatsCards";
 import { CustomerCard } from "@/components/CustomerCard";
 import { CustomerEditModal } from "@/components/CustomerEditModal";
+import { AddCustomerModal } from "@/components/AddCustomerModal";
 
 export default function AdminCustomers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +16,7 @@ export default function AdminCustomers() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const {
     customers,
@@ -50,10 +52,16 @@ export default function AdminCustomers() {
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
       <div className="flex flex-row-reverse justify-between items-center">
         <h1 className="text-3xl font-bold">ניהול לקוחות</h1>
-        <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          ייצא נתונים
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setAddModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            לקוח חדש
+          </Button>
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            ייצא נתונים
+          </Button>
+        </div>
       </div>
 
       <CustomerStatsCards customers={customers} />
@@ -191,6 +199,12 @@ export default function AdminCustomers() {
           setEditModalOpen(false);
           setSelectedCustomer(null);
         }}
+        onSave={handleSaveCustomer}
+      />
+
+      <AddCustomerModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
         onSave={handleSaveCustomer}
       />
     </div>

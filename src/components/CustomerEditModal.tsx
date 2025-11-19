@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -20,6 +20,13 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(customer || {});
+
+  // Update formData when customer changes
+  useEffect(() => {
+    if (customer) {
+      setFormData(customer);
+    }
+  }, [customer]);
 
   const handleSave = async () => {
     if (!customer) return;
