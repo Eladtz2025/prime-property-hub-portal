@@ -45,6 +45,11 @@ export interface Property {
   createdAt?: string;
   property_type?: 'rental' | 'sale' | 'management';
   assignedUserId?: string;
+  assignedAgent?: {
+    id: string;
+    full_name: string;
+    phone: string;
+  };
 }
 
 export interface PropertyImage {
