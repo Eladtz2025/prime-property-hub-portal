@@ -49,6 +49,11 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
     assignedUserId: dbProperty.assigned_user_id || undefined,
+    assignedAgent: dbProperty.assigned_agent ? {
+      id: dbProperty.assigned_agent.id,
+      full_name: dbProperty.assigned_agent.full_name,
+      phone: dbProperty.assigned_agent.phone
+    } : undefined,
     images: dbProperty.property_images?.map((img: any) => ({
       id: img.id,
       name: img.alt_text || '',
@@ -74,18 +79,23 @@ export const useSupabasePropertyData = () => {
         log.info('Loading properties from Supabase');
 
         // Get all properties with their images
-        const { data: properties, error: propertiesError } = await supabase
-          .from('properties')
-          .select(`
-            *,
-            property_images (
-              id,
-              image_url,
-              is_main,
-              order_index,
-              alt_text
-            )
-          `);
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select(`
+        *,
+        property_images (
+          id,
+          image_url,
+          is_main,
+          order_index,
+          alt_text
+        ),
+        assigned_agent:profiles!assigned_user_id (
+          id,
+          full_name,
+          phone
+        )
+      `);
 
         if (propertiesError) {
           log.error('Failed to load properties:', propertiesError);

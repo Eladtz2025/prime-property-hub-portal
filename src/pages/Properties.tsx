@@ -465,6 +465,7 @@ export const Properties: React.FC = memo(() => {
                             </div>
                           </TableHead>
                           <TableHead className="text-center px-4 py-3 border-l border-border">סוג הנכס</TableHead>
+                          <TableHead className="text-center px-4 py-3 border-l border-border">סוכן מטפל</TableHead>
                           <TableHead 
                             className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('status')}
@@ -530,6 +531,25 @@ export const Properties: React.FC = memo(() => {
                               >
                                 {getPropertyTypeText(property.property_type)}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-center px-4 py-3 border-l border-border">
+                              {property.assignedAgent ? (
+                                <div className="flex items-center justify-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <div className="font-medium">
+                                      {property.assignedAgent.full_name}
+                                    </div>
+                                    {property.assignedAgent.phone && (
+                                      <div className="text-sm text-muted-foreground">
+                                        {formatPhoneDisplay(property.assignedAgent.phone, canViewPhone)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">לא משוייך</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-center px-4 py-3 border-l border-border">
                               <Badge className={`${getStatusColor(property.status)} text-sm`}>
