@@ -47,7 +47,7 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
           {/* Features */}
           <ul className="space-y-2 mb-6 md:mb-8">
             {features.map((feature, index) => (
-              <li key={index} className="flex items-start gap-2 text-xs md:text-sm justify-end">
+              <li key={index} className="flex items-start gap-2 text-xs md:text-sm justify-end flex-row-reverse">
                 <span className="font-montserrat text-white/70 leading-tight">{feature}</span>
                 <div className="w-1 h-1 rounded-full bg-white/60 mt-1.5 flex-shrink-0" />
               </li>
