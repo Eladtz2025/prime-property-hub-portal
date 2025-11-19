@@ -109,10 +109,10 @@ const Contact = () => {
                       אימייל
                     </h3>
                     <a 
-                      href="mailto:info@citymarket.co.il" 
+                      href="mailto:citymarketlv@gmail.com" 
                       className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
                     >
-                      info@citymarket.co.il
+                      citymarketlv@gmail.com
                     </a>
                   </div>
                 </div>

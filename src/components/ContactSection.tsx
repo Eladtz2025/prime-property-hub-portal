@@ -28,8 +28,8 @@ const ContactSection = () => {
               <Mail className="h-6 w-6 text-primary" />
             </div>
             <h3 className="font-bold mb-2">אימייל</h3>
-            <a href="mailto:info@citymarket.co.il" className="text-muted-foreground hover:text-primary transition-colors break-all">
-              info@citymarket.co.il
+            <a href="mailto:citymarketlv@gmail.com" className="text-muted-foreground hover:text-primary transition-colors break-all">
+              citymarketlv@gmail.com
             </a>
           </Card>
 

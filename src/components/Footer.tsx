@@ -71,8 +71,8 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
                 <Mail className="h-4 w-4 flex-shrink-0" />
-                <a href="mailto:info@citymarket.co.il" className="hover:text-secondary transition-colors break-all">
-                  info@citymarket.co.il
+                <a href="mailto:citymarketlv@gmail.com" className="hover:text-secondary transition-colors break-all">
+                  citymarketlv@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
