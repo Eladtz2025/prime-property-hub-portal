@@ -333,7 +333,7 @@ const Index = () => {
               <div className="space-y-4">
                 <input
                   type="tel"
-                  placeholder="טלפון"
+                  placeholder="054-123-4567"
                   value={contactForm.phone}
                   onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
                   className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base"

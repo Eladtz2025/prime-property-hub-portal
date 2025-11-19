@@ -63,19 +63,19 @@ const Footer = () => {
           <div>
             <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">צור קשר</h3>
             <ul className="space-y-2 md:space-y-3">
-              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
+              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80 flex-row-reverse">
                 <Phone className="h-4 w-4 flex-shrink-0" />
                 <a href="tel:0542284477" className="hover:text-secondary transition-colors">
                   054-228-4477
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
+              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80 flex-row-reverse">
                 <Mail className="h-4 w-4 flex-shrink-0" />
                 <a href="mailto:citymarketlv@gmail.com" className="hover:text-secondary transition-colors break-all">
                   citymarketlv@gmail.com
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80">
+              <li className="flex items-center gap-2 text-sm text-luxury-foreground/80 flex-row-reverse">
                 <MapPin className="h-4 w-4 flex-shrink-0" />
                 <span>תל אביב, ישראל</span>
               </li>
