@@ -48,17 +48,17 @@ export default function AdminCustomers() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-row-reverse justify-between items-center">
         <h1 className="text-3xl font-bold">ניהול לקוחות</h1>
         <Button variant="outline">
-          <Download className="h-4 w-4 ml-2" />
+          <Download className="h-4 w-4 mr-2" />
           ייצא נתונים
         </Button>
       </div>
 
       <CustomerStatsCards customers={customers} />
 
-      <div className="flex gap-4 items-center bg-card p-4 rounded-lg">
+      <div className="flex flex-row-reverse gap-4 items-center bg-card p-4 rounded-lg">
         <div className="flex-1 relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -106,7 +106,7 @@ export default function AdminCustomers() {
               setPriorityFilter("all");
             }}
         >
-          <Filter className="h-4 w-4 ml-2" />
+          <Filter className="h-4 w-4 mr-2" />
           נקה סינון
         </Button>
       </div>
