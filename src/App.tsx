@@ -52,6 +52,7 @@ import BrokerageFormPage from './pages/BrokerageFormPage';
 import AdminAlerts from './pages/AdminAlerts';
 import AdminActivity from './pages/AdminActivity';
 import AdminLeads from './pages/AdminLeads';
+import AdminCustomers from './pages/AdminCustomers';
 
 import NotFound from './pages/NotFound';
 
@@ -169,6 +170,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="manager">
                     <Properties />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/customers" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminCustomers />
                   </ProtectedRoute>
                 </Layout>
               } 

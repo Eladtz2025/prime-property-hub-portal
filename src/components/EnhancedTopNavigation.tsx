@@ -6,7 +6,8 @@ import {
   LogOut, 
   Settings,
   ChevronDown,
-  LayoutDashboard
+  LayoutDashboard,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ import {
 const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
+  { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
 ];
 
 interface EnhancedTopNavigationProps {

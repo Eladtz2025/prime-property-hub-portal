@@ -195,31 +195,79 @@ export type Database = {
       }
       contact_leads: {
         Row: {
+          assigned_agent_id: string | null
+          budget_max: number | null
+          budget_min: number | null
           created_at: string | null
           email: string
           id: string
+          last_contact_date: string | null
           message: string
+          move_in_date: string | null
           name: string
+          next_followup_date: string | null
+          notes: string | null
           phone: string | null
+          preferred_cities: string[] | null
+          preferred_neighborhoods: string[] | null
+          priority: string | null
           property_id: string | null
+          property_type: string | null
+          rooms_max: number | null
+          rooms_min: number | null
+          source: string | null
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
+          assigned_agent_id?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
           created_at?: string | null
           email: string
           id?: string
+          last_contact_date?: string | null
           message: string
+          move_in_date?: string | null
           name: string
+          next_followup_date?: string | null
+          notes?: string | null
           phone?: string | null
+          preferred_cities?: string[] | null
+          preferred_neighborhoods?: string[] | null
+          priority?: string | null
           property_id?: string | null
+          property_type?: string | null
+          rooms_max?: number | null
+          rooms_min?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
+          assigned_agent_id?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
           created_at?: string | null
           email?: string
           id?: string
+          last_contact_date?: string | null
           message?: string
+          move_in_date?: string | null
           name?: string
+          next_followup_date?: string | null
+          notes?: string | null
           phone?: string | null
+          preferred_cities?: string[] | null
+          preferred_neighborhoods?: string[] | null
+          priority?: string | null
           property_id?: string | null
+          property_type?: string | null
+          rooms_max?: number | null
+          rooms_min?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -852,6 +900,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_images_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_interests: {
+        Row: {
+          contacted_at: string | null
+          created_at: string | null
+          id: string
+          interest_level: string | null
+          lead_id: string
+          notes: string | null
+          property_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          contacted_at?: string | null
+          created_at?: string | null
+          id?: string
+          interest_level?: string | null
+          lead_id: string
+          notes?: string | null
+          property_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          contacted_at?: string | null
+          created_at?: string | null
+          id?: string
+          interest_level?: string | null
+          lead_id?: string
+          notes?: string | null
+          property_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_interests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "contact_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_interests_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
