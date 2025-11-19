@@ -143,7 +143,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <title>CITY MARKET Properties - נדל"ן בתל אביב | השכרות, מכירות וניהול נכסים</title>
         <meta name="description" content="מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. שירות מקצועי ומסור ללקוחות פרטיים ועסקיים." />
