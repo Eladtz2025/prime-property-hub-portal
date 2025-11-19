@@ -11,8 +11,8 @@ import { CustomerEditModal } from "@/components/CustomerEditModal";
 
 export default function AdminCustomers() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [priorityFilter, setPriorityFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -23,8 +23,8 @@ export default function AdminCustomers() {
     updateCustomerStatus,
     updateCustomerPriority,
   } = useCustomerData({
-    status: statusFilter || undefined,
-    priority: priorityFilter || undefined,
+    status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined,
+    priority: priorityFilter && priorityFilter !== 'all' ? priorityFilter : undefined,
     search: searchTerm || undefined,
   });
 
@@ -74,7 +74,7 @@ export default function AdminCustomers() {
             <SelectValue placeholder="כל הסטטוסים" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">כל הסטטוסים</SelectItem>
+            <SelectItem value="all">כל הסטטוסים</SelectItem>
             <SelectItem value="new">חדש</SelectItem>
             <SelectItem value="contacted">נוצר קשר</SelectItem>
             <SelectItem value="active">פעיל</SelectItem>
@@ -90,7 +90,7 @@ export default function AdminCustomers() {
             <SelectValue placeholder="כל העדיפויות" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">כל העדיפויות</SelectItem>
+            <SelectItem value="all">כל העדיפויות</SelectItem>
             <SelectItem value="low">נמוך</SelectItem>
             <SelectItem value="medium">בינוני</SelectItem>
             <SelectItem value="high">גבוה</SelectItem>
@@ -100,11 +100,11 @@ export default function AdminCustomers() {
 
         <Button
           variant="outline"
-          onClick={() => {
-            setSearchTerm("");
-            setStatusFilter("");
-            setPriorityFilter("");
-          }}
+            onClick={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setPriorityFilter("all");
+            }}
         >
           <Filter className="h-4 w-4 ml-2" />
           נקה סינון
