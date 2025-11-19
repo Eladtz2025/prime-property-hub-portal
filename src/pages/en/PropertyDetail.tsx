@@ -51,14 +51,14 @@ const EnglishPropertyDetail = () => {
     const agentPhone = property?.agent?.phone;
     const phone = agentPhone 
       ? agentPhone.replace(/^0/, '972').replace(/\D/g, '') 
-      : '972545503055';
+      : '972542284477';
     const message = `שלום אנו מתעניינים לגבי הדירה ב${translatedTitle}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleCall = () => {
     const agentPhone = property?.agent?.phone;
-    const phone = agentPhone || '0545503055';
+    const phone = agentPhone || '0542284477';
     window.location.href = `tel:${phone}`;
   };
 

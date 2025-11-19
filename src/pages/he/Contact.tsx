@@ -94,10 +94,10 @@ const Contact = () => {
                       טלפון
                     </h3>
                     <a 
-                      href="tel:+972545503055" 
+                      href="tel:+972542284477" 
                       className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
                     >
-                      054-550-3055
+                      054-228-4477
                     </a>
                   </div>
                 </div>

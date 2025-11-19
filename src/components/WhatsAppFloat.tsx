@@ -9,7 +9,7 @@ const WhatsAppFloat = () => {
 
   const handleWhatsAppClick = () => {
     if (isDragging) return;
-    const phone = '972545503055';
+    const phone = '972542284477';
     const message = 'שלום, אני מעוניין/ת לקבל מידע נוסף';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
