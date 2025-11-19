@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building, TrendingUp, Users2, ArrowRight } from 'lucide-react';
+import { Building, TrendingUp, Users2, ArrowLeft } from 'lucide-react';
 
 interface DivisionCardProps {
   title: string;
@@ -56,8 +56,8 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
 
           {/* Action */}
           <div className="flex items-center gap-2 text-white font-montserrat text-sm tracking-wide group-hover:gap-3 transition-all justify-end">
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             <span>למד עוד</span>
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           </div>
 
           {/* Hover Line */}
