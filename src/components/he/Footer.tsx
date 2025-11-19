@@ -82,8 +82,8 @@ const HebrewFooter = () => {
             <ul className="space-y-3 text-sm text-background/70">
               <li className="flex items-center gap-2 flex-row-reverse">
                 <Phone className="h-4 w-4" />
-                <a href="tel:0545503055" className="hover:text-background transition-colors">
-                  054-550-3055
+                <a href="tel:0542284477" className="hover:text-background transition-colors">
+                  054-228-4477
                 </a>
               </li>
               <li className="flex items-center gap-2 flex-row-reverse">
