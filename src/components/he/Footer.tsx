@@ -80,19 +80,19 @@ const HebrewFooter = () => {
               יצירת קשר
             </h4>
             <ul className="space-y-3 text-sm text-background/70">
-              <li className="flex items-center gap-2 flex-row-reverse">
+              <li className="flex items-center gap-2 justify-end">
                 <Phone className="h-4 w-4" />
                 <a href="tel:0542284477" className="hover:text-background transition-colors">
                   054-228-4477
                 </a>
               </li>
-              <li className="flex items-center gap-2 flex-row-reverse">
+              <li className="flex items-center gap-2 justify-end">
                 <Mail className="h-4 w-4" />
                 <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
                   citymarketlv@gmail.com
                 </a>
               </li>
-              <li className="flex items-center gap-2 flex-row-reverse">
+              <li className="flex items-center gap-2 justify-end">
                 <MapPin className="h-4 w-4" />
                 <span>תל אביב, ישראל</span>
               </li>
