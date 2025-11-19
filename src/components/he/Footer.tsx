@@ -88,8 +88,8 @@ const HebrewFooter = () => {
               </li>
               <li className="flex items-center gap-2 flex-row-reverse">
                 <Mail className="h-4 w-4" />
-                <a href="mailto:info@citymarket.co.il" className="hover:text-background transition-colors">
-                  info@citymarket.co.il
+                <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
+                  citymarketlv@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2 flex-row-reverse">
