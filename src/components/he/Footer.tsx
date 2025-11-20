@@ -11,46 +11,29 @@ const HebrewFooter = () => {
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
-          {/* Areas */}
-          <div className="text-left">
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
-              אזורים
+          {/* Contact */}
+          <div>
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+              יצירת קשר
             </h4>
-            <div className="space-y-2 text-sm text-background/70">
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
-                נווה צדק
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
-                רוטשילד
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
-                דיזנגוף
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
-                הצפון הישן
-              </p>
-            </div>
-          </div>
-
-          {/* Services */}
-          <div className="text-left">
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
-              שירותים
-            </h4>
-            <div className="space-y-2 text-sm text-background/70">
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/sales')}>
-                מכירות
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/rentals')}>
-                השכרות
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/management')}>
-                ניהול נכסים
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/new-developments')}>
-                פרויקטים חדשים
-              </p>
-            </div>
+            <ul className="space-y-3 text-sm text-background/70">
+              <li className="flex items-center gap-2 justify-start">
+                <Phone className="h-4 w-4" />
+                <a href="tel:0542284477" className="hover:text-background transition-colors">
+                  054-228-4477
+                </a>
+              </li>
+              <li className="flex items-center gap-2 justify-start">
+                <Mail className="h-4 w-4" />
+                <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
+                  citymarketlv@gmail.com
+                </a>
+              </li>
+              <li className="flex items-center gap-2 justify-start">
+                <MapPin className="h-4 w-4" />
+                <span>תל אביב, ישראל</span>
+              </li>
+            </ul>
           </div>
 
           {/* Company Info */}
@@ -76,29 +59,46 @@ const HebrewFooter = () => {
             </div>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
-              יצירת קשר
+          {/* Services */}
+          <div className="text-left">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
+              שירותים
             </h4>
-            <ul className="space-y-3 text-sm text-background/70">
-              <li className="flex items-center gap-2 justify-start">
-                <Phone className="h-4 w-4" />
-                <a href="tel:0542284477" className="hover:text-background transition-colors">
-                  054-228-4477
-                </a>
-              </li>
-              <li className="flex items-center gap-2 justify-start">
-                <Mail className="h-4 w-4" />
-                <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
-                  citymarketlv@gmail.com
-                </a>
-              </li>
-              <li className="flex items-center gap-2 justify-start">
-                <MapPin className="h-4 w-4" />
-                <span>תל אביב, ישראל</span>
-              </li>
-            </ul>
+            <div className="space-y-2 text-sm text-background/70">
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/sales')}>
+                מכירות
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/rentals')}>
+                השכרות
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/management')}>
+                ניהול נכסים
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/new-developments')}>
+                פרויקטים חדשים
+              </p>
+            </div>
+          </div>
+
+          {/* Areas */}
+          <div className="text-left">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
+              אזורים
+            </h4>
+            <div className="space-y-2 text-sm text-background/70">
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
+                נווה צדק
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
+                רוטשילד
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
+                דיזנגוף
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
+                הצפון הישן
+              </p>
+            </div>
           </div>
         </div>
 
