@@ -2,33 +2,33 @@ import { useNavigate } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+
 const HebrewFooter = () => {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
+
   return <footer className="bg-foreground text-background" dir="rtl">
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
-          {/* Company Info */}
+          {/* Areas */}
           <div className="text-left">
-            <div className="mb-4">
-              <h3 className="text-2xl font-bold tracking-wide">
-                CITY MARKET
-              </h3>
-              <p className="text-xs text-background/70 tracking-widest">
-                Properties
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
+              אזורים
+            </h4>
+            <div className="space-y-2 text-sm text-background/70">
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
+                נווה צדק
               </p>
-            </div>
-            <p className="text-sm text-background/70 mb-6">
-              מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
-            </p>
-            <div className="flex gap-3 justify-start">
-              <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Instagram">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="https://www.facebook.com/Ctmarket" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Facebook">
-                <Facebook className="h-5 w-5" />
-              </a>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
+                רוטשילד
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
+                דיזנגוף
+              </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
+                הצפון הישן
+              </p>
             </div>
           </div>
 
@@ -53,24 +53,26 @@ const HebrewFooter = () => {
             </div>
           </div>
 
-          {/* Areas */}
+          {/* Company Info */}
           <div className="text-left">
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
-              אזורים
-            </h4>
-            <div className="space-y-2 text-sm text-background/70">
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
-                נווה צדק
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold tracking-wide">
+                CITY MARKET
+              </h3>
+              <p className="text-xs text-background/70 tracking-widest">
+                Properties
               </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
-                רוטשילד
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
-                דיזנגוף
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
-                הצפון הישן
-              </p>
+            </div>
+            <p className="text-sm text-background/70 mb-6">
+              מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
+            </p>
+            <div className="flex gap-3 justify-start">
+              <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Instagram">
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a href="https://www.facebook.com/Ctmarket" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Facebook">
+                <Facebook className="h-5 w-5" />
+              </a>
             </div>
           </div>
 
@@ -130,4 +132,5 @@ const HebrewFooter = () => {
       </div>
     </footer>;
 };
+
 export default HebrewFooter;
