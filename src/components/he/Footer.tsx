@@ -12,10 +12,10 @@ const HebrewFooter = () => {
           {/* Company Info */}
           <div>
             <div className="mb-4">
-              <h3 className="text-2xl font-bold tracking-wide text-right">
+              <h3 className="text-2xl font-bold tracking-wide">
                 CITY MARKET
               </h3>
-              <p className="text-xs text-background/70 tracking-widest text-right">
+              <p className="text-xs text-background/70 tracking-widest">
                 Properties
               </p>
             </div>
@@ -34,7 +34,7 @@ const HebrewFooter = () => {
 
           {/* Services */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               שירותים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
@@ -55,7 +55,7 @@ const HebrewFooter = () => {
 
           {/* Areas */}
           <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               אזורים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
