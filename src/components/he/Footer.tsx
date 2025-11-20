@@ -10,7 +10,7 @@ const HebrewFooter = () => {
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Company Info */}
-          <div>
+          <div className="text-left">
             <div className="mb-4">
               <h3 className="text-2xl font-bold tracking-wide">
                 CITY MARKET
@@ -22,7 +22,7 @@ const HebrewFooter = () => {
             <p className="text-sm text-background/70 mb-6">
               מומחים בתיווך נדל"ן, השכרה, מכירה וניהול נכסים בתל אביב.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 justify-start">
               <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" className="hover:text-background/90 transition-colors" aria-label="Instagram">
                 <Instagram className="h-5 w-5" />
               </a>
@@ -33,7 +33,7 @@ const HebrewFooter = () => {
           </div>
 
           {/* Services */}
-          <div>
+          <div className="text-left">
             <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               שירותים
             </h4>
@@ -54,7 +54,7 @@ const HebrewFooter = () => {
           </div>
 
           {/* Areas */}
-          <div>
+          <div className="text-left">
             <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               אזורים
             </h4>
