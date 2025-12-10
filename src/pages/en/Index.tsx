@@ -66,7 +66,7 @@ const EnglishIndex = () => {
       features: [
         'Professional property search',
         'Comprehensive tenant screening',
-        'Legal contract preparation',
+        'Legal documentation assistance',
         'Personal dedicated service',
       ],
       link: '/en/rentals',
