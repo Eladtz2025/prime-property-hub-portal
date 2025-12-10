@@ -1,7 +1,7 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import VideoHero from "@/components/en/VideoHero";
-import DivisionCard from "@/components/DivisionCard";
+import DivisionCard from "@/components/en/DivisionCard";
 import { ConsultationModal } from "@/components/en/ConsultationModal";
 import { useNavigate } from "react-router-dom";
 import { Award, TrendingUp, Users } from "lucide-react";
