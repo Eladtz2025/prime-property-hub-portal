@@ -179,7 +179,9 @@ const EnglishIndex = () => {
               Our Divisions
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              Management, Sales and Rentals in One Place
+              Sales • Rentals • Property Management
+              <br />
+              All in One Place
             </p>
           </div>
 

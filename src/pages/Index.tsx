@@ -190,7 +190,9 @@ const Index = () => {
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-3 md:mb-4">החטיבות שלנו</h2>
             <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              ניהול, מכירה והשכרה במקום אחד
+              מכירות • השכרות • ניהול נכסים
+              <br />
+              הכול במקום אחד
             </p>
           </div>
 
