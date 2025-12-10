@@ -161,15 +161,11 @@ const EnglishIndex = () => {
               </p>
             </div>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed mb-8">
-              At <strong>City Market Properties</strong>, we offer personalized service to
-              guide you through every step of the real estate journey. We help you find the
-              perfect property and finalize the sales agreement, ensuring a smooth and rewarding
-              experience.
+              At <strong>City Market Properties</strong>, we provide personalized real estate services across sales, rentals, and full property management.
+              Our team guides you through every step, helping you find the ideal home or investment, secure qualified tenants, and manage your property with care and professionalism.
             </p>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              Whether you are buying your dream home or investing in premium real estate, our
-              dedicated team is here to make the process seamless, professional, and tailored to
-              your needs.
+              Whether you're buying, renting out your apartment, or seeking a trusted team to oversee your assets, we ensure a seamless, transparent experience tailored to your needs.
             </p>
           </div>
         </div>
