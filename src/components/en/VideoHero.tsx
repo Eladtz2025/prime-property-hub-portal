@@ -69,8 +69,9 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
       {/* Language Switcher - Bottom Right */}
       <button
         onClick={() => navigate("/")}
-        className="absolute bottom-8 right-8 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/20 hover:border-white/30 z-50"
+        className="absolute right-8 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/20 hover:border-white/30 z-50"
         style={{
+          bottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
           textShadow: '0 2px 4px rgba(0,0,0,0.3)',
         }}
       >
@@ -78,7 +79,12 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
       </button>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      <div 
+        className="absolute left-1/2 transform -translate-x-1/2 animate-bounce"
+        style={{
+          bottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         <div className="w-6 h-10 border-2 border-white/40 rounded-full flex items-start justify-center p-2">
           <div className="w-1 h-3 bg-white/60 rounded-full animate-scroll" />
         </div>
