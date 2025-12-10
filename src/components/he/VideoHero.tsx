@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useSafeAreaBottom } from "@/hooks/useSafeAreaBottom";
 
 interface VideoHeroProps {
   title: string;
@@ -10,6 +11,7 @@ interface VideoHeroProps {
 
 const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
   const navigate = useNavigate();
+  const bottomOffset = useSafeAreaBottom(32);
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -71,7 +73,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         onClick={() => navigate("/en")}
         className="absolute right-8 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-md text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/20 hover:border-white/30 z-50"
         style={{
-          bottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+          bottom: `${bottomOffset}px`,
           textShadow: '0 2px 4px rgba(0,0,0,0.3)',
         }}
       >
@@ -82,7 +84,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
       <div 
         className="absolute left-1/2 transform -translate-x-1/2 animate-bounce"
         style={{
-          bottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+          bottom: `${bottomOffset}px`,
         }}
       >
         <div className="w-6 h-10 border-2 border-white/40 rounded-full flex items-start justify-center p-2">
