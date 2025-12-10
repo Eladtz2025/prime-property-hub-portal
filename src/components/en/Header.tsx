@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Instagram, Facebook } from "lucide-react";
 
 const EnglishHeader = () => {
   const navigate = useNavigate();
@@ -120,6 +120,34 @@ const EnglishHeader = () => {
                 </span>
               </button>
             ))}
+            
+            {/* Social Media Icons */}
+            <div className="flex items-center gap-3 ml-4">
+              <a
+                href="https://www.facebook.com/Ctmarket"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-all duration-300 hover:scale-110 hover:opacity-80"
+                style={{
+                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                }}
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a
+                href="https://www.instagram.com/citymarket/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-all duration-300 hover:scale-110 hover:opacity-80"
+                style={{
+                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                }}
+              >
+                <Instagram className="w-5 h-5" />
+              </a>
+            </div>
           </nav>
 
           {/* Mobile Menu */}
@@ -170,6 +198,26 @@ const EnglishHeader = () => {
                   {item.label}
                 </button>
               ))}
+              
+              {/* Social Media Icons in Mobile Menu */}
+              <div className="flex items-center justify-center gap-6 pt-4 mt-2 border-t border-border">
+                <a
+                  href="https://www.facebook.com/Ctmarket"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground/70 hover:text-primary transition-colors duration-300"
+                >
+                  <Facebook className="w-6 h-6" />
+                </a>
+                <a
+                  href="https://www.instagram.com/citymarket/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground/70 hover:text-primary transition-colors duration-300"
+                >
+                  <Instagram className="w-6 h-6" />
+                </a>
+              </div>
             </div>
           </nav>
         )}
