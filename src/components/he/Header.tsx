@@ -49,8 +49,22 @@ const HebrewHeader = () => {
       
       <div className="container mx-auto px-4 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
-          {/* Right Navigation (RTL = right side) - Justify End */}
+          {/* Right Navigation (RTL = right side) with Facebook icon */}
           <nav className="hidden lg:flex items-center gap-6 justify-end">
+            {/* Facebook icon on far right */}
+            <a
+              href="https://www.facebook.com/Ctmarket"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-all duration-300 hover:scale-110 hover:opacity-80 ml-2"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              }}
+            >
+              <Facebook className="w-5 h-5" />
+            </a>
+            
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -99,7 +113,7 @@ const HebrewHeader = () => {
             </button>
           </div>
 
-          {/* Left Navigation (RTL = left side) - Justify Start */}
+          {/* Left Navigation (RTL = left side) with Instagram icon */}
           <nav className="hidden lg:flex items-center gap-6 justify-start">
             {leftNavItems.map((item) => (
               <button
@@ -126,41 +140,53 @@ const HebrewHeader = () => {
               </button>
             ))}
             
-            {/* Social Media Icons */}
-            <div className="flex items-center gap-3 mr-4">
-              <a
-                href="https://www.facebook.com/Ctmarket"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-all duration-300 hover:scale-110 hover:opacity-80"
-                style={{
-                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
-                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                }}
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/citymarket/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-all duration-300 hover:scale-110 hover:opacity-80"
-                style={{
-                  color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
-                  filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                }}
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-            </div>
+            {/* Instagram icon on far left */}
+            <a
+              href="https://www.instagram.com/citymarket/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-all duration-300 hover:scale-110 hover:opacity-80 mr-2"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              }}
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
           </nav>
 
-          {/* Mobile Menu */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
+          {/* Mobile Menu Button with Social Icons */}
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3 lg:hidden">
+            {/* Social Icons next to hamburger */}
+            <a
+              href="https://www.instagram.com/citymarket/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-all duration-300 hover:scale-110 hover:opacity-80"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              }}
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
+            <a
+              href="https://www.facebook.com/Ctmarket"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-all duration-300 hover:scale-110 hover:opacity-80"
+              style={{
+                color: isScrolled ? 'hsl(var(--foreground) / 0.7)' : '#ffffff',
+                filter: isScrolled ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              }}
+            >
+              <Facebook className="w-5 h-5" />
+            </a>
+            
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2"
+              className="p-2"
             >
               {mobileMenuOpen ? (
                 <X 
@@ -203,26 +229,6 @@ const HebrewHeader = () => {
                   {item.label}
                 </button>
               ))}
-              
-              {/* Social Media Icons in Mobile Menu */}
-              <div className="flex items-center justify-center gap-6 pt-4 mt-2 border-t border-border">
-                <a
-                  href="https://www.facebook.com/Ctmarket"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/70 hover:text-primary transition-colors duration-300"
-                >
-                  <Facebook className="w-6 h-6" />
-                </a>
-                <a
-                  href="https://www.instagram.com/citymarket/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/70 hover:text-primary transition-colors duration-300"
-                >
-                  <Instagram className="w-6 h-6" />
-                </a>
-              </div>
             </div>
           </nav>
         )}
