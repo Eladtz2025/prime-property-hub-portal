@@ -74,7 +74,7 @@ const EnglishIndex = () => {
     },
     {
       title: 'Sales',
-      description: 'Buying or selling? We ensure the perfect deal',
+      description: 'Buying or selling? We deliver the ideal deal with confidence and expertise.',
       image: '/images/sales-villa.jpg',
       features: [
         'Accurate property valuation',
