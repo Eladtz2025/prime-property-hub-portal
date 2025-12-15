@@ -132,6 +132,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         .update({
           address: formData.address,
           city: formData.city,
+          neighborhood: (formData as any).neighborhood || null,
           owner_name: formData.ownerName,
           owner_phone: formData.ownerPhone,
           assigned_user_id: (formData as any).assignedUserId || null,
@@ -323,7 +324,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="address">כתובת</Label>
+                    <Label htmlFor="address">כתובת (פנימי - לא מוצג באתר)</Label>
                     <Input
                       id="address"
                       value={formData.address}
@@ -339,6 +340,16 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       onChange={(e) => handleInputChange('city', e.target.value)}
                     />
                   </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="neighborhood">אזור/שכונה (מוצג באתר במקום הכתובת)</Label>
+                  <Input
+                    id="neighborhood"
+                    value={(formData as any).neighborhood || ''}
+                    onChange={(e) => handleInputChange('neighborhood' as any, e.target.value)}
+                    placeholder="לדוגמה: צפון ישן, מרכז תל אביב, פלורנטין..."
+                  />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">

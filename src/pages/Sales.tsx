@@ -84,6 +84,7 @@ const Sales = () => {
         title: prop.title || '',
         address: prop.address,
         city: prop.city,
+        neighborhood: (prop as any).neighborhood,
         price: prop.monthly_rent || 0, // Will need to add price field later for sales
         rooms: prop.rooms,
         property_size: prop.property_size,
@@ -167,19 +168,19 @@ const Sales = () => {
                   </div>
                   <div className="p-6 text-right">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm flex-row-reverse justify-end">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm" dir="rtl">
                       <MapPin className="h-4 w-4" />
-                      <span>{removeAddressNumber(property.address)}, {property.city}</span>
+                      <span>{(property as any).neighborhood || property.city}</span>
                     </div>
-                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground flex-row-reverse justify-end">
+                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground" dir="rtl">
                       {property.rooms && (
-                        <div className="flex items-center gap-1 flex-row-reverse">
+                        <div className="flex items-center gap-1">
                           <Home className="h-4 w-4" />
                           <span>{property.rooms}</span>
                         </div>
                       )}
                       {property.property_size && (
-                        <div className="flex items-center gap-1 flex-row-reverse">
+                        <div className="flex items-center gap-1">
                           <Square className="h-4 w-4" />
                           <span>{property.property_size} מ"ר</span>
                         </div>

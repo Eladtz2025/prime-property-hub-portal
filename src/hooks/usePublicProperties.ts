@@ -9,6 +9,7 @@ export interface PublicProperty {
   title?: string;
   address: string;
   city: string;
+  neighborhood?: string;
   description?: string;
   property_type: 'rental' | 'sale' | 'management';
   rooms?: number;
@@ -56,6 +57,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             title,
             address,
             city,
+            neighborhood,
             description,
             property_type,
             rooms,
@@ -97,6 +99,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           title: property.title || `${property.rooms} חדרים ${property.address}`,
           address: property.address,
           city: property.city,
+          neighborhood: property.neighborhood,
           description: property.description,
           property_type: property.property_type as 'rental' | 'sale' | 'management',
           rooms: property.rooms,
