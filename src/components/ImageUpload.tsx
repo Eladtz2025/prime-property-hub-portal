@@ -302,7 +302,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,video/*,.mov,.mp4,.webm,.avi"
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/x-msvideo,video/*,.mov,.MOV,.mp4,.MP4,.webm,.avi"
                 capture="environment"
                 onChange={(e) => handleFileUpload(e.target.files)}
                 className="hidden"

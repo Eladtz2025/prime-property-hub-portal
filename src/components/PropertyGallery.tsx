@@ -242,7 +242,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                 type="file"
                 id="image-upload"
                 multiple
-                accept="image/*,video/*,.mov,.mp4,.webm,.avi"
+                accept="image/*,video/mp4,video/quicktime,video/webm,video/x-msvideo,video/*,.mov,.MOV,.mp4,.MP4,.webm,.avi"
                 onChange={handleUpload}
                 className="hidden"
               />
