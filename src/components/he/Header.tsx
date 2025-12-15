@@ -11,6 +11,13 @@ const HebrewHeader = () => {
 
   useEffect(() => {
     const handleScroll = () => {
+      // Property pages should have immediate white background
+      const isPropertyPage = location.pathname.includes('/property/');
+      if (isPropertyPage) {
+        setScrollProgress(1);
+        return;
+      }
+      
       // Use different scroll thresholds based on the page
       const isHomePage = location.pathname === '/';
       const scrollThreshold = isHomePage ? window.innerHeight : 150;
