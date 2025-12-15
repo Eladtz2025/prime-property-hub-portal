@@ -9,18 +9,14 @@ const EnglishHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
+  const isPropertyPage = location.pathname.includes('/en/properties/');
+
   useEffect(() => {
     const handleScroll = () => {
-      // Property pages should have immediate white background
-      const isPropertyPage = location.pathname.includes('/en/properties/');
-      if (isPropertyPage) {
-        setScrollProgress(1);
-        return;
-      }
-      
       // Use different scroll thresholds based on the page
       const isHomePage = location.pathname === '/en';
-      const scrollThreshold = isHomePage ? window.innerHeight : 150;
+      // Property pages use shorter threshold for quick transition
+      const scrollThreshold = isPropertyPage ? 200 : (isHomePage ? window.innerHeight : 150);
       const progress = Math.min(window.scrollY / scrollThreshold, 1);
       setScrollProgress(progress);
     };
@@ -28,7 +24,7 @@ const EnglishHeader = () => {
     window.addEventListener('scroll', handleScroll);
     handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname]);
+  }, [location.pathname, isPropertyPage]);
 
   const leftNavItems = [
     { label: "Home", path: "/en" },
@@ -48,6 +44,14 @@ const EnglishHeader = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16">
+      {/* Dark gradient for property pages when not scrolled */}
+      {isPropertyPage && (
+        <div 
+          className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-transparent transition-opacity duration-300"
+          style={{ opacity: 1 - scrollProgress }}
+        />
+      )}
+      
       {/* Gradual white background */}
       <div 
         className="absolute inset-0 bg-white shadow-md transition-opacity duration-300"
