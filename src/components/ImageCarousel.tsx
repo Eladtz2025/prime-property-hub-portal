@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play } from 'lucide-react';
 import { PropertyImage } from '../types/property';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -52,6 +52,44 @@ const ImageWithPlaceholder: React.FC<{
   );
 };
 
+// Video component with controls
+const VideoWithPlaceholder: React.FC<{
+  src: string;
+  className?: string;
+  controls?: boolean;
+  autoPlay?: boolean;
+}> = ({ src, className, controls = true, autoPlay = false }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className={`${className} flex items-center justify-center bg-muted`}>
+        <Play className="h-12 w-12 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full">
+      {!isLoaded && (
+        <div className={`${className} absolute inset-0 bg-muted animate-pulse flex items-center justify-center`}>
+          <Play className="h-12 w-12 text-muted-foreground" />
+        </div>
+      )}
+      <video
+        src={src}
+        className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        controls={controls}
+        autoPlay={autoPlay}
+        playsInline
+        onLoadedData={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+};
+
 interface ImageCarouselProps {
   images: PropertyImage[];
   className?: string;
@@ -88,22 +126,31 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   };
 
   const currentImage = images[currentIndex];
+  const isVideo = currentImage.mediaType === 'video';
 
   return (
     <>
       <Card className={className}>
         <CardContent className="p-0 relative">
           <div className="relative aspect-video bg-muted">
-            <ImageWithPlaceholder
-              src={currentImage.url}
-              alt={currentImage.name}
-              className="w-full h-full object-contain rounded-t"
-              loading="eager"
-              sizes="(max-width: 768px) 100vw, 60vw"
-            />
+            {isVideo ? (
+              <VideoWithPlaceholder
+                src={currentImage.url}
+                className="w-full h-full object-contain rounded-t"
+                controls={true}
+              />
+            ) : (
+              <ImageWithPlaceholder
+                src={currentImage.url}
+                alt={currentImage.name}
+                className="w-full h-full object-contain rounded-t"
+                loading="eager"
+                sizes="(max-width: 768px) 100vw, 60vw"
+              />
+            )}
             
             {/* Price label on main image */}
-            {priceLabel && (
+            {priceLabel && !isVideo && (
               <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg">
                 {priceLabel}
               </div>
@@ -131,15 +178,17 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               </>
             )}
             
-            {/* Fullscreen button */}
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute top-2 right-2 h-8 w-8"
-              onClick={() => setIsFullscreen(true)}
-            >
-              <Expand className="h-4 w-4" />
-            </Button>
+            {/* Fullscreen button - only for images */}
+            {!isVideo && (
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8"
+                onClick={() => setIsFullscreen(true)}
+              >
+                <Expand className="h-4 w-4" />
+              </Button>
+            )}
             
             {/* Image counter */}
             {images.length > 1 && (
@@ -152,28 +201,44 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
           {/* Thumbnail strip */}
           {images.length > 1 && (
             <div className="flex gap-2 p-3 overflow-x-auto" dir="rtl">
-              {images.map((image, index) => (
-                <button
-                  key={image.id}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-colors ${
-                    index === currentIndex ? 'border-primary' : 'border-muted'
-                  }`}
-                >
-                  <ImageWithPlaceholder
-                    src={image.url}
-                    alt={image.name}
-                    className="w-full h-full object-cover"
-                    sizes="80px"
-                  />
-                </button>
-              ))}
+              {images.map((image, index) => {
+                const isThumbVideo = image.mediaType === 'video';
+                return (
+                  <button
+                    key={image.id}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-colors relative ${
+                      index === currentIndex ? 'border-primary' : 'border-muted'
+                    }`}
+                  >
+                    {isThumbVideo ? (
+                      <>
+                        <video
+                          src={image.url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <Play className="h-4 w-4 text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <ImageWithPlaceholder
+                        src={image.url}
+                        alt={image.name}
+                        className="w-full h-full object-cover"
+                        sizes="80px"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Fullscreen modal */}
+      {/* Fullscreen modal - only for images */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] p-0">
           <div className="relative">

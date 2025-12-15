@@ -876,6 +876,7 @@ export type Database = {
           id: string
           image_url: string
           is_main: boolean | null
+          media_type: string | null
           order_index: number | null
           property_id: string
         }
@@ -885,6 +886,7 @@ export type Database = {
           id?: string
           image_url: string
           is_main?: boolean | null
+          media_type?: string | null
           order_index?: number | null
           property_id: string
         }
@@ -894,6 +896,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_main?: boolean | null
+          media_type?: string | null
           order_index?: number | null
           property_id?: string
         }
