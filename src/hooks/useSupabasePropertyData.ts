@@ -60,6 +60,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
       url: img.image_url,
       isPrimary: img.is_main || false,
       uploadedAt: dbProperty.created_at,
+      mediaType: img.media_type || 'image',
     })).sort((a: any, b: any) => {
       if (a.isPrimary) return -1;
       if (b.isPrimary) return 1;

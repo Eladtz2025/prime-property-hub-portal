@@ -55,10 +55,11 @@ export interface Property {
 export interface PropertyImage {
   id: string;
   name: string;
-  url: string; // Base64 encoded image data
+  url: string;
   isPrimary: boolean;
   uploadedAt: string;
   size?: number;
+  mediaType?: 'image' | 'video';
 }
 
 export interface PropertyDocument {

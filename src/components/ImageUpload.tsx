@@ -2,7 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
@@ -27,6 +27,28 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const { toast } = useToast();
+
+  // Upload video directly to Supabase Storage
+  const uploadVideo = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
+    const { data, error } = await supabase.storage
+      .from('property-images')
+      .upload(fileName, file, {
+        contentType: file.type,
+        cacheControl: '3600'
+      });
+
+    if (error) {
+      logger.error('Video upload error:', error, 'ImageUpload');
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('property-images')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
 
   // Convert HEIC to JPEG, compress, and upload to Supabase Storage
   const processAndUploadImage = async (file: File): Promise<string> => {
@@ -96,6 +118,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     });
   };
 
+  const isVideoFile = (file: File): boolean => {
+    return file.type.startsWith('video/') || 
+           file.name.toLowerCase().match(/\.(mp4|mov|webm|avi)$/) !== null;
+  };
+
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -105,37 +132,48 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     
     for (let i = 0; i < files.length && (images.length + newImages.length) < maxImages; i++) {
       const file = files[i];
+      const isVideo = isVideoFile(file);
       
-      // Accept all common image formats including HEIC
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-      const isValidType = validTypes.some(type => file.type === type) || 
+      // Accept all common image formats including HEIC and video formats
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+      const validVideoTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
+      const isValidImageType = validImageTypes.some(type => file.type === type) || 
                           file.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|heic|heif)$/);
+      const isValidVideoType = validVideoTypes.some(type => file.type === type) || 
+                          file.name.toLowerCase().match(/\.(mp4|mov|webm|avi)$/);
       
-      if (!isValidType) {
+      if (!isValidImageType && !isValidVideoType) {
         errors.push(`${file.name} - פורמט לא נתמך`);
         continue;
       }
 
-      if (file.size > maxSizePerImage * 1024 * 1024) {
-        errors.push(`${file.name} - גדול מדי (מקסימום ${maxSizePerImage}MB)`);
+      const maxSize = isVideo ? 100 : maxSizePerImage; // 100MB for videos
+      if (file.size > maxSize * 1024 * 1024) {
+        errors.push(`${file.name} - גדול מדי (מקסימום ${maxSize}MB)`);
         continue;
       }
 
       try {
-        const imageUrl = await processAndUploadImage(file);
+        let fileUrl: string;
+        if (isVideo) {
+          fileUrl = await uploadVideo(file);
+        } else {
+          fileUrl = await processAndUploadImage(file);
+        }
         
         const newImage: PropertyImage = {
-          id: `img_${Date.now()}_${i}`,
+          id: `${isVideo ? 'vid' : 'img'}_${Date.now()}_${i}`,
           name: file.name,
-          url: imageUrl,
-          isPrimary: images.length === 0 && newImages.length === 0,
+          url: fileUrl,
+          isPrimary: images.length === 0 && newImages.length === 0 && !isVideo,
           uploadedAt: new Date().toISOString(),
-          size: file.size
+          size: file.size,
+          mediaType: isVideo ? 'video' : 'image'
         };
 
         newImages.push(newImage);
       } catch (error) {
-        logger.error('Error processing image:', error, 'ImageUpload');
+        logger.error('Error processing file:', error, 'ImageUpload');
         errors.push(`${file.name} - שגיאה בהעלאה`);
       }
     }
@@ -152,9 +190,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
     if (newImages.length > 0) {
       onImagesChange([...images, ...newImages]);
+      const videoCount = newImages.filter(img => img.mediaType === 'video').length;
+      const imageCount = newImages.length - videoCount;
+      const parts = [];
+      if (imageCount > 0) parts.push(`${imageCount} תמונות`);
+      if (videoCount > 0) parts.push(`${videoCount} סרטונים`);
       toast({
         title: "הצלחה",
-        description: `${newImages.length} תמונות נוספו בהצלחה`,
+        description: `${parts.join(' ו-')} נוספו בהצלחה`,
       });
     }
   }, [images, onImagesChange, maxImages, maxSizePerImage, toast]);
@@ -244,22 +287,22 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <>
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
               <p className="text-center text-muted-foreground">
-                מעבד תמונות...
+                מעבד קבצים...
               </p>
             </>
           ) : (
             <>
               <Upload className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-center text-muted-foreground mb-2 text-sm md:text-base">
-                גרור תמונות לכאן או צלם תמונה חדשה
+                גרור תמונות או סרטונים לכאן
               </p>
               <p className="text-xs text-muted-foreground/70 mb-4">
-                תומך ב-HEIC, JPEG, PNG, WebP (עד {maxSizePerImage}MB)
+                תמונות: HEIC, JPEG, PNG, WebP (עד {maxSizePerImage}MB) | סרטונים: MP4, MOV, WebM (עד 100MB)
               </p>
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm"
                 capture="environment"
                 onChange={(e) => handleFileUpload(e.target.files)}
                 className="hidden"
@@ -272,7 +315,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 className="w-full md:w-auto"
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
-                צלם או בחר תמונות ({images.length}/{maxImages})
+                בחר תמונות או סרטונים ({images.length}/{maxImages})
               </Button>
             </>
           )}
@@ -342,6 +385,8 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const isVideo = image.mediaType === 'video';
+
   return (
     <Card 
       ref={setNodeRef} 
@@ -354,14 +399,33 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
           {...attributes}
           {...listeners}
         >
-          <img
-            src={image.url}
-            alt={image.name}
-            className="w-full h-full object-cover rounded"
-          />
+          {isVideo ? (
+            <div className="w-full h-full bg-muted rounded flex items-center justify-center relative">
+              <video
+                src={image.url}
+                className="w-full h-full object-cover rounded"
+                muted
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
+                <Play className="h-8 w-8 text-white" />
+              </div>
+            </div>
+          ) : (
+            <img
+              src={image.url}
+              alt={image.name}
+              className="w-full h-full object-cover rounded"
+            />
+          )}
           
-          {/* Primary indicator */}
-          {image.isPrimary && (
+          {/* Video/Primary indicator */}
+          {isVideo && (
+            <div className="absolute top-1 left-1 bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+              <Video className="h-3 w-3" />
+              סרטון
+            </div>
+          )}
+          {image.isPrimary && !isVideo && (
             <div className="absolute top-1 left-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
               ראשית
             </div>
@@ -369,21 +433,23 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
           
           {/* Controls */}
           <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSetPrimary(image.id);
-              }}
-              className="h-6 w-6 p-0"
-            >
-              {image.isPrimary ? (
-                <Star className="h-3 w-3 text-yellow-500" />
-              ) : (
-                <StarOff className="h-3 w-3" />
-              )}
-            </Button>
+            {!isVideo && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSetPrimary(image.id);
+                }}
+                className="h-6 w-6 p-0"
+              >
+                {image.isPrimary ? (
+                  <Star className="h-3 w-3 text-yellow-500" />
+                ) : (
+                  <StarOff className="h-3 w-3" />
+                )}
+              </Button>
+            )}
             <Button
               size="sm"
               variant="destructive"

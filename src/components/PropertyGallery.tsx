@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, Image as ImageIcon, Trash2, Download, Eye } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play } from 'lucide-react';
 import { addWatermarkToFile } from '@/utils/watermark';
 import {
   Dialog,
@@ -32,6 +32,7 @@ interface PropertyImage {
   alt_text: string | null;
   is_main: boolean | null;
   order_index: number | null;
+  media_type?: string;
 }
 
 export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) => {
@@ -77,6 +78,11 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
     }
   };
 
+  const isVideoFile = (file: File): boolean => {
+    return file.type.startsWith('video/') || 
+           file.name.toLowerCase().match(/\.(mp4|mov|webm|avi)$/) !== null;
+  };
+
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -88,6 +94,18 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       
       for (const file of Array.from(files)) {
         console.log('📤 Processing file:', file.name);
+        const isVideo = isVideoFile(file);
+        
+        // Check file size limits (100MB for videos, 20MB for images)
+        const maxSize = isVideo ? 100 : 20;
+        if (file.size > maxSize * 1024 * 1024) {
+          toast({
+            title: 'קובץ גדול מדי',
+            description: `${file.name} גדול מ-${maxSize}MB`,
+            variant: 'destructive',
+          });
+          continue;
+        }
         
         // Upload to storage
         const fileExt = file.name.split('.').pop();
@@ -118,6 +136,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           alt_text: file.name,
           is_main: false,
           order_index: images.length + 1,
+          media_type: isVideo ? 'video' : 'image',
         };
         
         console.log('💾 Inserting to DB:', insertData);
@@ -135,14 +154,14 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
 
       toast({
         title: 'הצלחה',
-        description: 'התמונות הועלו בהצלחה',
+        description: 'הקבצים הועלו בהצלחה',
       });
       loadImages();
     } catch (error) {
-      console.error('❌❌❌ Error uploading images:', error);
+      console.error('❌❌❌ Error uploading files:', error);
       toast({
         title: 'שגיאה',
-        description: error instanceof Error ? error.message : 'שגיאה בהעלאת התמונות',
+        description: error instanceof Error ? error.message : 'שגיאה בהעלאה',
         variant: 'destructive',
       });
     } finally {
@@ -223,7 +242,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                 type="file"
                 id="image-upload"
                 multiple
-                accept="image/*"
+                accept="image/*,video/mp4,video/quicktime,video/webm"
                 onChange={handleUpload}
                 className="hidden"
               />
@@ -233,7 +252,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                 className="w-full md:w-auto"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'מעלה...' : 'העלה תמונות'}
+                {uploading ? 'מעלה...' : 'העלה תמונות או סרטונים'}
               </Button>
             </div>
           )}
@@ -246,69 +265,99 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           ) : images.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">אין תמונות עדיין</p>
+              <p className="text-muted-foreground">אין תמונות או סרטונים עדיין</p>
               {isSuperAdmin && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  לחץ על "העלה תמונות" כדי להוסיף תמונות לנכס
+                  לחץ על "העלה תמונות או סרטונים" כדי להוסיף לנכס
                 </p>
               )}
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {images.map((image) => (
-                <div key={image.id} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || 'תמונת נכס'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setViewImage(image)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => window.open(image.image_url, '_blank')}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {isSuperAdmin && (
+              {images.map((image) => {
+                const isVideo = image.media_type === 'video';
+                return (
+                  <div key={image.id} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted relative">
+                      {isVideo ? (
+                        <>
+                          <video
+                            src={image.image_url}
+                            className="w-full h-full object-cover"
+                            muted
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Play className="h-8 w-8 text-white" />
+                          </div>
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                            <Video className="h-3 w-3" />
+                            סרטון
+                          </div>
+                        </>
+                      ) : (
+                        <img
+                          src={image.image_url}
+                          alt={image.alt_text || 'תמונת נכס'}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                       <Button
                         size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(image)}
+                        variant="secondary"
+                        onClick={() => setViewImage(image)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       </Button>
-                    )}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => window.open(image.image_url, '_blank')}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(image)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Image Viewer Dialog */}
+      {/* Media Viewer Dialog */}
       <Dialog open={!!viewImage} onOpenChange={(open) => !open && setViewImage(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{viewImage?.alt_text || 'תמונת נכס'}</DialogTitle>
+            <DialogTitle>{viewImage?.alt_text || (viewImage?.media_type === 'video' ? 'סרטון נכס' : 'תמונת נכס')}</DialogTitle>
           </DialogHeader>
           {viewImage && (
             <div className="w-full">
-              <img
-                src={viewImage.image_url}
-                alt={viewImage.alt_text || 'תמונת נכס'}
-                className="w-full h-auto rounded-lg"
-              />
+              {viewImage.media_type === 'video' ? (
+                <video
+                  src={viewImage.image_url}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-auto rounded-lg"
+                />
+              ) : (
+                <img
+                  src={viewImage.image_url}
+                  alt={viewImage.alt_text || 'תמונת נכס'}
+                  className="w-full h-auto rounded-lg"
+                />
+              )}
             </div>
           )}
         </DialogContent>
