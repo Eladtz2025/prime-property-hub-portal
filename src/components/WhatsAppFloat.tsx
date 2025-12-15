@@ -1,90 +1,53 @@
 import { useLocation } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 const WhatsAppFloat = () => {
   const location = useLocation();
   const [position, setPosition] = useState({ left: 24, bottom: 24 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; initialLeft: number; initialBottom: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; initialLeft: number; initialBottom: number; hasMoved: boolean } | null>(null);
 
   const handleWhatsAppClick = () => {
-    if (isDragging) return;
+    // Only open WhatsApp if we didn't drag
+    if (dragRef.current?.hasMoved) return;
+    
     const phone = '972542284477';
     const message = 'שלום, אני מעוניין/ת לקבל מידע נוסף';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
-  const handleDragStart = (clientX: number, clientY: number) => {
-    setIsDragging(true);
+  const handlePointerDown = (e: React.PointerEvent) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragRef.current = {
-      startX: clientX,
-      startY: clientY,
+      startX: e.clientX,
+      startY: e.clientY,
       initialLeft: position.left,
       initialBottom: position.bottom,
+      hasMoved: false,
     };
   };
 
-  const handleDragMove = (clientX: number, clientY: number) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
     
-    const deltaX = clientX - dragRef.current.startX;
-    const deltaY = clientY - dragRef.current.startY;
+    const deltaX = e.clientX - dragRef.current.startX;
+    const deltaY = e.clientY - dragRef.current.startY;
     
-    setPosition({
-      left: dragRef.current.initialLeft + deltaX,
-      bottom: dragRef.current.initialBottom - deltaY, // Subtract because bottom decreases when moving down
-    });
-  };
-
-  const handleDragEnd = () => {
-    dragRef.current = null;
-    setTimeout(() => setIsDragging(false), 100);
-  };
-
-  // Mouse events
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleDragStart(e.clientX, e.clientY);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current) return;
-      handleDragMove(e.clientX, e.clientY);
-    };
-
-    const handleMouseUp = () => {
-      if (!dragRef.current) return;
-      handleDragEnd();
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+    // Only consider it a drag if moved more than 5 pixels
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      dragRef.current.hasMoved = true;
+      setPosition({
+        left: dragRef.current.initialLeft + deltaX,
+        bottom: dragRef.current.initialBottom - deltaY,
+      });
     }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
-  // Touch events
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    handleDragStart(touch.clientX, touch.clientY);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragRef.current) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    handleDragMove(touch.clientX, touch.clientY);
-  };
-
-  const handleTouchEnd = () => {
-    handleDragEnd();
+  const handlePointerUp = () => {
+    // Small delay to allow click handler to check hasMoved
+    setTimeout(() => {
+      dragRef.current = null;
+    }, 0);
   };
 
   // Hide on property detail pages and admin pages
@@ -95,21 +58,20 @@ const WhatsAppFloat = () => {
   return (
     <button
       onClick={handleWhatsAppClick}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       style={{
         left: `${position.left}px`,
         bottom: `${position.bottom}px`,
         touchAction: 'none',
       }}
-      className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-pointer hover:cursor-pointer flex items-center justify-center p-0 select-none"
+      className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-pointer flex items-center justify-center p-0 select-none"
       aria-label="צור קשר בוואטסאפ - WhatsApp"
     >
       <svg 
         viewBox="0 0 32 32" 
-        className="h-12 w-12"
+        className="h-12 w-12 pointer-events-none"
         fill="white"
         xmlns="http://www.w3.org/2000/svg"
       >
