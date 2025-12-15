@@ -28,8 +28,18 @@ import {
   Users,
   Plus,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Share2,
+  MessageCircle,
+  Facebook,
+  Link as LinkIcon
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditModal } from '../components/PropertyEditModal';
@@ -629,6 +639,51 @@ export const Properties: React.FC = memo(() => {
                                      <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
                                    </Tooltip>
                                  )}
+
+                                 {/* Share Dropdown */}
+                                 <DropdownMenu>
+                                   <Tooltip>
+                                     <TooltipTrigger asChild>
+                                       <DropdownMenuTrigger asChild>
+                                         <Button
+                                           variant="ghost"
+                                           size="icon"
+                                           className="h-9 w-9"
+                                         >
+                                           <Share2 className="h-4 w-4 text-primary" />
+                                         </Button>
+                                       </DropdownMenuTrigger>
+                                     </TooltipTrigger>
+                                     <TooltipContent>שתף נכס</TooltipContent>
+                                   </Tooltip>
+                                   <DropdownMenuContent align="end">
+                                     <DropdownMenuItem onClick={() => {
+                                       const url = `${window.location.origin}/he/property/${property.id}`;
+                                       window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+                                     }}>
+                                       <MessageCircle className="h-4 w-4 ml-2" />
+                                       שתף בווטסאפ
+                                     </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => {
+                                       const url = `${window.location.origin}/he/property/${property.id}`;
+                                       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                     }}>
+                                       <Facebook className="h-4 w-4 ml-2" />
+                                       שתף בפייסבוק
+                                     </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => {
+                                       const url = `${window.location.origin}/he/property/${property.id}`;
+                                       navigator.clipboard.writeText(url);
+                                       toast({
+                                         title: "הקישור הועתק",
+                                         description: "קישור לנכס הועתק ללוח",
+                                       });
+                                     }}>
+                                       <LinkIcon className="h-4 w-4 ml-2" />
+                                       העתק קישור
+                                     </DropdownMenuItem>
+                                   </DropdownMenuContent>
+                                 </DropdownMenu>
 
                                  {canEditProperties && (
                                    <Tooltip>

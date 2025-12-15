@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';
+import HebrewHeader from '@/components/he/Header';
 import { removeAddressNumber } from '@/lib/utils';
 import { Helmet } from 'react-helmet';
 
@@ -49,29 +50,37 @@ const PropertyDetailPage = () => {
     window.location.href = `tel:${phone}`;
   };
 
-  const handleShare = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'copy') => {
+  const handleNativeShare = async () => {
     const url = window.location.href;
-    
-    if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
-    } else if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-    } else if (platform === 'instagram') {
-      // Instagram doesn't support direct link sharing, so we copy the link
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "קישור הועתק",
-        description: "הקישור הועתק ללוח. אפשר להדביק באינסטגרם",
-      });
-    } else if (platform === 'copy') {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast({
-        title: "הקישור הועתק",
-        description: "הקישור הועתק ללוח",
-      });
-      setTimeout(() => setCopied(false), 2000);
+    const shareData = {
+      title: property?.title || 'נכס להשכרה/למכירה',
+      text: `${property?.title} - ${property?.address}, ${property?.city}`,
+      url: url,
+    };
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        // User cancelled or error - fallback to copy
+        if ((error as Error).name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      // Fallback for browsers that don't support native share
+      handleCopyLink();
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    toast({
+      title: "הקישור הועתק",
+      description: "הקישור הועתק ללוח",
+    });
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (isLoading) {
@@ -133,6 +142,7 @@ const PropertyDetailPage = () => {
   
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <HebrewHeader />
       <Helmet>
         <title>{property.title} - City Market Properties</title>
         <meta name="description" content={ogDescription} />
@@ -272,40 +282,19 @@ const PropertyDetailPage = () => {
           </div>
 
           {/* Share */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3 text-sm">שתף נכס זה</h3>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('whatsapp')}
-                title="שתף בווטסאפ"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('facebook')}
-                title="שתף בפייסבוק"
-              >
-                <Facebook className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('copy')}
-                title="העתק קישור"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </Card>
+          <Button 
+            variant="outline" 
+            className="w-full gap-2 h-12" 
+            onClick={handleNativeShare}
+          >
+            {copied ? <Check className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
+            שתף נכס זה
+          </Button>
         </div>
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:block container mx-auto px-4 py-8">
+      <div className="hidden lg:block container mx-auto px-4 py-8 pt-24">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse justify-end mb-6" aria-label="Breadcrumb" dir="rtl">
           <Link to="/" className="hover:text-primary transition-colors">
@@ -411,35 +400,14 @@ const PropertyDetailPage = () => {
             </div>
 
             {/* Share */}
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3 text-sm text-right">שתף נכס זה</h3>
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('whatsapp')}
-                  title="שתף בווטסאפ"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('facebook')}
-                  title="שתף בפייסבוק"
-                >
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('copy')}
-                  title="העתק קישור"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </Card>
+            <Button 
+              variant="outline" 
+              className="w-full gap-2" 
+              onClick={handleNativeShare}
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              שתף נכס זה
+            </Button>
           </div>
         </div>
 
