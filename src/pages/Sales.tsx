@@ -151,7 +151,7 @@ const Sales = () => {
           {filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative">
                     <img
                       src={property.image || '/images/sales-villa.jpg'}
@@ -166,7 +166,7 @@ const Sales = () => {
                       ₪ {property.price.toLocaleString()}
                     </div>
                   </div>
-                  <div className="p-6 text-right flex flex-col flex-grow">
+                  <div className="p-6 text-right">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm" dir="rtl">
                       <MapPin className="h-4 w-4" />
@@ -196,7 +196,7 @@ const Sales = () => {
                         </Badge>
                       ))}
                     </div>
-                    <Button asChild className="w-full mt-auto">
+                    <Button asChild className="w-full">
                       <Link to={`/he/property/${property.id}`}>פרטים נוספים</Link>
                     </Button>
                   </div>
