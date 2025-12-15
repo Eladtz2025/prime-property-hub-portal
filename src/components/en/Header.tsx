@@ -9,7 +9,7 @@ const EnglishHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const isPropertyPage = location.pathname.includes('/en/properties/');
+  const isPropertyPage = location.pathname.includes('/en/property/');
 
   useEffect(() => {
     const handleScroll = () => {
