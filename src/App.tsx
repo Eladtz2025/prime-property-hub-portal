@@ -85,6 +85,9 @@ const AppContent: React.FC = () => {
         <Route path="/brokerage-form/new" element={<BrokerageFormPage />} />
         <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
         
+        {/* Price Offer Public View - Clean page without layout */}
+        <Route path="/price-offer/:token" element={<PriceOfferView />} />
+        
         {/* Public pages - Redirects to /he/ */}
         <Route path="/" element={<Navigate to="/he" replace />} />
         <Route path="/rentals" element={<Navigate to="/he/rentals" replace />} />
