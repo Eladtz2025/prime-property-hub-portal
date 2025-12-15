@@ -662,7 +662,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               images={formData.images || []}
               onImagesChange={handleImagesChange}
               maxImages={10}
-              maxSizePerImage={5}
+              maxSizePerImage={50}
             />
           </TabsContent>
 
