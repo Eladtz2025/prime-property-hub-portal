@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 const HebrewFooter = () => {
   const navigate = useNavigate();
@@ -116,10 +114,6 @@ const HebrewFooter = () => {
             <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/contact')}>
               צור קשר
             </span>
-            <span className="text-background/30">|</span>
-            <Link to="/admin-dashboard" className="hover:text-background transition-colors">
-              ניהול
-            </Link>
           </div>
         </div>
 

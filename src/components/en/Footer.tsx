@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const EnglishFooter = () => {
   const navigate = useNavigate();
@@ -161,10 +160,6 @@ const EnglishFooter = () => {
             >
               Contact
             </span>
-            <span className="text-background/30">|</span>
-            <Link to="/admin-dashboard" className="hover:text-background transition-colors">
-              Management
-            </Link>
           </div>
         </div>
 
