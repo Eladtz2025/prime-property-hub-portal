@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Bath, Square, Building2, Phone, Facebook, Copy, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees, DollarSign } from "lucide-react";
+import { MapPin, Home, Bath, Square, Building2, Phone, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees, DollarSign, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -7,19 +7,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { PropertyImage } from "@/types/property";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/useTranslation";
 import EnglishFooter from "@/components/en/Footer";
+import EnglishHeader from "@/components/en/Header";
 import { removeAddressNumber } from "@/lib/utils";
 import { Helmet } from "react-helmet";
-
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
 
   // Load property from database
   const { data: property, isLoading, error } = usePublicProperty(id);
@@ -62,28 +61,32 @@ const EnglishPropertyDetail = () => {
     window.location.href = `tel:${phone}`;
   };
 
-  const handleShare = (platform: 'whatsapp' | 'facebook' | 'instagram' | 'copy') => {
+  const handleShare = async () => {
     const url = window.location.href;
-    
-    if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
-    } else if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-    } else if (platform === 'instagram') {
-      // Instagram doesn't support direct link sharing, so we copy the link
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Link Copied",
-        description: "Link copied to clipboard. You can paste it on Instagram",
-      });
-    } else if (platform === 'copy') {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast({
-        title: "Link Copied",
-        description: "Link copied to clipboard",
-      });
-      setTimeout(() => setCopied(false), 2000);
+    const shareData = {
+      title: translatedTitle || 'Property',
+      text: `Check out this property: ${translatedTitle}`,
+      url: url,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link Copied",
+          description: "Link copied to clipboard",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link Copied",
+          description: "Link copied to clipboard",
+        });
+      }
     }
   };
 
@@ -152,7 +155,8 @@ const EnglishPropertyDetail = () => {
   const ogDescription = translatedDescription || `${property.rooms} rooms in ${translatedAddress}, ${translatedCity}`;
   
   return (
-    <div className="min-h-screen english-luxury" dir="ltr">
+    <div className="min-h-screen english-luxury pt-16" dir="ltr">
+      <EnglishHeader />
       <Helmet>
         <title>{translatedTitle} - City Market Properties</title>
         <meta name="description" content={ogDescription} />
@@ -291,35 +295,14 @@ const EnglishPropertyDetail = () => {
           </div>
 
           {/* Share */}
-          <Card className="p-4">
-            <h3 className="font-playfair font-semibold mb-3 text-sm">Share This Property</h3>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('whatsapp')}
-                title="Share on WhatsApp"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('facebook')}
-                title="Share on Facebook"
-              >
-                <Facebook className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleShare('copy')}
-                title="Copy Link"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </Card>
+          <Button 
+            variant="outline" 
+            className="w-full gap-2 font-montserrat"
+            onClick={handleShare}
+          >
+            <Share2 className="h-4 w-4" />
+            Share Property
+          </Button>
         </div>
       </div>
 
@@ -423,35 +406,14 @@ const EnglishPropertyDetail = () => {
             </div>
 
             {/* Share */}
-            <Card className="p-4">
-              <h3 className="font-playfair font-semibold mb-3 text-sm">Share This Property</h3>
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('whatsapp')}
-                  title="Share on WhatsApp"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('facebook')}
-                  title="Share on Facebook"
-                >
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleShare('copy')}
-                  title="Copy Link"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </Card>
+            <Button 
+              variant="outline" 
+              className="w-full gap-2 font-montserrat"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
+              Share Property
+            </Button>
           </div>
 
           {/* Right Column - Image Gallery */}
