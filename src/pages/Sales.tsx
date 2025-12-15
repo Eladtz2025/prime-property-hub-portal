@@ -161,25 +161,25 @@ const Sales = () => {
                         e.currentTarget.src = '/images/sales-villa.jpg';
                       }}
                     />
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
                       ₪ {property.price.toLocaleString()}
                     </div>
                   </div>
-                  <div className="p-6">
+                  <div className="p-6 text-right">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm flex-row-reverse justify-end">
                       <MapPin className="h-4 w-4" />
                       <span>{removeAddressNumber(property.address)}, {property.city}</span>
                     </div>
-                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
+                    <div className="flex gap-4 mb-3 text-sm text-muted-foreground flex-row-reverse justify-end">
                       {property.rooms && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-row-reverse">
                           <Home className="h-4 w-4" />
                           <span>{property.rooms}</span>
                         </div>
                       )}
                       {property.property_size && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-row-reverse">
                           <Square className="h-4 w-4" />
                           <span>{property.property_size} מ"ר</span>
                         </div>
@@ -188,7 +188,7 @@ const Sales = () => {
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                       {property.description}
                     </p>
-                    <div className="flex gap-2 mb-4 flex-wrap">
+                    <div className="flex gap-2 mb-4 flex-wrap justify-end">
                       {property.features.map((feature, idx) => (
                         <Badge key={idx} className="bg-orange-500 hover:bg-orange-600 text-white">
                           {feature}
