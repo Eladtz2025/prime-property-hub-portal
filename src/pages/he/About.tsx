@@ -46,7 +46,7 @@ const About = () => {
 
       {/* Hero Section - Enhanced */}
       <FullScreenHero
-        title="אנחנו לא רק מוכרים נכסים"
+        title="הכתובת שלכם לנדל״ן בתל אביב"
         backgroundImage="/images/hero-about.jpg"
         minHeight="50vh"
       >
