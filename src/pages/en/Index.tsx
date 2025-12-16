@@ -194,39 +194,7 @@ Come explore with us the colorful mosaic of Tel Aviv.
       </section>
 
       {/* Stats Section */}
-      <section className="py-8 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
-            <div className="text-center">
-              <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                15+ Years
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Of Excellence
-              </p>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                500+
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Successful Deals
-              </p>
-            </div>
-            <div className="text-center">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="font-playfair text-4xl font-normal text-foreground mb-2">
-                24/7
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                Availability
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
       {/* Contact Section */}
       <section className="py-8 bg-background">
