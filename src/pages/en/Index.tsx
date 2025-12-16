@@ -208,7 +208,8 @@ Come explore with us the colorful mosaic of Tel Aviv.
                 Let&apos;s Find Your Dream Home
               </h2>
               <p className="font-montserrat text-lg text-muted-foreground">
-                Contact us today to schedule a viewing or learn more about our exclusive properties.
+                Contact us to schedule a viewing or request more details.
+
               </p>
             </div>
 
