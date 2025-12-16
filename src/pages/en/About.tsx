@@ -36,7 +36,7 @@ const About = () => {
       <EnglishHeader />
 
       {/* Hero Section - Enhanced */}
-      <FullScreenHero title="Your Trusted Partners in Tel Aviv" subtitle="We Transform Lives" backgroundImage="/images/hero-about.jpg" minHeight="50vh">
+      <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" minHeight="50vh">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto mt-8 md:mt-12 animate-fade-in" style={{
         animationDelay: '400ms'
