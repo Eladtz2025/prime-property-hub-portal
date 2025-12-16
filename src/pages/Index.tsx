@@ -199,39 +199,7 @@ const Index = () => {
 
 
       {/* Stats Section */}
-      <section className="py-4 md:py-8 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
-            <div className="text-center">
-              <Award className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
-                +15 שנים
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                של מצוינות
-              </p>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
-                +500
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                עסקאות מוצלחות
-              </p>
-            </div>
-            <div className="text-center">
-              <Users className="w-10 h-10 md:w-12 md:h-12 text-primary mx-auto mb-3 md:mb-4" />
-              <div className="font-playfair text-3xl md:text-4xl font-normal text-foreground mb-2">
-                24/7
-              </div>
-              <p className="font-montserrat text-sm text-muted-foreground tracking-wide uppercase">
-                זמינות מלאה
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
       {/* Contact Section */}
       <section className="py-4 md:py-8 bg-muted/30">
