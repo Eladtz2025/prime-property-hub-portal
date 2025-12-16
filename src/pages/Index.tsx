@@ -213,7 +213,7 @@ const Index = () => {
                 בואו נמצא את בית החלומות שלכם
               </h2>
               <p className="font-montserrat text-base md:text-lg text-muted-foreground px-4">
-                צרו קשר היום כדי לתאם צפייה או ללמוד עוד על הנכסים הבלעדיים שלנו.
+                פנו אלינו לתיאום סיור או לקבלת פרטים נוספים
               </p>
             </div>
 
