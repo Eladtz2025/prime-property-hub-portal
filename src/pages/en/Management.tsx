@@ -69,32 +69,32 @@ const EnglishManagement = () => {
     {
       icon: <DollarSign className="w-10 h-10 text-primary" />,
       title: "Rent Collection",
-      description: "Automated rent collection and financial reporting. Never worry about late payments again.",
+      description: "Automated rent collection and detailed financial reporting. No more chasing late payments.",
     },
     {
       icon: <Wrench className="w-10 h-10 text-primary" />,
       title: "Maintenance",
-      description: "24/7 maintenance coordination with vetted contractors. Quick response to tenant needs.",
+      description: "24/7 maintenance coordination with trusted contractors. Fast, reliable response to any tenant request.",
     },
     {
       icon: <FileText className="w-10 h-10 text-primary" />,
       title: "Legal Compliance",
-      description: "Full legal compliance and documentation. Stay protected with expert lease management.",
+      description: "Expert guidance and referrals to trusted legal professionals for all required documentation and compliance.",
     },
     {
       icon: <Phone className="w-10 h-10 text-primary" />,
       title: "Tenant Relations",
-      description: "Professional tenant screening and communication. Quality tenants, happy owners.",
+      description: "Professional screening, clear communication, and strong tenant relationships for long-term stability.",
     },
     {
       icon: <TrendingUp className="w-10 h-10 text-primary" />,
       title: "Financial Optimization",
-      description: "Maximize your ROI with strategic pricing and cost management.",
+      description: "Maximize ROI through strategic pricing, expense control, and portfolio insights.",
     },
     {
       icon: <Shield className="w-10 h-10 text-primary" />,
       title: "Property Protection",
-      description: "Regular inspections and preventive maintenance to preserve your investment.",
+      description: "Routine inspections and preventive maintenance designed to protect and preserve your investment.",
     },
   ];
 
