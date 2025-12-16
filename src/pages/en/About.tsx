@@ -92,6 +92,26 @@ const About = () => {
             <ValueCard icon={<Users className="w-full h-full" />} title="Dedication" description="Your satisfaction is our highest priority" delay={200} />
             <ValueCard icon={<TrendingUp className="w-full h-full" />} title="Innovation" description="Leveraging technology for superior results" delay={300} />
           </div>
+
+          {/* Description Text */}
+          <ScrollAnimated>
+            <div className="max-w-4xl mx-auto mt-12 text-center space-y-6">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                At City Market, we provide personalized real-estate services across sales, rentals, and full property management. With deep knowledge of Tel Aviv's neighborhoods, our team supports you through every step, whether you're looking to rent a home, buy or sell a property, secure qualified tenants, or manage your investment with confidence.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Whether you're searching for an apartment, renting out your property, or partnering with a trusted team to oversee your assets, we deliver a seamless and transparent experience tailored to your needs.
+              </p>
+              <div className="pt-4">
+                <p className="font-playfair text-xl md:text-2xl font-semibold text-foreground">
+                  Your home. Your investment.
+                </p>
+                <p className="text-lg text-primary font-medium mt-2">
+                  Handled with expertise and dedication.
+                </p>
+              </div>
+            </div>
+          </ScrollAnimated>
         </div>
       </section>
 

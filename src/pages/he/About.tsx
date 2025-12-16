@@ -92,6 +92,26 @@ const About = () => {
             <ValueCard icon={<Users className="w-full h-full" />} title="מסירות" description="שביעות הרצון שלכם היא העדיפות הגבוהה ביותר שלנו" delay={200} />
             <ValueCard icon={<TrendingUp className="w-full h-full" />} title="חדשנות" description="מינוף טכנולוגיה לתוצאות מעולות" delay={300} />
           </div>
+
+          {/* Description Text */}
+          <ScrollAnimated>
+            <div className="max-w-4xl mx-auto mt-12 text-center space-y-6">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                ב-City Market אנחנו מעניקים שירותי נדל״ן מותאמים אישית בתחומי מכירה, השכרה וניהול נכסים מלא. עם היכרות עמוקה של שכונות תל אביב, הצוות שלנו מלווה אתכם בכל שלב בין אם אתם מחפשים דירה להשכרה, מעוניינים לקנות או למכור נכס, לאתר שוכרים מתאימים או לנהל את ההשקעה שלכם בביטחון.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                בין אם אתם מחפשים דירה, משכירים את הנכס שלכם, או זקוקים לצוות מקצועי ואמין שינהל עבורכם את הנכסים, אנחנו מספקים חוויה שקופה, חלקה ומותאמת לצרכים שלכם.
+              </p>
+              <div className="pt-4">
+                <p className="font-playfair text-xl md:text-2xl font-semibold text-foreground">
+                  הבית שלכם. ההשקעה שלכם.
+                </p>
+                <p className="text-lg text-primary font-medium mt-2">
+                  מנוהלים ומטופלים במקצועיות ובמסירות
+                </p>
+              </div>
+            </div>
+          </ScrollAnimated>
         </div>
       </section>
 
