@@ -169,12 +169,8 @@ const Index = () => {
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-6">
               גלה את תל אביב
             </h2>
-            <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed text-center">
-              תל אביב היא עיר תוססת ומגוונת, שבה לכל שכונה יש סיפור ייחודי משלה. מהקסם הבוהמייני של נווה צדק ועד האנרגיה הצעירה של פלורנטין, מהאלגנטיות של שדרות רוטשילד ועד הסצנה התרבותית העשירה של דיזנגוף, בכל פינה תמצאו חוויה אחרת.
-
-גלו את השכונה שמתאימה בדיוק לאורח החיים ולחלומות שלכם.
-הפסיפס הצבעוני והמגוון המרתק של תל אביב מחכים לכם.
-            </p>
+            <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed text-center">תל אביב היא עיר תוססת ומגוונת, שבה לכל שכונה יש סיפור ייחודי משלה. מהקסם הבוהמייני של נווה צדק ועד האנרגיה הצעירה של פלורנטין, מהאלגנטיות של שדרות רוטשילד ועד הסצנה התרבותית העשירה של דיזנגוף, בכל פינה תמצאו חוויה אחרת. גלו את השכונה שמתאימה בדיוק לאורח החיים ולחלומות שלכם.
+ הפסיפס הצבעוני והמגוון המרתק של תל אביב מחכים לכם.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
