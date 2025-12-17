@@ -102,7 +102,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               <NavLink
                 key={item.url}
                 to={item.url}
-                end={item.url === '/'}
+                end={item.url === '/' || item.url === '/admin-dashboard'}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
