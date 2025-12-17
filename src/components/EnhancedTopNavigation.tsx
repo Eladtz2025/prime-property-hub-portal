@@ -45,33 +45,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
       "flex items-center gap-4 flex-1",
       isMobile ? "justify-end" : "justify-between"
     )}>
-      {/* Desktop Navigation in the center */}
-      {!isMobile && (
-        <div className="flex-1 flex justify-center">
-          <nav className="flex items-center gap-2 flex-row-reverse" dir="rtl">
-            {navigationItems.map((item) => (
-              <NavLink
-                key={item.url}
-                to={item.url}
-                end={item.url === '/'}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
-                    isActive
-                      ? "bg-primary/10 text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )
-                }
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* User Menu */}
+      {/* User Menu - now on the left */}
       <div className="flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -119,6 +93,32 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Desktop Navigation in the center */}
+      {!isMobile && (
+        <div className="flex-1 flex justify-center">
+          <nav className="flex items-center gap-2 flex-row-reverse" dir="rtl">
+            {navigationItems.map((item) => (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                end={item.url === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.title}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      )}
     </div>
   );
 };
