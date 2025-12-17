@@ -5,6 +5,10 @@
       "destination": "/api/og-redirect"
     },
     {
+      "source": "/he/property/:id",
+      "destination": "/api/og-redirect"
+    },
+    {
       "source": "/en/property/:id",
       "destination": "/api/og-redirect"
     },
