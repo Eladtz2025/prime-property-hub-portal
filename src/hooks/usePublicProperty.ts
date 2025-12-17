@@ -56,7 +56,8 @@ export const usePublicProperty = (propertyId: string | undefined) => {
               alt_text,
               is_main,
               order_index,
-              media_type
+              media_type,
+              show_on_website
             )
           `)
           .eq('id', propertyId)
@@ -104,6 +105,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
             phone: property.assigned_agent.phone
           } : null,
           images: (property.property_images || [])
+            .filter(img => img.show_on_website !== false)
             .sort((a, b) => {
               if (a.is_main && !b.is_main) return -1;
               if (!a.is_main && b.is_main) return 1;

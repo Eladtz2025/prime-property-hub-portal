@@ -91,7 +91,8 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
               alt_text,
               is_main,
               order_index,
-              media_type
+              media_type,
+              show_on_website
             )
           `)
           .eq('property_type', propertyType)
@@ -131,6 +132,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           monthly_rent: property.monthly_rent,
           featured: property.featured,
           images: (property.property_images || [])
+            .filter(img => img.show_on_website !== false)
             .sort((a, b) => {
               // Sort by is_main first, then by order_index
               if (a.is_main && !b.is_main) return -1;

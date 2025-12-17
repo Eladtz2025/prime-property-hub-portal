@@ -945,6 +945,7 @@ export type Database = {
           media_type: string | null
           order_index: number | null
           property_id: string
+          show_on_website: boolean | null
         }
         Insert: {
           alt_text?: string | null
@@ -955,6 +956,7 @@ export type Database = {
           media_type?: string | null
           order_index?: number | null
           property_id: string
+          show_on_website?: boolean | null
         }
         Update: {
           alt_text?: string | null
@@ -965,6 +967,7 @@ export type Database = {
           media_type?: string | null
           order_index?: number | null
           property_id?: string
+          show_on_website?: boolean | null
         }
         Relationships: [
           {
