@@ -356,45 +356,6 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Owner & Tenant Info (horizontal) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-3 rounded-lg border bg-background/50">
-                {/* Owner Section */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">בעל הנכס</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label htmlFor="ownerName" className="text-xs">שם</Label>
-                      <Input
-                        id="ownerName"
-                        value={formData.ownerName}
-                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                        dir="rtl"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ownerPhone" className="text-xs">טלפון</Label>
-                      <Input
-                        id="ownerPhone"
-                        value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
-                        onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
-                        disabled={!canViewPhone}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ownerEmail" className="text-xs">אימייל</Label>
-                      <Input
-                        id="ownerEmail"
-                        type="email"
-                        value={formData.ownerEmail || ''}
-                        onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Tenant Section */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
@@ -438,6 +399,45 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Owner Section */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground">בעל הנכס</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label htmlFor="ownerName" className="text-xs">שם</Label>
+                      <Input
+                        id="ownerName"
+                        value={formData.ownerName}
+                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                        dir="rtl"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ownerPhone" className="text-xs">טלפון</Label>
+                      <Input
+                        id="ownerPhone"
+                        value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
+                        onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                        disabled={!canViewPhone}
+                        dir="ltr"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ownerEmail" className="text-xs">אימייל</Label>
+                      <Input
+                        id="ownerEmail"
+                        type="email"
+                        value={formData.ownerEmail || ''}
+                        onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                        dir="ltr"
+                        className="h-8 text-sm"
+                      />
                     </div>
                   </div>
                 </div>
