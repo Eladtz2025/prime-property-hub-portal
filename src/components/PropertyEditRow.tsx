@@ -534,7 +534,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
                 {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-end" dir="rtl">
-                  <div>
+                  <div className="min-w-[80px]">
                     <Label htmlFor="rooms" className="text-xs">חדרים</Label>
                     <Input
                       id="rooms"
@@ -545,7 +545,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-[80px]">
                     <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
                     <Input
                       id="bathrooms"
@@ -556,7 +556,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-[80px]">
                     <Label htmlFor="floor" className="text-xs">קומה</Label>
                     <Input
                       id="floor"
@@ -570,7 +570,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       }}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-[80px]">
                     <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
                     <Input
                       id="propertySize"
@@ -580,7 +580,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-[80px]">
                     <Label className="text-xs">תוספות</Label>
                     <Popover>
                       <PopoverTrigger asChild>
