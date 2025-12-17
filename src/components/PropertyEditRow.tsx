@@ -448,23 +448,15 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                 {/* Address, City, Neighborhood */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
-                    <Label htmlFor="address" className="text-xs">כתובת (פנימי)</Label>
+                    <Label htmlFor="neighborhood_en" className="text-xs">Neighborhood</Label>
                     <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      dir="rtl"
+                      id="neighborhood_en"
+                      value={(formData as any).neighborhood_en || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, neighborhood_en: e.target.value }))}
+                      placeholder="Old North..."
+                      dir="ltr"
                       className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="city" className="text-xs">עיר</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      dir="rtl"
-                      className="h-8 text-sm"
+                      readOnly
                     />
                   </div>
                   <div>
@@ -497,66 +489,46 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="neighborhood_en" className="text-xs">Neighborhood</Label>
+                    <Label htmlFor="city" className="text-xs">עיר</Label>
                     <Input
-                      id="neighborhood_en"
-                      value={(formData as any).neighborhood_en || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, neighborhood_en: e.target.value }))}
-                      placeholder="Old North..."
-                      dir="ltr"
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      dir="rtl"
                       className="h-8 text-sm"
-                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address" className="text-xs">כתובת (פנימי)</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      dir="rtl"
+                      className="h-8 text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-end">
-                  <div>
-                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
-                    <Input
-                      id="rooms"
-                      type="number"
-                      step="0.5"
-                      className="text-center h-8 text-sm"
-                      value={formData.rooms || ''}
-                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="showManagementBadge"
+                      checked={formData.showManagementBadge !== false}
+                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                      className="scale-75"
                     />
+                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
                   </div>
-                  <div>
-                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
-                    <Input
-                      id="bathrooms"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={(formData as any).bathrooms || ''}
-                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="showOnWebsite"
+                      checked={(formData as any).showOnWebsite !== false}
+                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                      className="scale-75"
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="floor" className="text-xs">קומה</Label>
-                    <Input
-                      id="floor"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleInputChange('floor', val === '' ? null : Number(val));
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
-                    <Input
-                      id="propertySize"
-                      type="number"
-                      className="text-center h-8 text-sm"
-                      value={formData.propertySize || ''}
-                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
-                    />
+                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
                   <div>
                     <Label className="text-xs">תוספות</Label>
@@ -624,68 +596,63 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showOnWebsite"
-                      checked={(formData as any).showOnWebsite !== false}
-                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
-                      className="scale-75"
+                  <div>
+                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
+                    <Input
+                      id="propertySize"
+                      type="number"
+                      className="text-center h-8 text-sm"
+                      value={formData.propertySize || ''}
+                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
                     />
-                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showManagementBadge"
-                      checked={formData.showManagementBadge !== false}
-                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                      className="scale-75"
+                  <div>
+                    <Label htmlFor="floor" className="text-xs">קומה</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleInputChange('floor', val === '' ? null : Number(val));
+                      }}
                     />
-                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
+                  </div>
+                  <div>
+                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={(formData as any).bathrooms || ''}
+                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      step="0.5"
+                      className="text-center h-8 text-sm"
+                      value={formData.rooms || ''}
+                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                    />
                   </div>
                 </div>
 
                 {/* Status, Rent, Fees, Dates */}
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                   <div>
-                    <Label htmlFor="status" className="text-xs">סטטוס</Label>
-                    <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="occupied">תפוס</SelectItem>
-                        <SelectItem value="vacant">פנוי</SelectItem>
-                        <SelectItem value="maintenance">תחזוקה</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="monthlyRent" className="text-xs">שכ"ד</Label>
+                    <Label htmlFor="leaseEndDate" className="text-xs">סיום חוזה</Label>
                     <Input
-                      id="monthlyRent"
-                      type="number"
-                      value={formData.monthlyRent || ''}
-                      onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="municipalTax" className="text-xs">ארנונה</Label>
-                    <Input
-                      id="municipalTax"
-                      type="number"
-                      value={formData.municipalTax || ''}
-                      onChange={(e) => handleInputChange('municipalTax', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="buildingCommitteeFee" className="text-xs">ועד בית</Label>
-                    <Input
-                      id="buildingCommitteeFee"
-                      type="number"
-                      value={formData.buildingCommitteeFee || ''}
-                      onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value ? Number(e.target.value) : null)}
+                      id="leaseEndDate"
+                      type="date"
+                      value={formData.leaseEndDate || ''}
+                      onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -700,43 +667,52 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="leaseEndDate" className="text-xs">סיום חוזה</Label>
+                    <Label htmlFor="buildingCommitteeFee" className="text-xs">ועד בית</Label>
                     <Input
-                      id="leaseEndDate"
-                      type="date"
-                      value={formData.leaseEndDate || ''}
-                      onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
+                      id="buildingCommitteeFee"
+                      type="number"
+                      value={formData.buildingCommitteeFee || ''}
+                      onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value ? Number(e.target.value) : null)}
                       className="h-8 text-sm"
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="municipalTax" className="text-xs">ארנונה</Label>
+                    <Input
+                      id="municipalTax"
+                      type="number"
+                      value={formData.municipalTax || ''}
+                      onChange={(e) => handleInputChange('municipalTax', e.target.value ? Number(e.target.value) : null)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="monthlyRent" className="text-xs">שכ"ד</Label>
+                    <Input
+                      id="monthlyRent"
+                      type="number"
+                      value={formData.monthlyRent || ''}
+                      onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="status" className="text-xs">סטטוס</Label>
+                    <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="occupied">תפוס</SelectItem>
+                        <SelectItem value="vacant">פנוי</SelectItem>
+                        <SelectItem value="maintenance">תחזוקה</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 {/* Title HE/EN */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="title" className="text-xs flex-1">כותרת</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('title', 'title_en', 'he-en')}
-                        disabled={translatingField === 'title_en'}
-                      >
-                        {translatingField === 'title_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                        <span className="mr-1">→EN</span>
-                      </Button>
-                    </div>
-                    <Input
-                      id="title"
-                      value={(formData as any).title || ''}
-                      onChange={(e) => handleInputChange('title' as any, e.target.value)}
-                      placeholder="דירת גן מהממת בצפון הישן"
-                      dir="rtl"
-                      className="h-8 text-sm"
-                    />
-                  </div>
                   <div>
                     <div className="flex items-center gap-1">
                       <Label htmlFor="title_en" className="text-xs flex-1">Title</Label>
@@ -761,35 +737,34 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       className="h-8 text-sm"
                     />
                   </div>
-                </div>
-
-                {/* Description HE/EN */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <div className="flex items-center gap-1">
-                      <Label htmlFor="description" className="text-xs flex-1">תיאור</Label>
+                      <Label htmlFor="title" className="text-xs flex-1">כותרת</Label>
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
                         className="h-5 px-1 text-xs"
-                        onClick={() => translateField('description', 'description_en', 'he-en')}
-                        disabled={translatingField === 'description_en'}
+                        onClick={() => translateField('title', 'title_en', 'he-en')}
+                        disabled={translatingField === 'title_en'}
                       >
-                        {translatingField === 'description_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                        {translatingField === 'title_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
                         <span className="mr-1">→EN</span>
                       </Button>
                     </div>
-                    <Textarea
-                      id="description"
-                      value={(formData as any).description || ''}
-                      onChange={(e) => handleInputChange('description' as any, e.target.value)}
-                      placeholder="3 חדרים עם גישה לחצר..."
-                      rows={2}
+                    <Input
+                      id="title"
+                      value={(formData as any).title || ''}
+                      onChange={(e) => handleInputChange('title' as any, e.target.value)}
+                      placeholder="דירת גן מהממת בצפון הישן"
                       dir="rtl"
-                      className="text-sm"
+                      className="h-8 text-sm"
                     />
                   </div>
+                </div>
+
+                {/* Description HE/EN */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <div className="flex items-center gap-1">
                       <Label htmlFor="description_en" className="text-xs flex-1">Description</Label>
@@ -812,6 +787,31 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       placeholder="3 rooms with garden access..."
                       rows={2}
                       dir="ltr"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="description" className="text-xs flex-1">תיאור</Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 px-1 text-xs"
+                        onClick={() => translateField('description', 'description_en', 'he-en')}
+                        disabled={translatingField === 'description_en'}
+                      >
+                        {translatingField === 'description_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                        <span className="mr-1">→EN</span>
+                      </Button>
+                    </div>
+                    <Textarea
+                      id="description"
+                      value={(formData as any).description || ''}
+                      onChange={(e) => handleInputChange('description' as any, e.target.value)}
+                      placeholder="3 חדרים עם גישה לחצר..."
+                      rows={2}
+                      dir="rtl"
                       className="text-sm"
                     />
                   </div>
