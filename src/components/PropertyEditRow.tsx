@@ -176,6 +176,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           url: img.image_url,
           isPrimary: img.is_main || false,
           uploadedAt: img.created_at || new Date().toISOString(),
+          mediaType: (img.media_type as 'image' | 'video') || 'image',
         }));
 
         setFormData(prev => ({
@@ -316,6 +317,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
             alt_text: image.name || 'תמונת נכס',
             is_main: image.isPrimary || i === 0,
             order_index: i,
+            media_type: image.mediaType || 'image',
           });
         }
       }
