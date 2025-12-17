@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { signInWithEmail, signUp } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -157,11 +157,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-sm animate-fade-in relative z-10">
         {/* App Logo/Header */}
         <div className="text-center mb-6">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg border border-white/20">
-            <Building className="h-8 w-8 text-white" />
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-3 w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-lg border border-white/20">
+            <img 
+              src="/images/city-market-logo.png" 
+              alt="City Market" 
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">מערכת ניהול נכסים</h1>
-          <p className="text-white/80 text-sm">היכנס למערכת כדי לנהל את הנכסים שלך</p>
+          <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">City Market</h1>
+          <p className="text-white/80 text-sm">מערכת ניהול נכסים</p>
         </div>
 
         <Card className="shadow-xl backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl overflow-hidden">
@@ -274,7 +278,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-white/50 text-xs">
-            © {new Date().getFullYear()} מערכת ניהול נכסים. כל הזכויות שמורות.
+            © {new Date().getFullYear()} City Market. כל הזכויות שמורות.
           </p>
         </div>
       </div>
