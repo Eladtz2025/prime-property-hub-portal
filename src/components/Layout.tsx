@@ -22,7 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className="w-12 h-12 object-contain"
+              className="w-14 h-14 object-contain"
             />
             <div>
               <h1 className="font-bold text-foreground text-lg leading-tight">
@@ -54,7 +54,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <img 
               src="/images/city-market-icon.png" 
               alt="City Market" 
-              className="w-12 h-12 object-contain"
+              className="w-14 h-14 object-contain"
             />
             <div>
               <h1 className="font-bold text-foreground text-xl leading-tight">
