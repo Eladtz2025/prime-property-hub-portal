@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Languages, Loader2, X, ChevronUp } from 'lucide-react';
+import { Languages, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 
 interface PropertyEditRowProps {
@@ -343,15 +343,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
   return (
     <Collapsible open={isOpen}>
       <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-        <div className="bg-muted/30 border-t-2 border-primary/20 p-6">
-          {/* Header with close button */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">עריכת נכס - {property.address}</h3>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <ChevronUp className="h-5 w-5" />
-            </Button>
-          </div>
-
+        <div className="bg-muted/30 border-t-2 border-primary/20 p-4">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="details">פרטי הנכס</TabsTrigger>
@@ -382,6 +374,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
                         onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
                         disabled={!canViewPhone}
+                        dir="ltr"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -392,6 +385,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         type="email"
                         value={formData.ownerEmail || ''}
                         onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                        dir="ltr"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -418,6 +412,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
                         onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
                         disabled={!canViewPhone}
+                        dir="ltr"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -467,41 +462,36 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                   </div>
                   <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="neighborhood" className="text-xs flex-1">שכונה</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('neighborhood', 'neighborhood_en', 'he-en')}
-                        disabled={translatingField === 'neighborhood_en'}
-                      >
-                        {translatingField === 'neighborhood_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                    <Input
-                      id="neighborhood"
-                      value={(formData as any).neighborhood || ''}
-                      onChange={(e) => handleInputChange('neighborhood' as any, e.target.value)}
-                      placeholder="צפון ישן..."
-                      className="h-8 text-sm"
-                    />
+                    <Label htmlFor="neighborhood" className="text-xs">שכונה</Label>
+                    <Select 
+                      value={(formData as any).neighborhood || ''} 
+                      onValueChange={(value) => {
+                        handleInputChange('neighborhood' as any, value);
+                        // Auto-update English neighborhood
+                        const neighborhoodMap: Record<string, string> = {
+                          'מרכז': 'Center',
+                          'הצפון הישן': 'Old North',
+                          'הצפון החדש': 'New North',
+                          'רוטשילד': 'Rothschild',
+                          'דרום': 'South'
+                        };
+                        setFormData(prev => ({ ...prev, neighborhood_en: neighborhoodMap[value] || '' }));
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="בחר שכונה" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="מרכז">מרכז</SelectItem>
+                        <SelectItem value="הצפון הישן">הצפון הישן</SelectItem>
+                        <SelectItem value="הצפון החדש">הצפון החדש</SelectItem>
+                        <SelectItem value="רוטשילד">רוטשילד</SelectItem>
+                        <SelectItem value="דרום">דרום</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="neighborhood_en" className="text-xs flex-1">Neighborhood</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('neighborhood_en', 'neighborhood', 'en-he')}
-                        disabled={translatingField === 'neighborhood'}
-                      >
-                        {translatingField === 'neighborhood' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                      </Button>
-                    </div>
+                    <Label htmlFor="neighborhood_en" className="text-xs">Neighborhood</Label>
                     <Input
                       id="neighborhood_en"
                       value={(formData as any).neighborhood_en || ''}
@@ -509,6 +499,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       placeholder="Old North..."
                       dir="ltr"
                       className="h-8 text-sm"
+                      readOnly
                     />
                   </div>
                 </div>
@@ -684,8 +675,8 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
-                {/* Property specs: Rooms, Bath, Floor, Size + Features */}
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-2 items-end">
+                {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
+                <div className="grid grid-cols-5 md:grid-cols-10 gap-2 items-end">
                   <div>
                     <Label htmlFor="rooms" className="text-xs">חדרים</Label>
                     <Input
@@ -768,30 +759,23 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                     <Label htmlFor="mamad" className="cursor-pointer text-xs">ממ"ד</Label>
                   </div>
-                </div>
-
-                {/* Website toggles */}
-                <div className="flex flex-wrap gap-3 items-center">
-                  <div className="flex items-center gap-2 p-2 border rounded bg-background">
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
                     <Switch
                       id="showOnWebsite"
                       checked={(formData as any).showOnWebsite !== false}
                       onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                      className="scale-75"
                     />
-                    <div>
-                      <Label htmlFor="showOnWebsite" className="text-xs font-medium cursor-pointer">הצג באתר</Label>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formData.status === 'occupied' ? 'יוצג עם תגית "מושכר"' : 'יוצג באתר הציבורי'}
-                      </p>
-                    </div>
+                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
-                  <div className="flex items-center gap-2 p-2 border rounded bg-background">
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
                     <Switch
                       id="showManagementBadge"
                       checked={formData.showManagementBadge !== false}
                       onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                      className="scale-75"
                     />
-                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">הצג תג "בניהול מלא"</Label>
+                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
                   </div>
                 </div>
               </div>
