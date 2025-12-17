@@ -472,6 +472,8 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
+                          <TableHead className="text-center px-4 py-3 border-l border-border">חדרים</TableHead>
+                          <TableHead className="text-center px-4 py-3 border-l border-border">מ"ר</TableHead>
                           <TableHead 
                             className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('ownerName')}
@@ -513,6 +515,20 @@ export const Properties: React.FC = memo(() => {
                                   text={property.address} 
                                   searchTerm={filters.searchTerm}
                                 />
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                {property.rooms ? (
+                                  <span className="font-medium">{property.rooms}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                {property.propertySize ? (
+                                  <span className="font-medium">{property.propertySize}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
                               </TableCell>
                               <TableCell className="text-center px-4 py-3 border-l border-border">
                                 <div className="flex items-center justify-center gap-2">
