@@ -726,11 +726,11 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">תכונות</Label>
+                    <Label className="text-xs">תוספות</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-8 text-xs justify-start">
-                          תכונות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad].filter(Boolean).length})
+                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard].filter(Boolean).length})
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-40 p-3" align="start">
@@ -766,6 +766,14 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                               onCheckedChange={(checked) => handleInputChange('mamad', checked)}
                             />
                             <Label htmlFor="mamad" className="text-sm cursor-pointer">ממ"ד</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="yard"
+                              checked={formData.yard || false}
+                              onCheckedChange={(checked) => handleInputChange('yard', checked)}
+                            />
+                            <Label htmlFor="yard" className="text-sm cursor-pointer">חצר</Label>
                           </div>
                         </div>
                       </PopoverContent>
