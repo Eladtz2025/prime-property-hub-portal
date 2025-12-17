@@ -60,6 +60,7 @@ export interface PropertyImage {
   uploadedAt: string;
   size?: number;
   mediaType?: 'image' | 'video';
+  showOnWebsite?: boolean;
 }
 
 export interface PropertyDocument {

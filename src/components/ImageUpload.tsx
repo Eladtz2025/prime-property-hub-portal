@@ -2,7 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
@@ -168,7 +168,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           isPrimary: images.length === 0 && newImages.length === 0 && !isVideo,
           uploadedAt: new Date().toISOString(),
           size: file.size,
-          mediaType: isVideo ? 'video' : 'image'
+          mediaType: isVideo ? 'video' : 'image',
+          showOnWebsite: true
         };
 
         newImages.push(newImage);
@@ -341,6 +342,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                   onSetPrimary={setPrimaryImage}
                   onMoveUp={moveImageUp}
                   onMoveDown={moveImageDown}
+                  onToggleWebsite={(id) => {
+                    const updatedImages = images.map(img => 
+                      img.id === id ? { ...img, showOnWebsite: !(img.showOnWebsite ?? true) } : img
+                    );
+                    onImagesChange(updatedImages);
+                  }}
                 />
               ))}
             </div>
@@ -359,6 +366,7 @@ interface SortableImageCardProps {
   onSetPrimary: (id: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onToggleWebsite: (id: string) => void;
 }
 
 const SortableImageCard: React.FC<SortableImageCardProps> = ({
@@ -368,7 +376,8 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
   onRemove,
   onSetPrimary,
   onMoveUp,
-  onMoveDown
+  onMoveDown,
+  onToggleWebsite
 }) => {
   const {
     attributes,
@@ -386,12 +395,13 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
   };
 
   const isVideo = image.mediaType === 'video';
+  const isHidden = image.showOnWebsite === false;
 
   return (
     <Card 
       ref={setNodeRef} 
       style={style} 
-      className="relative group cursor-move"
+      className={`relative group cursor-move ${isHidden ? 'opacity-60' : ''}`}
     >
       <CardContent className="p-2">
         <div 
@@ -400,7 +410,7 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
           {...listeners}
         >
           {isVideo ? (
-            <div className="w-full h-full bg-muted rounded flex items-center justify-center relative">
+            <div className={`w-full h-full bg-muted rounded flex items-center justify-center relative ${isHidden ? 'grayscale' : ''}`}>
               <video
                 src={image.url}
                 className="w-full h-full object-cover rounded"
@@ -414,18 +424,24 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
             <img
               src={image.url}
               alt={image.name}
-              className="w-full h-full object-cover rounded"
+              className={`w-full h-full object-cover rounded ${isHidden ? 'grayscale' : ''}`}
             />
           )}
           
-          {/* Video/Primary indicator */}
-          {isVideo && (
+          {/* Video/Primary/Hidden indicator */}
+          {isHidden && (
+            <div className="absolute top-1 left-1 bg-gray-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+              <EyeOff className="h-3 w-3" />
+              פנימי
+            </div>
+          )}
+          {!isHidden && isVideo && (
             <div className="absolute top-1 left-1 bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
               <Video className="h-3 w-3" />
               סרטון
             </div>
           )}
-          {image.isPrimary && !isVideo && (
+          {!isHidden && image.isPrimary && !isVideo && (
             <div className="absolute top-1 left-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
               ראשית
             </div>
@@ -433,6 +449,22 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
           
           {/* Controls */}
           <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <Button
+              size="sm"
+              variant={isHidden ? "outline" : "secondary"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleWebsite(image.id);
+              }}
+              className="h-6 w-6 p-0"
+              title={isHidden ? "הצג באתר" : "הסתר מהאתר"}
+            >
+              {isHidden ? (
+                <EyeOff className="h-3 w-3 text-gray-500" />
+              ) : (
+                <Eye className="h-3 w-3 text-green-500" />
+              )}
+            </Button>
             {!isVideo && (
               <Button
                 size="sm"

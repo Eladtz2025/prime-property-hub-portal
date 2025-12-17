@@ -163,7 +163,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
     try {
       const { data, error } = await supabase
         .from('property_images')
-        .select('*')
+        .select('*, show_on_website')
         .eq('property_id', property.id)
         .order('order_index', { ascending: true });
 
@@ -177,6 +177,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           isPrimary: img.is_main || false,
           uploadedAt: img.created_at || new Date().toISOString(),
           mediaType: (img.media_type as 'image' | 'video') || 'image',
+          showOnWebsite: img.show_on_website ?? true,
         }));
 
         setFormData(prev => ({
@@ -318,6 +319,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
             is_main: image.isPrimary || i === 0,
             order_index: i,
             media_type: image.mediaType || 'image',
+            show_on_website: image.showOnWebsite ?? true,
           });
         }
       }
