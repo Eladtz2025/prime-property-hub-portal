@@ -355,10 +355,10 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Agent, Owner & Tenant Info (horizontal) */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 items-end gap-4 p-3 rounded-lg border bg-background/50" dir="rtl">
-                {/* Property Type - ראשון מימין */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
+              <div className={`grid grid-cols-2 md:grid-cols-4 items-end gap-3 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-5' : 'lg:grid-cols-7'}`} dir="rtl">
+                {/* סוג הנכס */}
+                <div className="space-y-1">
+                  <Label className="text-xs">סוג הנכס</Label>
                   <Select 
                     value={(formData as any).property_type || 'rental'} 
                     onValueChange={(value) => handleInputChange('property_type' as any, value)}
@@ -374,9 +374,9 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </Select>
                 </div>
 
-                {/* Assigned Agent - שני מימין */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">סוכן מטפל</h4>
+                {/* סוכן מטפל */}
+                <div className="space-y-1">
+                  <Label className="text-xs">סוכן מטפל</Label>
                   <Select 
                     value={(formData as any).assignedUserId || 'none'} 
                     onValueChange={(value) => handleInputChange('assignedUserId' as any, value === 'none' ? null : value)}
@@ -395,72 +395,70 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </Select>
                 </div>
 
-                {/* Owner Section - באמצע */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">בעל הנכס</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label htmlFor="ownerName" className="text-xs">שם</Label>
-                      <Input
-                        id="ownerName"
-                        value={formData.ownerName}
-                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                        dir="rtl"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ownerPhone" className="text-xs">טלפון</Label>
-                      <Input
-                        id="ownerPhone"
-                        value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
-                        onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
-                        disabled={!canViewPhone}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="ownerEmail" className="text-xs">אימייל</Label>
-                      <Input
-                        id="ownerEmail"
-                        type="email"
-                        value={formData.ownerEmail || ''}
-                        onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  </div>
+                {/* שם בעלים */}
+                <div className="space-y-1">
+                  <Label htmlFor="ownerName" className="text-xs">שם בעלים</Label>
+                  <Input
+                    id="ownerName"
+                    value={formData.ownerName}
+                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                    dir="rtl"
+                    className="h-8 text-sm"
+                  />
                 </div>
 
-                {/* Tenant Section - שמאל (only for rental and management) */}
+                {/* טלפון בעלים */}
+                <div className="space-y-1">
+                  <Label htmlFor="ownerPhone" className="text-xs">טלפון בעלים</Label>
+                  <Input
+                    id="ownerPhone"
+                    value={canViewPhone ? (formData.ownerPhone || '') : formatPhoneDisplay(formData.ownerPhone, canViewPhone)}
+                    onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                    disabled={!canViewPhone}
+                    dir="ltr"
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                {/* אימייל בעלים */}
+                <div className="space-y-1">
+                  <Label htmlFor="ownerEmail" className="text-xs">אימייל בעלים</Label>
+                  <Input
+                    id="ownerEmail"
+                    type="email"
+                    value={formData.ownerEmail || ''}
+                    onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                    dir="ltr"
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                {/* שם שוכר - only for rental and management */}
                 {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="tenantName" className="text-xs">שם</Label>
-                        <Input
-                          id="tenantName"
-                          value={formData.tenantName || ''}
-                          onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                          dir="rtl"
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="tenantPhone" className="text-xs">טלפון</Label>
-                        <Input
-                          id="tenantPhone"
-                          value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
-                          onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
-                          disabled={!canViewPhone}
-                          dir="ltr"
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="tenantName" className="text-xs">שם שוכר</Label>
+                    <Input
+                      id="tenantName"
+                      value={formData.tenantName || ''}
+                      onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                      dir="rtl"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                )}
+
+                {/* טלפון שוכר - only for rental and management */}
+                {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
+                  <div className="space-y-1">
+                    <Label htmlFor="tenantPhone" className="text-xs">טלפון שוכר</Label>
+                    <Input
+                      id="tenantPhone"
+                      value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
+                      onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                      disabled={!canViewPhone}
+                      dir="ltr"
+                      className="h-8 text-sm"
+                    />
                   </div>
                 )}
               </div>
