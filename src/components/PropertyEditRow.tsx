@@ -355,7 +355,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Agent, Owner & Tenant Info (horizontal) */}
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_auto_1fr_1fr] gap-4 p-3 rounded-lg border bg-background/50" dir="rtl">
+              <div className={`grid grid-cols-1 gap-4 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-[auto_auto_1fr]' : 'lg:grid-cols-[auto_auto_1fr_1fr]'}`} dir="rtl">
                 {/* Property Type - ראשון מימין */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
@@ -434,33 +434,35 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
-                {/* Tenant Section - שמאל */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label htmlFor="tenantName" className="text-xs">שם</Label>
-                      <Input
-                        id="tenantName"
-                        value={formData.tenantName || ''}
-                        onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                        dir="rtl"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tenantPhone" className="text-xs">טלפון</Label>
-                      <Input
-                        id="tenantPhone"
-                        value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
-                        onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
-                        disabled={!canViewPhone}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
+                {/* Tenant Section - שמאל (only for rental and management) */}
+                {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="tenantName" className="text-xs">שם</Label>
+                        <Input
+                          id="tenantName"
+                          value={formData.tenantName || ''}
+                          onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                          dir="rtl"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="tenantPhone" className="text-xs">טלפון</Label>
+                        <Input
+                          id="tenantPhone"
+                          value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
+                          onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                          disabled={!canViewPhone}
+                          dir="ltr"
+                          className="h-8 text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Row 2: Property Details */}
@@ -661,39 +663,46 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                     <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showManagementBadge"
-                      checked={formData.showManagementBadge !== false}
-                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
-                  </div>
+                  {(formData as any).property_type === 'management' && (
+                    <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                      <Switch
+                        id="showManagementBadge"
+                        checked={formData.showManagementBadge !== false}
+                        onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                        className="scale-75"
+                      />
+                      <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג ניהול</Label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status, Rent, Fees, Dates */}
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                  <div>
-                    <Label htmlFor="leaseEndDate" className="text-xs">סיום חוזה</Label>
-                    <Input
-                      id="leaseEndDate"
-                      type="date"
-                      value={formData.leaseEndDate || ''}
-                      onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="leaseStartDate" className="text-xs">התחלת חוזה</Label>
-                    <Input
-                      id="leaseStartDate"
-                      type="date"
-                      value={formData.leaseStartDate || ''}
-                      onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {/* Lease dates - only for rental and management */}
+                  {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
+                    <>
+                      <div>
+                        <Label htmlFor="leaseEndDate" className="text-xs">סיום חוזה</Label>
+                        <Input
+                          id="leaseEndDate"
+                          type="date"
+                          value={formData.leaseEndDate || ''}
+                          onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="leaseStartDate" className="text-xs">התחלת חוזה</Label>
+                        <Input
+                          id="leaseStartDate"
+                          type="date"
+                          value={formData.leaseStartDate || ''}
+                          onChange={(e) => handleInputChange('leaseStartDate', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <Label htmlFor="buildingCommitteeFee" className="text-xs">ועד בית</Label>
                     <Input
@@ -714,17 +723,21 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       className="h-8 text-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="monthlyRent" className="text-xs">שכ"ד</Label>
-                    <Input
-                      id="monthlyRent"
-                      type="number"
-                      value={formData.monthlyRent || ''}
-                      onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  {(formData as any).propertyType === 'sale' && (
+                  {/* Monthly rent - only for rental and management */}
+                  {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
+                    <div>
+                      <Label htmlFor="monthlyRent" className="text-xs">שכ"ד</Label>
+                      <Input
+                        id="monthlyRent"
+                        type="number"
+                        value={formData.monthlyRent || ''}
+                        onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
+                  {/* Sale price - only for sale */}
+                  {(formData as any).property_type === 'sale' && (
                     <div>
                       <Label htmlFor="currentMarketValue" className="text-xs">מחיר מכירה</Label>
                       <Input
