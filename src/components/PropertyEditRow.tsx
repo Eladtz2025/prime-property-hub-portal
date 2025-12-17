@@ -348,9 +348,9 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
         <div className="bg-muted/30 border-t-2 border-primary/20 p-4">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="details">פרטי הנכס</TabsTrigger>
-              <TabsTrigger value="images">תמונות</TabsTrigger>
               <TabsTrigger value="notes">הערות</TabsTrigger>
+              <TabsTrigger value="images">תמונות</TabsTrigger>
+              <TabsTrigger value="details">פרטי הנכס</TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="space-y-4">
