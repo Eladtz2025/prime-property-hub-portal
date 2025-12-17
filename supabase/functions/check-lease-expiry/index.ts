@@ -36,13 +36,64 @@ serve(async (req) => {
     // Parse request body for options
     let testMode = false;
     let forceCheck = false;
+    let sendTest = false;
     
     try {
       const body = await req.json();
       testMode = body?.test_mode === true;
       forceCheck = body?.force === true;
+      sendTest = body?.send_test === true;
     } catch {
       // No body or invalid JSON, use defaults
+    }
+
+    // If send_test is true, send immediate test message and return
+    if (sendTest) {
+      console.log('📧 Sending test message to admins...');
+      
+      const testMessage = `🧪 הודעת בדיקה - מערכת התראות
+
+זוהי הודעת בדיקה לוודא שמערכת ההתראות פועלת כשורה.
+
+תאריך: ${new Date().toLocaleDateString('he-IL')}
+שעה: ${new Date().toLocaleTimeString('he-IL')}
+
+אם קיבלת הודעה זו, המערכת עובדת! ✅`;
+
+      const testResults = {
+        success: true,
+        testMode: false,
+        sendTest: true,
+        messagesSent: 0,
+        errors: [] as string[]
+      };
+
+      for (const admin of ADMINS) {
+        try {
+          const { error: whatsappError } = await supabase.functions.invoke('whatsapp-send', {
+            body: {
+              phone: admin.phone,
+              message: testMessage,
+              type: 'single'
+            }
+          });
+
+          if (whatsappError) {
+            console.error(`Error sending test to ${admin.name}:`, whatsappError);
+            testResults.errors.push(`${admin.name}: ${whatsappError.message}`);
+          } else {
+            console.log(`✅ Test message sent to ${admin.name}`);
+            testResults.messagesSent++;
+          }
+        } catch (e) {
+          console.error(`Exception sending test to ${admin.name}:`, e);
+          testResults.errors.push(`${admin.name}: ${e.message}`);
+        }
+      }
+
+      return new Response(JSON.stringify(testResults), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log(`🔍 Starting lease expiry check. Test mode: ${testMode}, Force: ${forceCheck}`);
