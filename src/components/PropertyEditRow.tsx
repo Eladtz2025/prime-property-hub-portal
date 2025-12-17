@@ -355,23 +355,41 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Owner & Tenant Info (horizontal) */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-3 rounded-lg border bg-background/50" dir="rtl">
-                {/* Property Type - ראשון מימין */}
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr] gap-4 p-3 rounded-lg border bg-background/50" dir="rtl">
+                {/* Property Type & Agent - ראשון מימין, קומפקטי */}
                 <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
-                  <Select 
-                    value={(formData as any).property_type || 'rental'} 
-                    onValueChange={(value) => handleInputChange('property_type' as any, value)}
-                  >
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="בחר סוג" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rental">השכרה</SelectItem>
-                      <SelectItem value="sale">מכירה</SelectItem>
-                      <SelectItem value="management">ניהול</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <h4 className="text-xs font-semibold text-muted-foreground">סוג וסוכן</h4>
+                  <div className="flex flex-col gap-2">
+                    <Select 
+                      value={(formData as any).property_type || 'rental'} 
+                      onValueChange={(value) => handleInputChange('property_type' as any, value)}
+                    >
+                      <SelectTrigger className="h-8 text-sm w-36">
+                        <SelectValue placeholder="בחר סוג" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rental">השכרה</SelectItem>
+                        <SelectItem value="sale">מכירה</SelectItem>
+                        <SelectItem value="management">ניהול</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={(formData as any).assignedUserId || 'none'} 
+                      onValueChange={(value) => handleInputChange('assignedUserId' as any, value === 'none' ? null : value)}
+                    >
+                      <SelectTrigger className="h-8 text-sm w-36">
+                        <SelectValue placeholder="בחר סוכן" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">אין סוכן</SelectItem>
+                        {users.map(user => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.full_name || user.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Owner Section - באמצע */}
@@ -416,7 +434,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                 {/* Tenant Section - שמאל */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label htmlFor="tenantName" className="text-xs">שם</Label>
                       <Input
@@ -437,25 +455,6 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         dir="ltr"
                         className="h-8 text-sm"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="assignedUser" className="text-xs">סוכן מטפל</Label>
-                      <Select 
-                        value={(formData as any).assignedUserId || 'none'} 
-                        onValueChange={(value) => handleInputChange('assignedUserId' as any, value === 'none' ? null : value)}
-                      >
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="בחר סוכן" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">אין סוכן</SelectItem>
-                          {users.map(user => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.full_name || user.email}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>
