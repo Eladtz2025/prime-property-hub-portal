@@ -46,7 +46,7 @@ const EnglishNeighborhoods = () => {
     {
       id: "old-north",
       name: "Old North",
-      description: "Quiet residential area with Bauhaus heritage and family appeal",
+      description: "Where calm living meets the heart of the city",
       imageUrl: "/images/en/neighborhoods/old-north-hero.jpg",
       avgPrice: "₪3.5M - ₪9M",
       highlights: ["Family-friendly", "Bauhaus gems", "Parks & green spaces"],
