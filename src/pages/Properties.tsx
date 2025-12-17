@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Property } from '../types/property';
 import { PropertyDetailModal } from '../components/PropertyDetailModal';
-import { PropertyEditModal } from '../components/PropertyEditModal';
+import { PropertyEditRow } from '../components/PropertyEditRow';
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
 import { PropertyWhatsAppHistory } from '../components/PropertyWhatsAppHistory';
@@ -79,7 +79,7 @@ export const Properties: React.FC = memo(() => {
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [expandedPropertyId, setExpandedPropertyId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   
   const { 
@@ -329,7 +329,7 @@ export const Properties: React.FC = memo(() => {
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
     updateProperty(updatedProperty);
-    setEditingProperty(null);
+    setExpandedPropertyId(null);
   };
 
   const handleDeleteProperty = (property: Property) => {
@@ -439,16 +439,23 @@ export const Properties: React.FC = memo(() => {
                 {isMobile ? (
                   <div className="space-y-3 px-2">
                     {paginatedProperties.map((property) => (
-                      <OptimizedMobilePropertyCard
-                        key={property.id}
-                        property={property}
-                        onViewDetails={handleViewDetails}
-                        onEdit={setEditingProperty}
-                        onDelete={handleDeleteProperty}
-                        ownerPropertyCount={getOwnerPropertyCount(property)}
-                        searchTerm={filters.searchTerm}
-                        canEdit={canEditProperties}
-                      />
+                      <React.Fragment key={property.id}>
+                        <OptimizedMobilePropertyCard
+                          property={property}
+                          onViewDetails={handleViewDetails}
+                          onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
+                          onDelete={handleDeleteProperty}
+                          ownerPropertyCount={getOwnerPropertyCount(property)}
+                          searchTerm={filters.searchTerm}
+                          canEdit={canEditProperties}
+                        />
+                        <PropertyEditRow
+                          property={property}
+                          isOpen={expandedPropertyId === property.id}
+                          onClose={() => setExpandedPropertyId(null)}
+                          onSave={handlePropertyUpdate}
+                        />
+                      </React.Fragment>
                     ))}
                   </div>
                 ) : (
@@ -499,210 +506,225 @@ export const Properties: React.FC = memo(() => {
                       </TableHeader>
                       <TableBody>
                         {paginatedProperties.map((property) => (
-                          <TableRow key={property.id} className="hover:bg-muted/50">
-                            <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
-                              <SearchHighlight 
-                                text={property.address} 
-                                searchTerm={filters.searchTerm}
-                              />
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              <div className="flex items-center justify-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="font-medium">
-                                      <SearchHighlight 
-                                        text={property.ownerName} 
-                                        searchTerm={filters.searchTerm}
-                                      />
-                                    </div>
-                                    {getOwnerPropertyCount(property) > 1 && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {getOwnerPropertyCount(property)} נכסים
-                                      </Badge>
-                                    )}
-                                  </div>
-                                   {property.ownerPhone && (
-                                      <div className="text-sm text-muted-foreground">
-                                        <SearchHighlight 
-                                          text={formatPhoneDisplay(property.ownerPhone, canViewPhone)} 
-                                          searchTerm={filters.searchTerm}
-                                        />
-                                      </div>
-                                   )}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              <Badge 
-                                variant="outline" 
-                                className={`${getPropertyTypeColor(property.property_type)} text-sm`}
-                              >
-                                {getPropertyTypeText(property.property_type)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              {property.assignedAgent ? (
+                          <React.Fragment key={property.id}>
+                            <TableRow className="hover:bg-muted/50">
+                              <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
+                                <SearchHighlight 
+                                  text={property.address} 
+                                  searchTerm={filters.searchTerm}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
                                 <div className="flex items-center justify-center gap-2">
                                   <User className="h-4 w-4 text-muted-foreground" />
                                   <div>
-                                    <div className="font-medium">
-                                      {property.assignedAgent.full_name}
-                                    </div>
-                                    {property.assignedAgent.phone && (
-                                      <div className="text-sm text-muted-foreground">
-                                        {formatPhoneDisplay(property.assignedAgent.phone, canViewPhone)}
+                                    <div className="flex items-center gap-2">
+                                      <div className="font-medium">
+                                        <SearchHighlight 
+                                          text={property.ownerName} 
+                                          searchTerm={filters.searchTerm}
+                                        />
                                       </div>
-                                    )}
+                                      {getOwnerPropertyCount(property) > 1 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {getOwnerPropertyCount(property)} נכסים
+                                        </Badge>
+                                      )}
+                                    </div>
+                                     {property.ownerPhone && (
+                                        <div className="text-sm text-muted-foreground">
+                                          <SearchHighlight 
+                                            text={formatPhoneDisplay(property.ownerPhone, canViewPhone)} 
+                                            searchTerm={filters.searchTerm}
+                                          />
+                                        </div>
+                                     )}
                                   </div>
                                 </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">לא משוייך</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              <Badge className={`${getStatusColor(property.status)} text-sm`}>
-                                {getStatusText(property.status)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              {property.leaseEndDate ? (
-                                <div className="flex items-center justify-center gap-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center px-4 py-3 border-l border-border">
-                              <div className="flex items-center justify-center gap-3">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleViewDetails(property.id)}
-                                      className="h-9 w-9"
-                                    >
-                                      <Eye className="h-4 w-4 text-primary" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>צפה בפרטי הנכס</TooltipContent>
-                                </Tooltip>
-                                
-                                {canEditProperties && (
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                <Badge 
+                                  variant="outline" 
+                                  className={`${getPropertyTypeColor(property.property_type)} text-sm`}
+                                >
+                                  {getPropertyTypeText(property.property_type)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                {property.assignedAgent ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                      <div className="font-medium">
+                                        {property.assignedAgent.full_name}
+                                      </div>
+                                      {property.assignedAgent.phone && (
+                                        <div className="text-sm text-muted-foreground">
+                                          {formatPhoneDisplay(property.assignedAgent.phone, canViewPhone)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">לא משוייך</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                <Badge className={`${getStatusColor(property.status)} text-sm`}>
+                                  {getStatusText(property.status)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                {property.leaseEndDate ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm">{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                <div className="flex items-center justify-center gap-3">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => setEditingProperty(property)}
+                                        onClick={() => handleViewDetails(property.id)}
                                         className="h-9 w-9"
                                       >
-                                        <Edit className="h-4 w-4 text-primary" />
+                                        <Eye className="h-4 w-4 text-primary" />
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>עריכת פרטי הנכס</TooltipContent>
+                                    <TooltipContent>צפה בפרטי הנכס</TooltipContent>
                                   </Tooltip>
-                                 )}
-                                 
-                                  {property.ownerPhone && canViewPhone && (
-                                   <Tooltip>
+                                  
+                                  {canEditProperties && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setExpandedPropertyId(expandedPropertyId === property.id ? null : property.id)}
+                                          className={`h-9 w-9 ${expandedPropertyId === property.id ? 'bg-primary/10' : ''}`}
+                                        >
+                                          <Edit className="h-4 w-4 text-primary" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>עריכת פרטי הנכס</TooltipContent>
+                                    </Tooltip>
+                                   )}
+                                   
+                                    {property.ownerPhone && canViewPhone && (
+                                     <Tooltip>
+                                         <TooltipTrigger asChild>
+                                           <Button
+                                             variant="ghost"
+                                             size="icon"
+                                             onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                             className="h-9 w-9"
+                                           >
+                                             <Phone className="h-4 w-4 text-primary" />
+                                           </Button>
+                                         </TooltipTrigger>
+                                         <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                                       </Tooltip>
+                                   )}
+                                  
+                                   {property.ownerEmail && (
+                                     <Tooltip>
                                        <TooltipTrigger asChild>
                                          <Button
                                            variant="ghost"
                                            size="icon"
-                                           onClick={() => window.open(`tel:${property.ownerPhone}`, '_self')}
+                                           onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
                                            className="h-9 w-9"
                                          >
-                                           <Phone className="h-4 w-4 text-primary" />
+                                           <Mail className="h-4 w-4 text-primary" />
                                          </Button>
                                        </TooltipTrigger>
-                                       <TooltipContent>התקשר לבעל הנכס</TooltipContent>
+                                       <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
                                      </Tooltip>
-                                 )}
-                                
-                                 {property.ownerEmail && (
-                                   <Tooltip>
-                                     <TooltipTrigger asChild>
-                                       <Button
-                                         variant="ghost"
-                                         size="icon"
-                                         onClick={() => window.open(`mailto:${property.ownerEmail}`, '_self')}
-                                         className="h-9 w-9"
-                                       >
-                                         <Mail className="h-4 w-4 text-primary" />
-                                       </Button>
-                                     </TooltipTrigger>
-                                     <TooltipContent>שלח אימייל לבעל הנכס</TooltipContent>
-                                   </Tooltip>
-                                 )}
+                                   )}
 
-                                 {/* Share Dropdown */}
-                                 <DropdownMenu>
-                                   <Tooltip>
-                                     <TooltipTrigger asChild>
-                                       <DropdownMenuTrigger asChild>
+                                   {/* Share Dropdown */}
+                                   <DropdownMenu>
+                                     <Tooltip>
+                                       <TooltipTrigger asChild>
+                                         <DropdownMenuTrigger asChild>
+                                           <Button
+                                             variant="ghost"
+                                             size="icon"
+                                             className="h-9 w-9"
+                                           >
+                                             <Share2 className="h-4 w-4 text-primary" />
+                                           </Button>
+                                         </DropdownMenuTrigger>
+                                       </TooltipTrigger>
+                                       <TooltipContent>שתף נכס</TooltipContent>
+                                     </Tooltip>
+                                     <DropdownMenuContent align="end">
+                                       <DropdownMenuItem onClick={() => {
+                                         const url = `${window.location.origin}/he/property/${property.id}`;
+                                         window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+                                       }}>
+                                         <MessageCircle className="h-4 w-4 ml-2" />
+                                         שתף בווטסאפ
+                                       </DropdownMenuItem>
+                                       <DropdownMenuItem onClick={() => {
+                                         const url = `${window.location.origin}/he/property/${property.id}`;
+                                         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                       }}>
+                                         <Facebook className="h-4 w-4 ml-2" />
+                                         שתף בפייסבוק
+                                       </DropdownMenuItem>
+                                       <DropdownMenuItem onClick={() => {
+                                         const url = `${window.location.origin}/he/property/${property.id}`;
+                                         navigator.clipboard.writeText(url);
+                                         toast({
+                                           title: "הקישור הועתק",
+                                           description: "קישור לנכס הועתק ללוח",
+                                         });
+                                       }}>
+                                         <LinkIcon className="h-4 w-4 ml-2" />
+                                         העתק קישור
+                                       </DropdownMenuItem>
+                                     </DropdownMenuContent>
+                                   </DropdownMenu>
+
+                                   {canEditProperties && (
+                                     <Tooltip>
+                                       <TooltipTrigger asChild>
                                          <Button
                                            variant="ghost"
                                            size="icon"
-                                           className="h-9 w-9"
+                                           onClick={() => handleDeleteProperty(property)}
+                                           className="text-destructive hover:text-destructive h-9 w-9"
                                          >
-                                           <Share2 className="h-4 w-4 text-primary" />
+                                           <Trash2 className="h-4 w-4" />
                                          </Button>
-                                       </DropdownMenuTrigger>
-                                     </TooltipTrigger>
-                                     <TooltipContent>שתף נכס</TooltipContent>
-                                   </Tooltip>
-                                   <DropdownMenuContent align="end">
-                                     <DropdownMenuItem onClick={() => {
-                                       const url = `${window.location.origin}/he/property/${property.id}`;
-                                       window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
-                                     }}>
-                                       <MessageCircle className="h-4 w-4 ml-2" />
-                                       שתף בווטסאפ
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => {
-                                       const url = `${window.location.origin}/he/property/${property.id}`;
-                                       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                                     }}>
-                                       <Facebook className="h-4 w-4 ml-2" />
-                                       שתף בפייסבוק
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => {
-                                       const url = `${window.location.origin}/he/property/${property.id}`;
-                                       navigator.clipboard.writeText(url);
-                                       toast({
-                                         title: "הקישור הועתק",
-                                         description: "קישור לנכס הועתק ללוח",
-                                       });
-                                     }}>
-                                       <LinkIcon className="h-4 w-4 ml-2" />
-                                       העתק קישור
-                                     </DropdownMenuItem>
-                                   </DropdownMenuContent>
-                                 </DropdownMenu>
-
-                                 {canEditProperties && (
-                                   <Tooltip>
-                                     <TooltipTrigger asChild>
-                                       <Button
-                                         variant="ghost"
-                                         size="icon"
-                                         onClick={() => handleDeleteProperty(property)}
-                                         className="text-destructive hover:text-destructive h-9 w-9"
-                                       >
-                                         <Trash2 className="h-4 w-4" />
-                                       </Button>
-                                     </TooltipTrigger>
-                                     <TooltipContent>מחק נכס</TooltipContent>
-                                   </Tooltip>
-                                 )}
-                               </div>
-                             </TableCell>
-                          </TableRow>
+                                       </TooltipTrigger>
+                                       <TooltipContent>מחק נכס</TooltipContent>
+                                     </Tooltip>
+                                   )}
+                                 </div>
+                               </TableCell>
+                            </TableRow>
+                            {/* Expandable Edit Row */}
+                            {expandedPropertyId === property.id && (
+                              <TableRow>
+                                <TableCell colSpan={7} className="p-0 border-0">
+                                  <PropertyEditRow
+                                    property={property}
+                                    isOpen={true}
+                                    onClose={() => setExpandedPropertyId(null)}
+                                    onSave={handlePropertyUpdate}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         ))}
                       </TableBody>
                     </Table>
@@ -763,19 +785,9 @@ export const Properties: React.FC = memo(() => {
             isOpen={true}
             onClose={() => setSelectedProperty(null)}
             onEdit={(property) => {
-              setEditingProperty(property);
+              setExpandedPropertyId(property.id);
               setSelectedProperty(null);
             }}
-          />
-        )}
-
-        {/* Property Edit Modal */}
-        {editingProperty && (
-          <PropertyEditModal
-            property={editingProperty}
-            isOpen={true}
-            onClose={() => setEditingProperty(null)}
-            onSave={handlePropertyUpdate}
           />
         )}
 
