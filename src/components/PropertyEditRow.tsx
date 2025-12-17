@@ -361,27 +361,6 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   <h4 className="text-xs font-semibold text-muted-foreground">שוכר</h4>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label htmlFor="tenantName" className="text-xs">שם</Label>
-                      <Input
-                        id="tenantName"
-                        value={formData.tenantName || ''}
-                        onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                        dir="rtl"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tenantPhone" className="text-xs">טלפון</Label>
-                      <Input
-                        id="tenantPhone"
-                        value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
-                        onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
-                        disabled={!canViewPhone}
-                        dir="ltr"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div>
                       <Label htmlFor="assignedUser" className="text-xs">סוכן מטפל</Label>
                       <Select 
                         value={(formData as any).assignedUserId || 'none'} 
@@ -400,6 +379,27 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label htmlFor="tenantPhone" className="text-xs">טלפון</Label>
+                      <Input
+                        id="tenantPhone"
+                        value={canViewPhone ? (formData.tenantPhone || '') : formatPhoneDisplay(formData.tenantPhone, canViewPhone)}
+                        onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                        disabled={!canViewPhone}
+                        dir="ltr"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="tenantName" className="text-xs">שם</Label>
+                      <Input
+                        id="tenantName"
+                        value={formData.tenantName || ''}
+                        onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                        dir="rtl"
+                        className="h-8 text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -408,12 +408,13 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   <h4 className="text-xs font-semibold text-muted-foreground">בעל הנכס</h4>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label htmlFor="ownerName" className="text-xs">שם</Label>
+                      <Label htmlFor="ownerEmail" className="text-xs">אימייל</Label>
                       <Input
-                        id="ownerName"
-                        value={formData.ownerName}
-                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                        dir="rtl"
+                        id="ownerEmail"
+                        type="email"
+                        value={formData.ownerEmail || ''}
+                        onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                        dir="ltr"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -429,13 +430,12 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="ownerEmail" className="text-xs">אימייל</Label>
+                      <Label htmlFor="ownerName" className="text-xs">שם</Label>
                       <Input
-                        id="ownerEmail"
-                        type="email"
-                        value={formData.ownerEmail || ''}
-                        onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                        dir="ltr"
+                        id="ownerName"
+                        value={formData.ownerName}
+                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                        dir="rtl"
                         className="h-8 text-sm"
                       />
                     </div>
