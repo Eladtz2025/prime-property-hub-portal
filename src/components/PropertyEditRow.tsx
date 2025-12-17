@@ -347,8 +347,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
       <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
         <div className="bg-muted/30 border-t-2 border-primary/20 p-4">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="notes">הערות</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="images">תמונות</TabsTrigger>
               <TabsTrigger value="details">פרטי הנכס</TabsTrigger>
             </TabsList>
@@ -816,6 +815,20 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                   </div>
                 </div>
+
+                {/* Notes Row */}
+                <div>
+                  <Label htmlFor="notes" className="text-xs">הערות</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes || ''}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    rows={3}
+                    placeholder="הוסף הערות על הנכס..."
+                    dir="rtl"
+                    className="text-sm"
+                  />
+                </div>
               </div>
             </TabsContent>
 
@@ -828,15 +841,6 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
               />
             </TabsContent>
 
-            <TabsContent value="notes" className="space-y-4">
-              <Textarea
-                id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                rows={6}
-                placeholder="הוסף הערות על הנכס..."
-              />
-            </TabsContent>
           </Tabs>
 
           {/* Footer with save/cancel */}
