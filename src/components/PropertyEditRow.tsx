@@ -355,7 +355,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Agent, Owner & Tenant Info (horizontal) */}
-              <div className={`grid grid-cols-1 items-end gap-4 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-[auto_auto_1fr]' : 'lg:grid-cols-[auto_auto_1fr_1fr]'}`} dir="rtl">
+              <div className="grid grid-cols-1 lg:grid-cols-4 items-end gap-4 p-3 rounded-lg border bg-background/50" dir="rtl">
                 {/* Property Type - ראשון מימין */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
@@ -363,7 +363,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     value={(formData as any).property_type || 'rental'} 
                     onValueChange={(value) => handleInputChange('property_type' as any, value)}
                   >
-                    <SelectTrigger className="h-8 text-sm w-32">
+                    <SelectTrigger className="h-8 text-sm">
                       <SelectValue placeholder="בחר סוג" />
                     </SelectTrigger>
                     <SelectContent>
@@ -381,7 +381,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     value={(formData as any).assignedUserId || 'none'} 
                     onValueChange={(value) => handleInputChange('assignedUserId' as any, value === 'none' ? null : value)}
                   >
-                    <SelectTrigger className="h-8 text-sm w-32">
+                    <SelectTrigger className="h-8 text-sm">
                       <SelectValue placeholder="בחר סוכן" />
                     </SelectTrigger>
                     <SelectContent>
@@ -645,7 +645,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="flex items-center gap-4 px-3 py-1.5 border rounded bg-background">
+                  <div className="flex items-center gap-4 px-3 py-1.5 border rounded bg-background min-w-[80px]">
                     <div className="flex items-center gap-1.5">
                       <Checkbox
                         id="featured"
