@@ -112,6 +112,7 @@ const Rentals = () => {
         address: prop.address,
         city: prop.city,
         neighborhood: (prop as any).neighborhood,
+        status: prop.status,
         monthly_rent: prop.monthly_rent || 0,
         rooms: prop.rooms,
         property_size: prop.property_size,
@@ -190,6 +191,12 @@ const Rentals = () => {
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
                       ₪ {property.monthly_rent.toLocaleString()} לחודש
                     </div>
+                    {/* Status Badge for Rented Properties */}
+                    {(property as any).status === 'occupied' && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm">
+                        מושכר
+                      </div>
+                    )}
                   </div>
                   <div className="p-6 text-right">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>

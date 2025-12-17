@@ -12,6 +12,7 @@ export interface PublicProperty {
   neighborhood?: string;
   description?: string;
   property_type: 'rental' | 'sale' | 'management';
+  status?: 'vacant' | 'occupied' | 'maintenance' | 'unknown';
   rooms?: number;
   property_size?: number;
   bathrooms?: number;
@@ -49,7 +50,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
       try {
         log.info(`Loading public ${propertyType} properties`);
 
-        // Get properties with images count
+        // Get properties with images count - filter by show_on_website instead of status
         const { data: propertiesWithImages, error: propertiesError } = await supabase
           .from('properties')
           .select(`
@@ -60,6 +61,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             neighborhood,
             description,
             property_type,
+            status,
             rooms,
             property_size,
             bathrooms,
@@ -73,7 +75,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             monthly_rent,
             featured,
             available,
-            status,
+            show_on_website,
             property_images!inner (
               id,
               image_url,
@@ -83,8 +85,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             )
           `)
           .eq('property_type', propertyType)
-          .eq('available', true)
-          .eq('status', 'vacant')
+          .eq('show_on_website', true)
           .order('featured', { ascending: false })
           .order('created_at', { ascending: false });
 
@@ -102,6 +103,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           neighborhood: property.neighborhood,
           description: property.description,
           property_type: property.property_type as 'rental' | 'sale' | 'management',
+          status: property.status as 'vacant' | 'occupied' | 'maintenance' | 'unknown',
           rooms: property.rooms,
           property_size: property.property_size,
           bathrooms: property.bathrooms,

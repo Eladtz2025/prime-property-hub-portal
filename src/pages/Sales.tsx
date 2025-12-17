@@ -85,6 +85,7 @@ const Sales = () => {
         address: prop.address,
         city: prop.city,
         neighborhood: (prop as any).neighborhood,
+        status: prop.status,
         price: prop.monthly_rent || 0, // Will need to add price field later for sales
         rooms: prop.rooms,
         property_size: prop.property_size,
@@ -151,7 +152,7 @@ const Sales = () => {
           {filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative">
                     <img
                       src={property.image || '/images/sales-villa.jpg'}
@@ -165,6 +166,12 @@ const Sales = () => {
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
                       ₪ {property.price.toLocaleString()}
                     </div>
+                    {/* Status Badge for Sold Properties */}
+                    {(property as any).status === 'occupied' && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm">
+                        נמכר
+                      </div>
+                    )}
                   </div>
                   <div className="p-6 text-right">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>

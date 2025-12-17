@@ -61,15 +61,36 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   useEffect(() => {
     const updatedProperty = {
       ...property,
-      assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId
+      assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId,
+      showOnWebsite: (property as any).show_on_website !== false
     };
     setFormData(updatedProperty as any);
     
     // Load images from property_images table when modal opens
     if (isOpen && property.id) {
       loadPropertyImages();
+      loadPropertyWebsiteFlag();
     }
   }, [property, isOpen]);
+
+  const loadPropertyWebsiteFlag = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('show_on_website')
+        .eq('id', property.id)
+        .single();
+
+      if (!error && data) {
+        setFormData(prev => ({
+          ...prev,
+          showOnWebsite: data.show_on_website !== false
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading show_on_website flag:', error);
+    }
+  };
 
   const loadPropertyImages = async () => {
     try {
@@ -162,6 +183,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           current_market_value: (formData as any).currentMarketValue || null,
           featured: (formData as any).featured || false,
           show_management_badge: formData.showManagementBadge !== false,
+          show_on_website: (formData as any).showOnWebsite !== false,
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -376,6 +398,23 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                       onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
                     />
                   </div>
+                </div>
+
+                {/* Show on Website Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="showOnWebsite" className="text-sm font-medium">הצג באתר</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.status === 'occupied' 
+                        ? 'הנכס יוצג באתר עם תגית "מושכר"' 
+                        : 'הנכס יוצג באתר הציבורי'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="showOnWebsite"
+                    checked={(formData as any).showOnWebsite !== false}
+                    onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                  />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
