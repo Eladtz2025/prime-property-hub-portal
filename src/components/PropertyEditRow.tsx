@@ -18,6 +18,7 @@ import { Languages, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PropertyDocuments } from './PropertyDocuments';
 
 interface PropertyEditRowProps {
   property: Property;
@@ -875,18 +876,21 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
-                {/* Notes Row */}
-                <div>
-                  <Label htmlFor="notes" className="text-xs">הערות</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes || ''}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    rows={3}
-                    placeholder="הוסף הערות על הנכס..."
-                    dir="rtl"
-                    className="text-sm"
-                  />
+                {/* Notes & Documents Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="notes" className="text-xs">הערות</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes || ''}
+                      onChange={(e) => handleInputChange('notes', e.target.value)}
+                      rows={3}
+                      placeholder="הוסף הערות על הנכס..."
+                      dir="rtl"
+                      className="text-sm"
+                    />
+                  </div>
+                  <PropertyDocuments propertyId={formData.id} />
                 </div>
               </div>
             </TabsContent>
