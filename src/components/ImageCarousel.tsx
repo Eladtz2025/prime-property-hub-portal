@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play } from 'lucide-react';
@@ -12,7 +12,8 @@ const ImageWithPlaceholder: React.FC<{
   className?: string;
   loading?: "lazy" | "eager";
   sizes?: string;
-}> = ({ src, alt, className, loading = "lazy", sizes }) => {
+  onImageLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+}> = ({ src, alt, className, loading = "lazy", sizes, onImageLoad }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -32,6 +33,11 @@ const ImageWithPlaceholder: React.FC<{
     );
   }
 
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setIsLoaded(true);
+    onImageLoad?.(e);
+  };
+
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       {!isLoaded && (
@@ -45,7 +51,7 @@ const ImageWithPlaceholder: React.FC<{
         className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         loading={loading}
         decoding="async"
-        onLoad={() => setIsLoaded(true)}
+        onLoad={handleLoad}
         onError={() => setHasError(true)}
       />
     </div>
@@ -103,6 +109,12 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imageOrientation, setImageOrientation] = useState<'landscape' | 'portrait' | 'unknown'>('unknown');
+
+  // Reset orientation when changing images
+  useEffect(() => {
+    setImageOrientation('unknown');
+  }, [currentIndex]);
 
   if (!images || images.length === 0) {
     return (
@@ -125,18 +137,128 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const isLandscape = img.naturalWidth > img.naturalHeight;
+    setImageOrientation(isLandscape ? 'landscape' : 'portrait');
+  };
+
   const currentImage = images[currentIndex];
   const isVideo = currentImage.mediaType === 'video';
+
+  // Controls overlay component - shared between both layouts
+  const ControlsOverlay = () => (
+    <>
+      {/* Price label */}
+      {priceLabel && !isVideo && (
+        <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg z-20">
+          {priceLabel}
+        </div>
+      )}
+      
+      {/* Navigation arrows */}
+      {images.length > 1 && (
+        <>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg z-20"
+            onClick={nextImage}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg z-20"
+            onClick={prevImage}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </>
+      )}
+      
+      {/* Fullscreen button */}
+      {!isVideo && (
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-3 right-3 h-9 w-9 shadow-lg z-20"
+          onClick={() => setIsFullscreen(true)}
+        >
+          <Expand className="h-4 w-4" />
+        </Button>
+      )}
+      
+      {/* Image counter */}
+      {images.length > 1 && (
+        <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <>
       <Card className={className}>
         <CardContent className="p-0 relative">
-          {/* Fixed height container with blurred background */}
-          <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
-            
-            {/* Blurred background layer - same image enlarged and blurred */}
-            {!isVideo && (
+          {/* Video or loading state - fixed height with blur */}
+          {(isVideo || imageOrientation === 'unknown') && (
+            <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
+              {/* Blurred background layer */}
+              {!isVideo && (
+                <div className="absolute inset-0 overflow-hidden">
+                  <img
+                    src={currentImage.url}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-full object-cover scale-110 blur-2xl opacity-40"
+                  />
+                </div>
+              )}
+              
+              {/* Main content layer */}
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="relative inline-block max-w-full max-h-full">
+                  {isVideo ? (
+                    <VideoWithPlaceholder
+                      src={currentImage.url}
+                      className="max-w-full max-h-[60vh] object-contain"
+                      controls={true}
+                    />
+                  ) : (
+                    <ImageWithPlaceholder
+                      src={currentImage.url}
+                      alt={currentImage.name}
+                      className="max-w-full max-h-[60vh] object-contain drop-shadow-lg"
+                      loading="eager"
+                      sizes="(max-width: 768px) 100vw, 60vw"
+                      onImageLoad={handleImageLoad}
+                    />
+                  )}
+                  <ControlsOverlay />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Landscape image - full width, dynamic height, no blur */}
+          {!isVideo && imageOrientation === 'landscape' && (
+            <div className="relative w-full overflow-hidden rounded-t-lg bg-black/5">
+              <img
+                src={currentImage.url}
+                alt={currentImage.name}
+                className="w-full h-auto object-cover"
+              />
+              <ControlsOverlay />
+            </div>
+          )}
+
+          {/* Portrait image - fixed height with blur background */}
+          {!isVideo && imageOrientation === 'portrait' && (
+            <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
+              {/* Blurred background */}
               <div className="absolute inset-0 overflow-hidden">
                 <img
                   src={currentImage.url}
@@ -145,78 +267,20 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   className="w-full h-full object-cover scale-110 blur-2xl opacity-40"
                 />
               </div>
-            )}
-            
-            {/* Main image/video layer - centered with contain */}
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              {/* Inner wrapper - shrinks to media size, controls positioned on it */}
-              <div className="relative inline-block max-w-full max-h-full">
-                {isVideo ? (
-                  <VideoWithPlaceholder
-                    src={currentImage.url}
-                    className="max-w-full max-h-[60vh] object-contain"
-                    controls={true}
-                  />
-                ) : (
-                  <ImageWithPlaceholder
+              
+              {/* Centered image */}
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="relative inline-block max-w-full max-h-full">
+                  <img
                     src={currentImage.url}
                     alt={currentImage.name}
                     className="max-w-full max-h-[60vh] object-contain drop-shadow-lg"
-                    loading="eager"
-                    sizes="(max-width: 768px) 100vw, 60vw"
                   />
-                )}
-                
-                {/* Price label on image */}
-                {priceLabel && !isVideo && (
-                  <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg">
-                    {priceLabel}
-                  </div>
-                )}
-                
-                {/* Navigation arrows on image */}
-                {images.length > 1 && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg"
-                      onClick={nextImage}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg"
-                      onClick={prevImage}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </>
-                )}
-                
-                {/* Fullscreen button on image */}
-                {!isVideo && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-3 right-3 h-9 w-9 shadow-lg"
-                    onClick={() => setIsFullscreen(true)}
-                  >
-                    <Expand className="h-4 w-4" />
-                  </Button>
-                )}
-                
-                {/* Image counter on image */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
-                    {currentIndex + 1} / {images.length}
-                  </div>
-                )}
+                  <ControlsOverlay />
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           {/* Thumbnail strip */}
           {images.length > 1 && (
