@@ -16,6 +16,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { Languages, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PropertyEditRowProps {
   property: Property;
@@ -676,7 +678,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                 </div>
 
                 {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
-                <div className="grid grid-cols-5 md:grid-cols-10 gap-2 items-end">
+                <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-end">
                   <div>
                     <Label htmlFor="rooms" className="text-xs">חדרים</Label>
                     <Input
@@ -723,41 +725,51 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
                     />
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="parking"
-                      checked={formData.parking || false}
-                      onCheckedChange={(checked) => handleInputChange('parking', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="parking" className="cursor-pointer text-xs">חניה</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="elevator"
-                      checked={formData.elevator || false}
-                      onCheckedChange={(checked) => handleInputChange('elevator', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="elevator" className="cursor-pointer text-xs">מעלית</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="balcony"
-                      checked={formData.balcony || false}
-                      onCheckedChange={(checked) => handleInputChange('balcony', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="balcony" className="cursor-pointer text-xs">מרפסת</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="mamad"
-                      checked={formData.mamad || false}
-                      onCheckedChange={(checked) => handleInputChange('mamad', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="mamad" className="cursor-pointer text-xs">ממ"ד</Label>
+                  <div>
+                    <Label className="text-xs">תכונות</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full h-8 text-xs justify-start">
+                          תכונות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad].filter(Boolean).length})
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-40 p-3" align="start">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="parking"
+                              checked={formData.parking || false}
+                              onCheckedChange={(checked) => handleInputChange('parking', checked)}
+                            />
+                            <Label htmlFor="parking" className="text-sm cursor-pointer">חניה</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="elevator"
+                              checked={formData.elevator || false}
+                              onCheckedChange={(checked) => handleInputChange('elevator', checked)}
+                            />
+                            <Label htmlFor="elevator" className="text-sm cursor-pointer">מעלית</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="balcony"
+                              checked={formData.balcony || false}
+                              onCheckedChange={(checked) => handleInputChange('balcony', checked)}
+                            />
+                            <Label htmlFor="balcony" className="text-sm cursor-pointer">מרפסת</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="mamad"
+                              checked={formData.mamad || false}
+                              onCheckedChange={(checked) => handleInputChange('mamad', checked)}
+                            />
+                            <Label htmlFor="mamad" className="text-sm cursor-pointer">ממ"ד</Label>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
                     <Switch
