@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
+import { Languages, Loader2 } from 'lucide-react';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -30,8 +31,9 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   onClose,
   onSave
 }) => {
-  const [formData, setFormData] = useState<Property>(property);
+  const [formData, setFormData] = useState<Property & { title_en?: string; description_en?: string; neighborhood_en?: string }>(property as any);
   const [loading, setLoading] = useState(false);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
@@ -62,16 +64,86 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     const updatedProperty = {
       ...property,
       assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId,
-      showOnWebsite: (property as any).show_on_website !== false
+      showOnWebsite: (property as any).show_on_website !== false,
+      title_en: '',
+      description_en: '',
+      neighborhood_en: ''
     };
     setFormData(updatedProperty as any);
     
-    // Load images from property_images table when modal opens
+    // Load images and English fields from property when modal opens
     if (isOpen && property.id) {
       loadPropertyImages();
       loadPropertyWebsiteFlag();
+      loadEnglishFields();
     }
   }, [property, isOpen]);
+
+  const loadEnglishFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('title_en, description_en, neighborhood_en')
+        .eq('id', property.id)
+        .single();
+
+      if (!error && data) {
+        setFormData(prev => ({
+          ...prev,
+          title_en: data.title_en || '',
+          description_en: data.description_en || '',
+          neighborhood_en: data.neighborhood_en || ''
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading English fields:', error);
+    }
+  };
+
+  const translateField = async (sourceField: string, targetField: string, direction: 'he-en' | 'en-he') => {
+    const sourceValue = (formData as any)[sourceField];
+    if (!sourceValue || sourceValue.trim() === '') {
+      toast({
+        title: "אין טקסט לתרגום",
+        description: "נא למלא את השדה המקור לפני התרגום",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTranslatingField(targetField);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-text', {
+        body: { 
+          text: sourceValue, 
+          targetLanguage: direction === 'he-en' ? 'en' : 'he',
+          context: sourceField.includes('title') ? 'property title' : sourceField.includes('description') ? 'property description' : 'neighborhood name'
+        }
+      });
+      
+      if (error) throw error;
+      
+      setFormData(prev => ({
+        ...prev,
+        [targetField]: data.translatedText || data.translated || ''
+      }));
+      
+      toast({
+        title: "תורגם בהצלחה",
+        description: direction === 'he-en' ? "הטקסט תורגם לאנגלית" : "הטקסט תורגם לעברית"
+      });
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      toast({
+        title: "שגיאה בתרגום",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setTranslatingField(null);
+    }
+  };
 
   const loadPropertyWebsiteFlag = async () => {
     try {
@@ -177,13 +249,16 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           bathrooms: (formData as any).bathrooms || null,
           building_floors: (formData as any).buildingFloors || null,
           title: (formData as any).title || null,
+          title_en: (formData as any).title_en || null,
           description: (formData as any).description || null,
+          description_en: (formData as any).description_en || null,
           acquisition_cost: (formData as any).acquisitionCost || null,
           renovation_costs: (formData as any).renovationCosts || null,
           current_market_value: (formData as any).currentMarketValue || null,
           featured: (formData as any).featured || false,
           show_management_badge: formData.showManagementBadge !== false,
           show_on_website: (formData as any).showOnWebsite !== false,
+          neighborhood_en: (formData as any).neighborhood_en || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -364,13 +439,50 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="neighborhood">אזור/שכונה (מוצג באתר במקום הכתובת)</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="neighborhood" className="flex-1">אזור/שכונה (מוצג באתר במקום הכתובת)</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('neighborhood', 'neighborhood_en', 'he-en')}
+                      disabled={translatingField === 'neighborhood_en'}
+                    >
+                      {translatingField === 'neighborhood_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→EN</span>
+                    </Button>
+                  </div>
                   <Input
                     id="neighborhood"
                     value={(formData as any).neighborhood || ''}
                     onChange={(e) => handleInputChange('neighborhood' as any, e.target.value)}
                     placeholder="לדוגמה: צפון ישן, מרכז תל אביב, פלורנטין..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="neighborhood_en" className="flex-1">Neighborhood (English)</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('neighborhood_en', 'neighborhood', 'en-he')}
+                      disabled={translatingField === 'neighborhood'}
+                    >
+                      {translatingField === 'neighborhood' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→HE</span>
+                    </Button>
+                  </div>
+                  <Input
+                    id="neighborhood_en"
+                    value={(formData as any).neighborhood_en || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, neighborhood_en: e.target.value }))}
+                    placeholder="e.g., Old North, Central Tel Aviv, Florentin..."
+                    dir="ltr"
                   />
                 </div>
                 
@@ -461,8 +573,21 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="title">כותרת</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="title" className="flex-1">כותרת</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('title', 'title_en', 'he-en')}
+                      disabled={translatingField === 'title_en'}
+                    >
+                      {translatingField === 'title_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→EN</span>
+                    </Button>
+                  </div>
                   <Input
                     id="title"
                     value={(formData as any).title || ''}
@@ -471,14 +596,76 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="description">תיאור</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="title_en" className="flex-1">Title (English)</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('title_en', 'title', 'en-he')}
+                      disabled={translatingField === 'title'}
+                    >
+                      {translatingField === 'title' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→HE</span>
+                    </Button>
+                  </div>
+                  <Input
+                    id="title_en"
+                    value={(formData as any).title_en || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title_en: e.target.value }))}
+                    placeholder="Beautiful Garden Apartment in Old North"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="description" className="flex-1">תיאור</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('description', 'description_en', 'he-en')}
+                      disabled={translatingField === 'description_en'}
+                    >
+                      {translatingField === 'description_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→EN</span>
+                    </Button>
+                  </div>
                   <Textarea
                     id="description"
                     value={(formData as any).description || ''}
                     onChange={(e) => handleInputChange('description' as any, e.target.value)}
                     placeholder="3 חדרים עם גישה לחצר..."
                     rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="description_en" className="flex-1">Description (English)</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => translateField('description_en', 'description', 'en-he')}
+                      disabled={translatingField === 'description'}
+                    >
+                      {translatingField === 'description' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                      <span className="mr-1">→HE</span>
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="description_en"
+                    value={(formData as any).description_en || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
+                    placeholder="3 rooms with garden access..."
+                    rows={3}
+                    dir="ltr"
                   />
                 </div>
 
