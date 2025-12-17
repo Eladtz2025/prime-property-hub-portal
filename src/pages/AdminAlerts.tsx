@@ -4,7 +4,7 @@ import { AlertCard } from '@/components/AlertCard';
 import { Alert } from '@/types/property';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Play, TestTube, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Play, TestTube, CheckCircle2, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -79,6 +79,31 @@ export const AdminAlerts = () => {
     onError: (error: any) => {
       toast({
         title: 'שגיאה בבדיקת חוזים',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Send test message mutation
+  const sendTestMessage = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-lease-expiry', {
+        body: { send_test: true }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'הודעת טסט נשלחה!',
+        description: `נשלחו ${data.messagesSent} הודעות WhatsApp לאלעד וטלי`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'שגיאה בשליחת הודעת טסט',
         description: error.message,
         variant: 'destructive'
       });
@@ -181,6 +206,15 @@ export const AdminAlerts = () => {
             >
               <Play className="h-4 w-4 ml-2" />
               {runLeaseCheck.isPending ? 'שולח...' : 'הרץ ושלח התראות'}
+            </Button>
+            <Button
+              onClick={() => sendTestMessage.mutate()}
+              disabled={sendTestMessage.isPending}
+              variant="secondary"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              <Send className="h-4 w-4 ml-2" />
+              {sendTestMessage.isPending ? 'שולח...' : 'שלח הודעת טסט'}
             </Button>
           </div>
           
