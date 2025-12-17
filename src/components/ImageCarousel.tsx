@@ -133,7 +133,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
       <Card className={className}>
         <CardContent className="p-0 relative">
           {/* Fixed height container with blurred background */}
-          <div className="relative h-[50vh] max-h-[500px] min-h-[280px] overflow-hidden rounded-t-lg bg-black/5">
+          <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
             
             {/* Blurred background layer - same image enlarged and blurred */}
             {!isVideo && (
