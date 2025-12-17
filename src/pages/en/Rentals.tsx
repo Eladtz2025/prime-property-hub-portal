@@ -36,14 +36,15 @@ const EnglishRentals = () => {
   // Use real data
   const properties = (realProperties || []).map(prop => ({
     id: prop.id,
-    title: prop.title || '',
+    title: prop.title_en || prop.title || '',
     address: prop.address,
     city: prop.city,
+    neighborhood: prop.neighborhood_en || prop.neighborhood || prop.city,
     status: prop.status,
     monthly_rent: prop.monthly_rent || 0,
     rooms: prop.rooms,
     property_size: prop.property_size,
-    description: prop.description || '',
+    description: prop.description_en || prop.description || '',
     image: prop.images[0]?.image_url || '',
     features: [
       prop.parking ? 'Parking' : null,
@@ -135,10 +136,10 @@ const EnglishRentals = () => {
                     )}
                   </div>
                   <div className="p-6">
-                    <h3 className="text-lg font-bold mb-2">{translations[property.title] || property.title}</h3>
+                    <h3 className="text-lg font-bold mb-2">{property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{removeAddressNumber(translations[property.address] || property.address)}, {translations[property.city] || property.city}</span>
+                      <span>{property.neighborhood}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (
@@ -155,7 +156,7 @@ const EnglishRentals = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {translations[property.description] || property.description}
+                      {property.description}
                     </p>
                     <div className="flex gap-2 mb-4 flex-wrap">
                       {property.features.map((feature, idx) => (
