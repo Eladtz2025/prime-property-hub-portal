@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/property/:id",
+      "destination": "/api/og-redirect"
+    },
+    {
+      "source": "/en/property/:id",
+      "destination": "/api/og-redirect"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.translate-text]
 verify_jwt = false
+
+[functions.og-property]
+verify_jwt = false
