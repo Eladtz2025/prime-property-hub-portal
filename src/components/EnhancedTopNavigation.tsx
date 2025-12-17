@@ -24,8 +24,8 @@ import {
 
 const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
-  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];
 
 interface EnhancedTopNavigationProps {
