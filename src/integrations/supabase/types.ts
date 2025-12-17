@@ -730,6 +730,7 @@ export type Database = {
           building_committee_fee: number | null
           building_floors: number | null
           city: string
+          co_brokerage_status: string | null
           contact_attempts: number
           contact_name: string | null
           contact_notes: string | null
@@ -777,6 +778,7 @@ export type Database = {
           building_committee_fee?: number | null
           building_floors?: number | null
           city: string
+          co_brokerage_status?: string | null
           contact_attempts?: number
           contact_name?: string | null
           contact_notes?: string | null
@@ -824,6 +826,7 @@ export type Database = {
           building_committee_fee?: number | null
           building_floors?: number | null
           city?: string
+          co_brokerage_status?: string | null
           contact_attempts?: number
           contact_name?: string | null
           contact_notes?: string | null
