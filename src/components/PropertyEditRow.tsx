@@ -366,6 +366,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         id="ownerName"
                         value={formData.ownerName}
                         onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                        dir="rtl"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -404,6 +405,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         id="tenantName"
                         value={formData.tenantName || ''}
                         onChange={(e) => handleInputChange('tenantName', e.target.value)}
+                        dir="rtl"
                         className="h-8 text-sm"
                       />
                     </div>
@@ -451,6 +453,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       id="address"
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
+                      dir="rtl"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -460,6 +463,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       id="city"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
+                      dir="rtl"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -729,6 +733,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       value={(formData as any).title || ''}
                       onChange={(e) => handleInputChange('title' as any, e.target.value)}
                       placeholder="דירת גן מהממת בצפון הישן"
+                      dir="rtl"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -781,6 +786,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('description' as any, e.target.value)}
                       placeholder="3 חדרים עם גישה לחצר..."
                       rows={2}
+                      dir="rtl"
                       className="text-sm"
                     />
                   </div>
