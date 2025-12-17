@@ -363,7 +363,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     value={(formData as any).property_type || 'rental'} 
                     onValueChange={(value) => handleInputChange('property_type' as any, value)}
                   >
-                    <SelectTrigger className="h-8 text-sm w-28">
+                    <SelectTrigger className="h-8 text-sm w-32">
                       <SelectValue placeholder="בחר סוג" />
                     </SelectTrigger>
                     <SelectContent>
@@ -645,32 +645,34 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="featured"
-                      checked={(formData as any).featured || false}
-                      onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
-                    />
-                    <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="showOnWebsite"
-                      checked={(formData as any).showOnWebsite !== false}
-                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
-                    />
-                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
-                  </div>
-                  {(formData as any).property_type === 'management' && (
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4 px-3 py-1.5 border rounded bg-background">
+                    <div className="flex items-center gap-1.5">
                       <Checkbox
-                        id="showManagementBadge"
-                        checked={formData.showManagementBadge !== false}
-                        onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                        id="featured"
+                        checked={(formData as any).featured || false}
+                        onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
                       />
-                      <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג ניהול</Label>
+                      <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
                     </div>
-                  )}
+                    <div className="flex items-center gap-1.5">
+                      <Checkbox
+                        id="showOnWebsite"
+                        checked={(formData as any).showOnWebsite !== false}
+                        onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                      />
+                      <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
+                    </div>
+                    {(formData as any).property_type === 'management' && (
+                      <div className="flex items-center gap-1.5">
+                        <Checkbox
+                          id="showManagementBadge"
+                          checked={formData.showManagementBadge !== false}
+                          onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                        />
+                        <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג ניהול</Label>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Status, Rent, Fees, Dates */}
