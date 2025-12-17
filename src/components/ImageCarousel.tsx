@@ -149,70 +149,73 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             
             {/* Main image/video layer - centered with contain */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
-              {isVideo ? (
-                <VideoWithPlaceholder
-                  src={currentImage.url}
-                  className="max-w-full max-h-full object-contain"
-                  controls={true}
-                />
-              ) : (
-                <ImageWithPlaceholder
-                  src={currentImage.url}
-                  alt={currentImage.name}
-                  className="max-w-full max-h-full object-contain drop-shadow-lg"
-                  loading="eager"
-                  sizes="(max-width: 768px) 100vw, 60vw"
-                />
-              )}
+              {/* Inner wrapper - shrinks to media size, controls positioned on it */}
+              <div className="relative inline-block max-w-full max-h-full">
+                {isVideo ? (
+                  <VideoWithPlaceholder
+                    src={currentImage.url}
+                    className="max-w-full max-h-[60vh] object-contain"
+                    controls={true}
+                  />
+                ) : (
+                  <ImageWithPlaceholder
+                    src={currentImage.url}
+                    alt={currentImage.name}
+                    className="max-w-full max-h-[60vh] object-contain drop-shadow-lg"
+                    loading="eager"
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                  />
+                )}
+                
+                {/* Price label on image */}
+                {priceLabel && !isVideo && (
+                  <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg">
+                    {priceLabel}
+                  </div>
+                )}
+                
+                {/* Navigation arrows on image */}
+                {images.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg"
+                      onClick={nextImage}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg"
+                      onClick={prevImage}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+                
+                {/* Fullscreen button on image */}
+                {!isVideo && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-3 right-3 h-9 w-9 shadow-lg"
+                    onClick={() => setIsFullscreen(true)}
+                  >
+                    <Expand className="h-4 w-4" />
+                  </Button>
+                )}
+                
+                {/* Image counter on image */}
+                {images.length > 1 && (
+                  <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
+                    {currentIndex + 1} / {images.length}
+                  </div>
+                )}
+              </div>
             </div>
-            
-            {/* Price label on main image */}
-            {priceLabel && !isVideo && (
-              <div className="absolute top-4 left-4 z-20 bg-primary text-primary-foreground px-4 py-2 rounded-md font-bold text-base shadow-lg">
-                {priceLabel}
-              </div>
-            )}
-            
-            {/* Navigation arrows */}
-            {images.length > 1 && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 z-20 shadow-lg"
-                  onClick={nextImage}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 z-20 shadow-lg"
-                  onClick={prevImage}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </>
-            )}
-            
-            {/* Fullscreen button - only for images */}
-            {!isVideo && (
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute top-3 right-3 h-9 w-9 z-20 shadow-lg"
-                onClick={() => setIsFullscreen(true)}
-              >
-                <Expand className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {/* Image counter */}
-            {images.length > 1 && (
-              <div className="absolute bottom-4 right-4 z-20 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
-                {currentIndex + 1} / {images.length}
-              </div>
-            )}
           </div>
           
           {/* Thumbnail strip */}
