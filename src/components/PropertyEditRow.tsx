@@ -61,6 +61,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
     const updatedProperty = {
       ...property,
       assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId,
+      co_brokerage_status: (property as any).co_brokerage_status || 'not_open',
       showOnWebsite: (property as any).show_on_website !== false,
       title_en: '',
       description_en: '',
@@ -220,6 +221,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           owner_name: formData.ownerName,
           owner_phone: formData.ownerPhone,
           assigned_user_id: (formData as any).assignedUserId || null,
+          co_brokerage_status: (formData as any).co_brokerage_status || 'not_open',
           status: formData.status,
           contact_status: formData.contactStatus,
           contact_attempts: formData.contactAttempts,
@@ -360,7 +362,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Agent, Owner & Tenant Info (horizontal) */}
-              <div className={`grid grid-cols-2 md:grid-cols-4 items-end gap-3 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-5' : 'lg:grid-cols-7'}`} dir="rtl">
+              <div className={`grid grid-cols-2 md:grid-cols-4 items-end gap-3 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-6' : 'lg:grid-cols-8'}`} dir="rtl">
                 {/* סוג הנכס */}
                 <div className="space-y-1">
                   <Label className="text-xs">סוג הנכס</Label>
@@ -396,6 +398,26 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                           {user.full_name || user.email}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* שיתוף פעולה מתווכים */}
+                <div className="space-y-1">
+                  <Label className="text-xs">שת״פ מתווכים</Label>
+                  <Select 
+                    value={(formData as any).co_brokerage_status || 'not_open'} 
+                    onValueChange={(value) => handleInputChange('co_brokerage_status' as any, value)}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="בחר סטטוס" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_open">לא פתוח</SelectItem>
+                      <SelectItem value="coop_25">שת״פ 25%</SelectItem>
+                      <SelectItem value="coop_33">שת״פ 33%</SelectItem>
+                      <SelectItem value="coop_50">שת״פ 50%</SelectItem>
+                      <SelectItem value="by_agreement">לפי סיכום</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
