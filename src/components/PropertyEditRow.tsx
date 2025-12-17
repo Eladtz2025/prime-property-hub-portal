@@ -355,7 +355,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
 
             <TabsContent value="details" className="space-y-4">
               {/* Row 1: Property Type, Agent, Owner & Tenant Info (horizontal) */}
-              <div className={`grid grid-cols-1 gap-4 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-[auto_auto_1fr]' : 'lg:grid-cols-[auto_auto_1fr_1fr]'}`} dir="rtl">
+              <div className={`grid grid-cols-1 items-end gap-4 p-3 rounded-lg border bg-background/50 ${(formData as any).property_type === 'sale' ? 'lg:grid-cols-[auto_auto_1fr]' : 'lg:grid-cols-[auto_auto_1fr_1fr]'}`} dir="rtl">
                 {/* Property Type - ראשון מימין */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
@@ -645,31 +645,28 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
+                  <div className="flex items-center gap-2">
+                    <Checkbox
                       id="featured"
                       checked={(formData as any).featured || false}
                       onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
-                      className="scale-75"
                     />
                     <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
+                  <div className="flex items-center gap-2">
+                    <Checkbox
                       id="showOnWebsite"
                       checked={(formData as any).showOnWebsite !== false}
                       onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
-                      className="scale-75"
                     />
                     <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
                   {(formData as any).property_type === 'management' && (
-                    <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                      <Switch
+                    <div className="flex items-center gap-2">
+                      <Checkbox
                         id="showManagementBadge"
                         checked={formData.showManagementBadge !== false}
                         onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                        className="scale-75"
                       />
                       <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג ניהול</Label>
                     </div>
