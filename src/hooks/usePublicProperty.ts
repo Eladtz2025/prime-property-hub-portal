@@ -55,7 +55,8 @@ export const usePublicProperty = (propertyId: string | undefined) => {
               image_url,
               alt_text,
               is_main,
-              order_index
+              order_index,
+              media_type
             )
           `)
           .eq('id', propertyId)
@@ -112,7 +113,8 @@ export const usePublicProperty = (propertyId: string | undefined) => {
               id: img.id,
               image_url: img.image_url,
               alt_text: img.alt_text,
-              is_main: img.is_main || false
+              is_main: img.is_main || false,
+              media_type: (img.media_type as 'image' | 'video') || 'image'
             }))
         };
 

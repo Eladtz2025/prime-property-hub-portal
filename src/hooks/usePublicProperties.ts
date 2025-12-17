@@ -40,6 +40,7 @@ export interface PublicProperty {
     image_url: string;
     alt_text?: string;
     is_main: boolean;
+    media_type?: 'image' | 'video';
   }[];
 }
 
@@ -89,7 +90,8 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
               image_url,
               alt_text,
               is_main,
-              order_index
+              order_index,
+              media_type
             )
           `)
           .eq('property_type', propertyType)
@@ -139,7 +141,8 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
               id: img.id,
               image_url: img.image_url,
               alt_text: img.alt_text,
-              is_main: img.is_main || false
+              is_main: img.is_main || false,
+              media_type: (img.media_type as 'image' | 'video') || 'image'
             }))
         }));
 
