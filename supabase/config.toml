@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.whatsapp-status]
 verify_jwt = false
+
+[functions.check-lease-expiry]
+verify_jwt = false

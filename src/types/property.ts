@@ -91,4 +91,5 @@ export interface Alert {
   tenantName?: string;
   dueDate?: string;
   createdAt: string;
+  isRead?: boolean;
 }

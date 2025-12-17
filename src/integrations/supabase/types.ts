@@ -340,6 +340,57 @@ export type Database = {
           },
         ]
       }
+      lease_expiry_alerts: {
+        Row: {
+          created_at: string
+          days_before: number
+          id: string
+          lease_end_date: string
+          notification_sent: boolean | null
+          property_id: string
+          sent_at: string
+          tenant_id: string
+          whatsapp_sent: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          days_before: number
+          id?: string
+          lease_end_date: string
+          notification_sent?: boolean | null
+          property_id: string
+          sent_at?: string
+          tenant_id: string
+          whatsapp_sent?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          days_before?: number
+          id?: string
+          lease_end_date?: string
+          notification_sent?: boolean | null
+          property_id?: string
+          sent_at?: string
+          tenant_id?: string
+          whatsapp_sent?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_expiry_alerts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_expiry_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           category: string
