@@ -46,7 +46,7 @@ const HebrewNeighborhoods = () => {
     {
       id: "old-north",
       name: "צפון הישן",
-      description: "אזור מגורים שקט עם מורשת באוהאוס ואטרקציה משפחתית",
+      description: "שקט ואיכות חיים בלב העיר",
       imageUrl: "/images/en/neighborhoods/old-north-hero.jpg",
       avgPrice: "₪3.5M - ₪9M",
       highlights: ["ידידותי למשפחות", "אוצרות באוהאוס", "פארקים ושטחים ירוקים"],
