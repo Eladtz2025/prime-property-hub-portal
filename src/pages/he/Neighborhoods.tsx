@@ -108,7 +108,7 @@ const HebrewNeighborhoods = () => {
                 </div>
 
                 <div className="p-6 space-y-4 text-right">
-                  <div className="flex items-center gap-2 flex-row-reverse text-primary">
+                  <div className="flex items-center gap-2 flex-row-reverse justify-end text-primary">
                     <TrendingUp className="w-5 h-5" />
                     <span className="font-montserrat font-semibold">
                       {neighborhood.avgPrice}
@@ -117,7 +117,7 @@ const HebrewNeighborhoods = () => {
 
                   <div className="space-y-2">
                     {neighborhood.highlights.map((highlight, index) => (
-                      <div key={index} className="flex items-center gap-2 flex-row-reverse text-muted-foreground">
+                      <div key={index} className="flex items-center gap-2 flex-row-reverse justify-end text-muted-foreground">
                         <MapPin className="w-4 h-4" />
                         <span className="font-montserrat text-sm">{highlight}</span>
                       </div>
