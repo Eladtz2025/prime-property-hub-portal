@@ -50,7 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({
               <h1 className="font-bold text-foreground text-xl leading-tight">
                 City Market CRM 
               </h1>
-              <p className="text-sm text-muted-foreground">ניהול נכסים</p>
+              
             </div>
           </div>
           
