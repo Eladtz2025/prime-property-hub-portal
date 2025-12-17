@@ -12,9 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Languages, Loader2 } from 'lucide-react';
+import { Languages, Loader2, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 
 interface PropertyEditRowProps {
@@ -59,6 +61,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
       ...property,
       assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId,
       showOnWebsite: (property as any).show_on_website !== false,
+      propertyType: (property as any).property_type || (property as any).propertyType || 'rental',
       title_en: '',
       description_en: '',
       neighborhood_en: ''
@@ -231,6 +234,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           elevator: formData.elevator || false,
           balcony: formData.balcony || false,
           yard: formData.yard || false,
+          mamad: formData.mamad || false,
           balcony_yard_size: formData.balconyYardSize || null,
           bathrooms: (formData as any).bathrooms || null,
           building_floors: (formData as any).buildingFloors || null,
@@ -245,6 +249,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           show_management_badge: formData.showManagementBadge !== false,
           show_on_website: (formData as any).showOnWebsite !== false,
           neighborhood_en: (formData as any).neighborhood_en || null,
+          property_type: (formData as any).propertyType || 'rental',
           updated_at: new Date().toISOString(),
         })
         .eq('id', formData.id);
@@ -504,6 +509,161 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
+                {/* Property specs: Type, Rooms, Bath, Floor, Size, Features, Toggles */}
+                <div className="grid grid-cols-4 md:grid-cols-9 gap-2 items-end">
+                  <div>
+                    <Label htmlFor="propertyType" className="text-xs">סוג</Label>
+                    <Select 
+                      value={(formData as any).propertyType || 'rental'} 
+                      onValueChange={(value) => handleInputChange('propertyType' as any, value)}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rental">השכרה</SelectItem>
+                        <SelectItem value="sale">מכירה</SelectItem>
+                        <SelectItem value="management">ניהול</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      step="0.5"
+                      className="text-center h-8 text-sm"
+                      value={formData.rooms || ''}
+                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={(formData as any).bathrooms || ''}
+                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="floor" className="text-xs">קומה</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleInputChange('floor', val === '' ? null : Number(val));
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
+                    <Input
+                      id="propertySize"
+                      type="number"
+                      className="text-center h-8 text-sm"
+                      value={formData.propertySize || ''}
+                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                    />
+                  </div>
+                  {(formData.balcony || formData.yard) && (
+                    <div>
+                      <Label htmlFor="balconyYardSize" className="text-xs">מ"ר מרפ/חצר</Label>
+                      <Input
+                        id="balconyYardSize"
+                        type="number"
+                        className="text-center h-8 text-sm"
+                        value={formData.balconyYardSize || ''}
+                        onChange={(e) => handleInputChange('balconyYardSize', e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs">תכונות</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-8 text-sm w-full justify-between">
+                          <span>
+                            {[formData.parking, formData.elevator, formData.balcony, formData.yard, formData.mamad].filter(Boolean).length} נבחרו
+                          </span>
+                          <ChevronDown className="h-3 w-3 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-40 p-2" align="start">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="feat-parking"
+                              checked={formData.parking || false}
+                              onCheckedChange={(checked) => handleInputChange('parking', checked as boolean)}
+                            />
+                            <Label htmlFor="feat-parking" className="text-sm cursor-pointer">חניה</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="feat-elevator"
+                              checked={formData.elevator || false}
+                              onCheckedChange={(checked) => handleInputChange('elevator', checked as boolean)}
+                            />
+                            <Label htmlFor="feat-elevator" className="text-sm cursor-pointer">מעלית</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="feat-balcony"
+                              checked={formData.balcony || false}
+                              onCheckedChange={(checked) => handleInputChange('balcony', checked as boolean)}
+                            />
+                            <Label htmlFor="feat-balcony" className="text-sm cursor-pointer">מרפסת</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="feat-yard"
+                              checked={formData.yard || false}
+                              onCheckedChange={(checked) => handleInputChange('yard', checked as boolean)}
+                            />
+                            <Label htmlFor="feat-yard" className="text-sm cursor-pointer">חצר</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="feat-mamad"
+                              checked={formData.mamad || false}
+                              onCheckedChange={(checked) => handleInputChange('mamad', checked as boolean)}
+                            />
+                            <Label htmlFor="feat-mamad" className="text-sm cursor-pointer">ממ"ד</Label>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="showOnWebsite"
+                      checked={(formData as any).showOnWebsite !== false}
+                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                      className="scale-75"
+                    />
+                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
+                  </div>
+                  {(formData as any).propertyType === 'management' && (
+                    <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                      <Switch
+                        id="showManagementBadge"
+                        checked={formData.showManagementBadge !== false}
+                        onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                        className="scale-75"
+                      />
+                      <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
+                    </div>
+                  )}
+                </div>
+
                 {/* Status, Rent, Fees, Dates */}
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                   <div>
@@ -568,214 +728,6 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       onChange={(e) => handleInputChange('leaseEndDate', e.target.value)}
                       className="h-8 text-sm"
                     />
-                  </div>
-                </div>
-
-                {/* Title HE/EN */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="title" className="text-xs flex-1">כותרת</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('title', 'title_en', 'he-en')}
-                        disabled={translatingField === 'title_en'}
-                      >
-                        {translatingField === 'title_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                        <span className="mr-1">→EN</span>
-                      </Button>
-                    </div>
-                    <Input
-                      id="title"
-                      value={(formData as any).title || ''}
-                      onChange={(e) => handleInputChange('title' as any, e.target.value)}
-                      placeholder="דירת גן מהממת בצפון הישן"
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="title_en" className="text-xs flex-1">Title</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('title_en', 'title', 'en-he')}
-                        disabled={translatingField === 'title'}
-                      >
-                        {translatingField === 'title' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                        <span className="mr-1">→HE</span>
-                      </Button>
-                    </div>
-                    <Input
-                      id="title_en"
-                      value={(formData as any).title_en || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title_en: e.target.value }))}
-                      placeholder="Beautiful Garden Apartment"
-                      dir="ltr"
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Description HE/EN */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="description" className="text-xs flex-1">תיאור</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('description', 'description_en', 'he-en')}
-                        disabled={translatingField === 'description_en'}
-                      >
-                        {translatingField === 'description_en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                        <span className="mr-1">→EN</span>
-                      </Button>
-                    </div>
-                    <Textarea
-                      id="description"
-                      value={(formData as any).description || ''}
-                      onChange={(e) => handleInputChange('description' as any, e.target.value)}
-                      placeholder="3 חדרים עם גישה לחצר..."
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Label htmlFor="description_en" className="text-xs flex-1">Description</Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => translateField('description_en', 'description', 'en-he')}
-                        disabled={translatingField === 'description'}
-                      >
-                        {translatingField === 'description' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                        <span className="mr-1">→HE</span>
-                      </Button>
-                    </div>
-                    <Textarea
-                      id="description_en"
-                      value={(formData as any).description_en || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
-                      placeholder="3 rooms with garden access..."
-                      rows={2}
-                      dir="ltr"
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
-                <div className="grid grid-cols-5 md:grid-cols-10 gap-2 items-end">
-                  <div>
-                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
-                    <Input
-                      id="rooms"
-                      type="number"
-                      step="0.5"
-                      className="text-center h-8 text-sm"
-                      value={formData.rooms || ''}
-                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
-                    <Input
-                      id="bathrooms"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={(formData as any).bathrooms || ''}
-                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="floor" className="text-xs">קומה</Label>
-                    <Input
-                      id="floor"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleInputChange('floor', val === '' ? null : Number(val));
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
-                    <Input
-                      id="propertySize"
-                      type="number"
-                      className="text-center h-8 text-sm"
-                      value={formData.propertySize || ''}
-                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="parking"
-                      checked={formData.parking || false}
-                      onCheckedChange={(checked) => handleInputChange('parking', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="parking" className="cursor-pointer text-xs">חניה</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="elevator"
-                      checked={formData.elevator || false}
-                      onCheckedChange={(checked) => handleInputChange('elevator', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="elevator" className="cursor-pointer text-xs">מעלית</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="balcony"
-                      checked={formData.balcony || false}
-                      onCheckedChange={(checked) => handleInputChange('balcony', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="balcony" className="cursor-pointer text-xs">מרפסת</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="mamad"
-                      checked={formData.mamad || false}
-                      onCheckedChange={(checked) => handleInputChange('mamad', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="mamad" className="cursor-pointer text-xs">ממ"ד</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showOnWebsite"
-                      checked={(formData as any).showOnWebsite !== false}
-                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
-                  </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showManagementBadge"
-                      checked={formData.showManagementBadge !== false}
-                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                      className="scale-75"
-                    />
-                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
                   </div>
                 </div>
               </div>
