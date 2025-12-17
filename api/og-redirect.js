@@ -35,6 +35,9 @@ export default async function handler(request) {
   if (pathParts[0] === 'property' && pathParts[1]) {
     propertyId = pathParts[1];
     lang = 'he';
+  } else if (pathParts[0] === 'he' && pathParts[1] === 'property' && pathParts[2]) {
+    propertyId = pathParts[2];
+    lang = 'he';
   } else if (pathParts[0] === 'en' && pathParts[1] === 'property' && pathParts[2]) {
     propertyId = pathParts[2];
     lang = 'en';
