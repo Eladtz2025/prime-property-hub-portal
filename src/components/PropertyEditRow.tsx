@@ -511,33 +511,52 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                 </div>
 
                 {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-end">
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showManagementBadge"
-                      checked={formData.showManagementBadge !== false}
-                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
-                      className="scale-75"
+                <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-end" dir="rtl">
+                  <div>
+                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      step="0.5"
+                      className="text-center h-8 text-sm"
+                      value={formData.rooms || ''}
+                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
                     />
-                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="showOnWebsite"
-                      checked={(formData as any).showOnWebsite !== false}
-                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
-                      className="scale-75"
+                  <div>
+                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={(formData as any).bathrooms || ''}
+                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
                     />
-                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
-                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
-                    <Switch
-                      id="featured"
-                      checked={(formData as any).featured || false}
-                      onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
-                      className="scale-75"
+                  <div>
+                    <Label htmlFor="floor" className="text-xs">קומה</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      min="0"
+                      className="text-center h-8 text-sm"
+                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleInputChange('floor', val === '' ? null : Number(val));
+                      }}
                     />
-                    <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
+                  </div>
+                  <div>
+                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
+                    <Input
+                      id="propertySize"
+                      type="number"
+                      className="text-center h-8 text-sm"
+                      value={formData.propertySize || ''}
+                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">תוספות</Label>
@@ -590,12 +609,11 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                             <Label htmlFor="yard" className="text-sm cursor-pointer">חצר</Label>
                           </div>
                           {(formData.balcony || formData.yard) && (
-                            <div className="mt-3 border-t pt-3">
-                              <Label className="text-xs mb-1 block">גודל מרפסת/חצר (מ"ר)</Label>
+                            <div className="pt-2 border-t">
+                              <Label className="text-xs">גודל מרפסת/חצר (מ"ר)</Label>
                               <Input
                                 type="number"
-                                className="h-7 text-sm"
-                                placeholder="0"
+                                className="h-7 text-sm mt-1"
                                 value={formData.balconyYardSize || ''}
                                 onChange={(e) => handleInputChange('balconyYardSize', e.target.value ? Number(e.target.value) : null)}
                               />
@@ -605,51 +623,32 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div>
-                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
-                    <Input
-                      id="propertySize"
-                      type="number"
-                      className="text-center h-8 text-sm"
-                      value={formData.propertySize || ''}
-                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="featured"
+                      checked={(formData as any).featured || false}
+                      onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
+                      className="scale-75"
                     />
+                    <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
                   </div>
-                  <div>
-                    <Label htmlFor="floor" className="text-xs">קומה</Label>
-                    <Input
-                      id="floor"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleInputChange('floor', val === '' ? null : Number(val));
-                      }}
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="showOnWebsite"
+                      checked={(formData as any).showOnWebsite !== false}
+                      onCheckedChange={(checked) => handleInputChange('showOnWebsite' as any, checked)}
+                      className="scale-75"
                     />
+                    <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
-                  <div>
-                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
-                    <Input
-                      id="bathrooms"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={(formData as any).bathrooms || ''}
-                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="showManagementBadge"
+                      checked={formData.showManagementBadge !== false}
+                      onCheckedChange={(checked) => handleInputChange('showManagementBadge', checked)}
+                      className="scale-75"
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
-                    <Input
-                      id="rooms"
-                      type="number"
-                      step="0.5"
-                      className="text-center h-8 text-sm"
-                      value={formData.rooms || ''}
-                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
-                    />
+                    <Label htmlFor="showManagementBadge" className="cursor-pointer text-xs">תג</Label>
                   </div>
                 </div>
 
