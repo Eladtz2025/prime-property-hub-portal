@@ -33,6 +33,7 @@ const PropertyDetailPage = () => {
     url: `${img.image_url}?t=${Date.now()}`,
     isPrimary: img.is_main,
     uploadedAt: new Date().toISOString(),
+    mediaType: img.media_type || 'image',
   })) || [];
 
   const handleWhatsApp = () => {
