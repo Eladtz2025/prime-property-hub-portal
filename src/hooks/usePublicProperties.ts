@@ -24,6 +24,7 @@ export interface PublicProperty {
   elevator?: boolean;
   balcony?: boolean;
   yard?: boolean;
+  mamad?: boolean;
   balcony_yard_size?: number;
   show_management_badge?: boolean;
   monthly_rent?: number;
@@ -76,6 +77,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             elevator,
             balcony,
             yard,
+            mamad,
             balcony_yard_size,
             show_management_badge,
             monthly_rent,
@@ -121,6 +123,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           elevator: property.elevator,
           balcony: property.balcony,
           yard: property.yard,
+          mamad: property.mamad,
           balcony_yard_size: property.balcony_yard_size,
           show_management_badge: property.show_management_badge,
           monthly_rent: property.monthly_rent,

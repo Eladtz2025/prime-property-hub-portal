@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { MapPin, Home, Bath, Square, Building2, Phone, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees, DollarSign, Share2 } from "lucide-react";
+import { MapPin, Home, Bath, Square, Building2, Phone, Check, Car, MoveUp, TreePine, MessageCircle, ChevronRight, Trees, DollarSign, Share2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -259,6 +259,12 @@ const EnglishPropertyDetail = () => {
                 Yard{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} sqm)` : ''}
               </Badge>
             )}
+            {property.mamad && (
+              <Badge variant="secondary" className="text-sm font-montserrat">
+                <Shield className="h-3 w-3 mr-1" />
+                Safe Room
+              </Badge>
+            )}
           </div>
 
           {/* Description */}
@@ -389,6 +395,12 @@ const EnglishPropertyDetail = () => {
                 <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
                   <Trees className="h-3 w-3 mr-1" />
                   Yard{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} sqm)` : ''}
+                </Badge>
+              )}
+              {property.mamad && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90 font-montserrat">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Safe Room
                 </Badge>
               )}
             </div>
