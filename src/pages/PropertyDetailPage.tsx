@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees } from 'lucide-react';
+import { ArrowRight, MapPin, Home, Bath, Square, Building2, Phone, Share2, Check, Car, MoveUp, TreePine, ChevronLeft, ChevronRight, Trees, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -246,6 +246,12 @@ const PropertyDetailPage = () => {
                 <Trees className="h-3 w-3 mr-1" />
               </Badge>
             )}
+            {property.mamad && (
+              <Badge variant="secondary" className="text-sm">
+                ממ"ד
+                <Shield className="h-3 w-3 mr-1" />
+              </Badge>
+            )}
           </div>
 
           {/* Description */}
@@ -383,6 +389,12 @@ const PropertyDetailPage = () => {
                 <Badge className="bg-secondary text-white hover:bg-secondary/90">
                   חצר{property.balcony_yard_size && !property.balcony ? ` (${property.balcony_yard_size} מ"ר)` : ''}
                   <Trees className="h-3 w-3 mr-1" />
+                </Badge>
+              )}
+              {property.mamad && (
+                <Badge className="bg-secondary text-white hover:bg-secondary/90">
+                  ממ"ד
+                  <Shield className="h-3 w-3 mr-1" />
                 </Badge>
               )}
             </div>

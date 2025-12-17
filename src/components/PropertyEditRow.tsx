@@ -775,6 +775,18 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                             />
                             <Label htmlFor="yard" className="text-sm cursor-pointer">חצר</Label>
                           </div>
+                          {(formData.balcony || formData.yard) && (
+                            <div className="mt-3 border-t pt-3">
+                              <Label className="text-xs mb-1 block">גודל מרפסת/חצר (מ"ר)</Label>
+                              <Input
+                                type="number"
+                                className="h-7 text-sm"
+                                placeholder="0"
+                                value={formData.balconyYardSize || ''}
+                                onChange={(e) => handleInputChange('balconyYardSize', e.target.value ? Number(e.target.value) : null)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </PopoverContent>
                     </Popover>
