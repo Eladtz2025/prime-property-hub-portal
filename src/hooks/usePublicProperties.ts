@@ -7,10 +7,13 @@ const log = logger.component('usePublicProperties');
 export interface PublicProperty {
   id: string;
   title?: string;
+  title_en?: string;
   address: string;
   city: string;
   neighborhood?: string;
+  neighborhood_en?: string;
   description?: string;
+  description_en?: string;
   property_type: 'rental' | 'sale' | 'management';
   status?: 'vacant' | 'occupied' | 'maintenance' | 'unknown';
   rooms?: number;
@@ -56,10 +59,13 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           .select(`
             id,
             title,
+            title_en,
             address,
             city,
             neighborhood,
+            neighborhood_en,
             description,
+            description_en,
             property_type,
             status,
             rooms,
@@ -98,10 +104,13 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
         const transformedProperties: PublicProperty[] = (propertiesWithImages || []).map(property => ({
           id: property.id,
           title: property.title || `${property.rooms} חדרים ${property.address}`,
+          title_en: property.title_en,
           address: property.address,
           city: property.city,
           neighborhood: property.neighborhood,
+          neighborhood_en: property.neighborhood_en,
           description: property.description,
+          description_en: property.description_en,
           property_type: property.property_type as 'rental' | 'sale' | 'management',
           status: property.status as 'vacant' | 'occupied' | 'maintenance' | 'unknown',
           rooms: property.rooms,

@@ -738,6 +738,7 @@ export type Database = {
           created_at: string
           current_market_value: number | null
           description: string | null
+          description_en: string | null
           elevator: boolean | null
           featured: boolean | null
           floor: number | null
@@ -747,6 +748,7 @@ export type Database = {
           monthly_rent: number | null
           municipal_tax: number | null
           neighborhood: string | null
+          neighborhood_en: string | null
           notes: string | null
           owner_email: string | null
           owner_name: string | null
@@ -760,6 +762,7 @@ export type Database = {
           show_on_website: boolean | null
           status: string
           title: string | null
+          title_en: string | null
           updated_at: string
           yard: boolean | null
         }
@@ -782,6 +785,7 @@ export type Database = {
           created_at?: string
           current_market_value?: number | null
           description?: string | null
+          description_en?: string | null
           elevator?: boolean | null
           featured?: boolean | null
           floor?: number | null
@@ -791,6 +795,7 @@ export type Database = {
           monthly_rent?: number | null
           municipal_tax?: number | null
           neighborhood?: string | null
+          neighborhood_en?: string | null
           notes?: string | null
           owner_email?: string | null
           owner_name?: string | null
@@ -804,6 +809,7 @@ export type Database = {
           show_on_website?: boolean | null
           status?: string
           title?: string | null
+          title_en?: string | null
           updated_at?: string
           yard?: boolean | null
         }
@@ -826,6 +832,7 @@ export type Database = {
           created_at?: string
           current_market_value?: number | null
           description?: string | null
+          description_en?: string | null
           elevator?: boolean | null
           featured?: boolean | null
           floor?: number | null
@@ -835,6 +842,7 @@ export type Database = {
           monthly_rent?: number | null
           municipal_tax?: number | null
           neighborhood?: string | null
+          neighborhood_en?: string | null
           notes?: string | null
           owner_email?: string | null
           owner_name?: string | null
@@ -848,6 +856,7 @@ export type Database = {
           show_on_website?: boolean | null
           status?: string
           title?: string | null
+          title_en?: string | null
           updated_at?: string
           yard?: boolean | null
         }
