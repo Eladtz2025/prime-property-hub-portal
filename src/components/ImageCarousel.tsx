@@ -1,10 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play } from 'lucide-react';
 import { PropertyImage } from '../types/property';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+
+interface ImageDimensions {
+  width: number;
+  height: number;
+}
 
 const ImageWithPlaceholder: React.FC<{
   src: string;
@@ -12,7 +17,8 @@ const ImageWithPlaceholder: React.FC<{
   className?: string;
   loading?: "lazy" | "eager";
   sizes?: string;
-}> = ({ src, alt, className, loading = "lazy", sizes }) => {
+  onDimensionsLoad?: (dimensions: ImageDimensions) => void;
+}> = ({ src, alt, className, loading = "lazy", sizes, onDimensionsLoad }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -22,6 +28,17 @@ const ImageWithPlaceholder: React.FC<{
       return `${url}?w=640 640w, ${url}?w=1024 1024w, ${url}?w=1920 1920w`;
     }
     return url;
+  };
+
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setIsLoaded(true);
+    if (onDimensionsLoad) {
+      onDimensionsLoad({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      });
+    }
   };
 
   if (hasError) {
@@ -45,7 +62,7 @@ const ImageWithPlaceholder: React.FC<{
         className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         loading={loading}
         decoding="async"
-        onLoad={() => setIsLoaded(true)}
+        onLoad={handleLoad}
         onError={() => setHasError(true)}
       />
     </div>
@@ -58,9 +75,21 @@ const VideoWithPlaceholder: React.FC<{
   className?: string;
   controls?: boolean;
   autoPlay?: boolean;
-}> = ({ src, className, controls = true, autoPlay = false }) => {
+  onDimensionsLoad?: (dimensions: ImageDimensions) => void;
+}> = ({ src, className, controls = true, autoPlay = false, onDimensionsLoad }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  const handleLoadedData = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    setIsLoaded(true);
+    if (onDimensionsLoad) {
+      onDimensionsLoad({
+        width: video.videoWidth,
+        height: video.videoHeight
+      });
+    }
+  };
 
   if (hasError) {
     return (
@@ -83,7 +112,7 @@ const VideoWithPlaceholder: React.FC<{
         controls={controls}
         autoPlay={autoPlay}
         playsInline
-        onLoadedData={() => setIsLoaded(true)}
+        onLoadedData={handleLoadedData}
         onError={() => setHasError(true)}
       />
     </div>
@@ -103,6 +132,33 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{[key: number]: ImageDimensions}>({});
+
+  const handleDimensionsLoad = useCallback((index: number, dimensions: ImageDimensions) => {
+    setImageDimensions(prev => ({
+      ...prev,
+      [index]: dimensions
+    }));
+  }, []);
+
+  // Calculate dynamic aspect ratio based on current image dimensions
+  const getAspectClasses = () => {
+    const dims = imageDimensions[currentIndex];
+    if (!dims) return 'aspect-video'; // Default 16:9 until loaded
+    
+    const ratio = dims.height / dims.width;
+    
+    // Portrait image (taller than wide)
+    if (ratio > 1.1) {
+      return 'aspect-[3/4]'; // 3:4 ratio for portrait
+    }
+    // Square-ish image
+    if (ratio > 0.9 && ratio <= 1.1) {
+      return 'aspect-square';
+    }
+    // Landscape image (wider than tall)
+    return 'aspect-video';
+  };
 
   if (!images || images.length === 0) {
     return (
@@ -132,12 +188,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
     <>
       <Card className={className}>
         <CardContent className="p-0 relative">
-          <div className="relative aspect-video bg-muted">
+          <div className={`relative bg-muted transition-all duration-300 ease-out max-h-[70vh] ${getAspectClasses()}`}>
             {isVideo ? (
               <VideoWithPlaceholder
                 src={currentImage.url}
                 className="w-full h-full object-contain rounded-t"
                 controls={true}
+                onDimensionsLoad={(dims) => handleDimensionsLoad(currentIndex, dims)}
               />
             ) : (
               <ImageWithPlaceholder
@@ -146,6 +203,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 className="w-full h-full object-contain rounded-t"
                 loading="eager"
                 sizes="(max-width: 768px) 100vw, 60vw"
+                onDimensionsLoad={(dims) => handleDimensionsLoad(currentIndex, dims)}
               />
             )}
             
