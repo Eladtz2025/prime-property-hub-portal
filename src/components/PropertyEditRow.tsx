@@ -403,6 +403,24 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
+                {/* Property Type */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground">סוג הנכס</h4>
+                  <Select 
+                    value={(formData as any).property_type || 'rental'} 
+                    onValueChange={(value) => handleInputChange('property_type' as any, value)}
+                  >
+                    <SelectTrigger className="h-8 text-sm w-48">
+                      <SelectValue placeholder="בחר סוג" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rental">השכרה</SelectItem>
+                      <SelectItem value="sale">מכירה</SelectItem>
+                      <SelectItem value="management">ניהול</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Owner Section */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground">בעל הנכס</h4>
