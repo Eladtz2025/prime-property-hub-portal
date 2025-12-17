@@ -233,6 +233,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           elevator: formData.elevator || false,
           balcony: formData.balcony || false,
           yard: formData.yard || false,
+          mamad: formData.mamad || false,
           balcony_yard_size: formData.balconyYardSize || null,
           bathrooms: (formData as any).bathrooms || null,
           building_floors: (formData as any).buildingFloors || null,
@@ -529,6 +530,15 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                     />
                     <Label htmlFor="showOnWebsite" className="cursor-pointer text-xs">באתר</Label>
                   </div>
+                  <div className="flex items-center gap-1 p-1.5 border rounded bg-background h-8">
+                    <Switch
+                      id="featured"
+                      checked={(formData as any).featured || false}
+                      onCheckedChange={(checked) => handleInputChange('featured' as any, checked)}
+                      className="scale-75"
+                    />
+                    <Label htmlFor="featured" className="cursor-pointer text-xs">מומלץ</Label>
+                  </div>
                   <div>
                     <Label className="text-xs">תוספות</Label>
                     <Popover>
@@ -695,6 +705,18 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       className="h-8 text-sm"
                     />
                   </div>
+                  {(formData as any).propertyType === 'sale' && (
+                    <div>
+                      <Label htmlFor="currentMarketValue" className="text-xs">מחיר מכירה</Label>
+                      <Input
+                        id="currentMarketValue"
+                        type="number"
+                        value={(formData as any).currentMarketValue || ''}
+                        onChange={(e) => handleInputChange('currentMarketValue' as any, e.target.value ? Number(e.target.value) : null)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="status" className="text-xs">סטטוס</Label>
                     <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
