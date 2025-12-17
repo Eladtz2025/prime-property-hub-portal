@@ -33,7 +33,7 @@ const ImageWithPlaceholder: React.FC<{
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full flex items-center justify-center">
       {!isLoaded && (
         <div className={`${className} absolute inset-0 bg-muted animate-pulse`} />
       )}
