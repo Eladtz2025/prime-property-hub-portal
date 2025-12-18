@@ -70,7 +70,7 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" dir="ltr">
         <DialogHeader>
           <DialogTitle className="font-playfair text-2xl">Get Free Consultation</DialogTitle>
           <DialogDescription className="font-montserrat">
