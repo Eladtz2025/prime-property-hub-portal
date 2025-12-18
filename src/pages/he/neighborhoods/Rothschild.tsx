@@ -6,6 +6,7 @@ import HebrewFooter from "@/components/he/Footer";
 import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
@@ -50,6 +51,15 @@ const RothschildNeighborhood = () => {
         backgroundImage="/images/en/neighborhoods/rothschild-hero.jpg"
         minHeight="100vh"
       />
+
+      <div className="container mx-auto px-4 pt-8">
+        <Breadcrumbs 
+          items={[
+            { label: "שכונות", href: "/he/neighborhoods" },
+            { label: "שדרות רוטשילד", href: "/he/neighborhoods/rothschild" }
+          ]} 
+        />
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-16">

@@ -6,6 +6,7 @@ import HebrewFooter from "@/components/he/Footer";
 import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const OldNorthNeighborhood = () => {
   const navigate = useNavigate();
@@ -20,6 +21,15 @@ const OldNorthNeighborhood = () => {
         backgroundImage="/images/en/neighborhoods/old-north-hero.jpg"
         minHeight="100vh"
       />
+
+      <div className="container mx-auto px-4 pt-8">
+        <Breadcrumbs 
+          items={[
+            { label: "שכונות", href: "/he/neighborhoods" },
+            { label: "צפון הישן", href: "/he/neighborhoods/old-north" }
+          ]} 
+        />
+      </div>
 
       <div className="container mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-3 gap-12">
