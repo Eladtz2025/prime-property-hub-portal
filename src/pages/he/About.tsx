@@ -159,16 +159,16 @@ const About = () => {
           }}>
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={sarahLeviReview} name="שרה לוי" rating={5} text="City Market עזרו לנו למצוא את דירת החלומות שלנו בנווה צדק. שירות מקצועי ואדיב, המלצה בחום!" />
+                  <TestimonialCard image={sarahLeviReview} name="רחל שפירא" rating={5} text="City Market עזרו לנו למצוא את דירת החלומות שלנו בנווה צדק. שירות מקצועי ואדיב, המלצה בחום!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={davidCohenReview} name="דוד כהן" rating={5} text="מקצועיות ברמה גבוהה. מכרתי דרכם דירה ברוטשילד במהירות ובמחיר מעולה. תודה רבה!" />
+                  <TestimonialCard image={davidCohenReview} name="דניאל פרץ" rating={5} text="מקצועיות ברמה גבוהה. מכרתי דרכם דירה ברוטשילד במהירות ובמחיר מעולה. תודה רבה!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={michalGolanReview} name="מיכל גולן" rating={5} text="ניהול הנכסים שלי בצורה מושלמת. תמיד זמינים, אמינים ומקצועיים. ממליצה בחום!" />
+                  <TestimonialCard image={michalGolanReview} name="נועה פלדמן" rating={5} text="ניהול הנכסים שלי בצורה מושלמת. תמיד זמינים, אמינים ומקצועיים. ממליצה בחום!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={yossiAbrahamReview} name="יוסי אברהם" rating={5} text="השכרתי דרכם דירה בדיזנגוף. התהליך היה חלק ומהיר, ממליץ בחום!" />
+                  <TestimonialCard image={yossiAbrahamReview} name="עמית בן-דוד" rating={5} text="השכרתי דרכם דירה בדיזנגוף. התהליך היה חלק ומהיר, ממליץ בחום!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard image={roiIsraeliReview} name="רועי ישראלי" rating={5} text="שירות יוצא דופן מההתחלה ועד הסוף. מצאו את הנכס המושלם למשפחה שלי בזמן שיא!" />
