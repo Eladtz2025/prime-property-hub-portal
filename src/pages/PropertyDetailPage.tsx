@@ -166,17 +166,13 @@ const PropertyDetailPage = () => {
       <div className="lg:hidden pt-16">
         {/* Breadcrumbs */}
         <div className="sticky top-16 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse" aria-label="Breadcrumb" dir="rtl">
-            <Link to="/" className="hover:text-primary transition-colors">
-              דף הבית
-            </Link>
-            <ChevronLeft className="h-4 w-4" />
-          <Link to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} className="hover:text-primary transition-colors">
-            {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
+          <Link 
+            to={property.property_type === 'sale' ? '/he/sales' : '/he/rentals'} 
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ChevronRight className="h-5 w-5" />
+            <span>חזרה ל{property.property_type === 'sale' ? 'נכסים למכירה' : 'נכסים להשכרה'}</span>
           </Link>
-            <ChevronLeft className="h-4 w-4" />
-            <span className="text-foreground">{property.title}</span>
-          </nav>
         </div>
 
         {/* Image Gallery */}
