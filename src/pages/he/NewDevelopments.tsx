@@ -5,33 +5,74 @@ import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 
 const NewDevelopments = () => {
-  const developments = [
+  const telAvivDevelopments = [
     {
-      title: "פרויקט נווה צדק",
-      location: "נווה צדק, תל אביב",
-      price: "החל מ-₪8,500,000",
-      imageUrl: "/images/en/neighborhoods/neve-tzedek.jpg",
-      type: "פרויקט חדש",
-    },
-    {
-      title: "פרויקט רוטשילד",
-      location: "שדרות רוטשילד, תל אביב",
+      title: "מגדל רוטשילד",
+      location: "תל אביב",
       price: "החל מ-₪12,000,000",
-      imageUrl: "/images/en/neighborhoods/rothschild.jpg",
+      imageUrl: "/images/developments/telaviv-rothschild-tower.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "פרויקט הצפון הישן",
-      location: "הצפון הישן, תל אביב",
-      price: "החל מ-₪9,000,000",
-      imageUrl: "/images/en/neighborhoods/old-north.jpg",
+      title: "נווה צדק רזידנסס",
+      location: "תל אביב",
+      price: "החל מ-₪8,500,000",
+      imageUrl: "/images/developments/telaviv-neve-tzedek.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "פרויקט פלורנטין",
-      location: "פלורנטין, תל אביב",
-      price: "החל מ-₪5,500,000",
-      imageUrl: "/images/en/neighborhoods/florentin.jpg",
+      title: "דיזנגוף טאוור",
+      location: "תל אביב",
+      price: "החל מ-₪7,200,000",
+      imageUrl: "/images/developments/telaviv-dizengoff-tower.jpg",
+      type: "פרויקט חדש",
+    },
+  ];
+
+  const herzliyaDevelopments = [
+    {
+      title: "הרצליה פיתוח מרינה",
+      location: "הרצליה",
+      price: "החל מ-₪9,500,000",
+      imageUrl: "/images/developments/herzliya-marina.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "מגדלי הים",
+      location: "הרצליה",
+      price: "החל מ-₪8,800,000",
+      imageUrl: "/images/developments/herzliya-sea-towers.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "פארק הרצליה",
+      location: "הרצליה",
+      price: "החל מ-₪7,900,000",
+      imageUrl: "/images/developments/herzliya-park.jpg",
+      type: "פרויקט חדש",
+    },
+  ];
+
+  const philadelphiaDevelopments = [
+    {
+      title: "ריטנהאוס רזידנסס",
+      location: "פילדלפיה",
+      price: "החל מ-$1,200,000",
+      imageUrl: "/images/developments/philadelphia-rittenhouse.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "סנטר סיטי טאוור",
+      location: "פילדלפיה",
+      price: "החל מ-$950,000",
+      imageUrl: "/images/developments/philadelphia-center-city.jpg",
+      type: "פרויקט חדש",
+    },
+    {
+      title: "דלאוור ווטרפרונט",
+      location: "פילדלפיה",
+      price: "החל מ-$1,100,000",
+      imageUrl: "/images/developments/philadelphia-delaware.jpg",
       type: "פרויקט חדש",
     },
   ];
@@ -39,12 +80,12 @@ const NewDevelopments = () => {
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
-        <title>פרויקטים חדשים - סיטי מרקט נדל"ן | תל אביב</title>
-        <meta name="description" content="גלו פרויקטים חדשים בשכונות המבוקשות של תל אביב. עיצוב מודרני, אמנות גבוהה ומיקומים מעולים." />
-        <meta property="og:title" content="פרויקטים חדשים - סיטי מרקט נדל״ן" />
-        <meta property="og:description" content="העתיד של המגורים המודרניים - פרויקטים יוקרתיים בתל אביב." />
+        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market</title>
+        <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
+        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market" />
+        <meta property="og:description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket.co.il/he/new-developments" />
+        <link rel="canonical" href="https://citymarket-properties.com/new-developments" />
       </Helmet>
       <HebrewHeader />
 
@@ -59,11 +100,11 @@ const NewDevelopments = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              העתיד של המגורים המודרניים
+              עתיד החיים המודרניים
             </h2>
             <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              גלו את הפרויקטים החדשים והמבוקשים ביותר בתל אביב. כל פרויקט מייצג 
-              את שיא העיצוב המודרני, אדריכלות בת-קיימא ואמנויות פרימיום.
+              חקרו את הפיתוחים החדשים המצופים ביותר של תל אביב. כל פרויקט מייצג 
+              את פסגת העיצוב המודרני, אדריכלות בת קיימא ושירותים פרימיום.
             </p>
           </div>
         </div>
@@ -77,11 +118,49 @@ const NewDevelopments = () => {
               תל אביב
             </h2>
             <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              פרויקטים בשכונות המובילות
+              פרויקטים בלב העיר הלבנה
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {developments.map((dev, idx) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {telAvivDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Herzliya Developments */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              הרצליה
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              יוקרה על חוף הים
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {herzliyaDevelopments.map((dev, idx) => (
+              <FlippablePropertyCard key={idx} {...dev} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Philadelphia Developments */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+              פילדלפיה
+            </h2>
+            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
+              השקעה בארה"ב
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {philadelphiaDevelopments.map((dev, idx) => (
               <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
