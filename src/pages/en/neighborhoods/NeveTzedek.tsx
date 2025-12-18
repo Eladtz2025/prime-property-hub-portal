@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users, ChevronRight } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 
@@ -11,29 +12,22 @@ const NeveTzedekNeighborhood = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <EnglishHeader />
+      
       {/* Breadcrumbs */}
-      <div className="sticky top-0 z-50 bg-background border-b">
+      <div className="sticky top-16 z-40 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
-              <Link to="/en" className="hover:text-primary transition-colors">
-                Home
-              </Link>
-              <ChevronRight className="h-4 w-4" />
-              <Link to="/en/neighborhoods" className="hover:text-primary transition-colors">
-                Neighborhoods
-              </Link>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-foreground">Neve Tzedek</span>
-            </nav>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/he/neighborhoods/neve-tzedek')}
-              className="gap-2"
-            >
-              עברית
-            </Button>
-          </div>
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+            <Link to="/en" className="hover:text-primary transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link to="/en/neighborhoods" className="hover:text-primary transition-colors">
+              Neighborhoods
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground">Neve Tzedek</span>
+          </nav>
         </div>
       </div>
 

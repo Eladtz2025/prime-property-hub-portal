@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, MapPin, Heart, Coffee, Palette, Building2, Star, ChevronLeft } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
+import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 
@@ -11,6 +12,7 @@ const NeveTzedekNeighborhood = () => {
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <HebrewHeader />
       
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="container mx-auto px-4 py-4">
