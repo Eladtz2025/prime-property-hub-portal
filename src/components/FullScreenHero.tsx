@@ -31,7 +31,11 @@ const FullScreenHero = ({
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in font-playfair">
           {title}
         </h1>
-        {subtitle}
+        {subtitle && (
+          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 animate-fade-in font-montserrat max-w-2xl mx-auto">
+            {subtitle}
+          </p>
+        )}
         {children}
       </div>
     </section>;
