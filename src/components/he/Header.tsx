@@ -224,7 +224,7 @@ const HebrewHeader = () => {
         {mobileMenuOpen && (
           <nav className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-border" dir="rtl">
             <div className="flex flex-col gap-2 py-4 px-4">
-              {[...leftNavItems, ...rightNavItems].map((item) => (
+              {[...rightNavItems, ...leftNavItems].map((item) => (
                 <button
                   key={item.path}
                   onClick={() => {
