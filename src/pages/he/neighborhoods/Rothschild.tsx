@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, MapPin, TrendingUp, Coffee, Building2, Home, Star, ChevronLeft } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
+import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 
@@ -40,23 +41,7 @@ const RothschildNeighborhood = () => {
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
-      
-      {/* Breadcrumbs */}
-      <div className="sticky top-0 z-50 bg-background border-b">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse" aria-label="Breadcrumb" dir="rtl">
-            <Link to="/" className="hover:text-primary transition-colors">
-              דף הבית
-            </Link>
-            <ChevronLeft className="h-4 w-4" />
-            <Link to="/neighborhoods" className="hover:text-primary transition-colors">
-              שכונות
-            </Link>
-            <ChevronLeft className="h-4 w-4" />
-            <span className="text-foreground">רוטשילד</span>
-          </nav>
-        </div>
-      </div>
+      <HebrewHeader />
 
       {/* Hero Section */}
       <FullScreenHero
