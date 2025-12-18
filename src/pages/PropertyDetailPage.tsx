@@ -268,10 +268,10 @@ const PropertyDetailPage = () => {
             <h3 className="text-lg font-semibold mb-3">נקודות מרכזיות</h3>
             <div className="space-y-2">
               {getKeyPoints().map((point, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span className="text-sm">{point}</span>
-                </div>
+              <div key={index} className="flex items-center gap-2 flex-row-reverse justify-start">
+                <span className="text-sm text-right">{point}</span>
+                <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+              </div>
               ))}
             </div>
           </div>
