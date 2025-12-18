@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const HebrewNeighborhoods = () => {
   const navigate = useNavigate();
@@ -74,54 +81,68 @@ const HebrewNeighborhoods = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {neighborhoods.map((neighborhood) => (
-              <Card
-                key={neighborhood.id}
-                className="group overflow-hidden border-0 shadow-card hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2"
-                onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)}
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={neighborhood.imageUrl}
-                    alt={neighborhood.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="font-playfair text-2xl font-bold mb-2">
-                      {neighborhood.name}
-                    </h3>
-                    <p className="font-montserrat text-sm opacity-90">
-                      {neighborhood.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-4 text-right">
-                  <div className="flex items-center gap-2 flex-row-reverse justify-end text-primary">
-                    <TrendingUp className="w-5 h-5" />
-                    <span className="font-montserrat font-semibold">
-                      {neighborhood.avgPrice}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {neighborhood.highlights.map((highlight, index) => (
-                      <div key={index} className="flex items-center gap-2 flex-row-reverse justify-end text-muted-foreground">
-                        <MapPin className="w-4 h-4" />
-                        <span className="font-montserrat text-sm">{highlight}</span>
+          <div className="relative px-12">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+                direction: "rtl",
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-mr-4">
+                {neighborhoods.map((neighborhood) => (
+                  <CarouselItem key={neighborhood.id} className="pr-4 md:basis-1/2 lg:basis-1/3">
+                    <Card
+                      className="group overflow-hidden border-0 shadow-card hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 h-full"
+                      onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)}
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <img
+                          src={neighborhood.imageUrl}
+                          alt={neighborhood.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                          <h3 className="font-playfair text-2xl font-bold mb-2">
+                            {neighborhood.name}
+                          </h3>
+                          <p className="font-montserrat text-sm opacity-90">
+                            {neighborhood.description}
+                          </p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
 
-                  <Button className="w-full font-montserrat" variant="outline">
-                    חקור שכונה
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                      <div className="p-6 space-y-4 text-right">
+                        <div className="flex items-center gap-2 flex-row-reverse justify-end text-primary">
+                          <TrendingUp className="w-5 h-5" />
+                          <span className="font-montserrat font-semibold">
+                            {neighborhood.avgPrice}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {neighborhood.highlights.map((highlight, index) => (
+                            <div key={index} className="flex items-center gap-2 flex-row-reverse justify-end text-muted-foreground">
+                              <MapPin className="w-4 h-4" />
+                              <span className="font-montserrat text-sm">{highlight}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <Button className="w-full font-montserrat" variant="outline">
+                          חקור שכונה
+                        </Button>
+                      </div>
+                    </Card>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="right-0 left-auto" />
+              <CarouselNext className="left-0 right-auto" />
+            </Carousel>
           </div>
         </div>
       </section>
