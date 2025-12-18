@@ -86,21 +86,6 @@ const NewDevelopments = () => {
         minHeight="100vh"
       />
 
-      {/* Introduction */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              עתיד החיים המודרניים
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-              חקרו את הפיתוחים החדשים המצופים ביותר של תל אביב. כל פרויקט מייצג 
-              את פסגת העיצוב המודרני, אדריכלות בת קיימא ושירותים פרימיום.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* Tel Aviv Developments */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
