@@ -82,6 +82,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             balcony_yard_size,
             show_management_badge,
             monthly_rent,
+            current_market_value,
             featured,
             available,
             show_on_website,
@@ -130,6 +131,9 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           balcony_yard_size: property.balcony_yard_size,
           show_management_badge: property.show_management_badge,
           monthly_rent: property.monthly_rent,
+          price: property.property_type === 'sale' 
+            ? (property.current_market_value || property.monthly_rent)
+            : property.current_market_value,
           featured: property.featured,
           images: (property.property_images || [])
             .filter(img => img.show_on_website !== false)
