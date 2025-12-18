@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, MapPin, TrendingUp, Coffee, Building2, Home, Star, ChevronLeft } from "lucide-react";
+import { ArrowRight, TrendingUp, Coffee, Building2, Home, Star, ChevronLeft } from "lucide-react";
 import HebrewFooter from "@/components/he/Footer";
 import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
@@ -137,42 +137,6 @@ const RothschildNeighborhood = () => {
               </div>
             </section>
 
-            {/* Amenities */}
-            <section>
-              <h2 className="font-playfair text-3xl font-bold text-foreground mb-6">
-                שירותים וגישה
-              </h2>
-              <div className="space-y-4 font-montserrat text-muted-foreground">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="text-right">
-                    <span className="font-semibold text-foreground">תחבורה ציבורית:</span> 
-                    {" "}גישה מצוינת לאוטובוסים, שתי תחנות רכבת קלה, ורכבת העיר העתידית
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="text-right">
-                    <span className="font-semibold text-foreground">קניות:</span> 
-                    {" "}שדרות רוטשילד ושוק הכרמל הסמוכים מציעים מגוון מותגים ייחודיים
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="text-right">
-                    <span className="font-semibold text-foreground">פארקים:</span> 
-                    {" "}השדרה עצמה משמשת כפארק עירוני עם שבילי אופניים וספסלי ישיבה
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="text-right">
-                    <span className="font-semibold text-foreground">חינוך:</span> 
-                    {" "}בתי ספר יסודיים ותיכוניים מובילים ברדיוס הליכה
-                  </div>
-                </div>
-              </div>
-            </section>
           </div>
 
         </div>
