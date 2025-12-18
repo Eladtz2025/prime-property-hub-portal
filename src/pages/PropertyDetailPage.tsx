@@ -183,12 +183,12 @@ const PropertyDetailPage = () => {
         <ImageCarousel images={propertyImages} priceLabel="" />
 
         {/* Property Info */}
-        <div className="px-4 py-6 space-y-6">
+        <div className="px-4 py-6 space-y-6 text-right">
           {/* Title and Address */}
           <div>
-            <h1 className="text-2xl font-bold mb-3">{property.title}</h1>
+            <h1 className="text-2xl font-bold mb-3 text-right">{property.title}</h1>
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">{getPropertyTypeLabel()}</Badge>
-            <div className="flex items-center gap-2 text-muted-foreground flex-row-reverse justify-start">
+            <div className="flex items-center gap-2 text-muted-foreground justify-end">
               <span>{removeAddressNumber(property.address)}, {property.city}</span>
               <MapPin className="h-5 w-5" />
             </div>
@@ -197,32 +197,32 @@ const PropertyDetailPage = () => {
           {/* Technical Details */}
           <div className="grid grid-cols-2 gap-4">
             {/* מחיר */}
-              <div className="flex items-center gap-3 col-span-2 flex-row-reverse justify-start">
+              <div className="flex items-center gap-3 col-span-2 justify-end">
                 <span className="text-lg font-bold">{getPriceDisplay()}</span>
                 <span className="text-xl font-bold text-primary">₪</span>
               </div>
-            <div className="flex items-center gap-3 flex-row-reverse justify-start">
+            <div className="flex items-center gap-3 justify-end">
               <span>{property.bathrooms} חדרי רחצה</span>
               <Bath className="h-5 w-5 text-primary" />
             </div>
             {property.rooms && (
-              <div className="flex items-center gap-3 flex-row-reverse justify-start">
+              <div className="flex items-center gap-3 justify-end">
                 <span>{property.rooms} חדרים</span>
                 <Home className="h-5 w-5 text-primary" />
               </div>
             )}
-            <div className="flex items-center gap-3 flex-row-reverse justify-start">
+            <div className="flex items-center gap-3 justify-end">
               <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
               <Building2 className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex items-center gap-3 flex-row-reverse justify-start">
+            <div className="flex items-center gap-3 justify-end">
               <span>{property.property_size} מ"ר</span>
               <Square className="h-5 w-5 text-primary" />
             </div>
           </div>
 
           {/* Features */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap justify-end">
             {property.parking && (
               <Badge variant="secondary" className="text-sm">
                 חניה
@@ -256,19 +256,19 @@ const PropertyDetailPage = () => {
           </div>
 
           {/* Description */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">תיאור הנכס</h3>
-            <p className="text-muted-foreground leading-relaxed">
+          <div className="text-right">
+            <h3 className="text-lg font-semibold mb-3 text-right">תיאור הנכס</h3>
+            <p className="text-muted-foreground leading-relaxed text-right">
               {property.description}
             </p>
           </div>
 
           {/* Key Points */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">נקודות מרכזיות</h3>
+          <div className="text-right">
+            <h3 className="text-lg font-semibold mb-3 text-right">נקודות מרכזיות</h3>
             <div className="space-y-2">
               {getKeyPoints().map((point, index) => (
-              <div key={index} className="flex items-center gap-2 flex-row-reverse justify-start">
+              <div key={index} className="flex items-center gap-2 justify-end">
                 <span className="text-sm text-right">{point}</span>
                 <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
               </div>
