@@ -118,15 +118,15 @@ const Management = () => {
             {services.map((service, index) => (
               <Card
                 key={index}
-                className="p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group text-left"
+                className="p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group text-right"
               >
-                <div className="mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-start">
+                <div className="mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-end">
                   {service.icon}
                 </div>
-                <h3 className="font-playfair text-xl font-bold text-foreground mb-2 text-left">
+                <h3 className="font-playfair text-xl font-bold text-foreground mb-2 text-right">
                   {service.title}
                 </h3>
-                <p className="font-montserrat text-muted-foreground text-sm leading-relaxed text-left">
+                <p className="font-montserrat text-muted-foreground text-sm leading-relaxed text-right">
                   {service.description}
                 </p>
               </Card>
