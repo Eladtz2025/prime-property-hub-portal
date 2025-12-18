@@ -9,70 +9,61 @@ const NewDevelopments = () => {
     {
       title: "Rothschild Tower",
       location: "Tel Aviv",
-      price: "From ₪12,000,000",
       imageUrl: "/images/developments/telaviv-rothschild-tower.jpg",
       type: "New Development",
     },
     {
       title: "Neve Tzedek Residences",
       location: "Tel Aviv",
-      price: "From ₪8,500,000",
       imageUrl: "/images/developments/telaviv-neve-tzedek.jpg",
       type: "New Development",
     },
     {
       title: "Dizengoff Tower",
       location: "Tel Aviv",
-      price: "From ₪7,200,000",
       imageUrl: "/images/developments/telaviv-dizengoff-tower.jpg",
       type: "New Development",
     },
   ];
 
-  const herzliyaDevelopments = [
+  const florentinDevelopments = [
     {
-      title: "Herzliya Marina",
-      location: "Herzliya",
-      price: "From ₪9,500,000",
-      imageUrl: "/images/developments/herzliya-marina.jpg",
+      title: "Industrial Loft Florentin",
+      location: "Florentin",
+      imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
       type: "New Development",
     },
     {
-      title: "Sea Towers",
-      location: "Herzliya",
-      price: "From ₪8,800,000",
-      imageUrl: "/images/developments/herzliya-sea-towers.jpg",
+      title: "Art Boutique Florentin",
+      location: "Florentin",
+      imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
       type: "New Development",
     },
     {
-      title: "Herzliya Park",
-      location: "Herzliya",
-      price: "From ₪7,900,000",
-      imageUrl: "/images/developments/herzliya-park.jpg",
+      title: "Gallery Studio",
+      location: "Florentin",
+      imageUrl: "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=800&q=80",
       type: "New Development",
     },
   ];
 
-  const philadelphiaDevelopments = [
+  const neveTzedekDevelopments = [
     {
-      title: "Rittenhouse Residences",
-      location: "Philadelphia",
-      price: "From $1,200,000",
-      imageUrl: "/images/developments/philadelphia-rittenhouse.jpg",
+      title: "Restored Historic Home",
+      location: "Neve Tzedek",
+      imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       type: "New Development",
     },
     {
-      title: "Center City Tower",
-      location: "Philadelphia",
-      price: "From $950,000",
-      imageUrl: "/images/developments/philadelphia-center-city.jpg",
+      title: "Boutique Villa Neve Tzedek",
+      location: "Neve Tzedek",
+      imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
       type: "New Development",
     },
     {
-      title: "Delaware Waterfront",
-      location: "Philadelphia",
-      price: "From $1,100,000",
-      imageUrl: "/images/developments/philadelphia-delaware.jpg",
+      title: "Romantic Garden Apartment",
+      location: "Neve Tzedek",
+      imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
       type: "New Development",
     },
   ];
@@ -80,8 +71,8 @@ const NewDevelopments = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
-        <title>New Developments - City Market Properties | Tel Aviv & Herzliya</title>
-        <meta name="description" content="Explore luxury new developments in Tel Aviv, Herzliya, and Philadelphia. Modern design, premium amenities, and prime locations." />
+        <title>New Developments - City Market Properties | Tel Aviv, Florentin & Neve Tzedek</title>
+        <meta name="description" content="Explore luxury new developments in Tel Aviv, Florentin, and Neve Tzedek. Modern design, premium amenities, and prime locations." />
         <meta property="og:title" content="New Developments - City Market Properties" />
         <meta property="og:description" content="The future of modern living - luxury developments in Israel's top locations." />
         <meta property="og:type" content="website" />
@@ -94,21 +85,6 @@ const NewDevelopments = () => {
         backgroundImage="/images/hero-new-developments.jpg"
         minHeight="100vh"
       />
-
-      {/* Introduction */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-6">
-              The Future of Modern Living
-            </h2>
-            <p className="font-montserrat text-lg text-muted-foreground leading-relaxed">
-               Explore Tel Aviv's most anticipated new developments. Each project represents 
-              the pinnacle of modern design, sustainable architecture, and premium amenities.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Tel Aviv Developments */}
       <section className="py-16 bg-muted/30">
@@ -129,38 +105,38 @@ const NewDevelopments = () => {
         </div>
       </section>
 
-      {/* Herzliya Developments */}
+      {/* Florentin Developments */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              Herzliya
+              Florentin
             </h2>
             <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              Luxury by the sea
+              Urban, Creative, Young
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {herzliyaDevelopments.map((dev, idx) => (
+            {florentinDevelopments.map((dev, idx) => (
               <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Philadelphia Developments */}
+      {/* Neve Tzedek Developments */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              Philadelphia
+              Neve Tzedek
             </h2>
             <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              Investment in the USA
+              History, Luxury & Romance
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {philadelphiaDevelopments.map((dev, idx) => (
+            {neveTzedekDevelopments.map((dev, idx) => (
               <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
