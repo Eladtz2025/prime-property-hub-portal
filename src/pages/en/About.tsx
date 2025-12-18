@@ -87,10 +87,10 @@ const About = () => {
           </ScrollAnimated>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <ValueCard icon={<Award className="w-full h-full" />} title="Excellence" description="We strive for perfection in every detail of our service" delay={0} />
-            <ValueCard icon={<Heart className="w-full h-full" />} title="Integrity" description="Honesty and transparency guide all our relationships" delay={100} />
-            <ValueCard icon={<Users className="w-full h-full" />} title="Dedication" description="Your satisfaction is our highest priority" delay={200} />
-            <ValueCard icon={<TrendingUp className="w-full h-full" />} title="Innovation" description="Leveraging technology for superior results" delay={300} />
+            <ValueCard icon={<Award className="w-full h-full" />} title="Excellence" description="We are committed to the highest standards, paying close attention to every detail to deliver exceptional results." delay={0} />
+            <ValueCard icon={<Heart className="w-full h-full" />} title="Integrity" description="Honesty, transparency, and trust are the foundation of every relationship we build." delay={100} />
+            <ValueCard icon={<Users className="w-full h-full" />} title="Dedication" description="Your goals come first. We are fully committed to guiding you with care, responsiveness, and professionalism." delay={200} />
+            <ValueCard icon={<TrendingUp className="w-full h-full" />} title="Innovation" description="We leverage smart tools and modern solutions to create efficient, forward-thinking real estate experiences." delay={300} />
           </div>
 
           {/* Description Text */}
