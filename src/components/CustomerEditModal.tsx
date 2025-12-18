@@ -4,19 +4,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
+import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
+
+interface Agent {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
 
 interface CustomerEditModalProps {
   customer: Customer | null;
   open: boolean;
   onClose: () => void;
   onSave: () => void;
+  agents?: Agent[];
 }
 
-export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerEditModalProps) => {
+export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = [] }: CustomerEditModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(customer || {});
@@ -41,6 +50,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
           phone: formData.phone,
           status: formData.status,
           priority: formData.priority,
+          assigned_agent_id: formData.assigned_agent_id,
           budget_min: formData.budget_min,
           budget_max: formData.budget_max,
           rooms_min: formData.rooms_min,
@@ -78,7 +88,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>עריכת לקוח - {customer.name}</DialogTitle>
         </DialogHeader>
@@ -102,7 +112,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>טלפון</Label>
               <Input
@@ -127,9 +137,6 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>עדיפות</Label>
               <Select value={formData.priority || 'medium'} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
@@ -141,6 +148,28 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
                   <SelectItem value="medium">בינוני</SelectItem>
                   <SelectItem value="high">גבוה</SelectItem>
                   <SelectItem value="urgent">דחוף</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>סוכן מטפל</Label>
+              <Select 
+                value={formData.assigned_agent_id || 'none'} 
+                onValueChange={(value) => setFormData({ ...formData, assigned_agent_id: value === 'none' ? null : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר סוכן" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">ללא סוכן</SelectItem>
+                  {agents.map(agent => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.full_name || agent.email}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -200,7 +229,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
             <Label>ערים מועדפות (מופרד בפסיקים)</Label>
             <Input
               value={formData.preferred_cities?.join(', ') || ''}
-              onChange={(e) => setFormData({ ...formData, preferred_cities: e.target.value.split(',').map(s => s.trim()) })}
+              onChange={(e) => setFormData({ ...formData, preferred_cities: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
               placeholder="תל אביב, רמת גן, גבעתיים"
             />
           </div>
@@ -209,7 +238,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
             <Label>שכונות מועדפות (מופרד בפסיקים)</Label>
             <Input
               value={formData.preferred_neighborhoods?.join(', ') || ''}
-              onChange={(e) => setFormData({ ...formData, preferred_neighborhoods: e.target.value.split(',').map(s => s.trim()) })}
+              onChange={(e) => setFormData({ ...formData, preferred_neighborhoods: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
               placeholder="רוטשילד, דיזנגוף, פלורנטין"
             />
           </div>
@@ -238,11 +267,15 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave }: CustomerE
             <Textarea
               value={formData.notes || ''}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={4}
+              rows={3}
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          {/* Property Matches Section */}
+          <Separator />
+          <CustomerPropertyMatches customer={customer} maxResults={5} />
+
+          <div className="flex gap-2 justify-end pt-4">
             <Button variant="outline" onClick={onClose}>
               ביטול
             </Button>
