@@ -72,39 +72,39 @@ const NeveTzedekNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Palette className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אמנות ותרבות</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     גלריות אמנות, תיאטרון סוזן דלל ומרכז האמנויות המפורסם
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Coffee className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">קפה ומסעדות</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     מסעדות שף מובילות ובתי קפה בוטיק בסמטאות הקסומות
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Heart className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אווירה רומנטית</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     סמטאות אבן, בתים היסטוריים וחצרות פנימיות מקסימות
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <MapPin className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">קרבה לחוף</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     דקות הליכה מטיילת תל אביב והים התיכון
                   </p>
                 </Card>

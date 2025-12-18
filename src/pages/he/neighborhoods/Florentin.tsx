@@ -72,39 +72,39 @@ const FlorentinNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Palette className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אמנות רחוב</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     ציורי קיר מרהיבים וגרפיטי אמנותי בכל פינה
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Music className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">חיי לילה</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     ברים, מועדונים ומקומות בילוי עד השעות הקטנות
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Users className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">קהילה צעירה</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     אווירה דינמית של אמנים, סטודנטים ויזמים צעירים
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <MapPin className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">מיקום מרכזי</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     קרבה לשוק הכרמל, נווה צדק ותחנת הרכבת המרכזית
                   </p>
                 </Card>

@@ -98,39 +98,39 @@ const RothschildNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Coffee className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">תרבות קפה</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     בתי קפה אייקוניים ומסעדות עטורות פרסים לאורך כל השדרה
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Building2 className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אדריכלות באוהאוס</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     בתים בסגנון הבינלאומי המשוקמים היטב עם חזיתות מקוריות
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Home className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">מרכז עסקים</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     ליבת סצנת הסטארט-אפים והיזמות של תל אביב
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Star className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אירועים תרבותיים</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     פסטיבלים שנתיים, שווקי אמנות ואירועי רחוב
                   </p>
                 </Card>
@@ -143,30 +143,30 @@ const RothschildNeighborhood = () => {
                 שירותים וגישה
               </h2>
               <div className="space-y-4 font-montserrat text-muted-foreground">
-                <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <span className="font-semibold text-foreground">תחבורה ציבורית:</span> 
                     {" "}גישה מצוינת לאוטובוסים, שתי תחנות רכבת קלה, ורכבת העיר העתידית
                   </div>
                 </div>
-                <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <span className="font-semibold text-foreground">קניות:</span> 
                     {" "}שדרות רוטשילד ושוק הכרמל הסמוכים מציעים מגוון מותגים ייחודיים
                   </div>
                 </div>
-                <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <span className="font-semibold text-foreground">פארקים:</span> 
                     {" "}השדרה עצמה משמשת כפארק עירוני עם שבילי אופניים וספסלי ישיבה
                   </div>
                 </div>
-                <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
+                  <div className="text-right">
                     <span className="font-semibold text-foreground">חינוך:</span> 
                     {" "}בתי ספר יסודיים ותיכוניים מובילים ברדיוס הליכה
                   </div>

@@ -72,39 +72,39 @@ const OldNorthNeighborhood = () => {
                 אורח חיים
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Users className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">ידידותי למשפחות</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     גנים, מגרשי משחקים ובתי ספר מובילים בסביבה
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Trees className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">שטחים ירוקים</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     פארקים, גנים ציבוריים ושדרות עצים מוצלות
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <Home className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">אדריכלות באוהאוס</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     בתים היסטוריים משוקמים בסגנון הבינלאומי
                   </p>
                 </Card>
-                <Card className="p-6" dir="rtl">
-                  <div className="flex items-center gap-3 flex-row-reverse mb-4">
+                <Card className="p-6 text-right">
+                  <div className="flex items-center gap-3 mb-4">
                     <MapPin className="w-8 h-8 text-primary" />
                     <h3 className="font-playfair text-xl font-bold">קרבה לחוף</h3>
                   </div>
-                  <p className="font-montserrat text-sm text-muted-foreground">
+                  <p className="font-montserrat text-sm text-muted-foreground text-right">
                     דקות הליכה מחופי הים ומהטיילת
                   </p>
                 </Card>
