@@ -1,7 +1,7 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -77,19 +77,6 @@ const Contact = () => {
               </p>
 
               <div className="space-y-8">
-                <div className="flex items-start gap-4">
-                  <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
-                      Address
-                    </h3>
-                    <p className="font-montserrat text-muted-foreground">
-                      Rothschild Boulevard<br />
-                      Tel Aviv, Israel
-                    </p>
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-4">
                   <Phone className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
