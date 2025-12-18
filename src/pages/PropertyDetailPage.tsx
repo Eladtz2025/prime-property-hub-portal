@@ -434,8 +434,8 @@ const PropertyDetailPage = () => {
           <h3 className="text-xl font-semibold mb-4 text-right">נקודות מרכזיות</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {getKeyPoints().map((point, index) => (
-              <div key={index} className="flex items-center gap-3 flex-row-reverse justify-start">
-                <span className="text-right">{point}</span>
+              <div key={index} className="flex items-center gap-3 justify-end">
+                <span>{point}</span>
                 <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
               </div>
             ))}
