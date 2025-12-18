@@ -22,6 +22,17 @@ const NeveTzedekNeighborhood = () => {
         minHeight="60vh"
       />
 
+      {/* Breadcrumbs */}
+      <div className="container mx-auto px-4 pt-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6" aria-label="Breadcrumb">
+          <Link to="/en" className="hover:text-primary transition-colors">Home</Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link to="/en/neighborhoods" className="hover:text-primary transition-colors">Neighborhoods</Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">Neve Tzedek</span>
+        </nav>
+      </div>
+
       {/* History & Character */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">

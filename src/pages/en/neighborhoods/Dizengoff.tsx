@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
+import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users, ChevronRight } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
+import { Link } from "react-router-dom";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
@@ -20,6 +21,17 @@ const DizengoffNeighborhood = () => {
         backgroundImage="/images/en/neighborhoods/dizengoff-hero.jpg"
         minHeight="60vh"
       />
+
+      {/* Breadcrumbs */}
+      <div className="container mx-auto px-4 pt-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6" aria-label="Breadcrumb">
+          <Link to="/en" className="hover:text-primary transition-colors">Home</Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link to="/en/neighborhoods" className="hover:text-primary transition-colors">Neighborhoods</Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">Dizengoff</span>
+        </nav>
+      </div>
 
       {/* History & Character */}
       <section className="py-16 bg-background">
