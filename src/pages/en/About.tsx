@@ -159,16 +159,16 @@ const About = () => {
           }}>
               <CarouselContent>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={sarahLeviReview} name="Sarah Levi" rating={5} text="City Market helped us find our dream apartment in Neve Tzedek. Professional and caring service, highly recommended!" />
+                  <TestimonialCard image={sarahLeviReview} name="Rachel Shapira" rating={5} text="City Market helped us find our dream apartment in Neve Tzedek. Professional and caring service, highly recommended!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={davidCohenReview} name="David Cohen" rating={5} text="High-level professionalism. Sold my apartment on Rothschild quickly and at an excellent price. Thank you!" />
+                  <TestimonialCard image={davidCohenReview} name="Daniel Peretz" rating={5} text="High-level professionalism. Sold my apartment on Rothschild quickly and at an excellent price. Thank you!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={michalGolanReview} name="Michal Golan" rating={5} text="Managing my properties perfectly. Always available, reliable and professional. Highly recommend!" />
+                  <TestimonialCard image={michalGolanReview} name="Noa Feldman" rating={5} text="Managing my properties perfectly. Always available, reliable and professional. Highly recommend!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
-                  <TestimonialCard image={yossiAbrahamReview} name="Yossi Abraham" rating={5} text="Rented an apartment on Dizengoff through them. The process was smooth and fast, highly recommend!" />
+                  <TestimonialCard image={yossiAbrahamReview} name="Amit Ben-David" rating={5} text="Rented an apartment on Dizengoff through them. The process was smooth and fast, highly recommend!" />
                 </CarouselItem>
                 <CarouselItem className="md:basis-1/2">
                   <TestimonialCard image={roiIsraeliReview} name="Roi Israeli" rating={5} text="Exceptional service from start to finish. Found the perfect property for my family in record time!" />
