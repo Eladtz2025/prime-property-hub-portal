@@ -81,7 +81,7 @@ const EnglishNeighborhoods = () => {
             </p>
           </div>
 
-          <div className="relative px-12">
+          <div className="relative px-16">
             <Carousel
               opts={{
                 align: "start",

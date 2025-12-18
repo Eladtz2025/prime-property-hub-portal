@@ -81,7 +81,7 @@ const HebrewNeighborhoods = () => {
             </p>
           </div>
 
-          <div className="relative px-12">
+          <div className="relative px-16">
             <Carousel
               opts={{
                 align: "start",
@@ -140,8 +140,8 @@ const HebrewNeighborhoods = () => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="right-0 left-auto" />
-              <CarouselNext className="left-0 right-auto" />
+              <CarouselPrevious className="-right-4 left-auto" />
+              <CarouselNext className="-left-4 right-auto" />
             </Carousel>
           </div>
         </div>
