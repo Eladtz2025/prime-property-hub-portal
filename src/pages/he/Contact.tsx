@@ -1,7 +1,7 @@
 import HebrewHeader from "@/components/he/Header";
 import HebrewFooter from "@/components/he/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -74,19 +74,6 @@ const Contact = () => {
               </p>
 
               <div className="space-y-8">
-                <div className="flex items-start gap-4">
-                  <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div className="text-right">
-                    <h3 className="font-montserrat text-sm tracking-widest uppercase text-foreground mb-2">
-                      כתובת
-                    </h3>
-                    <p className="font-montserrat text-muted-foreground">
-                      שדרות רוטשילד<br />
-                      תל אביב, ישראל
-                    </p>
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-4">
                   <Phone className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div className="text-right">
