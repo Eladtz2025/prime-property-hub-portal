@@ -3,7 +3,7 @@ import EnglishFooter from "@/components/en/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
-import { StatCounter } from "@/components/about/StatCounter";
+
 import { TimelineItem } from "@/components/about/TimelineItem";
 import { ValueCard } from "@/components/about/ValueCard";
 import { TeamCard } from "@/components/about/TeamCard";
@@ -36,17 +36,7 @@ const About = () => {
       <EnglishHeader />
 
       {/* Hero Section - Enhanced */}
-      <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" minHeight="50vh">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto mt-8 md:mt-12 animate-fade-in" style={{
-        animationDelay: '400ms'
-      }}>
-          <StatCounter end={15} label="Years Experience" />
-          <StatCounter end={500} label="Properties Sold" />
-          <StatCounter end={12} label="Tel Aviv Neighborhoods" />
-          <StatCounter end={98} label="Client Satisfaction" suffix="%" />
-        </div>
-      </FullScreenHero>
+      <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" minHeight="50vh" />
 
       {/* Our Story Section */}
       <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30">
