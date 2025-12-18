@@ -168,7 +168,7 @@ const Sales = () => {
                     </div>
                     {/* Status Badge for Sold Properties */}
                     {(property as any).status === 'occupied' && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm">
+                      <div className="absolute top-2 left-2 text-white px-3 py-1 rounded font-bold text-sm" style={{ backgroundColor: '#3A8C8C' }}>
                         נמכר
                       </div>
                     )}
