@@ -518,7 +518,9 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                           'הצפון הישן': 'Old North',
                           'הצפון החדש': 'New North',
                           'רוטשילד': 'Rothschild',
-                          'דרום': 'South'
+                          'דרום': 'South',
+                          'כרם התימנים': 'Kerem HaTeimanim',
+                          'שוק הכרמל': 'Carmel Market'
                         };
                         setFormData(prev => ({ ...prev, neighborhood_en: neighborhoodMap[value] || '' }));
                       }}
@@ -532,6 +534,8 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                         <SelectItem value="הצפון החדש">הצפון החדש</SelectItem>
                         <SelectItem value="רוטשילד">רוטשילד</SelectItem>
                         <SelectItem value="דרום">דרום</SelectItem>
+                        <SelectItem value="כרם התימנים">כרם התימנים</SelectItem>
+                        <SelectItem value="שוק הכרמל">שוק הכרמל</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
