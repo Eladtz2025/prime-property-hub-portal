@@ -29,50 +29,50 @@ const NewDevelopments = () => {
     },
   ];
 
-  const herzliyaDevelopments = [
+  const florentinDevelopments = [
     {
-      title: "הרצליה פיתוח מרינה",
-      location: "הרצליה",
-      price: "החל מ-₪9,500,000",
-      imageUrl: "/images/developments/herzliya-marina.jpg",
+      title: "לופט תעשייתי פלורנטין",
+      location: "פלורנטין",
+      price: "החל מ-₪3,200,000",
+      imageUrl: "/images/en/neighborhoods/florentin.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "מגדלי הים",
-      location: "הרצליה",
-      price: "החל מ-₪8,800,000",
-      imageUrl: "/images/developments/herzliya-sea-towers.jpg",
+      title: "בוטיק ארט פלורנטין",
+      location: "פלורנטין",
+      price: "החל מ-₪2,800,000",
+      imageUrl: "/images/en/neighborhoods/florentin-hero.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "פארק הרצליה",
-      location: "הרצליה",
-      price: "החל מ-₪7,900,000",
-      imageUrl: "/images/developments/herzliya-park.jpg",
+      title: "סטודיו גלריה",
+      location: "פלורנטין",
+      price: "החל מ-₪2,400,000",
+      imageUrl: "/images/neighborhoods/florentin-street.jpg",
       type: "פרויקט חדש",
     },
   ];
 
-  const philadelphiaDevelopments = [
+  const neveTzedekDevelopments = [
     {
-      title: "ריטנהאוס רזידנסס",
-      location: "פילדלפיה",
-      price: "החל מ-$1,200,000",
-      imageUrl: "/images/developments/philadelphia-rittenhouse.jpg",
+      title: "בית היסטורי משוחזר",
+      location: "נווה צדק",
+      price: "החל מ-₪9,500,000",
+      imageUrl: "/images/en/neighborhoods/neve-tzedek.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "סנטר סיטי טאוור",
-      location: "פילדלפיה",
-      price: "החל מ-$950,000",
-      imageUrl: "/images/developments/philadelphia-center-city.jpg",
+      title: "וילה בוטיק נווה צדק",
+      location: "נווה צדק",
+      price: "החל מ-₪12,000,000",
+      imageUrl: "/images/en/neighborhoods/neve-tzedek-hero.jpg",
       type: "פרויקט חדש",
     },
     {
-      title: "דלאוור ווטרפרונט",
-      location: "פילדלפיה",
-      price: "החל מ-$1,100,000",
-      imageUrl: "/images/developments/philadelphia-delaware.jpg",
+      title: "דירת גן רומנטית",
+      location: "נווה צדק",
+      price: "החל מ-₪7,800,000",
+      imageUrl: "/images/neighborhoods/neve-tzedek-street.jpg",
       type: "פרויקט חדש",
     },
   ];
@@ -80,10 +80,10 @@ const NewDevelopments = () => {
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
-        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market</title>
-        <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
-        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, הרצליה ופילדלפיה | City Market" />
-        <meta property="og:description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, הרצליה ופילדלפיה. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
+        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | City Market</title>
+        <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, פלורנטין ונווה צדק. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
+        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | City Market" />
+        <meta property="og:description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, פלורנטין ונווה צדק. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://citymarket-properties.com/new-developments" />
       </Helmet>
@@ -129,38 +129,38 @@ const NewDevelopments = () => {
         </div>
       </section>
 
-      {/* Herzliya Developments */}
+      {/* Florentin Developments */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              הרצליה
+              פלורנטין
             </h2>
             <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              יוקרה על חוף הים
+              אורבני, יצירתי, צעיר
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {herzliyaDevelopments.map((dev, idx) => (
+            {florentinDevelopments.map((dev, idx) => (
               <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Philadelphia Developments */}
+      {/* Neve Tzedek Developments */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              פילדלפיה
+              נווה צדק
             </h2>
             <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              השקעה בארה"ב
+              היסטוריה, יוקרה ורומנטיקה
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {philadelphiaDevelopments.map((dev, idx) => (
+            {neveTzedekDevelopments.map((dev, idx) => (
               <FlippablePropertyCard key={idx} {...dev} />
             ))}
           </div>
