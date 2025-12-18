@@ -9,33 +9,8 @@ const HebrewFooter = () => {
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Grid */}
         <div className="grid md:grid-cols-4 gap-12 mb-12">
-          {/* Contact */}
-          <div>
-            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold text-right">
-              יצירת קשר
-            </h4>
-            <ul className="space-y-3 text-sm text-background/70">
-              <li className="flex items-center gap-2 justify-start">
-                <Phone className="h-4 w-4" />
-                <a href="tel:0542284477" className="hover:text-background transition-colors">
-                  054-228-4477
-                </a>
-              </li>
-              <li className="flex items-center gap-2 justify-start">
-                <Mail className="h-4 w-4" />
-                <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
-                  citymarketlv@gmail.com
-                </a>
-              </li>
-              <li className="flex items-center gap-2 justify-start">
-                <MapPin className="h-4 w-4" />
-                <span>תל אביב, ישראל</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company Info */}
-          <div className="text-left">
+          {/* Company Info - Right in RTL */}
+          <div className="text-right">
             <div className="mb-4">
               <h3 className="text-2xl font-bold tracking-wide">
                 CITY MARKET
@@ -58,7 +33,7 @@ const HebrewFooter = () => {
           </div>
 
           {/* Services */}
-          <div className="text-left">
+          <div className="text-right">
             <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               שירותים
             </h4>
@@ -79,7 +54,7 @@ const HebrewFooter = () => {
           </div>
 
           {/* Areas */}
-          <div className="text-left">
+          <div className="text-right">
             <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
               אזורים
             </h4>
@@ -90,13 +65,38 @@ const HebrewFooter = () => {
               <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
                 רוטשילד
               </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/dizengoff')}>
-                דיזנגוף
-              </p>
               <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
                 הצפון הישן
               </p>
+              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/florentin')}>
+                פלורנטין
+              </p>
             </div>
+          </div>
+
+          {/* Contact - Left in RTL */}
+          <div className="text-right">
+            <h4 className="text-sm tracking-widest uppercase mb-4 font-semibold">
+              יצירת קשר
+            </h4>
+            <ul className="space-y-3 text-sm text-background/70">
+              <li className="flex items-center gap-2 justify-start">
+                <Phone className="h-4 w-4" />
+                <a href="tel:0542284477" className="hover:text-background transition-colors">
+                  054-228-4477
+                </a>
+              </li>
+              <li className="flex items-center gap-2 justify-start">
+                <Mail className="h-4 w-4" />
+                <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
+                  citymarketlv@gmail.com
+                </a>
+              </li>
+              <li className="flex items-center gap-2 justify-start">
+                <MapPin className="h-4 w-4" />
+                <span>תל אביב, ישראל</span>
+              </li>
+            </ul>
           </div>
         </div>
 
