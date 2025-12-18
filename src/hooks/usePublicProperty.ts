@@ -97,7 +97,9 @@ export const usePublicProperty = (propertyId: string | undefined) => {
           mamad: property.mamad,
           balcony_yard_size: property.balcony_yard_size,
           monthly_rent: property.monthly_rent,
-          price: property.current_market_value,
+          price: property.property_type === 'sale' 
+            ? (property.current_market_value || property.monthly_rent)
+            : property.current_market_value,
           featured: property.featured,
           agent: property.assigned_agent ? {
             id: property.assigned_agent.id,
