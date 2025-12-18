@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play, Volume2, VolumeX } from 'lucide-react';
 import { PropertyImage } from '../types/property';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -89,6 +89,7 @@ const VideoWithPlaceholder: React.FC<{
         controls={controls}
         autoPlay={autoPlay}
         playsInline
+        muted
         onLoadedData={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
       />
@@ -110,11 +111,27 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageOrientation, setImageOrientation] = useState<'landscape' | 'portrait' | 'unknown'>('unknown');
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Reset orientation when changing images
   useEffect(() => {
     setImageOrientation('unknown');
   }, [currentIndex]);
+
+  // Handle music toggle
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isMusicPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(() => {
+          console.log('Audio playback blocked by browser');
+        });
+      }
+      setIsMusicPlaying(!isMusicPlaying);
+    }
+  };
 
   if (!images || images.length === 0) {
     return (
@@ -145,6 +162,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 
   const currentImage = images[currentIndex];
   const isVideo = currentImage.mediaType === 'video';
+  const hasVideo = images.some(img => img.mediaType === 'video');
 
   // Controls overlay component - shared between both layouts
   const ControlsOverlay = () => (
@@ -178,6 +196,19 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
         </>
       )}
       
+      {/* Music control button - only show when there's video content */}
+      {hasVideo && (
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-3 left-3 h-9 w-9 shadow-lg z-20"
+          onClick={toggleMusic}
+          title={isMusicPlaying ? "השתק מוזיקה" : "נגן מוזיקה"}
+        >
+          {isMusicPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        </Button>
+      )}
+      
       {/* Fullscreen button */}
       {!isVideo && (
         <Button
@@ -201,6 +232,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 
   return (
     <>
+      {/* Background music audio element */}
+      <audio
+        ref={audioRef}
+        src="/audio/background-music.mp3"
+        loop
+        preload="auto"
+      />
       <Card className={className}>
         <CardContent className="p-0 relative">
           {/* Video or loading state - fixed height with blur */}
