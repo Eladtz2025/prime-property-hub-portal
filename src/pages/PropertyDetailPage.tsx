@@ -163,9 +163,9 @@ const PropertyDetailPage = () => {
       </Helmet>
 
       {/* Mobile Layout */}
-      <div className="lg:hidden">
+      <div className="lg:hidden pt-16">
         {/* Breadcrumbs */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
+        <div className="sticky top-16 z-10 bg-background/95 backdrop-blur px-4 py-3 border-b">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse" aria-label="Breadcrumb" dir="rtl">
             <Link to="/" className="hover:text-primary transition-colors">
               דף הבית
