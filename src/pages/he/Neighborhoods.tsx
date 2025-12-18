@@ -140,8 +140,8 @@ const HebrewNeighborhoods = () => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="-right-4 left-auto" />
-              <CarouselNext className="-left-4 right-auto" />
+              <CarouselPrevious className="-right-12 left-auto" />
+              <CarouselNext className="-left-12 right-auto" />
             </Carousel>
           </div>
         </div>
