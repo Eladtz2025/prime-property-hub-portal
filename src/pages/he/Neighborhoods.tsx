@@ -36,14 +36,6 @@ const HebrewNeighborhoods = () => {
       highlights: ["אמנות רחוב", "אווירה צעירה", "מרכז חיי לילה"],
     },
     {
-      id: "dizengoff",
-      name: "דיזנגוף",
-      description: "לב מסחרי תוסס עם קניות ובידור",
-      imageUrl: "/images/en/neighborhoods/dizengoff-hero.jpg",
-      avgPrice: "₪3M - ₪8M",
-      highlights: ["אזור קניות", "דיזנגוף סנטר", "דופק העיר"],
-    },
-    {
       id: "old-north",
       name: "צפון הישן",
       description: "שקט ואיכות חיים בלב העיר",
@@ -57,9 +49,9 @@ const HebrewNeighborhoods = () => {
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties</title>
-        <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין, דיזנגוף והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
+        <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
         <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties" />
-        <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין, דיזנגוף והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
+        <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://citymarket-properties.com/neighborhoods" />
       </Helmet>
@@ -82,7 +74,7 @@ const HebrewNeighborhoods = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {neighborhoods.map((neighborhood) => (
               <Card
                 key={neighborhood.id}

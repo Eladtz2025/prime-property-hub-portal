@@ -36,14 +36,6 @@ const EnglishNeighborhoods = () => {
       highlights: ["Street art", "Young vibe", "Nightlife hub"],
     },
     {
-      id: "dizengoff",
-      name: "Dizengoff",
-      description: "Bustling commercial heart with shopping and entertainment",
-      imageUrl: "/images/en/neighborhoods/dizengoff-hero.jpg",
-      avgPrice: "₪3M - ₪8M",
-      highlights: ["Shopping district", "Dizengoff Center", "City pulse"],
-    },
-    {
       id: "old-north",
       name: "Old North",
       description: "Where calm living meets the heart of the city",
@@ -57,7 +49,7 @@ const EnglishNeighborhoods = () => {
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <title>Tel Aviv Neighborhoods - City Market Properties</title>
-        <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, Dizengoff, and Old North. Find your perfect location in the White City." />
+        <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, and Old North. Find your perfect location in the White City." />
         <meta property="og:title" content="Tel Aviv Neighborhoods - City Market Properties" />
         <meta property="og:description" content="Discover Tel Aviv's most prestigious neighborhoods. Each area tells its own story." />
         <meta property="og:type" content="website" />
@@ -82,7 +74,7 @@ const EnglishNeighborhoods = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {neighborhoods.map((neighborhood) => (
               <Card
                 key={neighborhood.id}
