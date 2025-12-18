@@ -105,12 +105,7 @@ serve(async (req) => {
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;
 
-    // Format price
-    const priceText = property.monthly_rent 
-      ? (isEnglish ? `₪${property.monthly_rent.toLocaleString()}/mo` : `₪${property.monthly_rent.toLocaleString()}/חודש`)
-      : '';
-
-    const fullTitle = `${propertyTypePrefix}: ${title}${priceText ? ` - ${priceText}` : ''}`;
+    const fullTitle = `${propertyTypePrefix}: ${title}`;
 
     // Generate HTML with OG tags
     const html = `<!DOCTYPE html>
