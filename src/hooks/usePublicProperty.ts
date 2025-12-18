@@ -44,6 +44,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
             current_market_value,
             featured,
             available,
+            status,
             assigned_user_id,
             assigned_agent:profiles!properties_assigned_user_id_fkey (
               id,
@@ -61,8 +62,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
             )
           `)
           .eq('id', propertyId)
-          .eq('available', true)
-          .in('status', ['vacant', 'unknown'])
+          .eq('show_on_website', true)
           .single();
 
         if (error) {
@@ -86,6 +86,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
           description: property.description,
           description_en: property.description_en,
           property_type: property.property_type as 'rental' | 'sale',
+          status: property.status as 'vacant' | 'occupied' | 'maintenance' | 'unknown',
           rooms: property.rooms,
           property_size: property.property_size,
           bathrooms: property.bathrooms,
