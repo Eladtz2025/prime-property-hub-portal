@@ -71,11 +71,23 @@ serve(async (req) => {
     
     const mainImage = sortedImages[0]?.image_url || 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png';
 
+    // Get property type prefix
+    const getPropertyTypePrefix = (propertyType: string | null, isEn: boolean): string => {
+      const prefixes: Record<string, { he: string; en: string }> = {
+        rental: { he: 'להשכרה', en: 'For Rent' },
+        sale: { he: 'למכירה', en: 'For Sale' },
+        management: { he: 'ניהול', en: 'Management' }
+      };
+      const prefix = prefixes[propertyType || 'rental'] || prefixes.rental;
+      return isEn ? prefix.en : prefix.he;
+    };
+
     // Prepare content based on language
     const isEnglish = lang === 'en';
+    const propertyTypePrefix = getPropertyTypePrefix(property.property_type, isEnglish);
     const title = isEnglish 
-      ? (property.title_en || property.title || 'Property for Rent')
-      : (property.title || 'נכס להשכרה');
+      ? (property.title_en || property.title || 'Property')
+      : (property.title || 'נכס');
     
     const location = isEnglish
       ? (property.neighborhood_en || property.city || 'Tel Aviv')
@@ -98,7 +110,7 @@ serve(async (req) => {
       ? (isEnglish ? `₪${property.monthly_rent.toLocaleString()}/mo` : `₪${property.monthly_rent.toLocaleString()}/חודש`)
       : '';
 
-    const fullTitle = priceText ? `${title} - ${priceText}` : title;
+    const fullTitle = `${propertyTypePrefix}: ${title}${priceText ? ` - ${priceText}` : ''}`;
 
     // Generate HTML with OG tags
     const html = `<!DOCTYPE html>
