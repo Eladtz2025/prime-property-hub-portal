@@ -6,7 +6,6 @@ import { Helmet } from "react-helmet";
 
 import { TimelineItem } from "@/components/about/TimelineItem";
 import { ValueCard } from "@/components/about/ValueCard";
-import { TeamCard } from "@/components/about/TeamCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
 import { ScrollAnimated } from "@/components/about/ScrollAnimated";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import sarahLeviReview from "@/assets/reviews/sarah-levi.jpg";
 import michalGolanReview from "@/assets/reviews/michal-golan.jpg";
 import yossiAbrahamReview from "@/assets/reviews/yossi-abraham.jpg";
 import roiIsraeliReview from "@/assets/reviews/roi-israeli.jpg";
+
 const About = () => {
   const [isConsultationOpen, setIsConsultationOpen] = useState(false);
   const navigate = useNavigate();
@@ -37,30 +37,6 @@ const About = () => {
 
       {/* Hero Section - Enhanced */}
       <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" minHeight="50vh" />
-
-      {/* Our Story Section */}
-      <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30">
-        <div className="container mx-auto px-4">
-          <ScrollAnimated>
-            <div className="text-center mb-12 md:mb-16">
-              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-                Our Journey
-              </p>
-              
-            </div>
-          </ScrollAnimated>
-          
-          {/* Timeline */}
-          <div className="relative max-w-4xl mx-auto">
-            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2 hidden md:block" />
-            
-            <TimelineItem year="2008" title="Company Founded" description="Started as a small boutique agency with a big vision" icon={<Building className="w-8 h-8" />} side="left" />
-            <TimelineItem year="2012" title="Expanded to 5 Neighborhoods" description="Extended operations to Tel Aviv's premier neighborhoods" icon={<MapPin className="w-8 h-8" />} side="right" />
-            <TimelineItem year="2018" title="500+ Properties Milestone" description="Reached the 500 successfully sold properties mark" icon={<Award className="w-8 h-8" />} side="left" />
-            <TimelineItem year="2023" title="Digital Transformation" description="Launched smart property management platform" icon={<Sparkles className="w-8 h-8" />} side="right" />
-          </div>
-        </div>
-      </section>
 
       {/* Values Section */}
       <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
@@ -105,25 +81,26 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="py-12 md:py-16 lg:py-24 bg-background">
+      {/* Our Story Section */}
+      <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimated>
             <div className="text-center mb-12 md:mb-16">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-4">
-                Meet The Experts
+                Our Journey
               </p>
-              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-foreground">
-                Our Team
-              </h2>
+              
             </div>
           </ScrollAnimated>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <TeamCard image="/team1/david-cohen.jpg" name="David Cohen" role="Founder & CEO" experience="15+ years experience" delay={0} />
-            <TeamCard image="/team1/sarah-levi.jpg" name="Sarah Levi" role="Sales Director" experience="10+ years experience" delay={100} />
-            <TeamCard image="/team1/yossi-abraham.jpg" name="Yossi Abraham" role="Rentals Manager" experience="8+ years experience" delay={200} />
-            <TeamCard image="/team1/michal-golan.jpg" name="Michal Golan" role="Property Management Director" experience="12+ years experience" delay={300} />
+          
+          {/* Timeline */}
+          <div className="relative max-w-4xl mx-auto">
+            <div className="absolute left-1/2 h-full w-1 bg-primary/20 transform -translate-x-1/2 hidden md:block" />
+            
+            <TimelineItem year="2008" title="Company Founded" description="Started as a small boutique agency with a big vision" icon={<Building className="w-8 h-8" />} side="left" />
+            <TimelineItem year="2012" title="Expanded to 5 Neighborhoods" description="Extended operations to Tel Aviv's premier neighborhoods" icon={<MapPin className="w-8 h-8" />} side="right" />
+            <TimelineItem year="2018" title="500+ Properties Milestone" description="Reached the 500 successfully sold properties mark" icon={<Award className="w-8 h-8" />} side="left" />
+            <TimelineItem year="2023" title="Digital Transformation" description="Launched smart property management platform" icon={<Sparkles className="w-8 h-8" />} side="right" />
           </div>
         </div>
       </section>
