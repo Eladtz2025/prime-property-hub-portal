@@ -268,13 +268,13 @@ const Rentals = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
               <Card key={index} className="p-8">
-                <div className="flex gap-4">
+                <div className="flex flex-row-reverse gap-4">
                   <div className="flex-shrink-0">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <service.icon className="h-6 w-6 text-primary" />
                     </div>
                   </div>
-                  <div>
+                  <div className="text-right">
                     <h3 className="font-bold text-lg mb-2">{service.title}</h3>
                     <p className="text-muted-foreground">{service.description}</p>
                   </div>
