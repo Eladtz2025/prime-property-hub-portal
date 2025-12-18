@@ -8,7 +8,7 @@ import { toast } from "sonner";
 interface FlippablePropertyCardProps {
   title: string;
   location: string;
-  price: string;
+  price?: string;
   imageUrl: string;
   type?: string;
   parking?: boolean;
@@ -104,7 +104,7 @@ export const FlippablePropertyCard = ({
             )}
             <h3 className="reliz-property-title mb-2 text-right">{title}</h3>
             <div className="flex items-center justify-between flex-row-reverse">
-              <p className="font-playfair text-lg font-medium">{price}</p>
+              {price && <p className="font-playfair text-lg font-medium">{price}</p>}
               <p className="font-montserrat text-sm text-white/70">{location}</p>
             </div>
 
