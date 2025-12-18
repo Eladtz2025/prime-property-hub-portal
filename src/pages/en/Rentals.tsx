@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
@@ -9,7 +9,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Square, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import { usePublicProperties } from "@/hooks/usePublicProperties";
-import { useTranslation } from "@/hooks/useTranslation";
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
 
@@ -19,21 +18,7 @@ const EnglishRentals = () => {
   // Fetch real data from database
   const { data: realProperties, isLoading } = usePublicProperties({ propertyType: 'rental' });
 
-  // Collect all texts that need translation
-  const textsToTranslate = useMemo(() => {
-    if (!realProperties) return [];
-    const texts: string[] = [];
-    realProperties.forEach(prop => {
-      if (prop.title) texts.push(prop.title);
-      if (prop.address) texts.push(prop.address);
-      if (prop.description) texts.push(prop.description);
-    });
-    return [...new Set(texts)]; // Remove duplicates
-  }, [realProperties]);
-
-  const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
-
-  // Use real data
+  // Use real data with English fields from database
   const properties = (realProperties || []).map(prop => ({
     id: prop.id,
     title: prop.title_en || prop.title || '',
@@ -54,10 +39,9 @@ const EnglishRentals = () => {
   }));
 
   const filteredProperties = properties.filter((property) => {
-    const translatedAddress = translations[property.address || ''] || property.address || '';
-    const translatedTitle = translations[property.title || ''] || property.title || '';
-    const matchesSearch = translatedAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         translatedTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      property.neighborhood.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -105,11 +89,9 @@ const EnglishRentals = () => {
             />
           </div>
 
-          {isLoading || isTranslating ? (
+          {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">
-                {isLoading ? 'Loading properties...' : 'Translating...'}
-              </p>
+              <p className="text-lg text-muted-foreground">Loading properties...</p>
             </div>
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
