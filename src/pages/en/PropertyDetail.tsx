@@ -7,13 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { PropertyImage } from "@/types/property";
-import { useMemo } from "react";
 import { usePublicProperty } from "@/hooks/usePublicProperty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslation } from "@/hooks/useTranslation";
 import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
-import { removeAddressNumber } from "@/lib/utils";
+
 import { Helmet } from "react-helmet";
 const EnglishPropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,19 +21,10 @@ const EnglishPropertyDetail = () => {
   // Load property from database
   const { data: property, isLoading, error } = usePublicProperty(id);
 
-  // Prepare texts for translation
-  const textsToTranslate = useMemo(() => {
-    if (!property) return [];
-    return [
-      property.title || '',
-      property.description || '',
-      property.address || '',
-      property.city || ''
-    ].filter(Boolean);
-  }, [property]);
-
-  // Use translation hook
-  const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
+  // Get English texts from database
+  const translatedTitle = property?.title_en || property?.title || '';
+  const translatedDescription = property?.description_en || property?.description || '';
+  const translatedNeighborhood = property?.neighborhood_en || property?.neighborhood || property?.city || '';
 
   // Convert property images to PropertyImage format
   const propertyImages: PropertyImage[] = property?.images.map(img => ({
@@ -91,7 +80,7 @@ const EnglishPropertyDetail = () => {
     }
   };
 
-  if (isLoading || isTranslating) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Skeleton className="h-96 w-full max-w-4xl" />
@@ -131,9 +120,8 @@ const EnglishPropertyDetail = () => {
   };
 
   const getKeyPoints = () => {
-    const translatedCity = translations[property.city] || property.city;
     const points = [
-      `Excellent location in ${translatedCity}`,
+      `Excellent location in ${translatedNeighborhood}`,
       property.rooms ? `${property.rooms} spacious rooms` : 'Spacious area',
       `${property.property_size} sqm`,
     ];
@@ -146,14 +134,8 @@ const EnglishPropertyDetail = () => {
     return points;
   };
 
-  // Get translated texts
-  const translatedTitle = translations[property.title] || property.title;
-  const translatedDescription = translations[property.description] || property.description;
-  const translatedAddress = translations[property.address] || property.address;
-  const translatedCity = translations[property.city] || property.city;
-
   const ogImage = property.images[0]?.image_url || 'https://www.ctmarketproperties.com/city-market-logo.png';
-  const ogDescription = translatedDescription || `${property.rooms} rooms in ${translatedAddress}, ${translatedCity}`;
+  const ogDescription = translatedDescription || `${property.rooms} rooms in ${translatedNeighborhood}`;
   
   return (
     <div className="min-h-screen english-luxury pt-16" dir="ltr">
@@ -203,7 +185,7 @@ const EnglishPropertyDetail = () => {
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20 font-montserrat">{getPropertyTypeLabel()}</Badge>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" />
-              <span className="font-montserrat">{removeAddressNumber(translatedAddress)}, {translatedCity}</span>
+              <span className="font-montserrat">{translatedNeighborhood}</span>
             </div>
           </div>
 
@@ -337,7 +319,7 @@ const EnglishPropertyDetail = () => {
               <h1 className="text-2xl font-playfair font-bold mb-2">{translatedTitle}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4" />
-                <span className="text-base font-montserrat">{removeAddressNumber(translatedAddress)}, {translatedCity}</span>
+                <span className="text-base font-montserrat">{translatedNeighborhood}</span>
               </div>
             </div>
 
