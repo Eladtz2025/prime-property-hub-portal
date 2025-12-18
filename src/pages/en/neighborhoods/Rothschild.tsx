@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, TrendingUp, Coffee, Building2, Home, Star, TreePine, Users } from "lucide-react";
 import EnglishFooter from "@/components/en/Footer";
+import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 
 const RothschildNeighborhood = () => {
@@ -10,28 +11,7 @@ const RothschildNeighborhood = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
-      {/* Back Button */}
-      <div className="sticky top-0 z-50 bg-background border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/en/neighborhoods')}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Neighborhoods
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/he/neighborhoods/rothschild')}
-              className="gap-2"
-            >
-              עברית
-            </Button>
-          </div>
-        </div>
-      </div>
+      <EnglishHeader />
 
       {/* Hero Section */}
       <FullScreenHero
