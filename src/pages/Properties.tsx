@@ -681,31 +681,31 @@ export const Properties: React.FC = memo(() => {
                                        <TooltipContent>שתף נכס</TooltipContent>
                                      </Tooltip>
                                      <DropdownMenuContent align="end">
-                                       <DropdownMenuItem onClick={() => {
-                                         const url = `${window.location.origin}/he/property/${property.id}`;
-                                         window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
-                                       }}>
-                                         <MessageCircle className="h-4 w-4 ml-2" />
-                                         שתף בווטסאפ
-                                       </DropdownMenuItem>
-                                       <DropdownMenuItem onClick={() => {
-                                         const url = `${window.location.origin}/he/property/${property.id}`;
-                                         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                                       }}>
-                                         <Facebook className="h-4 w-4 ml-2" />
-                                         שתף בפייסבוק
-                                       </DropdownMenuItem>
-                                       <DropdownMenuItem onClick={() => {
-                                         const url = `${window.location.origin}/he/property/${property.id}`;
-                                         navigator.clipboard.writeText(url);
-                                         toast({
-                                           title: "הקישור הועתק",
-                                           description: "קישור לנכס הועתק ללוח",
-                                         });
-                                       }}>
-                                         <LinkIcon className="h-4 w-4 ml-2" />
-                                         העתק קישור
-                                       </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => {
+                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
+                                          window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+                                        }}>
+                                          <MessageCircle className="h-4 w-4 ml-2" />
+                                          שתף בווטסאפ
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => {
+                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
+                                          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                        }}>
+                                          <Facebook className="h-4 w-4 ml-2" />
+                                          שתף בפייסבוק
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => {
+                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
+                                          navigator.clipboard.writeText(url);
+                                          toast({
+                                            title: "הקישור הועתק",
+                                            description: "קישור לנכס הועתק ללוח",
+                                          });
+                                        }}>
+                                          <LinkIcon className="h-4 w-4 ml-2" />
+                                          העתק קישור
+                                        </DropdownMenuItem>
                                      </DropdownMenuContent>
                                    </DropdownMenu>
 
