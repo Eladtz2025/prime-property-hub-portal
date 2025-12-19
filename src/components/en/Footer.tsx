@@ -98,9 +98,9 @@ const EnglishFooter = () => {
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods/dizengoff')}
+                onClick={() => navigate('/en/neighborhoods/florentin')}
               >
-                Dizengoff
+                Florentin
               </p>
               <p 
                 className="cursor-pointer hover:text-background transition-colors"
