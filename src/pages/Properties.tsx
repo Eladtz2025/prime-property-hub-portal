@@ -689,8 +689,9 @@ export const Properties: React.FC = memo(() => {
                                           שתף בווטסאפ
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => {
-                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
-                                          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                          // Use og-property edge function for Facebook - returns proper OG tags with property image
+                                          const ogUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${property.id}&lang=he`;
+                                          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(ogUrl)}`, '_blank');
                                         }}>
                                           <Facebook className="h-4 w-4 ml-2" />
                                           שתף בפייסבוק
