@@ -86,7 +86,7 @@ const Sales = () => {
         city: prop.city,
         neighborhood: (prop as any).neighborhood,
         status: prop.status,
-        price: prop.monthly_rent || 0, // Will need to add price field later for sales
+        price: prop.price || prop.monthly_rent || 0,
         rooms: prop.rooms,
         property_size: prop.property_size,
         description: prop.description || '',
