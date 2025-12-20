@@ -205,16 +205,16 @@ const AdminPriceOffers = () => {
   }
 
   return (
-    <div className="p-8 rtl">
+    <div className="p-4 md:p-8 rtl overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">הצעות מחיר</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowTemplates(true)}>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold">הצעות מחיר</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)}>
               <FileText className="h-4 w-4 ml-2" />
               צור מתבנית
             </Button>
-            <Button onClick={() => navigate('/admin-dashboard/price-offers/create')}>
+            <Button size="sm" onClick={() => navigate('/admin-dashboard/price-offers/create')}>
               <Plus className="h-4 w-4 ml-2" />
               הצעה חדשה
             </Button>
@@ -233,12 +233,12 @@ const AdminPriceOffers = () => {
             {offers.map((offer) => (
               <div
                 key={offer.id}
-                className="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">{offer.property_title}</h3>
-                    <div className="flex gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg md:text-xl font-semibold mb-2 truncate">{offer.property_title}</h3>
+                    <div className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground">
                       <span>נוצר: {new Date(offer.created_at).toLocaleDateString('he-IL')}</span>
                       <span>צפיות: {offer.views_count}</span>
                       <span className={offer.is_active ? 'text-green-600' : 'text-red-600'}>
@@ -247,10 +247,11 @@ const AdminPriceOffers = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 justify-end">
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => navigate(`/admin-dashboard/price-offers/edit/${offer.id}`)}
                       title="ערוך"
                     >
@@ -260,6 +261,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => openOffer(offer.token)}
                       title="תצוגה מקדימה"
                     >
@@ -269,6 +271,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => copyLink(offer.token)}
                       title="העתק לינק"
                     >
@@ -278,6 +281,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => shareWhatsApp(offer.token, offer.property_title)}
                       title="שתף ב-WhatsApp"
                     >
@@ -287,6 +291,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => duplicateOffer(offer.id)}
                       title="שכפל הצעה"
                     >
@@ -296,6 +301,7 @@ const AdminPriceOffers = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => setDeleteId(offer.id)}
                       title="מחק"
                     >
