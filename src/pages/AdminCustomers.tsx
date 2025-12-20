@@ -191,15 +191,15 @@ export default function AdminCustomers() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div className="flex flex-row-reverse justify-between items-center">
-        <h1 className="text-3xl font-bold">ניהול לקוחות</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => setAddModalOpen(true)}>
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden" dir="rtl">
+      <div className="flex flex-col md:flex-row-reverse md:justify-between md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setAddModalOpen(true)} size="sm" className="md:size-default">
             <Plus className="h-4 w-4 ml-2" />
             לקוח חדש
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} size="sm" className="md:size-default">
             <Download className="h-4 w-4 ml-2" />
             ייצא לאקסל
           </Button>
@@ -209,8 +209,8 @@ export default function AdminCustomers() {
       <CustomerStatsCards customers={customers} />
 
       {/* Filters Bar */}
-      <div className="flex flex-row-reverse flex-wrap gap-4 items-center bg-card p-4 rounded-lg">
-        <div className="flex-1 min-w-[200px] relative">
+      <div className="flex flex-col md:flex-row-reverse flex-wrap gap-3 bg-card p-3 md:p-4 rounded-lg">
+        <div className="w-full md:flex-1 md:min-w-[200px] relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="חיפוש לפי שם, אימייל או טלפון..."
@@ -220,85 +220,90 @@ export default function AdminCustomers() {
           />
         </div>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="סטטוס" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסטטוסים</SelectItem>
-            <SelectItem value="new">חדש</SelectItem>
-            <SelectItem value="contacted">נוצר קשר</SelectItem>
-            <SelectItem value="active">פעיל</SelectItem>
-            <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
-            <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
-            <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
-            <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:flex gap-2 md:gap-3">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-36">
+              <SelectValue placeholder="סטטוס" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל הסטטוסים</SelectItem>
+              <SelectItem value="new">חדש</SelectItem>
+              <SelectItem value="contacted">נוצר קשר</SelectItem>
+              <SelectItem value="active">פעיל</SelectItem>
+              <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
+              <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
+              <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
+              <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="עדיפות" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל העדיפויות</SelectItem>
-            <SelectItem value="low">נמוך</SelectItem>
-            <SelectItem value="medium">בינוני</SelectItem>
-            <SelectItem value="high">גבוה</SelectItem>
-            <SelectItem value="urgent">דחוף</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-full md:w-32">
+              <SelectValue placeholder="עדיפות" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל העדיפויות</SelectItem>
+              <SelectItem value="low">נמוך</SelectItem>
+              <SelectItem value="medium">בינוני</SelectItem>
+              <SelectItem value="high">גבוה</SelectItem>
+              <SelectItem value="urgent">דחוף</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={agentFilter} onValueChange={setAgentFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="סוכן" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסוכנים</SelectItem>
-            {agents.map(agent => (
-              <SelectItem key={agent.id} value={agent.id}>
-                {agent.full_name || agent.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="w-full md:w-36">
+              <SelectValue placeholder="סוכן" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל הסוכנים</SelectItem>
+              {agents.map(agent => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.full_name || agent.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="מיון" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
-            <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
-            <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
-            <SelectItem value="last_contact_asc">דורש תשומת לב (קשר ישן)</SelectItem>
-            <SelectItem value="next_followup_asc">מעקב הבא קודם</SelectItem>
-            <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-40">
+              <SelectValue placeholder="מיון" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
+              <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
+              <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
+              <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
+              <SelectItem value="next_followup_asc">מעקב הבא קודם</SelectItem>
+              <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
-          <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
-            <LayoutGrid className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="תצוגת טבלה">
-            <List className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <div className="flex gap-2 justify-between md:justify-start">
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
+            <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="תצוגת טבלה">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-        <Button
-          variant="outline"
-          onClick={() => {
-            setSearchTerm("");
-            setStatusFilter("all");
-            setPriorityFilter("all");
-            setAgentFilter("all");
-            setSortBy("created_at_desc");
-          }}
-        >
-          <Filter className="h-4 w-4 ml-2" />
-          נקה
-        </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setPriorityFilter("all");
+              setAgentFilter("all");
+              setSortBy("created_at_desc");
+            }}
+          >
+            <Filter className="h-4 w-4 ml-1" />
+            נקה
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
