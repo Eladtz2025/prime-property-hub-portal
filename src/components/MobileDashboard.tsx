@@ -17,11 +17,17 @@ import {
   Plus,
   Edit3,
   Check,
-  X
+  X,
+  FileText,
+  MessageSquare,
+  ChevronLeft,
+  ArrowLeft
 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { ActivityLogsList } from './ActivityLogsList';
+import { ContactLeadsListCompact } from './ContactLeadsListCompact';
+import { BrokerageFormsListCompact } from './BrokerageFormsListCompact';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -303,6 +309,65 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       </div>
 
 
+        {/* Forms Section - Quick Access */}
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                טפסים
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                <Link to="/admin-dashboard/price-offers">
+                  ראה הכל
+                  <ArrowLeft className="h-3 w-3 mr-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" size="sm" className="h-auto py-3 flex-col gap-1" asChild>
+                <Link to="/brokerage-form/new">
+                  <FileText className="h-4 w-4" />
+                  <span className="text-xs">הזמנת תיווך</span>
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" className="h-auto py-3 flex-col gap-1" asChild>
+                <Link to="/admin-dashboard/price-offers">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs">הצעות מחיר</span>
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs text-muted-foreground mb-2">טפסי תיווך אחרונים:</p>
+              <BrokerageFormsListCompact limit={3} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Website Leads Section */}
+        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                פניות מהאתר
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                <Link to="/admin-dashboard/leads">
+                  ראה הכל
+                  <ArrowLeft className="h-3 w-3 mr-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ContactLeadsListCompact limit={3} />
+          </CardContent>
+        </Card>
+
         {/* Alerts Section */}
         <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
           <CardHeader className="pb-3 px-4 pt-4">
@@ -311,11 +376,19 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                 <Bell className="h-4 w-4" />
                 התראות ומעקב
               </CardTitle>
-              {alerts.length > 0 && (
-                <Badge variant="secondary" className="text-xs flex-shrink-0">
-                  {alerts.length}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {alerts.length > 0 && (
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    {alerts.length}
+                  </Badge>
+                )}
+                <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                  <Link to="/admin-dashboard/alerts">
+                    ראה הכל
+                    <ArrowLeft className="h-3 w-3 mr-1" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4">
@@ -404,7 +477,15 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         {/* Recent Activity */}
         <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
           <CardHeader className="pb-3 px-4 pt-4">
-            <CardTitle className="text-base font-bold text-foreground">פעילות אחרונה</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base font-bold text-foreground">פעילות אחרונה</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
+                <Link to="/admin-dashboard/activity">
+                  ראה הכל
+                  <ArrowLeft className="h-3 w-3 mr-1" />
+                </Link>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <ActivityLogsList limit={3} />

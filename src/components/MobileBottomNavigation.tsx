@@ -3,19 +3,22 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Building, 
-  LayoutDashboard
+  Users,
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Main navigation items
+// Main navigation items - core features accessible from bottom nav
 const navigationItems = [
+  { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
+  { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
+  { title: "פניות", url: "/admin-dashboard/leads", icon: MessageSquare },
+  { title: "טפסים", url: "/admin-dashboard/price-offers", icon: FileText },
 ];
-
-// Admin dashboard navigation item
-const adminDashboardItem = { title: "לוח בקרה", url: "/admin-dashboard", icon: Home };
 
 interface MobileBottomNavigationProps {
   notificationCount?: number;
@@ -25,16 +28,9 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   notificationCount = 0 
 }) => {
   const location = useLocation();
-  const { profile } = useAuth();
 
-  // Check if user is admin
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'manager';
-
-  // Combine main navigation with admin dashboard based on access
-  const allNavItems = [
-    ...navigationItems,
-    ...(isAdmin ? [adminDashboardItem] : [])
-  ];
+  // All nav items are now in the main array
+  const allNavItems = navigationItems;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
