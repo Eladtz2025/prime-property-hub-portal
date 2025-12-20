@@ -7,15 +7,19 @@ import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
-export const BrokerageFormsListCompact: React.FC = () => {
+interface BrokerageFormsListCompactProps {
+  limit?: number;
+}
+
+export const BrokerageFormsListCompact: React.FC<BrokerageFormsListCompactProps> = ({ limit = 5 }) => {
   const { data: forms, isLoading } = useQuery({
-    queryKey: ['brokerage-forms'],
+    queryKey: ['brokerage-forms', limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('brokerage_forms')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(limit);
 
       if (error) throw error;
       return data;
@@ -25,7 +29,7 @@ export const BrokerageFormsListCompact: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: limit }).map((_, i) => (
           <Skeleton key={i} className="h-16 w-full" />
         ))}
       </div>
