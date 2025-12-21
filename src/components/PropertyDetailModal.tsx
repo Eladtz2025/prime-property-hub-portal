@@ -121,11 +121,11 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
         <Tabs defaultValue="general" className="w-full" dir="rtl">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="notes">הערות</TabsTrigger>
-            <TabsTrigger value="history">היסטוריה</TabsTrigger>
-            <TabsTrigger value="contract">חוזה</TabsTrigger>
-            <TabsTrigger value="images">תמונות</TabsTrigger>
             <TabsTrigger value="general">כללי</TabsTrigger>
+            <TabsTrigger value="images">תמונות</TabsTrigger>
+            <TabsTrigger value="contract">חוזה</TabsTrigger>
+            <TabsTrigger value="history">היסטוריה</TabsTrigger>
+            <TabsTrigger value="notes">הערות</TabsTrigger>
           </TabsList>
 
           {/* General Details */}
