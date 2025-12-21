@@ -17,7 +17,7 @@ const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
   { title: "פניות", url: "/admin-dashboard/leads", icon: MessageSquare },
-  { title: "טפסים", url: "/admin-dashboard/price-offers", icon: FileText },
+  { title: "טפסים", url: "/admin-dashboard/forms", icon: FileText },
 ];
 
 interface MobileBottomNavigationProps {
