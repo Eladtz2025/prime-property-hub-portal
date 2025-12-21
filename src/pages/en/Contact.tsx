@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyNewLead } from "@/utils/notifyNewLead";
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
   email: z.string().email("Invalid email address").max(255, "Email is too long"),
@@ -34,6 +35,16 @@ const Contact = () => {
         property_id: null
       });
       if (error) throw error;
+
+      // Send WhatsApp notification to Tali (async, don't wait)
+      notifyNewLead({
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        message: validatedData.message,
+        source: 'Contact Page (English)',
+      });
+
       setFormData({
         name: "",
         email: "",
