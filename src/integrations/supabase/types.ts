@@ -279,6 +279,147 @@ export type Database = {
           },
         ]
       }
+      exclusive_listing_forms: {
+        Row: {
+          agent_id_number: string | null
+          agent_license: string | null
+          agent_name: string | null
+          agent_phone: string | null
+          agent_signature: string | null
+          asking_price: string | null
+          commission_includes_vat: boolean | null
+          commission_percentage: string | null
+          confirm_accuracy: boolean | null
+          confirm_defects: boolean | null
+          confirm_understanding: boolean | null
+          created_at: string | null
+          created_by: string | null
+          defects_details: string | null
+          defects_questionnaire: Json | null
+          end_date: string | null
+          exclusivity_months: number | null
+          expires_at: string | null
+          form_data: Json | null
+          id: string
+          language: string | null
+          marketing_activities: Json | null
+          marketing_other: string | null
+          owner_address: string | null
+          owner_email: string | null
+          owner_id_number: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          owner_signature: string | null
+          owner_signed_at: string | null
+          property_address: string | null
+          property_balcony: boolean | null
+          property_elevator: boolean | null
+          property_floor: string | null
+          property_gush_helka: string | null
+          property_parking: boolean | null
+          property_rooms: string | null
+          property_size_sqm: string | null
+          property_storage: boolean | null
+          start_date: string | null
+          status: string | null
+          token: string | null
+          transaction_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id_number?: string | null
+          agent_license?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_signature?: string | null
+          asking_price?: string | null
+          commission_includes_vat?: boolean | null
+          commission_percentage?: string | null
+          confirm_accuracy?: boolean | null
+          confirm_defects?: boolean | null
+          confirm_understanding?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          defects_details?: string | null
+          defects_questionnaire?: Json | null
+          end_date?: string | null
+          exclusivity_months?: number | null
+          expires_at?: string | null
+          form_data?: Json | null
+          id?: string
+          language?: string | null
+          marketing_activities?: Json | null
+          marketing_other?: string | null
+          owner_address?: string | null
+          owner_email?: string | null
+          owner_id_number?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          owner_signature?: string | null
+          owner_signed_at?: string | null
+          property_address?: string | null
+          property_balcony?: boolean | null
+          property_elevator?: boolean | null
+          property_floor?: string | null
+          property_gush_helka?: string | null
+          property_parking?: boolean | null
+          property_rooms?: string | null
+          property_size_sqm?: string | null
+          property_storage?: boolean | null
+          start_date?: string | null
+          status?: string | null
+          token?: string | null
+          transaction_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id_number?: string | null
+          agent_license?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_signature?: string | null
+          asking_price?: string | null
+          commission_includes_vat?: boolean | null
+          commission_percentage?: string | null
+          confirm_accuracy?: boolean | null
+          confirm_defects?: boolean | null
+          confirm_understanding?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          defects_details?: string | null
+          defects_questionnaire?: Json | null
+          end_date?: string | null
+          exclusivity_months?: number | null
+          expires_at?: string | null
+          form_data?: Json | null
+          id?: string
+          language?: string | null
+          marketing_activities?: Json | null
+          marketing_other?: string | null
+          owner_address?: string | null
+          owner_email?: string | null
+          owner_id_number?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          owner_signature?: string | null
+          owner_signed_at?: string | null
+          property_address?: string | null
+          property_balcony?: boolean | null
+          property_elevator?: boolean | null
+          property_floor?: string | null
+          property_gush_helka?: string | null
+          property_parking?: boolean | null
+          property_rooms?: string | null
+          property_size_sqm?: string | null
+          property_storage?: boolean | null
+          start_date?: string | null
+          status?: string | null
+          token?: string | null
+          transaction_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           amount: number
