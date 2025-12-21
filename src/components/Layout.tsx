@@ -17,13 +17,13 @@ export const Layout: React.FC<LayoutProps> = ({
   if (isMobile) {
     // Mobile layout without sidebar
     return <div className="min-h-screen flex flex-col w-full bg-background">
-        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-50 shadow-sm">
+        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-50 shadow-sm" dir="rtl">
           <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
           <div className="flex items-center gap-2 flex-shrink-0">
+            <img src="/images/city-market-icon.png" alt="City Market" className="w-10 h-10 object-contain" />
             <h1 className="font-bold text-foreground text-base leading-tight">
               City Market CRM
             </h1>
-            <img src="/images/city-market-icon.png" alt="City Market" className="w-10 h-10 object-contain" />
           </div>
         </header>
         <main className="flex-1 flex flex-col">
