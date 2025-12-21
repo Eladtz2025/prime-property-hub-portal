@@ -98,20 +98,20 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-row-reverse">
+            <div className="text-right">
               <DialogTitle className="text-xl">{property.address}</DialogTitle>
               <p className="text-muted-foreground">{property.city}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-row-reverse">
               <Badge className={getStatusColor(property.status)}>
                 {getStatusText(property.status)}
               </Badge>
               {canEdit && (
                 <Button size="sm" onClick={() => onEdit(property)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 ml-2" />
                   עריכה
                 </Button>
               )}
@@ -119,50 +119,50 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs defaultValue="general" className="w-full" dir="rtl">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="general">כללי</TabsTrigger>
-            <TabsTrigger value="images">תמונות</TabsTrigger>
-            <TabsTrigger value="contract">חוזה</TabsTrigger>
-            <TabsTrigger value="history">היסטוריה</TabsTrigger>
             <TabsTrigger value="notes">הערות</TabsTrigger>
+            <TabsTrigger value="history">היסטוריה</TabsTrigger>
+            <TabsTrigger value="contract">חוזה</TabsTrigger>
+            <TabsTrigger value="images">תמונות</TabsTrigger>
+            <TabsTrigger value="general">כללי</TabsTrigger>
           </TabsList>
 
           {/* General Details */}
-          <TabsContent value="general" className="space-y-4">
+          <TabsContent value="general" className="space-y-4 text-right">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Property Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
                     <Home className="h-4 w-4" />
                     פרטי הנכס
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
+                <CardContent className="space-y-3 text-right">
+                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">כתובת:</span>
                     <span>{property.address}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
                     <span className="font-medium">עיר:</span>
                     <span>{property.city}</span>
                   </div>
                   {property.propertySize && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
                       <span className="font-medium">גודל:</span>
                       <span>{property.propertySize} מ"ר</span>
                     </div>
                   )}
                   {property.floor && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
                       <span className="font-medium">קומה:</span>
                       <span>{property.floor}</span>
                     </div>
                   )}
                   {property.rooms && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
                       <span className="font-medium">חדרים:</span>
                       <span>{property.rooms}</span>
                     </div>
@@ -173,18 +173,18 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               {/* Owner Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
                     <User className="h-4 w-4" />
                     פרטי הבעלים
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 text-right">
                   <div>
                     <span className="font-medium">שם:</span>
                     <span className="mr-2">{property.ownerName}</span>
                   </div>
                   {property.ownerPhone && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       {canViewPhone ? (
                         <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
@@ -196,7 +196,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     </div>
                   )}
                   {property.ownerEmail && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <a href={`mailto:${property.ownerEmail}`} className="text-blue-600 hover:underline">
                         {property.ownerEmail}
@@ -211,12 +211,12 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               {/* Tenant Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
                     <User className="h-4 w-4" />
                     פרטי השוכר
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 text-right">
                   {property.tenantName ? (
                     <>
                       <div>
@@ -224,7 +224,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                         <span className="mr-2">{property.tenantName}</span>
                       </div>
                       {property.tenantPhone && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-row-reverse justify-end">
                           <Phone className="h-4 w-4 text-muted-foreground" />
                           {canViewPhone ? (
                             <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
@@ -245,9 +245,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               {/* Financial Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">מידע כספי</CardTitle>
+                  <CardTitle className="text-base text-right">מידע כספי</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="text-right">
                   {property.monthlyRent ? (
                     <div>
                       <span className="font-medium">שכירות חודשית:</span>
@@ -267,24 +267,24 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </TabsContent>
 
           {/* Contract Details */}
-          <TabsContent value="contract">
+          <TabsContent value="contract" className="text-right">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
                   <FileText className="h-4 w-4" />
                   פרטי חוזה
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 text-right">
                 {property.leaseStartDate && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">תאריך התחלה:</span>
                     <span>{new Date(property.leaseStartDate).toLocaleDateString('he-IL')}</span>
                   </div>
                 )}
                 {property.leaseEndDate && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">תאריך סיום:</span>
                     <span>{new Date(property.leaseEndDate).toLocaleDateString('he-IL')}</span>
@@ -298,15 +298,15 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </TabsContent>
 
           {/* History */}
-          <TabsContent value="history">
+          <TabsContent value="history" className="text-right">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 flex-row-reverse justify-end">
                   <History className="h-4 w-4" />
                   היסטוריית שינויים
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="text-right">
                 <div className="space-y-2">
                   {property.createdAt && (
                     <div className="text-sm text-muted-foreground">
@@ -327,12 +327,12 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </TabsContent>
 
           {/* Notes */}
-          <TabsContent value="notes">
+          <TabsContent value="notes" className="text-right">
             <Card>
               <CardHeader>
-                <CardTitle>הערות</CardTitle>
+                <CardTitle className="text-right">הערות</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="text-right">
                 {property.notes ? (
                   <p className="whitespace-pre-wrap">{property.notes}</p>
                 ) : (
