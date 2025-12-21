@@ -243,7 +243,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
         <CardContent className="p-0 relative">
           {/* Video or loading state - fixed height with blur */}
           {(isVideo || imageOrientation === 'unknown') && (
-            <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
+            <div className="relative h-[40vh] md:h-[60vh] max-h-[400px] md:max-h-[600px] min-h-[200px] md:min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
               {/* Blurred background layer */}
               {!isVideo && (
                 <div className="absolute inset-0 overflow-hidden">
@@ -262,14 +262,14 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   {isVideo ? (
                     <VideoWithPlaceholder
                       src={currentImage.url}
-                      className="max-w-full max-h-[60vh] object-contain"
+                      className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain"
                       controls={true}
                     />
                   ) : (
                     <ImageWithPlaceholder
                       src={currentImage.url}
                       alt={currentImage.name}
-                      className="max-w-full max-h-[60vh] object-contain drop-shadow-lg"
+                      className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
                       loading="eager"
                       sizes="(max-width: 768px) 100vw, 60vw"
                       onImageLoad={handleImageLoad}
@@ -295,7 +295,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 
           {/* Portrait image - fixed height with blur background */}
           {!isVideo && imageOrientation === 'portrait' && (
-            <div className="relative h-[60vh] max-h-[600px] min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
+            <div className="relative h-[40vh] md:h-[60vh] max-h-[400px] md:max-h-[600px] min-h-[200px] md:min-h-[300px] overflow-hidden rounded-t-lg bg-black/5">
               {/* Blurred background */}
               <div className="absolute inset-0 overflow-hidden">
                 <img
@@ -312,7 +312,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   <img
                     src={currentImage.url}
                     alt={currentImage.name}
-                    className="max-w-full max-h-[60vh] object-contain drop-shadow-lg"
+                    className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
                   />
                   <ControlsOverlay />
                 </div>
