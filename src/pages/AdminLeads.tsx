@@ -1,13 +1,16 @@
 import React from 'react';
 import { ContactLeadsList } from '@/components/ContactLeadsList';
+import { LeadsMobileList } from '@/components/LeadsMobileList';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMobileDetection } from '@/hooks/useMobileDetection';
 
 export const AdminLeads = () => {
   const { toast } = useToast();
+  const { isMobile } = useMobileDetection();
 
   const { data: leads } = useQuery({
     queryKey: ['contact-leads'],
@@ -77,7 +80,7 @@ export const AdminLeads = () => {
         </Button>
       </div>
 
-      <ContactLeadsList />
+      {isMobile ? <LeadsMobileList /> : <ContactLeadsList />}
     </div>
   );
 };
