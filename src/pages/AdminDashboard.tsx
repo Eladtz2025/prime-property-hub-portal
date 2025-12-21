@@ -9,10 +9,6 @@ import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BrokerageFormCard } from '../components/BrokerageFormCard';
-import { BrokerageFormsList } from '../components/BrokerageFormsList';
-import { ContactLeadsList } from '../components/ContactLeadsList';
-import { ContactLeadsListCompact } from '../components/ContactLeadsListCompact';
 import { AdminPWAInstallPrompt } from '../components/AdminPWAInstallPrompt';
 
 
@@ -173,10 +169,6 @@ const AdminDashboard = memo(() => {
           onAddProperty={() => setShowAddPropertyModal(true)}
         />
 
-        {/* טפסי תיווך */}
-        <div className="space-y-4">
-          <BrokerageFormsList />
-        </div>
       </div>
       
       <AddPropertyModal
