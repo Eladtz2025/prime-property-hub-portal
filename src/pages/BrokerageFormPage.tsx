@@ -9,9 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
+
+const OFFICE_AGENTS = [
+  { value: 'טלי סילברברג', label: 'טלי סילברברג' },
+  { value: 'אלעד צברי', label: 'אלעד צברי' },
+];
 
 const MAX_PROPERTIES = 10;
 
@@ -28,12 +34,14 @@ const BrokerageFormPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
+  const agentSignatureRef = useRef<SignatureCanvas>(null);
   const { user, hasPermission } = useAuth();
   
   const [mode, setMode] = useState<PageMode>('new');
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [hasSignature, setHasSignature] = useState(false);
+  const [hasAgentSignature, setHasAgentSignature] = useState(false);
   
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
@@ -124,9 +132,22 @@ const BrokerageFormPage = () => {
     setHasSignature(!signatureRef.current?.isEmpty());
   };
 
+  const clearAgentSignature = () => {
+    agentSignatureRef.current?.clear();
+    setHasAgentSignature(false);
+  };
+
+  const checkAgentSignature = () => {
+    setHasAgentSignature(!agentSignatureRef.current?.isEmpty());
+  };
+
   const validatePropertyData = () => {
     if (!formDate) {
       toast.error('יש למלא תאריך');
+      return false;
+    }
+    if (!referredBy) {
+      toast.error('יש לבחור סוכן');
       return false;
     }
     if (!feeTypeRental && !feeTypeSale) {
@@ -135,6 +156,11 @@ const BrokerageFormPage = () => {
     }
     if (properties.every(p => !p.address)) {
       toast.error('יש להוסיף לפחות נכס אחד');
+      return false;
+    }
+    // Validate agent signature only in 'new' mode
+    if (mode === 'new' && (!agentSignatureRef.current || agentSignatureRef.current.isEmpty())) {
+      toast.error('יש לחתום חתימת סוכן');
       return false;
     }
     return true;
@@ -159,9 +185,12 @@ const BrokerageFormPage = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      const agentSignatureData = agentSignatureRef.current?.toDataURL();
+      
       const formData = {
         formDate,
         referredBy,
+        agentSignature: agentSignatureData,
         feeTypeRental,
         feeTypeSale,
         specialTerms,
@@ -347,14 +376,23 @@ const BrokerageFormPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referred">מופנה על ידי</Label>
-                <Input
-                  id="referred"
-                  value={referredBy}
-                  onChange={(e) => setReferredBy(e.target.value)}
+                <Label htmlFor="referred">סוכן מטפל</Label>
+                <Select 
+                  value={referredBy} 
+                  onValueChange={setReferredBy}
                   disabled={isFieldDisabled}
-                  placeholder="שם המפנה (אופציונלי)"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סוכן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OFFICE_AGENTS.map((agent) => (
+                      <SelectItem key={agent.value} value={agent.value}>
+                        {agent.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -601,7 +639,37 @@ const BrokerageFormPage = () => {
               </div>
             </div>
 
-            {/* Signature */}
+            {/* Agent Signature - Only in 'new' mode */}
+            {mode === 'new' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>חתימת הסוכן</Label>
+                  <div className="flex items-center gap-2">
+                    {hasAgentSignature && (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <CheckCircle2 className="h-3 w-3 ml-1" />
+                        נחתם
+                      </Badge>
+                    )}
+                    <Button onClick={clearAgentSignature} variant="outline" size="sm">
+                      <Trash2 className="h-4 w-4 ml-2" />
+                      נקה חתימה
+                    </Button>
+                  </div>
+                </div>
+                <div className="border rounded-lg overflow-hidden bg-white">
+                  <SignatureCanvas
+                    ref={agentSignatureRef}
+                    onEnd={checkAgentSignature}
+                    canvasProps={{
+                      className: 'w-full h-40',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Client Signature */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>חתימת הלקוח</Label>
