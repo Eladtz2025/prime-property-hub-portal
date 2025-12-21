@@ -11,6 +11,8 @@ import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { CustomerStatsCards } from "@/components/CustomerStatsCards";
 import { CustomerCard } from "@/components/CustomerCard";
 import { CustomerTableView } from "@/components/CustomerTableView";
+import { CustomerMobileTable } from "@/components/CustomerMobileTable";
+import { CustomerDetailSheet } from "@/components/CustomerDetailSheet";
 import { CustomerEditModal } from "@/components/CustomerEditModal";
 import { AddCustomerModal } from "@/components/AddCustomerModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +35,7 @@ export default function AdminCustomers() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
 
   const {
     customers,
@@ -67,6 +70,11 @@ export default function AdminCustomers() {
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setEditModalOpen(true);
+  };
+
+  const handleSelectCustomerForSheet = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setDetailSheetOpen(true);
   };
 
   const handleSaveCustomer = () => {
@@ -146,7 +154,7 @@ export default function AdminCustomers() {
     XLSX.writeFile(wb, `לקוחות_${new Date().toLocaleDateString('he-IL')}.xlsx`);
   };
 
-  const renderCustomers = (customerList: Customer[]) => {
+  const renderCustomers = (customerList: Customer[], isMobileTable: boolean = false) => {
     if (loading) {
       return <div className="text-center py-12">טוען לקוחות...</div>;
     }
@@ -159,6 +167,17 @@ export default function AdminCustomers() {
       );
     }
 
+    // Mobile: Always show compact table
+    if (isMobileTable) {
+      return (
+        <CustomerMobileTable
+          customers={customerList}
+          onSelectCustomer={handleSelectCustomerForSheet}
+        />
+      );
+    }
+
+    // Desktop: Show based on viewMode
     if (viewMode === 'table') {
       return (
         <CustomerTableView
@@ -339,18 +358,34 @@ export default function AdminCustomers() {
           </TabsList>
 
           <TabsContent value="all" className="mt-4">
-            {renderCustomers(sortedCustomers)}
+            {renderCustomers(sortedCustomers, true)}
           </TabsContent>
           <TabsContent value="hot" className="mt-4">
-            {renderCustomers(hotLeads)}
+            {renderCustomers(hotLeads, true)}
           </TabsContent>
           <TabsContent value="followup" className="mt-4">
-            {renderCustomers(needFollowup)}
+            {renderCustomers(needFollowup, true)}
           </TabsContent>
           <TabsContent value="viewed" className="mt-4">
-            {renderCustomers(viewedProperties)}
+            {renderCustomers(viewedProperties, true)}
           </TabsContent>
         </Tabs>
+
+        {/* Mobile Customer Detail Sheet */}
+        <CustomerDetailSheet
+          customer={selectedCustomer}
+          open={detailSheetOpen}
+          onClose={() => {
+            setDetailSheetOpen(false);
+            setSelectedCustomer(null);
+          }}
+          onEdit={handleEditCustomer}
+          onUpdateStatus={updateCustomerStatus}
+          onUpdatePriority={updateCustomerPriority}
+          onAssignAgent={assignAgent}
+          onScheduleFollowup={scheduleFollowup}
+          agents={agents}
+        />
       </div>
 
       {/* Desktop: Full Filters Bar */}
