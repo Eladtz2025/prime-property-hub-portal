@@ -48,6 +48,7 @@ import WhatsAppCenter from './pages/WhatsAppCenter';
 import PriceOfferView from './pages/PriceOfferView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
 import PriceOfferBuilder from './pages/PriceOfferBuilder';
+import AdminForms from './pages/AdminForms';
 import BrokerageFormPage from './pages/BrokerageFormPage';
 import AdminAlerts from './pages/AdminAlerts';
 import AdminActivity from './pages/AdminActivity';
@@ -241,6 +242,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AllFeatures />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/forms" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminForms />
                   </ProtectedRoute>
                 </Layout>
               } 
