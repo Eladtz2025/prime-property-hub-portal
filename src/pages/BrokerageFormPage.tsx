@@ -9,15 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2 } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-
-const OFFICE_AGENTS = [
-  { value: 'טלי סילברברג', label: 'טלי סילברברג' },
-  { value: 'אלעד צברי', label: 'אלעד צברי' },
-];
 
 const MAX_PROPERTIES = 10;
 
@@ -35,7 +29,7 @@ const BrokerageFormPage = () => {
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
   const agentSignatureRef = useRef<SignatureCanvas>(null);
-  const { user, hasPermission } = useAuth();
+  const { user, profile, hasPermission } = useAuth();
   
   const [mode, setMode] = useState<PageMode>('new');
   const [loading, setLoading] = useState(false);
@@ -43,9 +37,16 @@ const BrokerageFormPage = () => {
   const [hasSignature, setHasSignature] = useState(false);
   const [hasAgentSignature, setHasAgentSignature] = useState(false);
   
+  // Broker details from token (for remote-sign mode)
+  const [brokerDetails, setBrokerDetails] = useState<{
+    full_name?: string;
+    broker_license_number?: string;
+    phone?: string;
+    id_number?: string;
+  } | null>(null);
+  
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
-  const [referredBy, setReferredBy] = useState('');
   const [feeTypeRental, setFeeTypeRental] = useState(false);
   const [feeTypeSale, setFeeTypeSale] = useState(false);
   const [specialTerms, setSpecialTerms] = useState('');
@@ -57,6 +58,9 @@ const BrokerageFormPage = () => {
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientPhone, setClientPhone] = useState('');
+
+  // Check if broker details are complete
+  const isBrokerDetailsComplete = profile?.full_name && profile?.broker_license_number && profile?.id_number;
 
   useEffect(() => {
     const initPage = async () => {
@@ -89,11 +93,15 @@ const BrokerageFormPage = () => {
 
       const formData = data.form_data as any;
       setFormDate(formData.formDate || '');
-      setReferredBy(formData.referredBy || '');
       setFeeTypeRental(formData.feeTypeRental || false);
       setFeeTypeSale(formData.feeTypeSale || false);
       setSpecialTerms(formData.specialTerms || '');
       setProperties(formData.properties || [{ address: '', floor: '', rooms: '', price: '' }]);
+      
+      // Set broker details from token
+      if (formData.brokerDetails) {
+        setBrokerDetails(formData.brokerDetails);
+      }
     } catch (err) {
       console.error('Error loading form data:', err);
       toast.error('שגיאה בטעינת הטופס');
@@ -146,8 +154,8 @@ const BrokerageFormPage = () => {
       toast.error('יש למלא תאריך');
       return false;
     }
-    if (!referredBy) {
-      toast.error('יש לבחור סוכן');
+    if (mode === 'new' && !isBrokerDetailsComplete) {
+      toast.error('יש להשלים את פרטי המתווך בהגדרות האישיות');
       return false;
     }
     if (!feeTypeRental && !feeTypeSale) {
@@ -189,7 +197,12 @@ const BrokerageFormPage = () => {
       
       const formData = {
         formDate,
-        referredBy,
+        brokerDetails: {
+          full_name: profile?.full_name,
+          broker_license_number: profile?.broker_license_number,
+          phone: profile?.phone,
+          id_number: profile?.id_number,
+        },
         agentSignature: agentSignatureData,
         feeTypeRental,
         feeTypeSale,
@@ -229,12 +242,20 @@ const BrokerageFormPage = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const signatureData = signatureRef.current?.toDataURL();
+      
+      // Get broker details based on mode
+      const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
+        full_name: profile?.full_name,
+        broker_license_number: profile?.broker_license_number,
+        phone: profile?.phone,
+        id_number: profile?.id_number,
+      };
 
       const { error } = await supabase
         .from('brokerage_forms')
         .insert({
           form_date: formDate,
-          referred_by: referredBy,
+          referred_by: currentBrokerDetails?.full_name || '',
           fee_type_rental: feeTypeRental,
           fee_type_sale: feeTypeSale,
           special_terms: specialTerms,
@@ -242,7 +263,7 @@ const BrokerageFormPage = () => {
           client_name: clientName,
           client_id: clientId,
           client_phone: clientPhone,
-          agent_name: user?.email || '',
+          agent_name: currentBrokerDetails?.full_name || '',
           agent_id: user?.id || '',
           client_signature: signatureData,
           created_by: user?.id,
@@ -258,6 +279,8 @@ const BrokerageFormPage = () => {
         resource_type: 'brokerage_form',
         details: {
           client_name: clientName,
+          broker_name: currentBrokerDetails?.full_name,
+          broker_license: currentBrokerDetails?.broker_license_number,
           properties_count: properties.filter(p => p.address).length,
           fee_types: {
             rental: feeTypeRental,
@@ -350,6 +373,14 @@ const BrokerageFormPage = () => {
   // Main form view (new or remote-sign)
   const isRemoteSign = mode === 'remote-sign';
   const isFieldDisabled = isRemoteSign;
+  
+  // Get current broker details for display
+  const currentBrokerDetails = isRemoteSign ? brokerDetails : {
+    full_name: profile?.full_name,
+    broker_license_number: profile?.broker_license_number,
+    phone: profile?.phone,
+    id_number: profile?.id_number,
+  };
 
   return (
     <div className="min-h-screen bg-background rtl">
@@ -363,7 +394,66 @@ const BrokerageFormPage = () => {
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* Date and Referral */}
+            {/* Warning if broker details are incomplete in new mode */}
+            {mode === 'new' && !isBrokerDetailsComplete && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-800">פרטי המתווך לא מלאים</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    כדי ליצור טופס תקין לפי חוק, יש להשלים את פרטי המתווך (שם מלא, מספר רישיון, ת.ז.) בהגדרות האישיות.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/settings')}
+                  >
+                    עבור להגדרות
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Broker Details Section */}
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                פרטי המתווך
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-muted-foreground">שם:</span>
+                    <span className="mr-2 font-medium">{currentBrokerDetails?.full_name || '—'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-muted-foreground">רישיון:</span>
+                    <span className="mr-2 font-medium">{currentBrokerDetails?.broker_license_number || '—'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-muted-foreground">טלפון:</span>
+                    <span className="mr-2 font-medium" dir="ltr">{currentBrokerDetails?.phone || '—'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-muted-foreground">ת.ז.:</span>
+                    <span className="mr-2 font-medium" dir="ltr">{currentBrokerDetails?.id_number || '—'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">תאריך</Label>
@@ -374,25 +464,6 @@ const BrokerageFormPage = () => {
                   onChange={(e) => setFormDate(e.target.value)}
                   disabled={isFieldDisabled}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="referred">סוכן מטפל</Label>
-                <Select 
-                  value={referredBy} 
-                  onValueChange={setReferredBy}
-                  disabled={isFieldDisabled}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר סוכן" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OFFICE_AGENTS.map((agent) => (
-                      <SelectItem key={agent.value} value={agent.value}>
-                        {agent.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 

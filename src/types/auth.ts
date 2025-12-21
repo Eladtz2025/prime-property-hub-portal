@@ -10,6 +10,10 @@ export interface UserProfile {
   updated_at: string;
   last_login?: string;
   role?: string; // comes from user_profiles_with_roles view
+  // Broker-specific fields
+  broker_license_number?: string;
+  id_number?: string;
+  address?: string;
 }
 
 export interface Permission {

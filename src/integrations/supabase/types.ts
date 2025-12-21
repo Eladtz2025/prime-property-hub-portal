@@ -687,30 +687,39 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          broker_license_number: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          id_number: string | null
           is_approved: boolean
           last_login: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          broker_license_number?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          id_number?: string | null
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          broker_license_number?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          id_number?: string | null
           is_approved?: boolean
           last_login?: string | null
           phone?: string | null
