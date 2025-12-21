@@ -145,7 +145,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                   <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
                     <Building className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-semibold truncate">סה״כ נכסים</span>
+                  <span className="text-xs font-semibold">סה״כ נכסים</span>
                 </div>
                 <div className="text-xl font-bold number-display">{stats.totalProperties}</div>
               </div>
@@ -155,7 +155,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
                   <div className="bg-white/20 p-1.5 rounded-lg flex-shrink-0">
                     <TrendingUp className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-semibold truncate">הכנסה חודשית</span>
+                  <span className="text-xs font-semibold">הכנסה חודשית</span>
                   {!isEditingIncome && (
                     <Button
                       onClick={handleEditIncome}
