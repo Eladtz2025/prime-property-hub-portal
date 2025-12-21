@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AdminPWAInstallPrompt } from './AdminPWAInstallPrompt';
 import { 
   Building, 
   Users, 
@@ -119,6 +120,9 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
+        {/* PWA Install Prompt */}
+        <AdminPWAInstallPrompt />
+        
         {/* Header with greeting */}
         <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
           {/* Background Pattern */}
