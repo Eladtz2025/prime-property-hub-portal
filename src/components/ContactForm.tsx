@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { notifyNewLead } from '@/utils/notifyNewLead';
 
 interface ContactFormProps {
   propertyId?: string;
@@ -49,6 +50,15 @@ const ContactForm = ({ propertyId, propertyTitle }: ContactFormProps) => {
         });
 
       if (error) throw error;
+
+      // Send WhatsApp notification to Tali (async, don't wait)
+      notifyNewLead({
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        message: validatedData.message,
+        source: propertyTitle ? `נכס: ${propertyTitle}` : 'טופס יצירת קשר',
+      });
 
       toast({
         title: 'הפנייה נשלחה בהצלחה!',
