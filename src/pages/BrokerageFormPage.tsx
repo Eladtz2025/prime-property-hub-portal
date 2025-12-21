@@ -630,7 +630,7 @@ const BrokerageFormPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button 
                 onClick={handleSaveForm} 
                 disabled={loading}
@@ -656,7 +656,7 @@ const BrokerageFormPage = () => {
                   ) : (
                     <Send className="h-4 w-4 ml-2" />
                   )}
-                  צור לינק לשליחה ללקוח
+                  צור לינק לחתימה
                 </Button>
               )}
             </div>
