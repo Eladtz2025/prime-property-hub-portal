@@ -373,27 +373,37 @@ export const Properties: React.FC = memo(() => {
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
-          <div className="flex items-center gap-3">
-            <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>רשימת נכסים</h2>
+            <div className="flex items-center gap-3">
+              {!isMobile && (
+                <div className="text-muted-foreground text-sm">
+                  {startIndex}-{endIndex} מתוך {totalItems} נכסים
+                </div>
+              )}
+              <Button 
+                onClick={handleRefreshProperties}
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+              >
+                <RefreshCw className="h-4 w-4 ml-2" />
+                רענן נתונים
+              </Button>
+              {canCreateProperties && (
+                <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  הוסף נכס
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {isMobile && (
+            <div className="text-muted-foreground text-xs text-right">
               {startIndex}-{endIndex} מתוך {totalItems} נכסים
             </div>
-            <Button 
-              onClick={handleRefreshProperties}
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-            >
-              <RefreshCw className="h-4 w-4 ml-2" />
-              רענן נתונים
-            </Button>
-            {canCreateProperties && (
-              <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
-                <Plus className="h-4 w-4 mr-2" />
-                הוסף נכס
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Simple Search Bar */}
