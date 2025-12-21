@@ -12,6 +12,7 @@ import { Eye, Save, Share2, Loader2, Copy, FileText } from 'lucide-react';
 import BlockSelector from '@/components/price-offer/builder/BlockSelector';
 import BlockList from '@/components/price-offer/builder/BlockList';
 import SaveTemplateModal from '@/components/price-offer/templates/SaveTemplateModal';
+import { priceOfferBuilderTranslations, PriceOfferLanguage } from '@/lib/price-offer-translations';
 
 interface PriceOfferData {
   id?: string;
@@ -35,6 +36,7 @@ const PriceOfferBuilder = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uiLanguage, setUiLanguage] = useState<PriceOfferLanguage>('he');
   
   const [offerData, setOfferData] = useState<PriceOfferData>({
     property_title: '',
@@ -48,6 +50,14 @@ const PriceOfferBuilder = () => {
   const [offerId, setOfferId] = useState<string | null>(id || null);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+
+  // Get translations based on UI language
+  const t = priceOfferBuilderTranslations[uiLanguage];
+
+  // Sync UI language with offer language
+  useEffect(() => {
+    setUiLanguage(offerData.language);
+  }, [offerData.language]);
 
   useEffect(() => {
     if (id) {
@@ -85,7 +95,7 @@ const PriceOfferBuilder = () => {
       setBlocks(blocksData || []);
     } catch (error: any) {
       toast({
-        title: 'שגיאה',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -171,12 +181,12 @@ const PriceOfferBuilder = () => {
       }
 
       toast({
-        title: activate ? 'הצעה פורסמה!' : 'הצעה נשמרה',
-        description: activate ? 'ההצעה פעילה ונגישה ללקוחות' : 'טיוטה נשמרה בהצלחה',
+        title: activate ? t.offerPublished : t.offerSaved,
+        description: activate ? t.offerPublishedDesc : t.draftSavedDesc,
       });
     } catch (error: any) {
       toast({
-        title: 'שגיאה בשמירה',
+        title: t.saveError,
         description: error.message,
         variant: 'destructive',
       });
@@ -188,8 +198,8 @@ const PriceOfferBuilder = () => {
   const handlePreview = async () => {
     if (!offerId) {
       toast({
-        title: 'שמור קודם',
-        description: 'יש לשמור את ההצעה לפני התצוגה המקדימה',
+        title: t.saveFirst,
+        description: t.saveBeforePreview,
         variant: 'destructive',
       });
       return;
@@ -210,8 +220,8 @@ const PriceOfferBuilder = () => {
   const handleShare = async () => {
     if (!offerId) {
       toast({
-        title: 'שמור קודם',
-        description: 'יש לשמור ולפרסם את ההצעה לפני השיתוף',
+        title: t.saveFirst,
+        description: t.saveBeforeShare,
         variant: 'destructive',
       });
       return;
@@ -226,7 +236,7 @@ const PriceOfferBuilder = () => {
     if (data) {
       const identifier = data.slug || data.token;
       const url = `${window.location.origin}/price-offer/${identifier}`;
-      const message = `שלום! הנה הצעת המחיר עבור ${data.property_title}:\n${url}`;
+      const message = `${t.whatsAppMessage} ${data.property_title}:\n${url}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     }
@@ -235,8 +245,8 @@ const PriceOfferBuilder = () => {
   const handleCopyLink = async () => {
     if (!offerId) {
       toast({
-        title: 'שמור קודם',
-        description: 'יש לשמור את ההצעה לפני העתקת הלינק',
+        title: t.saveFirst,
+        description: t.saveBeforeCopyLink,
         variant: 'destructive',
       });
       return;
@@ -253,8 +263,8 @@ const PriceOfferBuilder = () => {
       const url = `${window.location.origin}/price-offer/${identifier}`;
       navigator.clipboard.writeText(url);
       toast({
-        title: 'הלינק הועתק!',
-        description: 'הלינק הועתק ללוח',
+        title: t.linkCopied,
+        description: t.linkCopiedDesc,
       });
     }
   };
@@ -262,8 +272,8 @@ const PriceOfferBuilder = () => {
   const handleSaveAsTemplate = async (name: string, description: string, isPublic: boolean) => {
     if (!offerId) {
       toast({
-        title: 'שמור קודם',
-        description: 'יש לשמור את ההצעה לפני שמירה כתבנית',
+        title: t.saveFirst,
+        description: t.saveBeforeTemplate,
         variant: 'destructive',
       });
       return;
@@ -291,14 +301,14 @@ const PriceOfferBuilder = () => {
       if (error) throw error;
 
       toast({
-        title: 'תבנית נשמרה!',
-        description: 'התבנית נשמרה בהצלחה וזמינה לשימוש',
+        title: t.templateSaved,
+        description: t.templateSavedDesc,
       });
 
       setShowSaveTemplate(false);
     } catch (error: any) {
       toast({
-        title: 'שגיאה',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
@@ -315,37 +325,39 @@ const PriceOfferBuilder = () => {
     );
   }
 
+  const isRTL = uiLanguage === 'he';
+
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl" dir="rtl">
+    <div className="container mx-auto py-8 px-4 max-w-6xl" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">
-          {id ? 'עריכת הצעת מחיר' : 'הצעת מחיר חדשה'}
+          {id ? t.editOffer : t.newOffer}
         </h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePreview}>
-            <Eye className="h-4 w-4 ml-2" />
-            תצוגה מקדימה
+            <Eye className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.preview}
           </Button>
           <Button variant="outline" onClick={handleCopyLink}>
-            <Copy className="h-4 w-4 ml-2" />
-            העתק לינק
+            <Copy className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.copyLink}
           </Button>
           <Button variant="outline" onClick={handleShare}>
-            <Share2 className="h-4 w-4 ml-2" />
-            שתף ב-WhatsApp
+            <Share2 className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.shareWhatsApp}
           </Button>
           <Button variant="outline" onClick={() => setShowSaveTemplate(true)} disabled={!offerId}>
-            <FileText className="h-4 w-4 ml-2" />
-            שמור כתבנית
+            <FileText className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.saveAsTemplate}
           </Button>
           <Button variant="secondary" onClick={() => saveOffer(false)} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-            <Save className="h-4 w-4 ml-2" />
-            שמור טיוטה
+            {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+            <Save className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.saveDraft}
           </Button>
           <Button onClick={() => saveOffer(true)} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-            פרסם
+            {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+            {t.publish}
           </Button>
         </div>
       </div>
@@ -353,58 +365,58 @@ const PriceOfferBuilder = () => {
       {/* פרטים בסיסיים */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>פרטים בסיסיים</CardTitle>
+          <CardTitle>{t.basicDetails}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="title">כותרת נכס</Label>
+            <Label htmlFor="title">{t.propertyTitle}</Label>
             <Input
               id="title"
               value={offerData.property_title}
               onChange={(e) => setOfferData({ ...offerData, property_title: e.target.value })}
-              placeholder="פנקס 67, תל אביב יפו"
+              placeholder={t.propertyTitlePlaceholder}
             />
           </div>
 
           <div>
-            <Label htmlFor="slug">Slug / קישור מותאם (אופציונלי)</Label>
+            <Label htmlFor="slug">{t.slug}</Label>
             <Input
               id="slug"
               value={offerData.slug || ''}
               onChange={(e) => setOfferData({ ...offerData, slug: e.target.value })}
-              placeholder="penthouse-rothschild-67"
+              placeholder={t.slugPlaceholder}
               dir="ltr"
             />
             <p className="text-sm text-muted-foreground mt-1">
-              הקישור יהיה: {window.location.origin}/price-offer/{offerData.slug || '[slug-שלך]'}
+              {t.linkWillBe} {window.location.origin}/price-offer/{offerData.slug || t.yourSlug}
             </p>
           </div>
 
           <div>
-            <Label htmlFor="details">פרטים טכניים</Label>
+            <Label htmlFor="details">{t.technicalDetails}</Label>
             <Textarea
               id="details"
               value={offerData.property_details}
               onChange={(e) => setOfferData({ ...offerData, property_details: e.target.value })}
-              placeholder="קומה 2 | כיכר 2 | מגרש 902..."
+              placeholder={t.technicalDetailsPlaceholder}
               rows={3}
             />
           </div>
 
           <div>
-            <Label>שפה</Label>
+            <Label>{t.language}</Label>
             <RadioGroup
               value={offerData.language}
               onValueChange={(value) => setOfferData({ ...offerData, language: value as 'he' | 'en' })}
               className="flex gap-4 mt-2"
             >
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
                 <RadioGroupItem value="he" id="lang-he" />
-                <Label htmlFor="lang-he" className="cursor-pointer">עברית</Label>
+                <Label htmlFor="lang-he" className="cursor-pointer">{t.hebrew}</Label>
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
                 <RadioGroupItem value="en" id="lang-en" />
-                <Label htmlFor="lang-en" className="cursor-pointer">English</Label>
+                <Label htmlFor="lang-en" className="cursor-pointer">{t.english}</Label>
               </div>
             </RadioGroup>
           </div>
@@ -414,7 +426,7 @@ const PriceOfferBuilder = () => {
       {/* בונה הבלוקים */}
       <Card>
         <CardHeader>
-          <CardTitle>בניית ההצעה</CardTitle>
+          <CardTitle>{t.buildOffer}</CardTitle>
         </CardHeader>
         <CardContent>
           <BlockSelector offerId={offerId} onBlockAdded={loadOffer} />
@@ -432,7 +444,7 @@ const PriceOfferBuilder = () => {
           
           {!offerId && (
             <p className="text-muted-foreground text-center py-8">
-              שמור את ההצעה כדי להתחיל להוסיף בלוקים
+              {t.saveOfferToAddBlocks}
             </p>
           )}
         </CardContent>
