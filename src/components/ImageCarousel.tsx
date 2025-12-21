@@ -258,26 +258,24 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               
               {/* Main content layer */}
               <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="relative inline-block max-w-full max-h-full">
-                  {isVideo ? (
-                    <VideoWithPlaceholder
-                      src={currentImage.url}
-                      className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain"
-                      controls={true}
-                    />
-                  ) : (
-                    <ImageWithPlaceholder
-                      src={currentImage.url}
-                      alt={currentImage.name}
-                      className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
-                      loading="eager"
-                      sizes="(max-width: 768px) 100vw, 60vw"
-                      onImageLoad={handleImageLoad}
-                    />
-                  )}
-                  <ControlsOverlay />
-                </div>
+                {isVideo ? (
+                  <VideoWithPlaceholder
+                    src={currentImage.url}
+                    className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain"
+                    controls={true}
+                  />
+                ) : (
+                  <ImageWithPlaceholder
+                    src={currentImage.url}
+                    alt={currentImage.name}
+                    className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
+                    loading="eager"
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    onImageLoad={handleImageLoad}
+                  />
+                )}
               </div>
+              <ControlsOverlay />
             </div>
           )}
 
@@ -308,15 +306,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               
               {/* Centered image */}
               <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="relative inline-block max-w-full max-h-full">
-                  <img
-                    src={currentImage.url}
-                    alt={currentImage.name}
-                    className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
-                  />
-                  <ControlsOverlay />
-                </div>
+                <img
+                  src={currentImage.url}
+                  alt={currentImage.name}
+                  className="max-w-full max-h-[40vh] md:max-h-[60vh] object-contain drop-shadow-lg"
+                />
               </div>
+              <ControlsOverlay />
             </div>
           )}
           
