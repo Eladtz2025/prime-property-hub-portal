@@ -12,6 +12,7 @@ import { StatsCard } from './StatsCard';
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
+import { BrokerageFormsList } from './BrokerageFormsList';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -296,6 +297,11 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
+      </div>
+
+      {/* טפסי תיווך - רק בדסקטופ */}
+      <div className="space-y-4">
+        <BrokerageFormsList />
       </div>
     </div>
   );
