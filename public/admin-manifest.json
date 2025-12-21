@@ -1,0 +1,28 @@
+{
+  "name": "City Market - ניהול",
+  "short_name": "CM ניהול",
+  "description": "מערכת ניהול נכסים סיטי מרקט",
+  "theme_color": "#1a1a2e",
+  "background_color": "#1a1a2e",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/admin-dashboard",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/city-market-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "he",
+  "dir": "rtl"
+}
