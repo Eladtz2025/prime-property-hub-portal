@@ -13,6 +13,7 @@ import { BrokerageFormCard } from '../components/BrokerageFormCard';
 import { BrokerageFormsList } from '../components/BrokerageFormsList';
 import { ContactLeadsList } from '../components/ContactLeadsList';
 import { ContactLeadsListCompact } from '../components/ContactLeadsListCompact';
+import { AdminPWAInstallPrompt } from '../components/AdminPWAInstallPrompt';
 
 
 const AdminDashboard = memo(() => {
@@ -148,6 +149,7 @@ const AdminDashboard = memo(() => {
   return (
     <>
       <div className="space-y-6">
+        <AdminPWAInstallPrompt />
         <Dashboard
           properties={properties} 
           stats={stats ? {
