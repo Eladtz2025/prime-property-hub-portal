@@ -20,6 +20,7 @@ interface PropertyRow {
   floor: string;
   rooms: string;
   price: string;
+  gushHelka: string; // גוש/חלקה - only for sale
 }
 
 type PageMode = 'new' | 'remote-sign' | 'generated-link';
@@ -51,8 +52,12 @@ const BrokerageFormPage = () => {
   const [feeTypeSale, setFeeTypeSale] = useState(false);
   const [specialTerms, setSpecialTerms] = useState('');
   const [properties, setProperties] = useState<PropertyRow[]>([
-    { address: '', floor: '', rooms: '', price: '' }
+    { address: '', floor: '', rooms: '', price: '', gushHelka: '' }
   ]);
+  
+  // Client data - additional fields
+  const [clientAddress, setClientAddress] = useState('');
+  const [clientConfirmation, setClientConfirmation] = useState(false);
   
   // Client data
   const [clientName, setClientName] = useState('');
@@ -122,7 +127,7 @@ const BrokerageFormPage = () => {
       toast.error(`ניתן להוסיף עד ${MAX_PROPERTIES} נכסים בטופס אחד`);
       return;
     }
-    setProperties([...properties, { address: '', floor: '', rooms: '', price: '' }]);
+    setProperties([...properties, { address: '', floor: '', rooms: '', price: '', gushHelka: '' }]);
   };
 
   const removePropertyRow = (index: number) => {
@@ -175,8 +180,12 @@ const BrokerageFormPage = () => {
   };
 
   const validateClientData = () => {
-    if (!clientName || !clientId || !clientPhone) {
-      toast.error('יש למלא את כל פרטי הלקוח');
+    if (!clientName || !clientId || !clientPhone || !clientAddress) {
+      toast.error('יש למלא את כל פרטי הלקוח (כולל כתובת)');
+      return false;
+    }
+    if (!clientConfirmation) {
+      toast.error('יש לאשר שקראת והבנת את תוכן הטופס');
       return false;
     }
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
@@ -269,16 +278,21 @@ const BrokerageFormPage = () => {
           created_by: user?.id,
           status: 'active'
         });
+      
+      // Note: clientAddress and clientConfirmation are part of form validation
+      // but stored in activity_logs for compliance
 
       if (error) throw error;
 
-      // Activity logging
+      // Activity logging with additional compliance fields
       await supabase.from('activity_logs').insert({
         user_id: user?.id,
         action: 'create_brokerage_form',
         resource_type: 'brokerage_form',
         details: {
           client_name: clientName,
+          client_address: clientAddress,
+          client_confirmation: clientConfirmation,
           broker_name: currentBrokerDetails?.full_name,
           broker_license: currentBrokerDetails?.broker_license_number,
           properties_count: properties.filter(p => p.address).length,
@@ -516,6 +530,7 @@ const BrokerageFormPage = () => {
                     <tr>
                       <th className="p-2 text-right text-sm">מס'</th>
                       <th className="p-2 text-right text-sm">כתובת</th>
+                      {feeTypeSale && <th className="p-2 text-right text-sm">גוש/חלקה</th>}
                       <th className="p-2 text-right text-sm">קומה</th>
                       <th className="p-2 text-right text-sm">חדרים</th>
                       <th className="p-2 text-right text-sm">מחיר</th>
@@ -535,6 +550,17 @@ const BrokerageFormPage = () => {
                             className="h-8"
                           />
                         </td>
+                        {feeTypeSale && (
+                          <td className="p-2">
+                            <Input
+                              value={property.gushHelka}
+                              onChange={(e) => handlePropertyChange(index, 'gushHelka', e.target.value)}
+                              disabled={isFieldDisabled}
+                              placeholder="גוש/חלקה"
+                              className="h-8"
+                            />
+                          </td>
+                        )}
                         <td className="p-2">
                           <Input
                             value={property.floor}
@@ -607,6 +633,17 @@ const BrokerageFormPage = () => {
                           placeholder="כתובת"
                         />
                       </div>
+                      {feeTypeSale && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">גוש/חלקה</Label>
+                          <Input
+                            value={property.gushHelka}
+                            onChange={(e) => handlePropertyChange(index, 'gushHelka', e.target.value)}
+                            disabled={isFieldDisabled}
+                            placeholder="גוש/חלקה"
+                          />
+                        </div>
+                      )}
                       <div className="grid grid-cols-3 gap-2">
                         <div className="space-y-2">
                           <Label className="text-xs">קומה</Label>
@@ -679,7 +716,7 @@ const BrokerageFormPage = () => {
             {/* Client Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">פרטי הלקוח</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="clientName">שם מלא</Label>
                   <Input
@@ -705,6 +742,15 @@ const BrokerageFormPage = () => {
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
                     placeholder="מספר טלפון"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="clientAddress">כתובת</Label>
+                  <Input
+                    id="clientAddress"
+                    value={clientAddress}
+                    onChange={(e) => setClientAddress(e.target.value)}
+                    placeholder="כתובת מגורים"
                   />
                 </div>
               </div>
@@ -739,6 +785,21 @@ const BrokerageFormPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Client Confirmation Checkbox */}
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <div className="flex items-start space-x-3 space-x-reverse">
+                <Checkbox
+                  id="clientConfirmation"
+                  checked={clientConfirmation}
+                  onCheckedChange={(checked) => setClientConfirmation(checked as boolean)}
+                  className="mt-1"
+                />
+                <Label htmlFor="clientConfirmation" className="cursor-pointer text-sm leading-relaxed">
+                  אני מאשר/ת כי קראתי את תוכן מסמך זה, הוסבר לי משמעותו בשפה המובנת לי, והנני מסכים/ה לתנאיו.
+                </Label>
+              </div>
+            </div>
 
             {/* Client Signature */}
             <div className="space-y-2">
