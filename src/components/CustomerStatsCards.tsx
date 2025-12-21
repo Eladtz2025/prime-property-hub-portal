@@ -67,18 +67,18 @@ export const CustomerStatsCards = ({ customers }: CustomerStatsCardsProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-5 gap-2 md:gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.title} className="p-6">
-            <div className="flex flex-row-reverse items-center justify-between">
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold">{stat.value}</p>
+          <Card key={stat.title} className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row-reverse items-center md:justify-between text-center md:text-right">
+              <div className={`p-1.5 md:p-3 rounded-full ${stat.bgColor} mb-1 md:mb-0`}>
+                <Icon className={`h-4 w-4 md:h-6 md:w-6 ${stat.color}`} />
               </div>
-              <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                <Icon className={`h-6 w-6 ${stat.color}`} />
+              <div>
+                <p className="text-lg md:text-3xl font-bold">{stat.value}</p>
+                <p className="text-[8px] md:text-sm text-muted-foreground leading-tight">{stat.title}</p>
               </div>
             </div>
           </Card>
