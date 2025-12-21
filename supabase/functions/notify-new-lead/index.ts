@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 // Tali's phone number for notifications
-const NOTIFICATION_PHONE = '972549803548';
+const NOTIFICATION_PHONE = '972542284477';
 
 interface LeadNotification {
   name: string;
