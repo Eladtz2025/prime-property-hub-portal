@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Search, Filter, Download, Plus, LayoutGrid, List } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Download, Plus, LayoutGrid, List, SlidersHorizontal } from "lucide-react";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { CustomerStatsCards } from "@/components/CustomerStatsCards";
 import { CustomerCard } from "@/components/CustomerCard";
@@ -13,7 +15,6 @@ import { CustomerEditModal } from "@/components/CustomerEditModal";
 import { AddCustomerModal } from "@/components/AddCustomerModal";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
-
 interface Agent {
   id: string;
   full_name: string | null;
@@ -31,6 +32,7 @@ export default function AdminCustomers() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
 
   const {
     customers,
@@ -208,9 +210,152 @@ export default function AdminCustomers() {
 
       <CustomerStatsCards customers={customers} />
 
-      {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row-reverse flex-wrap gap-3 bg-card p-3 md:p-4 rounded-lg">
-        <div className="w-full md:flex-1 md:min-w-[200px] relative">
+      {/* Mobile: Search + Filters Button */}
+      <div className="md:hidden flex flex-col gap-3 bg-card p-3 rounded-lg">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="חיפוש..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="shrink-0 relative">
+                <SlidersHorizontal className="h-4 w-4" />
+                {(statusFilter !== 'all' || priorityFilter !== 'all' || agentFilter !== 'all') && (
+                  <Badge className="absolute -top-2 -left-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                    {[statusFilter !== 'all', priorityFilter !== 'all', agentFilter !== 'all'].filter(Boolean).length}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+              <SheetHeader>
+                <SheetTitle>פילטרים</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 py-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="סטטוס" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל הסטטוסים</SelectItem>
+                    <SelectItem value="new">חדש</SelectItem>
+                    <SelectItem value="contacted">נוצר קשר</SelectItem>
+                    <SelectItem value="active">פעיל</SelectItem>
+                    <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
+                    <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
+                    <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
+                    <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="עדיפות" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל העדיפויות</SelectItem>
+                    <SelectItem value="low">נמוך</SelectItem>
+                    <SelectItem value="medium">בינוני</SelectItem>
+                    <SelectItem value="high">גבוה</SelectItem>
+                    <SelectItem value="urgent">דחוף</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={agentFilter} onValueChange={setAgentFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="סוכן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל הסוכנים</SelectItem>
+                    {agents.map(agent => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.full_name || agent.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="מיון" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
+                    <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
+                    <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
+                    <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
+                    <SelectItem value="next_followup_asc">מעקב הבא קודם</SelectItem>
+                    <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center justify-between pt-2">
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
+                    <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
+                      <LayoutGrid className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="table" aria-label="תצוגת טבלה">
+                      <List className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setStatusFilter("all");
+                      setPriorityFilter("all");
+                      setAgentFilter("all");
+                      setSortBy("created_at_desc");
+                    }}
+                  >
+                    <Filter className="h-4 w-4 ml-1" />
+                    נקה הכל
+                  </Button>
+                </div>
+
+                <Button onClick={() => setFiltersSheetOpen(false)} className="w-full">
+                  החל פילטרים
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Mobile Tabs - Scrollable */}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="w-full overflow-x-auto flex justify-start gap-1 h-auto p-1">
+            <TabsTrigger value="all" className="text-xs px-2 py-1 whitespace-nowrap">הכל ({sortedCustomers.length})</TabsTrigger>
+            <TabsTrigger value="hot" className="text-xs px-2 py-1 whitespace-nowrap">חמים ({hotLeads.length})</TabsTrigger>
+            <TabsTrigger value="followup" className="text-xs px-2 py-1 whitespace-nowrap">מעקב ({needFollowup.length})</TabsTrigger>
+            <TabsTrigger value="viewed" className="text-xs px-2 py-1 whitespace-nowrap">צפו ({viewedProperties.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="mt-4">
+            {renderCustomers(sortedCustomers)}
+          </TabsContent>
+          <TabsContent value="hot" className="mt-4">
+            {renderCustomers(hotLeads)}
+          </TabsContent>
+          <TabsContent value="followup" className="mt-4">
+            {renderCustomers(needFollowup)}
+          </TabsContent>
+          <TabsContent value="viewed" className="mt-4">
+            {renderCustomers(viewedProperties)}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop: Full Filters Bar */}
+      <div className="hidden md:flex flex-row-reverse flex-wrap gap-3 bg-card p-4 rounded-lg">
+        <div className="flex-1 min-w-[200px] relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="חיפוש לפי שם, אימייל או טלפון..."
@@ -220,9 +365,9 @@ export default function AdminCustomers() {
           />
         </div>
 
-        <div className="grid grid-cols-2 md:flex gap-2 md:gap-3">
+        <div className="flex gap-3">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-36">
+            <SelectTrigger className="w-36">
               <SelectValue placeholder="סטטוס" />
             </SelectTrigger>
             <SelectContent>
@@ -238,7 +383,7 @@ export default function AdminCustomers() {
           </Select>
 
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="w-full md:w-32">
+            <SelectTrigger className="w-32">
               <SelectValue placeholder="עדיפות" />
             </SelectTrigger>
             <SelectContent>
@@ -251,7 +396,7 @@ export default function AdminCustomers() {
           </Select>
 
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-full md:w-36">
+            <SelectTrigger className="w-36">
               <SelectValue placeholder="סוכן" />
             </SelectTrigger>
             <SelectContent>
@@ -265,7 +410,7 @@ export default function AdminCustomers() {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-40">
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="מיון" />
             </SelectTrigger>
             <SelectContent>
@@ -279,7 +424,7 @@ export default function AdminCustomers() {
           </Select>
         </div>
 
-        <div className="flex gap-2 justify-between md:justify-start">
+        <div className="flex gap-2">
           <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
             <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
               <LayoutGrid className="h-4 w-4" />
@@ -306,7 +451,8 @@ export default function AdminCustomers() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4">
+      {/* Desktop Tabs */}
+      <Tabs defaultValue="all" className="hidden md:block space-y-4">
         <TabsList>
           <TabsTrigger value="all">כל הלקוחות ({sortedCustomers.length})</TabsTrigger>
           <TabsTrigger value="hot">לידים חמים ({hotLeads.length})</TabsTrigger>
