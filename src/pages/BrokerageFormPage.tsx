@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
+import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerage-form-translations';
 
 const MAX_PROPERTIES = 10;
 
@@ -20,7 +22,7 @@ interface PropertyRow {
   floor: string;
   rooms: string;
   price: string;
-  gushHelka: string; // גוש/חלקה - only for sale
+  gushHelka: string;
 }
 
 type PageMode = 'new' | 'remote-sign' | 'generated-link';
@@ -37,6 +39,10 @@ const BrokerageFormPage = () => {
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [hasSignature, setHasSignature] = useState(false);
   const [hasAgentSignature, setHasAgentSignature] = useState(false);
+  const [language, setLanguage] = useState<BrokerageFormLanguage>('he');
+  
+  // Get translations based on current language
+  const t = brokerageFormTranslations[language];
   
   // Broker details from token (for remote-sign mode)
   const [brokerDetails, setBrokerDetails] = useState<{
@@ -91,7 +97,7 @@ const BrokerageFormPage = () => {
         .single();
 
       if (error || !data) {
-        toast.error('קישור לא תקין או פג תוקפו');
+        toast.error(t.errorInvalidLink);
         navigate('/');
         return;
       }
@@ -101,7 +107,12 @@ const BrokerageFormPage = () => {
       setFeeTypeRental(formData.feeTypeRental || false);
       setFeeTypeSale(formData.feeTypeSale || false);
       setSpecialTerms(formData.specialTerms || '');
-      setProperties(formData.properties || [{ address: '', floor: '', rooms: '', price: '' }]);
+      setProperties(formData.properties || [{ address: '', floor: '', rooms: '', price: '', gushHelka: '' }]);
+      
+      // Set language from saved form data
+      if (formData.language) {
+        setLanguage(formData.language);
+      }
       
       // Set broker details from token
       if (formData.brokerDetails) {
@@ -109,7 +120,7 @@ const BrokerageFormPage = () => {
       }
     } catch (err) {
       console.error('Error loading form data:', err);
-      toast.error('שגיאה בטעינת הטופס');
+      toast.error(t.errorLoadingForm);
       navigate('/');
     } finally {
       setLoading(false);
@@ -124,7 +135,7 @@ const BrokerageFormPage = () => {
 
   const addPropertyRow = () => {
     if (properties.length >= MAX_PROPERTIES) {
-      toast.error(`ניתן להוסיף עד ${MAX_PROPERTIES} נכסים בטופס אחד`);
+      toast.error(t.errorMaxProperties.replace('{max}', String(MAX_PROPERTIES)));
       return;
     }
     setProperties([...properties, { address: '', floor: '', rooms: '', price: '', gushHelka: '' }]);
@@ -156,24 +167,24 @@ const BrokerageFormPage = () => {
 
   const validatePropertyData = () => {
     if (!formDate) {
-      toast.error('יש למלא תאריך');
+      toast.error(t.errorFillDate);
       return false;
     }
     if (mode === 'new' && !isBrokerDetailsComplete) {
-      toast.error('יש להשלים את פרטי המתווך בהגדרות האישיות');
+      toast.error(t.errorCompleteBrokerDetails);
       return false;
     }
     if (!feeTypeRental && !feeTypeSale) {
-      toast.error('יש לבחור לפחות סוג שירות אחד');
+      toast.error(t.errorSelectServiceType);
       return false;
     }
     if (properties.every(p => !p.address)) {
-      toast.error('יש להוסיף לפחות נכס אחד');
+      toast.error(t.errorAddProperty);
       return false;
     }
     // Validate agent signature only in 'new' mode
     if (mode === 'new' && (!agentSignatureRef.current || agentSignatureRef.current.isEmpty())) {
-      toast.error('יש לחתום חתימת סוכן');
+      toast.error(t.errorAgentSignature);
       return false;
     }
     return true;
@@ -181,15 +192,15 @@ const BrokerageFormPage = () => {
 
   const validateClientData = () => {
     if (!clientName || !clientId || !clientPhone || !clientAddress) {
-      toast.error('יש למלא את כל פרטי הלקוח (כולל כתובת)');
+      toast.error(t.errorClientDetails);
       return false;
     }
     if (!clientConfirmation) {
-      toast.error('יש לאשר שקראת והבנת את תוכן הטופס');
+      toast.error(t.errorClientConfirmation);
       return false;
     }
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
-      toast.error('יש לחתום על הטופס');
+      toast.error(t.errorClientSignature);
       return false;
     }
     return true;
@@ -206,6 +217,7 @@ const BrokerageFormPage = () => {
       
       const formData = {
         formDate,
+        language,
         brokerDetails: {
           full_name: profile?.full_name,
           broker_license_number: profile?.broker_license_number,
@@ -235,10 +247,10 @@ const BrokerageFormPage = () => {
       const link = `${window.location.origin}/brokerage-form/${data.token}`;
       setGeneratedLink(link);
       setMode('generated-link');
-      toast.success('הקישור נוצר בהצלחה');
+      toast.success(t.linkCreated);
     } catch (err) {
       console.error('Error creating link:', err);
-      toast.error('שגיאה ביצירת הקישור');
+      toast.error(t.errorCreatingLink);
     } finally {
       setLoading(false);
     }
@@ -278,9 +290,6 @@ const BrokerageFormPage = () => {
           created_by: user?.id,
           status: 'active'
         });
-      
-      // Note: clientAddress and clientConfirmation are part of form validation
-      // but stored in activity_logs for compliance
 
       if (error) throw error;
 
@@ -299,7 +308,8 @@ const BrokerageFormPage = () => {
           fee_types: {
             rental: feeTypeRental,
             sale: feeTypeSale
-          }
+          },
+          language
         }
       });
 
@@ -311,14 +321,14 @@ const BrokerageFormPage = () => {
           .eq('token', token);
       }
 
-      toast.success('הטופס נשמר בהצלחה');
+      toast.success(t.formSaved);
       setTimeout(() => {
         window.close();
         navigate('/');
       }, 1500);
     } catch (err) {
       console.error('Error saving form:', err);
-      toast.error('שגיאה בשמירת הטופס');
+      toast.error(t.errorSavingForm);
     } finally {
       setLoading(false);
     }
@@ -326,11 +336,11 @@ const BrokerageFormPage = () => {
 
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
-    toast.success('הקישור הועתק ללוח');
+    toast.success(t.linkCopied);
   };
 
   const shareViaWhatsApp = () => {
-    const message = `שלום, נא למלא ולחתום על טופס הזמנת שירותי תיווך:\n${generatedLink}`;
+    const message = `${t.whatsAppMessage}\n${generatedLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -345,13 +355,13 @@ const BrokerageFormPage = () => {
   // Generated link view
   if (mode === 'generated-link' && generatedLink) {
     return (
-      <div className="min-h-screen bg-background rtl">
+      <div className={`min-h-screen bg-background ${language === 'he' ? 'rtl' : 'ltr'}`}>
         <div className="max-w-2xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center">קישור לטופס נוצר בהצלחה</CardTitle>
+              <CardTitle className="text-2xl text-center">{t.linkCreatedSuccess}</CardTitle>
               <CardDescription className="text-center">
-                שלח את הקישור ללקוח למילוי וחתימה
+                {t.sendLinkToClient}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -361,12 +371,12 @@ const BrokerageFormPage = () => {
               
               <div className="flex gap-2">
                 <Button onClick={copyLinkToClipboard} className="flex-1" variant="outline">
-                  <Copy className="h-4 w-4 ml-2" />
-                  העתק קישור
+                  <Copy className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                  {t.copyLink}
                 </Button>
                 <Button onClick={shareViaWhatsApp} className="flex-1">
-                  <Send className="h-4 w-4 ml-2" />
-                  שלח בוואטסאפ
+                  <Send className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                  {t.sendWhatsApp}
                 </Button>
               </div>
 
@@ -375,7 +385,7 @@ const BrokerageFormPage = () => {
                 variant="ghost" 
                 className="w-full mt-4"
               >
-                סגור חלון
+                {t.closeWindow}
               </Button>
             </CardContent>
           </Card>
@@ -397,14 +407,38 @@ const BrokerageFormPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background rtl">
+    <div className={`min-h-screen bg-background ${language === 'he' ? 'rtl' : 'ltr'}`}>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">טופס הזמנת שירותי תיווך</CardTitle>
-            <CardDescription>
-              {isRemoteSign ? 'נא למלא את הפרטים ולחתום על הטופס' : 'מלא את פרטי הטופס'}
-            </CardDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-2xl">{t.title}</CardTitle>
+                <CardDescription>
+                  {isRemoteSign ? t.fillDetails : t.fillFormDetails}
+                </CardDescription>
+              </div>
+              {/* Language Selector - only in new mode */}
+              {mode === 'new' && (
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <RadioGroup
+                    value={language}
+                    onValueChange={(value) => setLanguage(value as BrokerageFormLanguage)}
+                    className="flex gap-2"
+                  >
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="he" id="lang-he" />
+                      <Label htmlFor="lang-he" className="cursor-pointer text-sm">עברית</Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="en" id="lang-en" />
+                      <Label htmlFor="lang-en" className="cursor-pointer text-sm">English</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+            </div>
           </CardHeader>
           
           <CardContent className="space-y-6">
@@ -413,9 +447,9 @@ const BrokerageFormPage = () => {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-yellow-800">פרטי המתווך לא מלאים</p>
+                  <p className="font-medium text-yellow-800">{t.brokerDetailsIncomplete}</p>
                   <p className="text-sm text-yellow-700 mt-1">
-                    כדי ליצור טופס תקין לפי חוק, יש להשלים את פרטי המתווך (שם מלא, מספר רישיון, ת.ז.) בהגדרות האישיות.
+                    {t.brokerDetailsWarning}
                   </p>
                   <Button 
                     variant="outline" 
@@ -423,7 +457,7 @@ const BrokerageFormPage = () => {
                     className="mt-2"
                     onClick={() => navigate('/settings')}
                   >
-                    עבור להגדרות
+                    {t.goToSettings}
                   </Button>
                 </div>
               </div>
@@ -433,35 +467,35 @@ const BrokerageFormPage = () => {
             <div className="bg-muted/50 p-4 rounded-lg border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Award className="h-4 w-4" />
-                פרטי המתווך
+                {t.brokerDetails}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <span className="text-muted-foreground">שם:</span>
-                    <span className="mr-2 font-medium">{currentBrokerDetails?.full_name || '—'}</span>
+                    <span className="text-muted-foreground">{t.name}:</span>
+                    <span className={`${language === 'he' ? 'mr-2' : 'ml-2'} font-medium`}>{currentBrokerDetails?.full_name || '—'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <span className="text-muted-foreground">רישיון:</span>
-                    <span className="mr-2 font-medium">{currentBrokerDetails?.broker_license_number || '—'}</span>
+                    <span className="text-muted-foreground">{t.license}:</span>
+                    <span className={`${language === 'he' ? 'mr-2' : 'ml-2'} font-medium`}>{currentBrokerDetails?.broker_license_number || '—'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <span className="text-muted-foreground">טלפון:</span>
-                    <span className="mr-2 font-medium" dir="ltr">{currentBrokerDetails?.phone || '—'}</span>
+                    <span className="text-muted-foreground">{t.phone}:</span>
+                    <span className={`${language === 'he' ? 'mr-2' : 'ml-2'} font-medium`} dir="ltr">{currentBrokerDetails?.phone || '—'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <span className="text-muted-foreground">ת.ז.:</span>
-                    <span className="mr-2 font-medium" dir="ltr">{currentBrokerDetails?.id_number || '—'}</span>
+                    <span className="text-muted-foreground">{t.idNumber}:</span>
+                    <span className={`${language === 'he' ? 'mr-2' : 'ml-2'} font-medium`} dir="ltr">{currentBrokerDetails?.id_number || '—'}</span>
                   </div>
                 </div>
               </div>
@@ -470,7 +504,7 @@ const BrokerageFormPage = () => {
             {/* Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">תאריך</Label>
+                <Label htmlFor="date">{t.date}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -483,19 +517,19 @@ const BrokerageFormPage = () => {
 
             {/* הצהרות */}
             <div className="bg-muted p-4 rounded-lg space-y-3">
-              <h3 className="font-semibold">הצהרות</h3>
+              <h3 className="font-semibold">{t.declarations}</h3>
               <p className="text-sm text-muted-foreground">
-                אני/אנחנו הח"מ מאשר/ים שהופנינו אל רכוש ו/או צד זה ע"י "סיטי מרקט" וכי הנכסים המפורטים להלן לא היו ידועים לנו קודם לכן ממקור אחר. אנו מתחייבים שלא למסור לזולת ולא להשתמש בכל מידע הקשור בפנייה זו ללא תיאום מראש עם "סיטי מרקט".
+                {t.declarationText1}
               </p>
               <p className="text-sm text-muted-foreground">
-                הנני מאשר/ים כי הופניתי לראשונה על ידכם אל הנכסים/הצדדים המפורטים בטופס זה.
+                {t.declarationText2}
               </p>
             </div>
 
             {/* שכר טרחה */}
             <div className="space-y-3">
-              <h3 className="font-semibold">שכר טרחה</h3>
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <h3 className="font-semibold">{t.feeTypes}</h3>
+              <div className={`flex items-center ${language === 'he' ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
                 <Checkbox
                   id="rental"
                   checked={feeTypeRental}
@@ -503,10 +537,10 @@ const BrokerageFormPage = () => {
                   disabled={isFieldDisabled}
                 />
                 <Label htmlFor="rental" className="cursor-pointer">
-                  השכרת דירה/משרד — <strong>100%</strong> מדמי השכירות החודשיים <em>בתוספת מע"מ</em> במזומן.
+                  {t.rentalFee} <strong>{t.rentalFeeAmount}</strong> {t.rentalFeeText} <em>{t.plusVat}</em> {t.inCash}
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className={`flex items-center ${language === 'he' ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
                 <Checkbox
                   id="sale"
                   checked={feeTypeSale}
@@ -514,26 +548,26 @@ const BrokerageFormPage = () => {
                   disabled={isFieldDisabled}
                 />
                 <Label htmlFor="sale" className="cursor-pointer">
-                  קניה או מכירה — <strong>2%</strong> מהערך הכולל של העסקה <em>בתוספת מע"מ</em> במזומן.
+                  {t.saleFee} <strong>{t.saleFeeAmount}</strong> {t.saleFeeText} <em>{t.plusVat}</em> {t.inCash}
                 </Label>
               </div>
             </div>
 
             {/* רשימת נכסים */}
             <div className="space-y-3">
-              <h3 className="font-semibold">נכסים שהופניתי אליהם</h3>
+              <h3 className="font-semibold">{t.propertiesReferred}</h3>
               
               {/* Desktop view - table */}
               <div className="hidden md:block border rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="p-2 text-right text-sm">מס'</th>
-                      <th className="p-2 text-right text-sm">כתובת</th>
-                      {feeTypeSale && <th className="p-2 text-right text-sm">גוש/חלקה</th>}
-                      <th className="p-2 text-right text-sm">קומה</th>
-                      <th className="p-2 text-right text-sm">חדרים</th>
-                      <th className="p-2 text-right text-sm">מחיר</th>
+                      <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.propertyNumber}</th>
+                      <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.address}</th>
+                      {feeTypeSale && <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.gushHelka}</th>}
+                      <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.floor}</th>
+                      <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.rooms}</th>
+                      <th className={`p-2 ${language === 'he' ? 'text-right' : 'text-left'} text-sm`}>{t.price}</th>
                       {!isFieldDisabled && <th className="p-2 w-10"></th>}
                     </tr>
                   </thead>
@@ -546,7 +580,7 @@ const BrokerageFormPage = () => {
                             value={property.address}
                             onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="כתובת"
+                            placeholder={t.address}
                             className="h-8"
                           />
                         </td>
@@ -556,7 +590,7 @@ const BrokerageFormPage = () => {
                               value={property.gushHelka}
                               onChange={(e) => handlePropertyChange(index, 'gushHelka', e.target.value)}
                               disabled={isFieldDisabled}
-                              placeholder="גוש/חלקה"
+                              placeholder={t.gushHelka}
                               className="h-8"
                             />
                           </td>
@@ -566,7 +600,7 @@ const BrokerageFormPage = () => {
                             value={property.floor}
                             onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="קומה"
+                            placeholder={t.floor}
                             className="h-8"
                           />
                         </td>
@@ -575,7 +609,7 @@ const BrokerageFormPage = () => {
                             value={property.rooms}
                             onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="חדרים"
+                            placeholder={t.rooms}
                             className="h-8"
                           />
                         </td>
@@ -584,7 +618,7 @@ const BrokerageFormPage = () => {
                             value={property.price}
                             onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="מחיר"
+                            placeholder={t.price}
                             className="h-8"
                           />
                         </td>
@@ -613,7 +647,7 @@ const BrokerageFormPage = () => {
                   <Card key={index}>
                     <CardContent className="p-4 space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold">נכס {index + 1}</span>
+                        <span className="font-semibold">{t.property} {index + 1}</span>
                         {!isFieldDisabled && properties.length > 1 && (
                           <Button
                             variant="ghost"
@@ -625,51 +659,51 @@ const BrokerageFormPage = () => {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">כתובת</Label>
+                        <Label className="text-xs">{t.address}</Label>
                         <Input
                           value={property.address}
                           onChange={(e) => handlePropertyChange(index, 'address', e.target.value)}
                           disabled={isFieldDisabled}
-                          placeholder="כתובת"
+                          placeholder={t.address}
                         />
                       </div>
                       {feeTypeSale && (
                         <div className="space-y-2">
-                          <Label className="text-xs">גוש/חלקה</Label>
+                          <Label className="text-xs">{t.gushHelka}</Label>
                           <Input
                             value={property.gushHelka}
                             onChange={(e) => handlePropertyChange(index, 'gushHelka', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="גוש/חלקה"
+                            placeholder={t.gushHelka}
                           />
                         </div>
                       )}
                       <div className="grid grid-cols-3 gap-2">
                         <div className="space-y-2">
-                          <Label className="text-xs">קומה</Label>
+                          <Label className="text-xs">{t.floor}</Label>
                           <Input
                             value={property.floor}
                             onChange={(e) => handlePropertyChange(index, 'floor', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="קומה"
+                            placeholder={t.floor}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">חדרים</Label>
+                          <Label className="text-xs">{t.rooms}</Label>
                           <Input
                             value={property.rooms}
                             onChange={(e) => handlePropertyChange(index, 'rooms', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="חדרים"
+                            placeholder={t.rooms}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">מחיר</Label>
+                          <Label className="text-xs">{t.price}</Label>
                           <Input
                             value={property.price}
                             onChange={(e) => handlePropertyChange(index, 'price', e.target.value)}
                             disabled={isFieldDisabled}
-                            placeholder="מחיר"
+                            placeholder={t.price}
                           />
                         </div>
                       </div>
@@ -680,17 +714,17 @@ const BrokerageFormPage = () => {
 
               {!isFieldDisabled && (
                 <Button onClick={addPropertyRow} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 ml-2" />
-                  הוסף נכס
+                  <Plus className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                  {t.addProperty}
                 </Button>
               )}
             </div>
 
             {/* Special Terms */}
             <div>
-              <Label>תנאים מיוחדים ו/או נוספים</Label>
+              <Label>{t.specialTerms}</Label>
               <Textarea
-                placeholder="הקלידו תנאים מיוחדים, יוצאי דופן, חריגים וכד'."
+                placeholder={t.specialTermsPlaceholder}
                 value={specialTerms}
                 onChange={(e) => setSpecialTerms(e.target.value)}
                 disabled={isFieldDisabled}
@@ -699,15 +733,15 @@ const BrokerageFormPage = () => {
 
             {/* תנאים משלימים */}
             <div className="bg-muted p-4 rounded-lg space-y-3">
-              <h3 className="font-semibold">תנאים משלימים</h3>
-              <ol className="text-sm text-muted-foreground space-y-2 pr-5">
-                <li>התחייבות זו תהיה תקפה גם במקרה של סיוע של צד שלישי לסיום העסקה.</li>
-                <li>התשלום יבוצע <strong>מיד</strong> עם עשיית ההסכם (זכרון דברים) ו/או חוזה ו/או עם קבלת החזקה בנכס – המוקדם מביניהם.</li>
-                <li>אי תשלום בתוך 5 ימים ממועד האירוע המזכה יחייב <strong>כפל דמי תיווך</strong> לתשלום בתוך 10 ימים ממועד האירוע.</li>
-                <li>"סיטי מרקט" לא תהיה אחראית לשינויים בעמדת המוכרים/משכירים, או למקרה שבו נמכר/הושכר הנכס לאחר.</li>
-                <li>העברת מידע לאדם אחר תחייב בתשלום מלוא שכר הטרחה כאילו אני/אנחנו ביצענו את העסקה בעצמנו.</li>
-                <li>אם קונים/שוכרים פנו תחילה למתווך אחר אך העסקה נסגרה באמצעותנו — דמי התיווך יחולו כרגיל לפי התנאים לעיל.</li>
-                <li>אני/אנחנו מתחייבים לעדכן את משרדכם בתוך 5 ימים אם אשכור/אשכיר/אקנה/אמכור – דרככם או שלא דרככם.</li>
+              <h3 className="font-semibold">{t.supplementaryTerms}</h3>
+              <ol className={`text-sm text-muted-foreground space-y-2 ${language === 'he' ? 'pr-5' : 'pl-5'}`}>
+                <li>{t.term1}</li>
+                <li>{t.term2}</li>
+                <li>{t.term3}</li>
+                <li>{t.term4}</li>
+                <li>{t.term5}</li>
+                <li>{t.term6}</li>
+                <li>{t.term7}</li>
               </ol>
             </div>
 
@@ -715,42 +749,42 @@ const BrokerageFormPage = () => {
 
             {/* Client Details */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">פרטי הלקוח</h3>
+              <h3 className="text-lg font-semibold">{t.clientDetails}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="clientName">שם מלא</Label>
+                  <Label htmlFor="clientName">{t.fullName}</Label>
                   <Input
                     id="clientName"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    placeholder="שם הלקוח"
+                    placeholder={t.clientName}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientId">ת.ז</Label>
+                  <Label htmlFor="clientId">{t.clientId}</Label>
                   <Input
                     id="clientId"
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
-                    placeholder="מספר ת.ז"
+                    placeholder={t.clientIdPlaceholder}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientPhone">טלפון</Label>
+                  <Label htmlFor="clientPhone">{t.clientPhone}</Label>
                   <Input
                     id="clientPhone"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="מספר טלפון"
+                    placeholder={t.clientPhonePlaceholder}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientAddress">כתובת</Label>
+                  <Label htmlFor="clientAddress">{t.clientAddress}</Label>
                   <Input
                     id="clientAddress"
                     value={clientAddress}
                     onChange={(e) => setClientAddress(e.target.value)}
-                    placeholder="כתובת מגורים"
+                    placeholder={t.clientAddressPlaceholder}
                   />
                 </div>
               </div>
@@ -760,17 +794,17 @@ const BrokerageFormPage = () => {
             {mode === 'new' && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>חתימת הסוכן</Label>
+                  <Label>{t.agentSignature}</Label>
                   <div className="flex items-center gap-2">
                     {hasAgentSignature && (
                       <Badge variant="outline" className="text-green-600 border-green-600">
-                        <CheckCircle2 className="h-3 w-3 ml-1" />
-                        נחתם
+                        <CheckCircle2 className={`h-3 w-3 ${language === 'he' ? 'ml-1' : 'mr-1'}`} />
+                        {t.signed}
                       </Badge>
                     )}
                     <Button onClick={clearAgentSignature} variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4 ml-2" />
-                      נקה חתימה
+                      <Trash2 className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                      {t.clearSignature}
                     </Button>
                   </div>
                 </div>
@@ -788,7 +822,7 @@ const BrokerageFormPage = () => {
 
             {/* Client Confirmation Checkbox */}
             <div className="bg-muted/50 p-4 rounded-lg border">
-              <div className="flex items-start space-x-3 space-x-reverse">
+              <div className={`flex items-start ${language === 'he' ? 'space-x-3 space-x-reverse' : 'space-x-3'}`}>
                 <Checkbox
                   id="clientConfirmation"
                   checked={clientConfirmation}
@@ -796,7 +830,7 @@ const BrokerageFormPage = () => {
                   className="mt-1"
                 />
                 <Label htmlFor="clientConfirmation" className="cursor-pointer text-sm leading-relaxed">
-                  אני מאשר/ת כי קראתי את תוכן מסמך זה, הוסבר לי משמעותו בשפה המובנת לי, והנני מסכים/ה לתנאיו.
+                  {t.confirmationText}
                 </Label>
               </div>
             </div>
@@ -804,17 +838,17 @@ const BrokerageFormPage = () => {
             {/* Client Signature */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>חתימת הלקוח</Label>
+                <Label>{t.clientSignature}</Label>
                 <div className="flex items-center gap-2">
                   {hasSignature && (
                     <Badge variant="outline" className="text-green-600 border-green-600">
-                      <CheckCircle2 className="h-3 w-3 ml-1" />
-                      נחתם
+                      <CheckCircle2 className={`h-3 w-3 ${language === 'he' ? 'ml-1' : 'mr-1'}`} />
+                      {t.signed}
                     </Badge>
                   )}
                   <Button onClick={clearSignature} variant="outline" size="sm">
-                    <Trash2 className="h-4 w-4 ml-2" />
-                    נקה חתימה
+                    <Trash2 className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                    {t.clearSignature}
                   </Button>
                 </div>
               </div>
@@ -837,11 +871,11 @@ const BrokerageFormPage = () => {
                 className="flex-1"
               >
                 {loading ? (
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className={`h-4 w-4 animate-spin ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
                 ) : (
-                  <Save className="h-4 w-4 ml-2" />
+                  <Save className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
                 )}
-                שמור טופס
+                {t.saveForm}
               </Button>
               
               {!isRemoteSign && (
@@ -852,21 +886,16 @@ const BrokerageFormPage = () => {
                   className="flex-1"
                 >
                   {loading ? (
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    <Loader2 className={`h-4 w-4 animate-spin ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
                   ) : (
-                    <Send className="h-4 w-4 ml-2" />
+                    <Send className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
                   )}
-                  צור לינק לחתימה
+                  {t.createLink}
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-muted-foreground text-sm">
-          <p>City Market Properties</p>
-        </div>
       </div>
     </div>
   );
