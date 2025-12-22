@@ -27,6 +27,7 @@ export interface Customer {
   next_followup_date: string | null;
   source: string;
   updated_at: string | null;
+  is_hidden: boolean | null;
   // Rental-specific fields
   pets: boolean | null;
   tenant_type: string | null;
@@ -67,6 +68,7 @@ interface CustomerFilters {
   priority?: string;
   assigned_agent_id?: string;
   search?: string;
+  showHidden?: boolean;
 }
 
 export const useCustomerData = (filters?: CustomerFilters) => {
@@ -81,6 +83,11 @@ export const useCustomerData = (filters?: CustomerFilters) => {
         .from('contact_leads')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter hidden customers unless showHidden is true
+      if (!filters?.showHidden) {
+        query = query.or('is_hidden.is.null,is_hidden.eq.false');
+      }
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
@@ -113,7 +120,7 @@ export const useCustomerData = (filters?: CustomerFilters) => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [filters?.status, filters?.priority, filters?.assigned_agent_id, filters?.search]);
+  }, [filters?.status, filters?.priority, filters?.assigned_agent_id, filters?.search, filters?.showHidden]);
 
   const updateCustomerStatus = async (id: string, status: string) => {
     try {
@@ -288,6 +295,81 @@ export const useCustomerData = (filters?: CustomerFilters) => {
     }
   };
 
+  const deleteCustomer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_leads')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'נמחק בהצלחה',
+        description: 'הלקוח נמחק לצמיתות',
+      });
+      
+      fetchCustomers();
+    } catch (error) {
+      logger.error('Error deleting customer', error, 'useCustomerData');
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן למחוק את הלקוח',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const hideCustomer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_leads')
+        .update({ is_hidden: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'סומן כלא רלוונטי',
+        description: 'הלקוח הוסתר מהרשימה',
+      });
+      
+      fetchCustomers();
+    } catch (error) {
+      logger.error('Error hiding customer', error, 'useCustomerData');
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן להסתיר את הלקוח',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const unhideCustomer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_leads')
+        .update({ is_hidden: false })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'שוחזר בהצלחה',
+        description: 'הלקוח שוחזר לרשימה',
+      });
+      
+      fetchCustomers();
+    } catch (error) {
+      logger.error('Error unhiding customer', error, 'useCustomerData');
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לשחזר את הלקוח',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return {
     customers,
     loading,
@@ -299,5 +381,8 @@ export const useCustomerData = (filters?: CustomerFilters) => {
     addNotes,
     addPropertyInterest,
     fetchPropertyInterests,
+    deleteCustomer,
+    hideCustomer,
+    unhideCustomer,
   };
 };

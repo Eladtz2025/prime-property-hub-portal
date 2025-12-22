@@ -239,6 +239,7 @@ export type Database = {
           flexible_move_date: boolean | null
           floor_preference: string | null
           id: string
+          is_hidden: boolean | null
           last_contact_date: string | null
           lawyer_details: string | null
           message: string
@@ -279,6 +280,7 @@ export type Database = {
           flexible_move_date?: boolean | null
           floor_preference?: string | null
           id?: string
+          is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
           message: string
@@ -319,6 +321,7 @@ export type Database = {
           flexible_move_date?: boolean | null
           floor_preference?: string | null
           id?: string
+          is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
           message?: string
