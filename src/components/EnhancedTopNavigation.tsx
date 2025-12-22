@@ -7,7 +7,10 @@ import {
   Settings,
   ChevronDown,
   LayoutDashboard,
-  Users
+  Users,
+  Activity,
+  Search,
+  Gauge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -70,6 +73,28 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span>פורטל בעלים</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                onClick={() => navigate('/admin-dashboard/monitoring')}
+              >
+                <Activity className="h-4 w-4" />
+                <span>ניטור מערכת</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                onClick={() => navigate('/admin-dashboard/seo')}
+              >
+                <Search className="h-4 w-4" />
+                <span>בדיקת SEO</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                onClick={() => navigate('/admin-dashboard/performance')}
+              >
+                <Gauge className="h-4 w-4" />
+                <span>בדיקת מהירות</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 

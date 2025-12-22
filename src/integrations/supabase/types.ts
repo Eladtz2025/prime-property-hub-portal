@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_history: {
+        Row: {
+          backup_date: string
+          created_at: string | null
+          error_message: string | null
+          file_name: string
+          file_size_kb: number | null
+          id: string
+          status: string
+          tables_backed_up: Json | null
+        }
+        Insert: {
+          backup_date?: string
+          created_at?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size_kb?: number | null
+          id?: string
+          status: string
+          tables_backed_up?: Json | null
+        }
+        Update: {
+          backup_date?: string
+          created_at?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size_kb?: number | null
+          id?: string
+          status?: string
+          tables_backed_up?: Json | null
+        }
+        Relationships: []
+      }
       brokerage_form_tokens: {
         Row: {
           client_filled_at: string | null
@@ -278,6 +311,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      error_logs: {
+        Row: {
+          alert_sent: boolean | null
+          created_at: string | null
+          error_message: string
+          error_stack: string | null
+          error_time: string
+          id: string
+          page_url: string | null
+          severity: string
+          user_agent: string | null
+        }
+        Insert: {
+          alert_sent?: boolean | null
+          created_at?: string | null
+          error_message: string
+          error_stack?: string | null
+          error_time?: string
+          id?: string
+          page_url?: string | null
+          severity: string
+          user_agent?: string | null
+        }
+        Update: {
+          alert_sent?: boolean | null
+          created_at?: string | null
+          error_message?: string
+          error_stack?: string | null
+          error_time?: string
+          id?: string
+          page_url?: string | null
+          severity?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       exclusive_listing_forms: {
         Row: {
@@ -559,6 +628,36 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      monitoring_logs: {
+        Row: {
+          alert_sent: boolean | null
+          check_time: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          alert_sent?: boolean | null
+          check_time?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          response_time_ms?: number | null
+          status: string
+        }
+        Update: {
+          alert_sent?: boolean | null
+          check_time?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          response_time_ms?: number | null
+          status?: string
         }
         Relationships: []
       }
