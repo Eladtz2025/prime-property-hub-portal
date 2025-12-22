@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Check, X, Settings, Pencil, Phone, MapPin, Award, CreditCard } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { UserPlus, Check, X, Settings, Pencil, Award, User, Phone } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { logger } from '@/utils/logger';
 
 export const UserManagement: React.FC = () => {
@@ -417,142 +418,155 @@ export const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
-      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>ערוך משתמש</DialogTitle>
-            <DialogDescription>
-              עדכן את פרטי המשתמש בטופס למטה
-            </DialogDescription>
-          </DialogHeader>
+      {/* Edit User Sheet */}
+      <Sheet open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <SheetContent side="left" className="w-full sm:max-w-md flex flex-col p-0">
+          <SheetHeader className="px-6 py-4 border-b">
+            <SheetTitle>עריכת משתמש</SheetTitle>
+            <SheetDescription>
+              {editingUser?.email}
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="grid gap-4 py-4">
-            {/* Email - Read only */}
-            <div className="grid gap-2">
-              <Label>אימייל</Label>
-              <Input value={editingUser?.email || ''} disabled className="bg-muted" />
-            </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
+              {/* Personal Details Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  פרטים אישיים
+                </h3>
+                
+                <div className="grid gap-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="edit-name" className="text-xs">שם מלא</Label>
+                    <Input
+                      id="edit-name"
+                      value={editForm.full_name}
+                      onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                      placeholder="הזן שם מלא"
+                      className="h-9"
+                    />
+                  </div>
 
-            {/* Full Name */}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-name">שם מלא</Label>
-              <Input
-                id="edit-name"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                placeholder="הזן שם מלא"
-              />
-            </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit-phone" className="text-xs">טלפון</Label>
+                      <Input
+                        id="edit-phone"
+                        type="tel"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        placeholder="054-1234567"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="edit-id" className="text-xs">ת.ז.</Label>
+                      <Input
+                        id="edit-id"
+                        value={editForm.id_number}
+                        onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
+                        placeholder="מספר ת.ז."
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
 
-            {/* Phone */}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-phone">טלפון</Label>
-              <div className="relative">
-                <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="edit-phone"
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  placeholder="054-1234567"
-                  className="pr-10"
-                />
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-address">כתובת</Label>
-              <div className="relative">
-                <MapPin className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="edit-address"
-                  value={editForm.address}
-                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                  placeholder="הזן כתובת"
-                  className="pr-10"
-                />
-              </div>
-            </div>
-
-            {/* Broker License Number */}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-license">מספר רישיון תיווך</Label>
-              <div className="relative">
-                <Award className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="edit-license"
-                  value={editForm.broker_license_number}
-                  onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
-                  placeholder="הזן מספר רישיון"
-                  className="pr-10"
-                />
-              </div>
-            </div>
-
-            {/* ID Number */}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-id">מספר תעודת זהות</Label>
-              <div className="relative">
-                <CreditCard className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="edit-id"
-                  value={editForm.id_number}
-                  onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
-                  placeholder="הזן מספר ת.ז."
-                  className="pr-10"
-                />
-              </div>
-            </div>
-
-            {/* Role */}
-            <div className="grid gap-2">
-              <Label>תפקיד</Label>
-              <Select
-                value={editForm.role}
-                onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">צופה</SelectItem>
-                  <SelectItem value="manager">מנהל תיקים</SelectItem>
-                  <SelectItem value="admin">מנהל</SelectItem>
-                  {profile?.role === 'super_admin' && (
-                    <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Approval Status */}
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label htmlFor="edit-approved">משתמש מאושר</Label>
-                <div className="text-sm text-muted-foreground">
-                  {editForm.is_approved ? 'המשתמש יכול להתחבר למערכת' : 'המשתמש ממתין לאישור'}
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="edit-address" className="text-xs">כתובת</Label>
+                    <Input
+                      id="edit-address"
+                      value={editForm.address}
+                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                      placeholder="הזן כתובת"
+                      className="h-9"
+                    />
+                  </div>
                 </div>
               </div>
-              <Switch
-                id="edit-approved"
-                checked={editForm.is_approved}
-                onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
-              />
+
+              <Separator />
+
+              {/* Broker Details Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Award className="h-4 w-4" />
+                  פרטי מתווך
+                </h3>
+                
+                <div className="grid gap-1.5">
+                  <Label htmlFor="edit-license" className="text-xs">מספר רישיון תיווך</Label>
+                  <Input
+                    id="edit-license"
+                    value={editForm.broker_license_number}
+                    onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
+                    placeholder="הזן מספר רישיון"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* System Settings Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  הגדרות מערכת
+                </h3>
+                
+                <div className="grid gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">תפקיד</Label>
+                    <Select
+                      value={editForm.role}
+                      onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="viewer">צופה</SelectItem>
+                        <SelectItem value="manager">מנהל תיקים</SelectItem>
+                        <SelectItem value="admin">מנהל</SelectItem>
+                        {profile?.role === 'super_admin' && (
+                          <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="edit-approved" className="text-sm">משתמש מאושר</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {editForm.is_approved ? 'יכול להתחבר' : 'ממתין לאישור'}
+                      </p>
+                    </div>
+                    <Switch
+                      id="edit-approved"
+                      checked={editForm.is_approved}
+                      onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingUser(null)}>
-              ביטול
-            </Button>
-            <Button onClick={handleUpdateUser}>
-              שמור שינויים
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <SheetFooter className="px-6 py-4 border-t bg-muted/30">
+            <div className="flex gap-2 w-full">
+              <Button variant="outline" onClick={() => setEditingUser(null)} className="flex-1">
+                ביטול
+              </Button>
+              <Button onClick={handleUpdateUser} className="flex-1">
+                שמור שינויים
+              </Button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
