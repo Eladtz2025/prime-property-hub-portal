@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.check-performance]
 verify_jwt = false
+
+[functions.send-brokerage-form]
+verify_jwt = false
