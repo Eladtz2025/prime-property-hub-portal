@@ -289,11 +289,8 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header עם מונה משתמשים וכפתור הזמנה */}
+      {/* Header עם מונה משתמשים וכפתור הזמנה - RTL */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {users.length} משתמשים במערכת
-        </p>
         <Button 
           variant={showInviteForm ? 'secondary' : 'default'}
           size="sm" 
@@ -311,6 +308,9 @@ export const UserManagement: React.FC = () => {
             </>
           )}
         </Button>
+        <p className="text-sm text-muted-foreground">
+          {users.length} משתמשים במערכת
+        </p>
       </div>
 
       {/* טופס הזמנה מתרחב */}
@@ -374,12 +374,12 @@ export const UserManagement: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="text-xs font-medium">אימייל</TableHead>
-                <TableHead className="text-xs font-medium">שם</TableHead>
-                <TableHead className="text-xs font-medium hidden sm:table-cell">טלפון</TableHead>
-                <TableHead className="text-xs font-medium">תפקיד</TableHead>
-                <TableHead className="text-xs font-medium hidden sm:table-cell">סטטוס</TableHead>
-                <TableHead className="text-xs font-medium w-[100px]">פעולות</TableHead>
+                <TableHead className="text-xs font-medium text-right">אימייל</TableHead>
+                <TableHead className="text-xs font-medium text-right">שם</TableHead>
+                <TableHead className="text-xs font-medium text-right hidden sm:table-cell">טלפון</TableHead>
+                <TableHead className="text-xs font-medium text-right">תפקיד</TableHead>
+                <TableHead className="text-xs font-medium text-right hidden sm:table-cell">סטטוס</TableHead>
+                <TableHead className="text-xs font-medium text-right w-[100px]">פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -396,15 +396,15 @@ export const UserManagement: React.FC = () => {
                   }}
                 >
                   <TableRow className={`${editingUser?.id === user.id ? 'bg-muted/30' : ''} hover:bg-muted/20`}>
-                    <TableCell className="text-sm py-3">{user.email}</TableCell>
-                    <TableCell className="text-sm py-3">{user.full_name || '-'}</TableCell>
-                    <TableCell className="text-sm py-3 hidden sm:table-cell">{user.phone || '-'}</TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="text-sm py-3 text-right">{user.email}</TableCell>
+                    <TableCell className="text-sm py-3 text-right">{user.full_name || '-'}</TableCell>
+                    <TableCell className="text-sm py-3 text-right hidden sm:table-cell">{user.phone || '-'}</TableCell>
+                    <TableCell className="py-3 text-right">
                       <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
                         {getRoleLabel(user.role)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-3 hidden sm:table-cell">
+                    <TableCell className="py-3 text-right hidden sm:table-cell">
                       {user.is_approved ? (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-200">
                           מאושר
@@ -415,8 +415,8 @@ export const UserManagement: React.FC = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="py-3">
-                      <div className="flex items-center gap-1">
+                    <TableCell className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           size="icon"
                           variant={editingUser?.id === user.id ? 'secondary' : 'ghost'}
