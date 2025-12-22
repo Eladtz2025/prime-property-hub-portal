@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,11 +11,62 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe, AlertCircle } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerage-form-translations';
+import { z } from 'zod';
 
 const MAX_PROPERTIES = 10;
+
+// Hebrew name validation regex - allows Hebrew, English letters, spaces, hyphens, and apostrophes
+const hebrewNameRegex = /^[a-zA-Z\u0590-\u05FF\s'-]+$/;
+
+// Israeli ID validation (9 digits)
+const israeliIdRegex = /^\d{9}$/;
+
+// Phone validation - Israeli format
+const israeliPhoneRegex = /^(\+972|0)?[2-9]\d{7,8}$/;
+
+// Validate Israeli ID using Luhn algorithm
+const validateIsraeliID = (id: string): boolean => {
+  if (!israeliIdRegex.test(id)) return false;
+  
+  const digits = id.split('').map(Number);
+  const sum = digits.reduce((acc, digit, index) => {
+    const step = digit * ((index % 2) + 1);
+    return acc + (step > 9 ? step - 9 : step);
+  }, 0);
+  
+  return sum % 10 === 0;
+};
+
+// Client validation schema
+const clientSchema = z.object({
+  clientName: z.string()
+    .trim()
+    .min(2, 'שם חייב להכיל לפחות 2 תווים')
+    .max(100, 'שם ארוך מדי')
+    .regex(hebrewNameRegex, 'שם מכיל תווים לא חוקיים'),
+  clientId: z.string()
+    .trim()
+    .regex(israeliIdRegex, 'תעודת זהות חייבת להכיל 9 ספרות')
+    .refine(validateIsraeliID, 'מספר תעודת הזהות אינו תקין'),
+  clientPhone: z.string()
+    .trim()
+    .regex(israeliPhoneRegex, 'מספר טלפון לא תקין'),
+  clientAddress: z.string()
+    .trim()
+    .min(5, 'כתובת חייבת להכיל לפחות 5 תווים')
+    .max(200, 'כתובת ארוכה מדי'),
+});
+
+// Field error type
+interface FieldErrors {
+  clientName?: string;
+  clientId?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+}
 
 interface PropertyRow {
   address: string;
@@ -40,6 +91,10 @@ const BrokerageFormPage = () => {
   const [hasSignature, setHasSignature] = useState(false);
   const [hasAgentSignature, setHasAgentSignature] = useState(false);
   const [language, setLanguage] = useState<BrokerageFormLanguage>('he');
+  
+  // Field errors for real-time validation
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   
   // Get translations based on current language
   const t = brokerageFormTranslations[language];
@@ -69,6 +124,73 @@ const BrokerageFormPage = () => {
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientPhone, setClientPhone] = useState('');
+
+  // Validate a single field
+  const validateField = useCallback((field: keyof FieldErrors, value: string): string | undefined => {
+    try {
+      const schema = clientSchema.shape[field];
+      schema.parse(value);
+      return undefined;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return error.errors[0]?.message;
+      }
+      return undefined;
+    }
+  }, []);
+
+  // Handle field blur - mark as touched and validate
+  const handleFieldBlur = useCallback((field: keyof FieldErrors) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    
+    let value = '';
+    switch (field) {
+      case 'clientName': value = clientName; break;
+      case 'clientId': value = clientId; break;
+      case 'clientPhone': value = clientPhone; break;
+      case 'clientAddress': value = clientAddress; break;
+    }
+    
+    const error = validateField(field, value);
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+  }, [clientName, clientId, clientPhone, clientAddress, validateField]);
+
+  // Handle field change with real-time validation
+  const handleClientNameChange = useCallback((value: string) => {
+    setClientName(value);
+    if (touched.clientName) {
+      const error = validateField('clientName', value);
+      setFieldErrors(prev => ({ ...prev, clientName: error }));
+    }
+  }, [touched.clientName, validateField]);
+
+  const handleClientIdChange = useCallback((value: string) => {
+    // Only allow digits, max 9
+    const cleaned = value.replace(/\D/g, '').slice(0, 9);
+    setClientId(cleaned);
+    if (touched.clientId) {
+      const error = validateField('clientId', cleaned);
+      setFieldErrors(prev => ({ ...prev, clientId: error }));
+    }
+  }, [touched.clientId, validateField]);
+
+  const handleClientPhoneChange = useCallback((value: string) => {
+    // Allow digits, plus sign, and common separators
+    const cleaned = value.replace(/[^\d+\-\s]/g, '').slice(0, 15);
+    setClientPhone(cleaned);
+    if (touched.clientPhone) {
+      const error = validateField('clientPhone', cleaned);
+      setFieldErrors(prev => ({ ...prev, clientPhone: error }));
+    }
+  }, [touched.clientPhone, validateField]);
+
+  const handleClientAddressChange = useCallback((value: string) => {
+    setClientAddress(value);
+    if (touched.clientAddress) {
+      const error = validateField('clientAddress', value);
+      setFieldErrors(prev => ({ ...prev, clientAddress: error }));
+    }
+  }, [touched.clientAddress, validateField]);
 
   // Check if broker details are complete
   const isBrokerDetailsComplete = profile?.full_name && profile?.broker_license_number && profile?.id_number;
@@ -191,10 +313,40 @@ const BrokerageFormPage = () => {
   };
 
   const validateClientData = () => {
-    if (!clientName || !clientId || !clientPhone || !clientAddress) {
-      toast.error(t.errorClientDetails);
+    // Mark all fields as touched
+    setTouched({
+      clientName: true,
+      clientId: true,
+      clientPhone: true,
+      clientAddress: true,
+    });
+
+    // Validate all fields using Zod
+    const result = clientSchema.safeParse({
+      clientName,
+      clientId,
+      clientPhone,
+      clientAddress,
+    });
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof FieldErrors;
+        if (!errors[field]) {
+          errors[field] = err.message;
+        }
+      });
+      setFieldErrors(errors);
+      
+      // Show first error as toast
+      const firstError = result.error.errors[0];
+      toast.error(firstError?.message || t.errorClientDetails);
       return false;
     }
+
+    setFieldErrors({});
+
     if (!clientConfirmation) {
       toast.error(t.errorClientConfirmation);
       return false;
@@ -752,40 +904,93 @@ const BrokerageFormPage = () => {
               <h3 className="text-lg font-semibold">{t.clientDetails}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="clientName">{t.fullName}</Label>
+                  <Label htmlFor="clientName" className="flex items-center gap-1">
+                    {t.fullName}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="clientName"
                     value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
+                    onChange={(e) => handleClientNameChange(e.target.value)}
+                    onBlur={() => handleFieldBlur('clientName')}
                     placeholder={t.clientName}
+                    maxLength={100}
+                    className={fieldErrors.clientName && touched.clientName ? 'border-destructive' : ''}
                   />
+                  {fieldErrors.clientName && touched.clientName && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {fieldErrors.clientName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientId">{t.clientId}</Label>
+                  <Label htmlFor="clientId" className="flex items-center gap-1">
+                    {t.clientId}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="clientId"
                     value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
+                    onChange={(e) => handleClientIdChange(e.target.value)}
+                    onBlur={() => handleFieldBlur('clientId')}
                     placeholder={t.clientIdPlaceholder}
+                    maxLength={9}
+                    inputMode="numeric"
+                    pattern="\d{9}"
+                    dir="ltr"
+                    className={fieldErrors.clientId && touched.clientId ? 'border-destructive' : ''}
                   />
+                  {fieldErrors.clientId && touched.clientId && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {fieldErrors.clientId}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientPhone">{t.clientPhone}</Label>
+                  <Label htmlFor="clientPhone" className="flex items-center gap-1">
+                    {t.clientPhone}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="clientPhone"
                     value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
+                    onChange={(e) => handleClientPhoneChange(e.target.value)}
+                    onBlur={() => handleFieldBlur('clientPhone')}
                     placeholder={t.clientPhonePlaceholder}
+                    maxLength={15}
+                    inputMode="tel"
+                    dir="ltr"
+                    className={fieldErrors.clientPhone && touched.clientPhone ? 'border-destructive' : ''}
                   />
+                  {fieldErrors.clientPhone && touched.clientPhone && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {fieldErrors.clientPhone}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientAddress">{t.clientAddress}</Label>
+                  <Label htmlFor="clientAddress" className="flex items-center gap-1">
+                    {t.clientAddress}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="clientAddress"
                     value={clientAddress}
-                    onChange={(e) => setClientAddress(e.target.value)}
+                    onChange={(e) => handleClientAddressChange(e.target.value)}
+                    onBlur={() => handleFieldBlur('clientAddress')}
                     placeholder={t.clientAddressPlaceholder}
+                    maxLength={200}
+                    className={fieldErrors.clientAddress && touched.clientAddress ? 'border-destructive' : ''}
                   />
+                  {fieldErrors.clientAddress && touched.clientAddress && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {fieldErrors.clientAddress}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
