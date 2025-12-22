@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Check, X, Settings, Pencil, Award, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, Check, X, Settings, Pencil, Award, User, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -24,6 +24,7 @@ export const UserManagement: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('viewer');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: '',
     phone: '',
@@ -287,63 +288,75 @@ export const UserManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            הזמן משתמש חדש
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="invite-email">כתובת אימייל</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="user@example.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="invite-role">תפקיד</Label>
-              <Select value={inviteRole} onValueChange={(value: UserRole) => setInviteRole(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">צופה</SelectItem>
-                  <SelectItem value="manager">מנהל תיקים</SelectItem>
-                  <SelectItem value="admin">מנהל</SelectItem>
-                  {profile?.role === 'super_admin' && (
-                    <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button 
-                onClick={handleInviteUser}
-                disabled={loading || !inviteEmail.trim()}
-                className="w-full"
-              >
-                שלח הזמנה
-              </Button>
+    <div className="space-y-4">
+      {/* כפתור הזמנת משתמש וטופס מתרחב */}
+      <div className="flex items-center justify-between">
+        <Button 
+          variant={showInviteForm ? 'default' : 'outline'}
+          size="sm" 
+          onClick={() => setShowInviteForm(!showInviteForm)}
+        >
+          {showInviteForm ? (
+            <ChevronUp className="h-4 w-4 ml-1" />
+          ) : (
+            <Plus className="h-4 w-4 ml-1" />
+          )}
+          הזמן משתמש
+        </Button>
+      </div>
+
+      <Collapsible open={showInviteForm}>
+        <CollapsibleContent>
+          <div className="border rounded-lg p-4 mb-4 bg-muted/20 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="invite-email">כתובת אימייל</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invite-role">תפקיד</Label>
+                <Select value={inviteRole} onValueChange={(value: UserRole) => setInviteRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="viewer">צופה</SelectItem>
+                    <SelectItem value="manager">מנהל תיקים</SelectItem>
+                    <SelectItem value="admin">מנהל</SelectItem>
+                    {profile?.role === 'super_admin' && (
+                      <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end gap-2">
+                <Button 
+                  onClick={handleInviteUser}
+                  disabled={loading || !inviteEmail.trim()}
+                  className="flex-1"
+                >
+                  שלח הזמנה
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowInviteForm(false)}
+                >
+                  ביטול
+                </Button>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            ניהול משתמשים
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* טבלת משתמשים ללא Card (ה-Card מגיע מ-Settings.tsx) */}
+      <div>
           {loading ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
@@ -566,8 +579,7 @@ export const UserManagement: React.FC = () => {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
     </div>
   );
