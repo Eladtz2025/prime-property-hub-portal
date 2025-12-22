@@ -489,6 +489,60 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_enabled: boolean | null
+          name: string
+          rollout_percentage: number | null
+          target_users: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name: string
+          rollout_percentage?: number | null
+          target_users?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name?: string
+          rollout_percentage?: number | null
+          target_users?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_records: {
         Row: {
           amount: number
@@ -743,6 +797,45 @@ export type Database = {
           id?: string
           resource?: string
           role?: string
+        }
+        Relationships: []
+      }
+      pipeline_runs: {
+        Row: {
+          branch: string | null
+          commit_hash: string | null
+          created_at: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+          test_results: Json | null
+          triggered_by: string | null
+        }
+        Insert: {
+          branch?: string | null
+          commit_hash?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status: string
+          test_results?: Json | null
+          triggered_by?: string | null
+        }
+        Update: {
+          branch?: string | null
+          commit_hash?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          test_results?: Json | null
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -1369,6 +1462,66 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qa_tests: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          expected_result: string | null
+          id: string
+          last_tested_at: string | null
+          name: string
+          notes: string | null
+          priority: string | null
+          status: string | null
+          tested_by: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          expected_result?: string | null
+          id?: string
+          last_tested_at?: string | null
+          name: string
+          notes?: string | null
+          priority?: string | null
+          status?: string | null
+          tested_by?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expected_result?: string | null
+          id?: string
+          last_tested_at?: string | null
+          name?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string | null
+          tested_by?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qa_tests_tested_by_fkey"
+            columns: ["tested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qa_tests_tested_by_fkey"
+            columns: ["tested_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
             referencedColumns: ["id"]
           },
         ]
