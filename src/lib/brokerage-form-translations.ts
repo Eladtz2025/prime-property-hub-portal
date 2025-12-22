@@ -113,6 +113,19 @@ export const brokerageFormTranslations = {
     language: 'שפה',
     hebrew: 'עברית',
     english: 'English',
+    
+    // Thank you screen
+    thankYouTitle: 'הטופס נחתם בהצלחה!',
+    thankYouMessage: 'תודה שבחרת בסיטי מרקט. הטופס נשמר במערכת.',
+    enterEmail: 'הזן כתובת מייל לקבלת עותק',
+    sendEmailCopy: 'שלח לי עותק למייל',
+    downloadPDF: 'הורד כ-PDF',
+    emailSent: 'הטופס נשלח למייל בהצלחה',
+    emailError: 'שגיאה בשליחת המייל',
+    invalidEmail: 'כתובת מייל לא תקינה',
+    closeAndFinish: 'סיום',
+    sending: 'שולח...',
+    generating: 'מייצר PDF...',
   },
   en: {
     // Page titles
@@ -228,6 +241,19 @@ export const brokerageFormTranslations = {
     language: 'Language',
     hebrew: 'עברית',
     english: 'English',
+    
+    // Thank you screen
+    thankYouTitle: 'Form Signed Successfully!',
+    thankYouMessage: 'Thank you for choosing City Market. The form has been saved.',
+    enterEmail: 'Enter email to receive a copy',
+    sendEmailCopy: 'Send me a copy by email',
+    downloadPDF: 'Download as PDF',
+    emailSent: 'Form sent to email successfully',
+    emailError: 'Error sending email',
+    invalidEmail: 'Invalid email address',
+    closeAndFinish: 'Finish',
+    sending: 'Sending...',
+    generating: 'Generating PDF...',
   }
 };
 

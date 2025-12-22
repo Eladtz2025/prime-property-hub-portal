@@ -11,10 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe, AlertCircle } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe, AlertCircle, Download, Mail, Check } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerage-form-translations';
 import { z } from 'zod';
+import jsPDF from 'jspdf';
 
 const MAX_PROPERTIES = 10;
 
@@ -93,6 +94,12 @@ const BrokerageFormPage = () => {
   const [clientSignatureData, setClientSignatureData] = useState<string | null>(null);
   const [agentSignatureData, setAgentSignatureData] = useState<string | null>(null);
   const [language, setLanguage] = useState<BrokerageFormLanguage>('he');
+  
+  // Thank you screen state
+  const [showThankYou, setShowThankYou] = useState(false);
+  const [clientEmail, setClientEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   
   // Field errors for real-time validation
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -502,10 +509,8 @@ const BrokerageFormPage = () => {
       }
 
       toast.success(t.formSaved);
-      setTimeout(() => {
-        window.close();
-        navigate('/');
-      }, 1500);
+      // Show thank you screen instead of closing
+      setShowThankYou(true);
     } catch (err) {
       console.error('Error saving form:', err);
       toast.error(t.errorSavingForm);
@@ -513,6 +518,162 @@ const BrokerageFormPage = () => {
       setLoading(false);
     }
   };
+
+  // Generate PDF function
+  const generatePDF = useCallback(() => {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let yPos = 20;
+    
+    // Title
+    pdf.setFontSize(18);
+    pdf.text(t.title, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+    
+    // Get current broker details for display
+    const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
+      full_name: profile?.full_name,
+      broker_license_number: profile?.broker_license_number,
+      phone: profile?.phone,
+      id_number: profile?.id_number,
+    };
+    
+    // Broker details section
+    pdf.setFontSize(14);
+    pdf.text(t.brokerDetails, 20, yPos);
+    yPos += 8;
+    pdf.setFontSize(11);
+    pdf.text(`${t.name}: ${currentBrokerDetails?.full_name || '—'}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.license}: ${currentBrokerDetails?.broker_license_number || '—'}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.phone}: ${currentBrokerDetails?.phone || '—'}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.date}: ${formDate}`, 20, yPos);
+    yPos += 12;
+    
+    // Fee types
+    pdf.setFontSize(14);
+    pdf.text(t.feeTypes, 20, yPos);
+    yPos += 8;
+    pdf.setFontSize(11);
+    if (feeTypeRental) {
+      pdf.text(`✓ ${t.rentalFee} ${t.rentalFeeAmount} ${t.rentalFeeText}`, 20, yPos);
+      yPos += 6;
+    }
+    if (feeTypeSale) {
+      pdf.text(`✓ ${t.saleFee} ${t.saleFeeAmount} ${t.saleFeeText}`, 20, yPos);
+      yPos += 6;
+    }
+    yPos += 6;
+    
+    // Properties section
+    pdf.setFontSize(14);
+    pdf.text(t.propertiesReferred, 20, yPos);
+    yPos += 8;
+    pdf.setFontSize(10);
+    properties.forEach((prop, idx) => {
+      if (prop.address) {
+        pdf.text(`${idx + 1}. ${prop.address}${prop.floor ? `, ${t.floor}: ${prop.floor}` : ''}${prop.rooms ? `, ${t.rooms}: ${prop.rooms}` : ''}${prop.price ? `, ${t.price}: ${prop.price}` : ''}`, 20, yPos);
+        yPos += 6;
+      }
+    });
+    yPos += 6;
+    
+    // Client details
+    pdf.setFontSize(14);
+    pdf.text(t.clientDetails, 20, yPos);
+    yPos += 8;
+    pdf.setFontSize(11);
+    pdf.text(`${t.clientName}: ${clientName}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.clientId}: ${clientId}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.clientPhone}: ${clientPhone}`, 20, yPos);
+    yPos += 6;
+    pdf.text(`${t.clientAddress}: ${clientAddress}`, 20, yPos);
+    yPos += 15;
+    
+    // Signatures
+    if (agentSignatureData) {
+      try {
+        pdf.text(t.agentSignature + ':', 20, yPos);
+        yPos += 5;
+        pdf.addImage(agentSignatureData, 'PNG', 20, yPos, 50, 25);
+        yPos += 30;
+      } catch (e) {
+        console.error('Error adding agent signature to PDF:', e);
+      }
+    }
+    
+    if (clientSignatureData) {
+      try {
+        pdf.text(t.clientSignature + ':', 20, yPos);
+        yPos += 5;
+        pdf.addImage(clientSignatureData, 'PNG', 20, yPos, 50, 25);
+      } catch (e) {
+        console.error('Error adding client signature to PDF:', e);
+      }
+    }
+    
+    return pdf;
+  }, [t, mode, brokerDetails, profile, formDate, feeTypeRental, feeTypeSale, properties, clientName, clientId, clientPhone, clientAddress, agentSignatureData, clientSignatureData]);
+
+  // Download PDF function
+  const downloadPDF = useCallback(async () => {
+    setGeneratingPDF(true);
+    try {
+      const pdf = generatePDF();
+      pdf.save(`brokerage-form-${clientName.replace(/\s+/g, '-')}-${formDate}.pdf`);
+      toast.success(language === 'he' ? 'הקובץ הורד בהצלחה' : 'File downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error(language === 'he' ? 'שגיאה ביצירת הקובץ' : 'Error generating file');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  }, [generatePDF, clientName, formDate, language]);
+
+  // Send email copy function
+  const sendEmailCopy = useCallback(async () => {
+    if (!clientEmail || !clientEmail.includes('@')) {
+      toast.error(t.invalidEmail);
+      return;
+    }
+    
+    setSendingEmail(true);
+    try {
+      const pdf = generatePDF();
+      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      
+      const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
+        full_name: profile?.full_name,
+      };
+      
+      const { error } = await supabase.functions.invoke('send-brokerage-form', {
+        body: {
+          email: clientEmail,
+          formData: {
+            clientName,
+            formDate,
+            brokerName: currentBrokerDetails?.full_name
+          },
+          pdfBase64,
+          language
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success(t.emailSent);
+      setClientEmail('');
+    } catch (err) {
+      console.error('Error sending email:', err);
+      toast.error(t.emailError);
+    } finally {
+      setSendingEmail(false);
+    }
+  }, [clientEmail, generatePDF, t, mode, brokerDetails, profile, clientName, formDate, language]);
 
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
@@ -528,6 +689,90 @@ const BrokerageFormPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Thank you screen
+  if (showThankYou) {
+    return (
+      <div className={`min-h-screen bg-background flex items-center justify-center p-4 ${language === 'he' ? 'rtl' : 'ltr'}`}>
+        <Card className="max-w-lg w-full">
+          <CardContent className="pt-8 text-center space-y-6">
+            {/* Success icon */}
+            <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
+              <Check className="h-10 w-10 text-green-600" />
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-foreground">{t.thankYouTitle}</h1>
+              <p className="text-muted-foreground">{t.thankYouMessage}</p>
+            </div>
+            
+            {/* Email input section */}
+            <div className="space-y-3 pt-4">
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder={t.enterEmail}
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                  className="flex-1"
+                  dir="ltr"
+                />
+                <Button 
+                  onClick={sendEmailCopy} 
+                  disabled={sendingEmail || !clientEmail}
+                  className="min-w-[120px]"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {t.sending}
+                    </>
+                  ) : (
+                    <>
+                      <Mail className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                      {t.sendEmailCopy}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            {/* Download PDF button */}
+            <Button 
+              onClick={downloadPDF} 
+              variant="outline" 
+              className="w-full"
+              disabled={generatingPDF}
+            >
+              {generatingPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t.generating}
+                </>
+              ) : (
+                <>
+                  <Download className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
+                  {t.downloadPDF}
+                </>
+              )}
+            </Button>
+            
+            {/* Close button */}
+            <Button 
+              onClick={() => {
+                window.close();
+                navigate('/');
+              }} 
+              variant="ghost"
+              className="w-full"
+            >
+              {t.closeAndFinish}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
