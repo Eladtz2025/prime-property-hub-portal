@@ -205,15 +205,15 @@ const ExclusiveListingPage = () => {
       setExclusivityMonths(data.exclusivity_months?.toString() || '');
 
       // Set marketing
-      const marketingData = (data.marketing_activities as unknown as MarketingActivities) || {};
+      const marketingData = data.marketing_activities as unknown as MarketingActivities | null;
       setMarketing({
-        signage: marketingData?.signage || false,
-        internet: marketingData?.internet || false,
-        socialMedia: marketingData?.socialMedia || false,
-        press: marketingData?.press || false,
-        brokerNetwork: marketingData?.brokerNetwork || false,
-        photography: marketingData?.photography || false,
-        virtualTour: marketingData?.virtualTour || false,
+        signage: marketingData?.signage ?? false,
+        internet: marketingData?.internet ?? false,
+        socialMedia: marketingData?.socialMedia ?? false,
+        press: marketingData?.press ?? false,
+        brokerNetwork: marketingData?.brokerNetwork ?? false,
+        photography: marketingData?.photography ?? false,
+        virtualTour: marketingData?.virtualTour ?? false,
       });
       setMarketingOther(data.marketing_other || '');
 
