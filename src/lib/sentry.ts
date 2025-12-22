@@ -12,11 +12,16 @@ export const initSentry = () => {
   Sentry.init({
     dsn: SENTRY_DSN,
     
-    // Performance Monitoring
-    tracesSampleRate: 0.1, // 10% of transactions
+    // Performance Monitoring - Enhanced tracing
+    tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0, // 20% in prod, 100% in dev
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/.*\.supabase\.co/,
+      /^https:\/\/.*\.lovable\.app/,
+    ],
     
-    // Session Replay (optional, for debugging)
-    replaysSessionSampleRate: 0.1, // 10% of sessions
+    // Session Replay for debugging
+    replaysSessionSampleRate: import.meta.env.PROD ? 0.1 : 0.5,
     replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
     
     // Environment
@@ -25,15 +30,24 @@ export const initSentry = () => {
     // Release tracking
     release: import.meta.env.VITE_APP_VERSION || '1.0.0',
     
+    // Enhanced logging
+    debug: import.meta.env.DEV,
+    
+    // Attach stack traces to all messages
+    attachStacktrace: true,
+    
+    // Normalize depth for context data
+    normalizeDepth: 6,
+    
     // Filter events
     beforeSend(event, hint) {
-      // Filter out specific errors if needed
-      const error = hint.originalException;
-      
-      // Don't send network errors for local development
-      if (import.meta.env.DEV) {
+      // Don't send in development unless explicitly enabled
+      if (import.meta.env.DEV && !import.meta.env.VITE_SENTRY_DEV_ENABLED) {
+        console.log('[Sentry] Event captured (dev mode):', event.message || event.exception?.values?.[0]?.value);
         return null;
       }
+      
+      const error = hint.originalException;
       
       // Filter out common non-critical errors
       if (error instanceof Error) {
@@ -46,33 +60,82 @@ export const initSentry = () => {
         if (error.message?.includes('Loading chunk')) {
           return null;
         }
+        
+        // Skip cancelled requests
+        if (error.message?.includes('AbortError') || error.message?.includes('cancelled')) {
+          return null;
+        }
       }
       
       return event;
+    },
+    
+    // Enhanced breadcrumbs
+    beforeBreadcrumb(breadcrumb, hint) {
+      // Add more context to fetch breadcrumbs
+      if (breadcrumb.category === 'fetch' && hint?.input) {
+        const url = hint.input[0];
+        if (typeof url === 'string') {
+          breadcrumb.data = {
+            ...breadcrumb.data,
+            endpoint: url.split('?')[0],
+          };
+        }
+      }
+      
+      // Filter out noisy console breadcrumbs
+      if (breadcrumb.category === 'console' && breadcrumb.level === 'log') {
+        return null;
+      }
+      
+      return breadcrumb;
     },
     
     // Ignore specific errors
     ignoreErrors: [
       // Browser extensions
       'top.GLOBALS',
+      'originalCreateNotification',
+      'canvas.contentDocument',
       // Network errors
       'NetworkError',
       'Failed to fetch',
+      'Load failed',
       // Chrome specific
       'ResizeObserver loop limit exceeded',
+      'ResizeObserver loop completed with undelivered notifications',
+      // User interactions
+      'Non-Error promise rejection captured',
     ],
     
     // Integrations
     integrations: [
-      Sentry.browserTracingIntegration(),
+      // Browser tracing for performance
+      Sentry.browserTracingIntegration({
+        enableInp: true, // Interaction to Next Paint
+      }),
+      
+      // Session replay for debugging
       Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
+        maskAllText: false, // Allow text for better debugging
+        maskAllInputs: true, // Mask sensitive inputs
+        blockAllMedia: false,
+        networkDetailAllowUrls: [
+          /supabase\.co/,
+        ],
+      }),
+      
+      // HTTP client integration for better fetch tracking
+      Sentry.httpClientIntegration(),
+      
+      // Capture console errors
+      Sentry.captureConsoleIntegration({
+        levels: ['error', 'warn'],
       }),
     ],
   });
 
-  console.log('[Sentry] Initialized successfully');
+  console.log('[Sentry] Initialized successfully with enhanced tracing');
 };
 
 // Helper function to capture errors with context
@@ -88,12 +151,18 @@ export const captureError = (
   });
 };
 
-// Helper function to capture messages
+// Helper function to capture messages with levels
 export const captureMessage = (
   message: string,
-  level: Sentry.SeverityLevel = 'info'
+  level: Sentry.SeverityLevel = 'info',
+  context?: Record<string, unknown>
 ) => {
-  Sentry.captureMessage(message, level);
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setExtras(context);
+    }
+    Sentry.captureMessage(message, level);
+  });
 };
 
 // Helper function to set user context
@@ -113,14 +182,60 @@ export const setUser = (user: { id: string; email?: string; name?: string } | nu
 export const addBreadcrumb = (
   message: string,
   category?: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
+  level: Sentry.SeverityLevel = 'info'
 ) => {
   Sentry.addBreadcrumb({
     message,
     category: category || 'custom',
     data,
-    level: 'info',
+    level,
   });
+};
+
+// Helper function to start a transaction for performance monitoring
+export const startTransaction = (name: string, op: string) => {
+  return Sentry.startInactiveSpan({
+    name,
+    op,
+  });
+};
+
+// Helper function to measure async operations
+export const measureAsync = async <T>(
+  name: string,
+  operation: () => Promise<T>,
+  context?: Record<string, unknown>
+): Promise<T> => {
+  const span = Sentry.startInactiveSpan({
+    name,
+    op: 'function',
+  });
+  
+  try {
+    const result = await operation();
+    span?.end();
+    return result;
+  } catch (error) {
+    span?.end();
+    captureError(error as Error, { operation: name, ...context });
+    throw error;
+  }
+};
+
+// Helper to log API calls
+export const logApiCall = (
+  endpoint: string,
+  method: string,
+  status: number,
+  duration?: number
+) => {
+  addBreadcrumb(
+    `API ${method} ${endpoint} - ${status}`,
+    'api',
+    { endpoint, method, status, duration },
+    status >= 400 ? 'error' : 'info'
+  );
 };
 
 // Error boundary wrapper component
