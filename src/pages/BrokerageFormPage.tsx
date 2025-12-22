@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe, AlertCircle, Download, Mail, Check } from 'lucide-react';
+import { Loader2, Copy, Send, Save, Plus, X, CheckCircle2, Trash2, AlertTriangle, Award, User, Phone, CreditCard, Globe, AlertCircle, Download, Check } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerage-form-translations';
 import { z } from 'zod';
@@ -543,65 +543,131 @@ const BrokerageFormPage = () => {
       id_number: profile?.id_number,
     };
     
+    const sectionStyle = `margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-${language === 'he' ? 'right' : 'left'}: 4px solid #2563eb;`;
+    const headerStyle = `font-size: 15px; font-weight: bold; margin: 0 0 12px 0; color: #1e40af;`;
+    const textStyle = `font-size: 12px; line-height: 1.6; margin: 6px 0; color: #333;`;
+    const smallTextStyle = `font-size: 11px; line-height: 1.5; margin: 4px 0; color: #555;`;
+    
     container.innerHTML = `
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="font-size: 24px; margin: 0; color: #1a1a1a;">${t.title}</h1>
-        <p style="font-size: 14px; color: #666; margin-top: 8px;">${formDate}</p>
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2563eb;">
+        <h1 style="font-size: 22px; margin: 0; color: #1e3a5f; font-weight: bold;">${t.title}</h1>
+        <p style="font-size: 13px; color: #666; margin-top: 8px;">${t.date}: ${formDate}</p>
       </div>
       
-      <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
-        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.brokerDetails}</h2>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.name}:</strong> ${currentBrokerDetails?.full_name || '—'}</p>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.license}:</strong> ${currentBrokerDetails?.broker_license_number || '—'}</p>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.phone}:</strong> ${currentBrokerDetails?.phone || '—'}</p>
+      <!-- Broker Details -->
+      <div style="${sectionStyle}">
+        <h2 style="${headerStyle}">${t.brokerDetails}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <p style="${textStyle}"><strong>${t.name}:</strong> ${currentBrokerDetails?.full_name || '—'}</p>
+          <p style="${textStyle}"><strong>${t.license}:</strong> ${currentBrokerDetails?.broker_license_number || '—'}</p>
+          <p style="${textStyle}"><strong>${t.phone}:</strong> ${currentBrokerDetails?.phone || '—'}</p>
+          <p style="${textStyle}"><strong>${t.idNumber}:</strong> ${currentBrokerDetails?.id_number || '—'}</p>
+        </div>
       </div>
       
-      <div style="margin-bottom: 24px;">
-        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.feeTypes}</h2>
-        ${feeTypeRental ? `<p style="margin: 4px 0; font-size: 14px;">✓ ${t.rentalFee} ${t.rentalFeeAmount} ${t.rentalFeeText}</p>` : ''}
-        ${feeTypeSale ? `<p style="margin: 4px 0; font-size: 14px;">✓ ${t.saleFee} ${t.saleFeeAmount} ${t.saleFeeText}</p>` : ''}
+      <!-- Declarations -->
+      <div style="${sectionStyle}">
+        <h2 style="${headerStyle}">${t.declarations}</h2>
+        <p style="${smallTextStyle}">${t.declarationText1}</p>
+        <p style="${smallTextStyle} margin-top: 8px;">${t.declarationText2}</p>
       </div>
       
-      <div style="margin-bottom: 24px;">
-        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.propertiesReferred}</h2>
-        ${properties.filter(p => p.address).map((prop, idx) => `
-          <p style="margin: 4px 0; font-size: 14px;">
-            ${idx + 1}. ${prop.address}
-            ${prop.floor ? `, ${t.floor}: ${prop.floor}` : ''}
-            ${prop.rooms ? `, ${t.rooms}: ${prop.rooms}` : ''}
-            ${prop.price ? `, ${t.price}: ${prop.price}` : ''}
-          </p>
-        `).join('')}
+      <!-- Fee Types -->
+      <div style="margin-bottom: 20px;">
+        <h2 style="${headerStyle}">${t.feeTypes}</h2>
+        ${feeTypeRental ? `<p style="${textStyle}">✓ ${t.rentalFee} <strong>${t.rentalFeeAmount}</strong> ${t.rentalFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
+        ${feeTypeSale ? `<p style="${textStyle}">✓ ${t.saleFee} <strong>${t.saleFeeAmount}</strong> ${t.saleFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
       </div>
       
-      <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
-        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.clientDetails}</h2>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientName}:</strong> ${clientName}</p>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientId}:</strong> ${clientId}</p>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientPhone}:</strong> ${clientPhone}</p>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientAddress}:</strong> ${clientAddress}</p>
+      <!-- Properties Table -->
+      <div style="margin-bottom: 20px;">
+        <h2 style="${headerStyle}">${t.propertiesReferred}</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #e5e7eb;">
+              <th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">#</th>
+              <th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">${t.address}</th>
+              ${feeTypeSale ? `<th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">${t.gushHelka}</th>` : ''}
+              <th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">${t.floor}</th>
+              <th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">${t.rooms}</th>
+              <th style="padding: 8px; border: 1px solid #d1d5db; text-align: ${language === 'he' ? 'right' : 'left'};">${t.price}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${properties.filter(p => p.address).map((prop, idx) => `
+              <tr>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">${idx + 1}</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">${prop.address}</td>
+                ${feeTypeSale ? `<td style="padding: 8px; border: 1px solid #d1d5db;">${prop.gushHelka || '—'}</td>` : ''}
+                <td style="padding: 8px; border: 1px solid #d1d5db;">${prop.floor || '—'}</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">${prop.rooms || '—'}</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">${prop.price || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
       
+      <!-- Special Terms (if any) -->
       ${specialTerms ? `
-        <div style="margin-bottom: 24px;">
-          <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.specialTerms}</h2>
-          <p style="font-size: 14px; white-space: pre-wrap;">${specialTerms}</p>
+        <div style="margin-bottom: 20px; padding: 12px; background: #fef3c7; border-radius: 8px; border: 1px solid #f59e0b;">
+          <h2 style="${headerStyle} color: #92400e;">${t.specialTerms}</h2>
+          <p style="${textStyle} white-space: pre-wrap;">${specialTerms}</p>
         </div>
       ` : ''}
       
-      <div style="display: flex; gap: 40px; margin-top: 30px;">
+      <!-- Supplementary Terms -->
+      <div style="${sectionStyle}">
+        <h2 style="${headerStyle}">${t.supplementaryTerms}</h2>
+        <ol style="margin: 0; padding-${language === 'he' ? 'right' : 'left'}: 20px;">
+          <li style="${smallTextStyle}">${t.term1}</li>
+          <li style="${smallTextStyle}">${t.term2}</li>
+          <li style="${smallTextStyle}">${t.term3}</li>
+          <li style="${smallTextStyle}">${t.term4}</li>
+          <li style="${smallTextStyle}">${t.term5}</li>
+          <li style="${smallTextStyle}">${t.term6}</li>
+          <li style="${smallTextStyle}">${t.term7}</li>
+        </ol>
+      </div>
+      
+      <!-- Client Details -->
+      <div style="${sectionStyle}">
+        <h2 style="${headerStyle}">${t.clientDetails}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <p style="${textStyle}"><strong>${t.fullName}:</strong> ${clientName}</p>
+          <p style="${textStyle}"><strong>${t.clientId}:</strong> ${clientId}</p>
+          <p style="${textStyle}"><strong>${t.clientPhone}:</strong> ${clientPhone}</p>
+          <p style="${textStyle}"><strong>${t.clientAddress}:</strong> ${clientAddress}</p>
+        </div>
+      </div>
+      
+      <!-- Client Confirmation -->
+      <div style="margin-bottom: 20px; padding: 12px; background: #d1fae5; border-radius: 8px; border: 1px solid #10b981;">
+        <p style="${textStyle}">✓ ${t.confirmationText}</p>
+      </div>
+      
+      <!-- Signatures -->
+      <div style="display: flex; gap: 40px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
         ${agentSignatureData ? `
-          <div style="flex: 1;">
-            <p style="font-size: 14px; margin-bottom: 8px;"><strong>${t.agentSignature}:</strong></p>
-            <img src="${agentSignatureData}" style="max-width: 150px; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
+          <div style="flex: 1; text-align: center;">
+            <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.agentSignature}</p>
+            <img src="${agentSignatureData}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
+            <p style="font-size: 11px; color: #666; margin-top: 4px;">${currentBrokerDetails?.full_name || ''}</p>
           </div>
         ` : ''}
         ${clientSignatureData ? `
-          <div style="flex: 1;">
-            <p style="font-size: 14px; margin-bottom: 8px;"><strong>${t.clientSignature}:</strong></p>
-            <img src="${clientSignatureData}" style="max-width: 150px; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
+          <div style="flex: 1; text-align: center;">
+            <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.clientSignature}</p>
+            <img src="${clientSignatureData}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
+            <p style="font-size: 11px; color: #666; margin-top: 4px;">${clientName}</p>
           </div>
         ` : ''}
+      </div>
+      
+      <!-- Footer -->
+      <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center;">
+        <p style="font-size: 10px; color: #9ca3af;">© City Market Real Estate | ${t.date}: ${formDate}</p>
       </div>
     `;
     
@@ -619,16 +685,51 @@ const BrokerageFormPage = () => {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5;
       
-      const imgWidth = pageWidth;
+      const imgWidth = pageWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // If content is taller than one page, scale it down
-      if (imgHeight > pageHeight) {
-        const scale = pageHeight / imgHeight;
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * scale, pageHeight);
+      // Handle multi-page content
+      if (imgHeight > pageHeight - (margin * 2)) {
+        let heightLeft = imgHeight;
+        let position = margin;
+        let pageNumber = 0;
+        
+        while (heightLeft > 0) {
+          if (pageNumber > 0) {
+            pdf.addPage();
+          }
+          
+          const sourceY = pageNumber * (canvas.height * (pageHeight - margin * 2) / imgHeight);
+          const sourceHeight = Math.min(
+            canvas.height - sourceY,
+            canvas.height * (pageHeight - margin * 2) / imgHeight
+          );
+          
+          // Create a temporary canvas for this page slice
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = sourceHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (tempCtx) {
+            tempCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            );
+            
+            const pageImgData = tempCanvas.toDataURL('image/png');
+            const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+            pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
+          }
+          
+          heightLeft -= (pageHeight - margin * 2);
+          pageNumber++;
+        }
       } else {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       }
       
       return pdf;
@@ -652,10 +753,6 @@ const BrokerageFormPage = () => {
     }
   }, [generatePDF, clientName, formDate, language]);
 
-  // Send email copy function - currently disabled
-  const sendEmailCopy = useCallback(async () => {
-    toast.error(t.emailNotConfigured);
-  }, [t]);
 
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
@@ -691,16 +788,9 @@ const BrokerageFormPage = () => {
               <p className="text-muted-foreground">{t.thankYouMessage}</p>
             </div>
             
-            {/* Email notice - temporarily unavailable */}
-            <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 flex items-center gap-2">
-              <Mail className="h-4 w-4 flex-shrink-0" />
-              <span>{t.emailNotConfigured}</span>
-            </div>
-            
             {/* Download PDF button */}
             <Button 
               onClick={downloadPDF} 
-              variant="outline" 
               className="w-full"
               disabled={generatingPDF}
             >
