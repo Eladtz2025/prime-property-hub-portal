@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, MessageSquare, Edit, Clock, ArrowUpDown } from "lucide-react";
+import { Phone, MessageSquare, Edit, Clock, ArrowUpDown, Home, Briefcase, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -16,6 +16,7 @@ interface Agent {
 interface CustomerTableViewProps {
   customers: Customer[];
   onEdit: (customer: Customer) => void;
+  onRowClick?: (customer: Customer) => void;
   onUpdateStatus: (id: string, status: string) => void;
   onUpdatePriority: (id: string, priority: string) => void;
   onAssignAgent?: (id: string, agentId: string | null) => void;
@@ -58,6 +59,12 @@ const priorityLabels: Record<string, string> = {
   urgent: 'דחוף',
 };
 
+const propertyTypeLabels: Record<string, string> = {
+  rental: 'שכירות',
+  sale: 'מכירה',
+  both: 'שניהם',
+};
+
 const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) => {
   const date = lastContactDate ? new Date(lastContactDate) : new Date(createdAt);
   const daysDiff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -70,9 +77,23 @@ const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) 
   return { text: `${daysDiff} ימים`, color: 'text-red-600', bg: 'bg-red-100' };
 };
 
+const formatBudget = (min?: number | null, max?: number | null) => {
+  if (!min && !max) return '-';
+  const formatNum = (n: number) => {
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${Math.round(n / 1000)}K`;
+    return n.toString();
+  };
+  if (min && max) return `₪${formatNum(min)}-${formatNum(max)}`;
+  if (min) return `₪${formatNum(min)}+`;
+  if (max) return `עד ₪${formatNum(max)}`;
+  return '-';
+};
+
 export const CustomerTableView = ({
   customers,
   onEdit,
+  onRowClick,
   onUpdateStatus,
   onUpdatePriority,
   onAssignAgent,
@@ -80,7 +101,8 @@ export const CustomerTableView = ({
   sortBy,
   onSortChange,
 }: CustomerTableViewProps) => {
-  const handleWhatsApp = (customer: Customer) => {
+  const handleWhatsApp = (e: React.MouseEvent, customer: Customer) => {
+    e.stopPropagation();
     if (customer.phone) {
       const message = encodeURIComponent(
         `שלום ${customer.name}, אני מ-City Market נדל"ן.\n` +
@@ -91,8 +113,14 @@ export const CustomerTableView = ({
     }
   };
 
-  const handleCall = (phone: string) => {
+  const handleCall = (e: React.MouseEvent, phone: string) => {
+    e.stopPropagation();
     window.location.href = `tel:${phone}`;
+  };
+
+  const handleEditClick = (e: React.MouseEvent, customer: Customer) => {
+    e.stopPropagation();
+    onEdit(customer);
   };
 
   const SortableHeader = ({ label, sortKey }: { label: string; sortKey: string }) => (
@@ -122,14 +150,13 @@ export const CustomerTableView = ({
               <SortableHeader label="שם לקוח" sortKey="name" />
             </TableHead>
             <TableHead className="text-right">טלפון</TableHead>
+            <TableHead className="text-right">סוג עסקה</TableHead>
+            <TableHead className="text-right">תקציב</TableHead>
             <TableHead className="text-right">סטטוס</TableHead>
             <TableHead className="text-right">עדיפות</TableHead>
             <TableHead className="text-right">סוכן</TableHead>
             <TableHead className="text-right">
               <SortableHeader label="קשר אחרון" sortKey="last_contact" />
-            </TableHead>
-            <TableHead className="text-right">
-              <SortableHeader label="מעקב הבא" sortKey="next_followup" />
             </TableHead>
             <TableHead className="text-right">פעולות</TableHead>
           </TableRow>
@@ -140,7 +167,11 @@ export const CustomerTableView = ({
             const assignedAgent = agents.find(a => a.id === customer.assigned_agent_id);
 
             return (
-              <TableRow key={customer.id} className="hover:bg-muted/30">
+              <TableRow 
+                key={customer.id} 
+                className="hover:bg-muted/30 cursor-pointer"
+                onClick={() => onRowClick?.(customer)}
+              >
                 <TableCell className="font-medium text-right">
                   <div>
                     <div>{customer.name}</div>
@@ -153,6 +184,27 @@ export const CustomerTableView = ({
                   {customer.phone || '-'}
                 </TableCell>
                 <TableCell className="text-right">
+                  {customer.property_type ? (
+                    <Badge variant="outline" className="gap-1">
+                      {customer.property_type === 'rental' ? (
+                        <Home className="h-3 w-3" />
+                      ) : customer.property_type === 'sale' ? (
+                        <Briefcase className="h-3 w-3" />
+                      ) : (
+                        <Wallet className="h-3 w-3" />
+                      )}
+                      {propertyTypeLabels[customer.property_type] || customer.property_type}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <span className="text-sm font-medium">
+                    {formatBudget(customer.budget_min, customer.budget_max)}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <Select 
                     value={customer.status} 
                     onValueChange={(value) => onUpdateStatus(customer.id, value)}
@@ -173,7 +225,7 @@ export const CustomerTableView = ({
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <Select 
                     value={customer.priority} 
                     onValueChange={(value) => onUpdatePriority(customer.id, value)}
@@ -191,7 +243,7 @@ export const CustomerTableView = ({
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   {onAssignAgent && agents.length > 0 ? (
                     <Select 
                       value={customer.assigned_agent_id || "none"} 
@@ -221,15 +273,6 @@ export const CustomerTableView = ({
                     {timeSince.text}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
-                  {customer.next_followup_date ? (
-                    <span className="text-xs">
-                      {format(new Date(customer.next_followup_date), 'dd/MM HH:mm', { locale: he })}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">-</span>
-                  )}
-                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     {customer.phone && (
@@ -238,7 +281,7 @@ export const CustomerTableView = ({
                           size="sm" 
                           variant="ghost" 
                           className="h-7 w-7 p-0"
-                          onClick={() => handleCall(customer.phone!)}
+                          onClick={(e) => handleCall(e, customer.phone!)}
                         >
                           <Phone className="h-3 w-3" />
                         </Button>
@@ -246,7 +289,7 @@ export const CustomerTableView = ({
                           size="sm" 
                           variant="ghost" 
                           className="h-7 w-7 p-0 text-green-600 hover:text-green-700"
-                          onClick={() => handleWhatsApp(customer)}
+                          onClick={(e) => handleWhatsApp(e, customer)}
                         >
                           <MessageSquare className="h-3 w-3" />
                         </Button>
@@ -256,7 +299,7 @@ export const CustomerTableView = ({
                       size="sm" 
                       variant="ghost" 
                       className="h-7 w-7 p-0"
-                      onClick={() => onEdit(customer)}
+                      onClick={(e) => handleEditClick(e, customer)}
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
