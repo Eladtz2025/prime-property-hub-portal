@@ -3,22 +3,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Download, Plus, LayoutGrid, List, SlidersHorizontal, Eye, EyeOff } from "lucide-react";
+import { Search, Filter, Download, Plus, SlidersHorizontal, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { CustomerStatsCards } from "@/components/CustomerStatsCards";
-import { CustomerCard } from "@/components/CustomerCard";
 import { CustomerTableView } from "@/components/CustomerTableView";
 import { CustomerMobileTable } from "@/components/CustomerMobileTable";
-import { CustomerDetailSheet } from "@/components/CustomerDetailSheet";
-import { CustomerEditModal } from "@/components/CustomerEditModal";
 import { AddCustomerModal } from "@/components/AddCustomerModal";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
+
 interface Agent {
   id: string;
   full_name: string | null;
@@ -31,13 +28,9 @@ export default function AdminCustomers() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("created_at_desc");
-  const [viewMode, setViewMode] = useState<string>("table");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
-  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
 
   const {
@@ -47,7 +40,6 @@ export default function AdminCustomers() {
     updateCustomerStatus,
     updateCustomerPriority,
     assignAgent,
-    scheduleFollowup,
     deleteCustomer,
     hideCustomer,
     unhideCustomer,
@@ -59,7 +51,6 @@ export default function AdminCustomers() {
     showHidden,
   });
 
-  // Fetch agents
   useEffect(() => {
     const fetchAgents = async () => {
       const { data, error } = await supabase
@@ -74,21 +65,10 @@ export default function AdminCustomers() {
     fetchAgents();
   }, []);
 
-  const handleEditCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setEditModalOpen(true);
-  };
-
-  const handleSelectCustomerForSheet = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setDetailSheetOpen(true);
-  };
-
   const handleSaveCustomer = () => {
     fetchCustomers();
   };
 
-  // Sort customers
   const sortedCustomers = useMemo(() => {
     const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
     
@@ -106,22 +86,12 @@ export default function AdminCustomers() {
           const aDate = a.next_followup_date ? new Date(a.next_followup_date).getTime() : Infinity;
           const bDate = b.next_followup_date ? new Date(b.next_followup_date).getTime() : Infinity;
           return aDate - bDate;
-        case 'next_followup_desc':
-          const aDate2 = a.next_followup_date ? new Date(a.next_followup_date).getTime() : 0;
-          const bDate2 = b.next_followup_date ? new Date(b.next_followup_date).getTime() : 0;
-          return bDate2 - aDate2;
         case 'last_contact_asc':
           const aContact = a.last_contact_date ? new Date(a.last_contact_date).getTime() : new Date(a.created_at).getTime();
           const bContact = b.last_contact_date ? new Date(b.last_contact_date).getTime() : new Date(b.created_at).getTime();
-          return aContact - bContact; // Oldest first (needs attention)
-        case 'last_contact_desc':
-          const aContact2 = a.last_contact_date ? new Date(a.last_contact_date).getTime() : new Date(a.created_at).getTime();
-          const bContact2 = b.last_contact_date ? new Date(b.last_contact_date).getTime() : new Date(b.created_at).getTime();
-          return bContact2 - aContact2;
+          return aContact - bContact;
         case 'name_asc':
           return a.name.localeCompare(b.name, 'he');
-        case 'name_desc':
-          return b.name.localeCompare(a.name, 'he');
         default:
           return 0;
       }
@@ -135,7 +105,6 @@ export default function AdminCustomers() {
   });
   const viewedProperties = sortedCustomers.filter(c => c.property_id);
 
-  // Export to Excel
   const handleExport = () => {
     const exportData = sortedCustomers.map(c => ({
       'שם': c.name,
@@ -145,14 +114,8 @@ export default function AdminCustomers() {
       'עדיפות': c.priority,
       'תקציב מינימום': c.budget_min || '',
       'תקציב מקסימום': c.budget_max || '',
-      'חדרים מינימום': c.rooms_min || '',
-      'חדרים מקסימום': c.rooms_max || '',
       'ערים מועדפות': c.preferred_cities?.join(', ') || '',
-      'שכונות מועדפות': c.preferred_neighborhoods?.join(', ') || '',
       'תאריך יצירה': new Date(c.created_at).toLocaleDateString('he-IL'),
-      'קשר אחרון': c.last_contact_date ? new Date(c.last_contact_date).toLocaleDateString('he-IL') : '',
-      'מעקב הבא': c.next_followup_date ? new Date(c.next_followup_date).toLocaleDateString('he-IL') : '',
-      'הערות': c.notes || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -161,36 +124,20 @@ export default function AdminCustomers() {
     XLSX.writeFile(wb, `לקוחות_${new Date().toLocaleDateString('he-IL')}.xlsx`);
   };
 
-  const renderCustomers = (customerList: Customer[], isMobileTable: boolean = false) => {
+  const renderCustomers = (customerList: Customer[], isMobile: boolean = false) => {
     if (loading) {
       return <div className="text-center py-12">טוען לקוחות...</div>;
     }
 
     if (customerList.length === 0) {
-      return (
-        <div className="text-center py-12 text-muted-foreground">
-          לא נמצאו לקוחות
-        </div>
-      );
+      return <div className="text-center py-12 text-muted-foreground">לא נמצאו לקוחות</div>;
     }
 
-    // Mobile: Always show compact table
-    if (isMobileTable) {
+    if (isMobile) {
       return (
         <CustomerMobileTable
           customers={customerList}
-          onSelectCustomer={handleSelectCustomerForSheet}
-        />
-      );
-    }
-
-    // Desktop: Show based on viewMode
-    if (viewMode === 'table') {
-      return (
-        <CustomerTableView
-          customers={customerList}
-          onEdit={handleEditCustomer}
-          onRowClick={handleSelectCustomerForSheet}
+          onSave={handleSaveCustomer}
           onUpdateStatus={updateCustomerStatus}
           onUpdatePriority={updateCustomerPriority}
           onAssignAgent={assignAgent}
@@ -198,27 +145,24 @@ export default function AdminCustomers() {
           onHideCustomer={hideCustomer}
           onUnhideCustomer={unhideCustomer}
           agents={agents}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
         />
       );
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {customerList.map((customer) => (
-          <CustomerCard
-            key={customer.id}
-            customer={customer}
-            onEdit={handleEditCustomer}
-            onUpdateStatus={updateCustomerStatus}
-            onUpdatePriority={updateCustomerPriority}
-            onAssignAgent={assignAgent}
-            onScheduleFollowup={scheduleFollowup}
-            agents={agents}
-          />
-        ))}
-      </div>
+      <CustomerTableView
+        customers={customerList}
+        onSave={handleSaveCustomer}
+        onUpdateStatus={updateCustomerStatus}
+        onUpdatePriority={updateCustomerPriority}
+        onAssignAgent={assignAgent}
+        onDeleteCustomer={deleteCustomer}
+        onHideCustomer={hideCustomer}
+        onUnhideCustomer={unhideCustomer}
+        agents={agents}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
     );
   };
 
@@ -227,11 +171,11 @@ export default function AdminCustomers() {
       <div className="flex flex-col md:flex-row-reverse md:justify-between md:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות</h1>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setAddModalOpen(true)} size="sm" className="md:size-default">
+          <Button onClick={() => setAddModalOpen(true)} size="sm">
             <Plus className="h-4 w-4 ml-2" />
             לקוח חדש
           </Button>
-          <Button variant="outline" onClick={handleExport} size="sm" className="md:size-default">
+          <Button variant="outline" onClick={handleExport} size="sm">
             <Download className="h-4 w-4 ml-2" />
             ייצא לאקסל
           </Button>
@@ -240,7 +184,7 @@ export default function AdminCustomers() {
 
       <CustomerStatsCards customers={customers} />
 
-      {/* Mobile: Search + Filters Button */}
+      {/* Mobile: Search + Filters */}
       <div className="md:hidden flex flex-col gap-3 bg-card p-3 rounded-lg">
         <div className="flex gap-2">
           <div className="flex-1 relative">
@@ -269,9 +213,7 @@ export default function AdminCustomers() {
               </SheetHeader>
               <div className="flex flex-col gap-4 py-4">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="סטטוס" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="סטטוס" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">כל הסטטוסים</SelectItem>
                     <SelectItem value="new">חדש</SelectItem>
@@ -285,9 +227,7 @@ export default function AdminCustomers() {
                 </Select>
 
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="עדיפות" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="עדיפות" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">כל העדיפויות</SelectItem>
                     <SelectItem value="low">נמוך</SelectItem>
@@ -298,9 +238,7 @@ export default function AdminCustomers() {
                 </Select>
 
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="סוכן" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="סוכן" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">כל הסוכנים</SelectItem>
                     {agents.map(agent => (
@@ -312,122 +250,56 @@ export default function AdminCustomers() {
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="מיון" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="מיון" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
                     <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
                     <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
                     <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
-                    <SelectItem value="next_followup_asc">מעקב הבא קודם</SelectItem>
                     <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <div className="flex items-center gap-2 pt-2">
-                  <Switch
-                    id="showHiddenMobile"
-                    checked={showHidden}
-                    onCheckedChange={setShowHidden}
-                  />
-                  <Label htmlFor="showHiddenMobile" className="text-sm cursor-pointer">
-                    הצג לקוחות לא רלוונטיים
-                  </Label>
+                  <Switch id="showHiddenMobile" checked={showHidden} onCheckedChange={setShowHidden} />
+                  <Label htmlFor="showHiddenMobile" className="text-sm cursor-pointer">הצג לקוחות לא רלוונטיים</Label>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
-                    <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
-                      <LayoutGrid className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="table" aria-label="תצוגת טבלה">
-                      <List className="h-4 w-4" />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setStatusFilter("all");
-                      setPriorityFilter("all");
-                      setAgentFilter("all");
-                      setSortBy("created_at_desc");
-                      setShowHidden(false);
-                    }}
-                  >
-                    <Filter className="h-4 w-4 ml-1" />
-                    נקה הכל
+                  <Button variant="outline" size="sm" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); setAgentFilter("all"); setSortBy("created_at_desc"); setShowHidden(false); }}>
+                    <Filter className="h-4 w-4 ml-1" />נקה הכל
                   </Button>
                 </div>
 
-                <Button onClick={() => setFiltersSheetOpen(false)} className="w-full">
-                  החל פילטרים
-                </Button>
+                <Button onClick={() => setFiltersSheetOpen(false)} className="w-full">החל פילטרים</Button>
               </div>
             </SheetContent>
           </Sheet>
         </div>
 
-        {/* Mobile Tabs - Scrollable */}
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="w-full overflow-x-auto flex justify-start gap-1 h-auto p-1">
             <TabsTrigger value="all" className="text-xs px-2 py-1 whitespace-nowrap">הכל ({sortedCustomers.length})</TabsTrigger>
             <TabsTrigger value="hot" className="text-xs px-2 py-1 whitespace-nowrap">חמים ({hotLeads.length})</TabsTrigger>
             <TabsTrigger value="followup" className="text-xs px-2 py-1 whitespace-nowrap">מעקב ({needFollowup.length})</TabsTrigger>
-            <TabsTrigger value="viewed" className="text-xs px-2 py-1 whitespace-nowrap">צפו ({viewedProperties.length})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="mt-4">
-            {renderCustomers(sortedCustomers, true)}
-          </TabsContent>
-          <TabsContent value="hot" className="mt-4">
-            {renderCustomers(hotLeads, true)}
-          </TabsContent>
-          <TabsContent value="followup" className="mt-4">
-            {renderCustomers(needFollowup, true)}
-          </TabsContent>
-          <TabsContent value="viewed" className="mt-4">
-            {renderCustomers(viewedProperties, true)}
-          </TabsContent>
+          <TabsContent value="all" className="mt-4">{renderCustomers(sortedCustomers, true)}</TabsContent>
+          <TabsContent value="hot" className="mt-4">{renderCustomers(hotLeads, true)}</TabsContent>
+          <TabsContent value="followup" className="mt-4">{renderCustomers(needFollowup, true)}</TabsContent>
         </Tabs>
-
-        {/* Mobile Customer Detail Sheet */}
-        <CustomerDetailSheet
-          customer={selectedCustomer}
-          open={detailSheetOpen}
-          onClose={() => {
-            setDetailSheetOpen(false);
-            setSelectedCustomer(null);
-          }}
-          onEdit={handleEditCustomer}
-          onUpdateStatus={updateCustomerStatus}
-          onUpdatePriority={updateCustomerPriority}
-          onAssignAgent={assignAgent}
-          onScheduleFollowup={scheduleFollowup}
-          agents={agents}
-        />
       </div>
 
-      {/* Desktop: Full Filters Bar */}
+      {/* Desktop: Filters Bar */}
       <div className="hidden md:flex flex-row-reverse flex-wrap gap-3 bg-card p-4 rounded-lg">
         <div className="flex-1 min-w-[200px] relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="חיפוש לפי שם, אימייל או טלפון..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
+          <Input placeholder="חיפוש לפי שם, אימייל או טלפון..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10" />
         </div>
 
         <div className="flex gap-3">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="סטטוס" />
-            </SelectTrigger>
+            <SelectTrigger className="w-36"><SelectValue placeholder="סטטוס" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל הסטטוסים</SelectItem>
               <SelectItem value="new">חדש</SelectItem>
@@ -441,9 +313,7 @@ export default function AdminCustomers() {
           </Select>
 
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="עדיפות" />
-            </SelectTrigger>
+            <SelectTrigger className="w-32"><SelectValue placeholder="עדיפות" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל העדיפויות</SelectItem>
               <SelectItem value="low">נמוך</SelectItem>
@@ -454,82 +324,35 @@ export default function AdminCustomers() {
           </Select>
 
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="סוכן" />
-            </SelectTrigger>
+            <SelectTrigger className="w-36"><SelectValue placeholder="סוכן" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל הסוכנים</SelectItem>
-              {agents.map(agent => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.full_name || agent.email}
-                </SelectItem>
-              ))}
+              {agents.map(agent => (<SelectItem key={agent.id} value={agent.id}>{agent.full_name || agent.email}</SelectItem>))}
             </SelectContent>
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="מיון" />
-            </SelectTrigger>
+            <SelectTrigger className="w-40"><SelectValue placeholder="מיון" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
               <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
               <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
               <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
-              <SelectItem value="next_followup_asc">מעקב הבא קודם</SelectItem>
               <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex gap-2 items-center">
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            <Button
-              variant={viewMode === "table" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("table")}
-              className="h-8 px-3"
-            >
-              <List className="h-4 w-4 ml-1" />
-              טבלה
-            </Button>
-            <Button
-              variant={viewMode === "cards" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("cards")}
-              className="h-8 px-3"
-            >
-              <LayoutGrid className="h-4 w-4 ml-1" />
-              כרטיסים
-            </Button>
-          </div>
-
           <div className="flex items-center gap-2">
-            <Switch
-              id="showHiddenDesktop"
-              checked={showHidden}
-              onCheckedChange={setShowHidden}
-            />
+            <Switch id="showHiddenDesktop" checked={showHidden} onCheckedChange={setShowHidden} />
             <Label htmlFor="showHiddenDesktop" className="text-sm cursor-pointer whitespace-nowrap">
-              {showHidden ? <Eye className="h-4 w-4 inline ml-1" /> : <EyeOff className="h-4 w-4 inline ml-1" />}
-              לא רלוונטיים
+              {showHidden ? <Eye className="h-4 w-4 inline ml-1" /> : <EyeOff className="h-4 w-4 inline ml-1" />}לא רלוונטיים
             </Label>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSearchTerm("");
-              setStatusFilter("all");
-              setPriorityFilter("all");
-              setAgentFilter("all");
-              setSortBy("created_at_desc");
-              setShowHidden(false);
-            }}
-          >
-            <Filter className="h-4 w-4 ml-1" />
-            נקה
+          <Button variant="outline" size="sm" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); setAgentFilter("all"); setSortBy("created_at_desc"); setShowHidden(false); }}>
+            <Filter className="h-4 w-4 ml-1" />נקה
           </Button>
         </div>
       </div>
@@ -540,58 +363,14 @@ export default function AdminCustomers() {
           <TabsTrigger value="all">כל הלקוחות ({sortedCustomers.length})</TabsTrigger>
           <TabsTrigger value="hot">לידים חמים ({hotLeads.length})</TabsTrigger>
           <TabsTrigger value="followup">דורש מעקב ({needFollowup.length})</TabsTrigger>
-          <TabsTrigger value="viewed">צפו בנכסים ({viewedProperties.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          {renderCustomers(sortedCustomers)}
-        </TabsContent>
-
-        <TabsContent value="hot" className="space-y-4">
-          {renderCustomers(hotLeads)}
-        </TabsContent>
-
-        <TabsContent value="followup" className="space-y-4">
-          {renderCustomers(needFollowup)}
-        </TabsContent>
-
-        <TabsContent value="viewed" className="space-y-4">
-          {renderCustomers(viewedProperties)}
-        </TabsContent>
+        <TabsContent value="all" className="space-y-4">{renderCustomers(sortedCustomers)}</TabsContent>
+        <TabsContent value="hot" className="space-y-4">{renderCustomers(hotLeads)}</TabsContent>
+        <TabsContent value="followup" className="space-y-4">{renderCustomers(needFollowup)}</TabsContent>
       </Tabs>
 
-      {/* Desktop Customer Detail Sheet */}
-      <CustomerDetailSheet
-        customer={selectedCustomer}
-        open={detailSheetOpen}
-        onClose={() => {
-          setDetailSheetOpen(false);
-          setSelectedCustomer(null);
-        }}
-        onEdit={handleEditCustomer}
-        onUpdateStatus={updateCustomerStatus}
-        onUpdatePriority={updateCustomerPriority}
-        onAssignAgent={assignAgent}
-        onScheduleFollowup={scheduleFollowup}
-        agents={agents}
-      />
-
-      <CustomerEditModal
-        customer={selectedCustomer}
-        open={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setSelectedCustomer(null);
-        }}
-        onSave={handleSaveCustomer}
-        agents={agents}
-      />
-
-      <AddCustomerModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSave={handleSaveCustomer}
-      />
+      <AddCustomerModal open={addModalOpen} onClose={() => setAddModalOpen(false)} onSave={handleSaveCustomer} />
     </div>
   );
 }

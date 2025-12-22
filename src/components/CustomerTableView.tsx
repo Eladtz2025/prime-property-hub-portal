@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Phone, MessageSquare, Edit, Clock, ArrowUpDown, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw } from "lucide-react";
-import { format } from "date-fns";
-import { he } from "date-fns/locale";
+import { ArrowUpDown } from "lucide-react";
+import { ExpandableCustomerRow } from "@/components/ExpandableCustomerRow";
 import type { Customer } from "@/hooks/useCustomerData";
 
 interface Agent {
@@ -17,8 +13,7 @@ interface Agent {
 
 interface CustomerTableViewProps {
   customers: Customer[];
-  onEdit: (customer: Customer) => void;
-  onRowClick?: (customer: Customer) => void;
+  onSave: () => void;
   onUpdateStatus: (id: string, status: string) => void;
   onUpdatePriority: (id: string, priority: string) => void;
   onAssignAgent?: (id: string, agentId: string | null) => void;
@@ -30,75 +25,9 @@ interface CustomerTableViewProps {
   onSortChange: (sort: string) => void;
 }
 
-const statusColors: Record<string, string> = {
-  new: 'bg-blue-500 text-white',
-  contacted: 'bg-yellow-500 text-black',
-  active: 'bg-green-500 text-white',
-  viewing_scheduled: 'bg-purple-500 text-white',
-  offer_made: 'bg-orange-500 text-white',
-  closed_won: 'bg-emerald-600 text-white',
-  closed_lost: 'bg-gray-500 text-white',
-};
-
-const priorityColors: Record<string, string> = {
-  low: 'bg-gray-200 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-orange-100 text-orange-700',
-  urgent: 'bg-red-100 text-red-700',
-};
-
-const statusLabels: Record<string, string> = {
-  new: 'חדש',
-  contacted: 'נוצר קשר',
-  active: 'פעיל',
-  viewing_scheduled: 'צפייה קבועה',
-  offer_made: 'הצעה בוצעה',
-  closed_won: 'נסגר בהצלחה',
-  closed_lost: 'נסגר ללא הצלחה',
-};
-
-const priorityLabels: Record<string, string> = {
-  low: 'נמוך',
-  medium: 'בינוני',
-  high: 'גבוה',
-  urgent: 'דחוף',
-};
-
-const propertyTypeLabels: Record<string, string> = {
-  rental: 'שכירות',
-  sale: 'מכירה',
-  both: 'שניהם',
-};
-
-const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) => {
-  const date = lastContactDate ? new Date(lastContactDate) : new Date(createdAt);
-  const daysDiff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (daysDiff === 0) return { text: 'היום', color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff === 1) return { text: 'אתמול', color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff <= 3) return { text: `${daysDiff} ימים`, color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff <= 7) return { text: `${daysDiff} ימים`, color: 'text-yellow-600', bg: 'bg-yellow-100' };
-  if (daysDiff <= 14) return { text: `${daysDiff} ימים`, color: 'text-orange-600', bg: 'bg-orange-100' };
-  return { text: `${daysDiff} ימים`, color: 'text-red-600', bg: 'bg-red-100' };
-};
-
-const formatBudget = (min?: number | null, max?: number | null) => {
-  if (!min && !max) return '-';
-  const formatNum = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${Math.round(n / 1000)}K`;
-    return n.toString();
-  };
-  if (min && max) return `₪${formatNum(min)}-${formatNum(max)}`;
-  if (min) return `₪${formatNum(min)}+`;
-  if (max) return `עד ₪${formatNum(max)}`;
-  return '-';
-};
-
 export const CustomerTableView = ({
   customers,
-  onEdit,
-  onRowClick,
+  onSave,
   onUpdateStatus,
   onUpdatePriority,
   onAssignAgent,
@@ -109,62 +38,10 @@ export const CustomerTableView = ({
   sortBy,
   onSortChange,
 }: CustomerTableViewProps) => {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [hideDialogOpen, setHideDialogOpen] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
-  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSelectedCustomerId(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleHideClick = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSelectedCustomerId(id);
-    setHideDialogOpen(true);
-  };
-
-  const handleUnhideClick = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    onUnhideCustomer?.(id);
-  };
-
-  const confirmDelete = () => {
-    if (selectedCustomerId) {
-      onDeleteCustomer?.(selectedCustomerId);
-    }
-    setDeleteDialogOpen(false);
-    setSelectedCustomerId(null);
-  };
-
-  const confirmHide = () => {
-    if (selectedCustomerId) {
-      onHideCustomer?.(selectedCustomerId);
-    }
-    setHideDialogOpen(false);
-    setSelectedCustomerId(null);
-  };
-  const handleWhatsApp = (e: React.MouseEvent, customer: Customer) => {
-    e.stopPropagation();
-    if (customer.phone) {
-      const message = encodeURIComponent(
-        `שלום ${customer.name}, אני מ-City Market נדל"ן.\n` +
-        (customer.preferred_cities?.length ? `ראיתי שאתה מחפש דירה ב${customer.preferred_cities[0]}` : 'ראיתי שאתה מחפש דירה') +
-        `.\nיש לי כמה נכסים שיכולים להתאים לך, מתי נוח לדבר?`
-      );
-      window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
-    }
-  };
-
-  const handleCall = (e: React.MouseEvent, phone: string) => {
-    e.stopPropagation();
-    window.location.href = `tel:${phone}`;
-  };
-
-  const handleEditClick = (e: React.MouseEvent, customer: Customer) => {
-    e.stopPropagation();
-    onEdit(customer);
+  const handleToggleExpand = (customerId: string) => {
+    setExpandedRowId(prev => prev === customerId ? null : customerId);
   };
 
   const SortableHeader = ({ label, sortKey }: { label: string; sortKey: string }) => (
@@ -206,230 +83,24 @@ export const CustomerTableView = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {customers.map((customer) => {
-            const timeSince = getTimeSinceContact(customer.last_contact_date, customer.created_at);
-            const assignedAgent = agents.find(a => a.id === customer.assigned_agent_id);
-
-            return (
-              <TableRow 
-                key={customer.id} 
-                className={`hover:bg-muted/30 cursor-pointer ${customer.is_hidden ? 'opacity-50 bg-muted/20' : ''}`}
-                onClick={() => onRowClick?.(customer)}
-              >
-                <TableCell className="font-medium text-right">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        {customer.name}
-                        {customer.is_hidden && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">לא רלוונטי</Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                        {customer.email}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  {customer.phone || '-'}
-                </TableCell>
-                <TableCell className="text-right">
-                  {customer.property_type ? (
-                    <Badge variant="outline" className="gap-1">
-                      {customer.property_type === 'rental' ? (
-                        <Home className="h-3 w-3" />
-                      ) : customer.property_type === 'sale' ? (
-                        <Briefcase className="h-3 w-3" />
-                      ) : (
-                        <Wallet className="h-3 w-3" />
-                      )}
-                      {propertyTypeLabels[customer.property_type] || customer.property_type}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className="text-sm font-medium">
-                    {formatBudget(customer.budget_min, customer.budget_max)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                  <Select 
-                    value={customer.status} 
-                    onValueChange={(value) => onUpdateStatus(customer.id, value)}
-                  >
-                    <SelectTrigger className="h-7 text-xs w-[100px] border-0 bg-transparent p-0">
-                      <Badge className={`${statusColors[customer.status]} text-xs`}>
-                        {statusLabels[customer.status]}
-                      </Badge>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">חדש</SelectItem>
-                      <SelectItem value="contacted">נוצר קשר</SelectItem>
-                      <SelectItem value="active">פעיל</SelectItem>
-                      <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
-                      <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
-                      <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
-                      <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                  <Select 
-                    value={customer.priority} 
-                    onValueChange={(value) => onUpdatePriority(customer.id, value)}
-                  >
-                    <SelectTrigger className="h-7 text-xs w-[80px] border-0 bg-transparent p-0">
-                      <Badge className={`${priorityColors[customer.priority]} text-xs`}>
-                        {priorityLabels[customer.priority]}
-                      </Badge>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">נמוך</SelectItem>
-                      <SelectItem value="medium">בינוני</SelectItem>
-                      <SelectItem value="high">גבוה</SelectItem>
-                      <SelectItem value="urgent">דחוף</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                  {onAssignAgent && agents.length > 0 ? (
-                    <Select 
-                      value={customer.assigned_agent_id || "none"} 
-                      onValueChange={(value) => onAssignAgent(customer.id, value === "none" ? null : value)}
-                    >
-                      <SelectTrigger className="h-7 text-xs w-[100px]">
-                        <SelectValue placeholder="בחר" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-</SelectItem>
-                        {agents.map(agent => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.full_name || agent.email.split('@')[0]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      {assignedAgent?.full_name || assignedAgent?.email.split('@')[0] || '-'}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.bg} ${timeSince.color}`}>
-                    <Clock className="h-3 w-3" />
-                    {timeSince.text}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    {customer.phone && (
-                      <>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 w-7 p-0"
-                          onClick={(e) => handleCall(e, customer.phone!)}
-                          title="התקשר"
-                        >
-                          <Phone className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700"
-                          onClick={(e) => handleWhatsApp(e, customer)}
-                          title="WhatsApp"
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0"
-                      onClick={(e) => handleEditClick(e, customer)}
-                      title="עריכה"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    {customer.is_hidden ? (
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700"
-                        onClick={(e) => handleUnhideClick(e, customer.id)}
-                        title="שחזר לקוח"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                      </Button>
-                    ) : (
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-muted-foreground/80"
-                        onClick={(e) => handleHideClick(e, customer.id)}
-                        title="לא רלוונטי"
-                      >
-                        <EyeOff className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive/80"
-                      onClick={(e) => handleDeleteClick(e, customer.id)}
-                      title="מחק"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {customers.map((customer) => (
+            <ExpandableCustomerRow
+              key={customer.id}
+              customer={customer}
+              isExpanded={expandedRowId === customer.id}
+              onToggleExpand={() => handleToggleExpand(customer.id)}
+              onUpdateStatus={onUpdateStatus}
+              onUpdatePriority={onUpdatePriority}
+              onAssignAgent={onAssignAgent}
+              onDeleteCustomer={onDeleteCustomer}
+              onHideCustomer={onHideCustomer}
+              onUnhideCustomer={onUnhideCustomer}
+              onSave={onSave}
+              agents={agents}
+            />
+          ))}
         </TableBody>
       </Table>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
-            <AlertDialogDescription>
-              פעולה זו תמחק את הלקוח לצמיתות ולא ניתן יהיה לשחזר אותו.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              מחק לקוח
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Hide Confirmation Dialog */}
-      <AlertDialog open={hideDialogOpen} onOpenChange={setHideDialogOpen}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>סמן כלא רלוונטי?</AlertDialogTitle>
-            <AlertDialogDescription>
-              הלקוח יוסתר מהרשימה הראשית אבל ניתן יהיה לשחזר אותו בעתיד.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmHide}>
-              הסתר לקוח
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
