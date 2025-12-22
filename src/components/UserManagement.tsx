@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Check, X, Settings, Pencil, Phone } from 'lucide-react';
+import { UserPlus, Check, X, Settings, Pencil, Phone, MapPin, Award, CreditCard } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { logger } from '@/utils/logger';
@@ -27,7 +27,10 @@ export const UserManagement: React.FC = () => {
     full_name: '',
     phone: '',
     role: 'viewer' as UserRole,
-    is_approved: false
+    is_approved: false,
+    broker_license_number: '',
+    id_number: '',
+    address: ''
   });
 
   const canManageUsers = hasPermission('users', 'update');
@@ -226,7 +229,10 @@ export const UserManagement: React.FC = () => {
       full_name: user.full_name || '',
       phone: user.phone || '',
       role: (user.role || 'viewer') as UserRole,
-      is_approved: user.is_approved
+      is_approved: user.is_approved,
+      broker_license_number: user.broker_license_number || '',
+      id_number: user.id_number || '',
+      address: user.address || ''
     });
   };
 
@@ -240,7 +246,10 @@ export const UserManagement: React.FC = () => {
         .update({
           full_name: editForm.full_name,
           phone: editForm.phone,
-          is_approved: editForm.is_approved
+          is_approved: editForm.is_approved,
+          broker_license_number: editForm.broker_license_number,
+          id_number: editForm.id_number,
+          address: editForm.address
         })
         .eq('id', editingUser.id);
 
@@ -447,6 +456,51 @@ export const UserManagement: React.FC = () => {
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                   placeholder="054-1234567"
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-address">כתובת</Label>
+              <div className="relative">
+                <MapPin className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="edit-address"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  placeholder="הזן כתובת"
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* Broker License Number */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-license">מספר רישיון תיווך</Label>
+              <div className="relative">
+                <Award className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="edit-license"
+                  value={editForm.broker_license_number}
+                  onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
+                  placeholder="הזן מספר רישיון"
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* ID Number */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-id">מספר תעודת זהות</Label>
+              <div className="relative">
+                <CreditCard className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="edit-id"
+                  value={editForm.id_number}
+                  onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
+                  placeholder="הזן מספר ת.ז."
                   className="pr-10"
                 />
               </div>
