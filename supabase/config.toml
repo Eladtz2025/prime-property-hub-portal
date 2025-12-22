@@ -47,3 +47,21 @@ verify_jwt = false
 
 [functions.notify-new-lead]
 verify_jwt = false
+
+[functions.uptime-monitor]
+verify_jwt = false
+
+[functions.backup-database]
+verify_jwt = false
+
+[functions.send-alert]
+verify_jwt = false
+
+[functions.log-critical-error]
+verify_jwt = false
+
+[functions.check-seo]
+verify_jwt = false
+
+[functions.check-performance]
+verify_jwt = false
