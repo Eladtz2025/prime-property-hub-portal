@@ -54,6 +54,7 @@ import AdminAlerts from './pages/AdminAlerts';
 import AdminActivity from './pages/AdminActivity';
 import AdminLeads from './pages/AdminLeads';
 import AdminCustomers from './pages/AdminCustomers';
+import AdminDevOps from './pages/AdminDevOps';
 
 import NotFound from './pages/NotFound';
 
@@ -314,6 +315,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminLeads />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/devops" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDevOps />
                   </ProtectedRoute>
                 </Layout>
               } 
