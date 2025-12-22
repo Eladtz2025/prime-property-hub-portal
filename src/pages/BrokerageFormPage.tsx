@@ -90,6 +90,8 @@ const BrokerageFormPage = () => {
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [hasSignature, setHasSignature] = useState(false);
   const [hasAgentSignature, setHasAgentSignature] = useState(false);
+  const [clientSignatureData, setClientSignatureData] = useState<string | null>(null);
+  const [agentSignatureData, setAgentSignatureData] = useState<string | null>(null);
   const [language, setLanguage] = useState<BrokerageFormLanguage>('he');
   
   // Field errors for real-time validation
@@ -272,20 +274,47 @@ const BrokerageFormPage = () => {
   const clearSignature = () => {
     signatureRef.current?.clear();
     setHasSignature(false);
+    setClientSignatureData(null);
   };
 
   const checkSignature = () => {
-    setHasSignature(!signatureRef.current?.isEmpty());
+    if (!signatureRef.current?.isEmpty()) {
+      setHasSignature(true);
+      setClientSignatureData(signatureRef.current.toDataURL());
+    } else {
+      setHasSignature(false);
+      setClientSignatureData(null);
+    }
   };
 
   const clearAgentSignature = () => {
     agentSignatureRef.current?.clear();
     setHasAgentSignature(false);
+    setAgentSignatureData(null);
   };
 
   const checkAgentSignature = () => {
-    setHasAgentSignature(!agentSignatureRef.current?.isEmpty());
+    if (!agentSignatureRef.current?.isEmpty()) {
+      setHasAgentSignature(true);
+      setAgentSignatureData(agentSignatureRef.current.toDataURL());
+    } else {
+      setHasAgentSignature(false);
+      setAgentSignatureData(null);
+    }
   };
+
+  // Restore signatures after re-render
+  useEffect(() => {
+    if (agentSignatureData && agentSignatureRef.current?.isEmpty()) {
+      agentSignatureRef.current.fromDataURL(agentSignatureData);
+    }
+  }, [agentSignatureData]);
+
+  useEffect(() => {
+    if (clientSignatureData && signatureRef.current?.isEmpty()) {
+      signatureRef.current.fromDataURL(clientSignatureData);
+    }
+  }, [clientSignatureData]);
 
   const validatePropertyData = () => {
     if (!formDate) {
@@ -304,8 +333,8 @@ const BrokerageFormPage = () => {
       toast.error(t.errorAddProperty);
       return false;
     }
-    // Validate agent signature only in 'new' mode
-    if (mode === 'new' && (!agentSignatureRef.current || agentSignatureRef.current.isEmpty())) {
+    // Validate agent signature only in 'new' mode - use state instead of ref
+    if (mode === 'new' && !agentSignatureData) {
       toast.error(t.errorAgentSignature);
       return false;
     }
@@ -351,7 +380,8 @@ const BrokerageFormPage = () => {
       toast.error(t.errorClientConfirmation);
       return false;
     }
-    if (!signatureRef.current || signatureRef.current.isEmpty()) {
+    // Use state instead of ref for client signature validation
+    if (!clientSignatureData) {
       toast.error(t.errorClientSignature);
       return false;
     }
@@ -364,8 +394,6 @@ const BrokerageFormPage = () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      const agentSignatureData = agentSignatureRef.current?.toDataURL();
       
       const formData = {
         formDate,
@@ -414,7 +442,7 @@ const BrokerageFormPage = () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const signatureData = signatureRef.current?.toDataURL();
+      const signatureData = clientSignatureData;
       
       // Get broker details based on mode
       const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
