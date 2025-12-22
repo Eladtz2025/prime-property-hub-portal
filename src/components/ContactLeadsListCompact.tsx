@@ -12,11 +12,13 @@ interface ContactLeadsListCompactProps {
 
 export const ContactLeadsListCompact: React.FC<ContactLeadsListCompactProps> = ({ limit = 5 }) => {
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['contact-leads', limit],
+    queryKey: ['contact-leads-website', limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contact_leads')
         .select('*')
+        .or('source.eq.website,source.eq.contact_form,source.is.null')
+        .neq('source', 'manual')
         .order('created_at', { ascending: false })
         .limit(limit);
       
