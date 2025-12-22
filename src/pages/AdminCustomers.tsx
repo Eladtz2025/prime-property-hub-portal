@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Download, Plus, LayoutGrid, List, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, Download, Plus, LayoutGrid, List, SlidersHorizontal, Eye, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { CustomerStatsCards } from "@/components/CustomerStatsCards";
 import { CustomerCard } from "@/components/CustomerCard";
@@ -36,6 +38,7 @@ export default function AdminCustomers() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
 
   const {
     customers,
@@ -45,11 +48,15 @@ export default function AdminCustomers() {
     updateCustomerPriority,
     assignAgent,
     scheduleFollowup,
+    deleteCustomer,
+    hideCustomer,
+    unhideCustomer,
   } = useCustomerData({
     status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined,
     priority: priorityFilter && priorityFilter !== 'all' ? priorityFilter : undefined,
     assigned_agent_id: agentFilter && agentFilter !== 'all' ? agentFilter : undefined,
     search: searchTerm || undefined,
+    showHidden,
   });
 
   // Fetch agents
@@ -187,6 +194,9 @@ export default function AdminCustomers() {
           onUpdateStatus={updateCustomerStatus}
           onUpdatePriority={updateCustomerPriority}
           onAssignAgent={assignAgent}
+          onDeleteCustomer={deleteCustomer}
+          onHideCustomer={hideCustomer}
+          onUnhideCustomer={unhideCustomer}
           agents={agents}
           sortBy={sortBy}
           onSortChange={setSortBy}
@@ -315,6 +325,17 @@ export default function AdminCustomers() {
                   </SelectContent>
                 </Select>
 
+                <div className="flex items-center gap-2 pt-2">
+                  <Switch
+                    id="showHiddenMobile"
+                    checked={showHidden}
+                    onCheckedChange={setShowHidden}
+                  />
+                  <Label htmlFor="showHiddenMobile" className="text-sm cursor-pointer">
+                    הצג לקוחות לא רלוונטיים
+                  </Label>
+                </div>
+
                 <div className="flex items-center justify-between pt-2">
                   <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
                     <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
@@ -334,6 +355,7 @@ export default function AdminCustomers() {
                       setPriorityFilter("all");
                       setAgentFilter("all");
                       setSortBy("created_at_desc");
+                      setShowHidden(false);
                     }}
                   >
                     <Filter className="h-4 w-4 ml-1" />
@@ -482,6 +504,18 @@ export default function AdminCustomers() {
             </Button>
           </div>
 
+          <div className="flex items-center gap-2">
+            <Switch
+              id="showHiddenDesktop"
+              checked={showHidden}
+              onCheckedChange={setShowHidden}
+            />
+            <Label htmlFor="showHiddenDesktop" className="text-sm cursor-pointer whitespace-nowrap">
+              {showHidden ? <Eye className="h-4 w-4 inline ml-1" /> : <EyeOff className="h-4 w-4 inline ml-1" />}
+              לא רלוונטיים
+            </Label>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -491,6 +525,7 @@ export default function AdminCustomers() {
               setPriorityFilter("all");
               setAgentFilter("all");
               setSortBy("created_at_desc");
+              setShowHidden(false);
             }}
           >
             <Filter className="h-4 w-4 ml-1" />
