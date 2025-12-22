@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Check, X, Settings, Pencil, Award, User, Phone } from 'lucide-react';
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { UserPlus, Check, X, Settings, Pencil, Award, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { logger } from '@/utils/logger';
@@ -362,55 +362,206 @@ export const UserManagement: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.full_name || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
+                  <Collapsible
+                    key={user.id}
+                    open={editingUser?.id === user.id}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        handleEditUser(user);
+                      } else {
+                        setEditingUser(null);
+                      }
+                    }}
+                  >
+                    <TableRow className={editingUser?.id === user.id ? 'bg-muted/30' : ''}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.full_name || '-'}</TableCell>
+                      <TableCell>
                         <span className="text-sm">{user.phone || '-'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleLabel(user.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_approved ? 'default' : 'secondary'}>
-                        {user.is_approved ? 'מאושר' : 'ממתין לאישור'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {!user.is_approved && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleApproveUser(user.id)}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRejectUser(user.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {getRoleLabel(user.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_approved ? 'default' : 'secondary'}>
+                          {user.is_approved ? 'מאושר' : 'ממתין לאישור'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant={editingUser?.id === user.id ? 'default' : 'outline'}
+                            onClick={() => {
+                              if (editingUser?.id === user.id) {
+                                setEditingUser(null);
+                              } else {
+                                handleEditUser(user);
+                              }
+                            }}
+                          >
+                            {editingUser?.id === user.id ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <Pencil className="h-4 w-4" />
+                            )}
+                          </Button>
+                          {!user.is_approved && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleApproveUser(user.id)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRejectUser(user.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    
+                    <CollapsibleContent asChild>
+                      <TableRow className="bg-muted/20 hover:bg-muted/30">
+                        <TableCell colSpan={6} className="p-0">
+                          <div className="p-4 space-y-4">
+                            {/* Personal Details */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                פרטים אישיים
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="space-y-1">
+                                  <Label className="text-xs">שם מלא</Label>
+                                  <Input
+                                    value={editForm.full_name}
+                                    onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                                    placeholder="שם מלא"
+                                    className="h-8"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">טלפון</Label>
+                                  <Input
+                                    type="tel"
+                                    value={editForm.phone}
+                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                    placeholder="054-1234567"
+                                    className="h-8"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">ת.ז.</Label>
+                                  <Input
+                                    value={editForm.id_number}
+                                    onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
+                                    placeholder="מספר ת.ז."
+                                    className="h-8"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">כתובת</Label>
+                                  <Input
+                                    value={editForm.address}
+                                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                    placeholder="כתובת"
+                                    className="h-8"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Broker Details & System Settings */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                  <Award className="h-4 w-4" />
+                                  פרטי מתווך
+                                </h4>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">מספר רישיון תיווך</Label>
+                                  <Input
+                                    value={editForm.broker_license_number}
+                                    onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
+                                    placeholder="מספר רישיון"
+                                    className="h-8"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                  <Settings className="h-4 w-4" />
+                                  הגדרות מערכת
+                                </h4>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs">תפקיד</Label>
+                                    <Select
+                                      value={editForm.role}
+                                      onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="viewer">צופה</SelectItem>
+                                        <SelectItem value="manager">מנהל תיקים</SelectItem>
+                                        <SelectItem value="admin">מנהל</SelectItem>
+                                        {profile?.role === 'super_admin' && (
+                                          <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                                        )}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="flex items-center gap-2 border rounded-md px-3 py-1.5">
+                                    <Switch
+                                      id={`approved-${user.id}`}
+                                      checked={editForm.is_approved}
+                                      onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
+                                    />
+                                    <Label htmlFor={`approved-${user.id}`} className="text-xs whitespace-nowrap">
+                                      {editForm.is_approved ? 'מאושר' : 'ממתין'}
+                                    </Label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-2 pt-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setEditingUser(null)}
+                              >
+                                ביטול
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={handleUpdateUser}
+                              >
+                                <Check className="h-4 w-4 ml-1" />
+                                שמור
+                              </Button>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </CollapsibleContent>
+                  </Collapsible>
                 ))}
               </TableBody>
             </Table>
@@ -418,155 +569,6 @@ export const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Edit User Sheet */}
-      <Sheet open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <SheetContent side="left" className="w-full sm:max-w-md flex flex-col p-0">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle>עריכת משתמש</SheetTitle>
-            <SheetDescription>
-              {editingUser?.email}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="space-y-6">
-              {/* Personal Details Section */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  פרטים אישיים
-                </h3>
-                
-                <div className="grid gap-3">
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="edit-name" className="text-xs">שם מלא</Label>
-                    <Input
-                      id="edit-name"
-                      value={editForm.full_name}
-                      onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                      placeholder="הזן שם מלא"
-                      className="h-9"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="edit-phone" className="text-xs">טלפון</Label>
-                      <Input
-                        id="edit-phone"
-                        type="tel"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        placeholder="054-1234567"
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="edit-id" className="text-xs">ת.ז.</Label>
-                      <Input
-                        id="edit-id"
-                        value={editForm.id_number}
-                        onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
-                        placeholder="מספר ת.ז."
-                        className="h-9"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="edit-address" className="text-xs">כתובת</Label>
-                    <Input
-                      id="edit-address"
-                      value={editForm.address}
-                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                      placeholder="הזן כתובת"
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Broker Details Section */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Award className="h-4 w-4" />
-                  פרטי מתווך
-                </h3>
-                
-                <div className="grid gap-1.5">
-                  <Label htmlFor="edit-license" className="text-xs">מספר רישיון תיווך</Label>
-                  <Input
-                    id="edit-license"
-                    value={editForm.broker_license_number}
-                    onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
-                    placeholder="הזן מספר רישיון"
-                    className="h-9"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* System Settings Section */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  הגדרות מערכת
-                </h3>
-                
-                <div className="grid gap-3">
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs">תפקיד</Label>
-                    <Select
-                      value={editForm.role}
-                      onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="viewer">צופה</SelectItem>
-                        <SelectItem value="manager">מנהל תיקים</SelectItem>
-                        <SelectItem value="admin">מנהל</SelectItem>
-                        {profile?.role === 'super_admin' && (
-                          <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="edit-approved" className="text-sm">משתמש מאושר</Label>
-                      <p className="text-xs text-muted-foreground">
-                        {editForm.is_approved ? 'יכול להתחבר' : 'ממתין לאישור'}
-                      </p>
-                    </div>
-                    <Switch
-                      id="edit-approved"
-                      checked={editForm.is_approved}
-                      onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <SheetFooter className="px-6 py-4 border-t bg-muted/30">
-            <div className="flex gap-2 w-full">
-              <Button variant="outline" onClick={() => setEditingUser(null)} className="flex-1">
-                ביטול
-              </Button>
-              <Button onClick={handleUpdateUser} className="flex-1">
-                שמור שינויים
-              </Button>
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 };
