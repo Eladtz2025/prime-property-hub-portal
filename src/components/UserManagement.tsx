@@ -374,27 +374,17 @@ export const UserManagement: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="text-xs font-medium">אימייל</TableHead>
-                <TableHead className="text-xs font-medium">שם</TableHead>
-                <TableHead className="text-xs font-medium hidden sm:table-cell">טלפון</TableHead>
-                <TableHead className="text-xs font-medium">תפקיד</TableHead>
-                <TableHead className="text-xs font-medium hidden sm:table-cell">סטטוס</TableHead>
-                <TableHead className="text-xs font-medium w-[100px]">פעולות</TableHead>
+                <TableHead className="text-xs font-medium w-[28%]">אימייל</TableHead>
+                <TableHead className="text-xs font-medium w-[15%]">שם</TableHead>
+                <TableHead className="text-xs font-medium w-[15%] hidden sm:table-cell">טלפון</TableHead>
+                <TableHead className="text-xs font-medium w-[12%]">תפקיד</TableHead>
+                <TableHead className="text-xs font-medium w-[12%] hidden sm:table-cell">סטטוס</TableHead>
+                <TableHead className="text-xs font-medium w-[18%]">פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <Collapsible
-                  key={user.id}
-                  open={editingUser?.id === user.id}
-                  onOpenChange={(open) => {
-                    if (open) {
-                      handleEditUser(user);
-                    } else {
-                      setEditingUser(null);
-                    }
-                  }}
-                >
+                <React.Fragment key={user.id}>
                   <TableRow className={`${editingUser?.id === user.id ? 'bg-muted/30' : ''} hover:bg-muted/20`}>
                     <TableCell className="text-sm py-3">{user.email}</TableCell>
                     <TableCell className="text-sm py-3">{user.full_name || '-'}</TableCell>
@@ -458,142 +448,142 @@ export const UserManagement: React.FC = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                    
-                  <CollapsibleContent asChild>
-                    <TableRow className="bg-muted/10 hover:bg-muted/20 border-t-0">
+                  
+                  {editingUser?.id === user.id && (
+                    <TableRow className="bg-muted/10 hover:bg-muted/10 border-t-0">
                       <TableCell colSpan={6} className="p-0">
-                          <div className="p-4 space-y-4">
-                            {/* Personal Details */}
-                            <div className="space-y-3">
-                              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                פרטים אישיים
-                              </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                <div className="space-y-1">
-                                  <Label className="text-xs">שם מלא</Label>
-                                  <Input
-                                    value={editForm.full_name}
-                                    onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                                    placeholder="שם מלא"
-                                    className="h-8"
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">טלפון</Label>
-                                  <Input
-                                    type="tel"
-                                    value={editForm.phone}
-                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                    placeholder="054-1234567"
-                                    className="h-8"
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">ת.ז.</Label>
-                                  <Input
-                                    value={editForm.id_number}
-                                    onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
-                                    placeholder="מספר ת.ז."
-                                    className="h-8"
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">כתובת</Label>
-                                  <Input
-                                    value={editForm.address}
-                                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                                    placeholder="כתובת"
-                                    className="h-8"
-                                  />
-                                </div>
+                        <div className="p-4 space-y-4">
+                          {/* Personal Details */}
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              פרטים אישיים
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs">שם מלא</Label>
+                                <Input
+                                  value={editForm.full_name}
+                                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                                  placeholder="שם מלא"
+                                  className="h-8"
+                                />
                               </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Broker Details & System Settings */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-3">
-                                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                  <Award className="h-4 w-4" />
-                                  פרטי מתווך
-                                </h4>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">מספר רישיון תיווך</Label>
-                                  <Input
-                                    value={editForm.broker_license_number}
-                                    onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
-                                    placeholder="מספר רישיון"
-                                    className="h-8"
-                                  />
-                                </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">טלפון</Label>
+                                <Input
+                                  type="tel"
+                                  value={editForm.phone}
+                                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                  placeholder="054-1234567"
+                                  className="h-8"
+                                />
                               </div>
-
-                              <div className="space-y-3">
-                                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                  <Settings className="h-4 w-4" />
-                                  הגדרות מערכת
-                                </h4>
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                  <div className="flex-1 space-y-1">
-                                    <Label className="text-xs">תפקיד</Label>
-                                    <Select
-                                      value={editForm.role}
-                                      onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
-                                    >
-                                      <SelectTrigger className="h-8">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="viewer">צופה</SelectItem>
-                                        <SelectItem value="manager">מנהל תיקים</SelectItem>
-                                        <SelectItem value="admin">מנהל</SelectItem>
-                                        {profile?.role === 'super_admin' && (
-                                          <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="flex items-center gap-2 border rounded-md px-3 py-1.5">
-                                    <Switch
-                                      id={`approved-${user.id}`}
-                                      checked={editForm.is_approved}
-                                      onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
-                                    />
-                                    <Label htmlFor={`approved-${user.id}`} className="text-xs whitespace-nowrap">
-                                      {editForm.is_approved ? 'מאושר' : 'ממתין'}
-                                    </Label>
-                                  </div>
-                                </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">ת.ז.</Label>
+                                <Input
+                                  value={editForm.id_number}
+                                  onChange={(e) => setEditForm({ ...editForm, id_number: e.target.value })}
+                                  placeholder="מספר ת.ז."
+                                  className="h-8"
+                                />
                               </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex justify-end gap-2 pt-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => setEditingUser(null)}
-                              >
-                                ביטול
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={handleUpdateUser}
-                              >
-                                <Check className="h-4 w-4 ml-1" />
-                                שמור
-                              </Button>
+                              <div className="space-y-1">
+                                <Label className="text-xs">כתובת</Label>
+                                <Input
+                                  value={editForm.address}
+                                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                  placeholder="כתובת"
+                                  className="h-8"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </TableBody>
-            </Table>
+
+                          <Separator />
+
+                          {/* Broker Details & System Settings */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Award className="h-4 w-4" />
+                                פרטי מתווך
+                              </h4>
+                              <div className="space-y-1">
+                                <Label className="text-xs">מספר רישיון תיווך</Label>
+                                <Input
+                                  value={editForm.broker_license_number}
+                                  onChange={(e) => setEditForm({ ...editForm, broker_license_number: e.target.value })}
+                                  placeholder="מספר רישיון"
+                                  className="h-8"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Settings className="h-4 w-4" />
+                                הגדרות מערכת
+                              </h4>
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs">תפקיד</Label>
+                                  <Select
+                                    value={editForm.role}
+                                    onValueChange={(value: UserRole) => setEditForm({ ...editForm, role: value })}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="viewer">צופה</SelectItem>
+                                      <SelectItem value="manager">מנהל תיקים</SelectItem>
+                                      <SelectItem value="admin">מנהל</SelectItem>
+                                      {profile?.role === 'super_admin' && (
+                                        <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-center gap-2 border rounded-md px-3 py-1.5">
+                                  <Switch
+                                    id={`approved-${user.id}`}
+                                    checked={editForm.is_approved}
+                                    onCheckedChange={(checked) => setEditForm({ ...editForm, is_approved: checked })}
+                                  />
+                                  <Label htmlFor={`approved-${user.id}`} className="text-xs whitespace-nowrap">
+                                    {editForm.is_approved ? 'מאושר' : 'ממתין'}
+                                  </Label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setEditingUser(null)}
+                            >
+                              ביטול
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={handleUpdateUser}
+                            >
+                              <Check className="h-4 w-4 ml-1" />
+                              שמור
+                            </Button>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
           </div>
         )}
     </div>
