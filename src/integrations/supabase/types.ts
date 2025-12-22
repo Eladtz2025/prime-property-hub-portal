@@ -1944,37 +1944,18 @@ export type Database = {
     Views: {
       user_profiles_with_roles: {
         Row: {
+          address: string | null
+          broker_license_number: string | null
           created_at: string | null
           email: string | null
           full_name: string | null
           id: string | null
+          id_number: string | null
           is_approved: boolean | null
           last_login: string | null
           phone: string | null
-          role: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_approved?: boolean | null
-          last_login?: string | null
-          phone?: string | null
-          role?: never
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_approved?: boolean | null
-          last_login?: string | null
-          phone?: string | null
-          role?: never
-          updated_at?: string | null
         }
         Relationships: []
       }

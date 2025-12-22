@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UserSettings } from '@/components/UserSettings';
 import { UserManagement as UserManagementComponent } from '@/components/UserManagement';
 import { PropertyInvitationManager } from '@/components/PropertyInvitationManager';
@@ -22,16 +22,8 @@ export const Settings: React.FC = () => {
           </p>
         </div>
 
-        {/* Personal Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>הגדרות אישיות</CardTitle>
-            <CardDescription>עדכן את הפרטים האישיים שלך</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UserSettings />
-          </CardContent>
-        </Card>
+        {/* Personal Settings - now directly renders UserSettings which is already a Card */}
+        <UserSettings />
 
         {/* Super Admin Only Sections */}
         {isSuperAdmin && (

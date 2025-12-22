@@ -1,25 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, Mail, Save, Award, CreditCard, MapPin } from 'lucide-react';
+import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock } from 'lucide-react';
 
 export const UserSettings: React.FC = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: profile?.full_name || '',
-    phone: profile?.phone || '',
-    email: user?.email || '',
-    broker_license_number: profile?.broker_license_number || '',
-    id_number: profile?.id_number || '',
-    address: profile?.address || '',
+    full_name: '',
+    phone: '',
+    email: '',
+    broker_license_number: '',
+    id_number: '',
+    address: '',
   });
+
+  // Update form data when profile changes
+  useEffect(() => {
+    if (profile || user) {
+      setFormData({
+        full_name: profile?.full_name || '',
+        phone: profile?.phone || '',
+        email: user?.email || '',
+        broker_license_number: profile?.broker_license_number || '',
+        id_number: profile?.id_number || '',
+        address: profile?.address || '',
+      });
+    }
+  }, [profile, user]);
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -39,6 +54,9 @@ export const UserSettings: React.FC = () => {
 
       if (error) throw error;
 
+      // Refresh profile to get updated data
+      await refreshProfile();
+
       toast({
         title: "הפרטים עודכנו בהצלחה",
         description: "השינויים נשמרו במערכת",
@@ -56,25 +74,46 @@ export const UserSettings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold mb-2">הגדרות אישיות</h1>
-        <p className="text-muted-foreground">
-          נהל את הפרטים האישיים שלך
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            פרטים אישיים
-          </CardTitle>
-          <CardDescription>
-            עדכן את הפרטים האישיים שלך כאן
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              פרטי משתמש ומתווך
+            </CardTitle>
+            <CardDescription>
+              עדכן את הפרטים האישיים ופרטי התיווך שלך
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={profile?.is_approved ? "default" : "secondary"} className="gap-1">
+              {profile?.is_approved ? (
+                <>
+                  <CheckCircle className="h-3 w-3" />
+                  מאושר
+                </>
+              ) : (
+                <>
+                  <Clock className="h-3 w-3" />
+                  ממתין לאישור
+                </>
+              )}
+            </Badge>
+            {profile?.role && (
+              <Badge variant="outline" className="gap-1">
+                <Shield className="h-3 w-3" />
+                {profile.role === 'super_admin' ? 'מנהל ראשי' : 
+                 profile.role === 'admin' ? 'מנהל' : 
+                 profile.role === 'manager' ? 'מנהל נכסים' : 'צופה'}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Personal Details Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="full_name">שם מלא</Label>
             <Input
@@ -97,9 +136,6 @@ export const UserSettings: React.FC = () => {
               disabled
               className="bg-muted"
             />
-            <p className="text-xs text-muted-foreground">
-              לא ניתן לשנות את כתובת האימייל
-            </p>
           </div>
 
           <div className="space-y-2">
@@ -115,71 +151,12 @@ export const UserSettings: React.FC = () => {
               placeholder="05X-XXXXXXX"
               dir="ltr"
             />
-            <p className="text-xs text-muted-foreground">
-              מספר הטלפון משמש לזיהוי הנכסים שלך במערכת
-            </p>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {isLoading ? 'שומר...' : 'שמור שינויים'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Broker Details Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            פרטי מתווך
-          </CardTitle>
-          <CardDescription>
-            פרטים אלו ישמשו בטפסי הזמנת שירותי תיווך
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="broker_license_number" className="flex items-center gap-2">
-              <Award className="h-4 w-4" />
-              מספר רישיון תיווך
-            </Label>
-            <Input
-              id="broker_license_number"
-              value={formData.broker_license_number}
-              onChange={(e) => setFormData({ ...formData, broker_license_number: e.target.value })}
-              placeholder="הזן מספר רישיון תיווך"
-              dir="ltr"
-            />
-            <p className="text-xs text-muted-foreground">
-              נדרש לפי חוק לכל מתווך פעיל
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="id_number" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              מספר ת.ז.
-            </Label>
-            <Input
-              id="id_number"
-              value={formData.id_number}
-              onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
-              placeholder="הזן מספר תעודת זהות"
-              dir="ltr"
-            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="address" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              כתובת (אופציונלי)
+              כתובת
             </Label>
             <Input
               id="address"
@@ -188,37 +165,56 @@ export const UserSettings: React.FC = () => {
               placeholder="הזן כתובת"
             />
           </div>
+        </div>
 
-          <div className="flex justify-end pt-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {isLoading ? 'שומר...' : 'שמור שינויים'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Broker Details Section */}
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Award className="h-4 w-4" />
+            פרטי תיווך (יופיעו בטפסי תיווך)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="broker_license_number" className="flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                מספר רישיון תיווך
+              </Label>
+              <Input
+                id="broker_license_number"
+                value={formData.broker_license_number}
+                onChange={(e) => setFormData({ ...formData, broker_license_number: e.target.value })}
+                placeholder="הזן מספר רישיון תיווך"
+                dir="ltr"
+              />
+            </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>מידע על החשבון</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">תפקיד:</span>
-            <span className="font-medium">{profile?.role}</span>
+            <div className="space-y-2">
+              <Label htmlFor="id_number" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                מספר ת.ז.
+              </Label>
+              <Input
+                id="id_number"
+                value={formData.id_number}
+                onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                placeholder="הזן מספר תעודת זהות"
+                dir="ltr"
+              />
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">סטטוס:</span>
-            <span className="font-medium">
-              {profile?.is_approved ? 'מאושר' : 'ממתין לאישור'}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button 
+            onClick={handleSave} 
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {isLoading ? 'שומר...' : 'שמור שינויים'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
