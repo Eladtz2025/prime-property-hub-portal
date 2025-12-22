@@ -4,19 +4,18 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus, FileText, Receipt } from 'lucide-react';
+import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus, FileText, Receipt, ArrowLeft } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { AlertCard } from './AlertCard';
 import { StatsCard } from './StatsCard';
-
 import { MobileDashboard } from './MobileDashboard';
 import { ActivityLogsList } from './ActivityLogsList';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { BrokerageFormsList } from './BrokerageFormsList';
+import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 
 interface DashboardProps {
   properties: Property[];
@@ -226,6 +225,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </CardContent>
       </Card>
     </div>
+
+      {/* הדירות שלנו */}
+      <ActivePropertiesCard properties={properties} maxDisplay={6} />
 
       {/* שורה 2: התראות, פעילות ופניות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

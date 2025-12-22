@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -82,6 +82,7 @@ type PageMode = 'new' | 'remote-sign' | 'generated-link';
 
 const BrokerageFormPage = () => {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
   const agentSignatureRef = useRef<SignatureCanvas>(null);
@@ -213,10 +214,36 @@ const BrokerageFormPage = () => {
         await loadRemoteFormData(token);
       } else {
         setMode('new');
+        
+        // Pre-fill property from query params if coming from dashboard
+        const address = searchParams.get('address');
+        const city = searchParams.get('city');
+        const rooms = searchParams.get('rooms');
+        const floor = searchParams.get('floor');
+        const price = searchParams.get('price');
+        const type = searchParams.get('type');
+        
+        if (address) {
+          const fullAddress = city ? `${address}, ${city}` : address;
+          setProperties([{
+            address: fullAddress,
+            floor: floor || '',
+            rooms: rooms || '',
+            price: price || '',
+            gushHelka: ''
+          }]);
+          
+          // Auto-select fee type based on property type
+          if (type === 'rental') {
+            setFeeTypeRental(true);
+          } else if (type === 'sale') {
+            setFeeTypeSale(true);
+          }
+        }
       }
     };
     initPage();
-  }, [token]);
+  }, [token, searchParams]);
 
   const loadRemoteFormData = async (tokenValue: string) => {
     setLoading(true);
