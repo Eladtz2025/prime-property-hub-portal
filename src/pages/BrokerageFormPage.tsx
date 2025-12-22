@@ -16,6 +16,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerage-form-translations';
 import { z } from 'zod';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const MAX_PROPERTIES = 10;
 
@@ -519,18 +520,22 @@ const BrokerageFormPage = () => {
     }
   };
 
-  // Generate PDF function
-  const generatePDF = useCallback(() => {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    let yPos = 20;
+  // Generate PDF using html2canvas for Hebrew support
+  const generatePDF = useCallback(async () => {
+    // Create a temporary container for rendering
+    const container = document.createElement('div');
+    container.style.cssText = `
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      width: 794px;
+      padding: 40px;
+      background: white;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      direction: ${language === 'he' ? 'rtl' : 'ltr'};
+      color: #000;
+    `;
     
-    // Title
-    pdf.setFontSize(18);
-    pdf.text(t.title, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
-    
-    // Get current broker details for display
     const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
       full_name: profile?.full_name,
       broker_license_number: profile?.broker_license_number,
@@ -538,92 +543,105 @@ const BrokerageFormPage = () => {
       id_number: profile?.id_number,
     };
     
-    // Broker details section
-    pdf.setFontSize(14);
-    pdf.text(t.brokerDetails, 20, yPos);
-    yPos += 8;
-    pdf.setFontSize(11);
-    pdf.text(`${t.name}: ${currentBrokerDetails?.full_name || '—'}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.license}: ${currentBrokerDetails?.broker_license_number || '—'}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.phone}: ${currentBrokerDetails?.phone || '—'}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.date}: ${formDate}`, 20, yPos);
-    yPos += 12;
+    container.innerHTML = `
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="font-size: 24px; margin: 0; color: #1a1a1a;">${t.title}</h1>
+        <p style="font-size: 14px; color: #666; margin-top: 8px;">${formDate}</p>
+      </div>
+      
+      <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.brokerDetails}</h2>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.name}:</strong> ${currentBrokerDetails?.full_name || '—'}</p>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.license}:</strong> ${currentBrokerDetails?.broker_license_number || '—'}</p>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.phone}:</strong> ${currentBrokerDetails?.phone || '—'}</p>
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.feeTypes}</h2>
+        ${feeTypeRental ? `<p style="margin: 4px 0; font-size: 14px;">✓ ${t.rentalFee} ${t.rentalFeeAmount} ${t.rentalFeeText}</p>` : ''}
+        ${feeTypeSale ? `<p style="margin: 4px 0; font-size: 14px;">✓ ${t.saleFee} ${t.saleFeeAmount} ${t.saleFeeText}</p>` : ''}
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.propertiesReferred}</h2>
+        ${properties.filter(p => p.address).map((prop, idx) => `
+          <p style="margin: 4px 0; font-size: 14px;">
+            ${idx + 1}. ${prop.address}
+            ${prop.floor ? `, ${t.floor}: ${prop.floor}` : ''}
+            ${prop.rooms ? `, ${t.rooms}: ${prop.rooms}` : ''}
+            ${prop.price ? `, ${t.price}: ${prop.price}` : ''}
+          </p>
+        `).join('')}
+      </div>
+      
+      <div style="margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+        <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.clientDetails}</h2>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientName}:</strong> ${clientName}</p>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientId}:</strong> ${clientId}</p>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientPhone}:</strong> ${clientPhone}</p>
+        <p style="margin: 4px 0; font-size: 14px;"><strong>${t.clientAddress}:</strong> ${clientAddress}</p>
+      </div>
+      
+      ${specialTerms ? `
+        <div style="margin-bottom: 24px;">
+          <h2 style="font-size: 16px; margin: 0 0 12px 0; color: #333;">${t.specialTerms}</h2>
+          <p style="font-size: 14px; white-space: pre-wrap;">${specialTerms}</p>
+        </div>
+      ` : ''}
+      
+      <div style="display: flex; gap: 40px; margin-top: 30px;">
+        ${agentSignatureData ? `
+          <div style="flex: 1;">
+            <p style="font-size: 14px; margin-bottom: 8px;"><strong>${t.agentSignature}:</strong></p>
+            <img src="${agentSignatureData}" style="max-width: 150px; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
+          </div>
+        ` : ''}
+        ${clientSignatureData ? `
+          <div style="flex: 1;">
+            <p style="font-size: 14px; margin-bottom: 8px;"><strong>${t.clientSignature}:</strong></p>
+            <img src="${clientSignatureData}" style="max-width: 150px; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
+          </div>
+        ` : ''}
+      </div>
+    `;
     
-    // Fee types
-    pdf.setFontSize(14);
-    pdf.text(t.feeTypes, 20, yPos);
-    yPos += 8;
-    pdf.setFontSize(11);
-    if (feeTypeRental) {
-      pdf.text(`✓ ${t.rentalFee} ${t.rentalFeeAmount} ${t.rentalFeeText}`, 20, yPos);
-      yPos += 6;
-    }
-    if (feeTypeSale) {
-      pdf.text(`✓ ${t.saleFee} ${t.saleFeeAmount} ${t.saleFeeText}`, 20, yPos);
-      yPos += 6;
-    }
-    yPos += 6;
+    document.body.appendChild(container);
     
-    // Properties section
-    pdf.setFontSize(14);
-    pdf.text(t.propertiesReferred, 20, yPos);
-    yPos += 8;
-    pdf.setFontSize(10);
-    properties.forEach((prop, idx) => {
-      if (prop.address) {
-        pdf.text(`${idx + 1}. ${prop.address}${prop.floor ? `, ${t.floor}: ${prop.floor}` : ''}${prop.rooms ? `, ${t.rooms}: ${prop.rooms}` : ''}${prop.price ? `, ${t.price}: ${prop.price}` : ''}`, 20, yPos);
-        yPos += 6;
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // If content is taller than one page, scale it down
+      if (imgHeight > pageHeight) {
+        const scale = pageHeight / imgHeight;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * scale, pageHeight);
+      } else {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       }
-    });
-    yPos += 6;
-    
-    // Client details
-    pdf.setFontSize(14);
-    pdf.text(t.clientDetails, 20, yPos);
-    yPos += 8;
-    pdf.setFontSize(11);
-    pdf.text(`${t.clientName}: ${clientName}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.clientId}: ${clientId}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.clientPhone}: ${clientPhone}`, 20, yPos);
-    yPos += 6;
-    pdf.text(`${t.clientAddress}: ${clientAddress}`, 20, yPos);
-    yPos += 15;
-    
-    // Signatures
-    if (agentSignatureData) {
-      try {
-        pdf.text(t.agentSignature + ':', 20, yPos);
-        yPos += 5;
-        pdf.addImage(agentSignatureData, 'PNG', 20, yPos, 50, 25);
-        yPos += 30;
-      } catch (e) {
-        console.error('Error adding agent signature to PDF:', e);
-      }
+      
+      return pdf;
+    } finally {
+      document.body.removeChild(container);
     }
-    
-    if (clientSignatureData) {
-      try {
-        pdf.text(t.clientSignature + ':', 20, yPos);
-        yPos += 5;
-        pdf.addImage(clientSignatureData, 'PNG', 20, yPos, 50, 25);
-      } catch (e) {
-        console.error('Error adding client signature to PDF:', e);
-      }
-    }
-    
-    return pdf;
-  }, [t, mode, brokerDetails, profile, formDate, feeTypeRental, feeTypeSale, properties, clientName, clientId, clientPhone, clientAddress, agentSignatureData, clientSignatureData]);
+  }, [t, mode, brokerDetails, profile, formDate, feeTypeRental, feeTypeSale, properties, clientName, clientId, clientPhone, clientAddress, specialTerms, agentSignatureData, clientSignatureData, language]);
 
   // Download PDF function
   const downloadPDF = useCallback(async () => {
     setGeneratingPDF(true);
     try {
-      const pdf = generatePDF();
+      const pdf = await generatePDF();
       pdf.save(`brokerage-form-${clientName.replace(/\s+/g, '-')}-${formDate}.pdf`);
       toast.success(language === 'he' ? 'הקובץ הורד בהצלחה' : 'File downloaded successfully');
     } catch (error) {
@@ -634,46 +652,10 @@ const BrokerageFormPage = () => {
     }
   }, [generatePDF, clientName, formDate, language]);
 
-  // Send email copy function
+  // Send email copy function - currently disabled
   const sendEmailCopy = useCallback(async () => {
-    if (!clientEmail || !clientEmail.includes('@')) {
-      toast.error(t.invalidEmail);
-      return;
-    }
-    
-    setSendingEmail(true);
-    try {
-      const pdf = generatePDF();
-      const pdfBase64 = pdf.output('datauristring').split(',')[1];
-      
-      const currentBrokerDetails = mode === 'remote-sign' ? brokerDetails : {
-        full_name: profile?.full_name,
-      };
-      
-      const { error } = await supabase.functions.invoke('send-brokerage-form', {
-        body: {
-          email: clientEmail,
-          formData: {
-            clientName,
-            formDate,
-            brokerName: currentBrokerDetails?.full_name
-          },
-          pdfBase64,
-          language
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast.success(t.emailSent);
-      setClientEmail('');
-    } catch (err) {
-      console.error('Error sending email:', err);
-      toast.error(t.emailError);
-    } finally {
-      setSendingEmail(false);
-    }
-  }, [clientEmail, generatePDF, t, mode, brokerDetails, profile, clientName, formDate, language]);
+    toast.error(t.emailNotConfigured);
+  }, [t]);
 
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
@@ -709,35 +691,10 @@ const BrokerageFormPage = () => {
               <p className="text-muted-foreground">{t.thankYouMessage}</p>
             </div>
             
-            {/* Email input section */}
-            <div className="space-y-3 pt-4">
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder={t.enterEmail}
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                  className="flex-1"
-                  dir="ltr"
-                />
-                <Button 
-                  onClick={sendEmailCopy} 
-                  disabled={sendingEmail || !clientEmail}
-                  className="min-w-[120px]"
-                >
-                  {sendingEmail ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {t.sending}
-                    </>
-                  ) : (
-                    <>
-                      <Mail className={`h-4 w-4 ${language === 'he' ? 'ml-2' : 'mr-2'}`} />
-                      {t.sendEmailCopy}
-                    </>
-                  )}
-                </Button>
-              </div>
+            {/* Email notice - temporarily unavailable */}
+            <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 flex items-center gap-2">
+              <Mail className="h-4 w-4 flex-shrink-0" />
+              <span>{t.emailNotConfigured}</span>
             </div>
             
             {/* Download PDF button */}

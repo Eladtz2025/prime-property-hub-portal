@@ -126,6 +126,7 @@ export const brokerageFormTranslations = {
     closeAndFinish: 'סיום',
     sending: 'שולח...',
     generating: 'מייצר PDF...',
+    emailNotConfigured: 'שליחת מייל זמנית לא זמינה - נדרשת הגדרת דומיין',
   },
   en: {
     // Page titles
@@ -254,6 +255,7 @@ export const brokerageFormTranslations = {
     closeAndFinish: 'Finish',
     sending: 'Sending...',
     generating: 'Generating PDF...',
+    emailNotConfigured: 'Email sending temporarily unavailable - domain configuration required',
   }
 };
 
