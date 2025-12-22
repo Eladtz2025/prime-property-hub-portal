@@ -4,12 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
+import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers } from "lucide-react";
 
 interface Agent {
   id: string;
@@ -30,7 +32,6 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(customer || {});
 
-  // Update formData when customer changes
   useEffect(() => {
     if (customer) {
       setFormData(customer);
@@ -42,6 +43,9 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
     
     setLoading(true);
     try {
+      const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
+      const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
+
       const { error } = await supabase
         .from('contact_leads')
         .update({
@@ -61,6 +65,23 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           move_in_date: formData.move_in_date,
           notes: formData.notes,
           next_followup_date: formData.next_followup_date,
+          // Rental-specific
+          pets: isRental ? formData.pets : null,
+          tenant_type: isRental ? formData.tenant_type : null,
+          flexible_move_date: isRental ? formData.flexible_move_date : null,
+          parking_required: isRental ? formData.parking_required : null,
+          balcony_required: isRental ? formData.balcony_required : null,
+          elevator_required: isRental ? formData.elevator_required : null,
+          // Purchase-specific
+          purchase_purpose: isSale ? formData.purchase_purpose : null,
+          cash_available: isSale ? formData.cash_available : null,
+          property_to_sell: isSale ? formData.property_to_sell : null,
+          lawyer_details: isSale ? formData.lawyer_details : null,
+          urgency_level: isSale ? formData.urgency_level : null,
+          renovation_budget: isSale ? formData.renovation_budget : null,
+          new_or_second_hand: isSale ? formData.new_or_second_hand : null,
+          floor_preference: isSale ? formData.floor_preference : null,
+          view_preference: isSale ? formData.view_preference : null,
         })
         .eq('id', customer.id);
 
@@ -86,6 +107,9 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
 
   if (!customer) return null;
 
+  const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
+  const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -94,6 +118,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>שם מלא</Label>
@@ -174,7 +199,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
               </Select>
             </div>
             <div>
-              <Label>סוג נכס</Label>
+              <Label>סוג עסקה</Label>
               <Select value={formData.property_type || 'rental'} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -261,6 +286,246 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
               />
             </div>
           </div>
+
+          {/* Rental-specific fields */}
+          {isRental && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  פרטי שכירות
+                </h3>
+                
+                <div>
+                  <Label>סוג דייר</Label>
+                  <Select value={formData.tenant_type || ''} onValueChange={(value) => setFormData({ ...formData, tenant_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סוג דייר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">סטודנט</SelectItem>
+                      <SelectItem value="employee">שכיר</SelectItem>
+                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="couple">זוג</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="edit-pets"
+                      checked={!!formData.pets}
+                      onCheckedChange={(checked) => setFormData({ ...formData, pets: !!checked })}
+                    />
+                    <Label htmlFor="edit-pets" className="flex items-center gap-1 cursor-pointer">
+                      <Dog className="h-4 w-4" />
+                      יש חיות מחמד
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="edit-flexible"
+                      checked={!!formData.flexible_move_date}
+                      onCheckedChange={(checked) => setFormData({ ...formData, flexible_move_date: !!checked })}
+                    />
+                    <Label htmlFor="edit-flexible" className="cursor-pointer">גמישות בתאריך כניסה</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">דרישות מהנכס:</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-parking"
+                        checked={!!formData.parking_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, parking_required: !!checked })}
+                      />
+                      <Label htmlFor="edit-parking" className="flex items-center gap-1 cursor-pointer">
+                        <Car className="h-4 w-4" />
+                        חניה
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-balcony"
+                        checked={!!formData.balcony_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, balcony_required: !!checked })}
+                      />
+                      <Label htmlFor="edit-balcony" className="cursor-pointer">מרפסת</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-elevator"
+                        checked={!!formData.elevator_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, elevator_required: !!checked })}
+                      />
+                      <Label htmlFor="edit-elevator" className="flex items-center gap-1 cursor-pointer">
+                        <Building2 className="h-4 w-4" />
+                        מעלית
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Purchase-specific fields */}
+          {isSale && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  פרטי רכישה
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>מטרת הרכישה</Label>
+                    <Select value={formData.purchase_purpose || ''} onValueChange={(value) => setFormData({ ...formData, purchase_purpose: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר מטרה" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="residence">
+                          <span className="flex items-center gap-2">
+                            <Home className="h-4 w-4" />
+                            מגורים
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="investment">
+                          <span className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            השקעה
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="for_child">
+                          <span className="flex items-center gap-2">
+                            <Baby className="h-4 w-4" />
+                            לילד/ה
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>דחיפות</Label>
+                    <Select value={formData.urgency_level || ''} onValueChange={(value) => setFormData({ ...formData, urgency_level: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר דחיפות" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">נמוכה</SelectItem>
+                        <SelectItem value="medium">בינונית</SelectItem>
+                        <SelectItem value="high">גבוהה</SelectItem>
+                        <SelectItem value="immediate">מיידי</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>הון עצמי (₪)</Label>
+                    <Input
+                      type="number"
+                      value={formData.cash_available || ''}
+                      onChange={(e) => setFormData({ ...formData, cash_available: parseInt(e.target.value) || null })}
+                      placeholder="500,000"
+                    />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Wrench className="h-4 w-4" />
+                      תקציב שיפוץ (₪)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={formData.renovation_budget || ''}
+                      onChange={(e) => setFormData({ ...formData, renovation_budget: parseInt(e.target.value) || null })}
+                      placeholder="100,000"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="edit-property-to-sell"
+                    checked={!!formData.property_to_sell}
+                    onCheckedChange={(checked) => setFormData({ ...formData, property_to_sell: !!checked })}
+                  />
+                  <Label htmlFor="edit-property-to-sell" className="cursor-pointer">יש נכס קיים למכירה</Label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Layers className="h-4 w-4" />
+                      חדש/יד שניה
+                    </Label>
+                    <Select value={formData.new_or_second_hand || ''} onValueChange={(value) => setFormData({ ...formData, new_or_second_hand: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">חדש</SelectItem>
+                        <SelectItem value="second_hand">יד שניה</SelectItem>
+                        <SelectItem value="both">שניהם</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>העדפת קומה</Label>
+                    <Select value={formData.floor_preference || ''} onValueChange={(value) => setFormData({ ...formData, floor_preference: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ground">קרקע</SelectItem>
+                        <SelectItem value="low">נמוכה (1-3)</SelectItem>
+                        <SelectItem value="mid">בינונית (4-7)</SelectItem>
+                        <SelectItem value="high">גבוהה (8+)</SelectItem>
+                        <SelectItem value="top">עליונה</SelectItem>
+                        <SelectItem value="any">לא משנה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      העדפת נוף
+                    </Label>
+                    <Select value={formData.view_preference || ''} onValueChange={(value) => setFormData({ ...formData, view_preference: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sea">ים</SelectItem>
+                        <SelectItem value="city">עיר</SelectItem>
+                        <SelectItem value="park">פארק/ירוק</SelectItem>
+                        <SelectItem value="any">לא משנה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>פרטי עורך דין</Label>
+                  <Input
+                    value={formData.lawyer_details || ''}
+                    onChange={(e) => setFormData({ ...formData, lawyer_details: e.target.value })}
+                    placeholder="שם ומספר טלפון"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator />
 
           <div>
             <Label>הערות</Label>

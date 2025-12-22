@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, MessageSquare, Calendar, MapPin, Building2, Coins, Clock, User, X } from "lucide-react";
+import { 
+  Phone, Mail, MessageSquare, Calendar, MapPin, Building2, Coins, Clock, User, X,
+  Dog, Car, Home, Briefcase, TrendingUp, Baby, Wrench, Eye, Layers, Scale
+} from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -60,6 +63,48 @@ const priorityLabels: Record<string, string> = {
   urgent: 'דחוף',
 };
 
+const tenantTypeLabels: Record<string, string> = {
+  student: 'סטודנט',
+  employee: 'שכיר',
+  family: 'משפחה',
+  couple: 'זוג',
+};
+
+const purchasePurposeLabels: Record<string, string> = {
+  residence: 'מגורים',
+  investment: 'השקעה',
+  for_child: 'לילד/ה',
+};
+
+const urgencyLabels: Record<string, string> = {
+  low: 'נמוכה',
+  medium: 'בינונית',
+  high: 'גבוהה',
+  immediate: 'מיידי',
+};
+
+const newOrSecondHandLabels: Record<string, string> = {
+  new: 'חדש',
+  second_hand: 'יד שניה',
+  both: 'שניהם',
+};
+
+const floorPreferenceLabels: Record<string, string> = {
+  ground: 'קרקע',
+  low: 'נמוכה',
+  mid: 'בינונית',
+  high: 'גבוהה',
+  top: 'עליונה',
+  any: 'לא משנה',
+};
+
+const viewPreferenceLabels: Record<string, string> = {
+  sea: 'ים',
+  city: 'עיר',
+  park: 'פארק/ירוק',
+  any: 'לא משנה',
+};
+
 const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) => {
   const date = lastContactDate ? new Date(lastContactDate) : new Date(createdAt);
   const daysDiff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -87,6 +132,8 @@ export const CustomerDetailSheet = ({
 
   const timeSince = getTimeSinceContact(customer.last_contact_date, customer.created_at);
   const assignedAgent = agents.find(a => a.id === customer.assigned_agent_id);
+  const isRental = customer.property_type === 'rental' || customer.property_type === 'both';
+  const isSale = customer.property_type === 'sale' || customer.property_type === 'both';
 
   const handleWhatsApp = () => {
     if (customer.phone) {
@@ -213,6 +260,136 @@ export const CustomerDetailSheet = ({
                     <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg col-span-2">
                       <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span className="truncate">שכונות: {customer.preferred_neighborhoods.join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Rental-specific details */}
+          {isRental && (customer.tenant_type || customer.pets || customer.parking_required || customer.balcony_required || customer.elevator_required || customer.flexible_move_date) && (
+            <>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  פרטי שכירות
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {customer.tenant_type && (
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <User className="h-4 w-4 text-blue-600" />
+                      <span>{tenantTypeLabels[customer.tenant_type] || customer.tenant_type}</span>
+                    </div>
+                  )}
+                  {customer.pets && (
+                    <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                      <Dog className="h-4 w-4 text-amber-600" />
+                      <span>יש חיות מחמד</span>
+                    </div>
+                  )}
+                  {customer.flexible_move_date && (
+                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <Calendar className="h-4 w-4 text-green-600" />
+                      <span>גמיש בתאריך</span>
+                    </div>
+                  )}
+                  {customer.parking_required && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      <span>דורש חניה</span>
+                    </div>
+                  )}
+                  {customer.balcony_required && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <span>🏠</span>
+                      <span>דורש מרפסת</span>
+                    </div>
+                  )}
+                  {customer.elevator_required && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span>דורש מעלית</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Purchase-specific details */}
+          {isSale && (customer.purchase_purpose || customer.cash_available || customer.property_to_sell || customer.urgency_level || customer.renovation_budget || customer.new_or_second_hand || customer.floor_preference || customer.view_preference || customer.lawyer_details) && (
+            <>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  פרטי רכישה
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {customer.purchase_purpose && (
+                    <div className="flex items-center gap-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      {customer.purchase_purpose === 'residence' && <Home className="h-4 w-4 text-purple-600" />}
+                      {customer.purchase_purpose === 'investment' && <TrendingUp className="h-4 w-4 text-purple-600" />}
+                      {customer.purchase_purpose === 'for_child' && <Baby className="h-4 w-4 text-purple-600" />}
+                      <span>{purchasePurposeLabels[customer.purchase_purpose] || customer.purchase_purpose}</span>
+                    </div>
+                  )}
+                  {customer.urgency_level && (
+                    <div className={`flex items-center gap-2 p-2 rounded-lg ${
+                      customer.urgency_level === 'immediate' ? 'bg-red-50 dark:bg-red-900/20' :
+                      customer.urgency_level === 'high' ? 'bg-orange-50 dark:bg-orange-900/20' :
+                      'bg-muted/30'
+                    }`}>
+                      <Clock className={`h-4 w-4 ${
+                        customer.urgency_level === 'immediate' ? 'text-red-600' :
+                        customer.urgency_level === 'high' ? 'text-orange-600' :
+                        'text-muted-foreground'
+                      }`} />
+                      <span>דחיפות: {urgencyLabels[customer.urgency_level]}</span>
+                    </div>
+                  )}
+                  {customer.cash_available && (
+                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <Coins className="h-4 w-4 text-green-600" />
+                      <span>הון עצמי: ₪{(customer.cash_available/1000).toFixed(0)}K</span>
+                    </div>
+                  )}
+                  {customer.renovation_budget && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Wrench className="h-4 w-4 text-muted-foreground" />
+                      <span>שיפוץ: ₪{(customer.renovation_budget/1000).toFixed(0)}K</span>
+                    </div>
+                  )}
+                  {customer.property_to_sell && (
+                    <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg col-span-2">
+                      <Scale className="h-4 w-4 text-amber-600" />
+                      <span>יש נכס קיים למכירה</span>
+                    </div>
+                  )}
+                  {customer.new_or_second_hand && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Layers className="h-4 w-4 text-muted-foreground" />
+                      <span>{newOrSecondHandLabels[customer.new_or_second_hand]}</span>
+                    </div>
+                  )}
+                  {customer.floor_preference && customer.floor_preference !== 'any' && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span>קומה: {floorPreferenceLabels[customer.floor_preference]}</span>
+                    </div>
+                  )}
+                  {customer.view_preference && customer.view_preference !== 'any' && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span>נוף: {viewPreferenceLabels[customer.view_preference]}</span>
+                    </div>
+                  )}
+                  {customer.lawyer_details && (
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg col-span-2">
+                      <Scale className="h-4 w-4 text-muted-foreground" />
+                      <span>עו"ד: {customer.lawyer_details}</span>
                     </div>
                   )}
                 </div>

@@ -4,9 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers } from "lucide-react";
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -34,6 +37,23 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     preferred_neighborhoods: [] as string[],
     move_in_date: '',
     notes: '',
+    // Rental-specific
+    pets: false,
+    tenant_type: '' as string,
+    flexible_move_date: false,
+    parking_required: false,
+    balcony_required: false,
+    elevator_required: false,
+    // Purchase-specific
+    purchase_purpose: '' as string,
+    cash_available: null as number | null,
+    property_to_sell: false,
+    lawyer_details: '',
+    urgency_level: '' as string,
+    renovation_budget: null as number | null,
+    new_or_second_hand: '' as string,
+    floor_preference: '' as string,
+    view_preference: '' as string,
   });
 
   const handleSave = async () => {
@@ -67,6 +87,23 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           preferred_neighborhoods: formData.preferred_neighborhoods.length > 0 ? formData.preferred_neighborhoods : null,
           move_in_date: formData.move_in_date || null,
           notes: formData.notes || null,
+          // Rental-specific
+          pets: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.pets : null,
+          tenant_type: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.tenant_type || null : null,
+          flexible_move_date: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.flexible_move_date : null,
+          parking_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.parking_required : null,
+          balcony_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.balcony_required : null,
+          elevator_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.elevator_required : null,
+          // Purchase-specific
+          purchase_purpose: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.purchase_purpose || null : null,
+          cash_available: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.cash_available : null,
+          property_to_sell: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.property_to_sell : null,
+          lawyer_details: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.lawyer_details || null : null,
+          urgency_level: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.urgency_level || null : null,
+          renovation_budget: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.renovation_budget : null,
+          new_or_second_hand: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.new_or_second_hand || null : null,
+          floor_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.floor_preference || null : null,
+          view_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.view_preference || null : null,
         });
 
       if (error) throw error;
@@ -94,6 +131,21 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         preferred_neighborhoods: [],
         move_in_date: '',
         notes: '',
+        pets: false,
+        tenant_type: '',
+        flexible_move_date: false,
+        parking_required: false,
+        balcony_required: false,
+        elevator_required: false,
+        purchase_purpose: '',
+        cash_available: null,
+        property_to_sell: false,
+        lawyer_details: '',
+        urgency_level: '',
+        renovation_budget: null,
+        new_or_second_hand: '',
+        floor_preference: '',
+        view_preference: '',
       });
       
       onSave();
@@ -109,6 +161,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     }
   };
 
+  const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
+  const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -117,6 +172,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>שם מלא *</Label>
@@ -198,9 +254,12 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             </div>
           </div>
 
+          <Separator />
+
+          {/* Property Type - This determines which fields to show */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>סוג נכס</Label>
+              <Label>סוג עסקה</Label>
               <Select value={formData.property_type} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -213,7 +272,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               </Select>
             </div>
             <div>
-              <Label>תאריך כניסה משוער</Label>
+              <Label>תאריך כניסה/רכישה משוער</Label>
               <Input
                 type="date"
                 value={formData.move_in_date}
@@ -222,6 +281,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             </div>
           </div>
 
+          {/* Common Property Preferences */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>תקציב מינימום (₪)</Label>
@@ -229,7 +289,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                 type="number"
                 value={formData.budget_min || ''}
                 onChange={(e) => setFormData({ ...formData, budget_min: e.target.value ? Number(e.target.value) : null })}
-                placeholder="3000"
+                placeholder={isSale ? "1,000,000" : "3000"}
               />
             </div>
             <div>
@@ -238,7 +298,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                 type="number"
                 value={formData.budget_max || ''}
                 onChange={(e) => setFormData({ ...formData, budget_max: e.target.value ? Number(e.target.value) : null })}
-                placeholder="5000"
+                placeholder={isSale ? "3,000,000" : "8000"}
               />
             </div>
           </div>
@@ -289,6 +349,246 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               placeholder="נווה צדק, פלורנטין"
             />
           </div>
+
+          {/* Rental-specific fields */}
+          {isRental && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  פרטי שכירות
+                </h3>
+                
+                <div>
+                  <Label>סוג דייר</Label>
+                  <Select value={formData.tenant_type} onValueChange={(value) => setFormData({ ...formData, tenant_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סוג דייר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">סטודנט</SelectItem>
+                      <SelectItem value="employee">שכיר</SelectItem>
+                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="couple">זוג</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="pets"
+                      checked={formData.pets}
+                      onCheckedChange={(checked) => setFormData({ ...formData, pets: !!checked })}
+                    />
+                    <Label htmlFor="pets" className="flex items-center gap-1 cursor-pointer">
+                      <Dog className="h-4 w-4" />
+                      יש חיות מחמד
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="flexible_move_date"
+                      checked={formData.flexible_move_date}
+                      onCheckedChange={(checked) => setFormData({ ...formData, flexible_move_date: !!checked })}
+                    />
+                    <Label htmlFor="flexible_move_date" className="cursor-pointer">גמישות בתאריך כניסה</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">דרישות מהנכס:</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="parking_required"
+                        checked={formData.parking_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, parking_required: !!checked })}
+                      />
+                      <Label htmlFor="parking_required" className="flex items-center gap-1 cursor-pointer">
+                        <Car className="h-4 w-4" />
+                        חניה
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="balcony_required"
+                        checked={formData.balcony_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, balcony_required: !!checked })}
+                      />
+                      <Label htmlFor="balcony_required" className="cursor-pointer">מרפסת</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="elevator_required"
+                        checked={formData.elevator_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, elevator_required: !!checked })}
+                      />
+                      <Label htmlFor="elevator_required" className="flex items-center gap-1 cursor-pointer">
+                        <Building2 className="h-4 w-4" />
+                        מעלית
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Purchase-specific fields */}
+          {isSale && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  פרטי רכישה
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>מטרת הרכישה</Label>
+                    <Select value={formData.purchase_purpose} onValueChange={(value) => setFormData({ ...formData, purchase_purpose: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר מטרה" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="residence">
+                          <span className="flex items-center gap-2">
+                            <Home className="h-4 w-4" />
+                            מגורים
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="investment">
+                          <span className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            השקעה
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="for_child">
+                          <span className="flex items-center gap-2">
+                            <Baby className="h-4 w-4" />
+                            לילד/ה
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>דחיפות</Label>
+                    <Select value={formData.urgency_level} onValueChange={(value) => setFormData({ ...formData, urgency_level: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר דחיפות" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">נמוכה</SelectItem>
+                        <SelectItem value="medium">בינונית</SelectItem>
+                        <SelectItem value="high">גבוהה</SelectItem>
+                        <SelectItem value="immediate">מיידי</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>הון עצמי (₪)</Label>
+                    <Input
+                      type="number"
+                      value={formData.cash_available || ''}
+                      onChange={(e) => setFormData({ ...formData, cash_available: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="500,000"
+                    />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Wrench className="h-4 w-4" />
+                      תקציב שיפוץ (₪)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={formData.renovation_budget || ''}
+                      onChange={(e) => setFormData({ ...formData, renovation_budget: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="100,000"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="property_to_sell"
+                    checked={formData.property_to_sell}
+                    onCheckedChange={(checked) => setFormData({ ...formData, property_to_sell: !!checked })}
+                  />
+                  <Label htmlFor="property_to_sell" className="cursor-pointer">יש נכס קיים למכירה</Label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Layers className="h-4 w-4" />
+                      חדש/יד שניה
+                    </Label>
+                    <Select value={formData.new_or_second_hand} onValueChange={(value) => setFormData({ ...formData, new_or_second_hand: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">חדש</SelectItem>
+                        <SelectItem value="second_hand">יד שניה</SelectItem>
+                        <SelectItem value="both">שניהם</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>העדפת קומה</Label>
+                    <Select value={formData.floor_preference} onValueChange={(value) => setFormData({ ...formData, floor_preference: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ground">קרקע</SelectItem>
+                        <SelectItem value="low">נמוכה (1-3)</SelectItem>
+                        <SelectItem value="mid">בינונית (4-7)</SelectItem>
+                        <SelectItem value="high">גבוהה (8+)</SelectItem>
+                        <SelectItem value="top">עליונה</SelectItem>
+                        <SelectItem value="any">לא משנה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      העדפת נוף
+                    </Label>
+                    <Select value={formData.view_preference} onValueChange={(value) => setFormData({ ...formData, view_preference: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sea">ים</SelectItem>
+                        <SelectItem value="city">עיר</SelectItem>
+                        <SelectItem value="park">פארק/ירוק</SelectItem>
+                        <SelectItem value="any">לא משנה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>פרטי עורך דין</Label>
+                  <Input
+                    value={formData.lawyer_details}
+                    onChange={(e) => setFormData({ ...formData, lawyer_details: e.target.value })}
+                    placeholder="שם ומספר טלפון"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator />
 
           <div>
             <Label>הערות</Label>

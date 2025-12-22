@@ -229,78 +229,123 @@ export type Database = {
       contact_leads: {
         Row: {
           assigned_agent_id: string | null
+          balcony_required: boolean | null
           budget_max: number | null
           budget_min: number | null
+          cash_available: number | null
           created_at: string | null
+          elevator_required: boolean | null
           email: string
+          flexible_move_date: boolean | null
+          floor_preference: string | null
           id: string
           last_contact_date: string | null
+          lawyer_details: string | null
           message: string
           move_in_date: string | null
           name: string
+          new_or_second_hand: string | null
           next_followup_date: string | null
           notes: string | null
+          parking_required: boolean | null
+          pets: boolean | null
           phone: string | null
           preferred_cities: string[] | null
           preferred_neighborhoods: string[] | null
           priority: string | null
           property_id: string | null
+          property_to_sell: boolean | null
           property_type: string | null
+          purchase_purpose: string | null
+          renovation_budget: number | null
           rooms_max: number | null
           rooms_min: number | null
           source: string | null
           status: string | null
+          tenant_type: string | null
           updated_at: string | null
+          urgency_level: string | null
+          view_preference: string | null
         }
         Insert: {
           assigned_agent_id?: string | null
+          balcony_required?: boolean | null
           budget_max?: number | null
           budget_min?: number | null
+          cash_available?: number | null
           created_at?: string | null
+          elevator_required?: boolean | null
           email: string
+          flexible_move_date?: boolean | null
+          floor_preference?: string | null
           id?: string
           last_contact_date?: string | null
+          lawyer_details?: string | null
           message: string
           move_in_date?: string | null
           name: string
+          new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          parking_required?: boolean | null
+          pets?: boolean | null
           phone?: string | null
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null
           property_id?: string | null
+          property_to_sell?: boolean | null
           property_type?: string | null
+          purchase_purpose?: string | null
+          renovation_budget?: number | null
           rooms_max?: number | null
           rooms_min?: number | null
           source?: string | null
           status?: string | null
+          tenant_type?: string | null
           updated_at?: string | null
+          urgency_level?: string | null
+          view_preference?: string | null
         }
         Update: {
           assigned_agent_id?: string | null
+          balcony_required?: boolean | null
           budget_max?: number | null
           budget_min?: number | null
+          cash_available?: number | null
           created_at?: string | null
+          elevator_required?: boolean | null
           email?: string
+          flexible_move_date?: boolean | null
+          floor_preference?: string | null
           id?: string
           last_contact_date?: string | null
+          lawyer_details?: string | null
           message?: string
           move_in_date?: string | null
           name?: string
+          new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          parking_required?: boolean | null
+          pets?: boolean | null
           phone?: string | null
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null
           property_id?: string | null
+          property_to_sell?: boolean | null
           property_type?: string | null
+          purchase_purpose?: string | null
+          renovation_budget?: number | null
           rooms_max?: number | null
           rooms_min?: number | null
           source?: string | null
           status?: string | null
+          tenant_type?: string | null
           updated_at?: string | null
+          urgency_level?: string | null
+          view_preference?: string | null
         }
         Relationships: [
           {

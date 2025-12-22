@@ -27,6 +27,23 @@ export interface Customer {
   next_followup_date: string | null;
   source: string;
   updated_at: string | null;
+  // Rental-specific fields
+  pets: boolean | null;
+  tenant_type: string | null;
+  flexible_move_date: boolean | null;
+  parking_required: boolean | null;
+  balcony_required: boolean | null;
+  elevator_required: boolean | null;
+  // Purchase-specific fields
+  purchase_purpose: string | null;
+  cash_available: number | null;
+  property_to_sell: boolean | null;
+  lawyer_details: string | null;
+  urgency_level: string | null;
+  renovation_budget: number | null;
+  new_or_second_hand: string | null;
+  floor_preference: string | null;
+  view_preference: string | null;
 }
 
 export interface PropertyInterest {
