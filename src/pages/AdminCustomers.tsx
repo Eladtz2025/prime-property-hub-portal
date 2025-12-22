@@ -29,7 +29,7 @@ export default function AdminCustomers() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("created_at_desc");
-  const [viewMode, setViewMode] = useState<string>("cards");
+  const [viewMode, setViewMode] = useState<string>("table");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -183,6 +183,7 @@ export default function AdminCustomers() {
         <CustomerTableView
           customers={customerList}
           onEdit={handleEditCustomer}
+          onRowClick={handleSelectCustomerForSheet}
           onUpdateStatus={updateCustomerStatus}
           onUpdatePriority={updateCustomerPriority}
           onAssignAgent={assignAgent}
@@ -459,15 +460,27 @@ export default function AdminCustomers() {
           </Select>
         </div>
 
-        <div className="flex gap-2">
-          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v)}>
-            <ToggleGroupItem value="cards" aria-label="תצוגת כרטיסים">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="table" aria-label="תצוגת טבלה">
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="h-8 px-3"
+            >
+              <List className="h-4 w-4 ml-1" />
+              טבלה
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4 ml-1" />
+              כרטיסים
+            </Button>
+          </div>
 
           <Button
             variant="outline"
@@ -511,6 +524,22 @@ export default function AdminCustomers() {
           {renderCustomers(viewedProperties)}
         </TabsContent>
       </Tabs>
+
+      {/* Desktop Customer Detail Sheet */}
+      <CustomerDetailSheet
+        customer={selectedCustomer}
+        open={detailSheetOpen}
+        onClose={() => {
+          setDetailSheetOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onEdit={handleEditCustomer}
+        onUpdateStatus={updateCustomerStatus}
+        onUpdatePriority={updateCustomerPriority}
+        onAssignAgent={assignAgent}
+        onScheduleFollowup={scheduleFollowup}
+        agents={agents}
+      />
 
       <CustomerEditModal
         customer={selectedCustomer}
