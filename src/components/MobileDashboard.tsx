@@ -29,6 +29,8 @@ import { AlertCard } from './AlertCard';
 import { ActivityLogsList } from './ActivityLogsList';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { BrokerageFormsListCompact } from './BrokerageFormsListCompact';
+import { ActivePropertiesCard } from './ActivePropertiesCard';
+import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -208,109 +210,45 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
         </div>
 
-      {/* Urgent Alerts */}
-      {urgentAlerts.length > 0 && (
-        <Card className="border-destructive bg-destructive/10 animate-scale-in backdrop-blur-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-destructive text-base">
-              <AlertTriangle className="h-4 w-4" />
-              התראות דחופות ({urgentAlerts.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {urgentAlerts.slice(0, 2).map((alert) => (
-              <div key={alert.id} className="bg-card/60 rounded-lg p-3 border border-destructive/20 overflow-hidden">
-                <div className="flex items-start gap-3">
-                  <div className="bg-destructive/10 p-2 rounded-full flex-shrink-0">
-                    <AlertTriangle className="h-3 w-3 text-destructive" />
-                  </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="font-medium text-sm text-destructive truncate">{alert.message}</div>
-                    <div className="text-xs text-destructive/80 mt-1 truncate">
-                      {alert.propertyAddress} • {alert.ownerName}
+        {/* Urgent Alerts */}
+        {urgentAlerts.length > 0 && (
+          <Card className="border-destructive bg-destructive/10 animate-scale-in backdrop-blur-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-destructive text-base">
+                <AlertTriangle className="h-4 w-4" />
+                התראות דחופות ({urgentAlerts.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {urgentAlerts.slice(0, 2).map((alert) => (
+                <div key={alert.id} className="bg-card/60 rounded-lg p-3 border border-destructive/20 overflow-hidden">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-destructive/10 p-2 rounded-full flex-shrink-0">
+                      <AlertTriangle className="h-3 w-3 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="font-medium text-sm text-destructive truncate">{alert.message}</div>
+                      <div className="text-xs text-destructive/80 mt-1 truncate">
+                        {alert.propertyAddress} • {alert.ownerName}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {urgentAlerts.length > 2 && (
-              <Button variant="outline" size="sm" className="w-full text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
-                הצג עוד {urgentAlerts.length - 2}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              ))}
+              {urgentAlerts.length > 2 && (
+                <Button variant="outline" size="sm" className="w-full text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
+                  הצג עוד {urgentAlerts.length - 2}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Quick Stats - Row 1 */}
-      <div className="grid grid-cols-2 gap-4 animate-fade-in">
-        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-700/80 mb-2 font-medium">תפוסים</p>
-                <p className="text-2xl font-bold text-green-700">{stats.confirmedOccupied}</p>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl shadow-lg">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Active Properties Card */}
+        <ActivePropertiesCard properties={properties} maxDisplay={4} />
 
-        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-700/80 mb-2 font-medium">פנויים</p>
-                <p className="text-2xl font-bold text-orange-700">{stats.confirmedVacant}</p>
-              </div>
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
-                <Users className="h-5 w-5 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Stats - Row 2 */}
-      <div className="grid grid-cols-3 gap-3 animate-fade-in">
-        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
-                <Phone className="h-4 w-4 text-white" />
-              </div>
-              <p className="text-xs text-blue-700/80 mb-1 font-medium">נוצר קשר</p>
-              <p className="text-xl font-bold text-blue-700">{stats.contactedProperties}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
-                <Clock className="h-4 w-4 text-white" />
-              </div>
-              <p className="text-xs text-purple-700/80 mb-1 font-medium">טרם קשר</p>
-              <p className="text-xl font-bold text-purple-700">{stats.notContactedProperties}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-to-br from-gray-50 to-gray-100/50">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-gray-500 to-gray-600 p-2 rounded-lg shadow-lg w-fit mx-auto mb-2">
-                <AlertTriangle className="h-4 w-4 text-white" />
-              </div>
-              <p className="text-xs text-gray-700/80 mb-1 font-medium">לא ידוע</p>
-              <p className="text-xl font-bold text-gray-700">{stats.unknownStatus}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Analytics Summary Card */}
+        <AnalyticsSummaryCard stats={stats} />
 
         {/* Alerts Section */}
         <Card className="shadow-card animate-fade-in border border-border/50 bg-card">

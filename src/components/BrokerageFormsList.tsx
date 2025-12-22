@@ -1,17 +1,21 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { FileText, Calendar, User, Phone, CheckCircle2, Clock, Copy } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { FileText, Calendar, User, Phone, CheckCircle2, Clock, Copy, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const BrokerageFormsList: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const { data: forms, isLoading } = useQuery({
     queryKey: ['brokerage-forms'],
@@ -48,6 +52,40 @@ export const BrokerageFormsList: React.FC = () => {
       description: 'כעת ניתן לשלוח את הלינק ללקוח',
     });
   };
+
+  const deleteFormMutation = useMutation({
+    mutationFn: async (formId: string) => {
+      const { error } = await supabase
+        .from('brokerage_forms')
+        .delete()
+        .eq('id', formId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brokerage-forms'] });
+      toast({ title: 'הטופס נמחק בהצלחה' });
+    },
+    onError: () => {
+      toast({ title: 'שגיאה במחיקת הטופס', variant: 'destructive' });
+    },
+  });
+
+  const deleteTokenMutation = useMutation({
+    mutationFn: async (tokenId: string) => {
+      const { error } = await supabase
+        .from('brokerage_form_tokens')
+        .delete()
+        .eq('id', tokenId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-brokerage-tokens'] });
+      toast({ title: 'הטופס נמחק בהצלחה' });
+    },
+    onError: () => {
+      toast({ title: 'שגיאה במחיקת הטופס', variant: 'destructive' });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -126,14 +164,48 @@ export const BrokerageFormsList: React.FC = () => {
                                 תוקף עד: {format(new Date(tokenRecord.expires_at), 'dd/MM/yyyy', { locale: he })}
                               </p>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => copyTokenLink(tokenRecord.token)}
-                            >
-                              <Copy className="h-4 w-4 ml-2" />
-                              העתק לינק
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyTokenLink(tokenRecord.token)}
+                              >
+                                <Copy className="h-4 w-4 ml-2" />
+                                העתק לינק
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => window.open(`/brokerage-form/${tokenRecord.token}`, '_blank')}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>מחיקת טופס</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      האם אתה בטוח שברצונך למחוק את הטופס? פעולה זו אינה ניתנת לביטול.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => deleteTokenMutation.mutate(tokenRecord.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      מחק
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -236,8 +308,42 @@ export const BrokerageFormsList: React.FC = () => {
                     <div className="text-xs text-muted-foreground">
                       סוכן: {form.agent_name} (ח.פ {form.agent_id})
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      נשלח: {format(new Date(form.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        נשלח: {format(new Date(form.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => navigate(`/brokerage-form/view/${form.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>מחיקת טופס</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              האם אתה בטוח שברצונך למחוק את הטופס של {form.client_name}? פעולה זו אינה ניתנת לביטול.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>ביטול</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => deleteFormMutation.mutate(form.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              מחק
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </CardContent>
