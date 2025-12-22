@@ -289,62 +289,71 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* כפתור הזמנת משתמש וטופס מתרחב */}
+      {/* Header עם מונה משתמשים וכפתור הזמנה */}
       <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {users.length} משתמשים במערכת
+        </p>
         <Button 
-          variant={showInviteForm ? 'default' : 'outline'}
+          variant={showInviteForm ? 'secondary' : 'default'}
           size="sm" 
           onClick={() => setShowInviteForm(!showInviteForm)}
         >
           {showInviteForm ? (
-            <ChevronUp className="h-4 w-4 ml-1" />
+            <>
+              <ChevronUp className="h-4 w-4 ml-1" />
+              סגור
+            </>
           ) : (
-            <Plus className="h-4 w-4 ml-1" />
+            <>
+              <Plus className="h-4 w-4 ml-1" />
+              הזמן משתמש
+            </>
           )}
-          הזמן משתמש
         </Button>
       </div>
 
+      {/* טופס הזמנה מתרחב */}
       <Collapsible open={showInviteForm}>
         <CollapsibleContent>
-          <div className="border rounded-lg p-4 mb-4 bg-muted/20 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="invite-email">כתובת אימייל</Label>
+          <div className="border border-border/50 rounded-lg p-4 bg-muted/30">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
                 <Input
-                  id="invite-email"
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="user@example.com"
+                  placeholder="כתובת אימייל"
+                  className="h-9"
                 />
               </div>
-              <div>
-                <Label htmlFor="invite-role">תפקיד</Label>
-                <Select value={inviteRole} onValueChange={(value: UserRole) => setInviteRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="viewer">צופה</SelectItem>
-                    <SelectItem value="manager">מנהל תיקים</SelectItem>
-                    <SelectItem value="admin">מנהל</SelectItem>
-                    {profile?.role === 'super_admin' && (
-                      <SelectItem value="super_admin">מנהל עליון</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end gap-2">
+              <Select value={inviteRole} onValueChange={(value: UserRole) => setInviteRole(value)}>
+                <SelectTrigger className="w-full sm:w-[140px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">צופה</SelectItem>
+                  <SelectItem value="manager">מנהל תיקים</SelectItem>
+                  <SelectItem value="admin">מנהל</SelectItem>
+                  {profile?.role === 'super_admin' && (
+                    <SelectItem value="super_admin">מנהל עליון</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
                 <Button 
                   onClick={handleInviteUser}
                   disabled={loading || !inviteEmail.trim()}
-                  className="flex-1"
+                  size="sm"
+                  className="h-9"
                 >
-                  שלח הזמנה
+                  <UserPlus className="h-4 w-4 ml-1" />
+                  שלח
                 </Button>
                 <Button 
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9"
                   onClick={() => setShowInviteForm(false)}
                 >
                   ביטול
@@ -355,97 +364,104 @@ export const UserManagement: React.FC = () => {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* טבלת משתמשים ללא Card (ה-Card מגיע מ-Settings.tsx) */}
-      <div>
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>אימייל</TableHead>
-                  <TableHead>שם</TableHead>
-                  <TableHead>טלפון</TableHead>
-                  <TableHead>תפקיד</TableHead>
-                  <TableHead>סטטוס</TableHead>
-                  <TableHead>פעולות</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <Collapsible
-                    key={user.id}
-                    open={editingUser?.id === user.id}
-                    onOpenChange={(open) => {
-                      if (open) {
-                        handleEditUser(user);
-                      } else {
-                        setEditingUser(null);
-                      }
-                    }}
-                  >
-                    <TableRow className={editingUser?.id === user.id ? 'bg-muted/30' : ''}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.full_name || '-'}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">{user.phone || '-'}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {getRoleLabel(user.role)}
+      {/* טבלת משתמשים */}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+        </div>
+      ) : (
+        <div className="border border-border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="text-xs font-medium">אימייל</TableHead>
+                <TableHead className="text-xs font-medium">שם</TableHead>
+                <TableHead className="text-xs font-medium hidden sm:table-cell">טלפון</TableHead>
+                <TableHead className="text-xs font-medium">תפקיד</TableHead>
+                <TableHead className="text-xs font-medium hidden sm:table-cell">סטטוס</TableHead>
+                <TableHead className="text-xs font-medium w-[100px]">פעולות</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <Collapsible
+                  key={user.id}
+                  open={editingUser?.id === user.id}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      handleEditUser(user);
+                    } else {
+                      setEditingUser(null);
+                    }
+                  }}
+                >
+                  <TableRow className={`${editingUser?.id === user.id ? 'bg-muted/30' : ''} hover:bg-muted/20`}>
+                    <TableCell className="text-sm py-3">{user.email}</TableCell>
+                    <TableCell className="text-sm py-3">{user.full_name || '-'}</TableCell>
+                    <TableCell className="text-sm py-3 hidden sm:table-cell">{user.phone || '-'}</TableCell>
+                    <TableCell className="py-3">
+                      <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                        {getRoleLabel(user.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-3 hidden sm:table-cell">
+                      {user.is_approved ? (
+                        <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-200">
+                          מאושר
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_approved ? 'default' : 'secondary'}>
-                          {user.is_approved ? 'מאושר' : 'ממתין לאישור'}
+                      ) : (
+                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-200">
+                          ממתין
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={editingUser?.id === user.id ? 'default' : 'outline'}
-                            onClick={() => {
-                              if (editingUser?.id === user.id) {
-                                setEditingUser(null);
-                              } else {
-                                handleEditUser(user);
-                              }
-                            }}
-                          >
-                            {editingUser?.id === user.id ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <Pencil className="h-4 w-4" />
-                            )}
-                          </Button>
-                          {!user.is_approved && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApproveUser(user.id)}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRejectUser(user.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant={editingUser?.id === user.id ? 'secondary' : 'ghost'}
+                          className="h-7 w-7"
+                          onClick={() => {
+                            if (editingUser?.id === user.id) {
+                              setEditingUser(null);
+                            } else {
+                              handleEditUser(user);
+                            }
+                          }}
+                        >
+                          {editingUser?.id === user.id ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <Pencil className="h-3.5 w-3.5" />
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </Button>
+                        {!user.is_approved && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleApproveUser(user.id)}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRejectUser(user.id)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                     
-                    <CollapsibleContent asChild>
-                      <TableRow className="bg-muted/20 hover:bg-muted/30">
-                        <TableCell colSpan={6} className="p-0">
+                  <CollapsibleContent asChild>
+                    <TableRow className="bg-muted/10 hover:bg-muted/20 border-t-0">
+                      <TableCell colSpan={6} className="p-0">
                           <div className="p-4 space-y-4">
                             {/* Personal Details */}
                             <div className="space-y-3">
@@ -578,9 +594,8 @@ export const UserManagement: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
-          )}
-      </div>
-
+          </div>
+        )}
     </div>
   );
 };
