@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Phone, Mail, MessageSquare, Calendar, MapPin, Building2, Coins, Clock, ChevronDown, ChevronUp, User } from "lucide-react";
+import { Phone, Mail, MessageSquare, Calendar, MapPin, Building2, Coins, Clock, ChevronDown, ChevronUp, User, Dog, Car, Home, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -179,6 +179,17 @@ export const CustomerCard = ({
               {customer.preferred_cities.length > 2 && `+${customer.preferred_cities.length - 2}`}
             </span>
           )}
+          {/* Property type indicator */}
+          {customer.property_type && (
+            <span className="flex items-center gap-1">
+              {customer.property_type === 'rental' && <Home className="h-3 w-3" />}
+              {customer.property_type === 'sale' && <Briefcase className="h-3 w-3" />}
+              {customer.property_type === 'rental' ? 'שכירות' : customer.property_type === 'sale' ? 'מכירה' : 'שניהם'}
+            </span>
+          )}
+          {/* Quick icons for rental requirements */}
+          {customer.pets && <span title="יש חיות מחמד"><Dog className="h-3 w-3 text-amber-600" /></span>}
+          {customer.parking_required && <span title="דורש חניה"><Car className="h-3 w-3 text-blue-600" /></span>}
         </div>
 
         {/* Row 4: Assigned Agent */}
