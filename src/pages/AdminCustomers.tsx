@@ -212,8 +212,8 @@ export default function AdminCustomers() {
             </Button>
           </div>
           <TabsList>
+          <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
             <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
-            <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
           </TabsList>
         </div>
 
