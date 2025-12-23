@@ -1,0 +1,232 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface Property {
+  id: string;
+  title: string | null;
+  address: string;
+}
+
+interface AddBrokerModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  editBroker?: {
+    id: string;
+    name: string;
+    phone: string;
+    office_name: string | null;
+    interested_properties: string[];
+    interested_properties_text: string | null;
+    notes: string | null;
+  } | null;
+}
+
+export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerModalProps) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [officeName, setOfficeName] = useState("");
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [propertiesText, setPropertiesText] = useState("");
+  const [notes, setNotes] = useState("");
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      fetchProperties();
+      if (editBroker) {
+        setName(editBroker.name);
+        setPhone(editBroker.phone);
+        setOfficeName(editBroker.office_name || "");
+        setSelectedProperties(editBroker.interested_properties || []);
+        setPropertiesText(editBroker.interested_properties_text || "");
+        setNotes(editBroker.notes || "");
+      } else {
+        resetForm();
+      }
+    }
+  }, [open, editBroker]);
+
+  const fetchProperties = async () => {
+    const { data } = await supabase
+      .from('properties')
+      .select('id, title, address')
+      .order('address');
+    
+    if (data) {
+      setProperties(data);
+    }
+  };
+
+  const resetForm = () => {
+    setName("");
+    setPhone("");
+    setOfficeName("");
+    setSelectedProperties([]);
+    setPropertiesText("");
+    setNotes("");
+  };
+
+  const handlePropertyToggle = (propertyId: string) => {
+    setSelectedProperties(prev => 
+      prev.includes(propertyId)
+        ? prev.filter(id => id !== propertyId)
+        : [...prev, propertyId]
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim() || !phone.trim()) {
+      toast.error("יש למלא שם וטלפון");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const brokerData = {
+        name: name.trim(),
+        phone: phone.trim(),
+        office_name: officeName.trim() || null,
+        interested_properties: selectedProperties,
+        interested_properties_text: propertiesText.trim() || null,
+        notes: notes.trim() || null,
+      };
+
+      if (editBroker) {
+        const { error } = await supabase
+          .from('brokers')
+          .update({ ...brokerData, updated_at: new Date().toISOString() })
+          .eq('id', editBroker.id);
+        
+        if (error) throw error;
+        toast.success("המתווך עודכן בהצלחה");
+      } else {
+        const { error } = await supabase
+          .from('brokers')
+          .insert(brokerData);
+        
+        if (error) throw error;
+        toast.success("המתווך נוסף בהצלחה");
+      }
+
+      onSave();
+      onClose();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving broker:', error);
+      toast.error("שגיאה בשמירת המתווך");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" dir="rtl">
+        <DialogHeader>
+          <DialogTitle>{editBroker ? "עריכת מתווך" : "הוספת מתווך חדש"}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">שם *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="שם המתווך"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">טלפון *</Label>
+            <Input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="מספר טלפון"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="officeName">שם משרד</Label>
+            <Input
+              id="officeName"
+              value={officeName}
+              onChange={(e) => setOfficeName(e.target.value)}
+              placeholder="שם המשרד"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>דירות מעניינות מהמערכת</Label>
+            <ScrollArea className="h-32 border rounded-md p-2">
+              {properties.length === 0 ? (
+                <p className="text-sm text-muted-foreground">אין דירות במערכת</p>
+              ) : (
+                <div className="space-y-2">
+                  {properties.map((property) => (
+                    <div key={property.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={property.id}
+                        checked={selectedProperties.includes(property.id)}
+                        onCheckedChange={() => handlePropertyToggle(property.id)}
+                      />
+                      <label htmlFor={property.id} className="text-sm cursor-pointer flex-1">
+                        {property.title || property.address}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="propertiesText">דירות נוספות (טקסט חופשי)</Label>
+            <Textarea
+              id="propertiesText"
+              value={propertiesText}
+              onChange={(e) => setPropertiesText(e.target.value)}
+              placeholder="דירות שלא במערכת..."
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">הערות</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="הערות נוספות..."
+              rows={2}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? "שומר..." : editBroker ? "עדכן" : "הוסף"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              ביטול
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
