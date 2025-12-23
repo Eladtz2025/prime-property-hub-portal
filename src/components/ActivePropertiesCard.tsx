@@ -43,7 +43,7 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
       </CardHeader>
       <CardContent className="pt-0">
         <div className="max-h-[400px] overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4">
             {activeProperties.map((property) => (
               <PropertyQuickCard key={property.id} property={property} />
             ))}
