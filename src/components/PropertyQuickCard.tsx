@@ -29,12 +29,16 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
             alt={property.address}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {/* Price Badge */}
+          {/* Price Badge - bottom right */}
           {formatPrice() && (
             <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs font-bold shadow-md">
               {formatPrice()}
             </div>
           )}
+          {/* Property ID Badge - bottom left */}
+          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-xs font-medium shadow-md">
+            #{property.id?.slice(-4).toUpperCase() || '0000'}
+          </div>
         </div>
         
         {/* Minimal Content */}
