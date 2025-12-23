@@ -179,6 +179,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brokers: {
+        Row: {
+          created_at: string | null
+          id: string
+          interested_properties: string[] | null
+          interested_properties_text: string | null
+          name: string
+          notes: string | null
+          office_name: string | null
+          phone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interested_properties?: string[] | null
+          interested_properties_text?: string | null
+          name: string
+          notes?: string | null
+          office_name?: string | null
+          phone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interested_properties?: string[] | null
+          interested_properties_text?: string | null
+          name?: string
+          notes?: string | null
+          office_name?: string | null
+          phone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bulk_sends: {
         Row: {
           completed_at: string | null

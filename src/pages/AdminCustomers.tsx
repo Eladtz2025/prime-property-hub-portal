@@ -1,20 +1,29 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Download, Plus, SlidersHorizontal, Eye, EyeOff } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Search, Plus } from "lucide-react";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
-import { CustomerStatsCards } from "@/components/CustomerStatsCards";
+import { useBrokerData, type BrokerWithPropertyNames } from "@/hooks/useBrokerData";
 import { CustomerTableView } from "@/components/CustomerTableView";
 import { CustomerMobileTable } from "@/components/CustomerMobileTable";
+import { BrokerTableView } from "@/components/BrokerTableView";
+import { BrokerMobileTable } from "@/components/BrokerMobileTable";
 import { AddCustomerModal } from "@/components/AddCustomerModal";
+import { AddBrokerModal } from "@/components/AddBrokerModal";
 import { supabase } from "@/integrations/supabase/client";
-import * as XLSX from "xlsx";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Agent {
   id: string;
@@ -23,19 +32,17 @@ interface Agent {
 }
 
 export default function AdminCustomers() {
+  const [activeTab, setActiveTab] = useState<"customers" | "brokers">("customers");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [agentFilter, setAgentFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("created_at_desc");
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addCustomerModalOpen, setAddCustomerModalOpen] = useState(false);
+  const [addBrokerModalOpen, setAddBrokerModalOpen] = useState(false);
+  const [editBroker, setEditBroker] = useState<BrokerWithPropertyNames | null>(null);
+  const [deleteBrokerId, setDeleteBrokerId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
-  const [showHidden, setShowHidden] = useState(false);
 
   const {
     customers,
-    loading,
+    loading: customersLoading,
     fetchCustomers,
     updateCustomerStatus,
     updateCustomerPriority,
@@ -44,12 +51,15 @@ export default function AdminCustomers() {
     hideCustomer,
     unhideCustomer,
   } = useCustomerData({
-    status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined,
-    priority: priorityFilter && priorityFilter !== 'all' ? priorityFilter : undefined,
-    assigned_agent_id: agentFilter && agentFilter !== 'all' ? agentFilter : undefined,
     search: searchTerm || undefined,
-    showHidden,
   });
+
+  const {
+    brokers,
+    loading: brokersLoading,
+    fetchBrokers,
+    deleteBroker,
+  } = useBrokerData();
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -69,63 +79,40 @@ export default function AdminCustomers() {
     fetchCustomers();
   };
 
-  const sortedCustomers = useMemo(() => {
-    const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-    
-    return [...customers].sort((a, b) => {
-      switch (sortBy) {
-        case 'created_at_desc':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'created_at_asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        case 'priority_desc':
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        case 'priority_asc':
-          return priorityOrder[b.priority] - priorityOrder[a.priority];
-        case 'next_followup_asc':
-          const aDate = a.next_followup_date ? new Date(a.next_followup_date).getTime() : Infinity;
-          const bDate = b.next_followup_date ? new Date(b.next_followup_date).getTime() : Infinity;
-          return aDate - bDate;
-        case 'last_contact_asc':
-          const aContact = a.last_contact_date ? new Date(a.last_contact_date).getTime() : new Date(a.created_at).getTime();
-          const bContact = b.last_contact_date ? new Date(b.last_contact_date).getTime() : new Date(b.created_at).getTime();
-          return aContact - bContact;
-        case 'name_asc':
-          return a.name.localeCompare(b.name, 'he');
-        default:
-          return 0;
-      }
-    });
-  }, [customers, sortBy]);
-
-  const hotLeads = sortedCustomers.filter(c => c.priority === 'high' || c.priority === 'urgent');
-  const needFollowup = sortedCustomers.filter(c => {
-    if (!c.next_followup_date) return false;
-    return new Date(c.next_followup_date) <= new Date();
-  });
-  const viewedProperties = sortedCustomers.filter(c => c.property_id);
-
-  const handleExport = () => {
-    const exportData = sortedCustomers.map(c => ({
-      'שם': c.name,
-      'אימייל': c.email,
-      'טלפון': c.phone || '',
-      'סטטוס': c.status,
-      'עדיפות': c.priority,
-      'תקציב מינימום': c.budget_min || '',
-      'תקציב מקסימום': c.budget_max || '',
-      'ערים מועדפות': c.preferred_cities?.join(', ') || '',
-      'תאריך יצירה': new Date(c.created_at).toLocaleDateString('he-IL'),
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'לקוחות');
-    XLSX.writeFile(wb, `לקוחות_${new Date().toLocaleDateString('he-IL')}.xlsx`);
+  const handleSaveBroker = () => {
+    fetchBrokers();
+    setEditBroker(null);
   };
 
+  const handleEditBroker = (broker: BrokerWithPropertyNames) => {
+    setEditBroker(broker);
+    setAddBrokerModalOpen(true);
+  };
+
+  const handleDeleteBroker = async () => {
+    if (!deleteBrokerId) return;
+    try {
+      await deleteBroker(deleteBrokerId);
+      toast.success("המתווך נמחק בהצלחה");
+    } catch (error) {
+      toast.error("שגיאה במחיקת המתווך");
+    }
+    setDeleteBrokerId(null);
+  };
+
+  // Filter brokers by search
+  const filteredBrokers = brokers.filter(broker => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      broker.name.toLowerCase().includes(search) ||
+      broker.phone.includes(search) ||
+      broker.office_name?.toLowerCase().includes(search)
+    );
+  });
+
   const renderCustomers = (customerList: Customer[], isMobile: boolean = false) => {
-    if (loading) {
+    if (customersLoading) {
       return <div className="text-center py-12">טוען לקוחות...</div>;
     }
 
@@ -160,8 +147,36 @@ export default function AdminCustomers() {
         onHideCustomer={hideCustomer}
         onUnhideCustomer={unhideCustomer}
         agents={agents}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
+        sortBy="created_at_desc"
+        onSortChange={() => {}}
+      />
+    );
+  };
+
+  const renderBrokers = (isMobile: boolean = false) => {
+    if (brokersLoading) {
+      return <div className="text-center py-12">טוען מתווכים...</div>;
+    }
+
+    if (filteredBrokers.length === 0) {
+      return <div className="text-center py-12 text-muted-foreground">לא נמצאו מתווכים</div>;
+    }
+
+    if (isMobile) {
+      return (
+        <BrokerMobileTable
+          brokers={filteredBrokers}
+          onEdit={handleEditBroker}
+          onDelete={(id) => setDeleteBrokerId(id)}
+        />
+      );
+    }
+
+    return (
+      <BrokerTableView
+        brokers={filteredBrokers}
+        onEdit={handleEditBroker}
+        onDelete={(id) => setDeleteBrokerId(id)}
       />
     );
   };
@@ -169,208 +184,95 @@ export default function AdminCustomers() {
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden" dir="rtl">
       <div className="flex flex-col md:flex-row-reverse md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות ומתווכים</h1>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setAddModalOpen(true)} size="sm">
+          <Button onClick={() => setAddCustomerModalOpen(true)} size="sm">
             <Plus className="h-4 w-4 ml-2" />
             לקוח חדש
           </Button>
-          <Button variant="outline" onClick={handleExport} size="sm">
-            <Download className="h-4 w-4 ml-2" />
-            ייצא לאקסל
+          <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline">
+            <Plus className="h-4 w-4 ml-2" />
+            מתווך חדש
           </Button>
         </div>
       </div>
 
-      <CustomerStatsCards customers={customers} />
-
-      {/* Mobile: Search + Filters */}
-      <div className="md:hidden flex flex-col gap-3 bg-card p-3 rounded-lg">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="חיפוש..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-          </div>
-          <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="shrink-0 relative">
-                <SlidersHorizontal className="h-4 w-4" />
-                {(statusFilter !== 'all' || priorityFilter !== 'all' || agentFilter !== 'all') && (
-                  <Badge className="absolute -top-2 -left-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                    {[statusFilter !== 'all', priorityFilter !== 'all', agentFilter !== 'all'].filter(Boolean).length}
-                  </Badge>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-              <SheetHeader>
-                <SheetTitle>פילטרים</SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col gap-4 py-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger><SelectValue placeholder="סטטוס" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל הסטטוסים</SelectItem>
-                    <SelectItem value="new">חדש</SelectItem>
-                    <SelectItem value="contacted">נוצר קשר</SelectItem>
-                    <SelectItem value="active">פעיל</SelectItem>
-                    <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
-                    <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
-                    <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
-                    <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger><SelectValue placeholder="עדיפות" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל העדיפויות</SelectItem>
-                    <SelectItem value="low">נמוך</SelectItem>
-                    <SelectItem value="medium">בינוני</SelectItem>
-                    <SelectItem value="high">גבוה</SelectItem>
-                    <SelectItem value="urgent">דחוף</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={agentFilter} onValueChange={setAgentFilter}>
-                  <SelectTrigger><SelectValue placeholder="סוכן" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל הסוכנים</SelectItem>
-                    {agents.map(agent => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.full_name || agent.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger><SelectValue placeholder="מיון" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
-                    <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
-                    <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
-                    <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
-                    <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <Switch id="showHiddenMobile" checked={showHidden} onCheckedChange={setShowHidden} />
-                  <Label htmlFor="showHiddenMobile" className="text-sm cursor-pointer">הצג לקוחות לא רלוונטיים</Label>
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <Button variant="outline" size="sm" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); setAgentFilter("all"); setSortBy("created_at_desc"); setShowHidden(false); }}>
-                    <Filter className="h-4 w-4 ml-1" />נקה הכל
-                  </Button>
-                </div>
-
-                <Button onClick={() => setFiltersSheetOpen(false)} className="w-full">החל פילטרים</Button>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="w-full overflow-x-auto flex justify-start gap-1 h-auto p-1">
-            <TabsTrigger value="all" className="text-xs px-2 py-1 whitespace-nowrap">הכל ({sortedCustomers.length})</TabsTrigger>
-            <TabsTrigger value="hot" className="text-xs px-2 py-1 whitespace-nowrap">חמים ({hotLeads.length})</TabsTrigger>
-            <TabsTrigger value="followup" className="text-xs px-2 py-1 whitespace-nowrap">מעקב ({needFollowup.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-4">{renderCustomers(sortedCustomers, true)}</TabsContent>
-          <TabsContent value="hot" className="mt-4">{renderCustomers(hotLeads, true)}</TabsContent>
-          <TabsContent value="followup" className="mt-4">{renderCustomers(needFollowup, true)}</TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Desktop: Filters Bar */}
-      <div className="hidden md:flex flex-row-reverse flex-wrap gap-3 bg-card p-4 rounded-lg">
-        <div className="flex-1 min-w-[200px] relative">
+      {/* Search bar */}
+      <div className="bg-card p-3 md:p-4 rounded-lg">
+        <div className="relative max-w-md">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input placeholder="חיפוש לפי שם, אימייל או טלפון..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-10" />
-        </div>
-
-        <div className="flex gap-3">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="סטטוס" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">כל הסטטוסים</SelectItem>
-              <SelectItem value="new">חדש</SelectItem>
-              <SelectItem value="contacted">נוצר קשר</SelectItem>
-              <SelectItem value="active">פעיל</SelectItem>
-              <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
-              <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
-              <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
-              <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="w-32"><SelectValue placeholder="עדיפות" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">כל העדיפויות</SelectItem>
-              <SelectItem value="low">נמוך</SelectItem>
-              <SelectItem value="medium">בינוני</SelectItem>
-              <SelectItem value="high">גבוה</SelectItem>
-              <SelectItem value="urgent">דחוף</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="סוכן" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">כל הסוכנים</SelectItem>
-              {agents.map(agent => (<SelectItem key={agent.id} value={agent.id}>{agent.full_name || agent.email}</SelectItem>))}
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="מיון" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at_desc">חדשים קודם</SelectItem>
-              <SelectItem value="created_at_asc">ישנים קודם</SelectItem>
-              <SelectItem value="priority_desc">עדיפות גבוהה קודם</SelectItem>
-              <SelectItem value="last_contact_asc">דורש תשומת לב</SelectItem>
-              <SelectItem value="name_asc">לפי שם א-ת</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex gap-2 items-center">
-          <div className="flex items-center gap-2">
-            <Switch id="showHiddenDesktop" checked={showHidden} onCheckedChange={setShowHidden} />
-            <Label htmlFor="showHiddenDesktop" className="text-sm cursor-pointer whitespace-nowrap">
-              {showHidden ? <Eye className="h-4 w-4 inline ml-1" /> : <EyeOff className="h-4 w-4 inline ml-1" />}לא רלוונטיים
-            </Label>
-          </div>
-
-          <Button variant="outline" size="sm" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); setAgentFilter("all"); setSortBy("created_at_desc"); setShowHidden(false); }}>
-            <Filter className="h-4 w-4 ml-1" />נקה
-          </Button>
+          <Input
+            placeholder="חיפוש..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-10"
+          />
         </div>
       </div>
 
-      {/* Desktop Tabs */}
-      <Tabs defaultValue="all" className="hidden md:block space-y-4">
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers")} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">כל הלקוחות ({sortedCustomers.length})</TabsTrigger>
-          <TabsTrigger value="hot">לידים חמים ({hotLeads.length})</TabsTrigger>
-          <TabsTrigger value="followup">דורש מעקב ({needFollowup.length})</TabsTrigger>
+          <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
+          <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">{renderCustomers(sortedCustomers)}</TabsContent>
-        <TabsContent value="hot" className="space-y-4">{renderCustomers(hotLeads)}</TabsContent>
-        <TabsContent value="followup" className="space-y-4">{renderCustomers(needFollowup)}</TabsContent>
+        {/* Customers Tab */}
+        <TabsContent value="customers" className="space-y-4">
+          {/* Mobile view */}
+          <div className="md:hidden">
+            {renderCustomers(customers, true)}
+          </div>
+          {/* Desktop view */}
+          <div className="hidden md:block">
+            {renderCustomers(customers)}
+          </div>
+        </TabsContent>
+
+        {/* Brokers Tab */}
+        <TabsContent value="brokers" className="space-y-4">
+          {/* Mobile view */}
+          <div className="md:hidden">
+            {renderBrokers(true)}
+          </div>
+          {/* Desktop view */}
+          <div className="hidden md:block">
+            {renderBrokers()}
+          </div>
+        </TabsContent>
       </Tabs>
 
-      <AddCustomerModal open={addModalOpen} onClose={() => setAddModalOpen(false)} onSave={handleSaveCustomer} />
+      {/* Modals */}
+      <AddCustomerModal 
+        open={addCustomerModalOpen} 
+        onClose={() => setAddCustomerModalOpen(false)} 
+        onSave={handleSaveCustomer} 
+      />
+      
+      <AddBrokerModal
+        open={addBrokerModalOpen}
+        onClose={() => { setAddBrokerModalOpen(false); setEditBroker(null); }}
+        onSave={handleSaveBroker}
+        editBroker={editBroker}
+      />
+
+      {/* Delete Broker Confirmation */}
+      <AlertDialog open={!!deleteBrokerId} onOpenChange={() => setDeleteBrokerId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם למחוק את המתווך?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו לא ניתנת לביטול. המתווך יימחק לצמיתות.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBroker} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              מחק
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
