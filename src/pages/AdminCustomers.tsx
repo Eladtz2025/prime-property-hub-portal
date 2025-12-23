@@ -187,7 +187,7 @@ export default function AdminCustomers() {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers")} className="space-y-4">
         {/* Tabs + Buttons row */}
-        <div className="flex flex-col sm:flex-row-reverse sm:justify-between sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setAddCustomerModalOpen(true)} size="sm">
               <Plus className="h-4 w-4 ml-2" />
