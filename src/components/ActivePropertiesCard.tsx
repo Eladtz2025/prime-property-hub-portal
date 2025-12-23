@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Building } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyQuickCard } from './PropertyQuickCard';
+import { PropertyDetailModal } from './PropertyDetailModal';
 
 interface ActivePropertiesCardProps {
   properties: Property[];
@@ -10,10 +11,23 @@ interface ActivePropertiesCardProps {
 export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({ 
   properties
 }) => {
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Filter only vacant properties (available for rent/sale)
   const activeProperties = React.useMemo(() => {
     return properties.filter(p => p.status === 'vacant');
   }, [properties]);
+
+  const handlePropertyClick = (property: Property) => {
+    setSelectedProperty(property);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProperty(null);
+  };
 
   return (
     <div className="space-y-3">
@@ -29,9 +43,22 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
           {activeProperties.map((property) => (
-            <PropertyQuickCard key={property.id} property={property} />
+            <PropertyQuickCard 
+              key={property.id} 
+              property={property} 
+              onClick={handlePropertyClick}
+            />
           ))}
         </div>
+      )}
+
+      {selectedProperty && (
+        <PropertyDetailModal
+          property={selectedProperty}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onEdit={() => {}}
+        />
       )}
     </div>
   );

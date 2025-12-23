@@ -6,9 +6,10 @@ import { Property } from '@/types/property';
 
 interface PropertyQuickCardProps {
   property: Property;
+  onClick?: (property: Property) => void;
 }
 
-export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }) => {
+export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, onClick }) => {
   const formatPrice = () => {
     if (!property.monthlyRent) return null;
     return `₪${property.monthlyRent.toLocaleString('he-IL')}`;
@@ -20,7 +21,7 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
                      || '/placeholder.svg';
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer">
+    <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer" onClick={() => onClick?.(property)}>
       <CardContent className="p-0">
         {/* Square Image - smaller cards */}
         <div className="w-full aspect-square overflow-hidden relative bg-muted">
