@@ -49,13 +49,21 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
           <Button
             variant="ghost"
             size="sm"
-            className="w-full text-[10px] h-6 mt-1 px-1"
+            className="w-full text-xs sm:text-[10px] h-8 sm:h-6 mt-1.5 px-2 font-medium"
             onClick={(e) => {
               e.stopPropagation();
-              window.open(`/brokerage-form/${property.id}`, '_blank');
+              const params = new URLSearchParams({
+                address: property.address || '',
+                city: property.city || '',
+                rooms: property.rooms?.toString() || '',
+                floor: property.floor?.toString() || '',
+                price: property.monthlyRent?.toString() || '',
+                type: property.property_type || 'rental'
+              });
+              window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
             }}
           >
-            <FileText className="h-3 w-3 ml-1" />
+            <FileText className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
             טופס תיווך
           </Button>
         </div>
