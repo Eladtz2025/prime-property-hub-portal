@@ -15,9 +15,9 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Filter active properties (occupied or available/vacant)
+  // Filter only vacant properties (available for rent/sale)
   const activeProperties = React.useMemo(() => {
-    return properties.filter(p => p.status === 'occupied' || p.status === 'vacant' || p.property_type);
+    return properties.filter(p => p.status === 'vacant');
   }, [properties]);
 
   if (activeProperties.length === 0) {
