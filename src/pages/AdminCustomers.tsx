@@ -185,6 +185,19 @@ export default function AdminCustomers() {
     <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden" dir="rtl">
       <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות ומתווכים</h1>
 
+      {/* Search bar - above tabs, aligned right */}
+      <div className="bg-card p-3 md:p-4 rounded-lg">
+        <div className="relative max-w-md">
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="חיפוש..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-10"
+          />
+        </div>
+      </div>
+
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers")} className="space-y-4">
         {/* Tabs + Buttons row */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -202,19 +215,6 @@ export default function AdminCustomers() {
             <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
             <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
           </TabsList>
-        </div>
-
-        {/* Search bar */}
-        <div className="bg-card p-3 md:p-4 rounded-lg">
-          <div className="relative max-w-md">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="חיפוש..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-          </div>
         </div>
 
         {/* Customers Tab */}
