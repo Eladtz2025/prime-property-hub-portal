@@ -235,7 +235,7 @@ export type Database = {
           cash_available: number | null
           created_at: string | null
           elevator_required: boolean | null
-          email: string
+          email: string | null
           flexible_move_date: boolean | null
           floor_preference: string | null
           id: string
@@ -250,7 +250,7 @@ export type Database = {
           notes: string | null
           parking_required: boolean | null
           pets: boolean | null
-          phone: string | null
+          phone: string
           preferred_cities: string[] | null
           preferred_neighborhoods: string[] | null
           priority: string | null
@@ -276,7 +276,7 @@ export type Database = {
           cash_available?: number | null
           created_at?: string | null
           elevator_required?: boolean | null
-          email: string
+          email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
           id?: string
@@ -291,7 +291,7 @@ export type Database = {
           notes?: string | null
           parking_required?: boolean | null
           pets?: boolean | null
-          phone?: string | null
+          phone: string
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null
@@ -317,7 +317,7 @@ export type Database = {
           cash_available?: number | null
           created_at?: string | null
           elevator_required?: boolean | null
-          email?: string
+          email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
           id?: string
@@ -332,7 +332,7 @@ export type Database = {
           notes?: string | null
           parking_required?: boolean | null
           pets?: boolean | null
-          phone?: string | null
+          phone?: string
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null

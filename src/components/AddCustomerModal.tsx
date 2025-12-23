@@ -57,10 +57,10 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
   });
 
   const handleSave = async () => {
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.phone) {
       toast({
         title: 'שגיאה',
-        description: 'שם ואימייל הם שדות חובה',
+        description: 'שם וטלפון הם שדות חובה',
         variant: 'destructive',
       });
       return;
@@ -72,8 +72,8 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         .from('contact_leads')
         .insert({
           name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
+          email: formData.email || null,
+          phone: formData.phone,
           message: formData.message || 'לקוח נוסף ידנית',
           status: formData.status,
           priority: formData.priority,
@@ -183,23 +183,23 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               />
             </div>
             <div>
-              <Label>אימייל *</Label>
+              <Label>טלפון *</Label>
               <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@example.com"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="050-1234567"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>טלפון</Label>
+              <Label>אימייל</Label>
               <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="050-1234567"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@example.com"
               />
             </div>
             <div>
