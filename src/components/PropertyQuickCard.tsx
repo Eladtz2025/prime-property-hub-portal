@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Home, Layers, FileText } from 'lucide-react';
+import { MapPin, FileText } from 'lucide-react';
 import { Property } from '@/types/property';
 
 interface PropertyQuickCardProps {
@@ -39,60 +38,45 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
   };
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 hover:border-primary/30">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Address */}
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <p className="font-medium text-sm leading-tight truncate">
-                {property.address}
-              </p>
-              <p className="text-xs text-muted-foreground">{property.city}</p>
-            </div>
+    <Card className="group hover:shadow-sm transition-all duration-200 hover:border-primary/30">
+      <CardContent className="p-2.5">
+        <div className="space-y-1.5">
+          {/* Address + City in one line */}
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+            <p className="font-medium text-xs leading-tight truncate">
+              {property.address}, {property.city}
+            </p>
           </div>
 
-          {/* Details */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {property.rooms && (
-              <div className="flex items-center gap-1">
-                <Home className="h-3 w-3" />
-                <span>{property.rooms} חד׳</span>
-              </div>
-            )}
-            {property.floor !== undefined && property.floor !== null && (
-              <div className="flex items-center gap-1">
-                <Layers className="h-3 w-3" />
-                <span>קומה {property.floor}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Price & Type */}
-          <div className="flex items-center justify-between">
+          {/* Details + Price in one line */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              {formatPrice() && (
-                <span className="font-semibold text-sm text-primary">
-                  {formatPrice()}
-                </span>
+              {property.rooms && (
+                <span>{property.rooms} חד׳</span>
               )}
-              {getPropertyTypeLabel() && (
-                <span className="text-xs text-muted-foreground">
-                  | {getPropertyTypeLabel()}
-                </span>
+              {property.floor !== undefined && property.floor !== null && (
+                <span>ק׳ {property.floor}</span>
+              )}
+              {formatPrice() && (
+                <span className="font-medium text-primary">{formatPrice()}</span>
               )}
             </div>
+            {getPropertyTypeLabel() && (
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
+                {getPropertyTypeLabel()}
+              </span>
+            )}
           </div>
 
-          {/* Brokerage Form Button */}
+          {/* Compact Brokerage Form Button */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="w-full gap-2 text-xs"
+            className="w-full h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
             onClick={() => window.open(buildBrokerageFormUrl(), '_blank')}
           >
-            <FileText className="h-3.5 w-3.5" />
+            <FileText className="h-3 w-3" />
             טופס תיווך
           </Button>
         </div>

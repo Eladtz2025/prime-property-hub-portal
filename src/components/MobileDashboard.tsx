@@ -245,7 +245,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         )}
 
         {/* Active Properties Card */}
-        <ActivePropertiesCard properties={properties} maxDisplay={4} />
+        <ActivePropertiesCard properties={properties} />
 
         {/* Analytics Summary Card */}
         <AnalyticsSummaryCard stats={stats} />

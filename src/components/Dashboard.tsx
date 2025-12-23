@@ -227,7 +227,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
     </div>
 
       {/* הדירות שלנו */}
-      <ActivePropertiesCard properties={properties} maxDisplay={6} />
+      <ActivePropertiesCard properties={properties} />
 
       {/* שורה 2: התראות, פעילות ופניות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

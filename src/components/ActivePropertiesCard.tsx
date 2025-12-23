@@ -8,21 +8,17 @@ import { PropertyQuickCard } from './PropertyQuickCard';
 
 interface ActivePropertiesCardProps {
   properties: Property[];
-  maxDisplay?: number;
 }
 
 export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({ 
-  properties, 
-  maxDisplay = 6 
+  properties
 }) => {
   const navigate = useNavigate();
 
   // Filter active properties (occupied or available/vacant)
   const activeProperties = React.useMemo(() => {
-    return properties
-      .filter(p => p.status === 'occupied' || p.status === 'vacant' || p.property_type)
-      .slice(0, maxDisplay);
-  }, [properties, maxDisplay]);
+    return properties.filter(p => p.status === 'occupied' || p.status === 'vacant' || p.property_type);
+  }, [properties]);
 
   if (activeProperties.length === 0) {
     return null;
@@ -30,26 +26,28 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <Building className="h-5 w-5 text-primary" />
-          <CardTitle>הדירות שלנו</CardTitle>
+          <CardTitle className="text-base">הדירות שלנו ({activeProperties.length})</CardTitle>
         </div>
         <Button 
           variant="ghost" 
           size="sm"
           onClick={() => navigate('/admin-dashboard/properties')}
-          className="gap-1"
+          className="gap-1 h-8"
         >
           <span className="text-sm">ראה הכל</span>
           <ArrowLeft className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {activeProperties.map((property) => (
-            <PropertyQuickCard key={property.id} property={property} />
-          ))}
+      <CardContent className="pt-0">
+        <div className="max-h-[400px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {activeProperties.map((property) => (
+              <PropertyQuickCard key={property.id} property={property} />
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
