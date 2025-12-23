@@ -39,45 +39,44 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
 
   return (
     <Card className="group hover:shadow-sm transition-all duration-200 hover:border-primary/30">
-      <CardContent className="p-2.5">
-        <div className="space-y-1.5">
-          {/* Address + City in one line */}
-          <div className="flex items-center gap-1.5">
+      <CardContent className="p-2 sm:p-2.5">
+        {/* Mobile: Single row layout | Desktop: Stacked layout */}
+        <div className="flex items-center gap-2 sm:block sm:space-y-1.5">
+          {/* Address */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
             <p className="font-medium text-xs leading-tight truncate">
               {property.address}, {property.city}
             </p>
           </div>
 
-          {/* Details + Price in one line */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              {property.rooms && (
-                <span>{property.rooms} חד׳</span>
-              )}
-              {property.floor !== undefined && property.floor !== null && (
-                <span>ק׳ {property.floor}</span>
-              )}
-              {formatPrice() && (
-                <span className="font-medium text-primary">{formatPrice()}</span>
-              )}
-            </div>
+          {/* Details - inline on mobile, below on desktop */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+            {property.rooms && (
+              <span>{property.rooms} חד׳</span>
+            )}
+            {property.floor !== undefined && property.floor !== null && (
+              <span className="hidden sm:inline">ק׳ {property.floor}</span>
+            )}
+            {formatPrice() && (
+              <span className="font-medium text-primary">{formatPrice()}</span>
+            )}
             {getPropertyTypeLabel() && (
-              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded hidden sm:inline">
                 {getPropertyTypeLabel()}
               </span>
             )}
           </div>
 
-          {/* Compact Brokerage Form Button */}
+          {/* Brokerage Form Button - icon only on mobile */}
           <Button
             variant="ghost"
             size="sm"
-            className="w-full h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            className="h-7 px-2 sm:w-full sm:gap-1.5 text-xs text-muted-foreground hover:text-primary shrink-0"
             onClick={() => window.open(buildBrokerageFormUrl(), '_blank')}
           >
-            <FileText className="h-3 w-3" />
-            טופס תיווך
+            <FileText className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">טופס תיווך</span>
           </Button>
         </div>
       </CardContent>
