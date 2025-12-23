@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building, ArrowLeft } from 'lucide-react';
 import { Property } from '@/types/property';
@@ -25,11 +24,12 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base">הדירות שלנו ({activeProperties.length})</CardTitle>
+          <h3 className="font-semibold text-base">הדירות שלנו ({activeProperties.length})</h3>
         </div>
         <Button 
           variant="ghost" 
@@ -40,16 +40,14 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
           <span className="text-sm">ראה הכל</span>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="max-h-[400px] overflow-y-auto pr-1">
-          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4">
-            {activeProperties.map((property) => (
-              <PropertyQuickCard key={property.id} property={property} />
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Properties List */}
+      <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4">
+        {activeProperties.map((property) => (
+          <PropertyQuickCard key={property.id} property={property} />
+        ))}
+      </div>
+    </div>
   );
 };
