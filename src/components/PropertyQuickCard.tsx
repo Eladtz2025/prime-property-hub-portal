@@ -1,5 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText } from 'lucide-react';
 import { Property } from '@/types/property';
 
 interface PropertyQuickCardProps {
@@ -20,8 +22,8 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
   return (
     <Card className="group hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer">
       <CardContent className="p-0">
-        {/* Portrait Image */}
-        <div className="w-full aspect-[3/4] overflow-hidden relative bg-muted">
+        {/* Square Image - smaller cards */}
+        <div className="w-full aspect-square overflow-hidden relative bg-muted">
           <img 
             src={primaryImage} 
             alt={property.address}
@@ -29,18 +31,32 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property }
           />
           {/* Price Badge */}
           {formatPrice() && (
-            <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-sm font-bold shadow-md">
+            <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-xs font-bold shadow-md">
               {formatPrice()}
             </div>
           )}
         </div>
         
         {/* Minimal Content */}
-        <div className="p-2 text-right">
-          <p className="font-medium text-sm truncate">{property.address}</p>
-          <p className="text-xs text-muted-foreground">
+        <div className="p-1.5 text-right">
+          <p className="font-medium text-xs truncate">{property.address}</p>
+          <p className="text-[10px] text-muted-foreground truncate">
             {property.city} {property.rooms && `| ${property.rooms} חד׳`}
           </p>
+          
+          {/* Brokerage Form Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-[10px] h-6 mt-1 px-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`/brokerage-form/${property.id}`, '_blank');
+            }}
+          >
+            <FileText className="h-3 w-3 ml-1" />
+            טופס תיווך
+          </Button>
         </div>
       </CardContent>
     </Card>
