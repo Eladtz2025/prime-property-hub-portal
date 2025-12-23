@@ -261,6 +261,8 @@ export type Database = {
           renovation_budget: number | null
           rooms_max: number | null
           rooms_min: number | null
+          size_max: number | null
+          size_min: number | null
           source: string | null
           status: string | null
           tenant_type: string | null
@@ -302,6 +304,8 @@ export type Database = {
           renovation_budget?: number | null
           rooms_max?: number | null
           rooms_min?: number | null
+          size_max?: number | null
+          size_min?: number | null
           source?: string | null
           status?: string | null
           tenant_type?: string | null
@@ -343,6 +347,8 @@ export type Database = {
           renovation_budget?: number | null
           rooms_max?: number | null
           rooms_min?: number | null
+          size_max?: number | null
+          size_min?: number | null
           source?: string | null
           status?: string | null
           tenant_type?: string | null

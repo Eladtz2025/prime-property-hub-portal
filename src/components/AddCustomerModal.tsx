@@ -33,6 +33,8 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     budget_max: null as number | null,
     rooms_min: null as number | null,
     rooms_max: null as number | null,
+    size_min: null as number | null,
+    size_max: null as number | null,
     preferred_cities: [] as string[],
     preferred_neighborhoods: [] as string[],
     move_in_date: '',
@@ -83,6 +85,8 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           budget_max: formData.budget_max,
           rooms_min: formData.rooms_min,
           rooms_max: formData.rooms_max,
+          size_min: formData.size_min,
+          size_max: formData.size_max,
           preferred_cities: formData.preferred_cities.length > 0 ? formData.preferred_cities : null,
           preferred_neighborhoods: formData.preferred_neighborhoods.length > 0 ? formData.preferred_neighborhoods : null,
           move_in_date: formData.move_in_date || null,
@@ -127,6 +131,8 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         budget_max: null,
         rooms_min: null,
         rooms_max: null,
+        size_min: null,
+        size_max: null,
         preferred_cities: [],
         preferred_neighborhoods: [],
         move_in_date: '',
@@ -322,6 +328,27 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                 value={formData.rooms_max || ''}
                 onChange={(e) => setFormData({ ...formData, rooms_max: e.target.value ? Number(e.target.value) : null })}
                 placeholder="4"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>גודל מינימום (מ"ר)</Label>
+              <Input
+                type="number"
+                value={formData.size_min || ''}
+                onChange={(e) => setFormData({ ...formData, size_min: e.target.value ? Number(e.target.value) : null })}
+                placeholder="60"
+              />
+            </div>
+            <div>
+              <Label>גודל מקסימום (מ"ר)</Label>
+              <Input
+                type="number"
+                value={formData.size_max || ''}
+                onChange={(e) => setFormData({ ...formData, size_max: e.target.value ? Number(e.target.value) : null })}
+                placeholder="120"
               />
             </div>
           </div>
