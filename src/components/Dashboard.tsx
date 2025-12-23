@@ -84,8 +84,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
 
   return (
     <div className="space-y-6">
-      {/* Header with greeting card and forms */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
+      {/* Header with greeting card */}
+      <div className="w-full">
         <div className="bg-gradient-primary rounded-2xl p-6 text-white shadow-elevated animate-fade-in relative isolate overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -102,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <p className="text-white/70 text-sm mt-1">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
               <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
                 <div className="bg-white/20 p-2 rounded-lg">
@@ -191,39 +191,35 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               </div>
               <div className="text-2xl font-bold number-display text-right">{stats.notContactedProperties}</div>
             </div>
+
+            {/* קוביית טפסים */}
+            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-semibold text-right">טפסים</span>
+              </div>
+              <div className="space-y-1.5">
+                <button 
+                  onClick={() => window.open('/brokerage-form/new', '_blank')}
+                  className="w-full text-right text-sm bg-white/10 hover:bg-white/20 rounded-lg px-2 py-1.5 transition-colors flex items-center gap-2 flex-row-reverse"
+                >
+                  <FileText className="h-3 w-3" />
+                  הזמנת תיווך
+                </button>
+                <button 
+                  onClick={() => window.open('/admin-dashboard/price-offers', '_blank')}
+                  className="w-full text-right text-sm bg-white/10 hover:bg-white/20 rounded-lg px-2 py-1.5 transition-colors flex items-center gap-2 flex-row-reverse"
+                >
+                  <Receipt className="h-3 w-3" />
+                  הצעות מחיר
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Forms Card - Separate */}
-      <Card className="h-fit">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <CardTitle>טפסים</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={() => window.open('/brokerage-form/new', '_blank')}
-            >
-              <FileText className="h-4 w-4 ml-2" />
-              הזמנת תיווך
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={() => window.open('/admin-dashboard/price-offers', '_blank')}
-            >
-              <Receipt className="h-4 w-4 ml-2" />
-              הצעות מחיר
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
 
       {/* הדירות שלנו */}
