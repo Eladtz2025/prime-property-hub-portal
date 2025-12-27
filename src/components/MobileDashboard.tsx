@@ -31,6 +31,8 @@ import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { BrokerageFormsListCompact } from './BrokerageFormsListCompact';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
+import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
+import { AddAppointmentModal } from './AddAppointmentModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -67,6 +69,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
   const [isEditingIncome, setIsEditingIncome] = useState(false);
   const [editIncomeValue, setEditIncomeValue] = useState('');
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   
   // Load saved manual income from localStorage
   useEffect(() => {
@@ -247,6 +250,12 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
 
+        {/* Upcoming Appointments Card */}
+        <UpcomingAppointmentsCard 
+          limit={3} 
+          onAddAppointment={() => setIsAppointmentModalOpen(true)}
+        />
+
         {/* Analytics Summary Card */}
         <AnalyticsSummaryCard stats={stats} />
 
@@ -374,6 +383,12 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Appointment Modal */}
+      <AddAppointmentModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+      />
     </div>
   );
 };
