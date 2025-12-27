@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon } from 'lucide-react';
+import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon, Car, Building2, DoorOpen, Shield, Trees, Wallet } from 'lucide-react';
 import { Property, PropertyImage } from '../types/property';
 import { ImageCarousel } from './ImageCarousel';
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,15 +139,11 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     פרטי הנכס
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-right">
+                <CardContent className="space-y-2 text-right">
                   <div className="flex items-center gap-2 flex-row-reverse justify-end">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">כתובת:</span>
-                    <span>{property.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                    <span className="font-medium">עיר:</span>
-                    <span>{property.city}</span>
+                    <span>{property.address}, {property.city}</span>
                   </div>
                   {property.propertySize && (
                     <div className="flex items-center gap-2 flex-row-reverse justify-end">
@@ -155,16 +151,48 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                       <span>{property.propertySize} מ"ר</span>
                     </div>
                   )}
-                  {property.floor && (
-                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                      <span className="font-medium">קומה:</span>
-                      <span>{property.floor}</span>
-                    </div>
-                  )}
-                  {property.rooms && (
-                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                      <span className="font-medium">חדרים:</span>
-                      <span>{property.rooms}</span>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {property.rooms && (
+                      <span><span className="font-medium">חדרים:</span> {property.rooms}</span>
+                    )}
+                    {property.floor !== undefined && property.floor !== null && (
+                      <span><span className="font-medium">קומה:</span> {property.floor}{property.buildingFloors ? ` / ${property.buildingFloors}` : ''}</span>
+                    )}
+                    {property.bathrooms && (
+                      <span><span className="font-medium">חדרי רחצה:</span> {property.bathrooms}</span>
+                    )}
+                  </div>
+                  {/* Features */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t">
+                    {property.parking && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Car className="h-3 w-3 ml-1" />חניה
+                      </Badge>
+                    )}
+                    {property.elevator && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Building2 className="h-3 w-3 ml-1" />מעלית
+                      </Badge>
+                    )}
+                    {property.balcony && (
+                      <Badge variant="secondary" className="text-xs">
+                        <DoorOpen className="h-3 w-3 ml-1" />מרפסת
+                      </Badge>
+                    )}
+                    {property.mamad && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Shield className="h-3 w-3 ml-1" />ממ"ד
+                      </Badge>
+                    )}
+                    {property.yard && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Trees className="h-3 w-3 ml-1" />חצר
+                      </Badge>
+                    )}
+                  </div>
+                  {property.balconyYardSize && (
+                    <div className="text-sm text-muted-foreground">
+                      גודל מרפסת/חצר: {property.balconyYardSize} מ"ר
                     </div>
                   )}
                 </CardContent>
@@ -245,16 +273,39 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               {/* Financial Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-right">מידע כספי</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
+                    <Wallet className="h-4 w-4" />
+                    מידע כספי
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="text-right">
+                <CardContent className="space-y-2 text-right">
                   {property.monthlyRent ? (
                     <div>
                       <span className="font-medium">שכירות חודשית:</span>
-                      <span className="mr-2 text-lg font-bold">₪{property.monthlyRent.toLocaleString()}</span>
+                      <span className="mr-2 text-lg font-bold text-primary">₪{property.monthlyRent.toLocaleString()}</span>
                     </div>
                   ) : (
                     <p className="text-muted-foreground">לא הוגדר מחיר</p>
+                  )}
+                  {property.municipalTax && (
+                    <div>
+                      <span className="font-medium">ארנונה:</span>
+                      <span className="mr-2">₪{property.municipalTax.toLocaleString()}/חודש</span>
+                    </div>
+                  )}
+                  {property.buildingCommitteeFee && (
+                    <div>
+                      <span className="font-medium">ועד בית:</span>
+                      <span className="mr-2">₪{property.buildingCommitteeFee.toLocaleString()}/חודש</span>
+                    </div>
+                  )}
+                  {(property.monthlyRent || property.municipalTax || property.buildingCommitteeFee) && (
+                    <div className="pt-2 border-t mt-2">
+                      <span className="font-medium">סה"כ עלות חודשית:</span>
+                      <span className="mr-2 font-bold">
+                        ₪{((property.monthlyRent || 0) + (property.municipalTax || 0) + (property.buildingCommitteeFee || 0)).toLocaleString()}
+                      </span>
+                    </div>
                   )}
                 </CardContent>
               </Card>
