@@ -14,6 +14,7 @@ import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { BrokerageFormsList } from './BrokerageFormsList';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
+import { AddAppointmentModal } from './AddAppointmentModal';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
   const [isEditingIncome, setIsEditingIncome] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   
   // Load saved manual income from localStorage
   useEffect(() => {
@@ -229,7 +231,10 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* שורה 2: פגישות קרובות, התראות, פעילות ופניות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* פגישות קרובות */}
-        <UpcomingAppointmentsCard limit={3} />
+        <UpcomingAppointmentsCard 
+          limit={3} 
+          onAddAppointment={() => setIsAppointmentModalOpen(true)}
+        />
         
         {/* התראות ומעקב */}
         <Card className="h-fit">
@@ -305,6 +310,12 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       <div className="space-y-4">
         <BrokerageFormsList />
       </div>
+
+      {/* מודל הוספת פגישה */}
+      <AddAppointmentModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+      />
     </div>
   );
 });

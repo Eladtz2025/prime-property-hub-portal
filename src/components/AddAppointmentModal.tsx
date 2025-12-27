@@ -26,6 +26,9 @@ const appointmentTypes = [
   { value: 'viewing', label: 'צפייה בנכס' },
   { value: 'signing', label: 'חתימת חוזה' },
   { value: 'handover', label: 'מסירת מפתחות' },
+  { value: 'new_property', label: 'נכס חדש לראות' },
+  { value: 'client_meeting', label: 'פגישת לקוח' },
+  { value: 'office', label: 'פגישה במשרד' },
   { value: 'meeting', label: 'פגישה כללית' },
   { value: 'other', label: 'אחר' },
 ];
@@ -48,9 +51,10 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
   const [formData, setFormData] = useState({
     clientName: '',
     clientPhone: '',
+    location: '',
     appointmentDate: undefined as Date | undefined,
     appointmentTime: '',
-    appointmentType: 'viewing',
+    appointmentType: property ? 'viewing' : 'meeting',
     notes: ''
   });
 
@@ -98,9 +102,10 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
     setFormData({
       clientName: '',
       clientPhone: '',
+      location: '',
       appointmentDate: undefined,
       appointmentTime: '',
-      appointmentType: 'viewing',
+      appointmentType: property ? 'viewing' : 'meeting',
       notes: ''
     });
     onClose();
@@ -130,7 +135,11 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
         : `פגישה עם ${formData.clientName}`
     );
     
-    const location = encodeURIComponent(property?.address ? `${property.address}, ${property.city}` : '');
+    const location = encodeURIComponent(
+      property?.address 
+        ? `${property.address}, ${property.city}` 
+        : formData.location || ''
+    );
     
     const details = encodeURIComponent(
       `לקוח: ${formData.clientName}\n` +
@@ -178,6 +187,19 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
               dir="ltr"
             />
           </div>
+
+          {/* Location - only when no property */}
+          {!property && (
+            <div className="space-y-2">
+              <Label className="text-right block">מיקום הפגישה</Label>
+              <Input
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="כתובת, משרד, זום..."
+                className="text-right"
+              />
+            </div>
+          )}
 
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-3">
