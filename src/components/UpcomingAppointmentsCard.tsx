@@ -20,6 +20,7 @@ interface Appointment {
   notes: string | null;
   status: string;
   property_id: string | null;
+  location?: string | null;
   properties?: {
     address: string;
     city: string;
@@ -36,6 +37,9 @@ const appointmentTypeLabels: Record<string, string> = {
   viewing: 'צפייה',
   signing: 'חתימה',
   handover: 'מסירה',
+  new_property: 'נכס חדש',
+  client_meeting: 'פגישת לקוח',
+  office: 'משרד',
   meeting: 'פגישה',
   other: 'אחר'
 };
@@ -44,6 +48,9 @@ const appointmentTypeColors: Record<string, string> = {
   viewing: 'bg-blue-100 text-blue-800',
   signing: 'bg-green-100 text-green-800',
   handover: 'bg-purple-100 text-purple-800',
+  new_property: 'bg-amber-100 text-amber-800',
+  client_meeting: 'bg-cyan-100 text-cyan-800',
+  office: 'bg-indigo-100 text-indigo-800',
   meeting: 'bg-orange-100 text-orange-800',
   other: 'bg-gray-100 text-gray-800'
 };
@@ -200,10 +207,13 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                     </span>
                   </div>
                   
-                  {appointment.properties && (
+                  {(appointment.properties || appointment.notes) && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {appointment.properties.address}, {appointment.properties.city}
+                      {appointment.properties 
+                        ? `${appointment.properties.address}, ${appointment.properties.city}`
+                        : appointment.notes || 'לא צוין מיקום'
+                      }
                     </p>
                   )}
                   
