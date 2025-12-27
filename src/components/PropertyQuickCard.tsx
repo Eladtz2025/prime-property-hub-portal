@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText } from 'lucide-react';
+import { FileText, CalendarPlus } from 'lucide-react';
 import { Property } from '@/types/property';
+import { AddAppointmentModal } from './AddAppointmentModal';
 
 interface PropertyQuickCardProps {
   property: Property;
@@ -10,6 +11,8 @@ interface PropertyQuickCardProps {
 }
 
 export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, onClick }) => {
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  
   const formatPrice = () => {
     if (!property.monthlyRent) return null;
     return `₪${property.monthlyRent.toLocaleString('he-IL')}`;
@@ -45,29 +48,49 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
             {property.city} {property.rooms && `| ${property.rooms} חד׳`}
           </p>
           
-          {/* Brokerage Form Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-xs sm:text-[10px] h-8 sm:h-6 mt-1.5 px-2 font-medium"
-            onClick={(e) => {
-              e.stopPropagation();
-              const params = new URLSearchParams({
-                address: property.address || '',
-                city: property.city || '',
-                rooms: property.rooms?.toString() || '',
-                floor: property.floor?.toString() || '',
-                price: property.monthlyRent?.toString() || '',
-                type: property.property_type || 'rental'
-              });
-              window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
-            }}
-          >
-            <FileText className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
-            טופס תיווך
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-1 mt-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-xs sm:text-[10px] h-8 sm:h-6 px-2 font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                const params = new URLSearchParams({
+                  address: property.address || '',
+                  city: property.city || '',
+                  rooms: property.rooms?.toString() || '',
+                  floor: property.floor?.toString() || '',
+                  price: property.monthlyRent?.toString() || '',
+                  type: property.property_type || 'rental'
+                });
+                window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
+              }}
+            >
+              <FileText className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
+              תיווך
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-xs sm:text-[10px] h-8 sm:h-6 px-2 font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAppointmentModalOpen(true);
+              }}
+            >
+              <CalendarPlus className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
+              פגישה
+            </Button>
+          </div>
         </div>
       </CardContent>
+      
+      <AddAppointmentModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        property={property}
+      />
     </Card>
   );
 };

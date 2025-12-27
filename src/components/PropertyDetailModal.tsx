@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon, Car, Building2, DoorOpen, Shield, Trees, Wallet } from 'lucide-react';
+import { Edit, Phone, Mail, MapPin, Calendar, Home, FileText, History, User, Image as ImageIcon, Car, Building2, DoorOpen, Shield, Trees, Wallet, CalendarPlus } from 'lucide-react';
 import { Property, PropertyImage } from '../types/property';
 import { ImageCarousel } from './ImageCarousel';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { supabase } from '@/integrations/supabase/client';
+import { AddAppointmentModal } from './AddAppointmentModal';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -28,6 +29,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
   const [images, setImages] = useState<PropertyImage[]>(property.images || []);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && property.id) {
@@ -109,6 +111,10 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               <Badge className={getStatusColor(property.status)}>
                 {getStatusText(property.status)}
               </Badge>
+              <Button size="sm" variant="outline" onClick={() => setIsAppointmentModalOpen(true)}>
+                <CalendarPlus className="h-4 w-4 ml-2" />
+                קבע פגישה
+              </Button>
               {canEdit && (
                 <Button size="sm" onClick={() => onEdit(property)}>
                   <Edit className="h-4 w-4 ml-2" />
@@ -393,6 +399,12 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             </Card>
           </TabsContent>
         </Tabs>
+        
+        <AddAppointmentModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => setIsAppointmentModalOpen(false)}
+          property={property}
+        />
       </DialogContent>
     </Dialog>
   );
