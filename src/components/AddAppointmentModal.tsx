@@ -202,7 +202,7 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
           )}
 
           {/* Date and Time */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Date */}
             <div className="space-y-2">
               <Label className="text-right block">תאריך *</Label>
@@ -219,12 +219,14 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
                     }
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-50" align="center" side="bottom" sideOffset={4}>
                   <Calendar
                     mode="single"
                     selected={formData.appointmentDate}
                     onSelect={(date) => setFormData({ ...formData, appointmentDate: date })}
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    locale={he}
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
