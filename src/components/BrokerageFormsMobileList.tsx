@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,11 +14,14 @@ import {
   Phone,
   MessageCircle,
   Building,
-  Calendar
+  Calendar,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { downloadBrokerageFormPDF } from '@/lib/brokerage-pdf-generator';
 import {
   Sheet,
   SheetContent,
@@ -29,6 +32,7 @@ import {
 } from '@/components/ui/sheet';
 
 export const BrokerageFormsMobileList: React.FC = () => {
+  const [downloadingFormId, setDownloadingFormId] = useState<string | null>(null);
   const { data: forms, isLoading: formsLoading } = useQuery({
     queryKey: ['brokerage-forms'],
     queryFn: async () => {
@@ -67,6 +71,32 @@ export const BrokerageFormsMobileList: React.FC = () => {
     const message = `שלום! להלן הלינק לטופס הזמנת שירותי תיווך:\n${link}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleDownloadPDF = async (form: any) => {
+    setDownloadingFormId(form.id);
+    try {
+      await downloadBrokerageFormPDF({
+        client_name: form.client_name,
+        client_id: form.client_id,
+        client_phone: form.client_phone,
+        client_signature: form.client_signature,
+        agent_name: form.agent_name,
+        agent_id: form.agent_id,
+        form_date: form.form_date,
+        fee_type_rental: form.fee_type_rental,
+        fee_type_sale: form.fee_type_sale,
+        properties: form.properties as any[],
+        special_terms: form.special_terms,
+        referred_by: form.referred_by,
+      });
+      toast.success('הקובץ הורד בהצלחה');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('שגיאה בהורדת הקובץ');
+    } finally {
+      setDownloadingFormId(null);
+    }
   };
 
   const isLoading = formsLoading || tokensLoading;
@@ -333,6 +363,27 @@ export const BrokerageFormsMobileList: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Download PDF Button */}
+                      <div className="pt-4 border-t">
+                        <Button
+                          onClick={() => handleDownloadPDF(form)}
+                          disabled={downloadingFormId === form.id}
+                          className="w-full gap-2"
+                        >
+                          {downloadingFormId === form.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              מכין PDF...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4" />
+                              הורד כ-PDF
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </SheetContent>
                 </Sheet>
