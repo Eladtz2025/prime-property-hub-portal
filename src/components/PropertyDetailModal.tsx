@@ -102,22 +102,23 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <div className="flex items-center justify-between flex-row-reverse">
-            <div className="text-right">
-              <DialogTitle className="text-xl">{property.address}</DialogTitle>
-              <p className="text-muted-foreground">{property.city}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-right order-1 sm:order-2">
+              <DialogTitle className="text-lg sm:text-xl leading-tight">{property.address}</DialogTitle>
+              <p className="text-muted-foreground text-sm">{property.city}</p>
             </div>
-            <div className="flex items-center gap-2 flex-row-reverse">
-              <Badge className={getStatusColor(property.status)}>
+            <div className="flex items-center gap-2 flex-wrap justify-end order-2 sm:order-1">
+              <Badge className={`${getStatusColor(property.status)} text-xs`}>
                 {getStatusText(property.status)}
               </Badge>
-              <Button size="sm" variant="outline" onClick={() => setIsAppointmentModalOpen(true)}>
-                <CalendarPlus className="h-4 w-4 ml-2" />
-                קבע פגישה
+              <Button size="sm" variant="outline" onClick={() => setIsAppointmentModalOpen(true)} className="text-xs h-8 px-2">
+                <CalendarPlus className="h-3.5 w-3.5 ml-1" />
+                <span className="hidden xs:inline">קבע פגישה</span>
+                <span className="xs:hidden">פגישה</span>
               </Button>
               {canEdit && (
-                <Button size="sm" onClick={() => onEdit(property)}>
-                  <Edit className="h-4 w-4 ml-2" />
+                <Button size="sm" onClick={() => onEdit(property)} className="text-xs h-8 px-2">
+                  <Edit className="h-3.5 w-3.5 ml-1" />
                   עריכה
                 </Button>
               )}
