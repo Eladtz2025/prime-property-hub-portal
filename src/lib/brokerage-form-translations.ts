@@ -74,6 +74,7 @@ export const brokerageFormTranslations = {
     
     // Signatures
     agentSignature: 'חתימת הסוכן',
+    brokerSignature: 'חתימת המתווך',
     clientSignature: 'חתימת הלקוח',
     signed: 'נחתם',
     clearSignature: 'נקה חתימה',

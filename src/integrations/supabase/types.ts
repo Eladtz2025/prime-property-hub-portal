@@ -210,6 +210,7 @@ export type Database = {
         Row: {
           agent_id: string
           agent_name: string
+          agent_signature: string | null
           client_id: string
           client_name: string
           client_phone: string
@@ -229,6 +230,7 @@ export type Database = {
         Insert: {
           agent_id: string
           agent_name: string
+          agent_signature?: string | null
           client_id: string
           client_name: string
           client_phone: string
@@ -248,6 +250,7 @@ export type Database = {
         Update: {
           agent_id?: string
           agent_name?: string
+          agent_signature?: string | null
           client_id?: string
           client_name?: string
           client_phone?: string
