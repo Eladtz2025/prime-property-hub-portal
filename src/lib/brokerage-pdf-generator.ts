@@ -26,30 +26,30 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
   const properties = formData.properties || [];
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });
 
-  // Create a temporary container for rendering - optimized for single page
+  // Create a temporary container for rendering - ultra compact for single page
   const container = document.createElement('div');
   container.style.cssText = `
     position: absolute;
     left: -9999px;
     top: 0;
     width: 794px;
-    padding: 20px 30px;
+    padding: 12px 18px;
     background: white;
     font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
     direction: rtl;
     color: #000;
   `;
 
-  const sectionStyle = `margin-bottom: 10px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; border-right: 3px solid #2563eb;`;
-  const headerStyle = `font-size: 12px; font-weight: bold; margin: 0 0 6px 0; color: #1e40af;`;
-  const textStyle = `font-size: 10px; line-height: 1.4; margin: 3px 0; color: #333;`;
-  const smallTextStyle = `font-size: 9px; line-height: 1.3; margin: 2px 0; color: #555;`;
+  const sectionStyle = `margin-bottom: 6px; padding: 5px 8px; background: #f8f9fa; border-radius: 4px; border-right: 2px solid #2563eb;`;
+  const headerStyle = `font-size: 10px; font-weight: bold; margin: 0 0 4px 0; color: #1e40af;`;
+  const textStyle = `font-size: 9px; line-height: 1.3; margin: 2px 0; color: #333;`;
+  const smallTextStyle = `font-size: 8px; line-height: 1.2; margin: 1px 0; color: #555;`;
 
   container.innerHTML = `
     <!-- Header -->
-    <div style="text-align: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #2563eb;">
-      <h1 style="font-size: 16px; margin: 0; color: #1e3a5f; font-weight: bold;">${t.title}</h1>
-      <p style="font-size: 10px; color: #666; margin-top: 4px;">${t.date}: ${formDate}</p>
+    <div style="text-align: center; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #2563eb;">
+      <h1 style="font-size: 13px; margin: 0; color: #1e3a5f; font-weight: bold;">${t.title}</h1>
+      <p style="font-size: 8px; color: #666; margin-top: 2px;">${t.date}: ${formDate}</p>
     </div>
     
     <!-- Broker Details -->
@@ -72,16 +72,16 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
     </div>
     
     <!-- Fee Types -->
-    <div style="margin-bottom: 8px;">
+    <div style="margin-bottom: 5px;">
       <h2 style="${headerStyle}">${t.feeTypes}</h2>
-      ${formData.fee_type_rental ? `<p style="${textStyle}">✓ ${t.rentalFee} <strong>${t.rentalFeeAmount}</strong> ${t.rentalFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
-      ${formData.fee_type_sale ? `<p style="${textStyle}">✓ ${t.saleFee} <strong>${t.saleFeeAmount}</strong> ${t.saleFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
+      ${formData.fee_type_rental ? `<p style="${smallTextStyle}">✓ ${t.rentalFee} <strong>${t.rentalFeeAmount}</strong> ${t.rentalFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
+      ${formData.fee_type_sale ? `<p style="${smallTextStyle}">✓ ${t.saleFee} <strong>${t.saleFeeAmount}</strong> ${t.saleFeeText} ${t.plusVat} ${t.inCash}</p>` : ''}
     </div>
     
     <!-- Properties Table -->
-    <div style="margin-bottom: 8px;">
+    <div style="margin-bottom: 5px;">
       <h2 style="${headerStyle}">${t.propertiesReferred}</h2>
-      <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
         <thead>
           <tr style="background: #e5e7eb;">
             <th style="padding: 4px; border: 1px solid #d1d5db; text-align: right;">#</th>
@@ -109,7 +109,7 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
     
     <!-- Special Terms (if any) -->
     ${formData.special_terms ? `
-      <div style="margin-bottom: 8px; padding: 6px; background: #fef3c7; border-radius: 6px; border: 1px solid #f59e0b;">
+      <div style="margin-bottom: 5px; padding: 4px 6px; background: #fef3c7; border-radius: 4px; border: 1px solid #f59e0b;">
         <h2 style="${headerStyle} color: #92400e;">${t.specialTerms}</h2>
         <p style="${smallTextStyle} white-space: pre-wrap;">${formData.special_terms}</p>
       </div>
@@ -118,7 +118,7 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
     <!-- Supplementary Terms -->
     <div style="${sectionStyle}">
       <h2 style="${headerStyle}">${t.supplementaryTerms}</h2>
-      <ol style="margin: 0; padding-right: 16px; columns: 2; column-gap: 20px;">
+      <ol style="margin: 0; padding-right: 12px; columns: 3; column-gap: 10px; font-size: 7px;">
         <li style="${smallTextStyle}">${t.term1}</li>
         <li style="${smallTextStyle}">${t.term2}</li>
         <li style="${smallTextStyle}">${t.term3}</li>
@@ -141,37 +141,37 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
     </div>
     
     <!-- Client Confirmation -->
-    <div style="margin-bottom: 10px; padding: 6px; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981;">
+    <div style="margin-bottom: 6px; padding: 4px 6px; background: #d1fae5; border-radius: 4px; border: 1px solid #10b981;">
       <p style="${smallTextStyle}">✓ ${t.confirmationText}</p>
     </div>
     
     <!-- Signatures - Always show both -->
-    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-      <div style="display: flex; justify-content: space-around; gap: 20px;">
+    <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+      <div style="display: flex; justify-content: space-around; gap: 15px;">
         <div style="text-align: center; flex: 1;">
-          <p style="font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">${t.brokerSignature}</p>
+          <p style="font-size: 8px; font-weight: bold; margin-bottom: 2px; color: #1e40af;">${t.brokerSignature}</p>
           ${formData.agent_signature ? `
-            <img src="${formData.agent_signature}" style="max-width: 120px; max-height: 50px; border: 1px solid #d1d5db; border-radius: 4px; background: white; padding: 2px;" />
+            <img src="${formData.agent_signature}" style="max-width: 100px; max-height: 35px; border: 1px solid #d1d5db; border-radius: 3px; background: white; padding: 1px;" />
           ` : `
-            <div style="width: 120px; height: 50px; border: 1px dashed #d1d5db; border-radius: 4px; margin: 0 auto;"></div>
+            <div style="width: 100px; height: 35px; border: 1px dashed #d1d5db; border-radius: 3px; margin: 0 auto;"></div>
           `}
-          <p style="font-size: 9px; color: #666; margin-top: 2px;">${BUSINESS_INFO.brokerName}</p>
+          <p style="font-size: 7px; color: #666; margin-top: 1px;">${BUSINESS_INFO.brokerName}</p>
         </div>
         <div style="text-align: center; flex: 1;">
-          <p style="font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #1e40af;">${t.clientSignature}</p>
+          <p style="font-size: 8px; font-weight: bold; margin-bottom: 2px; color: #1e40af;">${t.clientSignature}</p>
           ${formData.client_signature ? `
-            <img src="${formData.client_signature}" style="max-width: 120px; max-height: 50px; border: 1px solid #d1d5db; border-radius: 4px; background: white; padding: 2px;" />
+            <img src="${formData.client_signature}" style="max-width: 100px; max-height: 35px; border: 1px solid #d1d5db; border-radius: 3px; background: white; padding: 1px;" />
           ` : `
-            <div style="width: 120px; height: 50px; border: 1px dashed #d1d5db; border-radius: 4px; margin: 0 auto;"></div>
+            <div style="width: 100px; height: 35px; border: 1px dashed #d1d5db; border-radius: 3px; margin: 0 auto;"></div>
           `}
-          <p style="font-size: 9px; color: #666; margin-top: 2px;">${formData.client_name}</p>
+          <p style="font-size: 7px; color: #666; margin-top: 1px;">${formData.client_name}</p>
         </div>
       </div>
     </div>
     
     <!-- Footer -->
-    <div style="margin-top: 10px; padding-top: 6px; border-top: 1px solid #e5e7eb; text-align: center;">
-      <p style="font-size: 8px; color: #9ca3af;">© ${BUSINESS_INFO.name} | ${t.date}: ${formDate}</p>
+    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px solid #e5e7eb; text-align: center;">
+      <p style="font-size: 7px; color: #9ca3af;">© ${BUSINESS_INFO.name} | ${t.date}: ${formDate}</p>
     </div>
   `;
 
