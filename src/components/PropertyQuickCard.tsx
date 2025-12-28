@@ -48,12 +48,12 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
             {property.city} {property.rooms && `| ${property.rooms} חד׳`}
           </p>
           
-          {/* Action Buttons */}
-          <div className="flex gap-1 mt-1.5">
+          {/* Action Buttons - Stacked */}
+          <div className="flex flex-col gap-1.5 mt-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="flex-1 text-xs sm:text-[10px] h-8 sm:h-6 px-2 font-medium"
+              className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
               onClick={(e) => {
                 e.stopPropagation();
                 const params = new URLSearchParams({
@@ -67,19 +67,19 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
                 window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
               }}
             >
-              <FileText className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
+              <FileText className="h-4 w-4 ml-2" />
               תיווך
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="flex-1 text-xs sm:text-[10px] h-8 sm:h-6 px-2 font-medium"
+              className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsAppointmentModalOpen(true);
               }}
             >
-              <CalendarPlus className="h-4 w-4 sm:h-3 sm:w-3 ml-1" />
+              <CalendarPlus className="h-4 w-4 ml-2" />
               פגישה
             </Button>
           </div>
