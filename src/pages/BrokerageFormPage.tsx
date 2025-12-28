@@ -118,6 +118,9 @@ const BrokerageFormPage = () => {
     id_number?: string;
   } | null>(null);
   
+  // Token agent signature (for remote-sign mode)
+  const [tokenAgentSignature, setTokenAgentSignature] = useState<string | null>(null);
+  
   // Form data
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [feeTypeRental, setFeeTypeRental] = useState(false);
@@ -276,6 +279,11 @@ const BrokerageFormPage = () => {
       // Set broker details from token
       if (formData.brokerDetails) {
         setBrokerDetails(formData.brokerDetails);
+      }
+      
+      // Set agent signature from token
+      if (formData.agentSignature) {
+        setTokenAgentSignature(formData.agentSignature);
       }
     } catch (err) {
       console.error('Error loading form data:', err);
@@ -487,6 +495,11 @@ const BrokerageFormPage = () => {
         id_number: profile?.id_number,
       };
 
+      // Get agent signature based on mode
+      const agentSignature = mode === 'remote-sign' 
+        ? tokenAgentSignature 
+        : agentSignatureData;
+
       const { error } = await supabase
         .from('brokerage_forms')
         .insert({
@@ -502,6 +515,7 @@ const BrokerageFormPage = () => {
           agent_name: currentBrokerDetails?.full_name || '',
           agent_id: user?.id || '',
           client_signature: signatureData,
+          agent_signature: agentSignature,
           created_by: user?.id,
           status: 'active'
         });

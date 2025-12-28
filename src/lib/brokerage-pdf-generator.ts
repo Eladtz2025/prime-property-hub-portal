@@ -11,6 +11,7 @@ interface BrokerageFormData {
   client_signature: string;
   agent_name: string;
   agent_id: string;
+  agent_signature?: string | null;
   form_date: string;
   fee_type_rental: boolean | null;
   fee_type_sale: boolean | null;
@@ -139,16 +140,25 @@ export async function generateBrokerageFormPDF(formData: BrokerageFormData): Pro
       <p style="${textStyle}">✓ ${t.confirmationText}</p>
     </div>
     
-    <!-- Signature -->
-    ${formData.client_signature ? `
-      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-        <div style="display: inline-block;">
-          <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.clientSignature}</p>
-          <img src="${formData.client_signature}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
-          <p style="font-size: 11px; color: #666; margin-top: 4px;">${formData.client_name}</p>
-        </div>
+    <!-- Signatures -->
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+      <div style="display: flex; justify-content: space-around; gap: 40px;">
+        ${formData.agent_signature ? `
+          <div style="text-align: center; flex: 1;">
+            <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.brokerSignature}</p>
+            <img src="${formData.agent_signature}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
+            <p style="font-size: 11px; color: #666; margin-top: 4px;">${formData.agent_name}</p>
+          </div>
+        ` : ''}
+        ${formData.client_signature ? `
+          <div style="text-align: center; flex: 1;">
+            <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.clientSignature}</p>
+            <img src="${formData.client_signature}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
+            <p style="font-size: 11px; color: #666; margin-top: 4px;">${formData.client_name}</p>
+          </div>
+        ` : ''}
       </div>
-    ` : ''}
+    </div>
     
     <!-- Footer -->
     <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center;">
