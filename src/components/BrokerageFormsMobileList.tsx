@@ -83,6 +83,7 @@ export const BrokerageFormsMobileList: React.FC = () => {
         client_signature: form.client_signature,
         agent_name: form.agent_name,
         agent_id: form.agent_id,
+        agent_signature: form.agent_signature,
         form_date: form.form_date,
         fee_type_rental: form.fee_type_rental,
         fee_type_sale: form.fee_type_sale,
