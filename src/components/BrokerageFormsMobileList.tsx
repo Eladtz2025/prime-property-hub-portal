@@ -254,37 +254,37 @@ export const BrokerageFormsMobileList: React.FC = () => {
                     </Card>
                   </SheetTrigger>
 
-                  <SheetContent side="bottom" className="h-[85vh] rtl">
-                    <SheetHeader>
-                      <SheetTitle className="flex items-center gap-2">
+                  <SheetContent side="bottom" className="h-[85vh] rtl flex flex-col">
+                    <SheetHeader className="flex-shrink-0 pt-4">
+                      <SheetTitle className="flex items-center gap-2 text-base">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                         טופס תיווך חתום
                       </SheetTitle>
-                      <SheetDescription>
+                      <SheetDescription className="text-xs">
                         נחתם בתאריך {format(new Date(form.form_date), 'dd MMMM yyyy', { locale: he })}
                       </SheetDescription>
                     </SheetHeader>
 
-                    <div className="mt-6 space-y-6 overflow-y-auto pb-8">
+                    <div className="flex-1 overflow-y-auto mt-4 space-y-4 pb-8">
                       {/* Client Details */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">פרטי הלקוח</h4>
-                        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-xs text-muted-foreground">פרטי הלקוח</h4>
+                        <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">שם מלא</span>
+                            <span className="text-muted-foreground text-xs">שם מלא</span>
                             <span className="font-medium">{form.client_name}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">ת.ז</span>
+                            <span className="text-muted-foreground text-xs">ת.ז</span>
                             <span>{form.client_id}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">טלפון</span>
+                            <span className="text-muted-foreground text-xs">טלפון</span>
                             <span dir="ltr">{form.client_phone}</span>
                           </div>
                           {form.referred_by && (
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">מופנה ע"י</span>
+                              <span className="text-muted-foreground text-xs">מופנה ע"י</span>
                               <span>{form.referred_by}</span>
                             </div>
                           )}
@@ -292,17 +292,17 @@ export const BrokerageFormsMobileList: React.FC = () => {
                       </div>
 
                       {/* Fee Types */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">סוג דמי תיווך</h4>
+                      <div className="space-y-1.5">
+                        <h4 className="font-semibold text-xs text-muted-foreground">סוג דמי תיווך</h4>
                         <div className="flex gap-2">
                           {form.fee_type_rental && (
-                            <Badge className="gap-1">
+                            <Badge variant="secondary" className="gap-1 text-xs">
                               <CheckCircle2 className="h-3 w-3" />
                               השכרה
                             </Badge>
                           )}
                           {form.fee_type_sale && (
-                            <Badge className="gap-1">
+                            <Badge variant="secondary" className="gap-1 text-xs">
                               <CheckCircle2 className="h-3 w-3" />
                               מכירה
                             </Badge>
@@ -312,13 +312,13 @@ export const BrokerageFormsMobileList: React.FC = () => {
 
                       {/* Properties */}
                       {properties.length > 0 && (
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">נכסים ({properties.length})</h4>
-                          <div className="space-y-2">
+                        <div className="space-y-1.5">
+                          <h4 className="font-semibold text-xs text-muted-foreground">נכסים ({properties.length})</h4>
+                          <div className="space-y-1.5">
                             {properties.map((prop: any, idx: number) => (
-                              <div key={idx} className="bg-muted/50 rounded-lg p-3">
-                                <p className="font-medium">{prop.address}</p>
-                                <div className="flex gap-3 text-sm text-muted-foreground mt-1">
+                              <div key={idx} className="bg-muted/50 rounded-lg p-2.5">
+                                <p className="font-medium text-sm">{prop.address}</p>
+                                <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
                                   {prop.floor && <span>קומה {prop.floor}</span>}
                                   {prop.rooms && <span>{prop.rooms} חדרים</span>}
                                   {prop.price && <span>₪{Number(prop.price).toLocaleString()}</span>}
@@ -331,20 +331,20 @@ export const BrokerageFormsMobileList: React.FC = () => {
 
                       {/* Special Terms */}
                       {form.special_terms && (
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">תנאים מיוחדים</h4>
-                          <p className="text-sm bg-muted/50 rounded-lg p-4">
+                        <div className="space-y-1.5">
+                          <h4 className="font-semibold text-xs text-muted-foreground">תנאים מיוחדים</h4>
+                          <p className="text-sm bg-muted/50 rounded-lg p-3">
                             {form.special_terms}
                           </p>
                         </div>
                       )}
 
                       {/* Agent Info */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">פרטי הסוכן</h4>
-                        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">שם</span>
+                      <div className="space-y-1.5">
+                        <h4 className="font-semibold text-xs text-muted-foreground">פרטי הסוכן</h4>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground text-xs">שם</span>
                             <span>{form.agent_name}</span>
                           </div>
                         </div>
@@ -352,24 +352,25 @@ export const BrokerageFormsMobileList: React.FC = () => {
 
                       {/* Signature */}
                       {form.client_signature && (
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">חתימת הלקוח</h4>
-                          <div className="bg-white border rounded-lg p-4 flex items-center justify-center">
+                        <div className="space-y-1.5">
+                          <h4 className="font-semibold text-xs text-muted-foreground">חתימת הלקוח</h4>
+                          <div className="bg-white border rounded-lg p-3 flex items-center justify-center">
                             <img 
                               src={form.client_signature} 
                               alt="חתימת לקוח" 
-                              className="max-h-24 object-contain"
+                              className="max-h-16 object-contain"
                             />
                           </div>
                         </div>
                       )}
 
                       {/* Download PDF Button */}
-                      <div className="pt-4 border-t">
+                      <div className="pt-3 border-t mt-auto flex-shrink-0">
                         <Button
                           onClick={() => handleDownloadPDF(form)}
                           disabled={downloadingFormId === form.id}
                           className="w-full gap-2"
+                          size="sm"
                         >
                           {downloadingFormId === form.id ? (
                             <>
