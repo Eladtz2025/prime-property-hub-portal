@@ -100,25 +100,29 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
-        <DialogHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-right order-1 sm:order-2">
-              <DialogTitle className="text-lg sm:text-xl leading-tight">{property.address}</DialogTitle>
-              <p className="text-muted-foreground text-sm">{property.city}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end order-2 sm:order-1">
-              <Badge className={`${getStatusColor(property.status)} text-xs`}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6" dir="rtl">
+        <DialogHeader className="pt-2 pb-0">
+          <div className="flex flex-col gap-3">
+            {/* Title + Status row */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-right flex-1 min-w-0">
+                <DialogTitle className="text-base sm:text-xl leading-tight">{property.address}</DialogTitle>
+                <p className="text-muted-foreground text-xs sm:text-sm">{property.city}</p>
+              </div>
+              <Badge className={`${getStatusColor(property.status)} text-xs shrink-0`}>
                 {getStatusText(property.status)}
               </Badge>
-              <Button size="sm" variant="outline" onClick={() => setIsAppointmentModalOpen(true)} className="text-xs h-8 px-2">
-                <CalendarPlus className="h-3.5 w-3.5 ml-1" />
-                <span className="hidden xs:inline">קבע פגישה</span>
-                <span className="xs:hidden">פגישה</span>
+            </div>
+            
+            {/* Action buttons - separate row on mobile */}
+            <div className="flex items-center gap-2 justify-end">
+              <Button size="sm" variant="outline" onClick={() => setIsAppointmentModalOpen(true)} className="text-xs h-7 px-2">
+                <CalendarPlus className="h-3 w-3 ml-1" />
+                פגישה
               </Button>
               {canEdit && (
-                <Button size="sm" onClick={() => onEdit(property)} className="text-xs h-8 px-2">
-                  <Edit className="h-3.5 w-3.5 ml-1" />
+                <Button size="sm" onClick={() => onEdit(property)} className="text-xs h-7 px-2">
+                  <Edit className="h-3 w-3 ml-1" />
                   עריכה
                 </Button>
               )}
@@ -126,80 +130,79 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="general">כללי</TabsTrigger>
-            <TabsTrigger value="images">תמונות</TabsTrigger>
-            <TabsTrigger value="contract">חוזה</TabsTrigger>
-            <TabsTrigger value="history">היסטוריה</TabsTrigger>
-            <TabsTrigger value="notes">הערות</TabsTrigger>
+        <Tabs defaultValue="general" className="w-full mt-2" dir="rtl">
+          <TabsList className="grid w-full grid-cols-5 h-8">
+            <TabsTrigger value="general" className="text-xs px-1">כללי</TabsTrigger>
+            <TabsTrigger value="images" className="text-xs px-1">תמונות</TabsTrigger>
+            <TabsTrigger value="contract" className="text-xs px-1">חוזה</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs px-1">היסטוריה</TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs px-1">הערות</TabsTrigger>
           </TabsList>
 
           {/* General Details */}
-          <TabsContent value="general" className="space-y-4 text-right">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="general" className="space-y-3 text-right mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Property Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
-                    <Home className="h-4 w-4" />
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <Home className="h-4 w-4 text-muted-foreground" />
                     פרטי הנכס
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-right">
-                  <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">כתובת:</span>
+                <CardContent className="p-3 pt-0 space-y-1.5 text-right text-sm">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span>{property.address}, {property.city}</span>
                   </div>
                   {property.propertySize && (
-                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
+                    <div>
                       <span className="font-medium">גודל:</span>
-                      <span>{property.propertySize} מ"ר</span>
+                      <span className="mr-1">{property.propertySize} מ"ר</span>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
                     {property.rooms && (
                       <span><span className="font-medium">חדרים:</span> {property.rooms}</span>
                     )}
                     {property.floor !== undefined && property.floor !== null && (
-                      <span><span className="font-medium">קומה:</span> {property.floor}{property.buildingFloors ? ` / ${property.buildingFloors}` : ''}</span>
+                      <span><span className="font-medium">קומה:</span> {property.floor}{property.buildingFloors ? `/${property.buildingFloors}` : ''}</span>
                     )}
                     {property.bathrooms && (
-                      <span><span className="font-medium">חדרי רחצה:</span> {property.bathrooms}</span>
+                      <span><span className="font-medium">מקלחות:</span> {property.bathrooms}</span>
                     )}
                   </div>
                   {/* Features */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t">
                     {property.parking && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Car className="h-3 w-3 ml-1" />חניה
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
+                        <Car className="h-2.5 w-2.5 ml-0.5" />חניה
                       </Badge>
                     )}
                     {property.elevator && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Building2 className="h-3 w-3 ml-1" />מעלית
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
+                        <Building2 className="h-2.5 w-2.5 ml-0.5" />מעלית
                       </Badge>
                     )}
                     {property.balcony && (
-                      <Badge variant="secondary" className="text-xs">
-                        <DoorOpen className="h-3 w-3 ml-1" />מרפסת
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
+                        <DoorOpen className="h-2.5 w-2.5 ml-0.5" />מרפסת
                       </Badge>
                     )}
                     {property.mamad && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Shield className="h-3 w-3 ml-1" />ממ"ד
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
+                        <Shield className="h-2.5 w-2.5 ml-0.5" />ממ"ד
                       </Badge>
                     )}
                     {property.yard && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Trees className="h-3 w-3 ml-1" />חצר
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-muted text-muted-foreground">
+                        <Trees className="h-2.5 w-2.5 ml-0.5" />חצר
                       </Badge>
                     )}
                   </div>
                   {property.balconyYardSize && (
-                    <div className="text-sm text-muted-foreground">
-                      גודל מרפסת/חצר: {property.balconyYardSize} מ"ר
+                    <div className="text-xs text-muted-foreground">
+                      מרפסת/חצר: {property.balconyYardSize} מ"ר
                     </div>
                   )}
                 </CardContent>
@@ -207,22 +210,22 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
               {/* Owner Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
-                    <User className="h-4 w-4" />
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <User className="h-4 w-4 text-muted-foreground" />
                     פרטי הבעלים
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-right">
+                <CardContent className="p-3 pt-0 space-y-1.5 text-right text-sm">
                   <div>
                     <span className="font-medium">שם:</span>
-                    <span className="mr-2">{property.ownerName}</span>
+                    <span className="mr-1">{property.ownerName}</span>
                   </div>
                   {property.ownerPhone && (
-                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       {canViewPhone ? (
-                        <a href={`tel:${property.ownerPhone}`} className="text-blue-600 hover:underline">
+                        <a href={`tel:${property.ownerPhone}`} className="text-primary hover:underline">
                           {formatPhoneNumber(property.ownerPhone)}
                         </a>
                       ) : (
@@ -231,9 +234,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     </div>
                   )}
                   {property.ownerEmail && (
-                    <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a href={`mailto:${property.ownerEmail}`} className="text-blue-600 hover:underline">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <a href={`mailto:${property.ownerEmail}`} className="text-primary hover:underline truncate">
                         {property.ownerEmail}
                       </a>
                     </div>
@@ -242,74 +245,74 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Tenant Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
-                    <User className="h-4 w-4" />
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <User className="h-4 w-4 text-muted-foreground" />
                     פרטי השוכר
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-right">
+                <CardContent className="p-3 pt-0 space-y-1.5 text-right text-sm">
                   {property.tenantName ? (
                     <>
                       <div>
                         <span className="font-medium">שם:</span>
-                        <span className="mr-2">{property.tenantName}</span>
+                        <span className="mr-1">{property.tenantName}</span>
                       </div>
                       {property.tenantPhone && (
-                        <div className="flex items-center gap-2 flex-row-reverse justify-end">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           {canViewPhone ? (
-                            <a href={`tel:${property.tenantPhone}`} className="text-blue-600 hover:underline">
+                            <a href={`tel:${property.tenantPhone}`} className="text-primary hover:underline">
                               {formatPhoneNumber(property.tenantPhone)}
                             </a>
                           ) : (
                             <span className="text-muted-foreground">{formatPhoneDisplay(property.tenantPhone, canViewPhone)}</span>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <p className="text-muted-foreground">אין שוכר כרגע</p>
+                    <p className="text-muted-foreground text-xs">אין שוכר כרגע</p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Financial Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base flex-row-reverse justify-end">
-                    <Wallet className="h-4 w-4" />
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
                     מידע כספי
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-right">
+                <CardContent className="p-3 pt-0 space-y-1 text-right text-sm">
                   {property.monthlyRent ? (
                     <div>
-                      <span className="font-medium">שכירות חודשית:</span>
-                      <span className="mr-2 text-lg font-bold text-primary">₪{property.monthlyRent.toLocaleString()}</span>
+                      <span className="font-medium">שכירות:</span>
+                      <span className="mr-1 font-bold text-primary">₪{property.monthlyRent.toLocaleString()}</span>
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">לא הוגדר מחיר</p>
+                    <p className="text-muted-foreground text-xs">לא הוגדר מחיר</p>
                   )}
                   {property.municipalTax && (
-                    <div>
+                    <div className="text-xs">
                       <span className="font-medium">ארנונה:</span>
-                      <span className="mr-2">₪{property.municipalTax.toLocaleString()}/חודש</span>
+                      <span className="mr-1">₪{property.municipalTax.toLocaleString()}/חודש</span>
                     </div>
                   )}
                   {property.buildingCommitteeFee && (
-                    <div>
+                    <div className="text-xs">
                       <span className="font-medium">ועד בית:</span>
-                      <span className="mr-2">₪{property.buildingCommitteeFee.toLocaleString()}/חודש</span>
+                      <span className="mr-1">₪{property.buildingCommitteeFee.toLocaleString()}/חודש</span>
                     </div>
                   )}
                   {(property.monthlyRent || property.municipalTax || property.buildingCommitteeFee) && (
-                    <div className="pt-2 border-t mt-2">
-                      <span className="font-medium">סה"כ עלות חודשית:</span>
-                      <span className="mr-2 font-bold">
+                    <div className="pt-1.5 border-t mt-1.5 text-xs">
+                      <span className="font-medium">סה"כ:</span>
+                      <span className="mr-1 font-bold">
                         ₪{((property.monthlyRent || 0) + (property.municipalTax || 0) + (property.buildingCommitteeFee || 0)).toLocaleString()}
                       </span>
                     </div>
