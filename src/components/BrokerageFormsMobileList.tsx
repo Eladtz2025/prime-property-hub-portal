@@ -317,10 +317,6 @@ export const BrokerageFormsMobileList: React.FC = () => {
                             <span className="text-muted-foreground">שם</span>
                             <span>{form.agent_name}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">ח.פ</span>
-                            <span>{form.agent_id}</span>
-                          </div>
                         </div>
                       </div>
 
