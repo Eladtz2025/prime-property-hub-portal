@@ -13,9 +13,20 @@ const AdminForms = () => {
   };
 
   return (
-    <div className="relative min-h-screen pb-32">
+    <div className="min-h-screen">
       <div className="p-4 rtl">
-        <h1 className="text-2xl font-bold mb-4">טפסים</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">טפסים</h1>
+          <Button
+            onClick={handleNewBrokerageForm}
+            size="sm"
+            className="gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">טופס תיווך</span>
+            <span className="sm:hidden">חדש</span>
+          </Button>
+        </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -37,18 +48,6 @@ const AdminForms = () => {
             <AdminPriceOffersContent />
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Floating Action Button - Always visible for quick access to new brokerage form */}
-      <div className="fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 z-40">
-        <Button
-          onClick={handleNewBrokerageForm}
-          size="lg"
-          className="w-full md:w-auto shadow-lg gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 text-base rounded-xl"
-        >
-          <Plus className="h-5 w-5" />
-          טופס תיווך חדש
-        </Button>
       </div>
     </div>
   );

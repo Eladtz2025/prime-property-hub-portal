@@ -244,10 +244,27 @@ export const BrokerageFormsMobileList: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="text-left">
+                          <div className="flex flex-col items-end gap-2">
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(form.form_date), 'dd/MM', { locale: he })}
                             </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadPDF(form);
+                              }}
+                              disabled={downloadingFormId === form.id}
+                              className="gap-1.5 h-8"
+                            >
+                              {downloadingFormId === form.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Download className="h-3.5 w-3.5" />
+                              )}
+                              PDF
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
