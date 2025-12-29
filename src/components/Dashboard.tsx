@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10"></div>
           </div>
           
-          <div className="relative z-10 flex flex-row-reverse items-start gap-6">
+          <div className="relative z-10 flex items-start gap-6" dir="rtl">
             {/* Greeting - Right side */}
             <div className="shrink-0">
               <h1 className="text-3xl font-bold mb-2 text-right">
