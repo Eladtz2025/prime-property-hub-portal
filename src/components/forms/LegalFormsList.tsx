@@ -4,11 +4,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, Plus, ExternalLink, Loader2, Calendar, User, Building } from 'lucide-react';
+import { FileText, Download, Plus, ExternalLink, Loader2, Calendar, User, Building, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { generateMemorandumPDF } from '@/lib/memorandum-pdf-generator';
 import { generateExclusivityPDF } from '@/lib/exclusivity-pdf-generator';
+import { generateBrokerSharingPDF } from '@/lib/broker-sharing-pdf-generator';
+import { BUSINESS_INFO } from '@/constants/business';
 import { toast } from 'sonner';
 
 interface LegalForm {
@@ -126,6 +128,31 @@ export const LegalFormsList = () => {
         };
         await generateExclusivityPDF(formData);
         toast.success('ה-PDF הורד בהצלחה');
+      } else if (form.form_type === 'broker_sharing') {
+        const formData = {
+          primary_broker_name: form.language === 'he' ? BUSINESS_INFO.brokerName : BUSINESS_INFO.brokerNameEn,
+          primary_broker_license: BUSINESS_INFO.license,
+          primary_broker_phone: BUSINESS_INFO.phone,
+          primary_broker_company: BUSINESS_INFO.name,
+          secondary_broker_name: String(form.client_name || rawData.secondary_broker_name || ''),
+          secondary_broker_license: String(rawData.secondary_broker_license || ''),
+          secondary_broker_phone: String(rawData.secondary_broker_phone || ''),
+          secondary_broker_email: String(rawData.secondary_broker_email || ''),
+          secondary_broker_company: String(rawData.secondary_broker_company || ''),
+          property_address: String(form.property_address || ''),
+          property_city: String(rawData.property_city || ''),
+          transaction_type: (rawData.transaction_type as 'sale' | 'rental') || 'sale',
+          primary_broker_share: String(rawData.primary_broker_share || '50'),
+          secondary_broker_share: String(rawData.secondary_broker_share || '50'),
+          form_date: String(rawData.form_date || form.created_at || ''),
+          primary_broker_signature: String(rawData.primary_broker_signature || ''),
+          secondary_broker_signature: String(rawData.secondary_broker_signature || ''),
+          language: (form.language || 'he') as 'he' | 'en',
+        };
+        const pdf = await generateBrokerSharingPDF(formData);
+        const fileName = `broker-sharing-${form.client_name?.replace(/\s+/g, '-') || 'form'}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        pdf.save(fileName);
+        toast.success('ה-PDF הורד בהצלחה');
       } else {
         toast.error('סוג טופס לא נתמך עדיין');
       }
@@ -171,7 +198,7 @@ export const LegalFormsList = () => {
           <SelectContent>
             <SelectItem value="memorandum">זיכרון דברים</SelectItem>
             <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
-            <SelectItem value="broker_sharing" disabled>שיתוף מתווכים (בקרוב)</SelectItem>
+            <SelectItem value="broker_sharing">שיתוף מתווכים</SelectItem>
           </SelectContent>
         </Select>
       </div>
