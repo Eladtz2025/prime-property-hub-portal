@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Download, Mail, Loader2 } from 'lucide-react';
+import { CheckCircle, Download, Mail, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FormThankYouScreenProps {
@@ -21,6 +21,12 @@ interface FormThankYouScreenProps {
   onSendEmail?: (email: string) => Promise<void>;
   onFinish: () => void;
   isRTL?: boolean;
+  // WhatsApp props
+  onSendWhatsApp?: () => Promise<void>;
+  sendWhatsAppText?: string;
+  whatsAppSentText?: string;
+  whatsAppErrorText?: string;
+  sendingWhatsAppText?: string;
 }
 
 export const FormThankYouScreen: React.FC<FormThankYouScreenProps> = ({
@@ -39,10 +45,17 @@ export const FormThankYouScreen: React.FC<FormThankYouScreenProps> = ({
   onSendEmail,
   onFinish,
   isRTL = true,
+  // WhatsApp props
+  onSendWhatsApp,
+  sendWhatsAppText,
+  whatsAppSentText,
+  whatsAppErrorText,
+  sendingWhatsAppText,
 }) => {
   const [email, setEmail] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
@@ -72,6 +85,20 @@ export const FormThankYouScreen: React.FC<FormThankYouScreenProps> = ({
       toast.error(emailErrorText);
     } finally {
       setIsSendingEmail(false);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!onSendWhatsApp) return;
+
+    setIsSendingWhatsApp(true);
+    try {
+      await onSendWhatsApp();
+      toast.success(whatsAppSentText || 'Message sent!');
+    } catch (error) {
+      toast.error(whatsAppErrorText || 'Error sending message');
+    } finally {
+      setIsSendingWhatsApp(false);
     }
   };
 
@@ -106,6 +133,28 @@ export const FormThankYouScreen: React.FC<FormThankYouScreenProps> = ({
               </>
             )}
           </Button>
+
+          {/* WhatsApp Button */}
+          {onSendWhatsApp && (
+            <Button
+              onClick={handleSendWhatsApp}
+              disabled={isSendingWhatsApp}
+              className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
+            >
+              {isSendingWhatsApp ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {sendingWhatsAppText || 'Sending...'}
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="h-4 w-4" />
+                  {sendWhatsAppText || 'Send via WhatsApp'}
+                </>
+              )}
+            </Button>
+          )}
 
           {/* Email Section */}
           {onSendEmail && (
