@@ -169,8 +169,8 @@ const EnglishPropertyDetail = () => {
             <Link to={property.property_type === 'sale' ? '/en/sales' : '/en/rentals'} className="hover:text-primary transition-colors">
               {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
             </Link>
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground">{translatedTitle}</span>
+          <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground">Property #{property.property_number}</span>
           </nav>
         </div>
 
@@ -307,7 +307,7 @@ const EnglishPropertyDetail = () => {
             {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">{translatedTitle}</span>
+          <span className="text-foreground">Property #{property.property_number}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

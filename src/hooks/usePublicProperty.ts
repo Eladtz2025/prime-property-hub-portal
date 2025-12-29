@@ -16,10 +16,11 @@ export const usePublicProperty = (propertyId: string | undefined) => {
       try {
         log.info(`Loading public property: ${propertyId}`);
 
-        const { data: property, error } = await supabase
+          const { data: property, error } = await supabase
           .from('properties')
           .select(`
             id,
+            property_number,
             title,
             title_en,
             address,
@@ -77,6 +78,7 @@ export const usePublicProperty = (propertyId: string | undefined) => {
         // Transform data
         const transformedProperty: PublicProperty = {
           id: property.id,
+          property_number: property.property_number,
           title: property.title || `${property.rooms} חדרים ${property.address}`,
           title_en: property.title_en,
           address: property.address,

@@ -1450,6 +1450,7 @@ export type Database = {
           owner_name: string | null
           owner_phone: string | null
           parking: boolean | null
+          property_number: number
           property_size: number | null
           property_type: string | null
           renovation_costs: number | null
@@ -1498,6 +1499,7 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null
+          property_number?: number
           property_size?: number | null
           property_type?: string | null
           renovation_costs?: number | null
@@ -1546,6 +1548,7 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null
+          property_number?: number
           property_size?: number | null
           property_type?: string | null
           renovation_costs?: number | null

@@ -6,6 +6,7 @@ const log = logger.component('usePublicProperties');
 
 export interface PublicProperty {
   id: string;
+  property_number?: number;
   title?: string;
   title_en?: string;
   address: string;
