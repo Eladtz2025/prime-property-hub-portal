@@ -173,9 +173,9 @@ export const LegalFormsList = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-right" dir="rtl">
       {/* Header with filters and new form button */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+      <div className="flex flex-col sm:flex-row-reverse gap-3 justify-between items-start sm:items-center">
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="סנן לפי סוג" />
@@ -190,7 +190,7 @@ export const LegalFormsList = () => {
 
         <Select onValueChange={handleNewForm}>
           <SelectTrigger className="w-full sm:w-48">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-row-reverse items-center gap-2">
               <Plus className="h-4 w-4" />
               <span>טופס חדש</span>
             </div>
@@ -257,7 +257,7 @@ export const LegalFormsList = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 sm:flex-col">
+                  <div className="flex flex-row-reverse gap-2 sm:flex-col">
                     {form.status === 'signed' && (
                       <Button
                         variant="outline"

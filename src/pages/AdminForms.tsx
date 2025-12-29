@@ -14,15 +14,15 @@ const AdminForms = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="p-4 rtl">
-        <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen" dir="rtl">
+      <div className="p-4 text-right">
+        <div className="flex flex-row-reverse items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">טפסים</h1>
           {activeTab === 'brokerage' && (
             <Button
               onClick={handleNewBrokerageForm}
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 flex-row-reverse"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">טופס תיווך</span>
@@ -33,20 +33,20 @@ const AdminForms = () => {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="brokerage" className="gap-2 text-xs sm:text-sm">
-              <FileSignature className="h-4 w-4" />
-              <span className="hidden sm:inline">טפסי תיווך</span>
-              <span className="sm:hidden">תיווך</span>
+            <TabsTrigger value="price-offers" className="gap-2 text-xs sm:text-sm flex-row-reverse">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">הצעות מחיר</span>
+              <span className="sm:hidden">הצעות</span>
             </TabsTrigger>
-            <TabsTrigger value="legal" className="gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="legal" className="gap-2 text-xs sm:text-sm flex-row-reverse">
               <Scale className="h-4 w-4" />
               <span className="hidden sm:inline">טפסים משפטיים</span>
               <span className="sm:hidden">משפטי</span>
             </TabsTrigger>
-            <TabsTrigger value="price-offers" className="gap-2 text-xs sm:text-sm">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">הצעות מחיר</span>
-              <span className="sm:hidden">הצעות</span>
+            <TabsTrigger value="brokerage" className="gap-2 text-xs sm:text-sm flex-row-reverse">
+              <FileSignature className="h-4 w-4" />
+              <span className="hidden sm:inline">טפסי תיווך</span>
+              <span className="sm:hidden">תיווך</span>
             </TabsTrigger>
           </TabsList>
 

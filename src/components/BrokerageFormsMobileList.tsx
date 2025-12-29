@@ -128,11 +128,11 @@ export const BrokerageFormsMobileList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-right" dir="rtl">
       {/* Pending Tokens Section */}
       {pendingCount > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-row-reverse items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-yellow-600" />
             <h3 className="text-sm font-semibold">בהמתנה לחתימה ({pendingCount})</h3>
           </div>
@@ -206,7 +206,7 @@ export const BrokerageFormsMobileList: React.FC = () => {
       {/* Signed Forms Section */}
       {signedCount > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-row-reverse items-center gap-2 mb-3">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <h3 className="text-sm font-semibold">חתומים ({signedCount})</h3>
           </div>
