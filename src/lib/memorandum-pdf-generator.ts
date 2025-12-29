@@ -114,6 +114,7 @@ export async function generateMemorandumPDF(formData: MemorandumFormData): Promi
       <h2 style="${headerStyle}">${t.financialDetails}</h2>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
         <p style="${textStyle}"><strong>${t.rentalPrice}:</strong> ₪${formData.rental_price}</p>
+        <p style="${textStyle}"><strong>${t.brokerageFee}:</strong> ${t.brokerageFeeValue}</p>
         ${formData.deposit_amount ? `<p style="${textStyle}"><strong>${t.depositAmount}:</strong> ₪${formData.deposit_amount}</p>` : ''}
         ${formData.payment_method ? `<p style="${textStyle}"><strong>${t.paymentMethod}:</strong> ${formData.payment_method}</p>` : ''}
         ${formData.guarantees ? `<p style="${textStyle}"><strong>${t.guarantees}:</strong> ${formData.guarantees}</p>` : ''}
