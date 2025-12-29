@@ -84,7 +84,11 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
                     floor: property.floor?.toString() || '',
                     price: property.monthlyRent?.toString() || '',
                   });
-                  window.open(`/memorandum-form/new?${params.toString()}`, '_blank');
+                  // Choose form based on property type
+                  const formPath = property.property_type === 'sale' 
+                    ? '/sale-memorandum-form/new' 
+                    : '/memorandum-form/new';
+                  window.open(`${formPath}?${params.toString()}`, '_blank');
                 }}
               >
                 <FileText className="h-4 w-4 ml-2" />
