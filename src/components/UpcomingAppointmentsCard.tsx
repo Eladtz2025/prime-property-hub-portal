@@ -183,60 +183,69 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
             {appointments.map((appointment) => (
               <div 
                 key={appointment.id} 
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
               >
-                {/* Date & Time */}
-                <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg p-2 min-w-[60px]">
-                  <span className="text-xs font-medium text-primary">
+                {/* Date & Time - horizontal on mobile, vertical on desktop */}
+                <div className="flex sm:flex-col items-center justify-between sm:justify-center bg-primary/10 rounded-lg p-2 sm:p-3 w-full sm:w-auto sm:min-w-[70px]">
+                  <span className="text-sm sm:text-xs font-medium text-primary">
                     {getDateLabel(appointment.appointment_date)}
                   </span>
-                  <span className="text-lg font-bold">
+                  <span className="text-xl sm:text-lg font-bold">
                     {appointment.appointment_time.slice(0, 5)}
                   </span>
                 </div>
 
                 {/* Details */}
-                <div className="flex-1 space-y-1 text-right">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge className={appointmentTypeColors[appointment.appointment_type]}>
+                <div className="flex-1 space-y-2 text-right">
+                  {/* Badge and Name - stacked on mobile */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <Badge className={`${appointmentTypeColors[appointment.appointment_type]} w-fit`}>
                       {appointmentTypeLabels[appointment.appointment_type]}
                     </Badge>
                     <span className="font-medium flex items-center gap-1">
-                      <User className="h-3 w-3" />
+                      <User className="h-3 w-3 flex-shrink-0" />
                       {appointment.client_name}
                     </span>
                   </div>
                   
+                  {/* Location with truncate */}
                   {(appointment.properties || appointment.notes) && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {appointment.properties 
-                        ? `${appointment.properties.address}, ${appointment.properties.city}`
-                        : appointment.notes || 'לא צוין מיקום'
-                      }
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 max-w-full">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {appointment.properties 
+                          ? `${appointment.properties.address}, ${appointment.properties.city}`
+                          : appointment.notes || 'לא צוין מיקום'
+                        }
+                      </span>
                     </p>
                   )}
                   
-                  {appointment.client_phone && (
-                    <a 
-                      href={`tel:${appointment.client_phone}`}
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                  {/* Phone + Calendar Button together */}
+                  <div className="flex items-center justify-between gap-2">
+                    {appointment.client_phone ? (
+                      <a 
+                        href={`tel:${appointment.client_phone}`}
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Phone className="h-3 w-3 flex-shrink-0" />
+                        {appointment.client_phone}
+                      </a>
+                    ) : (
+                      <span></span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openGoogleCalendar(appointment)}
+                      title="הוסף ליומן גוגל"
+                      className="gap-1 h-8 px-2"
                     >
-                      <Phone className="h-3 w-3" />
-                      {appointment.client_phone}
-                    </a>
-                  )}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline text-xs">יומן גוגל</span>
+                    </Button>
+                  </div>
                 </div>
-
-                {/* Google Calendar Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => openGoogleCalendar(appointment)}
-                  title="הוסף ליומן גוגל"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
               </div>
             ))}
           </div>
