@@ -16,6 +16,7 @@ import { saleMemorandumTranslations, SaleMemorandumLanguage, useSaleMemorandumTr
 import { downloadSaleMemorandumPDF, SaleMemorandumFormData } from '@/lib/sale-memorandum-pdf-generator';
 import { FormSignatureBox } from '@/components/forms/FormSignatureBox';
 import { FormThankYouScreen } from '@/components/forms/FormThankYouScreen';
+import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 const SaleMemorandumFormPage = () => {
   const [searchParams] = useSearchParams();
@@ -27,6 +28,8 @@ const SaleMemorandumFormPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [savedFormData, setSavedFormData] = useState<SaleMemorandumFormData | null>(null);
+  
+  const { sendWhatsAppMessage, isSending: isSendingWhatsApp } = useWhatsAppSender();
 
   // Form state
   const [formDate, setFormDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -258,6 +261,20 @@ const SaleMemorandumFormPage = () => {
   };
 
   if (showThankYou && savedFormData) {
+    const handleSendWhatsApp = async () => {
+      if (!savedFormData.client_phone) {
+        throw new Error('No phone number');
+      }
+      const message = t.whatsAppMessageTemplate
+        .replace('{name}', savedFormData.client_name)
+        .replace('{address}', `${savedFormData.property_address}, ${savedFormData.property_city}`);
+      
+      await sendWhatsAppMessage({
+        phone: savedFormData.client_phone,
+        message,
+      });
+    };
+
     return (
       <FormThankYouScreen
         title={t.thankYouTitle}
@@ -274,6 +291,11 @@ const SaleMemorandumFormPage = () => {
         onDownloadPDF={() => downloadSaleMemorandumPDF(savedFormData)}
         onFinish={() => window.close()}
         isRTL={isRTL}
+        onSendWhatsApp={handleSendWhatsApp}
+        sendWhatsAppText={t.sendViaWhatsApp}
+        whatsAppSentText={t.whatsAppSent}
+        whatsAppErrorText={t.whatsAppError}
+        sendingWhatsAppText={t.sendingWhatsApp}
       />
     );
   }

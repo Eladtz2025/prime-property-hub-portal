@@ -17,6 +17,7 @@ import { getValidationSchema, formatValidationErrors, sanitizeInput } from '@/ut
 import { downloadMemorandumPDF, MemorandumFormData } from '@/lib/memorandum-pdf-generator';
 import { FormSignatureBox } from '@/components/forms/FormSignatureBox';
 import { FormThankYouScreen } from '@/components/forms/FormThankYouScreen';
+import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 const MemorandumFormPage = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +29,8 @@ const MemorandumFormPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [savedFormData, setSavedFormData] = useState<MemorandumFormData | null>(null);
+  
+  const { sendWhatsAppMessage, isSending: isSendingWhatsApp } = useWhatsAppSender();
 
   // Form state
   const [formDate, setFormDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -272,6 +275,20 @@ const MemorandumFormPage = () => {
   };
 
   if (showThankYou && savedFormData) {
+    const handleSendWhatsApp = async () => {
+      if (!savedFormData.client_phone) {
+        throw new Error('No phone number');
+      }
+      const message = t.whatsAppMessageTemplate
+        .replace('{name}', savedFormData.client_name)
+        .replace('{address}', `${savedFormData.property_address}, ${savedFormData.property_city}`);
+      
+      await sendWhatsAppMessage({
+        phone: savedFormData.client_phone,
+        message,
+      });
+    };
+
     return (
       <FormThankYouScreen
         title={t.thankYouTitle}
@@ -288,6 +305,11 @@ const MemorandumFormPage = () => {
         onDownloadPDF={() => downloadMemorandumPDF(savedFormData)}
         onFinish={() => window.close()}
         isRTL={isRTL}
+        onSendWhatsApp={handleSendWhatsApp}
+        sendWhatsAppText={t.sendViaWhatsApp}
+        whatsAppSentText={t.whatsAppSent}
+        whatsAppErrorText={t.whatsAppError}
+        sendingWhatsAppText={t.sendingWhatsApp}
       />
     );
   }

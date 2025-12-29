@@ -119,6 +119,11 @@ export const saleMemorandumTranslations = {
     closeAndFinish: 'סיום',
     sending: 'שולח...',
     generating: 'מייצר PDF...',
+    sendViaWhatsApp: 'שלח ללקוח בוואטסאפ',
+    whatsAppSent: 'ההודעה נשלחה בהצלחה!',
+    whatsAppError: 'שגיאה בשליחת ההודעה',
+    sendingWhatsApp: 'שולח...',
+    whatsAppMessageTemplate: 'שלום {name},\n\nתודה שחתמת על זיכרון הדברים לנכס ב{address}.\nהמסמך נשמר במערכת.\n\nבברכה,\nסיטי מרקט נכסים',
     
     // Status
     statusDraft: 'טיוטה',
@@ -251,6 +256,11 @@ export const saleMemorandumTranslations = {
     closeAndFinish: 'Finish',
     sending: 'Sending...',
     generating: 'Generating PDF...',
+    sendViaWhatsApp: 'Send to Client via WhatsApp',
+    whatsAppSent: 'Message sent successfully!',
+    whatsAppError: 'Error sending message',
+    sendingWhatsApp: 'Sending...',
+    whatsAppMessageTemplate: 'Hello {name},\n\nThank you for signing the memorandum for the property at {address}.\nThe document has been saved.\n\nBest regards,\nCity Market Properties',
     
     // Status
     statusDraft: 'Draft',
