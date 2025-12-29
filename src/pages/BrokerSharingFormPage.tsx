@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -163,15 +164,15 @@ const BrokerSharingFormPage = () => {
 
       const { data, error } = await supabase
         .from('legal_forms')
-        .insert({
+        .insert([{
           form_type: 'broker_sharing',
           language,
           status: 'signed',
           signed_at: new Date().toISOString(),
           client_name: secondaryBrokerName,
           property_address: propertyAddress,
-          form_data: formData,
-        })
+          form_data: formData as unknown as Json,
+        }])
         .select()
         .single();
 
@@ -212,14 +213,14 @@ const BrokerSharingFormPage = () => {
 
       const { error } = await supabase
         .from('legal_form_tokens')
-        .insert({
+        .insert([{
           token: newToken,
           form_type: 'broker_sharing',
           language,
           status: 'pending',
           expires_at: expiresAt.toISOString(),
-          form_data: formData,
-        });
+          form_data: formData as unknown as Json,
+        }]);
 
       if (error) throw error;
 
@@ -257,14 +258,17 @@ const BrokerSharingFormPage = () => {
   if (formSubmitted) {
     return (
       <FormThankYouScreen
-        titleText={t.thankYouTitle}
-        messageText={t.thankYouMessage}
-        downloadPdfText={t.downloadPDF}
-        emailLabel={t.enterEmail}
+        title={t.thankYouTitle}
+        message={t.thankYouMessage}
+        downloadPDFText={t.downloadPDF}
+        enterEmailText={t.enterEmail}
         sendEmailText={t.sendEmailCopy}
         finishText={t.closeAndFinish}
         sendingText={t.sending}
         generatingText={t.generating}
+        emailSentText={t.emailSent}
+        emailErrorText={t.emailError}
+        invalidEmailText={t.invalidEmail}
         onDownloadPDF={handleDownloadPDF}
         onFinish={() => window.close()}
         isRTL={isRTL}
