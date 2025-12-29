@@ -76,7 +76,7 @@ const NewDevelopments = () => {
         <meta property="og:title" content="New Developments - City Market Properties" />
         <meta property="og:description" content="The future of modern living - luxury developments in Israel's top locations." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket.co.il/en/new-developments" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/new-developments" />
       </Helmet>
       <EnglishHeader />
 

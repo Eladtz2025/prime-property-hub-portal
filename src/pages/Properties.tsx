@@ -705,7 +705,7 @@ export const Properties: React.FC = memo(() => {
                                      </Tooltip>
                                      <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => {
-                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
+                                          const url = `${window.location.origin}/he/property/${property.id}`;
                                           window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
                                         }}>
                                           <MessageCircle className="h-4 w-4 ml-2" />
@@ -720,7 +720,7 @@ export const Properties: React.FC = memo(() => {
                                           שתף בפייסבוק
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => {
-                                          const url = `https://citymarket.co.il/he/property/${property.id}`;
+                                          const url = `${window.location.origin}/he/property/${property.id}`;
                                           navigator.clipboard.writeText(url);
                                           toast({
                                             title: "הקישור הועתק",

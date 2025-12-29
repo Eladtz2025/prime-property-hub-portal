@@ -65,7 +65,7 @@ const EnglishSales = () => {
         <meta name="description" content="Apartments and properties for sale in Tel Aviv. Full professional service including consultation, valuation, legal support and negotiation with potential buyers." />
         <meta property="og:title" content="Properties for Sale - CITY MARKET Properties" />
         <meta property="og:description" content="Wide range of apartments and properties for sale in Tel Aviv with full professional service" />
-        <link rel="canonical" href="https://citymarket.co.il/en/sales" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/sales" />
       </Helmet>
       <EnglishHeader />
       
