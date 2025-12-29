@@ -55,6 +55,7 @@ import AdminActivity from './pages/AdminActivity';
 import AdminLeads from './pages/AdminLeads';
 import AdminCustomers from './pages/AdminCustomers';
 import AdminDevOps from './pages/AdminDevOps';
+import MemorandumFormPage from './pages/MemorandumFormPage';
 
 import NotFound from './pages/NotFound';
 
@@ -86,6 +87,10 @@ const AppContent: React.FC = () => {
         {/* Brokerage Form Routes - Clean pages without layout */}
         <Route path="/brokerage-form/new" element={<BrokerageFormPage />} />
         <Route path="/brokerage-form/:token" element={<BrokerageFormPage />} />
+        
+        {/* Memorandum Form Routes - Clean pages without layout */}
+        <Route path="/memorandum-form/new" element={<MemorandumFormPage />} />
+        <Route path="/memorandum-form/:token" element={<MemorandumFormPage />} />
         
         {/* Price Offer Public View - Clean page without layout */}
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
