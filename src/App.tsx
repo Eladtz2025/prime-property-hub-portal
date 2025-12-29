@@ -57,6 +57,7 @@ import AdminLeads from './pages/AdminLeads';
 import AdminCustomers from './pages/AdminCustomers';
 import AdminDevOps from './pages/AdminDevOps';
 import MemorandumFormPage from './pages/MemorandumFormPage';
+import BrokerSharingFormPage from './pages/BrokerSharingFormPage';
 
 import NotFound from './pages/NotFound';
 
@@ -92,6 +93,14 @@ const AppContent: React.FC = () => {
         {/* Memorandum Form Routes - Clean pages without layout */}
         <Route path="/memorandum-form/new" element={<MemorandumFormPage />} />
         <Route path="/memorandum-form/:token" element={<MemorandumFormPage />} />
+        
+        {/* Exclusivity Form Routes - Clean pages without layout */}
+        <Route path="/exclusivity-form/new" element={<ExclusivityFormPage />} />
+        <Route path="/exclusivity-form/:token" element={<ExclusivityFormPage />} />
+        
+        {/* Broker Sharing Form Routes - Clean pages without layout */}
+        <Route path="/broker-sharing-form/new" element={<BrokerSharingFormPage />} />
+        <Route path="/broker-sharing-form/:token" element={<BrokerSharingFormPage />} />
         
         {/* Price Offer Public View - Clean page without layout */}
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
