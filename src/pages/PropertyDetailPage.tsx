@@ -288,7 +288,7 @@ const PropertyDetailPage = () => {
           <Button 
             variant="outline" 
             className="w-full gap-2 h-12" 
-            onClick={handleNativeShare}
+            onClick={handleCopyLink}
           >
             {copied ? <Check className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
             שתף נכס זה
@@ -412,7 +412,7 @@ const PropertyDetailPage = () => {
             <Button 
               variant="outline" 
               className="w-full gap-2" 
-              onClick={handleNativeShare}
+              onClick={handleCopyLink}
             >
               {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
               שתף נכס זה
