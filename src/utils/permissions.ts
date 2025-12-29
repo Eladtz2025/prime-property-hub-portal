@@ -1,4 +1,5 @@
 import { Permission } from '@/types/auth';
+import { formatIsraeliPhone } from './phoneFormatter';
 
 /**
  * Check if user has permission to view phone numbers
@@ -15,8 +16,7 @@ export const canViewPhoneNumbers = (permissions: Permission[]): boolean => {
  * Format phone number with masking for users without permission
  */
 export const formatPhoneDisplay = (phone: string | undefined, canView: boolean): string => {
-  if (!phone || !canView) {
-    return '***-***-****';
-  }
-  return phone;
+  if (!phone) return '-';
+  if (!canView) return '***-***-****';
+  return formatIsraeliPhone(phone);
 };

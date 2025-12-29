@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatIsraeliPhone } from "@/utils/phoneFormatter";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -236,7 +237,7 @@ export const ExpandableCustomerRow = ({
           </div>
         </TableCell>
         <TableCell className="text-right">
-          {customer.phone || '-'}
+          {customer.phone ? formatIsraeliPhone(customer.phone) : '-'}
         </TableCell>
         <TableCell className="text-right">
           {customer.property_type ? (

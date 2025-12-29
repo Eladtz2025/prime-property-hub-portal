@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatIsraeliPhone } from "@/utils/phoneFormatter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -237,7 +238,7 @@ export const CustomerMobileTable = ({
                       </span>
                       {customer.phone && (
                         <span className="text-[10px] text-muted-foreground truncate">
-                          {customer.phone}
+                          {formatIsraeliPhone(customer.phone)}
                         </span>
                       )}
                     </div>
