@@ -55,24 +55,24 @@ export async function generateMemorandumPDF(formData: MemorandumFormData): Promi
     left: -9999px;
     top: 0;
     width: 794px;
-    padding: 20px 30px;
+    padding: 16px 28px;
     background: white;
     font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
     direction: ${isRTL ? 'rtl' : 'ltr'};
     color: #000;
   `;
 
-  const sectionStyle = `margin-bottom: 14px; padding: 10px 14px; background: #f8f9fa; border-radius: 6px; border-${isRTL ? 'right' : 'left'}: 4px solid #2563eb;`;
-  const headerStyle = `font-size: 13px; font-weight: bold; margin: 0 0 8px 0; color: #1e40af;`;
-  const textStyle = `font-size: 11px; line-height: 1.5; margin: 4px 0; color: #333;`;
+  const sectionStyle = `margin-bottom: 10px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; border-${isRTL ? 'right' : 'left'}: 4px solid #2563eb;`;
+  const headerStyle = `font-size: 12px; font-weight: bold; margin: 0 0 6px 0; color: #1e40af;`;
+  const textStyle = `font-size: 10px; line-height: 1.4; margin: 3px 0; color: #333;`;
   const smallTextStyle = `font-size: 10px; line-height: 1.4; margin: 3px 0; color: #444;`;
 
   container.innerHTML = `
     <!-- Header -->
-    <div style="text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 3px solid #2563eb;">
-      <h1 style="font-size: 22px; margin: 0; color: #1e3a5f; font-weight: bold;">${t.title}</h1>
-      <p style="font-size: 14px; color: #4b5563; margin-top: 4px;">${t.subtitle}</p>
-      <p style="font-size: 10px; color: #666; margin-top: 6px;">${t.formDate}: ${formDate}</p>
+    <div style="text-align: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid #2563eb;">
+      <h1 style="font-size: 20px; margin: 0; color: #1e3a5f; font-weight: bold;">${t.title}</h1>
+      <p style="font-size: 12px; color: #4b5563; margin-top: 3px;">${t.subtitle}</p>
+      <p style="font-size: 9px; color: #666; margin-top: 4px;">${t.formDate}: ${formDate}</p>
     </div>
     
     <!-- Agent/Broker Details -->
@@ -123,14 +123,14 @@ export async function generateMemorandumPDF(formData: MemorandumFormData): Promi
     </div>
     
     <!-- Declaration -->
-    <div style="margin-bottom: 14px; padding: 12px 16px; background: #eff6ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+    <div style="margin-bottom: 10px; padding: 8px 12px; background: #eff6ff; border-radius: 6px; border: 1px solid #bfdbfe;">
       <h2 style="${headerStyle}">${t.declaration}</h2>
       <p style="${smallTextStyle}">${t.declarationText1}</p>
       <p style="${smallTextStyle}">${t.declarationText2}</p>
       <p style="${smallTextStyle}">${t.declarationText3}</p>
       <p style="${smallTextStyle}">${t.declarationText4}</p>
       <p style="${smallTextStyle}">${t.declarationText5}</p>
-      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #bfdbfe;">
+      <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #bfdbfe;">
         <p style="${smallTextStyle}"><em>${t.commissionNote}</em></p>
         <p style="${smallTextStyle}"><em>${t.depositCheck}</em></p>
       </div>
@@ -138,44 +138,44 @@ export async function generateMemorandumPDF(formData: MemorandumFormData): Promi
     
     <!-- Additional Notes (if any) -->
     ${formData.notes ? `
-      <div style="margin-bottom: 14px; padding: 10px 14px; background: #fef3c7; border-radius: 6px; border: 1px solid #f59e0b;">
+      <div style="margin-bottom: 10px; padding: 8px 12px; background: #fef3c7; border-radius: 6px; border: 1px solid #f59e0b;">
         <h2 style="${headerStyle} color: #92400e;">${t.additionalNotes}</h2>
         <p style="${smallTextStyle} white-space: pre-wrap;">${formData.notes}</p>
       </div>
     ` : ''}
     
     <!-- Confirmation -->
-    <div style="margin-bottom: 14px; padding: 8px 12px; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981;">
+    <div style="margin-bottom: 10px; padding: 6px 10px; background: #d1fae5; border-radius: 6px; border: 1px solid #10b981;">
       <p style="${smallTextStyle}">✓ ${t.confirmationText}</p>
     </div>
     
     <!-- Signatures -->
-    <div style="margin-top: 20px; padding-top: 16px; border-top: 3px solid #2563eb;">
-      <div style="display: flex; justify-content: space-around; gap: 40px;">
-        <div style="text-align: center; flex: 1; padding: 12px; background: #f8fafc; border-radius: 8px;">
-          <p style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.agentSignature}</p>
+    <div style="margin-top: 12px; padding-top: 10px; border-top: 3px solid #2563eb;">
+      <div style="display: flex; justify-content: space-around; gap: 30px;">
+        <div style="text-align: center; flex: 1; padding: 8px; background: #f8fafc; border-radius: 6px;">
+          <p style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #1e40af;">${t.agentSignature}</p>
           ${formData.agent_signature ? `
-            <img src="${formData.agent_signature}" style="max-width: 140px; max-height: 60px; border: 1px solid #d1d5db; border-radius: 6px; background: white; padding: 4px;" />
+            <img src="${formData.agent_signature}" style="max-width: 120px; max-height: 45px; border: 1px solid #d1d5db; border-radius: 4px; background: white; padding: 3px;" />
           ` : `
-            <div style="width: 140px; height: 60px; border: 2px dashed #d1d5db; border-radius: 6px; margin: 0 auto;"></div>
+            <div style="width: 120px; height: 45px; border: 2px dashed #d1d5db; border-radius: 4px; margin: 0 auto;"></div>
           `}
-          <p style="font-size: 10px; color: #374151; margin-top: 6px; font-weight: 600;">${isRTL ? BUSINESS_INFO.brokerName : BUSINESS_INFO.brokerNameEn}</p>
+          <p style="font-size: 9px; color: #374151; margin-top: 4px; font-weight: 600;">${isRTL ? BUSINESS_INFO.brokerName : BUSINESS_INFO.brokerNameEn}</p>
         </div>
-        <div style="text-align: center; flex: 1; padding: 12px; background: #f8fafc; border-radius: 8px;">
-          <p style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.tenantSignature}</p>
+        <div style="text-align: center; flex: 1; padding: 8px; background: #f8fafc; border-radius: 6px;">
+          <p style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #1e40af;">${t.tenantSignature}</p>
           ${formData.client_signature ? `
-            <img src="${formData.client_signature}" style="max-width: 140px; max-height: 60px; border: 1px solid #d1d5db; border-radius: 6px; background: white; padding: 4px;" />
+            <img src="${formData.client_signature}" style="max-width: 120px; max-height: 45px; border: 1px solid #d1d5db; border-radius: 4px; background: white; padding: 3px;" />
           ` : `
-            <div style="width: 140px; height: 60px; border: 2px dashed #d1d5db; border-radius: 6px; margin: 0 auto;"></div>
+            <div style="width: 120px; height: 45px; border: 2px dashed #d1d5db; border-radius: 4px; margin: 0 auto;"></div>
           `}
-          <p style="font-size: 10px; color: #374151; margin-top: 6px; font-weight: 600;">${formData.client_name}</p>
+          <p style="font-size: 9px; color: #374151; margin-top: 4px; font-weight: 600;">${formData.client_name}</p>
         </div>
       </div>
     </div>
     
     <!-- Footer -->
-    <div style="margin-top: 16px; padding-top: 10px; border-top: 1px solid #e5e7eb; text-align: center;">
-      <p style="font-size: 9px; color: #6b7280;">© ${BUSINESS_INFO.name} | ${t.formDate}: ${formDate}</p>
+    <div style="margin-top: 10px; padding-top: 6px; border-top: 1px solid #e5e7eb; text-align: center;">
+      <p style="font-size: 8px; color: #6b7280;">© ${BUSINESS_INFO.name} | ${t.formDate}: ${formDate}</p>
     </div>
   `;
 
