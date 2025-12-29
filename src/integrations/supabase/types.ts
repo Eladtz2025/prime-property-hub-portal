@@ -835,6 +835,179 @@ export type Database = {
           },
         ]
       }
+      legal_form_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          form_data: Json
+          form_type: string
+          id: string
+          language: string
+          legal_form_id: string | null
+          signed_at: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          form_data?: Json
+          form_type: string
+          id?: string
+          language?: string
+          legal_form_id?: string | null
+          signed_at?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          form_data?: Json
+          form_type?: string
+          id?: string
+          language?: string
+          legal_form_id?: string | null
+          signed_at?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_form_tokens_legal_form_id_fkey"
+            columns: ["legal_form_id"]
+            isOneToOne: false
+            referencedRelation: "legal_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_forms: {
+        Row: {
+          agent_id_number: string | null
+          agent_license: string | null
+          agent_name: string | null
+          agent_phone: string | null
+          agent_signature: string | null
+          client_address: string | null
+          client_email: string | null
+          client_id_number: string | null
+          client_name: string | null
+          client_phone: string | null
+          client_signature: string | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string
+          created_by: string | null
+          deposit_amount: string | null
+          entry_date: string | null
+          form_data: Json | null
+          form_type: string
+          guarantees: string | null
+          id: string
+          language: string
+          notes: string | null
+          payment_method: string | null
+          pdf_url: string | null
+          property_address: string | null
+          property_city: string | null
+          property_floor: string | null
+          property_rooms: string | null
+          property_size: string | null
+          rental_price: string | null
+          second_party_id: string | null
+          second_party_name: string | null
+          second_party_phone: string | null
+          second_party_signature: string | null
+          signed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id_number?: string | null
+          agent_license?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_signature?: string | null
+          client_address?: string | null
+          client_email?: string | null
+          client_id_number?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          client_signature?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          deposit_amount?: string | null
+          entry_date?: string | null
+          form_data?: Json | null
+          form_type: string
+          guarantees?: string | null
+          id?: string
+          language?: string
+          notes?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_floor?: string | null
+          property_rooms?: string | null
+          property_size?: string | null
+          rental_price?: string | null
+          second_party_id?: string | null
+          second_party_name?: string | null
+          second_party_phone?: string | null
+          second_party_signature?: string | null
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id_number?: string | null
+          agent_license?: string | null
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_signature?: string | null
+          client_address?: string | null
+          client_email?: string | null
+          client_id_number?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          client_signature?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          deposit_amount?: string | null
+          entry_date?: string | null
+          form_data?: Json | null
+          form_type?: string
+          guarantees?: string | null
+          id?: string
+          language?: string
+          notes?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          property_address?: string | null
+          property_city?: string | null
+          property_floor?: string | null
+          property_rooms?: string | null
+          property_size?: string | null
+          rental_price?: string | null
+          second_party_id?: string | null
+          second_party_name?: string | null
+          second_party_phone?: string | null
+          second_party_signature?: string | null
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_templates: {
         Row: {
           category: string
