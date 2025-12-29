@@ -114,7 +114,7 @@ const Index = () => {
         <meta property="og:title" content="CITY MARKET Properties - נדל&quot;ן בתל אביב" />
         <meta property="og:description" content="מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב" />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket.co.il" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he" />
       </Helmet>
       <HebrewHeader />
       

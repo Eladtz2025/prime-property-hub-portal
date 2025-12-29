@@ -106,7 +106,7 @@ const EnglishManagement = () => {
         <meta property="og:title" content="Property Management - City Market Properties" />
         <meta property="og:description" content="Expert property management services - from single apartments to entire buildings." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket.co.il/en/management" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/management" />
       </Helmet>
       <EnglishHeader />
 

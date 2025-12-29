@@ -66,7 +66,7 @@ const Contact = () => {
         <meta name="description" content="Contact CITY MARKET Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Phone: 054-228-4477" />
         <meta property="og:title" content="Contact Us - CITY MARKET Properties" />
         <meta property="og:description" content="Contact CITY MARKET real estate experts in Tel Aviv" />
-        <link rel="canonical" href="https://citymarket.co.il/en/contact" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/contact" />
       </Helmet>
       <EnglishHeader />
 

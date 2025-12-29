@@ -60,7 +60,7 @@ const EnglishNeighborhoods = () => {
         <meta property="og:title" content="Tel Aviv Neighborhoods - City Market Properties" />
         <meta property="og:description" content="Discover Tel Aviv's most prestigious neighborhoods. Each area tells its own story." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket.co.il/en/neighborhoods" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods" />
       </Helmet>
       <EnglishHeader />
 
