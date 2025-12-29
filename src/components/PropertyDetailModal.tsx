@@ -246,36 +246,19 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Tenant Info */}
+              {/* Additional Notes */}
               <Card>
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    פרטי השוכר
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    הערות נוספות
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0 space-y-1.5 text-right text-sm">
-                  {property.tenantName ? (
-                    <>
-                      <div>
-                        <span className="font-medium">שם:</span>
-                        <span className="mr-1">{property.tenantName}</span>
-                      </div>
-                      {property.tenantPhone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          {canViewPhone ? (
-                            <a href={`tel:${property.tenantPhone}`} className="text-primary hover:underline">
-                              {formatPhoneNumber(property.tenantPhone)}
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">{formatPhoneDisplay(property.tenantPhone, canViewPhone)}</span>
-                          )}
-                        </div>
-                      )}
-                    </>
+                  {property.notes ? (
+                    <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
                   ) : (
-                    <p className="text-muted-foreground text-xs">אין שוכר כרגע</p>
+                    <p className="text-muted-foreground text-xs">אין הערות נוספות</p>
                   )}
                 </CardContent>
               </Card>
