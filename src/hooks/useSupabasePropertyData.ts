@@ -243,6 +243,7 @@ export const useSupabasePropertyData = () => {
             renovation_costs: (newProperty as any).renovationCosts || null,
             current_market_value: (newProperty as any).currentMarketValue || null,
             featured: (newProperty as any).featured || false,
+            assigned_user_id: (newProperty as any).assigned_user_id || (newProperty as any).assignedUserId || null,
           });
 
         if (propertyError) {
