@@ -277,7 +277,14 @@ export const LegalFormsList = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(`/memorandum-form/${form.id}`, '_blank')}
+                      onClick={() => {
+                        const routes: Record<string, string> = {
+                          memorandum: `/memorandum-form/${form.id}`,
+                          exclusivity: `/exclusivity-form/${form.id}`,
+                          broker_sharing: `/broker-sharing-form/${form.id}`,
+                        };
+                        window.open(routes[form.form_type] || `/memorandum-form/${form.id}`, '_blank');
+                      }}
                       className="gap-1.5"
                     >
                       <ExternalLink className="h-4 w-4" />
