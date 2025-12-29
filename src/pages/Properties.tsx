@@ -1,4 +1,5 @@
 import React, { useState, useMemo, memo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ export const Properties: React.FC = memo(() => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { permissions, hasPermission } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canCreateProperties = hasPermission('properties', 'create');
   const canEditProperties = hasPermission('properties', 'update');
@@ -149,6 +151,17 @@ export const Properties: React.FC = memo(() => {
     
     setupManagementProperties();
   }, []);
+
+  // Handle edit query parameter from navigation
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && properties.length > 0) {
+      setExpandedPropertyId(editId);
+      // Clear the query parameter
+      searchParams.delete('edit');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, properties.length, setSearchParams]);
 
   const getOwnerPropertyCount = (property: Property) => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Building } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyQuickCard } from './PropertyQuickCard';
@@ -11,6 +12,7 @@ interface ActivePropertiesCardProps {
 export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({ 
   properties
 }) => {
+  const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -27,6 +29,12 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProperty(null);
+  };
+
+  const handleEditProperty = (property: Property) => {
+    setIsModalOpen(false);
+    setSelectedProperty(null);
+    navigate(`/admin-dashboard/properties?edit=${property.id}`);
   };
 
   return (
@@ -57,7 +65,7 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
           property={selectedProperty}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          onEdit={() => {}}
+          onEdit={handleEditProperty}
         />
       )}
     </div>
