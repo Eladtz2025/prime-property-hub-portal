@@ -208,16 +208,16 @@ const AdminPriceOffersContent = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-right" dir="rtl">
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)}>
-          <FileText className="h-4 w-4 ml-2" />
-          צור מתבנית
-        </Button>
-        <Button size="sm" onClick={() => navigate('/admin-dashboard/price-offers/create')}>
-          <Plus className="h-4 w-4 ml-2" />
+      <div className="flex flex-row-reverse flex-wrap gap-2">
+        <Button size="sm" onClick={() => navigate('/admin-dashboard/price-offers/create')} className="flex-row-reverse">
+          <Plus className="h-4 w-4 mr-2" />
           הצעה חדשה
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="flex-row-reverse">
+          <FileText className="h-4 w-4 mr-2" />
+          צור מתבנית
         </Button>
       </div>
 
@@ -251,13 +251,14 @@ const AdminPriceOffersContent = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-row-reverse flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/admin-dashboard/price-offers/edit/${offer.id}`)}
+                      className="flex-row-reverse"
                     >
-                      <Edit className="h-3.5 w-3.5 ml-1" />
+                      <Edit className="h-3.5 w-3.5 mr-1" />
                       ערוך
                     </Button>
                     
@@ -265,8 +266,9 @@ const AdminPriceOffersContent = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => copyLink(offer.token)}
+                      className="flex-row-reverse"
                     >
-                      <Copy className="h-3.5 w-3.5 ml-1" />
+                      <Copy className="h-3.5 w-3.5 mr-1" />
                       העתק
                     </Button>
                     
@@ -274,9 +276,9 @@ const AdminPriceOffersContent = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => shareWhatsApp(offer.token, offer.property_title)}
-                      className="text-green-600"
+                      className="text-green-600 flex-row-reverse"
                     >
-                      <Share2 className="h-3.5 w-3.5 ml-1" />
+                      <Share2 className="h-3.5 w-3.5 mr-1" />
                       שלח
                     </Button>
                     
