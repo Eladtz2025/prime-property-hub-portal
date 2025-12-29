@@ -228,6 +228,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           neighborhood: (formData as any).neighborhood || null,
           owner_name: formData.ownerName,
           owner_phone: formData.ownerPhone,
+          owner_email: formData.ownerEmail || null,
           assigned_user_id: (formData as any).assignedUserId || null,
           status: formData.status,
           contact_status: formData.contactStatus,
