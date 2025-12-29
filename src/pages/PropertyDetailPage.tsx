@@ -308,7 +308,7 @@ const PropertyDetailPage = () => {
             {property.property_type === 'sale' ? 'למכירה' : 'להשכרה'}
           </Link>
           <ChevronLeft className="h-4 w-4" />
-          <span className="text-foreground">{property.title}</span>
+          <span className="text-foreground">נכס #{property.property_number}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
