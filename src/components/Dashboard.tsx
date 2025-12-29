@@ -96,134 +96,110 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10"></div>
           </div>
           
-          <div className="relative z-10">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-2">
+          <div className="relative z-10 flex flex-row-reverse items-start gap-6">
+            {/* Greeting - Right side */}
+            <div className="shrink-0">
+              <h1 className="text-3xl font-bold mb-2 text-right">
                 שלום{userName ? ` ${userName}` : ''}! 👋
               </h1>
-              <p className="text-white/90 text-base">ברוך הבא למערכת ניהול הנכסים</p>
-              <p className="text-white/70 text-sm mt-1">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
+              <p className="text-white/90 text-base text-right">ברוך הבא למערכת ניהול הנכסים</p>
+              <p className="text-white/70 text-sm mt-1 text-right">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <Building className="h-4 w-4" />
+            {/* Stats Cards - Left side */}
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Building className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">סה״כ נכסים</span>
                 </div>
-                <span className="text-sm font-semibold text-right">סה״כ נכסים</span>
+                <div className="text-2xl font-bold number-display text-right">{stats.totalProperties}</div>
               </div>
-              <div className="text-2xl font-bold number-display text-right">{stats.totalProperties}</div>
-            </div>
-            
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <TrendingUp className="h-4 w-4" />
+              
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">הכנסה חודשית</span>
+                  {!isEditingIncome && (
+                    <Edit2 
+                      className="h-3 w-3 ml-auto cursor-pointer hover:scale-110 transition-transform" 
+                      onClick={() => setIsEditingIncome(true)}
+                    />
+                  )}
                 </div>
-                <span className="text-sm font-semibold text-right">הכנסה חודשית</span>
-                {!isEditingIncome && (
-                  <Edit2 
-                    className="h-3 w-3 ml-auto cursor-pointer hover:scale-110 transition-transform" 
-                    onClick={() => setIsEditingIncome(true)}
-                  />
+                {isEditingIncome ? (
+                  <div className="space-y-2">
+                    <Input
+                      type="number"
+                      placeholder="הזן סכום..."
+                      defaultValue={manualMonthlyIncome || autoCalculatedIncome}
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/70 h-8 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const value = Number((e.target as HTMLInputElement).value);
+                          saveManualIncome(value);
+                        }
+                        if (e.key === 'Escape') {
+                          setIsEditingIncome(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold number-display text-right">
+                    {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
+                  </div>
                 )}
               </div>
-              {isEditingIncome ? (
-                <div className="space-y-2">
-                  <Input
-                    type="number"
-                    placeholder="הזן סכום..."
-                    defaultValue={manualMonthlyIncome || autoCalculatedIncome}
-                    className="bg-white/20 border-white/30 text-white placeholder:text-white/70 h-8 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const value = Number((e.target as HTMLInputElement).value);
-                        saveManualIncome(value);
-                      }
-                      if (e.key === 'Escape') {
-                        setIsEditingIncome(false);
-                      }
-                    }}
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <div className="text-2xl font-bold number-display text-right">
-                  {displayIncome > 0 ? `₪${displayIncome.toLocaleString('he-IL')}` : 'לא חושב'}
-                </div>
-              )}
-            </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4" />
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <CheckCircle className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">תפוסים</span>
                 </div>
-                <span className="text-sm font-semibold text-right">תפוסים</span>
+                <div className="text-2xl font-bold number-display text-right">{stats.confirmedOccupied}</div>
               </div>
-              <div className="text-2xl font-bold number-display text-right">{stats.confirmedOccupied}</div>
-            </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <Users className="h-4 w-4" />
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">פנויים</span>
                 </div>
-                <span className="text-sm font-semibold text-right">פנויים</span>
+                <div className="text-2xl font-bold number-display text-right">{stats.confirmedVacant}</div>
               </div>
-              <div className="text-2xl font-bold number-display text-right">{stats.confirmedVacant}</div>
-            </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <Phone className="h-4 w-4" />
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">נוצר קשר</span>
                 </div>
-                <span className="text-sm font-semibold text-right">נוצר קשר</span>
+                <div className="text-2xl font-bold number-display text-right">{stats.contactedProperties}</div>
               </div>
-              <div className="text-2xl font-bold number-display text-right">{stats.contactedProperties}</div>
-            </div>
 
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <Clock className="h-4 w-4" />
+              <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
+                <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-right">טרם קשר</span>
                 </div>
-                <span className="text-sm font-semibold text-right">טרם קשר</span>
-              </div>
-              <div className="text-2xl font-bold number-display text-right">{stats.notContactedProperties}</div>
-            </div>
-
-            {/* קוביית טפסים */}
-            <div className="bg-white/15 backdrop-blur-lg rounded-xl p-3 border border-white/10">
-              <div className="flex items-center gap-3 mb-2 flex-row-reverse justify-end">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-semibold text-right">טפסים</span>
-              </div>
-              <div className="space-y-1.5">
-                <button 
-                  onClick={() => window.open('/brokerage-form/new', '_blank')}
-                  className="w-full text-right text-sm bg-white/10 hover:bg-white/20 rounded-lg px-2 py-1.5 transition-colors flex items-center gap-2 flex-row-reverse"
-                >
-                  <FileText className="h-3 w-3" />
-                  הזמנת תיווך
-                </button>
-                <button 
-                  onClick={() => window.open('/admin-dashboard/price-offers', '_blank')}
-                  className="w-full text-right text-sm bg-white/10 hover:bg-white/20 rounded-lg px-2 py-1.5 transition-colors flex items-center gap-2 flex-row-reverse"
-                >
-                  <Receipt className="h-3 w-3" />
-                  הצעות מחיר
-                </button>
+                <div className="text-2xl font-bold number-display text-right">{stats.notContactedProperties}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
       {/* הדירות שלנו */}
       <ActivePropertiesCard properties={properties} />
