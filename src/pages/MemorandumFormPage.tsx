@@ -62,6 +62,23 @@ const MemorandumFormPage = () => {
     }
   }, [token]);
 
+  // Pre-fill from URL params (when coming from property quick card)
+  useEffect(() => {
+    if (!token) {
+      const address = searchParams.get('address');
+      const city = searchParams.get('city');
+      const rooms = searchParams.get('rooms');
+      const floor = searchParams.get('floor');
+      const price = searchParams.get('price');
+      
+      if (address) setPropertyAddress(address);
+      if (city) setPropertyCity(city);
+      if (rooms) setPropertyRooms(rooms);
+      if (floor) setPropertyFloor(floor);
+      if (price) setRentalPrice(price);
+    }
+  }, []);
+
   const loadTokenData = async () => {
     if (!token) return;
     setIsLoading(true);
