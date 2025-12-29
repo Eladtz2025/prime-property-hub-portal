@@ -8,6 +8,7 @@ import { FileText, Download, Plus, ExternalLink, Loader2, Calendar, User, Buildi
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { generateMemorandumPDF } from '@/lib/memorandum-pdf-generator';
+import { generateExclusivityPDF } from '@/lib/exclusivity-pdf-generator';
 import { toast } from 'sonner';
 
 interface LegalForm {
@@ -82,8 +83,9 @@ export const LegalFormsList = () => {
   const handleDownloadPDF = async (form: LegalForm) => {
     setDownloadingId(form.id);
     try {
-      if (form.form_type === 'memorandum' && form.form_data) {
-        const rawData = form.form_data as Record<string, unknown>;
+      const rawData = (form.form_data || {}) as Record<string, unknown>;
+      
+      if (form.form_type === 'memorandum') {
         const formData = {
           client_name: String(rawData.client_name || form.client_name || ''),
           client_id_number: String(rawData.client_id_number || ''),
@@ -91,12 +93,38 @@ export const LegalFormsList = () => {
           property_address: String(rawData.property_address || form.property_address || ''),
           property_city: String(rawData.property_city || ''),
           rental_price: String(rawData.rental_price || ''),
-          form_date: String(rawData.form_date || ''),
+          form_date: String(rawData.form_date || form.created_at || ''),
           client_signature: String(rawData.client_signature || ''),
           agent_signature: String(rawData.agent_signature || ''),
           language: (form.language || 'he') as 'he' | 'en',
         };
         await generateMemorandumPDF(formData);
+        toast.success('ה-PDF הורד בהצלחה');
+      } else if (form.form_type === 'exclusivity') {
+        const formData = {
+          seller_name: String(form.client_name || ''),
+          seller_id_number: String(rawData.seller_id_number || ''),
+          seller_address: String(rawData.seller_address || ''),
+          seller_phone: String(rawData.seller_phone || ''),
+          seller_email: String(rawData.seller_email || ''),
+          property_address: String(form.property_address || ''),
+          property_city: String(rawData.property_city || ''),
+          property_floor: String(rawData.property_floor || ''),
+          property_rooms: String(rawData.property_rooms || ''),
+          property_size: String(rawData.property_size || ''),
+          property_gush_helka: String(rawData.property_gush_helka || ''),
+          exclusivity_period: String(rawData.exclusivity_period || ''),
+          start_date: String(rawData.start_date || ''),
+          end_date: String(rawData.end_date || ''),
+          asking_price: String(rawData.asking_price || ''),
+          commission_percentage: String(rawData.commission_percentage || ''),
+          commission_includes_vat: Boolean(rawData.commission_includes_vat),
+          form_date: String(rawData.form_date || form.created_at || ''),
+          seller_signature: String(rawData.seller_signature || ''),
+          agent_signature: String(rawData.agent_signature || ''),
+          language: (form.language || 'he') as 'he' | 'en',
+        };
+        await generateExclusivityPDF(formData);
         toast.success('ה-PDF הורד בהצלחה');
       } else {
         toast.error('סוג טופס לא נתמך עדיין');
@@ -142,7 +170,7 @@ export const LegalFormsList = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="memorandum">זיכרון דברים</SelectItem>
-            <SelectItem value="exclusivity" disabled>הסכם בלעדיות (בקרוב)</SelectItem>
+            <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
             <SelectItem value="broker_sharing" disabled>שיתוף מתווכים (בקרוב)</SelectItem>
           </SelectContent>
         </Select>
