@@ -411,6 +411,10 @@ const MemorandumFormPage = () => {
                 <Input value={rentalPrice} onChange={(e) => setRentalPrice(e.target.value)} placeholder={t.rentalPricePlaceholder} disabled={isRemoteSigning} />
               </div>
               <div>
+                <Label>{t.brokerageFee}</Label>
+                <Input value={t.brokerageFeeValue} disabled className="bg-muted text-muted-foreground cursor-not-allowed" />
+              </div>
+              <div>
                 <Label>{t.depositAmount}</Label>
                 <Input value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder={t.depositAmountPlaceholder} disabled={isRemoteSigning} />
               </div>

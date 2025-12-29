@@ -36,6 +36,8 @@ export const memorandumTranslations = {
     financialDetails: 'פרטים כספיים',
     rentalPrice: 'מחיר שכירות (₪)',
     rentalPricePlaceholder: 'מחיר חודשי',
+    brokerageFee: 'דמי תיווך',
+    brokerageFeeValue: 'מחיר השכירות + מע"מ',
     depositAmount: 'דמי רצינות (₪)',
     depositAmountPlaceholder: 'סכום הפיקדון',
     paymentMethod: 'צורת תשלום',
@@ -52,15 +54,15 @@ export const memorandumTranslations = {
     
     // Legal text
     declaration: 'הצהרה',
-    declarationText1: 'הנני מאשר/ת כי ברצוני לשכור את הדירה בכתובת הרשומה לעיל, אשר הוצגה לי על ידי סיטי מרקט נכסים.',
-    declarationText2: 'בחתימתי על זיכרון דברים זה אני מתחייב/ת לשכור את הדירה לפי התנאים הרשומים לעיל.',
-    declarationText3: 'זיכרון דברים זה יבוטל ודמי הרצינות יוחזרו אלי אם בעל הדירה לא ימצא אותי כדייר ראוי או אם לא תהיה הסכמה על סעיפים מהותיים בחוזה שיועבר אלי.',
-    declarationText4: 'במקרה של ביטול מכל סיבה אחרת, דמי הרצינות לא יוחזרו.',
-    declarationText5: 'בחתימתי על זיכרון דברים זה אני מקנה לעצמי זכות ראשונים לשכור נכס זה.',
+    declarationText1: 'אני החתום מטה מאשר בזאת כי ברצוני לשכור את הדירה בכתובת הרשומה לעיל, אשר הוצגה לי על ידי סיטי מרקט נכסים.',
+    declarationText2: 'ולהלן ליידוע שבחתימתי על זיכרון דברים זה אני מתחייב לשכור את הדירה לפי התנאים לעיל.',
+    declarationText3: 'את זיכרון דברים זה יבוטל ודמי הרצינות יוחזרו אלי אם בעל הנכס לא ימצא אותי כדייר ראוי או אם לא תהיה הסכמה על סעיפים מהותיים בחוזה שיועבר לי על ידי בעל הנכס, ואשר מסרתי השגותיי עליהם בכתב.',
+    declarationText4: 'במקרה של ביטול מכל סיבה אחרת דמי הרצינות לא יוחזרו אלי.',
+    declarationText5: 'בחתימתי על זיכרון דברים זה אני מקנה לעצמי זכות ראשונים לשכור נכס זה על ידי המתווך הנ"ל.',
     
     // Commission
-    commissionNote: 'דמי הרצינות הם שווי ערך לעמלת התיווך.',
-    depositCheck: 'הפיקדון יופקד לאחר חתימת החוזה.',
+    commissionNote: 'סכום דמי הרצינות שניתנו על החשבון הם שווי ערך לעמלת התיווך.',
+    depositCheck: 'צ\'ק פיקדון זה יופקד לאחר חתימת החוזה.',
     
     // Agent details
     agentDetails: 'פרטי המתווך',
@@ -166,6 +168,8 @@ export const memorandumTranslations = {
     financialDetails: 'Financial Details',
     rentalPrice: 'Monthly Rent (₪)',
     rentalPricePlaceholder: 'Monthly price',
+    brokerageFee: 'Brokerage Fee',
+    brokerageFeeValue: 'Rental Price + VAT',
     depositAmount: 'Deposit Amount (₪)',
     depositAmountPlaceholder: 'Deposit amount',
     paymentMethod: 'Payment Method',
@@ -182,15 +186,15 @@ export const memorandumTranslations = {
     
     // Legal text
     declaration: 'Declaration',
-    declarationText1: 'I hereby confirm that I wish to rent the apartment at the address listed above, which was presented to me by City Market Properties.',
-    declarationText2: 'By signing this memorandum, I commit to renting the apartment according to the terms listed above.',
-    declarationText3: 'This memorandum will be cancelled and the deposit will be returned to me if the landlord does not find me to be a suitable tenant or if there is no agreement on material clauses in the contract to be provided to me.',
-    declarationText4: 'In case of cancellation for any other reason, the deposit will not be returned.',
-    declarationText5: 'By signing this memorandum, I grant myself the right of first refusal to rent this property.',
+    declarationText1: 'I, the undersigned, hereby confirm that I wish to rent the apartment at the address listed above, which was presented to me by City Market Properties.',
+    declarationText2: 'For your information, by signing this memorandum, I commit to renting the apartment according to the terms listed above.',
+    declarationText3: 'This memorandum will be cancelled and the deposit will be returned to me if the landlord does not find me to be a suitable tenant or if there is no agreement on material clauses in the contract to be provided to me by the landlord, and which I have submitted my objections to in writing.',
+    declarationText4: 'In case of cancellation for any other reason, the deposit will not be returned to me.',
+    declarationText5: 'By signing this memorandum, I grant myself the right of first refusal to rent this property through the aforementioned broker.',
     
     // Commission
-    commissionNote: 'The deposit amount is equivalent to the brokerage commission.',
-    depositCheck: 'The deposit will be deposited after signing the contract.',
+    commissionNote: 'The deposit amount given on account is equivalent to the brokerage commission.',
+    depositCheck: 'This deposit check will be deposited after signing the contract.',
     
     // Agent details
     agentDetails: 'Agent Details',
