@@ -77,6 +77,25 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
                 className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
                 onClick={(e) => {
                   e.stopPropagation();
+                  const params = new URLSearchParams({
+                    address: property.address || '',
+                    city: property.city || '',
+                    rooms: property.rooms?.toString() || '',
+                    floor: property.floor?.toString() || '',
+                    price: property.monthlyRent?.toString() || '',
+                  });
+                  window.open(`/memorandum-form/new?${params.toString()}`, '_blank');
+                }}
+              >
+                <FileText className="h-4 w-4 ml-2" />
+                זכ״ד
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
                   setIsAppointmentModalOpen(true);
                 }}
               >
