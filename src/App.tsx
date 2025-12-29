@@ -48,6 +48,7 @@ import WhatsAppCenter from './pages/WhatsAppCenter';
 import PriceOfferView from './pages/PriceOfferView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
 import PriceOfferBuilder from './pages/PriceOfferBuilder';
+import ExclusivityFormPage from './pages/ExclusivityFormPage';
 import AdminForms from './pages/AdminForms';
 import BrokerageFormPage from './pages/BrokerageFormPage';
 import AdminAlerts from './pages/AdminAlerts';
