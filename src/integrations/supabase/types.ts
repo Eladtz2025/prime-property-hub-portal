@@ -1309,6 +1309,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          display_type: string
           expected_income_max: number | null
           expected_income_min: number | null
           expires_at: string | null
@@ -1330,6 +1331,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          display_type?: string
           expected_income_max?: number | null
           expected_income_min?: number | null
           expires_at?: string | null
@@ -1351,6 +1353,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          display_type?: string
           expected_income_max?: number | null
           expected_income_min?: number | null
           expires_at?: string | null
