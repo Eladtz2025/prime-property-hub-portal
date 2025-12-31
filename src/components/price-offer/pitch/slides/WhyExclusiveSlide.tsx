@@ -1,43 +1,56 @@
-import { Shield, Target, Clock, TrendingUp, Users, CheckCircle } from "lucide-react";
+import { Shield, Target, Clock, TrendingUp, Users, CheckCircle, XCircle } from "lucide-react";
 
-interface Benefit {
-  icon: string;
-  title: string;
-  description: string;
+interface Comparison {
+  aspect: string;
+  exclusive: string;
+  nonExclusive: string;
 }
 
 interface WhyExclusiveSlideProps {
   title?: string;
   subtitle?: string;
-  benefits?: Benefit[];
+  comparisons?: Comparison[];
   statistic?: {
     value: string;
     label: string;
+    source: string;
   };
 }
 
-const iconMap: { [key: string]: any } = {
-  shield: Shield,
-  target: Target,
-  clock: Clock,
-  trending: TrendingUp,
-  users: Users,
-  check: CheckCircle,
-};
-
 const WhyExclusiveSlide = ({
-  title = "למה בלעדיות?",
-  subtitle = "היתרונות שלכם כשבוחרים לעבוד איתי בבלעדיות",
-  benefits = [
-    { icon: "target", title: "מחויבות מלאה", description: "אני משקיעה את כל המרץ והמשאבים בנכס שלכם" },
-    { icon: "trending", title: "השקעה מקסימלית", description: "צילום מקצועי, סרטון, פרסום בכל הפלטפורמות" },
-    { icon: "clock", title: "תיאום מסודר", description: "ביקורים מתואמים, ללא הפתעות והפרעות מיותרות" },
-    { icon: "shield", title: "מו״מ אפקטיבי", description: "כשאני היחידה שמייצגת - המו״מ חזק יותר" },
-    { icon: "users", title: "שקיפות מלאה", description: "דיווחים שוטפים על כל פניה והתעניינות" },
+  title = "למה דווקא בלעדיות?",
+  subtitle = "ההבדל בין עבודה ממוקדת לעבודה מפוזרת",
+  comparisons = [
+    { 
+      aspect: "השקעה בשיווק", 
+      exclusive: "צילום מקצועי, סרטון, רחפן - הכל כלול", 
+      nonExclusive: "צילום בסיסי עם טלפון" 
+    },
+    { 
+      aspect: "זמן תגובה לפניות", 
+      exclusive: "מענה תוך 3 שעות - עדיפות עליונה", 
+      nonExclusive: "מענה כשמספיקים - יש עוד 50 נכסים" 
+    },
+    { 
+      aspect: "ניהול מו״מ", 
+      exclusive: "מו״מ חזק - אני היחידה שמייצגת", 
+      nonExclusive: "מתחרים עם מתווכים אחרים על אותו קונה" 
+    },
+    { 
+      aspect: "מעקב ודיווחים", 
+      exclusive: "דיווח שבועי מפורט + שקיפות מלאה", 
+      nonExclusive: "קשה לעקוב - מי באמת עובד?" 
+    },
+    { 
+      aspect: "תיאום ביקורים", 
+      exclusive: "ביקורים מתואמים, מסודרים, ללא הפתעות", 
+      nonExclusive: "כל מתווך מביא לקוחות בזמנים שונים" 
+    },
   ],
   statistic = {
     value: "12%",
-    label: "יותר מהמחיר המבוקש",
+    label: "יותר מהמחיר - בממוצע",
+    source: "נתוני לשכת המתווכים 2024",
   },
 }: WhyExclusiveSlideProps) => {
   return (
@@ -49,37 +62,51 @@ const WhyExclusiveSlide = ({
           <p className="text-lg text-white/60">{subtitle}</p>
         </div>
 
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          {/* Benefits List */}
-          <div className="flex-1 space-y-4">
-            {benefits.map((benefit, index) => {
-              const IconComponent = iconMap[benefit.icon] || CheckCircle;
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition-colors hover:bg-white/10"
-                >
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
-                    <IconComponent className="h-6 w-6 text-emerald-400" />
+        <div className="flex flex-col gap-8 lg:flex-row">
+          {/* Comparison Table */}
+          <div className="flex-1">
+            {/* Table Header */}
+            <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
+              <div className="text-white/50"></div>
+              <div className="rounded-t-xl bg-emerald-500/20 py-2 text-center font-semibold text-emerald-400">
+                בלעדיות
+              </div>
+              <div className="rounded-t-xl bg-white/5 py-2 text-center font-medium text-white/50">
+                בלי בלעדיות
+              </div>
+            </div>
+
+            {/* Table Rows */}
+            <div className="space-y-2">
+              {comparisons.map((comp, index) => (
+                <div key={index} className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center py-3 font-medium text-white">
+                    {comp.aspect}
                   </div>
-                  <div>
-                    <h3 className="mb-1 font-semibold text-white">{benefit.title}</h3>
-                    <p className="text-sm text-white/60">{benefit.description}</p>
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+                    <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+                    <span className="text-white/80">{comp.exclusive}</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
+                    <XCircle className="h-4 w-4 flex-shrink-0 text-white/30" />
+                    <span className="text-white/50">{comp.nonExclusive}</span>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
           {/* Statistic Highlight */}
-          <div className="flex flex-col items-center justify-center lg:w-80">
+          <div className="flex flex-col items-center justify-center lg:w-72">
             <div className="w-full rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-8 text-center backdrop-blur-sm">
-              <p className="mb-2 text-sm uppercase tracking-wider text-emerald-400">נכסים בבלעדיות נמכרים ב-</p>
+              <p className="mb-2 text-sm uppercase tracking-wider text-emerald-400">
+                נכסים בבלעדיות נמכרים ב-
+              </p>
               <p className="mb-2 text-6xl font-bold text-white">{statistic.value}</p>
               <p className="text-lg text-white/70">{statistic.label}</p>
               <div className="mt-6 border-t border-white/10 pt-6">
-                <p className="text-sm text-white/50">
-                  *על פי נתוני לשכת המתווכים 2024
+                <p className="text-xs text-white/50">
+                  *{statistic.source}
                 </p>
               </div>
             </div>

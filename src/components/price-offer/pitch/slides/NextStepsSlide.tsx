@@ -1,4 +1,4 @@
-import { FileSignature, Camera, Globe, Users, Handshake, MessageCircle } from "lucide-react";
+import { FileSignature, Camera, Globe, Users, Handshake, MessageCircle, Sparkles } from "lucide-react";
 import { BUSINESS_INFO } from "@/constants/business";
 
 interface Step {
@@ -14,6 +14,7 @@ interface NextStepsSlideProps {
   steps?: Step[];
   whatsappNumber?: string;
   propertyTitle?: string;
+  closingMessage?: string;
 }
 
 const iconMap: { [key: string]: any } = {
@@ -26,19 +27,20 @@ const iconMap: { [key: string]: any } = {
 
 const NextStepsSlide = ({
   title = "הצעדים הבאים",
-  subtitle = "מה קורה אחרי שנחתום על בלעדיות?",
+  subtitle = "מה קורה אחרי שמחליטים לעבוד יחד?",
   steps = [
-    { icon: "signature", title: "חתימה על הסכם בלעדיות", description: "הסכם פשוט וברור", timing: "יום 1" },
-    { icon: "camera", title: "צילום מקצועי", description: "צלם אדריכלות + עריכה", timing: "שבוע 1" },
-    { icon: "globe", title: "עלייה לאוויר", description: "פרסום בכל הפלטפורמות", timing: "שבוע 1-2" },
-    { icon: "users", title: "ביקורים וסיורים", description: "תיאום וליווי אישי", timing: "שבוע 2-4" },
-    { icon: "handshake", title: "סגירת עסקה", description: "מו״מ וחתימה על חוזה", timing: "שבוע 3-6" },
+    { icon: "signature", title: "חתימה על הסכם בלעדיות", description: "הסכם פשוט וברור, בלי אותיות קטנות", timing: "יום 1" },
+    { icon: "camera", title: "צילום מקצועי + סרטון", description: "צלם אדריכלות מגיע אליכם הביתה", timing: "תוך 3 ימים" },
+    { icon: "globe", title: "עלייה לאוויר", description: "הנכס עולה לכל הפלטפורמות במקביל", timing: "תוך שבוע" },
+    { icon: "users", title: "ביקורים וסיורים", description: "אני מלווה כל ביקור ומדווחת בזמן אמת", timing: "שבוע 1-3" },
+    { icon: "handshake", title: "סגירת עסקה", description: "מו״מ, חתימה על חוזה, ומסירת מפתחות", timing: "שבוע 2-6" },
   ],
   whatsappNumber = "972542284477",
   propertyTitle = "הנכס שלי",
+  closingMessage = "בואו נתחיל. אשמח לענות על כל שאלה.",
 }: NextStepsSlideProps) => {
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(`שלום ${BUSINESS_INFO.brokerName}, אשמח לשמוע עוד על שירותי הבלעדיות`);
+    const message = encodeURIComponent(`שלום ${BUSINESS_INFO.brokerName}, אשמח לשמוע עוד על שירותי הבלעדיות עבור הנכס ב${propertyTitle}`);
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
   };
 
@@ -46,17 +48,17 @@ const NextStepsSlide = ({
     <div className="flex h-full w-full flex-col items-center justify-center px-8 py-24">
       <div className="w-full max-w-4xl">
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-10 text-center">
           <h2 className="mb-3 text-4xl font-bold text-white md:text-5xl">{title}</h2>
           <p className="text-lg text-white/60">{subtitle}</p>
         </div>
 
         {/* Timeline */}
-        <div className="relative mb-12">
+        <div className="relative mb-10">
           {/* Vertical line */}
           <div className="absolute right-6 top-0 h-full w-0.5 bg-gradient-to-b from-emerald-500 via-emerald-500/50 to-transparent" />
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {steps.map((step, index) => {
               const IconComponent = iconMap[step.icon] || FileSignature;
               const isLast = index === steps.length - 1;
@@ -73,7 +75,7 @@ const NextStepsSlide = ({
                   </div>
 
                   {/* Content */}
-                  <div className={`flex-1 rounded-xl border p-5 transition-all ${
+                  <div className={`flex-1 rounded-xl border p-4 transition-all ${
                     isLast 
                       ? "border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 to-teal-500/10" 
                       : "border-white/10 bg-white/5"
@@ -96,6 +98,14 @@ const NextStepsSlide = ({
           </div>
         </div>
 
+        {/* Closing Message */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 text-lg text-white/70">
+            <Sparkles className="h-5 w-5 text-amber-400" />
+            <span>{closingMessage}</span>
+          </div>
+        </div>
+
         {/* CTA */}
         <div className="text-center">
           <button
@@ -103,10 +113,10 @@ const NextStepsSlide = ({
             className="inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-10 py-5 text-lg font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/40"
           >
             <MessageCircle className="h-6 w-6" />
-            נתחיל היום?
+            נתחיל את השיחה
           </button>
           <p className="mt-4 text-sm text-white/40">
-            ללא התחייבות - שיחת ייעוץ ראשונית בחינם
+            שיחת ייעוץ ראשונית - ללא התחייבות, ללא עלות
           </p>
         </div>
       </div>
