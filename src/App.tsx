@@ -46,6 +46,7 @@ import ImportData from './pages/ImportData';
 import ImportFromStorage from './pages/ImportFromStorage';
 import WhatsAppCenter from './pages/WhatsAppCenter';
 import PriceOfferView from './pages/PriceOfferView';
+import PriceOfferLuxuryView from './pages/PriceOfferLuxuryView';
 import AdminPriceOffers from './pages/AdminPriceOffers';
 import PriceOfferBuilder from './pages/PriceOfferBuilder';
 import ExclusivityFormPage from './pages/ExclusivityFormPage';
@@ -107,8 +108,9 @@ const AppContent: React.FC = () => {
         <Route path="/broker-sharing-form/new" element={<BrokerSharingFormPage />} />
         <Route path="/broker-sharing-form/:token" element={<BrokerSharingFormPage />} />
         
-        {/* Price Offer Public View - Clean page without layout */}
+        {/* Price Offer Public Views - Clean pages without layout */}
         <Route path="/price-offer/:token" element={<PriceOfferView />} />
+        <Route path="/offer-luxury/:token" element={<PriceOfferLuxuryView />} />
         
         {/* Public pages - Redirects to /he/ */}
         <Route path="/" element={<Navigate to="/he" replace />} />

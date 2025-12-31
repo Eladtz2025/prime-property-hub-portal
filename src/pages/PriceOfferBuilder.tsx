@@ -21,6 +21,7 @@ interface PriceOfferData {
   language: 'he' | 'en';
   is_active: boolean;
   slug?: string;
+  display_type: 'standard' | 'luxury';
 }
 
 interface Block {
@@ -44,6 +45,7 @@ const PriceOfferBuilder = () => {
     language: 'he',
     is_active: false,
     slug: '',
+    display_type: 'standard',
   });
   
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -82,6 +84,7 @@ const PriceOfferBuilder = () => {
         language: offer.language as 'he' | 'en',
         is_active: offer.is_active,
         slug: offer.slug || '',
+        display_type: (offer.display_type as 'standard' | 'luxury') || 'standard',
       });
       setOfferId(offer.id);
 
@@ -207,13 +210,14 @@ const PriceOfferBuilder = () => {
     
     const { data } = await supabase
       .from('price_offers')
-      .select('token, slug')
+      .select('token, slug, display_type')
       .eq('id', offerId)
       .single();
     
     if (data) {
       const identifier = data.slug || data.token;
-      window.open(`/price-offer/${identifier}`, '_blank');
+      const basePath = data.display_type === 'luxury' ? '/offer-luxury' : '/price-offer';
+      window.open(`${basePath}/${identifier}`, '_blank');
     }
   };
 
@@ -419,6 +423,33 @@ const PriceOfferBuilder = () => {
                 <Label htmlFor="lang-en" className="cursor-pointer">{t.english}</Label>
               </div>
             </RadioGroup>
+          </div>
+
+          <div>
+            <Label>{isRTL ? 'סוג תצוגה' : 'Display Type'}</Label>
+            <RadioGroup
+              value={offerData.display_type}
+              onValueChange={(value) => setOfferData({ ...offerData, display_type: value as 'standard' | 'luxury' })}
+              className="flex gap-4 mt-2"
+            >
+              <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
+                <RadioGroupItem value="standard" id="display-standard" />
+                <Label htmlFor="display-standard" className="cursor-pointer">
+                  {isRTL ? 'רגיל' : 'Standard'}
+                </Label>
+              </div>
+              <div className={`flex items-center ${isRTL ? 'space-x-2 space-x-reverse' : 'space-x-2'}`}>
+                <RadioGroupItem value="luxury" id="display-luxury" />
+                <Label htmlFor="display-luxury" className="cursor-pointer">
+                  {isRTL ? 'מצגת יוקרה' : 'Luxury Presentation'}
+                </Label>
+              </div>
+            </RadioGroup>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isRTL 
+                ? 'מצגת יוקרה - תצוגה אינטראקטיבית עם אנימציות ועיצוב יוקרתי' 
+                : 'Luxury presentation - interactive display with animations and premium design'}
+            </p>
           </div>
         </CardContent>
       </Card>
