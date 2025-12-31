@@ -8,6 +8,13 @@ import AreaSlide from "./slides/AreaSlide";
 import FeaturesSlide from "./slides/FeaturesSlide";
 import StatsSlide from "./slides/StatsSlide";
 import ContactSlide from "./slides/ContactSlide";
+import AboutMeSlide from "./slides/AboutMeSlide";
+import MarketAnalysisSlide from "./slides/MarketAnalysisSlide";
+import MarketingPlanSlide from "./slides/MarketingPlanSlide";
+import WhyExclusiveSlide from "./slides/WhyExclusiveSlide";
+import SuccessStoriesSlide from "./slides/SuccessStoriesSlide";
+import NextStepsSlide from "./slides/NextStepsSlide";
+import ValuationSlide from "./slides/ValuationSlide";
 
 interface PriceOffer {
   id: string;
@@ -51,7 +58,7 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Build slides array from offer data
+  // Build slides array - Exclusivity Presentation for Property Owners
   const slides: Slide[] = [];
 
   // Slide 1: Title
@@ -60,122 +67,80 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     type: "title",
     data: {
       title: offer.property_title,
-      subtitle: offer.property_details,
+      subtitle: offer.property_details || "מצגת בלעדיות מקצועית",
       backgroundImage: heroImage,
       stats: [
-        offer.suggested_price_max && { label: "מחיר", value: `₪${(offer.suggested_price_max / 1000000).toFixed(1)}M` },
-        { label: "חדרים", value: "5" },
-        { label: "שטח", value: "220 מ״ר" },
+        offer.suggested_price_max && { label: "הערכת שווי", value: `₪${(offer.suggested_price_max / 1000000).toFixed(1)}M` },
+        { label: "חדרים", value: "4" },
+        { label: "שטח", value: "145 מ״ר" },
       ].filter(Boolean),
     },
   });
 
-  // Slide 2: Main image
+  // Slide 2: About Me (Agent Introduction)
+  slides.push({
+    type: "about_me",
+    data: {},
+  });
+
+  // Slide 3: Market Analysis
+  slides.push({
+    type: "market_analysis",
+    data: {
+      neighborhood: "צפון תל אביב",
+      avgPricePerSqm: 58000,
+      trend: "up",
+      trendPercent: 4.5,
+      avgDaysOnMarket: 32,
+    },
+  });
+
+  // Slide 4: Property Valuation
+  slides.push({
+    type: "valuation",
+    data: {
+      propertyAddress: offer.property_title,
+      propertySize: 145,
+      minPrice: offer.suggested_price_min || 7800000,
+      maxPrice: offer.suggested_price_max || 8500000,
+      recommendedPrice: offer.suggested_price_max || 8200000,
+      pricePerSqm: offer.price_per_sqm_max || 56552,
+    },
+  });
+
+  // Slide 5: Property Images (if available)
   if (images.length > 0) {
     slides.push({
       type: "image",
       data: {
         imageUrl: images[0].image_url,
-        caption: "סלון מרווח עם נוף פנורמי לים",
+        caption: "הנכס שלכם",
       },
     });
   }
 
-  // Slide 3: Property details
+  // Slide 6: Marketing Plan
   slides.push({
-    type: "details",
-    data: {
-      title: "פרטי הנכס",
-      details: [
-        { label: "שטח בנוי", value: "220 מ״ר", icon: "area" },
-        { label: "מרפסות", value: "80 מ״ר", icon: "balcony" },
-        { label: "חדרים", value: "5", icon: "rooms" },
-        { label: "קומה", value: "35", icon: "floor" },
-        { label: "חניות", value: "3", icon: "parking" },
-        { label: "מעלית", value: "2 פרטיות", icon: "elevator" },
-      ],
-    },
+    type: "marketing_plan",
+    data: {},
   });
 
-  // Extract text blocks for area info
-  const textBlocks = blocks.filter(b => b.block_type === 'text');
-  const areaBlock = textBlocks.find(b => 
-    b.block_data?.title?.includes('אזור') || 
-    b.block_data?.title?.includes('מיקום') ||
-    b.block_data?.title?.includes('שכונה')
-  );
-
-  if (areaBlock) {
-    slides.push({
-      type: "area",
-      data: {
-        title: areaBlock.block_data?.title || "האזור",
-        content: areaBlock.block_data?.content,
-        location: "תל אביב | קו החוף",
-      },
-    });
-  }
-
-  // Gallery slides (one per image, skip first which is hero)
-  images.slice(1, 4).forEach((img, index) => {
-    const captions = ["מטבח שף מאובזר", "סוויטת מאסטר", "מרפסת עם נוף לים"];
-    slides.push({
-      type: "image",
-      data: {
-        imageUrl: img.image_url,
-        caption: captions[index] || "",
-      },
-    });
+  // Slide 7: Why Exclusive
+  slides.push({
+    type: "why_exclusive",
+    data: {},
   });
 
-  // Features slide
-  const featuresBlock = textBlocks.find(b => 
-    b.block_data?.title?.includes('יתרון') || 
-    b.block_data?.title?.includes('למה')
-  );
-
-  const features = featuresBlock?.block_data?.content
-    ?.split('\n')
-    .filter((line: string) => line.trim().startsWith('•') || line.trim().startsWith('-'))
-    .map((line: string) => line.replace(/^[-•]\s*/, '').trim())
-    .slice(0, 6) || [
-      "נוף פנורמי בלתי נחסם לים התיכון",
-      "מיקום פריים בלב תל אביב",
-      "בניין יוקרה עם קונסיירז׳ 24/7",
-      "חניון פרטי ל-3 רכבים",
-      "בריכת אינסוף על הגג",
-      "אבטחה ברמה הגבוהה ביותר",
-    ];
-
+  // Slide 8: Success Stories
   slides.push({
-    type: "features",
-    data: {
-      title: "למה לרכוש כאן?",
-      features,
-    },
+    type: "success_stories",
+    data: {},
   });
 
-  // Stats slide
+  // Slide 9: Next Steps
   slides.push({
-    type: "stats",
+    type: "next_steps",
     data: {
-      title: "המספרים",
-      stats: [
-        { label: "מחיר מומלץ", value: offer.suggested_price_max || 12500000, prefix: "₪", format: "price" },
-        { label: "מחיר למ״ר", value: offer.price_per_sqm_max || 57000, prefix: "₪", format: "number" },
-        { label: "הכנסה חודשית צפויה", value: offer.expected_income_max || 35000, prefix: "₪", format: "number" },
-        { label: "תשואה שנתית", value: 3.4, suffix: "%", format: "percent" },
-      ],
-    },
-  });
-
-  // Contact slide
-  slides.push({
-    type: "contact",
-    data: {
-      title: "מעוניינים לשמוע עוד?",
-      subtitle: "נשמח לספר לכם עוד על הנכס ולתאם סיור",
-      whatsappNumber: "972547669985",
       propertyTitle: offer.property_title,
     },
   });
@@ -249,6 +214,20 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <StatsSlide {...slide.data} />;
       case "contact":
         return <ContactSlide {...slide.data} />;
+      case "about_me":
+        return <AboutMeSlide {...slide.data} />;
+      case "market_analysis":
+        return <MarketAnalysisSlide {...slide.data} />;
+      case "marketing_plan":
+        return <MarketingPlanSlide {...slide.data} />;
+      case "why_exclusive":
+        return <WhyExclusiveSlide {...slide.data} />;
+      case "success_stories":
+        return <SuccessStoriesSlide {...slide.data} />;
+      case "next_steps":
+        return <NextStepsSlide {...slide.data} />;
+      case "valuation":
+        return <ValuationSlide {...slide.data} />;
       default:
         return null;
     }
