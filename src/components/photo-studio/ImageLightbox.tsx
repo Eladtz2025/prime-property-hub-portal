@@ -81,7 +81,13 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.5, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.5, 0.5));
 
-  if (!images[currentIndex]) return null;
+  // Don't render if not open or no valid image
+  if (!isOpen) return null;
+  
+  const currentImage = images[currentIndex];
+  
+  // Don't render if no valid image URL or if it's a placeholder
+  if (!currentImage || currentImage.includes('placeholder')) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -124,9 +124,13 @@ export const SaveToPropertyDialog: React.FC<SaveToPropertyDialogProps> = ({
       if (insertError) throw insertError;
 
       toast.success('התמונה נשמרה בהצלחה לנכס');
-      onClose();
+      
+      // Reset state after successful save
       setSelectedProperty(null);
       setImageName('');
+      setSearchTerm('');
+      
+      onClose();
     } catch (error: any) {
       console.error('Error saving image:', error);
       toast.error(error.message || 'שגיאה בשמירת התמונה');
@@ -135,9 +139,17 @@ export const SaveToPropertyDialog: React.FC<SaveToPropertyDialogProps> = ({
     }
   };
 
+  const handleClose = () => {
+    // Reset state when closing
+    setSelectedProperty(null);
+    setImageName('');
+    setSearchTerm('');
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImagePlus className="h-5 w-5 text-primary" />

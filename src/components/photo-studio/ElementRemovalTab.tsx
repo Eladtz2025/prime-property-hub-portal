@@ -9,16 +9,25 @@ import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 
+// Calculate initial brush size based on screen
+const getInitialBrushSize = () => {
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    return 40; // Larger brush for mobile
+  }
+  return 30;
+};
+
 export const ElementRemovalTab: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [resultUrl, setResultUrl] = useState<string>('');
-  const [brushSize, setBrushSize] = useState(30);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [brushSize, setBrushSize] = useState(getInitialBrushSize);
+  const [hasMask, setHasMask] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -43,6 +52,7 @@ export const ElementRemovalTab: React.FC = () => {
   const loadImage = (file: File) => {
     setSelectedFile(file);
     setResultUrl('');
+    setHasMask(false);
     const url = URL.createObjectURL(file);
     setImageUrl(url);
 
@@ -122,6 +132,9 @@ export const ElementRemovalTab: React.FC = () => {
     ctx.beginPath();
     ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Mark that we have drawn something
+    setHasMask(true);
   }, [brushSize]);
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -156,6 +169,7 @@ export const ElementRemovalTab: React.FC = () => {
     if (ctx) {
       ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
     }
+    setHasMask(false);
   };
 
   const handleRemove = async () => {
@@ -164,7 +178,14 @@ export const ElementRemovalTab: React.FC = () => {
       return;
     }
 
+    if (!hasMask) {
+      toast.error('יש לסמן את האזור להסרה לפני הלחיצה');
+      return;
+    }
+
     setIsProcessing(true);
+    setProcessingStatus('מכין את התמונה...');
+    
     try {
       // Convert original image to base64
       const reader = new FileReader();
@@ -208,25 +229,32 @@ export const ElementRemovalTab: React.FC = () => {
       
       const maskBase64 = tempCanvas.toDataURL('image/png');
 
+      setProcessingStatus('שולח ל-AI לעיבוד...');
+
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
-        body: { 
-          type: 'inpaint',
+        body: {
+          prompt: 'Remove the masked elements from this image naturally, fill the area with appropriate background',
           image: base64Image,
-          mask: maskBase64
+          mask: maskBase64,
+          type: 'inpaint'
         }
       });
 
       if (error) throw error;
 
+      setProcessingStatus('מסיים עיבוד...');
+
       if (data?.imageUrl) {
         setResultUrl(data.imageUrl);
         toast.success('האלמנטים הוסרו בהצלחה!');
+        setHasMask(false);
       }
     } catch (error: any) {
       console.error('Error removing elements:', error);
       toast.error(error.message || 'שגיאה בהסרת האלמנטים');
     } finally {
       setIsProcessing(false);
+      setProcessingStatus('');
     }
   };
 
@@ -247,9 +275,6 @@ export const ElementRemovalTab: React.FC = () => {
       toast.error('שגיאה בהורדת התמונה');
     }
   };
-
-  // Mobile-friendly brush size
-  const defaultBrushSize = window.innerWidth < 768 ? 20 : 30;
 
   return (
     <>
@@ -283,6 +308,7 @@ export const ElementRemovalTab: React.FC = () => {
                 alt="Result" 
                 className="w-full rounded-lg cursor-pointer"
                 onClick={() => setLightboxOpen(true)}
+                loading="lazy"
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-48 md:h-64 bg-muted/30 rounded-lg border-2 border-dashed">
@@ -360,7 +386,7 @@ export const ElementRemovalTab: React.FC = () => {
                   <Slider
                     value={[brushSize]}
                     onValueChange={([value]) => setBrushSize(value)}
-                    min={5}
+                    min={10}
                     max={100}
                     step={5}
                     className="touch-none"
@@ -383,17 +409,18 @@ export const ElementRemovalTab: React.FC = () => {
                 <Button 
                   onClick={handleRemove} 
                   className="w-full min-h-[44px]"
-                  disabled={isProcessing}
+                  disabled={isProcessing || !hasMask}
+                  aria-label="הסר אלמנטים מסומנים"
                 >
                   {isProcessing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                      מסיר אלמנטים...
+                      {processingStatus || 'מעבד...'}
                     </>
                   ) : (
                     <>
                       <Eraser className="h-4 w-4 ml-2" />
-                      הסר אלמנטים מסומנים
+                      {hasMask ? 'הסר אלמנטים מסומנים' : 'סמן אזור להסרה'}
                     </>
                   )}
                 </Button>
