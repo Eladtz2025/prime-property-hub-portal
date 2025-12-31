@@ -60,6 +60,7 @@ import AdminDevOps from './pages/AdminDevOps';
 import MemorandumFormPage from './pages/MemorandumFormPage';
 import SaleMemorandumFormPage from './pages/SaleMemorandumFormPage';
 import BrokerSharingFormPage from './pages/BrokerSharingFormPage';
+import PhotoStudio from './pages/PhotoStudio';
 
 import NotFound from './pages/NotFound';
 
@@ -347,6 +348,16 @@ const AppContent: React.FC = () => {
                 <Layout onLogout={signOut}>
                   <ProtectedRoute requiredRole="admin">
                     <AdminDevOps />
+                  </ProtectedRoute>
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/admin-dashboard/photo-studio" 
+              element={
+                <Layout onLogout={signOut}>
+                  <ProtectedRoute requiredRole="admin">
+                    <PhotoStudio />
                   </ProtectedRoute>
                 </Layout>
               } 

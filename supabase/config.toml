@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.send-brokerage-form]
 verify_jwt = false
+
+[functions.generate-property-image]
+verify_jwt = false
