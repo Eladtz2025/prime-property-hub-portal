@@ -160,7 +160,7 @@ export const AutoEnhanceTab: React.FC = () => {
                       src={previewUrl} 
                       alt="Before" 
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={{ width: `${10000 / sliderPosition}%`, maxWidth: 'none' }}
+                      style={{ width: sliderPosition > 0 ? `${10000 / sliderPosition}%` : '100%', maxWidth: 'none' }}
                     />
                   </div>
 
