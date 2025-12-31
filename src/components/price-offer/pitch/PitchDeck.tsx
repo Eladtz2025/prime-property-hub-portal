@@ -9,10 +9,13 @@ import FeaturesSlide from "./slides/FeaturesSlide";
 import StatsSlide from "./slides/StatsSlide";
 import ContactSlide from "./slides/ContactSlide";
 import AboutMeSlide from "./slides/AboutMeSlide";
+import YourPropertySlide from "./slides/YourPropertySlide";
 import MarketAnalysisSlide from "./slides/MarketAnalysisSlide";
 import MarketingPlanSlide from "./slides/MarketingPlanSlide";
 import WhyExclusiveSlide from "./slides/WhyExclusiveSlide";
 import SuccessStoriesSlide from "./slides/SuccessStoriesSlide";
+import MyPromiseSlide from "./slides/MyPromiseSlide";
+import TransparencySlide from "./slides/TransparencySlide";
 import NextStepsSlide from "./slides/NextStepsSlide";
 import ValuationSlide from "./slides/ValuationSlide";
 
@@ -77,25 +80,22 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 2: About Me (Agent Introduction)
+  // Slide 2: About Me
+  slides.push({ type: "about_me", data: {} });
+
+  // Slide 3: Your Property
   slides.push({
-    type: "about_me",
-    data: {},
+    type: "your_property",
+    data: { propertyAddress: offer.property_title, propertyImage: heroImage },
   });
 
-  // Slide 3: Market Analysis
+  // Slide 4: Market Analysis
   slides.push({
     type: "market_analysis",
-    data: {
-      neighborhood: "צפון תל אביב",
-      avgPricePerSqm: 58000,
-      trend: "up",
-      trendPercent: 4.5,
-      avgDaysOnMarket: 32,
-    },
+    data: { neighborhood: "צפון תל אביב", avgPricePerSqm: 58000, trend: "up", trendPercent: 4.5, avgDaysOnMarket: 32 },
   });
 
-  // Slide 4: Property Valuation
+  // Slide 5: Valuation
   slides.push({
     type: "valuation",
     data: {
@@ -104,46 +104,26 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       minPrice: offer.suggested_price_min || 7800000,
       maxPrice: offer.suggested_price_max || 8500000,
       recommendedPrice: offer.suggested_price_max || 8200000,
-      pricePerSqm: offer.price_per_sqm_max || 56552,
     },
   });
-
-  // Slide 5: Property Images (if available)
-  if (images.length > 0) {
-    slides.push({
-      type: "image",
-      data: {
-        imageUrl: images[0].image_url,
-        caption: "הנכס שלכם",
-      },
-    });
-  }
 
   // Slide 6: Marketing Plan
-  slides.push({
-    type: "marketing_plan",
-    data: {},
-  });
+  slides.push({ type: "marketing_plan", data: {} });
 
   // Slide 7: Why Exclusive
-  slides.push({
-    type: "why_exclusive",
-    data: {},
-  });
+  slides.push({ type: "why_exclusive", data: {} });
 
   // Slide 8: Success Stories
-  slides.push({
-    type: "success_stories",
-    data: {},
-  });
+  slides.push({ type: "success_stories", data: {} });
 
-  // Slide 9: Next Steps
-  slides.push({
-    type: "next_steps",
-    data: {
-      propertyTitle: offer.property_title,
-    },
-  });
+  // Slide 9: My Promise
+  slides.push({ type: "my_promise", data: {} });
+
+  // Slide 10: Transparency
+  slides.push({ type: "transparency", data: {} });
+
+  // Slide 11: Next Steps
+  slides.push({ type: "next_steps", data: { propertyTitle: offer.property_title } });
 
   const totalSlides = slides.length;
 
@@ -216,6 +196,8 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <ContactSlide {...slide.data} />;
       case "about_me":
         return <AboutMeSlide {...slide.data} />;
+      case "your_property":
+        return <YourPropertySlide {...slide.data} />;
       case "market_analysis":
         return <MarketAnalysisSlide {...slide.data} />;
       case "marketing_plan":
@@ -224,6 +206,10 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <WhyExclusiveSlide {...slide.data} />;
       case "success_stories":
         return <SuccessStoriesSlide {...slide.data} />;
+      case "my_promise":
+        return <MyPromiseSlide {...slide.data} />;
+      case "transparency":
+        return <TransparencySlide {...slide.data} />;
       case "next_steps":
         return <NextStepsSlide {...slide.data} />;
       case "valuation":

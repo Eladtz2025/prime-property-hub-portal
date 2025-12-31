@@ -1,4 +1,4 @@
-import { Award, Home, Clock, TrendingUp } from "lucide-react";
+import { Award, Home, Clock, TrendingUp, Heart } from "lucide-react";
 import { BUSINESS_INFO } from "@/constants/business";
 
 interface AboutMeSlideProps {
@@ -7,21 +7,21 @@ interface AboutMeSlideProps {
   propertiesSoldThisYear?: number;
   avgDaysToSell?: number;
   successRate?: number;
-  personalQuote?: string;
+  personalStory?: string;
 }
 
 const AboutMeSlide = ({
   agentImage,
-  yearsExperience = 12,
-  propertiesSoldThisYear = 47,
-  avgDaysToSell = 21,
-  successRate = 94,
-  personalQuote = "אני מאמינה שכל נכס ראוי להצגה מקצועית וליווי אישי לאורך כל הדרך. המטרה שלי - להשיג לכם את המחיר הטוב ביותר בזמן הקצר ביותר.",
+  yearsExperience = 11,
+  propertiesSoldThisYear = 43,
+  avgDaysToSell = 19,
+  successRate = 93.7,
+  personalStory = "לפני 11 שנים נכנסתי לתחום אחרי שאני עצמי עברתי חוויה מאכזבת עם מתווך. הבנתי שיש דרך אחרת - דרך שבה הלקוח מרגיש שיש מישהו שבאמת אכפת לו. מאז, כל עסקה שאני סוגרת היא לא רק עסקה - זו משפחה שאני עוזרת לבנות את העתיד שלה.",
 }: AboutMeSlideProps) => {
   const stats = [
     { icon: Clock, value: yearsExperience, label: "שנות ניסיון", suffix: "" },
     { icon: Home, value: propertiesSoldThisYear, label: "נכסים ב-2024", suffix: "" },
-    { icon: TrendingUp, value: avgDaysToSell, label: "ימים למכירה", suffix: "ממוצע" },
+    { icon: TrendingUp, value: avgDaysToSell, label: "ימים ממוצע למכירה", suffix: "" },
     { icon: Award, value: successRate, label: "אחוז הצלחה", suffix: "%" },
   ];
 
@@ -53,15 +53,24 @@ const AboutMeSlide = ({
 
         {/* Info Section */}
         <div className="flex flex-col items-center text-center md:items-start md:text-right">
+          <p className="mb-2 text-sm uppercase tracking-wider text-emerald-400">
+            לא סתם מתווכת - שותפה לדרך
+          </p>
           <h2 className="mb-2 text-4xl font-bold text-white md:text-5xl">
             {BUSINESS_INFO.brokerName}
           </h2>
-          <p className="mb-6 text-xl text-emerald-400">{BUSINESS_INFO.name}</p>
+          <p className="mb-6 text-xl text-white/50">{BUSINESS_INFO.name}</p>
 
-          {/* Personal Quote */}
-          <p className="mb-8 max-w-lg text-lg leading-relaxed text-white/70">
-            "{personalQuote}"
-          </p>
+          {/* Personal Story */}
+          <div className="mb-8 max-w-lg">
+            <div className="mb-3 flex items-center gap-2">
+              <Heart className="h-4 w-4 text-rose-400" />
+              <span className="text-sm font-medium text-white/60">הסיפור שלי</span>
+            </div>
+            <p className="text-lg leading-relaxed text-white/70">
+              {personalStory}
+            </p>
+          </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
