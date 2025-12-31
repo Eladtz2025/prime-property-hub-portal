@@ -21,7 +21,7 @@ export const ElementRemovalTab: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [resultUrl, setResultUrl] = useState<string>('');
-  const [brushSize, setBrushSize] = useState(getInitialBrushSize);
+  const [brushSize, setBrushSize] = useState(() => getInitialBrushSize());
   const [hasMask, setHasMask] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
