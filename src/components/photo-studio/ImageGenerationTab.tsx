@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Download, Loader2, ImagePlus } from 'lucide-react';
+import { Sparkles, Download, Loader2, ImagePlus, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ImageLightbox } from './ImageLightbox';
+import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 
 const roomTypes = [
   { value: 'living_room', label: 'סלון' },
@@ -35,6 +36,10 @@ export const ImageGenerationTab: React.FC = () => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedImageForSave, setSelectedImageForSave] = useState('');
 
   const handleGenerate = async () => {
     if (!roomType || !style) {
@@ -84,126 +89,187 @@ export const ImageGenerationTab: React.FC = () => {
     }
   };
 
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const handleSaveToProperty = (imageUrl: string) => {
+    setSelectedImageForSave(imageUrl);
+    setSaveDialogOpen(true);
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            יצירת תמונות AI
-          </CardTitle>
-          <CardDescription>
-            צור תמונות נדל"ן מקצועיות באמצעות בינה מלאכותית
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>סוג חדר</Label>
-            <Select value={roomType} onValueChange={setRoomType}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סוג חדר" />
-              </SelectTrigger>
-              <SelectContent>
-                {roomTypes.map(room => (
-                  <SelectItem key={room.value} value={room.value}>
-                    {room.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>סגנון עיצוב</Label>
-            <Select value={style} onValueChange={setStyle}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סגנון" />
-              </SelectTrigger>
-              <SelectContent>
-                {styles.map(s => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>תיאור נוסף (אופציונלי)</Label>
-            <Textarea 
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder="הוסף פרטים נוספים כמו: נוף לים, רצפת עץ, תקרה גבוהה..."
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <Button 
-            onClick={handleGenerate} 
-            className="w-full"
-            disabled={isGenerating || !roomType || !style}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                יוצר תמונה...
-              </>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Gallery - Show first on mobile */}
+        <Card className="order-1 lg:order-2">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-lg md:text-xl">תמונות שנוצרו</CardTitle>
+            <CardDescription className="text-sm">
+              {generatedImages.length > 0 
+                ? `${generatedImages.length} תמונות נוצרו`
+                : 'התמונות שתיצור יופיעו כאן'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+            {generatedImages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 md:h-64 bg-muted/30 rounded-lg border-2 border-dashed">
+                <Sparkles className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground text-center text-sm md:text-base px-4">
+                  בחר סוג חדר וסגנון ולחץ על "צור תמונה"
+                </p>
+              </div>
             ) : (
-              <>
-                <ImagePlus className="h-4 w-4 ml-2" />
-                צור תמונה
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Gallery */}
-      <Card>
-        <CardHeader>
-          <CardTitle>תמונות שנוצרו</CardTitle>
-          <CardDescription>
-            {generatedImages.length > 0 
-              ? `${generatedImages.length} תמונות נוצרו`
-              : 'התמונות שתיצור יופיעו כאן'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {generatedImages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 bg-muted/30 rounded-lg border-2 border-dashed">
-              <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">
-                בחר סוג חדר וסגנון ולחץ על "צור תמונה"
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto">
-              {generatedImages.map((imageUrl, index) => (
-                <div key={index} className="relative group rounded-lg overflow-hidden">
-                  <img 
-                    src={imageUrl} 
-                    alt={`Generated property ${index + 1}`}
-                    className="w-full aspect-video object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleDownload(imageUrl, index)}
-                    >
-                      <Download className="h-4 w-4 ml-1" />
-                      הורד
-                    </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-h-[500px] overflow-y-auto">
+                {generatedImages.map((imageUrl, index) => (
+                  <div key={index} className="relative group rounded-lg overflow-hidden">
+                    <img 
+                      src={imageUrl} 
+                      alt={`Generated property ${index + 1}`}
+                      className="w-full aspect-video object-cover cursor-pointer"
+                      onClick={() => openLightbox(index)}
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 md:transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleSaveToProperty(imageUrl); }}
+                        className="min-h-[44px]"
+                      >
+                        <Save className="h-4 w-4 ml-1" />
+                        <span className="hidden sm:inline">שמור</span>
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleDownload(imageUrl, index); }}
+                        className="min-h-[44px]"
+                      >
+                        <Download className="h-4 w-4 ml-1" />
+                        <span className="hidden sm:inline">הורד</span>
+                      </Button>
+                    </div>
+                    {/* Mobile action buttons - always visible */}
+                    <div className="md:hidden absolute bottom-2 left-2 right-2 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleSaveToProperty(imageUrl); }}
+                        className="flex-1 min-h-[36px] text-xs"
+                      >
+                        <Save className="h-3 w-3 ml-1" />
+                        שמור
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleDownload(imageUrl, index); }}
+                        className="flex-1 min-h-[36px] text-xs"
+                      >
+                        <Download className="h-3 w-3 ml-1" />
+                        הורד
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Controls */}
+        <Card className="order-2 lg:order-1">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+              <Sparkles className="h-5 w-5 text-primary" />
+              יצירת תמונות AI
+            </CardTitle>
+            <CardDescription className="text-sm">
+              צור תמונות נדל"ן מקצועיות באמצעות בינה מלאכותית
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
+            <div className="space-y-2">
+              <Label>סוג חדר</Label>
+              <Select value={roomType} onValueChange={setRoomType}>
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder="בחר סוג חדר" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roomTypes.map(room => (
+                    <SelectItem key={room.value} value={room.value}>
+                      {room.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            <div className="space-y-2">
+              <Label>סגנון עיצוב</Label>
+              <Select value={style} onValueChange={setStyle}>
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder="בחר סגנון" />
+                </SelectTrigger>
+                <SelectContent>
+                  {styles.map(s => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>תיאור נוסף (אופציונלי)</Label>
+              <Textarea 
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="הוסף פרטים נוספים כמו: נוף לים, רצפת עץ, תקרה גבוהה..."
+                className="min-h-[80px] md:min-h-[100px]"
+              />
+            </div>
+
+            <Button 
+              onClick={handleGenerate} 
+              className="w-full min-h-[44px]"
+              disabled={isGenerating || !roomType || !style}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  יוצר תמונה...
+                </>
+              ) : (
+                <>
+                  <ImagePlus className="h-4 w-4 ml-2" />
+                  צור תמונה
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lightbox */}
+      <ImageLightbox
+        images={generatedImages}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onNavigate={setLightboxIndex}
+        onDownload={(url) => handleDownload(url, lightboxIndex)}
+      />
+
+      {/* Save Dialog */}
+      <SaveToPropertyDialog
+        isOpen={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
+        imageUrl={selectedImageForSave}
+      />
+    </>
   );
 };
