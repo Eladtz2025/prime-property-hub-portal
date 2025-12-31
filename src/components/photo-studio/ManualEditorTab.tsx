@@ -65,14 +65,9 @@ export const ManualEditorTab: React.FC = () => {
     };
   }, [updateCanvasSize]);
 
-  // Create/update fabric canvas when size changes
+  // Create/update fabric canvas when size changes - with proper cleanup
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    // Dispose existing canvas
-    if (fabricCanvas) {
-      fabricCanvas.dispose();
-    }
+    if (!canvasRef.current || canvasSize.width === 0) return;
 
     const canvas = new FabricCanvas(canvasRef.current, {
       width: canvasSize.width,
@@ -87,8 +82,10 @@ export const ManualEditorTab: React.FC = () => {
 
     return () => {
       canvas.dispose();
+      setFabricCanvas(null);
     };
-  }, [canvasSize]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasSize.width, canvasSize.height]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
