@@ -103,26 +103,26 @@ serve(async (req) => {
     const detailsEn: string[] = [];
     
     if (property.rooms) {
-      detailsHe.push(`${property.rooms} חדרים`);
+      detailsHe.push(`${property.rooms} חד'`);
       detailsEn.push(`${property.rooms} rooms`);
     }
     if (property.property_size) {
       detailsHe.push(`${property.property_size} מ"ר`);
       detailsEn.push(`${property.property_size} sqm`);
     }
-    if (property.floor) {
+    if (property.floor !== null && property.floor !== undefined) {
       detailsHe.push(`קומה ${property.floor}`);
       detailsEn.push(`Floor ${property.floor}`);
     }
-    if (property.balcony) {
+    if (property.balcony === true) {
       detailsHe.push('מרפסת ✓');
       detailsEn.push('Balcony ✓');
     }
-    if (property.parking) {
+    if (property.parking === true) {
       detailsHe.push('חניה ✓');
       detailsEn.push('Parking ✓');
     }
-    if (property.elevator) {
+    if (property.elevator === true) {
       detailsHe.push('מעלית ✓');
       detailsEn.push('Elevator ✓');
     }
@@ -139,6 +139,10 @@ serve(async (req) => {
     const description = isEnglish
       ? `🏠 ${detailsEn.join(' • ')}${priceFormattedEn ? ` | ${priceFormattedEn}` : ''} | ${location}`
       : `🏠 ${detailsHe.join(' • ')}${priceFormatted ? ` | ${priceFormatted}` : ''} | ${location}`;
+
+    // Detailed logging for debugging
+    console.log(`Property details - rooms: ${property.rooms}, size: ${property.property_size}, floor: ${property.floor}, balcony: ${property.balcony}, parking: ${property.parking}, elevator: ${property.elevator}, rent: ${property.monthly_rent}`);
+    console.log(`Generated description (${isEnglish ? 'EN' : 'HE'}): ${description}`);
 
     const siteName = isEnglish ? 'City Market Real Estate' : 'סיטי מרקט נדל"ן';
     
@@ -163,13 +167,13 @@ serve(async (req) => {
   <!-- Primary Meta Tags -->
   <title>${fullTitle} | ${siteName}</title>
   <meta name="title" content="${fullTitle} | ${siteName}">
-  <meta name="description" content="${description.substring(0, 160)}">
+  <meta name="description" content="${description.substring(0, 200)}">
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="${propertyUrl}">
   <meta property="og:title" content="${fullTitle}">
-  <meta property="og:description" content="${description.substring(0, 160)}">
+  <meta property="og:description" content="${description.substring(0, 200)}">
   <meta property="og:image" content="${ogImageUrl}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -182,7 +186,7 @@ serve(async (req) => {
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="${propertyUrl}">
   <meta property="twitter:title" content="${fullTitle}">
-  <meta property="twitter:description" content="${description.substring(0, 160)}">
+  <meta property="twitter:description" content="${description.substring(0, 200)}">
   <meta property="twitter:image" content="${ogImageUrl}">
   
   <!-- Fallback image for crawlers that don't support SVG -->
