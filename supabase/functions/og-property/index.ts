@@ -198,7 +198,6 @@ serve(async (req) => {
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="${escapedTitle}">
-  <meta property="og:site_name" content="${escapedSiteName}">
   <meta property="og:locale" content="${isEnglish ? 'en_US' : 'he_IL'}">
   
   <!-- Twitter -->
