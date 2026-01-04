@@ -74,8 +74,13 @@ const PropertyDetailPage = () => {
     }
   };
 
+  const getShareUrl = () => {
+    const baseEdgeFunctionUrl = 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property';
+    return `${baseEdgeFunctionUrl}?id=${id}&lang=he`;
+  };
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(getShareUrl());
     setCopied(true);
     toast({
       title: "הקישור הועתק",

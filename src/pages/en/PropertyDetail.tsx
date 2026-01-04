@@ -51,33 +51,18 @@ const EnglishPropertyDetail = () => {
     window.location.href = `tel:${phone}`;
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareData = {
-      title: translatedTitle || 'Property',
-      text: `Check out this property: ${translatedTitle}`,
-      url: url,
-    };
+  const getShareUrl = () => {
+    const baseEdgeFunctionUrl = 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property';
+    return `${baseEdgeFunctionUrl}?id=${id}&lang=en`;
+  };
 
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast({
-          title: "Link Copied",
-          description: "Link copied to clipboard",
-        });
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        await navigator.clipboard.writeText(url);
-        toast({
-          title: "Link Copied",
-          description: "Link copied to clipboard",
-        });
-      }
-    }
+  const handleShare = async () => {
+    const shareUrl = getShareUrl();
+    await navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied",
+      description: "Link copied to clipboard",
+    });
   };
 
   if (isLoading) {
