@@ -46,6 +46,11 @@ serve(async (req) => {
         property_size,
         monthly_rent,
         property_type,
+        floor,
+        balcony,
+        parking,
+        elevator,
+        bathrooms,
         property_images (
           id,
           image_url,
@@ -93,9 +98,47 @@ serve(async (req) => {
       ? (property.neighborhood_en || property.city || 'Tel Aviv')
       : (property.neighborhood || property.city || 'תל אביב');
     
+    // Build structured description with property details
+    const detailsHe: string[] = [];
+    const detailsEn: string[] = [];
+    
+    if (property.rooms) {
+      detailsHe.push(`${property.rooms} חדרים`);
+      detailsEn.push(`${property.rooms} rooms`);
+    }
+    if (property.property_size) {
+      detailsHe.push(`${property.property_size} מ"ר`);
+      detailsEn.push(`${property.property_size} sqm`);
+    }
+    if (property.floor) {
+      detailsHe.push(`קומה ${property.floor}`);
+      detailsEn.push(`Floor ${property.floor}`);
+    }
+    if (property.balcony) {
+      detailsHe.push('מרפסת ✓');
+      detailsEn.push('Balcony ✓');
+    }
+    if (property.parking) {
+      detailsHe.push('חניה ✓');
+      detailsEn.push('Parking ✓');
+    }
+    if (property.elevator) {
+      detailsHe.push('מעלית ✓');
+      detailsEn.push('Elevator ✓');
+    }
+    
+    // Format price
+    const priceFormatted = property.monthly_rent 
+      ? `₪${new Intl.NumberFormat('he-IL').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/חודש'}`
+      : '';
+    const priceFormattedEn = property.monthly_rent 
+      ? `₪${new Intl.NumberFormat('en-US').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/month'}`
+      : '';
+    
+    // Build structured description
     const description = isEnglish
-      ? (property.description_en || `${property.rooms || ''} rooms, ${property.property_size || ''}sqm in ${location}`)
-      : (property.description || `${property.rooms || ''} חדרים, ${property.property_size || ''} מ"ר ב${location}`);
+      ? `🏠 ${detailsEn.join(' • ')}${priceFormattedEn ? ` | ${priceFormattedEn}` : ''} | ${location}`
+      : `🏠 ${detailsHe.join(' • ')}${priceFormatted ? ` | ${priceFormatted}` : ''} | ${location}`;
 
     const siteName = isEnglish ? 'City Market Real Estate' : 'סיטי מרקט נדל"ן';
     
