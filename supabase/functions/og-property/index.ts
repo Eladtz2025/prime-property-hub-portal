@@ -108,47 +108,51 @@ serve(async (req) => {
       ? (property.neighborhood_en || property.city || 'Tel Aviv')
       : (property.neighborhood || property.city || 'תל אביב');
     
-    // Build structured description with property details
-    const detailsHe: string[] = [];
-    const detailsEn: string[] = [];
+    // Build structured description with emojis for each detail
+    const descPartsHe: string[] = [];
+    const descPartsEn: string[] = [];
     
     if (property.rooms) {
-      detailsHe.push(`${property.rooms} חד'`);
-      detailsEn.push(`${property.rooms} rooms`);
+      descPartsHe.push(`🛏️ ${property.rooms} חד'`);
+      descPartsEn.push(`🛏️ ${property.rooms} rooms`);
     }
     if (property.property_size) {
-      detailsHe.push(`${property.property_size} מ"ר`);
-      detailsEn.push(`${property.property_size} sqm`);
+      descPartsHe.push(`📐 ${property.property_size} מ"ר`);
+      descPartsEn.push(`📐 ${property.property_size} sqm`);
     }
     if (property.floor !== null && property.floor !== undefined) {
-      detailsHe.push(`קומה ${property.floor}`);
-      detailsEn.push(`Floor ${property.floor}`);
+      descPartsHe.push(`🏢 קומה ${property.floor}`);
+      descPartsEn.push(`🏢 Floor ${property.floor}`);
     }
     if (property.balcony === true) {
-      detailsHe.push('מרפסת ✓');
-      detailsEn.push('Balcony ✓');
+      descPartsHe.push(`🌿 מרפסת`);
+      descPartsEn.push(`🌿 Balcony`);
     }
     if (property.parking === true) {
-      detailsHe.push('חניה ✓');
-      detailsEn.push('Parking ✓');
+      descPartsHe.push(`🚗 חניה`);
+      descPartsEn.push(`🚗 Parking`);
     }
     if (property.elevator === true) {
-      detailsHe.push('מעלית ✓');
-      detailsEn.push('Elevator ✓');
+      descPartsHe.push(`🛗 מעלית`);
+      descPartsEn.push(`🛗 Elevator`);
     }
     
-    // Format price
-    const priceFormatted = property.monthly_rent 
-      ? `₪${new Intl.NumberFormat('he-IL').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/חודש'}`
-      : '';
-    const priceFormattedEn = property.monthly_rent 
-      ? `₪${new Intl.NumberFormat('en-US').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/month'}`
-      : '';
+    // Format price with emoji
+    if (property.monthly_rent) {
+      const priceHe = `💰 ₪${new Intl.NumberFormat('he-IL').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/חודש'}`;
+      const priceEn = `💰 ₪${new Intl.NumberFormat('en-US').format(property.monthly_rent)}${property.property_type === 'sale' ? '' : '/month'}`;
+      descPartsHe.push(priceHe);
+      descPartsEn.push(priceEn);
+    }
     
-    // Build structured description
+    // Add location with emoji
+    descPartsHe.push(`📍 ${location}`);
+    descPartsEn.push(`📍 ${location}`);
+    
+    // Build structured description with pipe separator
     const description = isEnglish
-      ? `🏠 ${detailsEn.join(' • ')}${priceFormattedEn ? ` | ${priceFormattedEn}` : ''} | ${location}`
-      : `🏠 ${detailsHe.join(' • ')}${priceFormatted ? ` | ${priceFormatted}` : ''} | ${location}`;
+      ? descPartsEn.join(' | ')
+      : descPartsHe.join(' | ');
 
     // Detailed logging for debugging
     console.log(`Property details - rooms: ${property.rooms}, size: ${property.property_size}, floor: ${property.floor}, balcony: ${property.balcony}, parking: ${property.parking}, elevator: ${property.elevator}, rent: ${property.monthly_rent}`);
