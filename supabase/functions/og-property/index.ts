@@ -1,6 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 
+// Escape HTML special characters to prevent breaking meta tag attributes
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -157,6 +167,11 @@ serve(async (req) => {
     // Dynamic OG image URL - generates branded 1200x630 image
     const ogImageUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-image?id=${propertyId}&lang=${lang}`;
 
+    // Escape content for safe HTML attribute embedding
+    const escapedDescription = escapeHtml(description.substring(0, 200));
+    const escapedTitle = escapeHtml(fullTitle);
+    const escapedSiteName = escapeHtml(siteName);
+
     // Generate HTML with OG tags
     const html = `<!DOCTYPE html>
 <html lang="${lang}" dir="${isEnglish ? 'ltr' : 'rtl'}">
@@ -165,28 +180,28 @@ serve(async (req) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Primary Meta Tags -->
-  <title>${fullTitle} | ${siteName}</title>
-  <meta name="title" content="${fullTitle} | ${siteName}">
-  <meta name="description" content="${description.substring(0, 200)}">
+  <title>${escapedTitle} | ${escapedSiteName}</title>
+  <meta name="title" content="${escapedTitle} | ${escapedSiteName}">
+  <meta name="description" content="${escapedDescription}">
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="${propertyUrl}">
-  <meta property="og:title" content="${fullTitle}">
-  <meta property="og:description" content="${description.substring(0, 200)}">
+  <meta property="og:title" content="${escapedTitle}">
+  <meta property="og:description" content="${escapedDescription}">
   <meta property="og:image" content="${ogImageUrl}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/svg+xml">
-  <meta property="og:image:alt" content="${fullTitle}">
-  <meta property="og:site_name" content="${siteName}">
+  <meta property="og:image:alt" content="${escapedTitle}">
+  <meta property="og:site_name" content="${escapedSiteName}">
   <meta property="og:locale" content="${isEnglish ? 'en_US' : 'he_IL'}">
   
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="${propertyUrl}">
-  <meta property="twitter:title" content="${fullTitle}">
-  <meta property="twitter:description" content="${description.substring(0, 200)}">
+  <meta property="twitter:title" content="${escapedTitle}">
+  <meta property="twitter:description" content="${escapedDescription}">
   <meta property="twitter:image" content="${ogImageUrl}">
   
   <!-- Fallback image for crawlers that don't support SVG -->
@@ -201,7 +216,7 @@ serve(async (req) => {
   </noscript>
 </head>
 <body>
-  <p>Redirecting to <a href="${propertyUrl}">${fullTitle}</a>...</p>
+  <p>Redirecting to <a href="${propertyUrl}">${escapedTitle}</a>...</p>
 </body>
 </html>`;
 
