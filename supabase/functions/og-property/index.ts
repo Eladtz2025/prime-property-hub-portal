@@ -168,8 +168,8 @@ serve(async (req) => {
 
     const fullTitle = `${propertyTypePrefix}: ${title}`;
 
-    // Dynamic OG image URL - generates branded 1200x630 image
-    const ogImageUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-image?id=${propertyId}&lang=${lang}`;
+    // Use the main property image directly (Facebook doesn't support SVG)
+    const ogImageUrl = mainImage;
 
     // Escape content for safe HTML attribute embedding
     const escapedDescription = escapeHtml(description.substring(0, 200));
@@ -194,9 +194,7 @@ serve(async (req) => {
   <meta property="og:title" content="${escapedTitle}">
   <meta property="og:description" content="${escapedDescription}">
   <meta property="og:image" content="${ogImageUrl}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="${escapedTitle}">
   <meta property="og:site_name" content="${escapedSiteName}">
   <meta property="og:locale" content="${isEnglish ? 'en_US' : 'he_IL'}">
