@@ -107,6 +107,9 @@ serve(async (req) => {
 
     const fullTitle = `${propertyTypePrefix}: ${title}`;
 
+    // Dynamic OG image URL - generates branded 1200x630 image
+    const ogImageUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-image?id=${propertyId}&lang=${lang}`;
+
     // Generate HTML with OG tags
     const html = `<!DOCTYPE html>
 <html lang="${lang}" dir="${isEnglish ? 'ltr' : 'rtl'}">
@@ -124,9 +127,11 @@ serve(async (req) => {
   <meta property="og:url" content="${propertyUrl}">
   <meta property="og:title" content="${fullTitle}">
   <meta property="og:description" content="${description.substring(0, 160)}">
-  <meta property="og:image" content="${mainImage}">
+  <meta property="og:image" content="${ogImageUrl}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image:alt" content="${fullTitle}">
   <meta property="og:site_name" content="${siteName}">
   <meta property="og:locale" content="${isEnglish ? 'en_US' : 'he_IL'}">
   
@@ -135,7 +140,10 @@ serve(async (req) => {
   <meta property="twitter:url" content="${propertyUrl}">
   <meta property="twitter:title" content="${fullTitle}">
   <meta property="twitter:description" content="${description.substring(0, 160)}">
-  <meta property="twitter:image" content="${mainImage}">
+  <meta property="twitter:image" content="${ogImageUrl}">
+  
+  <!-- Fallback image for crawlers that don't support SVG -->
+  <meta property="og:image" content="${mainImage}">
   
   <!-- Redirect for regular users (bots don't execute JS) -->
   <script>

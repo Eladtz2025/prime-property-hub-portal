@@ -45,6 +45,9 @@ verify_jwt = false
 [functions.og-property]
 verify_jwt = false
 
+[functions.og-image]
+verify_jwt = false
+
 [functions.notify-new-lead]
 verify_jwt = false
 
