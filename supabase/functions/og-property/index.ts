@@ -194,6 +194,8 @@ serve(async (req) => {
   <meta property="og:title" content="${escapedTitle}">
   <meta property="og:description" content="${escapedDescription}">
   <meta property="og:image" content="${ogImageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="${escapedTitle}">
   <meta property="og:site_name" content="${escapedSiteName}">
