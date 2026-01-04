@@ -208,9 +208,6 @@ serve(async (req) => {
   <meta property="twitter:description" content="${escapedDescription}">
   <meta property="twitter:image" content="${ogImageUrl}">
   
-  <!-- Fallback image for crawlers that don't support SVG -->
-  <meta property="og:image" content="${mainImage}">
-  
   <!-- Redirect for regular users (bots don't execute JS) -->
   <script>
     window.location.href = "${propertyUrl}";
