@@ -1948,6 +1948,42 @@ export type Database = {
           },
         ]
       }
+      seo_checks: {
+        Row: {
+          ai_analysis: Json | null
+          checked_at: string | null
+          created_by: string | null
+          fix_prompt: string | null
+          id: string
+          page_name: string | null
+          page_url: string
+          results: Json
+          score: number
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          checked_at?: string | null
+          created_by?: string | null
+          fix_prompt?: string | null
+          id?: string
+          page_name?: string | null
+          page_url: string
+          results?: Json
+          score?: number
+        }
+        Update: {
+          ai_analysis?: Json | null
+          checked_at?: string | null
+          created_by?: string | null
+          fix_prompt?: string | null
+          id?: string
+          page_name?: string | null
+          page_url?: string
+          results?: Json
+          score?: number
+        }
+        Relationships: []
+      }
       signature_forms: {
         Row: {
           created_at: string | null
