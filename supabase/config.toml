@@ -74,3 +74,9 @@ verify_jwt = false
 
 [functions.generate-property-image]
 verify_jwt = false
+
+[functions.analyze-seo-ai]
+verify_jwt = false
+
+[functions.discover-pages]
+verify_jwt = false
