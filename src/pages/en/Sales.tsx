@@ -77,7 +77,7 @@ const EnglishSales = () => {
       <EnglishHeader />
       
       <FullScreenHero
-        title="Properties for Sale"
+        title="Apartments for Sale in Tel Aviv"
         backgroundImage="/images/sales-villa.jpg"
         minHeight="100vh"
       />

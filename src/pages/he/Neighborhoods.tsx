@@ -73,7 +73,7 @@ const HebrewNeighborhoods = () => {
       <HebrewHeader />
 
       <FullScreenHero
-        title="שכונות"
+        title="שכונות תל אביב"
         backgroundImage="/images/hero-neighborhoods.jpg"
         minHeight="100vh"
       />

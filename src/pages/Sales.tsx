@@ -143,7 +143,7 @@ const Sales = () => {
       
       {/* Hero Section */}
       <FullScreenHero
-        title="מכירות"
+        title="דירות למכירה בתל אביב"
         backgroundImage="/images/sales-villa.jpg"
         minHeight="100vh"
       />

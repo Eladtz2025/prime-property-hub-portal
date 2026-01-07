@@ -169,7 +169,7 @@ const Rentals = () => {
       
       {/* Hero Section */}
       <FullScreenHero
-        title="השכרות"
+        title="דירות להשכרה בתל אביב"
         backgroundImage="/images/rental-interior.jpg"
         minHeight="100vh"
       />

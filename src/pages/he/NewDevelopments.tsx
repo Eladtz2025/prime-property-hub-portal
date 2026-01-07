@@ -89,7 +89,7 @@ const NewDevelopments = () => {
       <HebrewHeader />
 
       <FullScreenHero
-        title="פרויקטים חדשים"
+        title="פרויקטים חדשים בתל אביב"
         backgroundImage="/images/hero-new-developments.jpg"
         minHeight="100vh"
       />

@@ -81,7 +81,7 @@ const Contact = () => {
 
       {/* Hero Section */}
       <FullScreenHero
-        title="צור קשר"
+        title="צור קשר - נדל״ן תל אביב"
         backgroundImage="/images/hero-contact.jpg"
         minHeight="50vh"
       />
