@@ -184,12 +184,26 @@ function analyzeSchemas(html: string): SchemaAnalysis {
 // Analyze HTML and return SEO result
 function analyzeHtml(html: string, url: string, baseUrl: string, aiCrawlers: AiCrawlerCheck[], renderedScan: boolean) {
   // Extract SEO elements using regex
-  const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-  const title = titleMatch ? titleMatch[1].trim() : '';
+  // Get ALL title matches and take the LAST one (react-helmet adds it last)
+  const titleMatches = html.match(/<title[^>]*>([^<]*)<\/title>/gi) || [];
+  let title = '';
+  if (titleMatches.length > 0) {
+    const lastTitleMatch = titleMatches[titleMatches.length - 1].match(/<title[^>]*>([^<]*)<\/title>/i);
+    title = lastTitleMatch ? lastTitleMatch[1].trim() : '';
+  }
 
-  const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
-                    html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
-  const description = descMatch ? descMatch[1].trim() : '';
+  // Get ALL description meta tags and take the LAST one (react-helmet adds it after static)
+  const descPattern1 = /<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/gi;
+  const descPattern2 = /<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["'][^>]*>/gi;
+  const descMatches1 = [...html.matchAll(descPattern1)];
+  const descMatches2 = [...html.matchAll(descPattern2)];
+  const allDescMatches = [...descMatches1, ...descMatches2];
+  let description = '';
+  if (allDescMatches.length > 0) {
+    // Take the last description (react-helmet injects it after the static one)
+    const lastDesc = allDescMatches[allDescMatches.length - 1];
+    description = lastDesc[1].trim();
+  }
 
   const h1Matches = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/gi) || [];
   const h1Contents = h1Matches.map(h => h.replace(/<[^>]*>/g, '').trim());
@@ -197,17 +211,32 @@ function analyzeHtml(html: string, url: string, baseUrl: string, aiCrawlers: AiC
   const imgMatches = html.match(/<img[^>]*>/gi) || [];
   const imagesWithoutAlt = imgMatches.filter(img => !img.includes('alt=')).length;
 
-  // Open Graph tags
-  const ogTitle = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i);
-  const ogDesc = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i);
-  const ogImage = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["']/i);
-  const ogType = html.match(/<meta[^>]*property=["']og:type["'][^>]*content=["']([^"']*)["']/i);
-
+  // Open Graph tags - get LAST occurrence of each (react-helmet adds them after static)
   const ogTags: Record<string, string> = {};
-  if (ogTitle) ogTags['og:title'] = ogTitle[1];
-  if (ogDesc) ogTags['og:description'] = ogDesc[1];
-  if (ogImage) ogTags['og:image'] = ogImage[1];
-  if (ogType) ogTags['og:type'] = ogType[1];
+  
+  // og:title
+  const ogTitleMatches = [...html.matchAll(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["'][^>]*>/gi)];
+  const ogTitleMatches2 = [...html.matchAll(/<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:title["'][^>]*>/gi)];
+  const allOgTitles = [...ogTitleMatches, ...ogTitleMatches2];
+  if (allOgTitles.length > 0) ogTags['og:title'] = allOgTitles[allOgTitles.length - 1][1];
+  
+  // og:description
+  const ogDescMatches = [...html.matchAll(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["'][^>]*>/gi)];
+  const ogDescMatches2 = [...html.matchAll(/<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:description["'][^>]*>/gi)];
+  const allOgDescs = [...ogDescMatches, ...ogDescMatches2];
+  if (allOgDescs.length > 0) ogTags['og:description'] = allOgDescs[allOgDescs.length - 1][1];
+  
+  // og:image
+  const ogImageMatches = [...html.matchAll(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["'][^>]*>/gi)];
+  const ogImageMatches2 = [...html.matchAll(/<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:image["'][^>]*>/gi)];
+  const allOgImages = [...ogImageMatches, ...ogImageMatches2];
+  if (allOgImages.length > 0) ogTags['og:image'] = allOgImages[allOgImages.length - 1][1];
+  
+  // og:type
+  const ogTypeMatches = [...html.matchAll(/<meta[^>]*property=["']og:type["'][^>]*content=["']([^"']*)["'][^>]*>/gi)];
+  const ogTypeMatches2 = [...html.matchAll(/<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:type["'][^>]*>/gi)];
+  const allOgTypes = [...ogTypeMatches, ...ogTypeMatches2];
+  if (allOgTypes.length > 0) ogTags['og:type'] = allOgTypes[allOgTypes.length - 1][1];
 
   // Canonical URL
   const canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']*)["']/i);
