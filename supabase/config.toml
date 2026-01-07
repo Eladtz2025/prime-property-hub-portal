@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.discover-pages]
 verify_jwt = false
+
+[functions.check-seo-rendered]
+verify_jwt = false
