@@ -180,7 +180,7 @@ export const FeatureFlagsTab: React.FC = () => {
             }}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 mr-2" />
                   דגל חדש
                 </Button>
               </DialogTrigger>
@@ -218,7 +218,7 @@ export const FeatureFlagsTab: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label>אחוז Rollout: {formRollout}%</Label>
+                    <Label>אחוז פריסה: {formRollout}%</Label>
                     <Slider
                       value={[formRollout]}
                       onValueChange={([value]) => setFormRollout(value)}
@@ -247,7 +247,7 @@ export const FeatureFlagsTab: React.FC = () => {
                   <TableHead>שם</TableHead>
                   <TableHead>תיאור</TableHead>
                   <TableHead>סטטוס</TableHead>
-                  <TableHead>Rollout</TableHead>
+                  <TableHead>פריסה</TableHead>
                   <TableHead>נוצר</TableHead>
                   <TableHead>פעולות</TableHead>
                 </TableRow>
