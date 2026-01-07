@@ -7,6 +7,7 @@ import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import HreflangMeta from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 import {
   Carousel,
   CarouselContent,
@@ -65,6 +66,10 @@ const HebrewNeighborhoods = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" }
+      ]} />
       <HebrewHeader />
 
       <FullScreenHero

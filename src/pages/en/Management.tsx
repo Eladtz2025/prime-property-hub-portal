@@ -12,6 +12,8 @@ import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-
 import { Helmet } from "react-helmet";
 import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
 import { ConsultationModal } from "@/components/en/ConsultationModal";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishManagement = () => {
   const navigate = useNavigate();
@@ -108,6 +110,11 @@ const EnglishManagement = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/management" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/management" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Property Management", url: "https://www.ctmarketproperties.com/en/management" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}

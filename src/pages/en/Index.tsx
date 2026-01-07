@@ -10,7 +10,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
-import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema } from '@/components/seo/SchemaOrg';
+import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo/SchemaOrg';
 import { HreflangMeta } from '@/components/seo/HreflangMeta';
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
@@ -109,6 +109,9 @@ const EnglishIndex = () => {
       <OrganizationSchema language="en" />
       <WebSiteSchema language="en" />
       <LocalBusinessSchema language="en" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}

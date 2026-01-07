@@ -6,12 +6,27 @@ import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const FlorentinNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <html lang="en" dir="ltr" />
+        <title>Florentin - Bohemian Street Art Neighborhood | CITY MARKET Properties Tel Aviv</title>
+        <meta name="description" content="Properties for sale and rent in Florentin. Street art, nightlife, and young vibe. Real estate experts in Tel Aviv's most vibrant neighborhood." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods/florentin" />
+      </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/neighborhoods/florentin" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" },
+        { name: "Florentin", url: "https://www.ctmarketproperties.com/en/neighborhoods/florentin" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}

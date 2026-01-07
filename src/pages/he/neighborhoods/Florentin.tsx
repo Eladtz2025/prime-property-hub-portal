@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Helmet } from "react-helmet";
 import HreflangMeta from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const FlorentinNeighborhood = () => {
   const navigate = useNavigate();
@@ -22,6 +23,11 @@ const FlorentinNeighborhood = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/florentin" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/florentin" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" },
+        { name: "פלורנטין", url: "https://www.ctmarketproperties.com/he/neighborhoods/florentin" }
+      ]} />
       <HebrewHeader />
 
       <FullScreenHero

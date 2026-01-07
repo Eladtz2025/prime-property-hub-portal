@@ -11,6 +11,8 @@ import { MapPin, Home, Square, TrendingUp, Shield, Users, Award } from 'lucide-r
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishSales = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +69,11 @@ const EnglishSales = () => {
         <meta property="og:description" content="Wide range of apartments and properties for sale in Tel Aviv with full professional service" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/sales" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/sales" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Sales", url: "https://www.ctmarketproperties.com/en/sales" }
+      ]} />
       <EnglishHeader />
       
       <FullScreenHero

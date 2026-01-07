@@ -4,6 +4,7 @@ import { FlippablePropertyCard } from "@/components/he/FlippablePropertyCard";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import HreflangMeta from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -81,6 +82,10 @@ const NewDevelopments = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/new-developments" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/new-developments" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "פרויקטים חדשים", url: "https://www.ctmarketproperties.com/he/new-developments" }
+      ]} />
       <HebrewHeader />
 
       <FullScreenHero

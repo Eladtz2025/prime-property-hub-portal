@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 import {
   Carousel,
   CarouselContent,
@@ -62,6 +64,11 @@ const EnglishNeighborhoods = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/neighborhoods" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" }
+      ]} />
       <EnglishHeader />
 
       <FullScreenHero

@@ -12,7 +12,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
-import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema } from '@/components/seo/SchemaOrg';
+import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo/SchemaOrg';
 import { HreflangMeta } from '@/components/seo/HreflangMeta';
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
@@ -123,6 +123,9 @@ const Index = () => {
       <OrganizationSchema language="he" />
       <WebSiteSchema language="he" />
       <LocalBusinessSchema language="he" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" }
+      ]} />
       <HebrewHeader />
       
       {/* Hero Section */}

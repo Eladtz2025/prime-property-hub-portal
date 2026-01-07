@@ -11,6 +11,8 @@ import { MapPin, Home, Square, CheckCircle, Star, Users, TrendingUp } from 'luci
 import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishRentals = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +69,11 @@ const EnglishRentals = () => {
         <meta property="og:description" content="Wide range of apartments and properties for rent in Tel Aviv with full professional service" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/rentals" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/rentals" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Rentals", url: "https://www.ctmarketproperties.com/en/rentals" }
+      ]} />
       <EnglishHeader />
       
       <FullScreenHero

@@ -13,6 +13,7 @@ import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
 import HreflangMeta from '@/components/seo/HreflangMeta';
+import { BreadcrumbSchema } from '@/components/seo/SchemaOrg';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -134,6 +135,10 @@ const Sales = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/sales" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/sales" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "מכירות", url: "https://www.ctmarketproperties.com/he/sales" }
+      ]} />
       <HebrewHeader />
       
       {/* Hero Section */}
