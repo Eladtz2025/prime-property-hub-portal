@@ -7,12 +7,21 @@ import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { Helmet } from "react-helmet";
+import HreflangMeta from "@/components/seo/HreflangMeta";
 
 const OldNorthNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>צפון הישן - שכונה משפחתית עם מורשת באוהאוס | CITY MARKET Properties תל אביב</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה בצפון הישן. שכונה שקטה ומשפחתית, אדריכלות באוהאוס ושטחים ירוקים. מומחים בנדל״ן באזור המבוקש." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/old-north" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/old-north" />
       <HebrewHeader />
 
       <FullScreenHero

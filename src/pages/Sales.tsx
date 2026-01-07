@@ -12,6 +12,7 @@ import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
+import HreflangMeta from '@/components/seo/HreflangMeta';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -126,6 +127,13 @@ const Sales = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>דירות למכירה בתל אביב | CITY MARKET Properties - נדל"ן יוקרה בשכונות המובילות</title>
+        <meta name="description" content="דירות ונכסים למכירה בתל אביב. מומחים במכירת דירות ברוטשילד, נווה צדק, פלורנטין והצפון הישן. הערכת שווי, שיווק וליווי משפטי." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/sales" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/sales" />
       <HebrewHeader />
       
       {/* Hero Section */}

@@ -3,6 +3,7 @@ import HebrewFooter from "@/components/he/Footer";
 import { FlippablePropertyCard } from "@/components/he/FlippablePropertyCard";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
+import HreflangMeta from "@/components/seo/HreflangMeta";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -71,13 +72,15 @@ const NewDevelopments = () => {
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
-        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | City Market</title>
+        <html lang="he" dir="rtl" />
+        <title>פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | CITY MARKET Properties</title>
         <meta name="description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, פלורנטין ונווה צדק. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
-        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | City Market" />
+        <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב, פלורנטין ונווה צדק | CITY MARKET Properties" />
         <meta property="og:description" content="פרויקטי נדל&quot;ן חדשים ויוקרתיים בתל אביב, פלורנטין ונווה צדק. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק בפרויקטים המובילים." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket-properties.com/new-developments" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/new-developments" />
       </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/new-developments" />
       <HebrewHeader />
 
       <FullScreenHero

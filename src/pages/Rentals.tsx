@@ -12,6 +12,7 @@ import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCir
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
+import HreflangMeta from '@/components/seo/HreflangMeta';
 
 // Use real database data
 const USE_REAL_DATA = true;
@@ -152,6 +153,13 @@ const Rentals = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>דירות להשכרה בתל אביב | CITY MARKET Properties - נדל"ן בשכונות המובחרות</title>
+        <meta name="description" content="מחפשים דירה להשכרה בתל אביב? מגוון דירות להשכרה ברוטשילד, נווה צדק, פלורנטין והצפון הישן. ליווי מקצועי ושירות אישי." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/rentals" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/rentals" />
       <HebrewHeader />
       
       {/* Hero Section */}
