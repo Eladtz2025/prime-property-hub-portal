@@ -3,6 +3,8 @@ import EnglishFooter from "@/components/en/Footer";
 import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -71,6 +73,7 @@ const NewDevelopments = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
+        <html lang="en" dir="ltr" />
         <title>New Developments - City Market Properties | Tel Aviv, Florentin & Neve Tzedek</title>
         <meta name="description" content="Explore luxury new developments in Tel Aviv, Florentin, and Neve Tzedek. Modern design, premium amenities, and prime locations." />
         <meta property="og:title" content="New Developments - City Market Properties" />
@@ -78,6 +81,11 @@ const NewDevelopments = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/new-developments" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/new-developments" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "New Developments", url: "https://www.ctmarketproperties.com/en/new-developments" }
+      ]} />
       <EnglishHeader />
 
       <FullScreenHero

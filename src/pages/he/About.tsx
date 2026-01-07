@@ -3,7 +3,8 @@ import HebrewFooter from "@/components/he/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
-
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 import { TimelineItem } from "@/components/about/TimelineItem";
 import { ValueCard } from "@/components/about/ValueCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
@@ -26,13 +27,19 @@ const About = () => {
   const navigate = useNavigate();
   return <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
+        <html lang="he" dir="rtl" />
         <title>אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב</title>
         <meta name="description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />
         <meta property="og:title" content="אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב" />
         <meta property="og:description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket-properties.com/about" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/about" />
       </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/about" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "אודות", url: "https://www.ctmarketproperties.com/he/about" }
+      ]} />
       <HebrewHeader />
 
       {/* Hero Section - Enhanced */}

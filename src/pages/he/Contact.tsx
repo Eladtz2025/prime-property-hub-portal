@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewLead } from "@/utils/notifyNewLead";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema, LocalBusinessSchema } from "@/components/seo/SchemaOrg";
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
   email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
@@ -61,6 +63,20 @@ const Contact = () => {
     }
   };
     return <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>צור קשר - CITY MARKET Properties | נדל"ן בתל אביב</title>
+        <meta name="description" content="צרו קשר עם CITY MARKET Properties. מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. טלפון: 054-228-4477" />
+        <meta property="og:title" content="צור קשר - CITY MARKET Properties" />
+        <meta property="og:description" content="צרו קשר עם מומחי הנדל&quot;ן שלנו בתל אביב" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/contact" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/contact" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "צור קשר", url: "https://www.ctmarketproperties.com/he/contact" }
+      ]} />
+      <LocalBusinessSchema language="he" />
       <HebrewHeader />
 
       {/* Hero Section */}

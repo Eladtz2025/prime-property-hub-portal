@@ -26,6 +26,7 @@ interface SchemaAnalysis {
   hasWebSite: boolean;
   hasBreadcrumb: boolean;
   hasLocalBusiness: boolean;
+  hasFAQPage: boolean;
   rawSchemas: any[];
 }
 
@@ -59,6 +60,12 @@ interface SeoCheckResult {
   schemaAnalysis: SchemaAnalysis;
   hasNoAiMeta: boolean;
   hasNoImageAiMeta: boolean;
+  // Language & i18n fields
+  hasHreflang: boolean;
+  hreflangTags: { lang: string; url: string }[];
+  hasRtlSupport: boolean;
+  detectedLanguage: 'he' | 'en' | 'unknown';
+  languageConsistency: boolean;
 }
 
 // Extract keywords from text
@@ -156,6 +163,7 @@ function analyzeSchemas(html: string): SchemaAnalysis {
     hasWebSite: false,
     hasBreadcrumb: false,
     hasLocalBusiness: false,
+    hasFAQPage: false,
     rawSchemas: [],
   };
 
@@ -193,6 +201,9 @@ function analyzeSchemas(html: string): SchemaAnalysis {
           }
           if (t === 'LocalBusiness' || t === 'RealEstateAgent') {
             result.hasLocalBusiness = true;
+          }
+          if (t === 'FAQPage') {
+            result.hasFAQPage = true;
           }
         }
       };
@@ -303,7 +314,39 @@ Deno.serve(async (req) => {
     // NEW: Analyze schemas
     const schemaAnalysis = analyzeSchemas(html);
 
-    // NEW: Keyword analysis
+    // NEW: Check hreflang tags
+    const hreflangMatches = html.matchAll(/<link[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']*)["'][^>]*href=["']([^"']*)["']/gi);
+    const hreflangTags: { lang: string; url: string }[] = [];
+    for (const match of hreflangMatches) {
+      hreflangTags.push({ lang: match[1], url: match[2] });
+    }
+    // Also check reverse attribute order
+    const hreflangMatchesReverse = html.matchAll(/<link[^>]*hreflang=["']([^"']*)["'][^>]*href=["']([^"']*)["'][^>]*rel=["']alternate["']/gi);
+    for (const match of hreflangMatchesReverse) {
+      if (!hreflangTags.find(t => t.lang === match[1])) {
+        hreflangTags.push({ lang: match[1], url: match[2] });
+      }
+    }
+    const hasHreflang = hreflangTags.length > 0;
+
+    // NEW: Check RTL support
+    const hasRtlSupport = /<html[^>]*dir=["']rtl["']/i.test(html) || 
+                          /dir=["']rtl["']/i.test(html);
+
+    // Detect language from URL or lang attribute
+    let detectedLanguage: 'he' | 'en' | 'unknown' = 'unknown';
+    if (url.includes('/he/') || url.includes('/he') || htmlLang?.startsWith('he')) {
+      detectedLanguage = 'he';
+    } else if (url.includes('/en/') || url.includes('/en') || htmlLang?.startsWith('en')) {
+      detectedLanguage = 'en';
+    }
+
+    // Check language consistency
+    const languageConsistency = (
+      (detectedLanguage === 'he' && htmlLang?.startsWith('he')) ||
+      (detectedLanguage === 'en' && htmlLang?.startsWith('en')) ||
+      detectedLanguage === 'unknown'
+    );
     const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
     const bodyText = bodyMatch ? bodyMatch[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
     const firstParagraphMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
@@ -443,6 +486,42 @@ Deno.serve(async (req) => {
       issues.push({ severity: 'info', message: `${blockedCrawlers.length} AI crawlers חסומים ב-robots.txt` });
     }
 
+    // NEW: hreflang checks
+    if (!hasHreflang) {
+      score -= 5;
+      issues.push({ severity: 'warning', message: 'חסרים תגיות hreflang לשפות שונות' });
+      recommendations.push('הוסף תגיות hreflang לקישור בין גרסאות השפה השונות');
+    } else {
+      // Check if both he and en are present
+      const hasHe = hreflangTags.some(t => t.lang === 'he');
+      const hasEn = hreflangTags.some(t => t.lang === 'en');
+      if (!hasHe || !hasEn) {
+        score -= 3;
+        issues.push({ severity: 'warning', message: 'חסרים חלק מתגיות ה-hreflang (צריך he ו-en)' });
+      }
+    }
+
+    // NEW: RTL support for Hebrew pages
+    if (detectedLanguage === 'he' && !hasRtlSupport) {
+      score -= 3;
+      issues.push({ severity: 'warning', message: 'דף עברי ללא תמיכת RTL (dir="rtl")' });
+      recommendations.push('הוסף dir="rtl" לתגית <html> או לאלמנט הראשי');
+    }
+
+    // NEW: Language consistency check
+    if (!languageConsistency) {
+      score -= 2;
+      issues.push({ severity: 'warning', message: `חוסר עקביות בשפה: URL מציין ${detectedLanguage} אבל lang="${htmlLang}"` });
+      recommendations.push(`עדכן את תגית lang ל-"${detectedLanguage}" בהתאם ל-URL`);
+    }
+
+    // NEW: Canonical consistency check
+    if (canonicalUrl && !canonicalUrl.includes('ctmarketproperties.com')) {
+      score -= 3;
+      issues.push({ severity: 'warning', message: 'Canonical URL מפנה לדומיין אחר' });
+      recommendations.push('עדכן את ה-Canonical URL לדומיין הנוכחי');
+    }
+
     const result: SeoCheckResult = {
       url,
       title,
@@ -472,6 +551,11 @@ Deno.serve(async (req) => {
       schemaAnalysis,
       hasNoAiMeta,
       hasNoImageAiMeta,
+      hasHreflang,
+      hreflangTags,
+      hasRtlSupport,
+      detectedLanguage,
+      languageConsistency,
     };
 
     console.log(`SEO check completed: score=${result.score}, issues=${issues.length}`);
