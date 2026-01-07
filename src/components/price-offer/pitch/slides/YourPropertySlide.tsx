@@ -46,50 +46,50 @@ const YourPropertySlide = ({
   agentNote = "זה מה שהקונים יראו - וזה מה שאני אדע להדגיש עבורכם. הנכס הזה ייחודי, ואני אוודא שכל קונה פוטנציאלי יבין את הערך האמיתי שלו.",
 }: YourPropertySlideProps) => {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-8 py-24">
-      <div className="w-full max-w-5xl">
+    <div className="flex h-full w-full flex-col items-center justify-start md:justify-center px-4 md:px-8 py-20 md:py-24 overflow-y-auto">
+      <div className="w-full max-w-5xl pb-20 md:pb-0">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h2 className="mb-3 text-4xl font-bold text-white md:text-5xl">{title}</h2>
-          <p className="text-lg text-white/60">{subtitle}</p>
+        <div className="mb-6 md:mb-8 text-center">
+          <h2 className="mb-2 md:mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-white">{title}</h2>
+          <p className="text-base md:text-lg text-white/60">{subtitle}</p>
         </div>
 
-        <div className="flex flex-col gap-8 lg:flex-row">
+        <div className="flex flex-col gap-6 md:gap-8 lg:flex-row">
           {/* Left: Property Image + Address */}
           <div className="flex-1">
-            <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <div className="relative mb-3 md:mb-4 overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5">
               {propertyImage ? (
                 <img
                   src={propertyImage}
                   alt={propertyAddress}
-                  className="h-64 w-full object-cover lg:h-80"
+                  className="h-48 md:h-64 lg:h-80 w-full object-cover"
                 />
               ) : (
-                <div className="flex h-64 w-full items-center justify-center bg-gradient-to-br from-emerald-500/20 to-teal-500/20 lg:h-80">
-                  <Building className="h-16 w-16 text-white/30" />
+                <div className="flex h-48 md:h-64 lg:h-80 w-full items-center justify-center bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+                  <Building className="h-12 w-12 md:h-16 md:w-16 text-white/30" />
                 </div>
               )}
               {/* Address Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 md:p-4">
                 <div className="flex items-center gap-2 text-white">
-                  <MapPin className="h-4 w-4 text-emerald-400" />
-                  <span className="font-medium">{propertyAddress}</span>
+                  <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  <span className="text-sm md:text-base font-medium">{propertyAddress}</span>
                 </div>
               </div>
             </div>
 
             {/* Property Highlights */}
-            <div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
+            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
               {highlights.map((highlight, index) => {
                 const IconComponent = iconMap[highlight.icon] || Maximize;
                 return (
                   <div
                     key={index}
-                    className="flex flex-col items-center rounded-xl border border-white/10 bg-white/5 p-3 text-center"
+                    className="flex flex-col items-center rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-2 md:p-3 text-center"
                   >
-                    <IconComponent className="mb-1 h-5 w-5 text-emerald-400" />
-                    <span className="text-lg font-bold text-white">{highlight.value}</span>
-                    <span className="text-xs text-white/50">{highlight.title}</span>
+                    <IconComponent className="mb-1 h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+                    <span className="text-sm md:text-lg font-bold text-white">{highlight.value}</span>
+                    <span className="text-[10px] md:text-xs text-white/50">{highlight.title}</span>
                   </div>
                 );
               })}
@@ -98,28 +98,28 @@ const YourPropertySlide = ({
 
           {/* Right: Unique Points */}
           <div className="flex flex-1 flex-col">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-400" />
-              <h3 className="text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
+            <div className="mb-3 md:mb-4 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
+              <h3 className="text-base md:text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
             </div>
 
-            <div className="mb-6 space-y-3">
+            <div className="mb-4 md:mb-6 space-y-2 md:space-y-3">
               {uniquePoints.map((point, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
+                  className="flex items-start gap-2 md:gap-3 rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-3 md:p-4"
                 >
-                  <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-sm font-bold text-emerald-400">
+                  <div className="mt-0.5 flex h-5 w-5 md:h-6 md:w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs md:text-sm font-bold text-emerald-400">
                     {index + 1}
                   </div>
-                  <p className="text-white/80">{point}</p>
+                  <p className="text-sm md:text-base text-white/80">{point}</p>
                 </div>
               ))}
             </div>
 
             {/* Agent Note */}
-            <div className="mt-auto rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-5">
-              <p className="text-sm leading-relaxed text-white/70 italic">
+            <div className="mt-auto rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 md:p-5">
+              <p className="text-xs md:text-sm leading-relaxed text-white/70 italic">
                 "{agentNote}"
               </p>
             </div>

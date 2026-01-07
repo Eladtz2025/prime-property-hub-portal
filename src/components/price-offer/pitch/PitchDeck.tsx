@@ -252,53 +252,58 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6">
+      <div className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 md:px-8 md:py-6">
         {/* Previous Button */}
         <button
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ${
+          className={`flex items-center gap-1 md:gap-2 rounded-full px-3 py-2 md:px-6 md:py-3 text-xs md:text-sm font-medium transition-all duration-300 ${
             currentSlide === 0
               ? "cursor-not-allowed opacity-30"
               : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
           }`}
         >
-          <ChevronRight className="h-5 w-5" />
-          <span>הקודם</span>
+          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+          <span className="hidden sm:inline">הקודם</span>
         </button>
 
-        {/* Slide Indicators */}
-        <div className="flex items-center gap-3">
+        {/* Slide Indicators - hidden on mobile, show counter instead */}
+        <div className="hidden md:flex items-center gap-2">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentSlide
-                  ? "w-8 bg-white"
+                  ? "w-6 bg-white"
                   : "w-2 bg-white/30 hover:bg-white/50"
               }`}
             />
           ))}
         </div>
 
+        {/* Mobile Counter */}
+        <div className="md:hidden text-sm text-white/70 font-medium">
+          {currentSlide + 1} / {totalSlides}
+        </div>
+
         {/* Next Button */}
         <button
           onClick={nextSlide}
           disabled={currentSlide === totalSlides - 1}
-          className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ${
+          className={`flex items-center gap-1 md:gap-2 rounded-full px-3 py-2 md:px-6 md:py-3 text-xs md:text-sm font-medium transition-all duration-300 ${
             currentSlide === totalSlides - 1
               ? "cursor-not-allowed opacity-30"
               : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
           }`}
         >
-          <span>הבא</span>
-          <ChevronLeft className="h-5 w-5" />
+          <span className="hidden sm:inline">הבא</span>
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
         </button>
       </div>
 
-      {/* Slide Counter */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-sm text-white/50">
+      {/* Slide Counter - desktop only */}
+      <div className="hidden md:block absolute bottom-6 left-1/2 -translate-x-1/2 text-sm text-white/50">
         {currentSlide + 1} / {totalSlides}
       </div>
     </div>

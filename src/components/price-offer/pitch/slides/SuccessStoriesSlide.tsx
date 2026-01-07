@@ -59,16 +59,16 @@ const SuccessStoriesSlide = ({
   };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-8 py-24">
-      <div className="w-full max-w-6xl">
+    <div className="flex h-full w-full flex-col items-center justify-start md:justify-center px-4 md:px-8 py-20 md:py-24 overflow-y-auto">
+      <div className="w-full max-w-6xl pb-20 md:pb-0">
         {/* Header */}
-        <div className="mb-10 text-center">
-          <h2 className="mb-3 text-4xl font-bold text-white md:text-5xl">{title}</h2>
-          <p className="text-lg text-white/60">{subtitle}</p>
+        <div className="mb-6 md:mb-10 text-center">
+          <h2 className="mb-2 md:mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-white">{title}</h2>
+          <p className="text-base md:text-lg text-white/60">{subtitle}</p>
         </div>
 
         {/* Stories Grid */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {stories.map((story, index) => {
             const priceDiff = getPriceDiff(story.askingPrice, story.soldPrice);
             const isAboveAsking = priceDiff > 0;
@@ -76,57 +76,57 @@ const SuccessStoriesSlide = ({
             return (
               <div
                 key={index}
-                className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-emerald-500/30"
+                className="flex flex-col overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-emerald-500/30"
               >
                 {/* Image placeholder or gradient */}
-                <div className="relative h-32 bg-gradient-to-br from-emerald-500/20 to-teal-600/20">
+                <div className="relative h-24 md:h-32 bg-gradient-to-br from-emerald-500/20 to-teal-600/20">
                   {story.image ? (
                     <img src={story.image} alt={story.address} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <span className="text-4xl">🏠</span>
+                      <span className="text-3xl md:text-4xl">🏠</span>
                     </div>
                   )}
                   {/* Badge */}
                   {isAboveAsking && (
-                    <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium text-white">
-                      <TrendingUp className="h-3 w-3" />
+                    <div className="absolute left-2 md:left-3 top-2 md:top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium text-white">
+                      <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3" />
                       +{priceDiff.toFixed(1)}%
                     </div>
                   )}
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-1 flex-col p-5">
-                  <h3 className="mb-3 font-semibold text-white">{story.address}</h3>
+                <div className="flex flex-1 flex-col p-4 md:p-5">
+                  <h3 className="mb-2 md:mb-3 text-sm md:text-base font-semibold text-white">{story.address}</h3>
 
                   {/* Price comparison */}
-                  <div className="mb-4 flex items-center justify-between rounded-lg bg-white/5 p-3">
+                  <div className="mb-3 md:mb-4 flex items-center justify-between rounded-lg bg-white/5 p-2 md:p-3">
                     <div>
-                      <p className="text-xs text-white/50">מחיר מבוקש</p>
-                      <p className="font-medium text-white/70">{formatPrice(story.askingPrice)}</p>
+                      <p className="text-[10px] md:text-xs text-white/50">מחיר מבוקש</p>
+                      <p className="text-sm md:text-base font-medium text-white/70">{formatPrice(story.askingPrice)}</p>
                     </div>
                     <div className="text-left">
-                      <p className="text-xs text-white/50">נמכר ב-</p>
-                      <p className="font-bold text-emerald-400">{formatPrice(story.soldPrice)}</p>
+                      <p className="text-[10px] md:text-xs text-white/50">נמכר ב-</p>
+                      <p className="text-sm md:text-base font-bold text-emerald-400">{formatPrice(story.soldPrice)}</p>
                     </div>
                   </div>
 
                   {/* Days on market */}
-                  <div className="mb-4 flex items-center gap-2 text-sm text-white/50">
-                    <Calendar className="h-4 w-4" />
+                  <div className="mb-3 md:mb-4 flex items-center gap-2 text-xs md:text-sm text-white/50">
+                    <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4" />
                     <span>{story.daysOnMarket} ימים על השוק</span>
                   </div>
 
                   {/* Testimonial */}
                   {story.testimonial && (
-                    <div className="mt-auto border-t border-white/10 pt-4">
+                    <div className="mt-auto border-t border-white/10 pt-3 md:pt-4">
                       <div className="flex items-start gap-2">
-                        <Quote className="h-4 w-4 flex-shrink-0 text-emerald-400/50" />
-                        <p className="text-sm italic text-white/60">"{story.testimonial}"</p>
+                        <Quote className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0 text-emerald-400/50" />
+                        <p className="text-xs md:text-sm italic text-white/60">"{story.testimonial}"</p>
                       </div>
                       {story.clientName && (
-                        <p className="mt-2 text-right text-xs text-white/40">— {story.clientName}</p>
+                        <p className="mt-1 md:mt-2 text-right text-[10px] md:text-xs text-white/40">— {story.clientName}</p>
                       )}
                     </div>
                   )}

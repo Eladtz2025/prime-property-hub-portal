@@ -43,38 +43,36 @@ const ValuationSlide = ({
     return `₪${price.toLocaleString()}`;
   };
 
-  const minPosition = 0;
-  const maxPosition = 100;
   const recommendedPosition = ((recommendedPrice - minPrice) / (maxPrice - minPrice)) * 100;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-8 py-24">
-      <div className="w-full max-w-4xl">
+    <div className="flex h-full w-full flex-col items-center justify-start md:justify-center px-4 md:px-8 py-20 md:py-24 overflow-y-auto">
+      <div className="w-full max-w-4xl pb-20 md:pb-0">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h2 className="mb-3 text-4xl font-bold text-white md:text-5xl">{title}</h2>
-          <p className="text-lg text-white/60">{subtitle}</p>
+        <div className="mb-6 md:mb-8 text-center">
+          <h2 className="mb-2 md:mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-white">{title}</h2>
+          <p className="text-base md:text-lg text-white/60">{subtitle}</p>
         </div>
 
         {/* Property Info */}
-        <div className="mb-8 flex items-center justify-center gap-3 rounded-xl bg-white/5 p-4">
-          <Home className="h-5 w-5 text-emerald-400" />
-          <span className="text-white">{propertyAddress}</span>
-          <span className="text-white/50">|</span>
-          <span className="text-white/70">{propertySize} מ״ר</span>
+        <div className="mb-6 md:mb-8 flex flex-wrap items-center justify-center gap-2 md:gap-3 rounded-xl bg-white/5 p-3 md:p-4">
+          <Home className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+          <span className="text-sm md:text-base text-white">{propertyAddress}</span>
+          <span className="text-white/50 hidden md:inline">|</span>
+          <span className="text-sm md:text-base text-white/70">{propertySize} מ״ר</span>
         </div>
 
         {/* Price Range Visualization */}
-        <div className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+        <div className="mb-6 md:mb-10 rounded-2xl border border-white/10 bg-white/5 p-5 md:p-8 backdrop-blur-sm">
           {/* Recommended Price */}
-          <div className="mb-8 text-center">
-            <p className="mb-2 text-sm uppercase tracking-wider text-emerald-400">המחיר המומלץ</p>
-            <p className="text-5xl font-bold text-white md:text-6xl">{formatPrice(recommendedPrice)}</p>
-            <p className="mt-2 text-lg text-white/50">₪{pricePerSqm.toLocaleString()} למ״ר</p>
+          <div className="mb-6 md:mb-8 text-center">
+            <p className="mb-1 md:mb-2 text-xs md:text-sm uppercase tracking-wider text-emerald-400">המחיר המומלץ</p>
+            <p className="text-4xl md:text-5xl lg:text-6xl font-bold text-white">{formatPrice(recommendedPrice)}</p>
+            <p className="mt-1 md:mt-2 text-base md:text-lg text-white/50">₪{pricePerSqm.toLocaleString()} למ״ר</p>
           </div>
 
           {/* Price Range Bar */}
-          <div className="relative mb-6">
+          <div className="relative mb-4 md:mb-6">
             <div className="h-3 rounded-full bg-gradient-to-r from-amber-500/30 via-emerald-500/50 to-amber-500/30" />
             
             {/* Recommended marker */}
@@ -83,14 +81,14 @@ const ValuationSlide = ({
               style={{ right: `${recommendedPosition}%`, transform: `translateY(-50%) translateX(50%)` }}
             >
               <div className="flex flex-col items-center">
-                <div className="h-8 w-0.5 bg-emerald-400" />
-                <div className="h-4 w-4 rounded-full border-2 border-emerald-400 bg-[#0a0a0a]" />
+                <div className="h-6 md:h-8 w-0.5 bg-emerald-400" />
+                <div className="h-3 w-3 md:h-4 md:w-4 rounded-full border-2 border-emerald-400 bg-[#0a0a0a]" />
               </div>
             </div>
           </div>
 
           {/* Min/Max Labels */}
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-xs md:text-sm">
             <div className="text-right">
               <p className="text-white/50">מינימום</p>
               <p className="font-semibold text-white">{formatPrice(minPrice)}</p>
@@ -103,26 +101,26 @@ const ValuationSlide = ({
         </div>
 
         {/* Reasoning */}
-        <div className="mb-8 rounded-xl border border-white/10 bg-white/5 p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <Scale className="h-5 w-5 text-emerald-400" />
-            <h3 className="font-semibold text-white">הסבר להערכה</h3>
+        <div className="mb-6 md:mb-8 rounded-xl border border-white/10 bg-white/5 p-4 md:p-6">
+          <div className="mb-2 md:mb-3 flex items-center gap-2">
+            <Scale className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+            <h3 className="text-sm md:text-base font-semibold text-white">הסבר להערכה</h3>
           </div>
-          <p className="leading-relaxed text-white/70">{reasoning}</p>
+          <p className="text-sm md:text-base leading-relaxed text-white/70">{reasoning}</p>
         </div>
 
         {/* Comparisons */}
-        <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
-            <h3 className="font-semibold text-white">נכסים להשוואה</h3>
+        <div className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-6">
+          <div className="mb-3 md:mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+            <h3 className="text-sm md:text-base font-semibold text-white">נכסים להשוואה</h3>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-2 md:gap-3 grid-cols-1 md:grid-cols-3">
             {comparisons.map((comp, index) => (
-              <div key={index} className="rounded-lg bg-white/5 p-4 text-center">
-                <p className="mb-2 text-sm text-white/70">{comp.address}</p>
-                <p className="text-lg font-bold text-white">{formatPrice(comp.price)}</p>
-                <p className="text-xs text-white/50">{comp.size} מ״ר | ₪{comp.pricePerSqm.toLocaleString()}/מ״ר</p>
+              <div key={index} className="rounded-lg bg-white/5 p-3 md:p-4 text-center">
+                <p className="mb-1 md:mb-2 text-xs md:text-sm text-white/70">{comp.address}</p>
+                <p className="text-base md:text-lg font-bold text-white">{formatPrice(comp.price)}</p>
+                <p className="text-[10px] md:text-xs text-white/50">{comp.size} מ״ר | ₪{comp.pricePerSqm.toLocaleString()}/מ״ר</p>
               </div>
             ))}
           </div>
