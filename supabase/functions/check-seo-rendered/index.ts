@@ -76,7 +76,7 @@ async function checkAiCrawlers(baseUrl: string): Promise<AiCrawlerCheck[]> {
       return crawlers.map(c => ({ ...c, allowed: true, foundInRobots: false }));
     }
     
-    const robotsTxt = await response.text().toLowerCase();
+    const robotsTxt = (await response.text()).toLowerCase();
     
     return crawlers.map(crawler => {
       const userAgentLower = crawler.userAgent.toLowerCase();
