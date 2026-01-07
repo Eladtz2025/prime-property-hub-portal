@@ -142,61 +142,82 @@ export const MonitoringTab: React.FC = () => {
     ? Math.round((monitoringLogs.filter(l => l.status === 'up').length / monitoringLogs.length) * 100)
     : 100;
 
+  const criticalErrors = errorLogs.filter(e => e.severity === 'critical').length;
+  const todayErrors = errorLogs.filter(e => {
+    const errorDate = new Date(e.error_time);
+    const today = new Date();
+    return errorDate.toDateString() === today.toDateString();
+  }).length;
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-card/50 border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-green-500/20">
-                <Server className="h-6 w-6 text-green-400" />
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <Server className="h-5 w-5 text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">סטטוס מערכת</p>
-                <p className="text-2xl font-bold text-green-400">תקין</p>
+                <p className="text-xs text-muted-foreground">סטטוס</p>
+                <p className="text-lg font-bold text-green-400">תקין</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/50 border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-blue-500/20">
-                <Activity className="h-6 w-6 text-blue-400" />
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Activity className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">זמן תגובה ממוצע</p>
-                <p className="text-2xl font-bold">{avgResponseTime}ms</p>
+                <p className="text-xs text-muted-foreground">תגובה</p>
+                <p className="text-lg font-bold">{avgResponseTime}ms</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/50 border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-purple-500/20">
-                <CheckCircle className="h-6 w-6 text-purple-400" />
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <CheckCircle className="h-5 w-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Uptime</p>
-                <p className="text-2xl font-bold">{uptime}%</p>
+                <p className="text-xs text-muted-foreground">Uptime</p>
+                <p className="text-lg font-bold">{uptime}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/50 border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-red-500/20">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
+              <div className="p-2 rounded-lg bg-yellow-500/20">
+                <AlertTriangle className="h-5 w-5 text-yellow-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">שגיאות (24 שעות)</p>
-                <p className="text-2xl font-bold">{errorLogs.length}</p>
+                <p className="text-xs text-muted-foreground">שגיאות היום</p>
+                <p className="text-lg font-bold">{todayErrors}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={criticalErrors > 0 ? "bg-red-500/10 border-red-500/30" : "bg-card/50 border-border/50"}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/20">
+                <XCircle className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">קריטיות</p>
+                <p className={`text-lg font-bold ${criticalErrors > 0 ? 'text-red-400' : ''}`}>{criticalErrors}</p>
               </div>
             </div>
           </CardContent>

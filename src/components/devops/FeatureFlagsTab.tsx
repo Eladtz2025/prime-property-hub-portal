@@ -161,27 +161,8 @@ export const FeatureFlagsTab: React.FC = () => {
     }
   };
 
-  const benefits = [
-    { icon: Flag, text: 'הפעל פיצ\'רים חדשים בהדרגה' },
-    { icon: Percent, text: 'שליטה באחוז המשתמשים שרואים פיצ\'ר' },
-    { icon: Users, text: 'פיצ\'רים ספציפיים למשתמשים מסוימים' },
-    { icon: CheckCircle, text: 'כיבוי מיידי ללא deploy חדש' },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Benefits */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {benefits.map((benefit, index) => (
-          <Card key={index} className="bg-card/50 border-border/50">
-            <CardContent className="pt-6 flex items-center gap-3">
-              <benefit.icon className="h-5 w-5 text-primary" />
-              <span className="text-sm">{benefit.text}</span>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Flags Table */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader>
@@ -325,46 +306,6 @@ export const FeatureFlagsTab: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Usage Example */}
-      <Card className="bg-blue-500/10 border-blue-500/30">
-        <CardHeader>
-          <CardTitle className="text-blue-400">איך להשתמש בקוד?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="bg-background/50 p-4 rounded-lg text-sm font-mono overflow-x-auto">
-{`// hooks/useFeatureFlag.ts
-const useFeatureFlag = (flagName: string) => {
-  const [enabled, setEnabled] = useState(false);
-  
-  useEffect(() => {
-    const checkFlag = async () => {
-      const { data } = await supabase
-        .from('feature_flags')
-        .select('is_enabled, rollout_percentage')
-        .eq('name', flagName)
-        .single();
-      
-      if (data?.is_enabled) {
-        // Check rollout percentage
-        const random = Math.random() * 100;
-        setEnabled(random < data.rollout_percentage);
-      }
-    };
-    checkFlag();
-  }, [flagName]);
-  
-  return enabled;
-};
-
-// Usage in component
-const MyComponent = () => {
-  const showNewFeature = useFeatureFlag('new_checkout_flow');
-  
-  return showNewFeature ? <NewCheckout /> : <OldCheckout />;
-};`}
-          </pre>
-        </CardContent>
-      </Card>
     </div>
   );
 };

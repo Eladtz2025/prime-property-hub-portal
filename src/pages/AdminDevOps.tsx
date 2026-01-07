@@ -1,12 +1,11 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Search, Gauge, ClipboardCheck, Flag, Bug } from "lucide-react";
+import { Activity, Search, Gauge, ClipboardCheck, Flag } from "lucide-react";
 import { MonitoringTab } from "@/components/devops/MonitoringTab";
 import { SeoTab } from "@/components/devops/SeoTab";
 import { PerformanceTab } from "@/components/devops/PerformanceTab";
 import { QaTestsTab } from "@/components/devops/QaTestsTab";
 import { FeatureFlagsTab } from "@/components/devops/FeatureFlagsTab";
-import { ErrorTrackingTab } from "@/components/devops/ErrorTrackingTab";
 
 const AdminDevOps: React.FC = () => {
   return (
@@ -39,10 +38,6 @@ const AdminDevOps: React.FC = () => {
               <Flag className="h-4 w-4" />
               Feature Flags
             </TabsTrigger>
-            <TabsTrigger value="errors" className="flex items-center gap-2">
-              <Bug className="h-4 w-4" />
-              שגיאות
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="monitoring"><MonitoringTab /></TabsContent>
@@ -50,7 +45,6 @@ const AdminDevOps: React.FC = () => {
           <TabsContent value="performance"><PerformanceTab /></TabsContent>
           <TabsContent value="qa"><QaTestsTab /></TabsContent>
           <TabsContent value="flags"><FeatureFlagsTab /></TabsContent>
-          <TabsContent value="errors"><ErrorTrackingTab /></TabsContent>
         </Tabs>
       </div>
     </div>
