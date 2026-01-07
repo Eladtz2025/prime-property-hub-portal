@@ -474,16 +474,16 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             url,
-            formats: ['html'],
+            formats: ['rawHtml'],
             waitFor: 3000, // Wait 3 seconds for React to render
           }),
         });
 
         const firecrawlData = await firecrawlResponse.json();
         
-        if (firecrawlResponse.ok && firecrawlData.success && firecrawlData.data?.html) {
+        if (firecrawlResponse.ok && firecrawlData.success && (firecrawlData.data?.rawHtml || firecrawlData.data?.html)) {
           console.log('Firecrawl returned rendered HTML successfully');
-          const html = firecrawlData.data.html;
+          const html = firecrawlData.data.rawHtml || firecrawlData.data.html;
           const result = analyzeHtml(html, url, baseUrl, aiCrawlers, true);
           
           return new Response(
