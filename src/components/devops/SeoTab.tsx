@@ -139,22 +139,34 @@ export const SeoTab: React.FC = () => {
 
   // רשימת דפים קבועה - האתר הוא SPA אז discover-pages לא עובד
   const KNOWN_PAGES: PageToCheck[] = [
-    // עברית
+    // עברית - ראשי
     { name: 'דף הבית (עברית)', path: '/he', url: `${PRODUCTION_DOMAIN}/he` },
     { name: 'השכרות', path: '/he/rentals', url: `${PRODUCTION_DOMAIN}/he/rentals` },
     { name: 'מכירות', path: '/he/sales', url: `${PRODUCTION_DOMAIN}/he/sales` },
     { name: 'ניהול נכסים', path: '/he/management', url: `${PRODUCTION_DOMAIN}/he/management` },
     { name: 'אודות', path: '/he/about', url: `${PRODUCTION_DOMAIN}/he/about` },
     { name: 'צור קשר', path: '/he/contact', url: `${PRODUCTION_DOMAIN}/he/contact` },
-    { name: 'שאלות נפוצות', path: '/he/faq', url: `${PRODUCTION_DOMAIN}/he/faq` },
-    // אנגלית
+    { name: 'פרויקטים חדשים', path: '/he/new-developments', url: `${PRODUCTION_DOMAIN}/he/new-developments` },
+    // עברית - שכונות
+    { name: 'שכונות', path: '/he/neighborhoods', url: `${PRODUCTION_DOMAIN}/he/neighborhoods` },
+    { name: 'רוטשילד', path: '/he/neighborhoods/rothschild', url: `${PRODUCTION_DOMAIN}/he/neighborhoods/rothschild` },
+    { name: 'נווה צדק', path: '/he/neighborhoods/neve-tzedek', url: `${PRODUCTION_DOMAIN}/he/neighborhoods/neve-tzedek` },
+    { name: 'פלורנטין', path: '/he/neighborhoods/florentin', url: `${PRODUCTION_DOMAIN}/he/neighborhoods/florentin` },
+    { name: 'צפון ישן', path: '/he/neighborhoods/old-north', url: `${PRODUCTION_DOMAIN}/he/neighborhoods/old-north` },
+    // אנגלית - ראשי
     { name: 'Home (English)', path: '/en', url: `${PRODUCTION_DOMAIN}/en` },
     { name: 'Rentals', path: '/en/rentals', url: `${PRODUCTION_DOMAIN}/en/rentals` },
     { name: 'Sales', path: '/en/sales', url: `${PRODUCTION_DOMAIN}/en/sales` },
     { name: 'Property Management', path: '/en/management', url: `${PRODUCTION_DOMAIN}/en/management` },
     { name: 'About', path: '/en/about', url: `${PRODUCTION_DOMAIN}/en/about` },
     { name: 'Contact', path: '/en/contact', url: `${PRODUCTION_DOMAIN}/en/contact` },
-    { name: 'FAQ', path: '/en/faq', url: `${PRODUCTION_DOMAIN}/en/faq` },
+    { name: 'New Developments', path: '/en/new-developments', url: `${PRODUCTION_DOMAIN}/en/new-developments` },
+    // אנגלית - שכונות
+    { name: 'Neighborhoods', path: '/en/neighborhoods', url: `${PRODUCTION_DOMAIN}/en/neighborhoods` },
+    { name: 'Rothschild', path: '/en/neighborhoods/rothschild', url: `${PRODUCTION_DOMAIN}/en/neighborhoods/rothschild` },
+    { name: 'Neve Tzedek', path: '/en/neighborhoods/neve-tzedek', url: `${PRODUCTION_DOMAIN}/en/neighborhoods/neve-tzedek` },
+    { name: 'Florentin', path: '/en/neighborhoods/florentin', url: `${PRODUCTION_DOMAIN}/en/neighborhoods/florentin` },
+    { name: 'Old North', path: '/en/neighborhoods/old-north', url: `${PRODUCTION_DOMAIN}/en/neighborhoods/old-north` },
   ];
 
   useEffect(() => {

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Hebrew Pages -->
+  <url>
+    <loc>https://www.ctmarketproperties.com/he</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en"/>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/rentals</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/rentals"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/rentals"/>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/sales</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/sales"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/sales"/>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/management</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/management"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/about</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/about"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/contact</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/contact"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/new-developments</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/new-developments"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/new-developments"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/neighborhoods</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/neighborhoods/rothschild</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/rothschild"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/rothschild"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/neighborhoods/neve-tzedek</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/neve-tzedek"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/neve-tzedek"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/neighborhoods/florentin</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/florentin"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/florentin"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/he/neighborhoods/old-north</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/old-north"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/old-north"/>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- English Pages -->
+  <url>
+    <loc>https://www.ctmarketproperties.com/en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en"/>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/rentals</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/rentals"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/rentals"/>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/sales</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/sales"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/sales"/>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/management</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/management"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/about</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/about"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/contact</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/contact"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/new-developments</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/new-developments"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/new-developments"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/neighborhoods</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods"/>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/neighborhoods/rothschild</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/rothschild"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/rothschild"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/neighborhoods/neve-tzedek</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/neve-tzedek"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/neve-tzedek"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/neighborhoods/florentin</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/florentin"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/florentin"/>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.ctmarketproperties.com/en/neighborhoods/old-north</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://www.ctmarketproperties.com/he/neighborhoods/old-north"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ctmarketproperties.com/en/neighborhoods/old-north"/>
+    <priority>0.7</priority>
+  </url>
+</urlset>
