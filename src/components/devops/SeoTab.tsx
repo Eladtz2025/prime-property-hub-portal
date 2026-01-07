@@ -75,6 +75,7 @@ interface SeoResult {
   };
   hasNoAiMeta?: boolean;
   hasNoImageAiMeta?: boolean;
+  renderedScan?: boolean;
 }
 
 interface TopicPrompt {
@@ -205,11 +206,22 @@ export const SeoTab: React.FC = () => {
   const checkSinglePage = async (page: PageToCheck): Promise<SeoResult | null> => {
     try {
       const url = page.url || `${PRODUCTION_DOMAIN}${page.path}`;
-      const { data, error } = await supabase.functions.invoke('check-seo', {
+      
+      // Try rendered version first (with Firecrawl)
+      const { data, error } = await supabase.functions.invoke('check-seo-rendered', {
         body: { url }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.warn(`Rendered check failed for ${page.path}, falling back to simple check`);
+        // Fallback to simple version
+        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('check-seo', {
+          body: { url }
+        });
+        if (fallbackError) throw fallbackError;
+        return fallbackData?.result || null;
+      }
+      
       return data?.result || null;
     } catch (error) {
       console.error(`Error checking ${page.path}:`, error);
@@ -574,11 +586,18 @@ export const SeoTab: React.FC = () => {
                           <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                         </a>
                       </CardTitle>
-                      <Badge className={getScoreBg(result.seoResult.score)}>
-                        <span className={getScoreColor(result.seoResult.score)}>
-                          {result.seoResult.score}/100
-                        </span>
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {result.seoResult.renderedScan ? (
+                          <Badge className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">JS רונדר</Badge>
+                        ) : (
+                          <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30 text-xs">סטטי</Badge>
+                        )}
+                        <Badge className={getScoreBg(result.seoResult.score)}>
+                          <span className={getScoreColor(result.seoResult.score)}>
+                            {result.seoResult.score}/100
+                          </span>
+                        </Badge>
+                      </div>
                     </div>
                     <CardDescription className="truncate">{result.seoResult.url}</CardDescription>
                   </CardHeader>
