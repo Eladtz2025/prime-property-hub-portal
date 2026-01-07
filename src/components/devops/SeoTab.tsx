@@ -172,7 +172,17 @@ export const SeoTab: React.FC = () => {
   useEffect(() => {
     setDiscoveredPages(KNOWN_PAGES);
     loadHistory();
+    toast.success(`נמצאו ${KNOWN_PAGES.length} דפים לבדיקה`, {
+      description: 'לחץ על "בדוק דפים" כדי להתחיל'
+    });
   }, []);
+
+  const refreshPagesList = () => {
+    setDiscoveredPages(KNOWN_PAGES);
+    toast.success(`רשימת הדפים עודכנה`, {
+      description: `${KNOWN_PAGES.length} דפים מוכנים לבדיקה`
+    });
+  };
 
   const loadHistory = async () => {
     setLoadingHistory(true);
@@ -356,7 +366,7 @@ export const SeoTab: React.FC = () => {
             <History className="h-4 w-4 ml-2" />
             היסטוריה
           </Button>
-          <Button variant="outline" onClick={() => setDiscoveredPages(KNOWN_PAGES)} disabled={checking}>
+          <Button variant="outline" onClick={refreshPagesList} disabled={checking}>
             <RefreshCw className="h-4 w-4 ml-2" />
             רענן רשימה
           </Button>
