@@ -123,27 +123,27 @@ export const PerformanceTab: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between flex-row-reverse">
+        <div className="text-right">
           <h2 className="text-xl font-semibold">בדיקת ביצועים</h2>
           <p className="text-muted-foreground">בדיקת מהירות וביצועים באמצעות PageSpeed Insights</p>
         </div>
         <Button onClick={checkAllPages} disabled={checking}>
-          <Gauge className={`h-4 w-4 ml-2 ${checking ? 'animate-spin' : ''}`} />
+          <Gauge className={`h-4 w-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
           {checking ? 'בודק...' : 'הרץ בדיקת ביצועים'}
         </Button>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="flex-row-reverse">
           <TabsTrigger value="desktop" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" />
-            Desktop
+            מחשב
           </TabsTrigger>
           <TabsTrigger value="mobile" className="flex items-center gap-2">
             <Smartphone className="h-4 w-4" />
-            Mobile
+            נייד
           </TabsTrigger>
         </TabsList>
 
@@ -178,7 +178,7 @@ export const PerformanceTab: React.FC = () => {
                 <CardContent className="space-y-4">
                   {/* Core Web Vitals */}
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Core Web Vitals</p>
+                    <p className="text-sm font-medium">מדדי ליבה</p>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       {result.metrics && Object.entries(result.metrics).map(([key, metric]) => (
                         <div key={key} className="flex items-center justify-between p-2 bg-background/50 rounded">

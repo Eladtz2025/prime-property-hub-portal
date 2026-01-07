@@ -98,11 +98,11 @@ export const MonitoringTab: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'up':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="h-3 w-3 ml-1" /> תקין</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="h-3 w-3 mr-1" /> תקין</Badge>;
       case 'down':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" /> נפל</Badge>;
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> נפל</Badge>;
       case 'slow':
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><Clock className="h-3 w-3 ml-1" /> איטי</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><Clock className="h-3 w-3 mr-1" /> איטי</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -188,7 +188,7 @@ export const MonitoringTab: React.FC = () => {
                 <CheckCircle className="h-5 w-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Uptime</p>
+                <p className="text-xs text-muted-foreground">זמינות</p>
                 <p className="text-lg font-bold">{uptime}%</p>
               </div>
             </div>
@@ -225,17 +225,17 @@ export const MonitoringTab: React.FC = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-row-reverse">
         <Button onClick={fetchData} disabled={loading} variant="outline">
-          <RefreshCw className={`h-4 w-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           רענן נתונים
         </Button>
         <Button onClick={runHealthCheck} disabled={checkingHealth}>
-          <Activity className={`h-4 w-4 ml-2 ${checkingHealth ? 'animate-pulse' : ''}`} />
+          <Activity className={`h-4 w-4 mr-2 ${checkingHealth ? 'animate-pulse' : ''}`} />
           הרץ בדיקת בריאות
         </Button>
         <Button onClick={createBackup} disabled={creatingBackup} variant="secondary">
-          <Database className={`h-4 w-4 ml-2 ${creatingBackup ? 'animate-pulse' : ''}`} />
+          <Database className={`h-4 w-4 mr-2 ${creatingBackup ? 'animate-pulse' : ''}`} />
           צור גיבוי
         </Button>
       </div>

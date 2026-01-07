@@ -12,12 +12,12 @@ const AdminDevOps: React.FC = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">QA & DevOps</h1>
+          <h1 className="text-3xl font-bold mb-2">בדיקות איכות ותפעול</h1>
           <p className="text-muted-foreground">ניטור, בדיקות, וכלי פיתוח</p>
         </div>
 
         <Tabs defaultValue="monitoring" className="space-y-6">
-          <TabsList className="flex flex-wrap h-auto gap-2 bg-card/50 p-2">
+          <TabsList className="flex flex-wrap flex-row-reverse h-auto gap-2 bg-card/50 p-2">
             <TabsTrigger value="monitoring" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               ניטור
@@ -32,11 +32,11 @@ const AdminDevOps: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="qa" className="flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" />
-              QA ידני
+              בדיקות ידניות
             </TabsTrigger>
             <TabsTrigger value="flags" className="flex items-center gap-2">
               <Flag className="h-4 w-4" />
-              Feature Flags
+              דגלי פיצ'רים
             </TabsTrigger>
           </TabsList>
 

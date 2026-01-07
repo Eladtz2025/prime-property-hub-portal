@@ -170,7 +170,7 @@ export const QaTestsTab: React.FC = () => {
     const Icon = option.icon;
     return (
       <Badge className={option.color}>
-        <Icon className="h-3 w-3 ml-1" />
+        <Icon className="h-3 w-3 mr-1" />
         {option.label}
       </Badge>
     );
@@ -223,7 +223,7 @@ export const QaTestsTab: React.FC = () => {
       <div className="flex flex-wrap items-center gap-3">
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="w-40">
-            <Filter className="h-4 w-4 ml-2" />
+            <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="קטגוריה" />
           </SelectTrigger>
           <SelectContent>
@@ -249,12 +249,12 @@ export const QaTestsTab: React.FC = () => {
         <div className="flex-1" />
 
         <Button variant="outline" onClick={resetAllTests}>
-          <RefreshCw className="h-4 w-4 ml-2" />
+          <RefreshCw className="h-4 w-4 mr-2" />
           אפס הכל
         </Button>
         <Button onClick={exportToJson}>
-          <FileDown className="h-4 w-4 ml-2" />
-          ייצא לJSON
+          <FileDown className="h-4 w-4 mr-2" />
+          ייצא דוח
         </Button>
       </div>
 
