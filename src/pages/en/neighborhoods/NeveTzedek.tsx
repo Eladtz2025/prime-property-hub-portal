@@ -6,12 +6,27 @@ import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const NeveTzedekNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <html lang="en" dir="ltr" />
+        <title>Neve Tzedek - Tel Aviv's First Neighborhood | CITY MARKET Properties Luxury Real Estate</title>
+        <meta name="description" content="Properties for sale and rent in Neve Tzedek. Historic charm, boutique shops, and bohemian atmosphere. Real estate experts in Tel Aviv's first neighborhood." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods/neve-tzedek" />
+      </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/neighborhoods/neve-tzedek" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" },
+        { name: "Neve Tzedek", url: "https://www.ctmarketproperties.com/en/neighborhoods/neve-tzedek" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}

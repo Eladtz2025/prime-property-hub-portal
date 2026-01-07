@@ -6,12 +6,27 @@ import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 
 const OldNorthNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <html lang="en" dir="ltr" />
+        <title>Old North - Family Neighborhood with Bauhaus Heritage | CITY MARKET Properties Tel Aviv</title>
+        <meta name="description" content="Properties for sale and rent in Old North Tel Aviv. Quiet, family-friendly neighborhood with Bauhaus architecture and green spaces. Real estate experts." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods/old-north" />
+      </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/neighborhoods/old-north" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" },
+        { name: "Old North", url: "https://www.ctmarketproperties.com/en/neighborhoods/old-north" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}
