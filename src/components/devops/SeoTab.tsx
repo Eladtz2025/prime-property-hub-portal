@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, CheckCircle, XCircle, AlertTriangle, ExternalLink, Copy, History, RefreshCw, Bot, Key, FileCode, Sparkles } from "lucide-react";
+import { Search, CheckCircle, XCircle, AlertTriangle, ExternalLink, Copy, History, RefreshCw, Bot, Key, FileCode, Sparkles, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SeoHistoryChart } from "./SeoHistoryChart";
@@ -822,6 +822,60 @@ export const SeoTab: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* SEO Tips Section */}
+      <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border-blue-500/20">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-blue-400" />
+            <CardTitle>טיפים לשיפור נוסף</CardTitle>
+          </div>
+          <CardDescription>המלצות כלליות לשיפור SEO - תמיד יש מה לשפר!</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[
+              { category: 'תוכן', tip: 'הוסף תוכן ייחודי לכל דף (מינימום 500 מילים)', priority: 'high' },
+              { category: 'תמונות', tip: 'וודא שכל תמונה כוללת alt text מתאר', priority: 'medium' },
+              { category: 'קישורים', tip: 'הוסף Internal Links בין הדפים לחיזוק SEO', priority: 'high' },
+              { category: 'אסטרטגיה', tip: 'שקול להוסיף בלוג עם תוכן אורגני', priority: 'low' },
+              { category: 'Schema.org', tip: 'הוסף Review/Rating Schema למוצרים', priority: 'medium' },
+              { category: 'ביצועים', tip: 'בדוק מהירות טעינה ב-PageSpeed Insights', priority: 'high' },
+              { category: 'קישורים', tip: 'צור sitemap.xml ושלח ל-Google Search Console', priority: 'high' },
+              { category: 'תוכן', tip: 'הוסף FAQ Schema לשאלות נפוצות', priority: 'medium' },
+              { category: 'אסטרטגיה', tip: 'בנה Backlinks מאתרים רלוונטיים', priority: 'low' },
+              { category: 'ביצועים', tip: 'דחס תמונות לפורמט WebP', priority: 'medium' },
+            ].map((item, index) => (
+              <div 
+                key={index} 
+                className="flex items-center justify-between p-3 bg-card/50 rounded-lg border border-border/50 hover:bg-card/80 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`w-2 h-2 rounded-full ${
+                    item.priority === 'high' ? 'bg-red-400' : 
+                    item.priority === 'medium' ? 'bg-yellow-400' : 'bg-blue-400'
+                  }`} />
+                  <span className="text-sm">{item.tip}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                  <Badge 
+                    className={`text-xs ${
+                      item.priority === 'high' 
+                        ? 'bg-red-500/10 text-red-400 border-red-500/30' 
+                        : item.priority === 'medium' 
+                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' 
+                          : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                    }`}
+                  >
+                    {item.priority === 'high' ? 'גבוהה' : item.priority === 'medium' ? 'בינונית' : 'נמוכה'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
