@@ -135,8 +135,10 @@ export const SeoTab: React.FC = () => {
   const [consolidatedAnalysis, setConsolidatedAnalysis] = useState<ConsolidatedAnalysis | null>(null);
   const [analyzingWithAi, setAnalyzingWithAi] = useState(false);
 
+  const PRODUCTION_DOMAIN = 'https://www.ctmarketproperties.com';
+
   const getBaseUrl = () => {
-    return window.location.origin;
+    return PRODUCTION_DOMAIN;
   };
 
   useEffect(() => {

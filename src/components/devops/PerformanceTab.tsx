@@ -45,8 +45,10 @@ export const PerformanceTab: React.FC = () => {
   const [checking, setChecking] = useState(false);
   const [activeTab, setActiveTab] = useState('desktop');
 
+  const PRODUCTION_DOMAIN = 'https://www.ctmarketproperties.com';
+
   const getBaseUrl = () => {
-    return window.location.origin;
+    return PRODUCTION_DOMAIN;
   };
 
   const checkSinglePage = async (page: PageToCheck, strategy: 'desktop' | 'mobile'): Promise<PerformanceResult | null> => {
