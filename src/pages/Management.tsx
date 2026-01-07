@@ -9,6 +9,8 @@ import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Shield, DollarSign, Wrench, FileText, Phone, TrendingUp } from "lucide-react";
 import { FlippablePropertyCard } from '@/components/he/FlippablePropertyCard';
 import { ConsultationModal } from '@/components/he/ConsultationModal';
+import { Helmet } from "react-helmet";
+import HreflangMeta from '@/components/seo/HreflangMeta';
 
 const Management = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +58,13 @@ const Management = () => {
 
   return (
     <div className="min-h-screen english-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>ניהול נכסים בתל אביב | CITY MARKET Properties - ניהול דירות מקצועי ואמין</title>
+        <meta name="description" content="שירותי ניהול נכסים מקצועי בתל אביב. גביה, תחזוקה, בדיקת דיירים וניהול שוטף. שקט נפשי לבעלי נכסים עם תשואות עקביות." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/management" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/management" />
       <HebrewHeader />
 
       {/* Hero Section */}

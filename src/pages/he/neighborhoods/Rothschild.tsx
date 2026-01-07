@@ -7,6 +7,8 @@ import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { Helmet } from "react-helmet";
+import HreflangMeta from "@/components/seo/HreflangMeta";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
@@ -42,6 +44,13 @@ const RothschildNeighborhood = () => {
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>שדרות רוטשילד - נכסים בלב העיר הלבנה | CITY MARKET Properties תל אביב</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה בשדרות רוטשילד תל אביב. אדריכלות באוהאוס, מורשת אונסקו ומיקום פרימיום. מומחים בנדל״ן יוקרה." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/rothschild" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/rothschild" />
       <HebrewHeader />
 
       {/* Hero Section */}

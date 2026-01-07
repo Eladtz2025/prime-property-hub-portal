@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
+import HreflangMeta from "@/components/seo/HreflangMeta";
 import {
   Carousel,
   CarouselContent,
@@ -55,13 +56,15 @@ const HebrewNeighborhoods = () => {
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
-        <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties</title>
+        <html lang="he" dir="rtl" />
+        <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | CITY MARKET Properties</title>
         <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
-        <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | City Market Properties" />
+        <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | CITY MARKET Properties" />
         <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://citymarket-properties.com/neighborhoods" />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods" />
       </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/neighborhoods" />
       <HebrewHeader />
 
       <FullScreenHero

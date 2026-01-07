@@ -7,12 +7,21 @@ import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { Helmet } from "react-helmet";
+import HreflangMeta from "@/components/seo/HreflangMeta";
 
 const FlorentinNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>פלורנטין - שכונה בוהמית עם אמנות רחוב | CITY MARKET Properties תל אביב</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה בפלורנטין. אמנות רחוב, חיי לילה ואווירה צעירה. מומחים בנדל״ן בשכונה הכי תוססת בתל אביב." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/florentin" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/florentin" />
       <HebrewHeader />
 
       <FullScreenHero
