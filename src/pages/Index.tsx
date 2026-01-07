@@ -12,6 +12,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
+import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema } from '@/components/seo/SchemaOrg';
+import { HreflangMeta } from '@/components/seo/HreflangMeta';
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
   email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
@@ -109,6 +111,7 @@ const Index = () => {
   }];
   return <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
+        <html lang="he" dir="rtl" />
         <title>CITY MARKET Properties - נדל"ן בתל אביב | השכרות, מכירות וניהול נכסים</title>
         <meta name="description" content="מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. שירות מקצועי ומסור ללקוחות פרטיים ועסקיים." />
         <meta property="og:title" content="CITY MARKET Properties - נדל&quot;ן בתל אביב" />
@@ -116,6 +119,10 @@ const Index = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he" />
       </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
+      <LocalBusinessSchema language="he" />
       <HebrewHeader />
       
       {/* Hero Section */}

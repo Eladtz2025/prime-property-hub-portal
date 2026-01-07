@@ -3,7 +3,8 @@ import EnglishFooter from "@/components/en/Footer";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
-
+import { HreflangMeta } from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
 import { TimelineItem } from "@/components/about/TimelineItem";
 import { ValueCard } from "@/components/about/ValueCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
@@ -26,6 +27,7 @@ const About = () => {
   const navigate = useNavigate();
   return <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
+        <html lang="en" dir="ltr" />
         <title>About Us - City Market Properties | Tel Aviv Real Estate Experts</title>
         <meta name="description" content="Learn about City Market Properties - Over 15 years of experience in Tel Aviv's prestigious real estate market. Expert service in sales, rentals, and property management." />
         <meta property="og:title" content="About Us - City Market Properties" />
@@ -33,6 +35,11 @@ const About = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/about" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/about" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "About", url: "https://www.ctmarketproperties.com/en/about" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section - Enhanced */}

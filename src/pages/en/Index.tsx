@@ -10,6 +10,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
+import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema } from '@/components/seo/SchemaOrg';
+import { HreflangMeta } from '@/components/seo/HreflangMeta';
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
   email: z.string().email("Invalid email address").max(255, "Email is too long"),
@@ -95,6 +97,7 @@ const EnglishIndex = () => {
   }];
   return <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
+        <html lang="en" dir="ltr" />
         <title>CITY MARKET Properties - Real Estate in Tel Aviv | Rentals, Sales & Property Management</title>
         <meta name="description" content="Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Professional and dedicated service for private and corporate clients." />
         <meta property="og:title" content="CITY MARKET Properties - Real Estate in Tel Aviv" />
@@ -102,6 +105,10 @@ const EnglishIndex = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en" />
       </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
+      <LocalBusinessSchema language="en" />
       <EnglishHeader />
 
       {/* Hero Section */}
