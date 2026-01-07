@@ -137,41 +137,30 @@ export const SeoTab: React.FC = () => {
 
   const PRODUCTION_DOMAIN = 'https://www.ctmarketproperties.com';
 
-  const getBaseUrl = () => {
-    return PRODUCTION_DOMAIN;
-  };
+  // רשימת דפים קבועה - האתר הוא SPA אז discover-pages לא עובד
+  const KNOWN_PAGES: PageToCheck[] = [
+    // עברית
+    { name: 'דף הבית (עברית)', path: '/he', url: `${PRODUCTION_DOMAIN}/he` },
+    { name: 'השכרות', path: '/he/rentals', url: `${PRODUCTION_DOMAIN}/he/rentals` },
+    { name: 'מכירות', path: '/he/sales', url: `${PRODUCTION_DOMAIN}/he/sales` },
+    { name: 'ניהול נכסים', path: '/he/management', url: `${PRODUCTION_DOMAIN}/he/management` },
+    { name: 'אודות', path: '/he/about', url: `${PRODUCTION_DOMAIN}/he/about` },
+    { name: 'צור קשר', path: '/he/contact', url: `${PRODUCTION_DOMAIN}/he/contact` },
+    { name: 'שאלות נפוצות', path: '/he/faq', url: `${PRODUCTION_DOMAIN}/he/faq` },
+    // אנגלית
+    { name: 'Home (English)', path: '/en', url: `${PRODUCTION_DOMAIN}/en` },
+    { name: 'Rentals', path: '/en/rentals', url: `${PRODUCTION_DOMAIN}/en/rentals` },
+    { name: 'Sales', path: '/en/sales', url: `${PRODUCTION_DOMAIN}/en/sales` },
+    { name: 'Property Management', path: '/en/management', url: `${PRODUCTION_DOMAIN}/en/management` },
+    { name: 'About', path: '/en/about', url: `${PRODUCTION_DOMAIN}/en/about` },
+    { name: 'Contact', path: '/en/contact', url: `${PRODUCTION_DOMAIN}/en/contact` },
+    { name: 'FAQ', path: '/en/faq', url: `${PRODUCTION_DOMAIN}/en/faq` },
+  ];
 
   useEffect(() => {
-    discoverPages();
+    setDiscoveredPages(KNOWN_PAGES);
     loadHistory();
   }, []);
-
-  const discoverPages = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('discover-pages', {
-        body: { baseUrl: getBaseUrl() }
-      });
-
-      if (error) throw error;
-      
-      if (data?.pages) {
-        setDiscoveredPages(data.pages);
-        toast.success(`נמצאו ${data.pages.length} דפים לבדיקה`);
-      }
-    } catch (error) {
-      console.error('Error discovering pages:', error);
-      setDiscoveredPages([
-        { name: 'דף הבית (עברית)', path: '/he' },
-        { name: 'השכרות', path: '/he/rentals' },
-        { name: 'מכירות', path: '/he/sales' },
-        { name: 'ניהול נכסים', path: '/he/management' },
-        { name: 'אודות', path: '/he/about' },
-        { name: 'צור קשר', path: '/he/contact' },
-        { name: 'Home (English)', path: '/en' },
-        { name: 'Rentals (English)', path: '/en/rentals' },
-      ]);
-    }
-  };
 
   const loadHistory = async () => {
     setLoadingHistory(true);
@@ -193,7 +182,7 @@ export const SeoTab: React.FC = () => {
 
   const checkSinglePage = async (page: PageToCheck): Promise<SeoResult | null> => {
     try {
-      const url = page.url || `${getBaseUrl()}${page.path}`;
+      const url = page.url || `${PRODUCTION_DOMAIN}${page.path}`;
       const { data, error } = await supabase.functions.invoke('check-seo', {
         body: { url }
       });
@@ -355,9 +344,9 @@ export const SeoTab: React.FC = () => {
             <History className="h-4 w-4 ml-2" />
             היסטוריה
           </Button>
-          <Button variant="outline" onClick={discoverPages} disabled={checking}>
+          <Button variant="outline" onClick={() => setDiscoveredPages(KNOWN_PAGES)} disabled={checking}>
             <RefreshCw className="h-4 w-4 ml-2" />
-            סרוק דפים
+            רענן רשימה
           </Button>
           <Button onClick={checkAllPages} disabled={checking || analyzingWithAi}>
             <Search className={`h-4 w-4 ml-2 ${checking ? 'animate-pulse' : ''}`} />
