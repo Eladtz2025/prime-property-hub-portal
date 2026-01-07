@@ -77,7 +77,7 @@ const EnglishRentals = () => {
       <EnglishHeader />
       
       <FullScreenHero
-        title="Rental Properties"
+        title="Apartments for Rent in Tel Aviv"
         backgroundImage="/images/rental-interior.jpg"
         minHeight="100vh"
       />

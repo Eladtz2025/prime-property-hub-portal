@@ -72,7 +72,7 @@ const EnglishNeighborhoods = () => {
       <EnglishHeader />
 
       <FullScreenHero
-        title="Neighborhoods"
+        title="Tel Aviv Neighborhoods"
         backgroundImage="/images/hero-neighborhoods.jpg"
         minHeight="100vh"
       />

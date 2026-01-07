@@ -80,7 +80,7 @@ const Contact = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <FullScreenHero title="Contact Us" backgroundImage="/images/hero-contact.jpg" minHeight="50vh" />
+      <FullScreenHero title="Contact Us - Tel Aviv Real Estate" backgroundImage="/images/hero-contact.jpg" minHeight="50vh" />
 
       {/* Contact Form & Info */}
       <section className="py-24 bg-background">

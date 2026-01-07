@@ -89,7 +89,7 @@ const NewDevelopments = () => {
       <EnglishHeader />
 
       <FullScreenHero
-        title="New Developments"
+        title="New Developments in Tel Aviv"
         backgroundImage="/images/hero-new-developments.jpg"
         minHeight="100vh"
       />
