@@ -55,7 +55,6 @@ interface SeoResult {
   score: number;
   issues: SeoIssue[];
   recommendations: string[];
-  // New fields
   aiCrawlers?: AiCrawler[];
   keywordAnalysis?: {
     keywords: KeywordData[];
@@ -78,13 +77,28 @@ interface SeoResult {
   hasNoImageAiMeta?: boolean;
 }
 
-interface AiAnalysis {
+interface TopicPrompt {
+  title: string;
+  icon: string;
+  issueCount: number;
+  affectedPages: string[];
+  prompt: string;
+}
+
+interface ConsolidatedPrompts {
+  basicSeo: TopicPrompt;
+  schema: TopicPrompt;
+  aiCrawlers: TopicPrompt;
+  keywords: TopicPrompt;
+}
+
+interface ConsolidatedAnalysis {
   overallScore: number;
   scoreExplanation: string;
-  criticalIssues: { issue: string; fix: string }[];
-  warnings: { issue: string; fix: string }[];
-  recommendations: string[];
-  fixPrompt: string;
+  totalIssues: { critical: number; warning: number; info: number };
+  pagesAnalyzed: number;
+  consolidatedPrompts: ConsolidatedPrompts;
+  priorityOrder: string[];
 }
 
 interface PageToCheck {
@@ -107,7 +121,6 @@ interface HistoryEntry {
 interface FullResult {
   page: PageToCheck;
   seoResult: SeoResult;
-  aiAnalysis?: AiAnalysis;
 }
 
 export const SeoTab: React.FC = () => {
@@ -118,13 +131,14 @@ export const SeoTab: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState('prompts');
+  const [consolidatedAnalysis, setConsolidatedAnalysis] = useState<ConsolidatedAnalysis | null>(null);
+  const [analyzingWithAi, setAnalyzingWithAi] = useState(false);
 
   const getBaseUrl = () => {
     return window.location.origin;
   };
 
-  // Discover pages on mount
   useEffect(() => {
     discoverPages();
     loadHistory();
@@ -144,7 +158,6 @@ export const SeoTab: React.FC = () => {
       }
     } catch (error) {
       console.error('Error discovering pages:', error);
-      // Fallback to default pages
       setDiscoveredPages([
         { name: 'דף הבית (עברית)', path: '/he' },
         { name: 'השכרות', path: '/he/rentals' },
@@ -191,29 +204,39 @@ export const SeoTab: React.FC = () => {
     }
   };
 
-  const analyzeWithAi = async (seoData: SeoResult, pageName: string): Promise<AiAnalysis | null> => {
+  const analyzeAllWithAi = async (allResults: FullResult[]) => {
+    setAnalyzingWithAi(true);
     try {
+      const allPagesData = allResults.map(r => ({
+        pageName: r.page.name,
+        seoData: r.seoResult
+      }));
+
       const { data, error } = await supabase.functions.invoke('analyze-seo-ai', {
-        body: { seoData, pageName }
+        body: { allPagesData }
       });
 
       if (error) throw error;
-      return data?.analysis || null;
+      
+      if (data?.analysis) {
+        setConsolidatedAnalysis(data.analysis);
+        toast.success('ניתוח AI הושלם - הפרומפטים המאוחדים מוכנים');
+      }
     } catch (error) {
-      console.error(`Error analyzing with AI for ${pageName}:`, error);
-      return null;
+      console.error('Error analyzing with AI:', error);
+      toast.error('שגיאה בניתוח AI');
+    } finally {
+      setAnalyzingWithAi(false);
     }
   };
 
-  const saveToHistory = async (page: PageToCheck, seoResult: SeoResult, aiAnalysis?: AiAnalysis) => {
+  const saveToHistory = async (page: PageToCheck, seoResult: SeoResult) => {
     try {
       const { error } = await supabase.from('seo_checks').insert([{
         page_url: seoResult.url,
         page_name: page.name,
-        score: aiAnalysis?.overallScore || seoResult.score,
+        score: seoResult.score,
         results: seoResult as any,
-        ai_analysis: aiAnalysis as any || null,
-        fix_prompt: aiAnalysis?.fixPrompt || null,
       }]);
 
       if (error) throw error;
@@ -230,67 +253,51 @@ export const SeoTab: React.FC = () => {
 
     setChecking(true);
     setResults([]);
+    setConsolidatedAnalysis(null);
+    
+    const allResults: FullResult[] = [];
     
     for (const page of discoveredPages) {
       setCurrentPage(page.name);
       
-      // Check SEO
       const seoResult = await checkSinglePage(page);
       if (!seoResult) continue;
 
-      // Analyze with AI
-      const aiAnalysis = await analyzeWithAi(seoResult, page.name);
+      await saveToHistory(page, seoResult);
       
-      // Save to history
-      await saveToHistory(page, seoResult, aiAnalysis || undefined);
-      
-      // Update results
-      setResults(prev => [...prev, { page, seoResult, aiAnalysis: aiAnalysis || undefined }]);
+      const result = { page, seoResult };
+      allResults.push(result);
+      setResults(prev => [...prev, result]);
     }
     
     setCurrentPage(null);
     setChecking(false);
+    
+    // Now analyze all pages together with AI
+    if (allResults.length > 0) {
+      await analyzeAllWithAi(allResults);
+    }
+    
     loadHistory();
     toast.success('בדיקת SEO הושלמה');
   };
 
-  const copyFixPrompt = (result: FullResult) => {
-    const prompt = result.aiAnalysis?.fixPrompt || generateFallbackPrompt(result);
+  const copyPrompt = (prompt: string, title: string) => {
     navigator.clipboard.writeText(prompt);
-    toast.success('הפרומפט הועתק ללוח');
+    toast.success(`פרומפט "${title}" הועתק ללוח`);
   };
 
-  const generateFallbackPrompt = (result: FullResult): string => {
-    const { seoResult, page } = result;
-    const criticalIssues = seoResult.issues.filter(i => i.severity === 'critical');
-    const warnings = seoResult.issues.filter(i => i.severity === 'warning');
+  const copyAllPrompts = () => {
+    if (!consolidatedAnalysis) return;
     
-    let prompt = `תקן את בעיות ה-SEO בדף "${page.name}" (${seoResult.url}):\n\n`;
+    const prompts = consolidatedAnalysis.consolidatedPrompts;
+    const allPrompts = Object.values(prompts)
+      .filter(p => p.issueCount > 0)
+      .map(p => `${p.icon} ${p.title}\n${'='.repeat(40)}\n\n${p.prompt}`)
+      .join('\n\n\n');
     
-    if (criticalIssues.length > 0) {
-      prompt += `🔴 בעיות קריטיות:\n`;
-      criticalIssues.forEach((issue, i) => {
-        prompt += `${i + 1}. ${issue.message}\n`;
-      });
-      prompt += '\n';
-    }
-    
-    if (warnings.length > 0) {
-      prompt += `🟡 אזהרות:\n`;
-      warnings.forEach((issue, i) => {
-        prompt += `${i + 1}. ${issue.message}\n`;
-      });
-      prompt += '\n';
-    }
-    
-    if (seoResult.recommendations.length > 0) {
-      prompt += `📝 פעולות נדרשות:\n`;
-      seoResult.recommendations.forEach(rec => {
-        prompt += `- ${rec}\n`;
-      });
-    }
-    
-    return prompt;
+    navigator.clipboard.writeText(allPrompts);
+    toast.success('כל הפרומפטים הועתקו ללוח');
   };
 
   const getScoreColor = (score: number) => {
@@ -323,8 +330,15 @@ export const SeoTab: React.FC = () => {
   };
 
   const averageScore = results.length > 0 
-    ? Math.round(results.reduce((acc, r) => acc + (r.aiAnalysis?.overallScore || r.seoResult.score), 0) / results.length)
+    ? Math.round(results.reduce((acc, r) => acc + r.seoResult.score, 0) / results.length)
     : 0;
+
+  const topicIcons: Record<string, React.ReactNode> = {
+    basicSeo: <CheckCircle className="h-5 w-5" />,
+    schema: <FileCode className="h-5 w-5" />,
+    aiCrawlers: <Bot className="h-5 w-5" />,
+    keywords: <Key className="h-5 w-5" />,
+  };
 
   return (
     <div className="space-y-6">
@@ -332,7 +346,7 @@ export const SeoTab: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-xl font-semibold">בדיקת SEO מתקדמת</h2>
-          <p className="text-muted-foreground">סריקה אוטומטית עם ניתוח AI ויצירת פרומפט לתיקון</p>
+          <p className="text-muted-foreground">סריקה אוטומטית עם פרומפטים מאוחדים לפי נושא</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowHistory(!showHistory)} disabled={loadingHistory}>
@@ -343,9 +357,9 @@ export const SeoTab: React.FC = () => {
             <RefreshCw className="h-4 w-4 ml-2" />
             סרוק דפים
           </Button>
-          <Button onClick={checkAllPages} disabled={checking}>
+          <Button onClick={checkAllPages} disabled={checking || analyzingWithAi}>
             <Search className={`h-4 w-4 ml-2 ${checking ? 'animate-pulse' : ''}`} />
-            {checking ? `בודק: ${currentPage}...` : `בדוק ${discoveredPages.length} דפים`}
+            {checking ? `בודק: ${currentPage}...` : analyzingWithAi ? 'מנתח עם AI...' : `בדוק ${discoveredPages.length} דפים`}
           </Button>
         </div>
       </div>
@@ -355,19 +369,111 @@ export const SeoTab: React.FC = () => {
         <SeoHistoryChart history={history} />
       )}
 
-      {/* Average Score */}
-      {results.length > 0 && (
-        <Card className={`${getScoreBg(averageScore)} border`}>
-          <CardContent className="pt-6">
+      {/* Consolidated Prompts Section */}
+      {consolidatedAnalysis && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardHeader>
             <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                <CardTitle>פרומפטים מאוחדים לתיקון</CardTitle>
+              </div>
+              <Button onClick={copyAllPrompts} variant="outline" size="sm">
+                <Copy className="h-4 w-4 ml-2" />
+                העתק הכל
+              </Button>
+            </div>
+            <CardDescription>
+              {consolidatedAnalysis.scoreExplanation}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(consolidatedAnalysis.consolidatedPrompts).map(([key, topic]) => (
+                <Card 
+                  key={key} 
+                  className={`bg-card/50 border-border/50 ${topic.issueCount === 0 ? 'opacity-50' : ''}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {topicIcons[key]}
+                        <CardTitle className="text-lg">{topic.icon} {topic.title}</CardTitle>
+                      </div>
+                      {topic.issueCount > 0 ? (
+                        <Badge variant="destructive">{topic.issueCount} בעיות</Badge>
+                      ) : (
+                        <Badge className="bg-green-500/20 text-green-400">✓ תקין</Badge>
+                      )}
+                    </div>
+                    <CardDescription>
+                      {topic.affectedPages.length > 0 
+                        ? `${topic.affectedPages.length} דפים מושפעים`
+                        : 'אין דפים מושפעים'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {topic.affectedPages.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {topic.affectedPages.slice(0, 4).map((page, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">{page}</Badge>
+                        ))}
+                        {topic.affectedPages.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{topic.affectedPages.length - 4}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => copyPrompt(topic.prompt, topic.title)}
+                      disabled={topic.issueCount === 0}
+                    >
+                      <Copy className="h-4 w-4 ml-2" />
+                      העתק פרומפט
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Average Score & Stats */}
+      {results.length > 0 && (
+        <Card className={`${getScoreBg(consolidatedAnalysis?.overallScore || averageScore)} border`}>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">ציון ממוצע</p>
-                <p className={`text-4xl font-bold ${getScoreColor(averageScore)}`}>{averageScore}/100</p>
+                <p className={`text-4xl font-bold ${getScoreColor(consolidatedAnalysis?.overallScore || averageScore)}`}>
+                  {consolidatedAnalysis?.overallScore || averageScore}/100
+                </p>
               </div>
               <div className="text-left">
                 <p className="text-sm text-muted-foreground">דפים נבדקו</p>
                 <p className="text-2xl font-bold">{results.length}/{discoveredPages.length}</p>
               </div>
+              {consolidatedAnalysis && (
+                <div className="flex gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-400">{consolidatedAnalysis.totalIssues.critical}</p>
+                    <p className="text-xs text-muted-foreground">קריטי</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-yellow-400">{consolidatedAnalysis.totalIssues.warning}</p>
+                    <p className="text-xs text-muted-foreground">אזהרות</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-400">{consolidatedAnalysis.totalIssues.info}</p>
+                    <p className="text-xs text-muted-foreground">מידע</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -376,7 +482,11 @@ export const SeoTab: React.FC = () => {
       {/* Results with Tabs */}
       {results.length > 0 && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="prompts" className="flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              פרומפטים
+            </TabsTrigger>
             <TabsTrigger value="basic" className="flex items-center gap-1">
               <CheckCircle className="h-3 w-3" />
               בסיסי
@@ -395,6 +505,50 @@ export const SeoTab: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="prompts" className="mt-4">
+            {consolidatedAnalysis ? (
+              <div className="space-y-4">
+                {consolidatedAnalysis.priorityOrder.map((key) => {
+                  const topic = consolidatedAnalysis.consolidatedPrompts[key as keyof ConsolidatedPrompts];
+                  if (topic.issueCount === 0) return null;
+                  
+                  return (
+                    <Card key={key} className="bg-card/50 border-border/50">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {topicIcons[key]}
+                            <CardTitle>{topic.icon} {topic.title}</CardTitle>
+                            <Badge variant="destructive">{topic.issueCount} בעיות</Badge>
+                          </div>
+                          <Button onClick={() => copyPrompt(topic.prompt, topic.title)} size="sm">
+                            <Copy className="h-4 w-4 ml-2" />
+                            העתק פרומפט
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <pre className="bg-muted/50 p-4 rounded-lg text-sm whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto" dir="rtl">
+                          {topic.prompt}
+                        </pre>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="py-12 text-center">
+                  <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">הפרומפטים המאוחדים יופיעו כאן</h3>
+                  <p className="text-muted-foreground">
+                    {analyzingWithAi ? 'מנתח את התוצאות עם AI...' : 'הרץ בדיקת SEO כדי ליצור פרומפטים מאוחדים לפי נושא'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           <TabsContent value="basic" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.map((result, index) => (
@@ -407,16 +561,15 @@ export const SeoTab: React.FC = () => {
                           <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                         </a>
                       </CardTitle>
-                      <Badge className={getScoreBg(result.aiAnalysis?.overallScore || result.seoResult.score)}>
-                        <span className={getScoreColor(result.aiAnalysis?.overallScore || result.seoResult.score)}>
-                          {result.aiAnalysis?.overallScore || result.seoResult.score}/100
+                      <Badge className={getScoreBg(result.seoResult.score)}>
+                        <span className={getScoreColor(result.seoResult.score)}>
+                          {result.seoResult.score}/100
                         </span>
                       </Badge>
                     </div>
                     <CardDescription className="truncate">{result.seoResult.url}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Quick Checks */}
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-2">
                         <CheckIcon checked={!!result.seoResult.title} />
@@ -444,7 +597,6 @@ export const SeoTab: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Issues */}
                     {result.seoResult.issues.length > 0 && (
                       <div>
                         <p className="text-sm font-medium text-red-400 mb-1">בעיות ({result.seoResult.issues.length})</p>
@@ -458,28 +610,6 @@ export const SeoTab: React.FC = () => {
                         </ul>
                       </div>
                     )}
-
-                    {/* AI Analysis */}
-                    {result.aiAnalysis && (
-                      <div className="pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="h-4 w-4 text-purple-400" />
-                          <span className="text-sm font-medium text-purple-400">ניתוח AI</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2">{result.aiAnalysis.scoreExplanation}</p>
-                      </div>
-                    )}
-
-                    {/* Copy Prompt Button */}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => copyFixPrompt(result)}
-                    >
-                      <Copy className="h-4 w-4 ml-2" />
-                      העתק פרומפט לתיקון
-                    </Button>
                   </CardContent>
                 </Card>
               ))}
