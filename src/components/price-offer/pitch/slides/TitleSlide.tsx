@@ -43,16 +43,16 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
 
         {/* Stats Boxes */}
         {filteredStats && filteredStats.length > 0 && (
-          <div className="grid grid-cols-2 md:flex md:flex-wrap items-center justify-center gap-3 md:gap-6 mt-4 md:mt-8 w-full max-w-md md:max-w-none">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mt-4 md:mt-8 w-full max-w-sm md:max-w-none px-2">
             {filteredStats.map((stat, index) => (
               <div
                 key={index}
-                className="flex flex-col items-center justify-center px-4 py-4 md:px-8 md:py-6 border border-white/20 rounded-lg backdrop-blur-sm bg-white/5 min-w-0 md:min-w-[140px]"
+                className="flex flex-col items-center justify-center px-4 py-3 md:px-8 md:py-6 border border-white/20 rounded-lg backdrop-blur-sm bg-white/5 min-w-[90px] md:min-w-[140px] flex-1 md:flex-none"
               >
-                <span className="text-2xl md:text-4xl font-bold text-white mb-1 md:mb-2">
+                <span className="text-xl md:text-4xl font-bold text-white mb-1 md:mb-2">
                   {stat.value}
                 </span>
-                <span className="text-xs md:text-sm text-white/60 font-light tracking-wide">
+                <span className="text-[10px] md:text-sm text-white/60 font-light tracking-wide">
                   {stat.label}
                 </span>
               </div>

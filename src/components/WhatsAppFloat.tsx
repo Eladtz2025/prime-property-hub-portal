@@ -50,11 +50,12 @@ const WhatsAppFloat = () => {
     }, 0);
   };
 
-  // Hide on property detail pages, admin pages, and brokerage form pages
+  // Hide on property detail pages, admin pages, brokerage form pages, and pitch deck pages
   const isPropertyDetailPage = location.pathname.includes('/property/');
   const isAdminPage = location.pathname.startsWith('/admin-dashboard');
   const isBrokerageFormPage = location.pathname.startsWith('/brokerage-form');
-  if (isPropertyDetailPage || isAdminPage || isBrokerageFormPage) return null;
+  const isOfferLuxuryPage = location.pathname.startsWith('/offer-luxury');
+  if (isPropertyDetailPage || isAdminPage || isBrokerageFormPage || isOfferLuxuryPage) return null;
 
   return (
     <button
