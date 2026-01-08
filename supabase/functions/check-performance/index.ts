@@ -8,11 +8,11 @@ interface PerformanceResult {
   strategy: 'desktop' | 'mobile';
   score: number;
   metrics: {
-    lcp: { value: number; score: string };
-    fid: { value: number; score: string };
-    cls: { value: number; score: string };
-    fcp: { value: number; score: string };
-    ttfb: { value: number; score: string };
+    firstContentfulPaint: { value: number; score: string };
+    largestContentfulPaint: { value: number; score: string };
+    totalBlockingTime: { value: number; score: string };
+    cumulativeLayoutShift: { value: number; score: string };
+    speedIndex: { value: number; score: string };
   };
   opportunities: Array<{ title: string; description: string; savings?: string }>;
   diagnostics: Array<{ title: string; description: string }>;
@@ -67,25 +67,25 @@ Deno.serve(async (req) => {
     const audits = lighthouse.audits;
     
     const metrics = {
-      lcp: {
-        value: Math.round(audits['largest-contentful-paint']?.numericValue || 0),
-        score: getScoreLabel(audits['largest-contentful-paint']?.score || 0),
-      },
-      fid: {
-        value: Math.round(audits['max-potential-fid']?.numericValue || 0),
-        score: getScoreLabel(audits['max-potential-fid']?.score || 0),
-      },
-      cls: {
-        value: parseFloat((audits['cumulative-layout-shift']?.numericValue || 0).toFixed(3)),
-        score: getScoreLabel(audits['cumulative-layout-shift']?.score || 0),
-      },
-      fcp: {
+      firstContentfulPaint: {
         value: Math.round(audits['first-contentful-paint']?.numericValue || 0),
         score: getScoreLabel(audits['first-contentful-paint']?.score || 0),
       },
-      ttfb: {
-        value: Math.round(audits['server-response-time']?.numericValue || 0),
-        score: getScoreLabel(audits['server-response-time']?.score || 0),
+      largestContentfulPaint: {
+        value: Math.round(audits['largest-contentful-paint']?.numericValue || 0),
+        score: getScoreLabel(audits['largest-contentful-paint']?.score || 0),
+      },
+      totalBlockingTime: {
+        value: Math.round(audits['total-blocking-time']?.numericValue || 0),
+        score: getScoreLabel(audits['total-blocking-time']?.score || 0),
+      },
+      cumulativeLayoutShift: {
+        value: parseFloat((audits['cumulative-layout-shift']?.numericValue || 0).toFixed(3)),
+        score: getScoreLabel(audits['cumulative-layout-shift']?.score || 0),
+      },
+      speedIndex: {
+        value: Math.round(audits['speed-index']?.numericValue || 0),
+        score: getScoreLabel(audits['speed-index']?.score || 0),
       },
     };
 
