@@ -22,18 +22,18 @@ const iconMap: Record<string, React.ReactNode> = {
 
 const DetailsSlide = ({ title, details }: DetailsSlideProps) => {
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center px-8 pt-24 pb-32">
+    <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-16 md:pt-20 pb-28 md:pb-32 overflow-y-auto">
       {/* Title */}
       <h2 className="font-playfair text-4xl md:text-5xl text-white mb-16 text-center">
         {title}
       </h2>
 
       {/* Details Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl w-full">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl w-full">
         {details.map((detail, index) => (
           <div
             key={index}
-            className="flex flex-col items-center justify-center p-8 border border-white/10 rounded-2xl backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300"
+            className="flex flex-col items-center justify-center p-4 md:p-8 border border-white/10 rounded-2xl backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300"
           >
             <div className="text-emerald-400 mb-4">
               {iconMap[detail.icon] || <Home className="h-8 w-8" />}
