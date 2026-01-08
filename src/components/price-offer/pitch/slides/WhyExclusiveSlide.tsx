@@ -54,8 +54,8 @@ const WhyExclusiveSlide = ({
   },
 }: WhyExclusiveSlideProps) => {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start md:justify-center px-4 md:px-8 py-20 md:py-24 overflow-y-auto">
-      <div className="w-full max-w-5xl pb-20 md:pb-0">
+    <div className="flex h-full w-full flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
+      <div className="w-full max-w-5xl pb-8 md:pb-0">
         {/* Header */}
         <div className="mb-6 md:mb-10 text-center">
           <h2 className="mb-2 md:mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-white">{title}</h2>

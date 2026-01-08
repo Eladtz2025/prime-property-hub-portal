@@ -66,7 +66,7 @@ const TimelineSlide = ({
   ],
 }: TimelineSlideProps) => {
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-20 md:pt-24 pb-32 overflow-y-auto">
+    <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
       {/* Header */}
       <div className="text-center mb-6 md:mb-10">
         <h2 className="font-playfair text-3xl md:text-5xl text-white mb-3 md:mb-4">
