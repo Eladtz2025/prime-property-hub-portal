@@ -67,8 +67,11 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
   // Build slides array - Yitzhak Elhanan 14 Presentation
   const slides: Slide[] = [];
 
+  // Use static images from the pitch folder
+  const heroImage = "/images/pitch/yitzhak-elhanan-14/building-1.jpg";
+  const floorPlanImage = "/images/pitch/yitzhak-elhanan-14/floor-plan.jpg";
+
   // Slide 1: Title - יצחק אלחנן 14
-  const heroImage = images.length > 0 ? images[0].image_url : undefined;
   slides.push({
     type: "title",
     data: {
@@ -112,7 +115,7 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     data: {
       title: "דירת 3 חדרים בנווה צדק",
       address: "יצחק אלחנן 14, נווה צדק",
-      propertyImage: images.length > 1 ? images[1].image_url : heroImage,
+      propertyImage: floorPlanImage,
       highlights: [
         { icon: "size", title: "שטח נטו", value: "62.9 מ״ר" },
         { icon: "balcony", title: "מרפסות", value: "13.96 מ״ר" },
