@@ -115,7 +115,7 @@ const EnglishIndex = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <VideoHero title="Luxury Real Estate in Tel Aviv" subtitle="Local expertise. Personal service. Clear process." imageUrl="/images/en/hero-last-one.png" />
+      <VideoHero title="CITY MARKET" subtitle="Local expertise. Personal service. Clear process." imageUrl="/images/en/hero-last-one.png" />
 
       {/* Consultation Modal */}
       <ConsultationModal open={isConsultationOpen} onOpenChange={setIsConsultationOpen} />
