@@ -21,6 +21,7 @@ import ValuationSlide from "./slides/ValuationSlide";
 import BuildingSlide from "./slides/BuildingSlide";
 import AreaBreakdownSlide from "./slides/AreaBreakdownSlide";
 import TimelineSlide from "./slides/TimelineSlide";
+import GallerySlide from "./slides/GallerySlide";
 
 interface PriceOffer {
   id: string;
@@ -67,9 +68,64 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
   // Build slides array - Yitzhak Elhanan 14 Presentation
   const slides: Slide[] = [];
 
-  // Use static images from the pitch folder
-  const heroImage = "/images/pitch/yitzhak-elhanan-14/building-1.jpg";
+  // Image paths from new folder
+  const basePath = "/images/pitch/yitzhak-elhanan-14/new";
+  const heroImage = `${basePath}/living-room-1.jpeg`;
   const floorPlanImage = "/images/pitch/yitzhak-elhanan-14/floor-plan.jpg";
+
+  // Gallery images
+  const galleryImages = [
+    `${basePath}/living-room-1.jpeg`,
+    `${basePath}/bedroom-1.jpeg`,
+    `${basePath}/bedroom-2.jpeg`,
+    `${basePath}/bathroom-styled.jpeg`,
+    `${basePath}/balcony-1.jpeg`,
+    `${basePath}/balcony-2.jpeg`,
+    `${basePath}/living-kitchen.jpeg`,
+    `${basePath}/apartment-kitchen.jpeg`,
+    `${basePath}/apartment-room-1.jpeg`,
+    `${basePath}/apartment-room-2.jpeg`,
+    `${basePath}/apartment-corridor.jpeg`,
+    `${basePath}/apartment-room-construction.jpeg`,
+    `${basePath}/balcony-view-1.jpeg`,
+    `${basePath}/balcony-view-2.jpeg`,
+    `${basePath}/bathroom-actual.jpeg`,
+    `${basePath}/rooftops-view.jpeg`,
+  ];
+
+  // Building images
+  const buildingImages = [
+    `${basePath}/mailboxes-altnoyland.jpeg`,
+    `${basePath}/building-sign.jpeg`,
+    `${basePath}/lobby-entrance.jpeg`,
+    `${basePath}/mamad.jpeg`,
+    `${basePath}/bike-room.jpeg`,
+    `${basePath}/building-toilets.jpeg`,
+  ];
+
+  // Neighborhood images
+  const neighborhoodImages = [
+    `${basePath}/street-neve-tzedek-1.jpeg`,
+    `${basePath}/street-neve-tzedek-2.jpeg`,
+    `${basePath}/street-neve-tzedek-3.jpeg`,
+    `${basePath}/street-bicycle.jpeg`,
+    `${basePath}/balcony-plants.jpeg`,
+    `${basePath}/neighborhood-film.jpeg`,
+    `${basePath}/succulents.jpeg`,
+    `${basePath}/flowers.jpeg`,
+  ];
+
+  // Features images
+  const featuresImages = [
+    `${basePath}/smart-home-1.jpeg`,
+    `${basePath}/smart-home-2.jpeg`,
+    `${basePath}/bulthaup.jpeg`,
+    `${basePath}/materials-collage.jpeg`,
+    `${basePath}/wood-panels.jpeg`,
+    `${basePath}/corten-steel.jpeg`,
+    `${basePath}/floor-tiles.jpeg`,
+    `${basePath}/tiles-gray.jpeg`,
+  ];
 
   // Slide 1: Title - יצחק אלחנן 14
   slides.push({
@@ -242,7 +298,17 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 11: Next Steps
+  // Slide 11: Gallery
+  slides.push({
+    type: "gallery",
+    data: {
+      title: "גלריית הדירה",
+      subtitle: "צפו בתמונות הנכס והבניין",
+      images: [...galleryImages, ...buildingImages.slice(0, 4)],
+    },
+  });
+
+  // Slide 12: Next Steps
   slides.push({ type: "next_steps", data: { propertyTitle: "יצחק אלחנן 14" } });
 
   const totalSlides = slides.length;
@@ -340,6 +406,8 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <AreaBreakdownSlide {...slide.data} />;
       case "timeline":
         return <TimelineSlide {...slide.data} />;
+      case "gallery":
+        return <GallerySlide {...slide.data} />;
       default:
         return null;
     }
