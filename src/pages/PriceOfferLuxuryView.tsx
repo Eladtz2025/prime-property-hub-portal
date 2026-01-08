@@ -31,6 +31,22 @@ interface Image {
   image_order: number;
 }
 
+// Static offer data for known slugs
+const STATIC_OFFERS: Record<string, PriceOffer> = {
+  'yitzhak-elhanan-14': {
+    id: 'static-yitzhak-elhanan-14',
+    property_title: 'יצחק אלחנן 14, נווה צדק',
+    property_details: 'דירת גן יוקרתית בלב נווה צדק',
+    language: 'he',
+    suggested_price_min: null,
+    suggested_price_max: null,
+    price_per_sqm_min: null,
+    price_per_sqm_max: null,
+    expected_income_min: null,
+    expected_income_max: null,
+  }
+};
+
 const PriceOfferLuxuryView = () => {
   const { token } = useParams<{ token: string }>();
   const [offer, setOffer] = useState<PriceOffer | null>(null);
@@ -47,8 +63,15 @@ const PriceOfferLuxuryView = () => {
         return;
       }
 
+      // Check for static offer first
+      if (STATIC_OFFERS[token]) {
+        setOffer(STATIC_OFFERS[token]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Try to find by token or slug
+        // Try to find by token or slug in database
         let { data: offerData, error } = await supabase
           .from('price_offers')
           .select('*')
