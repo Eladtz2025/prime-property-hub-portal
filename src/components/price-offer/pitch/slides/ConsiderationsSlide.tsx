@@ -52,9 +52,9 @@ const ConsiderationsSlide = ({
       <div className="w-full max-w-4xl pb-8 md:pb-0">
         {/* Header */}
         <div className="mb-8 md:mb-10 text-center">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
-            <span className="text-sm text-amber-400">שקיפות מלאה</span>
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-[#e85c3a]/10 border border-[#e85c3a]/20">
+            <AlertTriangle className="h-4 w-4 text-[#e85c3a]" />
+            <span className="text-sm text-[#e85c3a]">שקיפות מלאה</span>
           </div>
           <h2 className="mb-2 md:mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-white">
             {title}
@@ -69,11 +69,11 @@ const ConsiderationsSlide = ({
             return (
               <div
                 key={index}
-                className="flex items-start gap-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 md:p-5 backdrop-blur-sm"
+                className="flex items-start gap-4 rounded-xl border border-[#e85c3a]/20 bg-[#e85c3a]/5 p-4 md:p-5 backdrop-blur-sm"
               >
                 {/* Icon */}
-                <div className="flex h-10 w-10 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-                  <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-amber-400" />
+                <div className="flex h-10 w-10 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e85c3a]/20">
+                  <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-[#e85c3a]" />
                 </div>
 
                 {/* Content */}
@@ -89,15 +89,15 @@ const ConsiderationsSlide = ({
         </div>
 
         {/* Balance Note */}
-        <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-5 md:p-6">
+        <div className="rounded-2xl border border-[#4a9a9a]/30 bg-gradient-to-br from-[#4a9a9a]/10 to-[#2d3b3a]/10 p-5 md:p-6">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
-              <Scale className="h-5 w-5 text-emerald-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4a9a9a]/20">
+              <Scale className="h-5 w-5 text-[#4a9a9a]" />
             </div>
             <h4 className="text-lg font-semibold text-white">איזון</h4>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="h-5 w-5 text-[#4a9a9a] flex-shrink-0 mt-0.5" />
             <p className="text-white/80 leading-relaxed">{balanceNote}</p>
           </div>
         </div>

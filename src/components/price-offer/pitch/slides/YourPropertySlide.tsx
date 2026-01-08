@@ -64,14 +64,14 @@ const YourPropertySlide = ({
                   className="h-48 md:h-64 lg:h-80 w-full object-cover"
                 />
               ) : (
-                <div className="flex h-48 md:h-64 lg:h-80 w-full items-center justify-center bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+                <div className="flex h-48 md:h-64 lg:h-80 w-full items-center justify-center bg-gradient-to-br from-[#4a9a9a]/20 to-[#2d3b3a]/20">
                   <Building className="h-12 w-12 md:h-16 md:w-16 text-white/30" />
                 </div>
               )}
               {/* Address Overlay */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 md:p-4">
                 <div className="flex items-center gap-2 text-white">
-                  <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 text-[#4a9a9a]" />
                   <span className="text-sm md:text-base font-medium">{propertyAddress}</span>
                 </div>
               </div>
@@ -86,7 +86,7 @@ const YourPropertySlide = ({
                     key={index}
                     className="flex flex-col items-center rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-2 md:p-3 text-center"
                   >
-                    <IconComponent className="mb-1 h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+                    <IconComponent className="mb-1 h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
                     <span className="text-sm md:text-lg font-bold text-white">{highlight.value}</span>
                     <span className="text-[10px] md:text-xs text-white/50">{highlight.title}</span>
                   </div>
@@ -98,7 +98,7 @@ const YourPropertySlide = ({
           {/* Right: Unique Points */}
           <div className="flex flex-1 flex-col">
             <div className="mb-3 md:mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
+              <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-[#f5c242]" />
               <h3 className="text-base md:text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
             </div>
 
@@ -108,7 +108,7 @@ const YourPropertySlide = ({
                   key={index}
                   className="flex items-start gap-2 md:gap-3 rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-3 md:p-4"
                 >
-                  <div className="mt-0.5 flex h-5 w-5 md:h-6 md:w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs md:text-sm font-bold text-emerald-400">
+                  <div className="mt-0.5 flex h-5 w-5 md:h-6 md:w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#4a9a9a]/20 text-xs md:text-sm font-bold text-[#4a9a9a]">
                     {index + 1}
                   </div>
                   <p className="text-sm md:text-base text-white/80">{point}</p>

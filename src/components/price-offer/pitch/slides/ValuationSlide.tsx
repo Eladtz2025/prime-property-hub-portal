@@ -56,7 +56,7 @@ const ValuationSlide = ({
 
         {/* Property Info */}
         <div className="mb-6 md:mb-8 flex flex-wrap items-center justify-center gap-2 md:gap-3 rounded-xl bg-white/5 p-3 md:p-4">
-          <Home className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+          <Home className="h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
           <span className="text-sm md:text-base text-white">{propertyAddress}</span>
           <span className="text-white/50 hidden md:inline">|</span>
           <span className="text-sm md:text-base text-white/70">{propertySize} מ״ר</span>
@@ -66,14 +66,14 @@ const ValuationSlide = ({
         <div className="mb-6 md:mb-10 rounded-2xl border border-white/10 bg-white/5 p-5 md:p-8 backdrop-blur-sm">
           {/* Recommended Price */}
           <div className="mb-6 md:mb-8 text-center">
-            <p className="mb-1 md:mb-2 text-xs md:text-sm uppercase tracking-wider text-emerald-400">המחיר המומלץ</p>
+            <p className="mb-1 md:mb-2 text-xs md:text-sm uppercase tracking-wider text-[#4a9a9a]">המחיר המומלץ</p>
             <p className="text-4xl md:text-5xl lg:text-6xl font-bold text-white">{formatPrice(recommendedPrice)}</p>
             <p className="mt-1 md:mt-2 text-base md:text-lg text-white/50">₪{pricePerSqm.toLocaleString()} למ״ר</p>
           </div>
 
           {/* Price Range Bar */}
           <div className="relative mb-4 md:mb-6">
-            <div className="h-3 rounded-full bg-gradient-to-r from-amber-500/30 via-emerald-500/50 to-amber-500/30" />
+            <div className="h-3 rounded-full bg-gradient-to-r from-[#f5c242]/30 via-[#4a9a9a]/50 to-[#f5c242]/30" />
             
             {/* Recommended marker */}
             <div 
@@ -81,8 +81,8 @@ const ValuationSlide = ({
               style={{ right: `${recommendedPosition}%`, transform: `translateY(-50%) translateX(50%)` }}
             >
               <div className="flex flex-col items-center">
-                <div className="h-6 md:h-8 w-0.5 bg-emerald-400" />
-                <div className="h-3 w-3 md:h-4 md:w-4 rounded-full border-2 border-emerald-400 bg-[#0a0a0a]" />
+                <div className="h-6 md:h-8 w-0.5 bg-[#4a9a9a]" />
+                <div className="h-3 w-3 md:h-4 md:w-4 rounded-full border-2 border-[#4a9a9a] bg-[#0a0a0a]" />
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ const ValuationSlide = ({
         {/* Reasoning */}
         <div className="mb-6 md:mb-8 rounded-xl border border-white/10 bg-white/5 p-4 md:p-6">
           <div className="mb-2 md:mb-3 flex items-center gap-2">
-            <Scale className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+            <Scale className="h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
             <h3 className="text-sm md:text-base font-semibold text-white">הסבר להערכה</h3>
           </div>
           <p className="text-sm md:text-base leading-relaxed text-white/70">{reasoning}</p>
@@ -112,7 +112,7 @@ const ValuationSlide = ({
         {/* Comparisons */}
         <div className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-6">
           <div className="mb-3 md:mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+            <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
             <h3 className="text-sm md:text-base font-semibold text-white">נכסים להשוואה</h3>
           </div>
           <div className="grid gap-2 md:gap-3 grid-cols-1 md:grid-cols-3">

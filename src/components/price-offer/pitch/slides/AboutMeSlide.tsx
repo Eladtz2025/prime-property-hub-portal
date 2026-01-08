@@ -38,7 +38,7 @@ const AboutMeSlide = ({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500/30 to-teal-600/30">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#4a9a9a]/30 to-[#2d3b3a]/30">
                 <span className="text-4xl md:text-7xl font-bold text-white/80">
                   {BUSINESS_INFO.brokerName.charAt(0)}
                 </span>
@@ -46,14 +46,14 @@ const AboutMeSlide = ({
             )}
           </div>
           {/* License Badge */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-sm font-medium text-white shadow-lg whitespace-nowrap">
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[#4a9a9a] px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-sm font-medium text-white shadow-lg whitespace-nowrap">
             רישיון #{BUSINESS_INFO.license}
           </div>
         </div>
 
         {/* Info Section */}
         <div className="flex flex-col items-center text-center md:items-start md:text-right">
-          <p className="mb-1 text-[10px] md:text-sm uppercase tracking-wider text-emerald-400">
+          <p className="mb-1 text-[10px] md:text-sm uppercase tracking-wider text-[#4a9a9a]">
             לא סתם מתווכת - שותפה לדרך
           </p>
           <h2 className="mb-1 text-2xl md:text-4xl lg:text-5xl font-bold text-white">
@@ -79,7 +79,7 @@ const AboutMeSlide = ({
                 key={index}
                 className="flex flex-col items-center rounded-lg md:rounded-xl border border-white/10 bg-white/5 px-2 py-2 md:px-4 md:py-4 backdrop-blur-sm"
               >
-                <stat.icon className="mb-1 h-4 w-4 md:h-6 md:w-6 text-emerald-400" />
+                <stat.icon className="mb-1 h-4 w-4 md:h-6 md:w-6 text-[#4a9a9a]" />
                 <span className="text-base md:text-2xl font-bold text-white">
                   {stat.value}{stat.suffix}
                 </span>

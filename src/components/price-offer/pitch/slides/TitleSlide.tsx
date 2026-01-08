@@ -1,3 +1,5 @@
+import cityMarketLogo from "@/assets/city-market-icon.png";
+
 interface TitleSlideProps {
   title: string;
   subtitle?: string | null;
@@ -25,8 +27,15 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 text-center max-w-5xl mx-auto pt-16 md:pt-20 pb-32 md:pb-24">
         {/* Logo */}
-        <div className="mb-4 md:mb-8 opacity-80">
-          <span className="text-lg md:text-2xl font-bold tracking-[0.2em] md:tracking-[0.3em] text-white/90 uppercase">Nadlan</span>
+        <div className="mb-4 md:mb-8 flex flex-col items-center gap-2">
+          <img 
+            src={cityMarketLogo} 
+            alt="City Market Properties" 
+            className="h-14 w-14 md:h-20 md:w-20"
+          />
+          <span className="text-sm md:text-lg font-bold tracking-[0.15em] md:tracking-[0.2em] text-white/90 uppercase">
+            City Market Properties
+          </span>
         </div>
 
         {/* Main Title */}
