@@ -5,6 +5,7 @@ interface FullScreenHeroProps {
   minHeight?: string;
   children?: React.ReactNode;
 }
+
 const FullScreenHero = ({
   title,
   subtitle,
@@ -12,17 +13,21 @@ const FullScreenHero = ({
   minHeight = "70vh",
   children
 }: FullScreenHeroProps) => {
-  return <section className="relative flex items-center justify-center overflow-hidden" style={{
-    minHeight,
-    height: minHeight
-  }}>
-      {/* Background Image - cover all screen */}
-      <div className="absolute inset-0 w-full h-full" style={{
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
-    }}>
+  return (
+    <section 
+      className="relative flex items-center justify-center overflow-hidden" 
+      style={{ minHeight, height: minHeight }}
+    >
+      {/* Background Image - optimized with img tag for LCP */}
+      <div className="absolute inset-0 w-full h-full">
+        <img
+          src={backgroundImage}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
       </div>
 
@@ -38,6 +43,8 @@ const FullScreenHero = ({
         )}
         {children}
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default FullScreenHero;
