@@ -8,7 +8,7 @@ interface AreaSlideProps {
 
 const AreaSlide = ({ title, content, location }: AreaSlideProps) => {
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-start md:justify-center px-4 md:px-8 pt-20 md:pt-24 pb-32 overflow-y-auto">
+    <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
       {/* Location Badge */}
       {location && (
         <div className="flex items-center gap-2 text-emerald-400 mb-4 md:mb-8">
