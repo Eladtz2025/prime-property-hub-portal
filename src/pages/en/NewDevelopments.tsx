@@ -4,7 +4,7 @@ import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const NewDevelopments = () => {
   const telAvivDevelopments = [
@@ -74,14 +74,16 @@ const NewDevelopments = () => {
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <html lang="en" dir="ltr" />
-        <title>New Developments - City Market Properties | Tel Aviv, Florentin & Neve Tzedek</title>
-        <meta name="description" content="Explore luxury new developments in Tel Aviv, Florentin, and Neve Tzedek. Modern design, premium amenities, and prime locations." />
+        <title>New Developments Tel Aviv | City Market Properties</title>
+        <meta name="description" content="Explore luxury new developments in Tel Aviv, Florentin, and Neve Tzedek. Modern design, premium amenities, and prime locations. Request information today!" />
         <meta property="og:title" content="New Developments - City Market Properties" />
         <meta property="og:description" content="The future of modern living - luxury developments in Israel's top locations." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/new-developments" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/new-developments" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "New Developments", url: "https://www.ctmarketproperties.com/en/new-developments" }

@@ -9,7 +9,7 @@ import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewLead } from "@/utils/notifyNewLead";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema, LocalBusinessSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, LocalBusinessSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
   email: z.string().email("Invalid email address").max(255, "Email is too long"),
@@ -65,13 +65,15 @@ const Contact = () => {
   return <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <html lang="en" dir="ltr" />
-        <title>Contact Us - CITY MARKET Properties | Real Estate in Tel Aviv</title>
-        <meta name="description" content="Contact CITY MARKET Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Phone: 054-228-4477" />
+        <title>Contact Us | City Market Tel Aviv Real Estate</title>
+        <meta name="description" content="Contact City Market Properties. Experts in real estate brokerage, rentals, sales and property management in Tel Aviv. Personal service and professional guidance. Phone: 054-228-4477" />
         <meta property="og:title" content="Contact Us - CITY MARKET Properties" />
         <meta property="og:description" content="Contact CITY MARKET real estate experts in Tel Aviv" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/contact" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/contact" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Contact", url: "https://www.ctmarketproperties.com/en/contact" }

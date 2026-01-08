@@ -7,7 +7,7 @@ import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 import {
   Carousel,
   CarouselContent,
@@ -57,14 +57,16 @@ const EnglishNeighborhoods = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
-        <title>Tel Aviv Neighborhoods - City Market Properties</title>
-        <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, and Old North. Find your perfect location in the White City." />
+        <title>Tel Aviv Neighborhoods | City Market Real Estate</title>
+        <meta name="description" content="Explore Tel Aviv's finest neighborhoods - Rothschild, Neve Tzedek, Florentin, and Old North. Find your perfect location in the White City. Contact us for expert guidance!" />
         <meta property="og:title" content="Tel Aviv Neighborhoods - City Market Properties" />
         <meta property="og:description" content="Discover Tel Aviv's most prestigious neighborhoods. Each area tells its own story." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/neighborhoods" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" }

@@ -8,7 +8,7 @@ import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const RothschildNeighborhood = () => {
   const navigate = useNavigate();
@@ -17,11 +17,13 @@ const RothschildNeighborhood = () => {
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <html lang="en" dir="ltr" />
-        <title>Rothschild Boulevard - Bauhaus Architecture & Culture | CITY MARKET Properties Tel Aviv</title>
-        <meta name="description" content="Properties for sale and rent on Rothschild Boulevard Tel Aviv. Bauhaus architecture, UNESCO heritage, and premium location. Luxury real estate experts." />
+        <title>Rothschild Boulevard | Tel Aviv Real Estate</title>
+        <meta name="description" content="Properties for sale and rent on Rothschild Boulevard Tel Aviv. Bauhaus architecture, UNESCO heritage, iconic cafés, and premium location. Contact our luxury real estate experts!" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods/rothschild" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/neighborhoods/rothschild" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" },

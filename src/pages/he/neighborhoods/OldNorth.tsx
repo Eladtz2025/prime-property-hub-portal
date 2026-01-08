@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Helmet } from "react-helmet";
 import HreflangMeta from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const OldNorthNeighborhood = () => {
   const navigate = useNavigate();
@@ -18,11 +18,13 @@ const OldNorthNeighborhood = () => {
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <html lang="he" dir="rtl" />
-        <title>צפון הישן - שכונה משפחתית עם מורשת באוהאוס | CITY MARKET Properties תל אביב</title>
-        <meta name="description" content="נכסים למכירה ולהשכרה בצפון הישן. שכונה שקטה ומשפחתית, אדריכלות באוהאוס ושטחים ירוקים. מומחים בנדל״ן באזור המבוקש." />
+        <title>צפון ישן תל אביב | נדל"ן קלאסי - סיטי מרקט</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה בצפון הישן תל אביב. שכונה שקטה ומשפחתית, אדריכלות באוהאוס ושטחים ירוקים. מומחים בנדל״ן באזור המבוקש. צרו קשר!" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/old-north" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/old-north" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
         { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" },
