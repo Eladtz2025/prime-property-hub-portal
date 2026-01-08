@@ -30,7 +30,10 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         <img
           src={imageUrl || "/images/en/hero-last-one.png"}
           alt="רקע גיבור"
-          className="absolute inset-0 w-full h-full object-cover scale-105 animate-slow-zoom"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
       )}
 
