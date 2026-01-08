@@ -58,7 +58,7 @@ export const PerformanceTab: React.FC = () => {
       });
 
       if (error) throw error;
-      return data;
+      return data?.result || data;
     } catch (error) {
       console.error(`Error checking ${page.path}:`, error);
       return null;
