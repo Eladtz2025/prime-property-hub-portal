@@ -4,7 +4,7 @@ import FullScreenHero from "@/components/FullScreenHero";
 import { Award, Users, TrendingUp, Heart, Building, MapPin, Sparkles, Home } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 import { TimelineItem } from "@/components/about/TimelineItem";
 import { ValueCard } from "@/components/about/ValueCard";
 import { TestimonialCard } from "@/components/about/TestimonialCard";
@@ -28,7 +28,7 @@ const About = () => {
   return <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
         <html lang="en" dir="ltr" />
-        <title>About Us - City Market Properties | Tel Aviv Real Estate Experts</title>
+        <title>About City Market | Tel Aviv Real Estate Experts</title>
         <meta name="description" content="Learn about City Market Properties - Over 15 years of experience in Tel Aviv's prestigious real estate market. Expert service in sales, rentals, and property management." />
         <meta property="og:title" content="About Us - City Market Properties" />
         <meta property="og:description" content="Tel Aviv's leading real estate experts with 15+ years of experience in luxury properties." />
@@ -36,6 +36,8 @@ const About = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/about" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/about" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "About", url: "https://www.ctmarketproperties.com/en/about" }

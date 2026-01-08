@@ -12,7 +12,7 @@ import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishSales = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,13 +63,15 @@ const EnglishSales = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
-        <title>Properties for Sale in Tel Aviv - CITY MARKET Properties</title>
-        <meta name="description" content="Apartments and properties for sale in Tel Aviv. Full professional service including consultation, valuation, legal support and negotiation with potential buyers." />
+        <title>Apartments for Sale in Tel Aviv | City Market</title>
+        <meta name="description" content="Apartments and properties for sale in Tel Aviv. Full professional service including consultation, valuation, legal support and negotiation. Find your dream home today!" />
         <meta property="og:title" content="Properties for Sale - CITY MARKET Properties" />
         <meta property="og:description" content="Wide range of apartments and properties for sale in Tel Aviv with full professional service" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/sales" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/sales" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Sales", url: "https://www.ctmarketproperties.com/en/sales" }

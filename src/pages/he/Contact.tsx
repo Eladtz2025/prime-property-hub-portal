@@ -9,7 +9,7 @@ import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewLead } from "@/utils/notifyNewLead";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema, LocalBusinessSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, LocalBusinessSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
   email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
@@ -72,6 +72,8 @@ const Contact = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/contact" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/contact" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
         { name: "צור קשר", url: "https://www.ctmarketproperties.com/he/contact" }

@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Helmet } from "react-helmet";
 import HreflangMeta from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const NeveTzedekNeighborhood = () => {
   const navigate = useNavigate();
@@ -18,11 +18,13 @@ const NeveTzedekNeighborhood = () => {
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <html lang="he" dir="rtl" />
-        <title>נווה צדק - השכונה הראשונה של תל אביב | CITY MARKET Properties נדל"ן יוקרה</title>
-        <meta name="description" content="נכסים למכירה ולהשכרה בנווה צדק. קסם היסטורי, בוטיקים יוקרתיים ואווירה בוהמית. מומחים בנדל״ן בשכונה הראשונה של תל אביב." />
+        <title>נווה צדק תל אביב | נדל"ן יוקרה - סיטי מרקט</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה בנווה צדק. קסם היסטורי, בוטיקים יוקרתיים, גלריות אמנות ואווירה בוהמית. מומחים בנדל״ן בשכונה הראשונה של תל אביב. צרו קשר!" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/neve-tzedek" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/neve-tzedek" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
         { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" },

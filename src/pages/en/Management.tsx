@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet";
 import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
 import { ConsultationModal } from "@/components/en/ConsultationModal";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishManagement = () => {
   const navigate = useNavigate();
@@ -103,14 +103,16 @@ const EnglishManagement = () => {
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
       <Helmet>
-        <title>Property Management - City Market Properties | Tel Aviv</title>
-        <meta name="description" content="Professional property management services in Tel Aviv. Rent collection, maintenance, legal compliance, and tenant relations. Maximize your ROI with expert management." />
+        <title>Property Management Tel Aviv | City Market</title>
+        <meta name="description" content="Professional property management in Tel Aviv. Rent collection, maintenance, legal compliance, and tenant relations. Maximize your ROI with expert management. Contact us today!" />
         <meta property="og:title" content="Property Management - City Market Properties" />
         <meta property="og:description" content="Expert property management services - from single apartments to entire buildings." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/management" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/management" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Property Management", url: "https://www.ctmarketproperties.com/en/management" }

@@ -7,7 +7,7 @@ import { MapPin, TrendingUp, Coffee, Building2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import HreflangMeta from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 import {
   Carousel,
   CarouselContent,
@@ -58,14 +58,16 @@ const HebrewNeighborhoods = () => {
     <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <html lang="he" dir="rtl" />
-        <title>שכונות תל אביב - מדריך לשכונות היוקרתיות | CITY MARKET Properties</title>
-        <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
+        <title>שכונות תל אביב | סיטי מרקט - מדריך נדל"ן</title>
+        <meta name="description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה. חקרו כל שכונה וצרו קשר!" />
         <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | CITY MARKET Properties" />
         <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
         { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" }

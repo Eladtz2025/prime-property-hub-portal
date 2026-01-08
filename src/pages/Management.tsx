@@ -11,7 +11,7 @@ import { FlippablePropertyCard } from '@/components/he/FlippablePropertyCard';
 import { ConsultationModal } from '@/components/he/ConsultationModal';
 import { Helmet } from "react-helmet";
 import HreflangMeta from '@/components/seo/HreflangMeta';
-import { BreadcrumbSchema } from '@/components/seo/SchemaOrg';
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/components/seo/SchemaOrg';
 
 const Management = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +66,8 @@ const Management = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/management" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/management" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
         { name: "ניהול נכסים", url: "https://www.ctmarketproperties.com/he/management" }

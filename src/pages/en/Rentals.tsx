@@ -12,7 +12,7 @@ import { usePublicProperties } from "@/hooks/usePublicProperties";
 import { Helmet } from "react-helmet";
 import { removeAddressNumber } from '@/lib/utils';
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
-import { BreadcrumbSchema } from "@/components/seo/SchemaOrg";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const EnglishRentals = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +70,8 @@ const EnglishRentals = () => {
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/rentals" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/rentals" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://www.ctmarketproperties.com/en" },
         { name: "Rentals", url: "https://www.ctmarketproperties.com/en/rentals" }
