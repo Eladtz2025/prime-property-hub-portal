@@ -5,7 +5,7 @@ interface ImageSlideProps {
 
 const ImageSlide = ({ imageUrl, caption }: ImageSlideProps) => {
   return (
-    <div className="relative h-full w-full flex items-center justify-center p-8 pt-24 pb-32">
+    <div className="relative h-full w-full flex items-center justify-center p-4 md:p-8 pt-16 md:pt-20 pb-28 md:pb-32 overflow-y-auto">
       {/* Image Container */}
       <div className="relative w-full h-full max-w-6xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
         <img

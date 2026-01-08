@@ -12,7 +12,7 @@ const ContactSlide = ({ title, subtitle, whatsappNumber, propertyTitle }: Contac
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center px-8 pt-24 pb-32">
+    <div className="relative h-full w-full flex flex-col items-center justify-center px-4 md:px-8 pt-16 md:pt-20 pb-28 md:pb-32 overflow-y-auto">
       {/* Title */}
       <h2 className="font-playfair text-4xl md:text-5xl text-white mb-6 text-center">
         {title}
@@ -30,9 +30,9 @@ const ContactSlide = ({ title, subtitle, whatsappNumber, propertyTitle }: Contac
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full text-white text-xl font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300"
+        className="group flex items-center gap-3 md:gap-4 px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full text-white text-lg md:text-xl font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300"
       >
-        <MessageCircle className="h-7 w-7 group-hover:scale-110 transition-transform" />
+        <MessageCircle className="h-6 w-6 md:h-7 md:w-7 group-hover:scale-110 transition-transform" />
         <span>שלחו לי הודעה בוואטסאפ</span>
       </a>
 

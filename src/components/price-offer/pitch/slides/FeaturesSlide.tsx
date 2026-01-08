@@ -7,18 +7,18 @@ interface FeaturesSlideProps {
 
 const FeaturesSlide = ({ title, features }: FeaturesSlideProps) => {
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center px-8 pt-24 pb-32">
+    <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-16 md:pt-20 pb-28 md:pb-32 overflow-y-auto">
       {/* Title */}
       <h2 className="font-playfair text-4xl md:text-5xl text-white mb-16 text-center">
         {title}
       </h2>
 
       {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl w-full">
         {features.map((feature, index) => (
           <div
             key={index}
-            className="flex items-center gap-4 p-6 border border-white/10 rounded-xl backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300"
+            className="flex items-center gap-3 md:gap-4 p-4 md:p-6 border border-white/10 rounded-xl backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400">
