@@ -14,14 +14,15 @@ import MarketAnalysisSlide from "./slides/MarketAnalysisSlide";
 import MarketingPlanSlide from "./slides/MarketingPlanSlide";
 import WhyExclusiveSlide from "./slides/WhyExclusiveSlide";
 import SuccessStoriesSlide from "./slides/SuccessStoriesSlide";
-import MyPromiseSlide from "./slides/MyPromiseSlide";
 import TransparencySlide from "./slides/TransparencySlide";
-import NextStepsSlide from "./slides/NextStepsSlide";
 import ValuationSlide from "./slides/ValuationSlide";
 import BuildingSlide from "./slides/BuildingSlide";
 import AreaBreakdownSlide from "./slides/AreaBreakdownSlide";
 import TimelineSlide from "./slides/TimelineSlide";
 import GallerySlide from "./slides/GallerySlide";
+import MarketDataSlide from "./slides/MarketDataSlide";
+import ConsiderationsSlide from "./slides/ConsiderationsSlide";
+import VisualStrategySlide from "./slides/VisualStrategySlide";
 
 interface PriceOffer {
   id: string;
@@ -184,7 +185,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         "שתי מרפסות (סלון וחדר שינה)",
         "בניין חדש עם חניון רובוטי",
       ],
-      agentNote: "הדירה ממוקמת בקומה אטרקטיבית עם נוף פתוח ואור טבעי לאורך כל היום.",
     },
   });
 
@@ -227,7 +227,46 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 7: Valuation
+  // Slide 7: Market Data
+  slides.push({
+    type: "market_data",
+    data: {
+      title: "נתוני שוק",
+      subtitle: "מחירי פריסייל ודירות למכירה באזור",
+      presaleUnits: [
+        { name: "דירה 3", netSize: "63 מ״ר", balconySize: "13 מ״ר", price: 4880000 },
+        { name: "דירה 2", netSize: "50 מ״ר", balconySize: "7 מ״ר", price: 3580000 },
+      ],
+      buildingListings: [
+        { price: 5250000 },
+        { price: 5990000 },
+        { price: 5990000 },
+        { price: 6500000 },
+      ],
+      neighborhoodListings: [
+        { price: 4550000, location: "דירה סמוכה" },
+        { price: 6000000, location: "דירה בשכונה" },
+      ],
+    },
+  });
+
+  // Slide 8: Considerations
+  slides.push({
+    type: "considerations",
+    data: {
+      title: "גורמים לשקלול",
+      subtitle: "שיקולים המשפיעים על התמחור",
+      considerations: [
+        { icon: "building", title: "תחרות פנימית", description: "ריבוי נכסים למכירה בבניין" },
+        { icon: "volume", title: "חשיפה לרעש", description: "תנועת אוטובוסים ברחוב הפונה לסלון" },
+        { icon: "bath", title: "חדר רחצה אחד", description: "חדר רחצה יחיד בדירה" },
+        { icon: "shield", title: "היעדר ממ״ד", description: "אין ממ״ד בדירה (יש מקלטים בבניין)" },
+      ],
+      balanceNote: "איזון: מיקום יוקרתי, מרפסות מרווחות ותכנון פנימי איכותי",
+    },
+  });
+
+  // Slide 9: Valuation
   slides.push({
     type: "valuation",
     data: {
@@ -248,7 +287,7 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 8: Marketing Plan
+  // Slide 10: Marketing Plan
   slides.push({
     type: "marketing_plan",
     data: {
@@ -260,8 +299,8 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         { icon: "share", title: "רשתות חברתיות", description: "תוכן ויזואלי מוקפד המדגיש סגנון חיים", stats: "אינסטגרם + פייסבוק" },
         { icon: "target", title: "פנייה ישירה", description: "רוכשי יוקרה, תושבי חוץ ומשקיעי פרימיום", stats: "קהל ממוקד" },
       ],
-      platforms: ["יד2", "אינסטגרם", "וואטסאפ שכונתי", "Nefesh B'Nefesh"],
-      agentNote: "נשלב בין חשיפה דיגיטלית לפנייה אישית לרשת הקשרים שלי בתחום הנדל״ן היוקרתי.",
+      platforms: ["יד2", "אינסטגרם", "וואטסאפ שכונתי", "שילוט מקומי", "Nefesh B'Nefesh"],
+      targetAudiences: ["רוכשי יוקרה מקומיים", "תושבי חוץ ורוכשים מחו״ל", "משקיעי פרימיום"],
     },
   });
 
@@ -282,23 +321,32 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 10: My Promise
+  // Slide 11: Visual Strategy
   slides.push({
-    type: "my_promise",
+    type: "visual_strategy",
     data: {
-      title: "המחויבות שלנו",
-      subtitle: "מה תקבלו בעבודה איתנו",
-      promises: [
-        { icon: "report", title: "שקיפות מלאה", description: "עדכונים שוטפים על כל פנייה והתקדמות" },
-        { icon: "response", title: "זמינות מלאה", description: "מענה מהיר בכל שאלה או בקשה" },
-        { icon: "target", title: "חשיפה אסטרטגית", description: "ללא שחיקה שיווקית - דגש על איכות" },
-        { icon: "shield", title: "שמירה על ערך", description: "הגנה על ערך הנכס לאורך התהליך" },
+      title: "אסטרטגיה ויזואלית",
+      subtitle: "שתי שכבות של הצגת הנכס",
+      layers: [
+        {
+          title: "הדירה כפי שהיא",
+          subtitle: "צילום אותנטי ושקוף",
+          icon: "camera",
+          color: "emerald",
+          points: ["אור טבעי, חלוקה ופרופורציות", "מרפסות וחיבור לחוץ", "תחושת המרחב האמיתית"],
+        },
+        {
+          title: "הדירה כפי שיכולה להיראות",
+          subtitle: "ויז׳ואלים בהשראת סגנון חיים",
+          icon: "sparkles",
+          color: "amber",
+          points: ["עיצוב תל-אביבי חמים ומודרני", "העמדת ריהוט חכמה", "תפיסת מגורים פנים-חוץ"],
+        },
       ],
-      guaranteeText: "אנחנו מתחייבים ללוות אתכם בכל שלב עד למכירה מוצלחת",
     },
   });
 
-  // Slide 11: Gallery
+  // Slide 12: Gallery
   slides.push({
     type: "gallery",
     data: {
@@ -307,9 +355,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       images: [...galleryImages, ...buildingImages.slice(0, 4)],
     },
   });
-
-  // Slide 12: Next Steps
-  slides.push({ type: "next_steps", data: { propertyTitle: "יצחק אלחנן 14" } });
 
   const totalSlides = slides.length;
 
@@ -392,12 +437,14 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <WhyExclusiveSlide {...slide.data} />;
       case "success_stories":
         return <SuccessStoriesSlide {...slide.data} />;
-      case "my_promise":
-        return <MyPromiseSlide {...slide.data} />;
       case "transparency":
         return <TransparencySlide {...slide.data} />;
-      case "next_steps":
-        return <NextStepsSlide {...slide.data} />;
+      case "market_data":
+        return <MarketDataSlide {...slide.data} />;
+      case "considerations":
+        return <ConsiderationsSlide {...slide.data} />;
+      case "visual_strategy":
+        return <VisualStrategySlide {...slide.data} />;
       case "valuation":
         return <ValuationSlide {...slide.data} />;
       case "building":
