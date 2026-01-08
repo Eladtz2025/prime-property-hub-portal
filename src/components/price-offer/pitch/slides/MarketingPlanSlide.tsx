@@ -1,4 +1,4 @@
-import { Check, Globe, Camera, Users, Share2, Home, Video, Megaphone, Eye } from "lucide-react";
+import { Check, Globe, Camera, Users, Share2, Home, Video, Megaphone, Eye, Target } from "lucide-react";
 
 interface MarketingItem {
   icon: string;
@@ -12,7 +12,7 @@ interface MarketingPlanSlideProps {
   subtitle?: string;
   items?: MarketingItem[];
   platforms?: string[];
-  agentNote?: string;
+  targetAudiences?: string[];
 }
 
 const iconMap: { [key: string]: any } = {
@@ -23,6 +23,7 @@ const iconMap: { [key: string]: any } = {
   home: Home,
   video: Video,
   megaphone: Megaphone,
+  target: Target,
 };
 
 const MarketingPlanSlide = ({
@@ -66,8 +67,8 @@ const MarketingPlanSlide = ({
       stats: "200+ מתווכים פעילים"
     },
   ],
-  platforms = ["יד2", "מדלן", "הומלס", "WinWin", "Facebook", "Instagram"],
-  agentNote = "כל פעילויות השיווק כלולות בעמלה - ללא עלות נוספת. אתם לא משלמים שקל על צילום, פרסום או שיווק.",
+  platforms = ["יד2", "אינסטגרם", "וואטסאפ שכונתי", "שילוט מקומי", "Nefesh B'Nefesh"],
+  targetAudiences = ["רוכשי יוקרה מקומיים", "תושבי חוץ ורוכשים מחו\"ל", "משקיעי פרימיום"],
 }: MarketingPlanSlideProps) => {
   return (
     <div className="flex h-full w-full flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
@@ -125,9 +126,19 @@ const MarketingPlanSlide = ({
           ))}
         </div>
 
-        {/* Bottom Note */}
-        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 md:p-4 text-center">
-          <p className="text-xs md:text-sm text-white/80">{agentNote}</p>
+        {/* Target Audiences */}
+        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4">
+          <p className="text-xs md:text-sm text-white/60 mb-3 text-center">קהלי יעד</p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {targetAudiences.map((audience, index) => (
+              <span
+                key={index}
+                className="rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs md:text-sm text-emerald-300"
+              >
+                {audience}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

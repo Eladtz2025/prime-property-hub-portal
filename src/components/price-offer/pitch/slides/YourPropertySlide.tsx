@@ -1,4 +1,4 @@
-import { MapPin, Maximize, BedDouble, Bath, Car, Sun, Building, Sparkles } from "lucide-react";
+import { MapPin, Maximize, BedDouble, Bath, Car, Sun, Building, Sparkles, DollarSign } from "lucide-react";
 
 interface PropertyHighlight {
   icon: string;
@@ -13,7 +13,6 @@ interface YourPropertySlideProps {
   propertyImage?: string;
   highlights?: PropertyHighlight[];
   uniquePoints?: string[];
-  agentNote?: string;
 }
 
 const iconMap: { [key: string]: any } = {
@@ -23,6 +22,7 @@ const iconMap: { [key: string]: any } = {
   parking: Car,
   balcony: Sun,
   floor: Building,
+  price: DollarSign,
 };
 
 const YourPropertySlide = ({
@@ -43,7 +43,6 @@ const YourPropertySlide = ({
     "מיקום מבוקש - קרוב לחוף ולתחבורה ציבורית",
     "כניסה מיידית - מאפשר גמישות במו״מ",
   ],
-  agentNote = "זה מה שהקונים יראו - וזה מה שאני אדע להדגיש עבורכם. הנכס הזה ייחודי, ואני אוודא שכל קונה פוטנציאלי יבין את הערך האמיתי שלו.",
 }: YourPropertySlideProps) => {
   return (
     <div className="flex h-full w-full flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
@@ -79,7 +78,7 @@ const YourPropertySlide = ({
             </div>
 
             {/* Property Highlights */}
-            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
               {highlights.map((highlight, index) => {
                 const IconComponent = iconMap[highlight.icon] || Maximize;
                 return (
@@ -103,7 +102,7 @@ const YourPropertySlide = ({
               <h3 className="text-base md:text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
             </div>
 
-            <div className="mb-4 md:mb-6 space-y-2 md:space-y-3">
+            <div className="space-y-2 md:space-y-3">
               {uniquePoints.map((point, index) => (
                 <div
                   key={index}
@@ -115,13 +114,6 @@ const YourPropertySlide = ({
                   <p className="text-sm md:text-base text-white/80">{point}</p>
                 </div>
               ))}
-            </div>
-
-            {/* Agent Note */}
-            <div className="mt-auto rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 md:p-5">
-              <p className="text-xs md:text-sm leading-relaxed text-white/70 italic">
-                "{agentNote}"
-              </p>
             </div>
           </div>
         </div>
