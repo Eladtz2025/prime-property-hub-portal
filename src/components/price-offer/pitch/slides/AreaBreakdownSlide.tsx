@@ -50,7 +50,7 @@ const AreaBreakdownSlide = ({
         {/* Interior Areas */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <Square className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+            <Square className="h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
             <span className="text-sm md:text-base text-white/70">שטחים פנימיים</span>
           </div>
           <div className="space-y-2">
@@ -67,9 +67,9 @@ const AreaBreakdownSlide = ({
             ))}
           </div>
           {/* Net Total */}
-          <div className="flex items-center justify-between p-3 md:p-4 mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-            <span className="text-sm md:text-base font-medium text-emerald-400">סה״כ נטו</span>
-            <span className="text-base md:text-lg font-bold text-emerald-400">
+          <div className="flex items-center justify-between p-3 md:p-4 mt-2 rounded-lg bg-[#4a9a9a]/10 border border-[#4a9a9a]/30">
+            <span className="text-sm md:text-base font-medium text-[#4a9a9a]">סה״כ נטו</span>
+            <span className="text-base md:text-lg font-bold text-[#4a9a9a]">
               {netTotal.toFixed(1)} מ״ר
             </span>
           </div>
@@ -78,17 +78,17 @@ const AreaBreakdownSlide = ({
         {/* Balconies */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <Sun className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
+            <Sun className="h-4 w-4 md:h-5 md:w-5 text-[#f5c242]" />
             <span className="text-sm md:text-base text-white/70">מרפסות</span>
           </div>
           <div className="space-y-2">
             {balconies.map((area, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 md:p-4 rounded-lg bg-amber-500/5 border border-amber-500/20"
+                className="flex items-center justify-between p-3 md:p-4 rounded-lg bg-[#f5c242]/5 border border-[#f5c242]/20"
               >
                 <span className="text-sm md:text-base text-white/80">{area.name}</span>
-                <span className="text-sm md:text-base font-medium text-amber-400">
+                <span className="text-sm md:text-base font-medium text-[#f5c242]">
                   {area.size.toFixed(2)} מ״ר
                 </span>
               </div>
@@ -97,7 +97,7 @@ const AreaBreakdownSlide = ({
         </div>
 
         {/* Weighted Total */}
-        <div className="flex items-center justify-between p-4 md:p-5 rounded-xl bg-gradient-to-r from-emerald-500/20 to-amber-500/20 border border-white/20">
+        <div className="flex items-center justify-between p-4 md:p-5 rounded-xl bg-gradient-to-r from-[#4a9a9a]/20 to-[#f5c242]/20 border border-white/20">
           <span className="text-base md:text-lg font-medium text-white">שטח משוקלל כולל</span>
           <span className="text-xl md:text-2xl font-bold text-white">
             {weightedTotal.toFixed(1)} מ״ר

@@ -86,16 +86,16 @@ const MarketingPlanSlide = ({
             return (
               <div
                 key={index}
-                className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 backdrop-blur-sm transition-all duration-300 hover:border-emerald-500/50 hover:bg-white/10"
+                className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 backdrop-blur-sm transition-all duration-300 hover:border-[#4a9a9a]/50 hover:bg-white/10"
               >
                 {/* Check mark */}
-                <div className="absolute left-3 md:left-4 top-3 md:top-4 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-emerald-500">
+                <div className="absolute left-3 md:left-4 top-3 md:top-4 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-[#4a9a9a]">
                   <Check className="h-2.5 w-2.5 md:h-3 md:w-3 text-white" />
                 </div>
 
                 {/* Icon */}
-                <div className="mb-2 md:mb-3 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
-                  <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-emerald-400" />
+                <div className="mb-2 md:mb-3 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-xl bg-gradient-to-br from-[#4a9a9a]/20 to-[#2d3b3a]/20">
+                  <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-[#4a9a9a]" />
                 </div>
 
                 {/* Content */}
@@ -104,7 +104,7 @@ const MarketingPlanSlide = ({
                 
                 {/* Stats Badge */}
                 {item.stats && (
-                  <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] md:text-xs text-emerald-400">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-[#4a9a9a]/10 px-2 py-1 text-[10px] md:text-xs text-[#4a9a9a]">
                     <Eye className="h-2.5 w-2.5 md:h-3 md:w-3" />
                     {item.stats}
                   </div>
@@ -127,13 +127,13 @@ const MarketingPlanSlide = ({
         </div>
 
         {/* Target Audiences */}
-        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4">
+        <div className="rounded-xl border border-[#4a9a9a]/30 bg-gradient-to-br from-[#4a9a9a]/10 to-[#2d3b3a]/10 p-4">
           <p className="text-xs md:text-sm text-white/60 mb-3 text-center">קהלי יעד</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {targetAudiences.map((audience, index) => (
               <span
                 key={index}
-                className="rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs md:text-sm text-emerald-300"
+                className="rounded-full bg-[#4a9a9a]/20 px-3 py-1.5 text-xs md:text-sm text-[#4a9a9a]"
               >
                 {audience}
               </span>

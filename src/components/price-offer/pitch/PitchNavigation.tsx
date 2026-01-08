@@ -1,4 +1,5 @@
 import { X, MessageCircle } from "lucide-react";
+import cityMarketLogo from "@/assets/city-market-icon.png";
 
 interface PitchNavigationProps {
   currentSlide: number;
@@ -14,12 +15,19 @@ const PitchNavigation = ({ onClose, propertyTitle }: PitchNavigationProps) => {
 
   return (
     <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 md:px-6 md:py-4 bg-gradient-to-b from-black/60 to-transparent">
-      {/* Right Side - Simple Logo */}
+      {/* Right Side - Logo */}
       <a 
         href="/"
-        className="text-lg md:text-xl font-bold tracking-wide text-white/80 hover:text-white transition-colors"
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
-        Nadlan
+        <img 
+          src={cityMarketLogo} 
+          alt="City Market Properties" 
+          className="h-8 w-8 md:h-10 md:w-10"
+        />
+        <span className="text-sm md:text-base font-bold tracking-wide text-white/90 hidden sm:inline">
+          City Market
+        </span>
       </a>
 
       {/* Left Side - Minimal Actions */}

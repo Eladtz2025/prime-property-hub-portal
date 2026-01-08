@@ -11,7 +11,7 @@ const AreaSlide = ({ title, content, location }: AreaSlideProps) => {
     <div className="relative h-full w-full flex flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
       {/* Location Badge */}
       {location && (
-        <div className="flex items-center gap-2 text-emerald-400 mb-4 md:mb-8">
+        <div className="flex items-center gap-2 text-[#4a9a9a] mb-4 md:mb-8">
           <MapPin className="h-4 w-4 md:h-5 md:w-5" />
           <span className="text-sm md:text-lg tracking-wide">{location}</span>
         </div>

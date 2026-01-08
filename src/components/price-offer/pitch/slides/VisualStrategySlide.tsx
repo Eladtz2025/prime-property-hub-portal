@@ -28,7 +28,7 @@ const VisualStrategySlide = ({
         "תחושת המרחב האמיתית",
       ],
       icon: Camera,
-      color: "emerald",
+      color: "teal",
     },
     {
       title: "שכבה 2",
@@ -40,7 +40,7 @@ const VisualStrategySlide = ({
         "תפיסת מגורים פנים-חוץ",
       ],
       icon: Sparkles,
-      color: "amber",
+      color: "gold",
     },
   ],
 }: VisualStrategySlideProps) => {
@@ -63,26 +63,26 @@ const VisualStrategySlide = ({
         <div className="grid md:grid-cols-2 gap-6">
           {layers.map((layer, index) => {
             const IconComponent = layer.icon;
-            const isEmerald = layer.color === "emerald";
+            const isTeal = layer.color === "teal";
             
             return (
               <div
                 key={index}
                 className={`rounded-2xl border p-6 backdrop-blur-sm ${
-                  isEmerald 
-                    ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10" 
-                    : "border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/10"
+                  isTeal 
+                    ? "border-[#4a9a9a]/30 bg-gradient-to-br from-[#4a9a9a]/10 to-[#2d3b3a]/10" 
+                    : "border-[#f5c242]/30 bg-gradient-to-br from-[#f5c242]/10 to-[#e85c3a]/10"
                 }`}
               >
                 {/* Layer Header */}
                 <div className="flex items-center gap-3 mb-5">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
-                    isEmerald ? "bg-emerald-500/20" : "bg-amber-500/20"
+                    isTeal ? "bg-[#4a9a9a]/20" : "bg-[#f5c242]/20"
                   }`}>
-                    <IconComponent className={`h-6 w-6 ${isEmerald ? "text-emerald-400" : "text-amber-400"}`} />
+                    <IconComponent className={`h-6 w-6 ${isTeal ? "text-[#4a9a9a]" : "text-[#f5c242]"}`} />
                   </div>
                   <div>
-                    <span className={`text-sm ${isEmerald ? "text-emerald-400" : "text-amber-400"}`}>
+                    <span className={`text-sm ${isTeal ? "text-[#4a9a9a]" : "text-[#f5c242]"}`}>
                       {layer.title}
                     </span>
                     <h3 className="text-lg font-semibold text-white">{layer.subtitle}</h3>
@@ -94,7 +94,7 @@ const VisualStrategySlide = ({
                   {layer.points.map((point, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       <div className={`h-2 w-2 rounded-full ${
-                        isEmerald ? "bg-emerald-400" : "bg-amber-400"
+                        isTeal ? "bg-[#4a9a9a]" : "bg-[#f5c242]"
                       }`} />
                       <span className="text-sm text-white/80">{point}</span>
                     </div>

@@ -48,7 +48,7 @@ const BuildingSlide = ({
           {subtitle}
         </p>
         {gushHelka && (
-          <p className="text-sm text-emerald-400/80 mt-2">
+          <p className="text-sm text-[#4a9a9a]/80 mt-2">
             גוש/חלקה: {gushHelka}
           </p>
         )}
@@ -61,7 +61,7 @@ const BuildingSlide = ({
             key={index}
             className="flex flex-col items-center justify-center p-4 md:p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
           >
-            <detail.icon className="h-6 w-6 md:h-8 md:w-8 text-emerald-400 mb-2 md:mb-3" />
+            <detail.icon className="h-6 w-6 md:h-8 md:w-8 text-[#4a9a9a] mb-2 md:mb-3" />
             <span className="text-xs md:text-sm text-white/50 mb-1">{detail.label}</span>
             <span className="text-sm md:text-lg font-medium text-white text-center">{detail.value}</span>
           </div>
@@ -81,8 +81,8 @@ const BuildingSlide = ({
                 key={index}
                 className="flex items-center gap-3 p-3 md:p-4 rounded-lg bg-white/5 border border-white/10"
               >
-                <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <FeatureIcon className="h-4 w-4 md:h-5 md:w-5 text-emerald-400" />
+                <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#4a9a9a]/20 flex items-center justify-center">
+                  <FeatureIcon className="h-4 w-4 md:h-5 md:w-5 text-[#4a9a9a]" />
                 </div>
                 <span className="text-sm md:text-base text-white/80">{feature}</span>
               </div>

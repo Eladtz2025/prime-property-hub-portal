@@ -59,7 +59,7 @@ const MarketDataSlide = ({
         {/* Presale Prices */}
         <div className="mb-6 md:mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <Tag className="h-5 w-5 text-emerald-400" />
+            <Tag className="h-5 w-5 text-[#4a9a9a]" />
             <h3 className="text-lg md:text-xl font-semibold text-white">מחירי פריסייל מהיזם</h3>
           </div>
           <div className="grid gap-3 md:gap-4 md:grid-cols-2">
@@ -70,7 +70,7 @@ const MarketDataSlide = ({
               >
                 <div className="flex justify-between items-start mb-3">
                   <span className="text-white font-medium">{unit.name}</span>
-                  <span className="text-lg md:text-xl font-bold text-emerald-400">
+                  <span className="text-lg md:text-xl font-bold text-[#4a9a9a]">
                     {formatPrice(unit.price)}
                   </span>
                 </div>
@@ -86,7 +86,7 @@ const MarketDataSlide = ({
         {/* Building Listings */}
         <div className="mb-6 md:mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <Building2 className="h-5 w-5 text-emerald-400" />
+            <Building2 className="h-5 w-5 text-[#4a9a9a]" />
             <h3 className="text-lg md:text-xl font-semibold text-white">דירות למכירה בבניין</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -106,7 +106,7 @@ const MarketDataSlide = ({
         {/* Neighborhood Listings */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Home className="h-5 w-5 text-emerald-400" />
+            <Home className="h-5 w-5 text-[#4a9a9a]" />
             <h3 className="text-lg md:text-xl font-semibold text-white">דירות למכירה בשכונה</h3>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -125,9 +125,9 @@ const MarketDataSlide = ({
         </div>
 
         {/* Summary Note */}
-        <div className="mt-6 md:mt-8 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 text-center">
+        <div className="mt-6 md:mt-8 rounded-xl border border-[#4a9a9a]/30 bg-gradient-to-br from-[#4a9a9a]/10 to-[#2d3b3a]/10 p-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <TrendingUp className="h-4 w-4 text-[#4a9a9a]" />
             <span className="text-sm font-medium text-white">סיכום</span>
           </div>
           <p className="text-sm text-white/70">
