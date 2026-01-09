@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useSafeAreaBottom } from "@/hooks/useSafeAreaBottom";
 
@@ -12,6 +11,9 @@ interface VideoHeroProps {
 const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
   const navigate = useNavigate();
   const bottomOffset = useSafeAreaBottom(32);
+
+  const defaultImage = "/images/en/hero-telaviv.webp";
+  const imageSrc = imageUrl || defaultImage;
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -27,14 +29,21 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
           <source src={videoUrl} type="video/mp4" />
         </video>
       ) : (
-        <img
-          src={imageUrl || "/images/en/hero-telaviv.jpg"}
-          alt="Hero background"
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-        />
+        <picture>
+          <source
+            type="image/webp"
+            srcSet="/images/en/hero-telaviv-640w.webp 640w, /images/en/hero-telaviv-1024w.webp 1024w, /images/en/hero-telaviv.webp 1920w"
+            sizes="100vw"
+          />
+          <img
+            src={imageSrc}
+            alt="Hero background"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+        </picture>
       )}
 
       {/* Overlay Gradient - Very light for bright daytime */}
