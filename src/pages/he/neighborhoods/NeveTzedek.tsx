@@ -36,6 +36,7 @@ const NeveTzedekNeighborhood = () => {
         title="נווה צדק"
         subtitle="השכונה הראשונה של תל אביב - קסם היסטורי ואווירה בוהמית"
         backgroundImage="/images/en/neighborhoods/neve-tzedek-hero.jpg"
+        backgroundAlt="סמטה היסטורית עם בתי אבן בשכונת נווה צדק תל אביב"
         minHeight="100vh"
       />
 
@@ -131,6 +132,37 @@ const NeveTzedekNeighborhood = () => {
 
         </div>
       </div>
+
+      {/* Internal Links Section */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="font-playfair text-2xl font-bold text-foreground mb-6">
+            נכסים זמינים בנווה צדק
+          </h2>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link 
+              to="/he/sales" 
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              נכסים למכירה
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link 
+              to="/he/rentals" 
+              className="inline-flex items-center gap-2 px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              נכסים להשכרה
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link 
+              to="/he/about" 
+              className="inline-flex items-center gap-2 px-6 py-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              אודות City Market
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <HebrewFooter />
     </div>

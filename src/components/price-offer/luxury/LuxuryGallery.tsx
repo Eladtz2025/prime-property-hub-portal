@@ -4,9 +4,14 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 interface LuxuryGalleryProps {
   images: string[];
   title?: string;
+  propertyAddress?: string;
 }
 
-const LuxuryGallery = ({ images, title }: LuxuryGalleryProps) => {
+const LuxuryGallery = ({ images, title, propertyAddress }: LuxuryGalleryProps) => {
+  const getAltText = (index: number) => {
+    const location = propertyAddress || title || 'Property';
+    return `${location} - Image ${index + 1} of ${images.length}`;
+  };
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   if (!images || images.length === 0) return null;
@@ -33,7 +38,7 @@ const LuxuryGallery = ({ images, title }: LuxuryGalleryProps) => {
           >
             <img 
               src={images[0]} 
-              alt="" 
+              alt={getAltText(0)} 
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
           </div>
@@ -45,9 +50,9 @@ const LuxuryGallery = ({ images, title }: LuxuryGalleryProps) => {
                 className="aspect-[4/3] cursor-pointer overflow-hidden rounded-lg"
                 onClick={() => openLightbox(idx)}
               >
-                <img 
+              <img 
                   src={img} 
-                  alt="" 
+                  alt={getAltText(idx)} 
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 />
               </div>
@@ -63,9 +68,9 @@ const LuxuryGallery = ({ images, title }: LuxuryGalleryProps) => {
                 }`}
                 onClick={() => openLightbox(idx)}
               >
-                <img 
+              <img 
                   src={img} 
-                  alt="" 
+                  alt={getAltText(idx)} 
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 />
                 {idx === 5 && images.length > 6 && (
@@ -111,7 +116,7 @@ const LuxuryGallery = ({ images, title }: LuxuryGalleryProps) => {
 
           <img
             src={images[selectedIndex]}
-            alt=""
+            alt={getAltText(selectedIndex)}
             className="max-h-[90vh] max-w-[90vw] object-contain"
             onClick={(e) => e.stopPropagation()}
           />

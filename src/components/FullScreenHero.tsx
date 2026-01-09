@@ -2,6 +2,7 @@ interface FullScreenHeroProps {
   title: string;
   subtitle?: string;
   backgroundImage: string;
+  backgroundAlt?: string;
   minHeight?: string;
   children?: React.ReactNode;
 }
@@ -17,6 +18,7 @@ const FullScreenHero = ({
   title,
   subtitle,
   backgroundImage,
+  backgroundAlt,
   minHeight = "70vh",
   children
 }: FullScreenHeroProps) => {
@@ -38,7 +40,7 @@ const FullScreenHero = ({
           />
           <img
             src={backgroundImage}
-            alt=""
+            alt={backgroundAlt || `${title} - Hero Image`}
             className="w-full h-full object-cover"
             loading="eager"
             fetchPriority="high"
