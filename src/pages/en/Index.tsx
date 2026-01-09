@@ -12,6 +12,8 @@ import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo/SchemaOrg';
 import { HreflangMeta } from '@/components/seo/HreflangMeta';
+import { ReviewsSchema } from '@/components/seo/ReviewsSchema';
+import GoogleReviews from '@/components/GoogleReviews';
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
   email: z.string().email("Invalid email address").max(255, "Email is too long"),
@@ -256,6 +258,10 @@ Come explore with us the colorful mosaic of Tel Aviv.
           </div>
         </div>
       </section>
+
+      {/* Google Reviews Section */}
+      <ReviewsSchema language="en" />
+      <GoogleReviews />
 
       {/* Footer */}
       <EnglishFooter />
