@@ -14,6 +14,8 @@ import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema, BreadcrumbSchema } from '@/components/seo/SchemaOrg';
 import { HreflangMeta } from '@/components/seo/HreflangMeta';
+import { ReviewsSchema } from '@/components/seo/ReviewsSchema';
+import GoogleReviews from '@/components/GoogleReviews';
 const contactSchema = z.object({
   name: z.string().min(2, "שם חייב להכיל לפחות 2 תווים").max(100, "שם ארוך מדי"),
   email: z.string().email("כתובת אימייל לא תקינה").max(255, "אימייל ארוך מדי"),
@@ -258,6 +260,10 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Google Reviews Section */}
+      <ReviewsSchema language="he" />
+      <GoogleReviews />
 
       {/* Footer */}
       <HebrewFooter />
