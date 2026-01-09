@@ -36,6 +36,7 @@ const OldNorthNeighborhood = () => {
         title="Old North"
         subtitle="Quiet residential area with Bauhaus heritage and family appeal"
         backgroundImage="/images/en/neighborhoods/old-north-hero.jpg"
+        backgroundAlt="Tree-lined street with Bauhaus buildings in Old North Tel Aviv"
         minHeight="100vh"
       />
 
@@ -146,6 +147,37 @@ const OldNorthNeighborhood = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Internal Links Section */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="font-playfair text-2xl font-bold text-foreground mb-6">
+            Properties in Old North
+          </h2>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link 
+              to="/en/sales" 
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Properties for Sale
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+            <Link 
+              to="/en/rentals" 
+              className="inline-flex items-center gap-2 px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              Properties for Rent
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+            <Link 
+              to="/en/about" 
+              className="inline-flex items-center gap-2 px-6 py-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              About City Market
+            </Link>
           </div>
         </div>
       </section>

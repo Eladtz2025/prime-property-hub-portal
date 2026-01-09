@@ -12,7 +12,7 @@ import { ScrollAnimated } from "@/components/about/ScrollAnimated";
 import { Button } from "@/components/ui/button";
 import { ConsultationModal } from "@/components/en/ConsultationModal";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Import testimonial images
@@ -45,7 +45,7 @@ const About = () => {
       <EnglishHeader />
 
       {/* Hero Section - Enhanced */}
-      <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" minHeight="50vh" />
+      <FullScreenHero title="Your Trusted Partners in Tel Aviv" backgroundImage="/images/hero-about.jpg" backgroundAlt="Panoramic view of Tel Aviv skyline" minHeight="50vh" />
 
       {/* Values Section */}
       <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
@@ -85,6 +85,21 @@ const About = () => {
                   Handled with expertise, care, and dedication.
                 </p>
               </div>
+            </div>
+          </ScrollAnimated>
+
+          {/* Internal Links to Services */}
+          <ScrollAnimated>
+            <div className="flex flex-wrap gap-4 justify-center mt-12">
+              <Link to="/en/sales" className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                Properties for Sale
+              </Link>
+              <Link to="/en/rentals" className="px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors font-medium">
+                Properties for Rent
+              </Link>
+              <Link to="/en/management" className="px-6 py-3 border border-muted-foreground text-muted-foreground rounded-lg hover:bg-muted transition-colors font-medium">
+                Property Management
+              </Link>
             </div>
           </ScrollAnimated>
         </div>

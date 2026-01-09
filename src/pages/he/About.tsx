@@ -12,7 +12,7 @@ import { ScrollAnimated } from "@/components/about/ScrollAnimated";
 import { Button } from "@/components/ui/button";
 import { ConsultationModal } from "@/components/he/ConsultationModal";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Import testimonial images
@@ -43,7 +43,7 @@ const About = () => {
       <HebrewHeader />
 
       {/* Hero Section - Enhanced */}
-      <FullScreenHero title="הכתובת שלכם לנדל״ן בתל אביב" backgroundImage="/images/hero-about.jpg" minHeight="50vh" />
+      <FullScreenHero title="הכתובת שלכם לנדל״ן בתל אביב" backgroundImage="/images/hero-about.jpg" backgroundAlt="נוף פנורמי של קו הרקיע של תל אביב" minHeight="50vh" />
 
       {/* Values Section */}
       <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
@@ -83,6 +83,21 @@ const About = () => {
                   מנוהלים ומטופלים במקצועיות ובמסירות
                 </p>
               </div>
+            </div>
+          </ScrollAnimated>
+
+          {/* Internal Links to Services */}
+          <ScrollAnimated>
+            <div className="flex flex-wrap gap-4 justify-center mt-12">
+              <Link to="/he/sales" className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                נכסים למכירה
+              </Link>
+              <Link to="/he/rentals" className="px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors font-medium">
+                נכסים להשכרה
+              </Link>
+              <Link to="/he/management" className="px-6 py-3 border border-muted-foreground text-muted-foreground rounded-lg hover:bg-muted transition-colors font-medium">
+                ניהול נכסים
+              </Link>
             </div>
           </ScrollAnimated>
         </div>
