@@ -57,7 +57,7 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
         {/* Subtitle */}
         {subtitle && (
           <p 
-            className="font-montserrat text-base md:text-xl text-white/70 font-light max-w-3xl leading-relaxed mb-8 md:mb-12"
+            className="font-montserrat text-base md:text-xl text-white font-light max-w-3xl leading-relaxed mb-8 md:mb-12"
             style={textShadowStyle}
           >
             {subtitle}
