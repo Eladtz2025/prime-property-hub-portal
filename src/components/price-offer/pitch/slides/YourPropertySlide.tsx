@@ -37,12 +37,7 @@ const YourPropertySlide = ({
     { icon: "balcony", title: "מרפסת", value: "15 מ״ר" },
     { icon: "parking", title: "חניה", value: "2 מקומות" },
   ],
-  uniquePoints = [
-    "נוף פתוח לים - יתרון משמעותי שמעלה ערך",
-    "שיפוץ טרי בשנתיים האחרונות - הקונים יעריכו",
-    "מיקום מבוקש - קרוב לחוף ולתחבורה ציבורית",
-    "כניסה מיידית - מאפשר גמישות במו״מ",
-  ],
+  uniquePoints,
 }: YourPropertySlideProps) => {
   return (
     <div className="flex h-full w-full flex-col items-center justify-start px-4 md:px-8 pt-16 pb-28 md:pt-24 md:pb-32 overflow-y-auto">
@@ -53,9 +48,9 @@ const YourPropertySlide = ({
           <p className="text-base md:text-lg text-white/60">{subtitle}</p>
         </div>
 
-        <div className="flex flex-col gap-6 md:gap-8 lg:flex-row">
+        <div className={`flex flex-col gap-6 md:gap-8 ${uniquePoints && uniquePoints.length > 0 ? 'lg:flex-row' : ''}`}>
           {/* Left: Property Image + Address */}
-          <div className="flex-1">
+          <div className={uniquePoints && uniquePoints.length > 0 ? "flex-1" : "w-full"}>
             <div className="relative mb-3 md:mb-4 overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5">
               {propertyImage ? (
                 <img
@@ -95,27 +90,29 @@ const YourPropertySlide = ({
             </div>
           </div>
 
-          {/* Right: Unique Points */}
-          <div className="flex flex-1 flex-col">
-            <div className="mb-3 md:mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-[#f5c242]" />
-              <h3 className="text-base md:text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
-            </div>
+          {/* Right: Unique Points - only show if provided */}
+          {uniquePoints && uniquePoints.length > 0 && (
+            <div className="flex flex-1 flex-col">
+              <div className="mb-3 md:mb-4 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-[#f5c242]" />
+                <h3 className="text-base md:text-lg font-semibold text-white">נקודות החוזק של הנכס</h3>
+              </div>
 
-            <div className="space-y-2 md:space-y-3">
-              {uniquePoints.map((point, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-2 md:gap-3 rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-3 md:p-4"
-                >
-                  <div className="mt-0.5 flex h-5 w-5 md:h-6 md:w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#4a9a9a]/20 text-xs md:text-sm font-bold text-[#4a9a9a]">
-                    {index + 1}
+              <div className="space-y-2 md:space-y-3">
+                {uniquePoints.map((point, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-2 md:gap-3 rounded-lg md:rounded-xl border border-white/10 bg-white/5 p-3 md:p-4"
+                  >
+                    <div className="mt-0.5 flex h-5 w-5 md:h-6 md:w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#4a9a9a]/20 text-xs md:text-sm font-bold text-[#4a9a9a]">
+                      {index + 1}
+                    </div>
+                    <p className="text-sm md:text-base text-white/80">{point}</p>
                   </div>
-                  <p className="text-sm md:text-base text-white/80">{point}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

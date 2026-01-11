@@ -17,6 +17,7 @@ import SuccessStoriesSlide from "./slides/SuccessStoriesSlide";
 import TransparencySlide from "./slides/TransparencySlide";
 import ValuationSlide from "./slides/ValuationSlide";
 import BuildingSlide from "./slides/BuildingSlide";
+import HighlightsSlide from "./slides/HighlightsSlide";
 import AreaBreakdownSlide from "./slides/AreaBreakdownSlide";
 import TimelineSlide from "./slides/TimelineSlide";
 import GallerySlide from "./slides/GallerySlide";
@@ -138,8 +139,24 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 2: About Me
-  slides.push({ type: "about_me", data: {} });
+  // Slide 2: Highlights
+  slides.push({
+    type: "highlights",
+    data: {
+      title: "חוזקות הנכס",
+      subtitle: "מה שהופך את הנכס הזה למיוחד",
+      highlights: [
+        "מערכת Smart Home מתקדמת",
+        "מטבח Bulthaup יוקרתי",
+        "שתי מרפסות מרווחות",
+        "חניון רובוטי",
+        "שני מקלטים תת-קרקעיים",
+        "חדר אופניים ייעודי",
+        "לובי מעוצב",
+        "בניין חדש בנווה צדק",
+      ],
+    },
+  });
 
   // Slide 3: Building Details
   slides.push({
@@ -152,12 +169,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       units: 17,
       developer: "חברת אלטנוילנד",
       architect: "יניב פרדו",
-        features: [
-          "שני מקלטים תת-קרקעיים כולל שירותים",
-          "חדר אופניים ייעודי לדיירים",
-          "חניון רובוטי",
-          "לובי מעוצב",
-        ],
     },
   });
 
@@ -174,12 +185,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         { icon: "rooms", title: "חדרים", value: "3" },
         { icon: "price", title: "מחיר למ״ר", value: "₪75,129" },
       ],
-        uniquePoints: [
-          "מערכת Smart Home מתקדמת",
-          "מטבח Bulthaup יוקרתי בעיצוב מינימליסטי",
-          "שתי מרפסות מרווחות (סלון וחדר שינה)",
-          "חלל פתוח עם אור טבעי משני כיוונים",
-        ],
     },
   });
 
@@ -351,6 +356,9 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
+  // Slide 13: About Me (moved to end)
+  slides.push({ type: "about_me", data: {} });
+
   const totalSlides = slides.length;
 
   const goToSlide = useCallback((index: number) => {
@@ -442,6 +450,8 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         return <VisualStrategySlide {...slide.data} />;
       case "valuation":
         return <ValuationSlide {...slide.data} />;
+      case "highlights":
+        return <HighlightsSlide {...slide.data} />;
       case "building":
         return <BuildingSlide {...slide.data} />;
       case "area_breakdown":
