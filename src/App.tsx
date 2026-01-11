@@ -57,6 +57,7 @@ const ImportFromStorage = React.lazy(() => import('./pages/ImportFromStorage'));
 const WhatsAppCenter = React.lazy(() => import('./pages/WhatsAppCenter'));
 const PriceOfferView = React.lazy(() => import('./pages/PriceOfferView'));
 const PriceOfferLuxuryView = React.lazy(() => import('./pages/PriceOfferLuxuryView'));
+const PriceOfferLightView = React.lazy(() => import('./pages/PriceOfferLightView'));
 const AdminPriceOffers = React.lazy(() => import('./pages/AdminPriceOffers'));
 const PriceOfferBuilder = React.lazy(() => import('./pages/PriceOfferBuilder'));
 const ExclusivityFormPage = React.lazy(() => import('./pages/ExclusivityFormPage'));
@@ -118,6 +119,7 @@ const AppContent: React.FC = () => {
           {/* Price Offer Public Views - Clean pages without layout */}
           <Route path="/price-offer/:token" element={<PriceOfferView />} />
           <Route path="/offer-luxury/:token" element={<PriceOfferLuxuryView />} />
+          <Route path="/offer-light/:token" element={<PriceOfferLightView />} />
           
           {/* Public pages - Redirects to /he/ */}
           <Route path="/" element={<Navigate to="/he" replace />} />
