@@ -135,11 +135,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       title: "יצחק אלחנן 14",
       subtitle: "דירת 3 חדרים בבניין חדש בנווה צדק",
       backgroundImage: heroImage,
-      stats: [
-        { label: "מחיר", value: "₪5.25M" },
-        { label: "שטח", value: "69.9 מ״ר" },
-        { label: "חדרים", value: "3" },
-      ],
     },
   });
 

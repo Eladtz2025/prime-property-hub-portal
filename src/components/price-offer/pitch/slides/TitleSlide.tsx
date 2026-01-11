@@ -12,7 +12,7 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
 
   return (
     <div className="relative h-full w-full flex items-center justify-center overflow-y-auto">
-      {/* Background Image with Overlay */}
+      {/* Background Image */}
       {backgroundImage && (
         <div className="absolute inset-0">
           <img
@@ -20,7 +20,6 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
             alt=""
             className="h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/40" />
         </div>
       )}
 
