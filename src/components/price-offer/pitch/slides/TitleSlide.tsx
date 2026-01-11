@@ -82,14 +82,6 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
             ))}
           </div>
         )}
-
-        {/* Scroll Hint - hidden on mobile */}
-        <div className="hidden md:flex absolute bottom-32 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-white/40">
-          <span className="text-xs tracking-widest uppercase">גלול או לחץ להמשך</span>
-          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
-            <div className="w-1 h-2 bg-white/60 rounded-full animate-bounce" />
-          </div>
-        </div>
       </div>
     </div>
   );
