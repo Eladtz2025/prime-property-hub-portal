@@ -2,10 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import LightPitchNavigation from "./LightPitchNavigation";
 import LightTitleSlide from "./slides/LightTitleSlide";
-import LightTableOfContentsSlide from "./slides/LightTableOfContentsSlide";
-import LightAboutUsSlide from "./slides/LightAboutUsSlide";
-import LightOurServicesSlide from "./slides/LightOurServicesSlide";
-import LightSalesProcessSlide from "./slides/LightSalesProcessSlide";
 import LightPropertyListingSlide from "./slides/LightPropertyListingSlide";
 import LightPropertyDetailsSlide from "./slides/LightPropertyDetailsSlide";
 import LightPropertyFeaturesSlide from "./slides/LightPropertyFeaturesSlide";
@@ -14,6 +10,9 @@ import LightFeaturesGridSlide from "./slides/LightFeaturesGridSlide";
 import LightComparativeAnalysisSlide from "./slides/LightComparativeAnalysisSlide";
 import LightNeighborhoodLifestyleSlide from "./slides/LightNeighborhoodLifestyleSlide";
 import LightNeighborhoodSlide from "./slides/LightNeighborhoodSlide";
+import LightSalesProcessSlide from "./slides/LightSalesProcessSlide";
+import LightOurServicesSlide from "./slides/LightOurServicesSlide";
+import LightAboutUsSlide from "./slides/LightAboutUsSlide";
 import LightContactSlide from "./slides/LightContactSlide";
 
 interface LightPitchDeckProps {
@@ -30,10 +29,6 @@ const LightPitchDeck = ({
 
   const slides = [
     { component: <LightTitleSlide propertyAddress={propertyAddress} propertyCity={propertyCity} /> },
-    { component: <LightTableOfContentsSlide /> },
-    { component: <LightAboutUsSlide /> },
-    { component: <LightOurServicesSlide /> },
-    { component: <LightSalesProcessSlide /> },
     { component: <LightPropertyListingSlide propertyAddress={`${propertyAddress}, ${propertyCity}`} /> },
     { component: <LightPropertyDetailsSlide /> },
     { component: <LightPropertyFeaturesSlide /> },
@@ -42,6 +37,9 @@ const LightPitchDeck = ({
     { component: <LightComparativeAnalysisSlide /> },
     { component: <LightNeighborhoodLifestyleSlide /> },
     { component: <LightNeighborhoodSlide /> },
+    { component: <LightSalesProcessSlide /> },
+    { component: <LightOurServicesSlide /> },
+    { component: <LightAboutUsSlide /> },
     { component: <LightContactSlide /> },
   ];
 
