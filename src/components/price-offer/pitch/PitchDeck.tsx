@@ -152,12 +152,12 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
       units: 17,
       developer: "חברת אלטנוילנד",
       architect: "יניב פרדו",
-      features: [
-        "מערכת Smart Home מתקדמת",
-        "מטבח Bulthaup יוקרתי",
-        "חניון רובוטי",
-        "לובי מעוצב",
-      ],
+        features: [
+          "שני מקלטים תת-קרקעיים כולל שירותים",
+          "חדר אופניים ייעודי לדיירים",
+          "חניון רובוטי",
+          "לובי מעוצב",
+        ],
     },
   });
 
@@ -174,12 +174,12 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         { icon: "rooms", title: "חדרים", value: "3" },
         { icon: "price", title: "מחיר למ״ר", value: "₪75,129" },
       ],
-      uniquePoints: [
-        "מערכת Smart Home מתקדמת",
-        "מטבח Bulthaup יוקרתי",
-        "שתי מרפסות (סלון וחדר שינה)",
-        "בניין חדש עם חניון רובוטי",
-      ],
+        uniquePoints: [
+          "מערכת Smart Home מתקדמת",
+          "מטבח Bulthaup יוקרתי בעיצוב מינימליסטי",
+          "שתי מרפסות מרווחות (סלון וחדר שינה)",
+          "חלל פתוח עם אור טבעי משני כיוונים",
+        ],
     },
   });
 
