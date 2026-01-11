@@ -30,9 +30,9 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
       )}
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 text-center max-w-5xl mx-auto pt-8 md:pt-12 pb-40 md:pb-32">
+      <div className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 text-center max-w-5xl mx-auto">
         {/* Logo */}
-        <div className="mb-4 md:mb-8 flex flex-col items-center gap-2">
+        <div className="mb-6 md:mb-10 flex flex-col items-center gap-2">
           <img 
             src={cityMarketLogo} 
             alt="City Market Properties" 
@@ -48,7 +48,7 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
 
         {/* Main Title */}
         <h1 
-          className="font-playfair text-3xl md:text-5xl lg:text-7xl font-normal text-white mb-4 md:mb-6 leading-tight"
+          className="font-playfair text-4xl md:text-6xl lg:text-8xl font-normal text-white mb-4 md:mb-6 leading-tight"
           style={textShadowStyle}
         >
           {title}
@@ -57,7 +57,7 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
         {/* Subtitle */}
         {subtitle && (
           <p 
-            className="font-montserrat text-base md:text-xl text-white font-light max-w-3xl leading-relaxed mb-8 md:mb-12"
+            className="font-montserrat text-lg md:text-2xl text-white font-light max-w-3xl leading-relaxed"
             style={textShadowStyle}
           >
             {subtitle}
