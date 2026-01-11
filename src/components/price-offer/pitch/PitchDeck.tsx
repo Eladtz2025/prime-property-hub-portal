@@ -139,12 +139,12 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
     },
   });
 
-  // Slide 2: Highlights
+  // Slide 2: Property (Highlights + Building Details combined)
   slides.push({
     type: "highlights",
     data: {
-      title: "חוזקות הנכס",
-      subtitle: "מה שהופך את הנכס הזה למיוחד",
+      title: "הנכס",
+      subtitle: "יצחק אלחנן 14, נווה צדק",
       highlights: [
         "מערכת Smart Home מתקדמת",
         "מטבח Bulthaup יוקרתי",
@@ -155,16 +155,6 @@ const PitchDeck = ({ offer, blocks, images }: PitchDeckProps) => {
         "לובי מעוצב",
         "בניין חדש בנווה צדק",
       ],
-    },
-  });
-
-  // Slide 3: Building Details
-  slides.push({
-    type: "building",
-    data: {
-      title: "הבניין",
-      subtitle: "פרויקט יוקרה בנווה צדק",
-      gushHelka: "6922/1",
       floors: 4,
       units: 17,
       developer: "חברת אלטנוילנד",
