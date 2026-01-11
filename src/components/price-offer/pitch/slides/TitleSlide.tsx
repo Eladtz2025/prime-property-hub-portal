@@ -10,6 +10,10 @@ interface TitleSlideProps {
 const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps) => {
   const filteredStats = stats?.filter(Boolean) as Array<{ label: string; value: string }> | undefined;
 
+  const textShadowStyle = {
+    textShadow: '0 2px 8px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.5)'
+  };
+
   return (
     <div className="relative h-full w-full flex items-center justify-center overflow-y-auto">
       {/* Background Image */}
@@ -17,14 +21,16 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
         <div className="absolute inset-0">
           <img
             src={backgroundImage}
-            alt=""
+            alt={`${title} - תמונת נכס`}
             className="h-full w-full object-cover"
           />
+          {/* Subtle bottom gradient only */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         </div>
       )}
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 text-center max-w-5xl mx-auto pt-16 md:pt-20 pb-32 md:pb-24">
+      <div className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 text-center max-w-5xl mx-auto pt-8 md:pt-12 pb-40 md:pb-32">
         {/* Logo */}
         <div className="mb-4 md:mb-8 flex flex-col items-center gap-2">
           <img 
@@ -32,19 +38,28 @@ const TitleSlide = ({ title, subtitle, backgroundImage, stats }: TitleSlideProps
             alt="City Market Properties" 
             className="h-14 w-14 md:h-20 md:w-20"
           />
-          <span className="text-sm md:text-lg font-bold tracking-[0.15em] md:tracking-[0.2em] text-white/90 uppercase">
+          <span 
+            className="text-sm md:text-lg font-bold tracking-[0.15em] md:tracking-[0.2em] text-white/90 uppercase"
+            style={textShadowStyle}
+          >
             City Market Properties
           </span>
         </div>
 
         {/* Main Title */}
-        <h1 className="font-playfair text-3xl md:text-5xl lg:text-7xl font-normal text-white mb-4 md:mb-6 leading-tight">
+        <h1 
+          className="font-playfair text-3xl md:text-5xl lg:text-7xl font-normal text-white mb-4 md:mb-6 leading-tight"
+          style={textShadowStyle}
+        >
           {title}
         </h1>
 
         {/* Subtitle */}
         {subtitle && (
-          <p className="font-montserrat text-base md:text-xl text-white/70 font-light max-w-3xl leading-relaxed mb-8 md:mb-12">
+          <p 
+            className="font-montserrat text-base md:text-xl text-white/70 font-light max-w-3xl leading-relaxed mb-8 md:mb-12"
+            style={textShadowStyle}
+          >
             {subtitle}
           </p>
         )}
