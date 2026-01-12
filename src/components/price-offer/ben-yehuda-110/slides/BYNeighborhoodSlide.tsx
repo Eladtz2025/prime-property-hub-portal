@@ -47,44 +47,60 @@ const BYNeighborhoodSlide = () => {
         {/* Decorative Line */}
         <div className="w-16 md:w-20 h-px bg-[#f5c242] mb-3 md:mb-4" />
 
-        {/* Top Row: Beach Badge + Map */}
-        <div className="w-full max-w-3xl flex flex-col md:flex-row gap-3 md:gap-4 mb-3 md:mb-4">
-          {/* Beach Distance Banner - Left side */}
-          <div className="bg-[#f5c242]/20 backdrop-blur-sm border border-[#f5c242]/40 rounded-xl px-4 md:px-6 py-2 md:py-3 flex items-center gap-3 md:gap-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242] flex items-center justify-center">
-              <Waves className="w-5 h-5 md:w-6 md:h-6 text-white" />
+        {/* Top Row: Map with Beach Badge inside */}
+        <div className="w-full max-w-3xl mb-3 md:mb-4">
+          {/* Desktop: Map Container with Beach Badge inside */}
+          <div className="relative hidden md:flex w-full bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 items-center justify-center">
+            
+            {/* Beach Badge - Small square, positioned inside map on left */}
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 bg-[#f5c242]/25 backdrop-blur-sm border border-[#f5c242]/50 rounded-lg p-3 flex flex-col items-center justify-center z-10">
+              <div className="w-10 h-10 rounded-full bg-[#f5c242] flex items-center justify-center mb-1">
+                <Waves className="w-5 h-5 text-white" />
+              </div>
+              <span 
+                className="text-2xl font-bold text-[#f5c242]"
+                style={{ textShadow: softShadow }}
+              >
+                3
+              </span>
+              <span className="text-xs text-white/90 text-center">min to beach</span>
+            </div>
+            
+            {/* SVG Map */}
+            <div className="relative h-24 w-full pl-20">
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
+                <line x1="80" y1="50" x2="350" y2="50" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+                <line x1="215" y1="15" x2="215" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+                <circle cx="215" cy="50" r="8" fill="#f5c242" />
+                <text x="215" y="75" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
+                <circle cx="100" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+                <text x="100" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
+                <circle cx="330" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+                <text x="330" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
+                <text x="157" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
+                <text x="272" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
+              </svg>
+            </div>
+          </div>
+          
+          {/* Mobile: Beach Badge only */}
+          <div className="md:hidden bg-[#f5c242]/20 backdrop-blur-sm border border-[#f5c242]/40 rounded-xl px-4 py-2 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#f5c242] flex items-center justify-center">
+              <Waves className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
               <span 
-                className="text-2xl md:text-4xl font-bold text-[#f5c242]"
+                className="text-2xl font-bold text-[#f5c242]"
                 style={{ textShadow: softShadow }}
               >
                 3
               </span>
               <span 
-                className="text-base md:text-xl font-light text-white ml-2"
+                className="text-base font-light text-white ml-2"
                 style={{ textShadow: softShadow }}
               >
                 min to the beach
               </span>
-            </div>
-          </div>
-
-          {/* Stylized Map - Right side, hidden on mobile */}
-          <div className="hidden md:flex flex-1 bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 items-center justify-center">
-            <div className="relative h-24 w-full">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
-                <line x1="50" y1="50" x2="350" y2="50" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
-                <line x1="200" y1="15" x2="200" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
-                <circle cx="200" cy="50" r="8" fill="#f5c242" />
-                <text x="200" y="75" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
-                <circle cx="80" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
-                <text x="80" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
-                <circle cx="320" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
-                <text x="320" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
-                <text x="140" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
-                <text x="260" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
-              </svg>
             </div>
           </div>
         </div>
