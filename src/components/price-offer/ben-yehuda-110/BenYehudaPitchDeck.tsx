@@ -124,7 +124,7 @@ const BenYehudaPitchDeck = () => {
         <button
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8b7765]/30 backdrop-blur-sm text-[#2d3b3a] transition-all hover:bg-[#8b7765]/50 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
@@ -138,7 +138,7 @@ const BenYehudaPitchDeck = () => {
               className={`h-2 rounded-full transition-all ${
                 index === currentSlide
                   ? "w-6 bg-white"
-                  : "w-2 bg-[#2d3b3a]/30 hover:bg-[#2d3b3a]/50"
+                  : "w-2 bg-white/40 hover:bg-white/60"
               }`}
             />
           ))}
@@ -147,7 +147,7 @@ const BenYehudaPitchDeck = () => {
         <button
           onClick={nextSlide}
           disabled={currentSlide === slides.length - 1}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8b7765]/30 backdrop-blur-sm text-[#2d3b3a] transition-all hover:bg-[#8b7765]/50 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
