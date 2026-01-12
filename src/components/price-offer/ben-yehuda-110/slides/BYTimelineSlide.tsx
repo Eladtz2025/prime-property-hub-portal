@@ -1,3 +1,5 @@
+import { FileSearch, Users, MessageSquare, CheckCircle } from 'lucide-react';
+
 interface BYTimelineSlideProps {
   content?: {
     title?: string;
@@ -10,20 +12,28 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
 
   const timelineItems = [
     {
+      number: 1,
       period: "Week 1",
-      description: "Pricing validation, positioning, preparation"
+      description: "Pricing validation, positioning, preparation",
+      icon: FileSearch
     },
     {
+      number: 2,
       period: "Weeks 2–3",
-      description: "Targeted soft launch to qualified buyers"
+      description: "Targeted soft launch to qualified buyers",
+      icon: Users
     },
     {
+      number: 3,
       period: "Weeks 4–6",
-      description: "Buyer feedback, refinement, negotiations"
+      description: "Buyer feedback, refinement, negotiations",
+      icon: MessageSquare
     },
     {
+      number: 4,
       period: "Ongoing",
-      description: "Offer management and closing strategy"
+      description: "Offer management and closing strategy",
+      icon: CheckCircle
     }
   ];
   
@@ -57,44 +67,101 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-white mb-6 md:mb-8" />
+        <div className="w-16 h-px bg-[#f5c242] mb-6 md:mb-8" />
 
-        {/* Timeline Container */}
-        <div className="w-full max-w-3xl">
-          <div className="relative">
-            {/* Vertical Line - Hidden on mobile */}
-            <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-px bg-white/30" />
+        {/* Horizontal Timeline - Desktop */}
+        <div className="hidden md:block w-full max-w-5xl">
+          {/* Progress Line */}
+          <div className="relative mb-8">
+            <div className="absolute top-6 left-0 right-0 h-1 bg-white/20 rounded-full" />
+            <div 
+              className="absolute top-6 left-0 h-1 rounded-full"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(to right, rgba(255,255,255,0.3), #f5c242)'
+              }}
+            />
+            
+            {/* Numbered Circles */}
+            <div className="relative flex justify-between">
+              {timelineItems.map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                  <div key={index} className="flex flex-col items-center" style={{ width: '25%' }}>
+                    <div className="w-12 h-12 rounded-full bg-[#f5c242] flex items-center justify-center text-white font-bold text-lg z-10 shadow-lg">
+                      {item.number}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-            {/* Timeline Items */}
-            <div className="space-y-4 md:space-y-6">
-              {timelineItems.map((item, index) => (
+          {/* Timeline Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            {timelineItems.map((item, index) => {
+              const IconComponent = item.icon;
+              return (
                 <div 
                   key={index}
-                  className="relative flex flex-col md:flex-row items-center gap-3 md:gap-6"
+                  className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 text-center"
                 >
-                  {/* Period Badge */}
-                  <div className="md:w-1/3 md:text-right">
-                    <span 
-                      className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm md:text-base font-medium"
-                      style={{ textShadow: softShadow }}
-                    >
-                      {item.period}
-                    </span>
-                  </div>
+                  <IconComponent className="w-6 h-6 text-[#f5c242] mx-auto mb-2" />
+                  <p 
+                    className="text-[#f5c242] font-medium text-sm mb-2"
+                    style={{ textShadow: softShadow }}
+                  >
+                    {item.period}
+                  </p>
+                  <p className="text-white/90 text-xs font-light">
+                    {item.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-                  {/* Center Dot - Hidden on mobile */}
-                  <div className="hidden md:flex items-center justify-center w-4 h-4 rounded-full bg-white/80 z-10" />
+        {/* Vertical Timeline - Mobile */}
+        <div className="md:hidden w-full max-w-sm">
+          <div className="relative">
+            {/* Vertical Line */}
+            <div 
+              className="absolute left-6 top-0 bottom-0 w-0.5"
+              style={{
+                background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), #f5c242)'
+              }}
+            />
 
-                  {/* Description Box */}
-                  <div className="md:w-1/2 w-full">
-                    <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-5 text-left md:text-left">
-                      <p className="text-white/90 text-sm md:text-base font-light">
+            {/* Timeline Items */}
+            <div className="space-y-6">
+              {timelineItems.map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                  <div key={index} className="relative flex items-start gap-4">
+                    {/* Number Circle */}
+                    <div className="w-12 h-12 rounded-full bg-[#f5c242] flex items-center justify-center text-white font-bold text-lg z-10 flex-shrink-0 shadow-lg">
+                      {item.number}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconComponent className="w-4 h-4 text-[#f5c242]" />
+                        <span 
+                          className="text-[#f5c242] font-medium text-sm"
+                          style={{ textShadow: softShadow }}
+                        >
+                          {item.period}
+                        </span>
+                      </div>
+                      <p className="text-white/90 text-sm font-light">
                         {item.description}
                       </p>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

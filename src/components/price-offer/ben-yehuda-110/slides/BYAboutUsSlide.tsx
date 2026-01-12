@@ -1,3 +1,5 @@
+import { Globe, Award, Briefcase } from 'lucide-react';
+
 interface BYAboutUsSlideProps {
   content?: {
     title?: string;
@@ -12,11 +14,6 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
     "Boutique, limited-client approach",
     "Tailored strategy for each property",
     "Discretion, clarity, and control"
-  ];
-
-  const ourAdvantage = [
-    "Elad: 15+ years of Tel Aviv market expertise",
-    "Tali: International perspective, communication, trust-building"
   ];
   
   return (
@@ -49,10 +46,10 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-white mb-6 md:mb-8" />
+        <div className="w-16 h-px bg-[#f5c242] mb-6 md:mb-8" />
 
-        {/* Opening Quote */}
-        <div className="w-full max-w-3xl mb-4 md:mb-6">
+        {/* Opening Quote - With Background Box */}
+        <div className="w-full max-w-3xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-5 mb-6">
           <p 
             className="text-white text-lg md:text-xl font-light leading-relaxed"
             style={{ textShadow: softShadow }}
@@ -67,47 +64,73 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
           </p>
         </div>
 
-        {/* Two Column Grid */}
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
-          {/* Boutique Approach Box */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-left">
+        {/* Boutique Approach Box */}
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-left mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Briefcase className="w-5 h-5 text-[#f5c242]" />
             <h3 
-              className="text-lg md:text-xl font-serif text-white mb-4"
+              className="text-lg md:text-xl font-serif text-white"
               style={{ textShadow: softShadow }}
             >
               Boutique Approach
             </h3>
-            <ul className="space-y-2">
-              {boutiqueApproach.map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-white/60 mt-1">•</span>
-                  <span className="text-white/90 text-sm md:text-base font-light">{item}</span>
-                </li>
-              ))}
-            </ul>
           </div>
+          <ul className="space-y-2">
+            {boutiqueApproach.map((item, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-[#f5c242] mt-1">•</span>
+                <span className="text-white/90 text-sm md:text-base font-light">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          {/* Our Advantage Box */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-left">
-            <h3 
-              className="text-lg md:text-xl font-serif text-white mb-4"
+        {/* Two Profile Cards */}
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+          {/* Elad Card */}
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-4">
+              <Award className="w-7 h-7 text-[#f5c242]" />
+            </div>
+            <h4 
+              className="text-lg font-serif text-white mb-2"
               style={{ textShadow: softShadow }}
             >
-              Our Advantage
-            </h3>
-            <ul className="space-y-2">
-              {ourAdvantage.map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-white/60 mt-1">•</span>
-                  <span className="text-white/90 text-sm md:text-base font-light">{item}</span>
-                </li>
-              ))}
-            </ul>
+              Elad Tzabari
+            </h4>
+            <div className="mb-3">
+              <span 
+                className="text-4xl md:text-5xl font-bold text-[#f5c242]"
+                style={{ textShadow: softShadow }}
+              >
+                15+
+              </span>
+              <span className="text-white/80 text-sm ml-2">Years</span>
+            </div>
+            <p className="text-white/90 text-sm font-light">
+              Tel Aviv market expertise
+            </p>
+          </div>
+
+          {/* Tali Card */}
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-4">
+              <Globe className="w-7 h-7 text-[#f5c242]" />
+            </div>
+            <h4 
+              className="text-lg font-serif text-white mb-2"
+              style={{ textShadow: softShadow }}
+            >
+              Tali Silberberg
+            </h4>
+            <p className="text-white/90 text-sm font-light leading-relaxed">
+              International perspective, communication, and trust-building
+            </p>
           </div>
         </div>
 
         {/* Closing Quote */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-5 md:p-8">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-5 md:p-8 border border-[#f5c242]/30">
           <p 
             className="text-white text-base md:text-lg lg:text-xl font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
