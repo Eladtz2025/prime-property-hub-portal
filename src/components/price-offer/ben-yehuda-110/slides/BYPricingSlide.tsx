@@ -114,14 +114,14 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
         </div>
 
         {/* Strategic Positioning */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left mb-3 md:mb-4">
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 text-left mb-6 md:mb-8">
           <h3 
             className="text-sm md:text-lg font-serif text-white mb-2"
             style={{ textShadow: softShadow }}
           >
             Strategic Positioning
           </h3>
-          <ul className="space-y-1.5">
+          <ul className="space-y-1">
             {strategicPositioning.map((item, index) => (
               <li key={index} className="flex items-start gap-2">
                 <span className="text-[#f5c242] mt-0.5">•</span>
