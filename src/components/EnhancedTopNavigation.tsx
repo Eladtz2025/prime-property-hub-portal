@@ -10,7 +10,8 @@ import {
   Users,
   Wrench,
   FileText,
-  ImagePlus
+  ImagePlus,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ const navigationItems = [
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
   { title: "טפסים", url: "/admin-dashboard/forms", icon: FileText },
   { title: "סטודיו תמונות", url: "/admin-dashboard/photo-studio", icon: ImagePlus },
+  { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];
 
