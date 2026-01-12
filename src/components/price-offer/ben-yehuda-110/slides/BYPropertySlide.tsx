@@ -22,8 +22,8 @@ const BYPropertySlide = ({ content }: BYPropertySlideProps) => {
       <div 
         className="absolute inset-0" 
         style={{ 
-          backgroundColor: 'rgba(180, 140, 100, 0.15)',
-          mixBlendMode: 'multiply'
+          backgroundColor: 'rgba(180, 140, 100, 0.35)',
+          mixBlendMode: 'overlay'
         }}
       />
       
