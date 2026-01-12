@@ -1,4 +1,4 @@
-import { Layers, Square, Home, Maximize, Sun, Shield, ArrowUpDown, FileCheck, Building2, Users, Sparkles } from 'lucide-react';
+import { Layers, Square, Home, Maximize, Sun, Shield, ArrowUpDown, FileCheck, Building2, Sparkles } from 'lucide-react';
 
 const BYPropertySlide = () => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
@@ -16,7 +16,6 @@ const BYPropertySlide = () => {
   const buildingDetails = [
     { icon: Building2, text: "Boutique residential building" },
     { icon: Layers, text: "4 floors | 15 apartments" },
-    { icon: Users, text: "Duplex units on top floors" },
     { icon: ArrowUpDown, text: "Elevator" },
     { icon: Sparkles, text: "Well-maintained residential atmosphere" }
   ];
@@ -44,10 +43,11 @@ const BYPropertySlide = () => {
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8">
         {/* Main Title */}
         <h1 
-          className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
+          className="text-lg md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          3-Room Duplex Apartment | Approx. 70 sqm
+          <span className="md:hidden">3-Room Duplex | ~70 sqm</span>
+          <span className="hidden md:inline">3-Room Duplex Apartment | Approx. 70 sqm</span>
         </h1>
 
         {/* Decorative Line */}
