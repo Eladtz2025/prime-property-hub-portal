@@ -10,11 +10,20 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
   
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
-      {/* Background Image - Full opacity, no overlay */}
+      {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: `url('/images/Ben Yehuda 110/99F9645C-C602-48C6-9476-D2ED18714BAF.jpeg')`,
+        }}
+      />
+      
+      {/* Warm sand/orange filter overlay */}
+      <div 
+        className="absolute inset-0" 
+        style={{ 
+          backgroundColor: 'rgba(180, 140, 100, 0.15)',
+          mixBlendMode: 'multiply'
         }}
       />
       
