@@ -58,6 +58,7 @@ const WhatsAppCenter = React.lazy(() => import('./pages/WhatsAppCenter'));
 const PriceOfferView = React.lazy(() => import('./pages/PriceOfferView'));
 const PriceOfferLuxuryView = React.lazy(() => import('./pages/PriceOfferLuxuryView'));
 const PriceOfferLightView = React.lazy(() => import('./pages/PriceOfferLightView'));
+const BenYehudaPitchDeck = React.lazy(() => import('./components/price-offer/ben-yehuda-110/BenYehudaPitchDeck'));
 const AdminPriceOffers = React.lazy(() => import('./pages/AdminPriceOffers'));
 const PriceOfferBuilder = React.lazy(() => import('./pages/PriceOfferBuilder'));
 const ExclusivityFormPage = React.lazy(() => import('./pages/ExclusivityFormPage'));
@@ -120,6 +121,7 @@ const AppContent: React.FC = () => {
           <Route path="/price-offer/:token" element={<PriceOfferView />} />
           <Route path="/offer-luxury/:token" element={<PriceOfferLuxuryView />} />
           <Route path="/offer-light/:token" element={<PriceOfferLightView />} />
+          <Route path="/offer/ben-yehuda-110" element={<BenYehudaPitchDeck />} />
           
           {/* Public pages - Redirects to /he/ */}
           <Route path="/" element={<Navigate to="/he" replace />} />
