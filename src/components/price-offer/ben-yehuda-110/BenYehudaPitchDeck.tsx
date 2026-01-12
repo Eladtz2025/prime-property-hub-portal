@@ -16,7 +16,7 @@ const BenYehudaPitchDeck = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const slides = [
-    { component: <BYTitleSlide currentSlide={1} totalSlides={10} /> },
+    { component: <BYTitleSlide /> },
     { component: <BYPropertySlide /> },
     { component: <BYFeaturesSlide /> },
     { component: <BYNeighborhoodSlide /> },
