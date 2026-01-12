@@ -177,7 +177,8 @@ serve(async (req) => {
             html, 
             url,
             config.property_type === 'both' ? 'rent' : config.property_type,
-            lovableApiKey
+            lovableApiKey,
+            config.cities
           );
 
           console.log(`Extracted ${extractedProperties.length} properties from ${url}`);
@@ -420,11 +421,17 @@ async function extractPropertiesWithAI(
   html: string,
   sourceUrl: string,
   propertyType: 'rent' | 'sale',
-  apiKey: string
+  apiKey: string,
+  targetCities?: string[]
 ): Promise<ScrapedProperty[]> {
   const source = sourceUrl.includes('yad2') ? 'yad2' : 
                  sourceUrl.includes('madlan') ? 'madlan' :
                  sourceUrl.includes('homeless') ? 'homeless' : 'other';
+
+  const cityFilter = targetCities?.length 
+    ? `\n\nIMPORTANT: Extract ONLY properties located in these cities: ${targetCities.join(', ')}. 
+Ignore any "recommended", "similar", or "you might also like" listings from OTHER cities.`
+    : '';
 
   const systemPrompt = `You are a real estate data extraction expert. Extract property listings from the provided content.
 Return a JSON array of properties with these fields:
@@ -441,7 +448,7 @@ Return a JSON array of properties with these fields:
 - description: short description
 - images: array of image URLs if found
 - features: object with boolean keys like {parking: true, elevator: true, balcony: true, mamad: true}
-
+${cityFilter}
 Return ONLY valid JSON array. If no properties found, return [].`;
 
   const userPrompt = `Extract all property listings from this ${source} page content:
@@ -482,7 +489,19 @@ ${markdown.substring(0, 15000)}`;
 
     const properties = JSON.parse(jsonMatch[0]);
     
-    return properties.map((p: any) => ({
+    // Filter by target cities if specified (backup filter)
+    let filteredProperties = properties;
+    if (targetCities?.length) {
+      filteredProperties = properties.filter((p: any) => {
+        const propCity = p.city?.trim();
+        return targetCities.some(targetCity => 
+          propCity?.includes(targetCity) || targetCity.includes(propCity)
+        );
+      });
+      console.log(`Filtered ${properties.length} -> ${filteredProperties.length} properties for cities: ${targetCities.join(', ')}`);
+    }
+
+    return filteredProperties.map((p: any) => ({
       source,
       source_url: p.source_url || sourceUrl,
       source_id: p.source_id || `${source}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
