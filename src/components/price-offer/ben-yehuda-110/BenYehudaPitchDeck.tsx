@@ -119,6 +119,16 @@ const BenYehudaPitchDeck = () => {
         ))}
       </div>
 
+      {/* Page Counter - Top Right */}
+      <div className="absolute top-4 right-4 z-30">
+        <span 
+          className="text-white text-xs md:text-sm font-light tracking-wide"
+          style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+        >
+          {currentSlide + 1} of {slides.length}
+        </span>
+      </div>
+
       {/* Navigation Buttons */}
       <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-center gap-4 px-4">
         <button
