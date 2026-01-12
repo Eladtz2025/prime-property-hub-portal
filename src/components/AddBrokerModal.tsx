@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
+import { validateField, requiredPhoneSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
 interface Property {
   id: string;
@@ -30,6 +32,8 @@ interface AddBrokerModalProps {
   } | null;
 }
 
+type FormFields = 'name' | 'phone';
+
 export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -39,6 +43,27 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
   const [notes, setNotes] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors<FormFields>>({});
+  const [touched, setTouched] = useState<FormTouched<FormFields>>({});
+
+  const validateFormField = (field: FormFields, value: string) => {
+    let error: string | null = null;
+    switch (field) {
+      case 'name':
+        error = validateField(requiredNameSchema, value);
+        break;
+      case 'phone':
+        error = validateField(requiredPhoneSchema, value);
+        break;
+    }
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+    return !error;
+  };
+
+  const handleFieldBlur = (field: FormFields, value: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateFormField(field, value);
+  };
 
   useEffect(() => {
     if (open) {
@@ -87,8 +112,13 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !phone.trim()) {
-      toast.error("יש למלא שם וטלפון");
+    // Validate all required fields
+    const nameValid = validateFormField('name', name);
+    const phoneValid = validateFormField('phone', phone);
+    setTouched({ name: true, phone: true });
+
+    if (!nameValid || !phoneValid) {
+      toast.error("נא לתקן את השדות המסומנים");
       return;
     }
 
@@ -144,10 +174,21 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (touched.name) validateFormField('name', e.target.value);
+              }}
+              onBlur={() => handleFieldBlur('name', name)}
               placeholder="שם המתווך"
+              className={touched.name && errors.name ? 'border-destructive' : ''}
               required
             />
+            {touched.name && errors.name && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.name}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -155,10 +196,21 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
             <Input
               id="phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="מספר טלפון"
+              onChange={(e) => {
+                setPhone(e.target.value);
+                if (touched.phone) validateFormField('phone', e.target.value);
+              }}
+              onBlur={() => handleFieldBlur('phone', phone)}
+              placeholder="050-1234567"
+              className={touched.phone && errors.phone ? 'border-destructive' : ''}
               required
             />
+            {touched.phone && errors.phone && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.phone}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

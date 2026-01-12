@@ -11,11 +11,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 interface ConsultationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Simple validation helpers
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPhone = (phone: string) => {
+  const cleaned = phone.replace(/[-\s]/g, '');
+  return /^(\+?972|0)?[2-9]\d{7,8}$/.test(cleaned);
+};
+
+type FormFields = 'name' | 'phone' | 'email';
+type FormErrors = Partial<Record<FormFields, string>>;
+type FormTouched = Partial<Record<FormFields, boolean>>;
 
 export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps) => {
   const [formData, setFormData] = useState({
@@ -25,9 +37,60 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<FormTouched>({});
+
+  const validateField = (field: FormFields, value: string): string | null => {
+    switch (field) {
+      case 'name':
+        if (!value.trim()) return 'Name is required';
+        if (value.trim().length < 2) return 'Name must be at least 2 characters';
+        return null;
+      case 'phone':
+        if (!value.trim()) return 'Phone is required';
+        if (!isValidPhone(value)) return 'Invalid phone number. Example: 050-1234567';
+        return null;
+      case 'email':
+        if (!value.trim()) return 'Email is required';
+        if (!isValidEmail(value)) return 'Invalid email address';
+        return null;
+    }
+  };
+
+  const handleFieldChange = (field: FormFields, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setErrors(prev => ({ ...prev, [field]: error || undefined }));
+    }
+  };
+
+  const handleFieldBlur = (field: FormFields) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const error = validateField(field, formData[field]);
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate all required fields
+    const nameError = validateField('name', formData.name);
+    const phoneError = validateField('phone', formData.phone);
+    const emailError = validateField('email', formData.email);
+    
+    setTouched({ name: true, phone: true, email: true });
+    setErrors({ 
+      name: nameError || undefined, 
+      phone: phoneError || undefined, 
+      email: emailError || undefined 
+    });
+
+    if (nameError || phoneError || emailError) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -78,29 +141,56 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4 px-1">
-          <Input
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-            className="text-left"
-          />
-          <Input
-            type="tel"
-            placeholder="Phone"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            required
-            className="text-left"
-          />
-          <Input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-            className="text-left"
-          />
+          <div className="space-y-1">
+            <Input
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              onBlur={() => handleFieldBlur('name')}
+              required
+              className={`text-left ${touched.name && errors.name ? 'border-destructive' : ''}`}
+            />
+            {touched.name && errors.name && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.name}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Input
+              type="tel"
+              placeholder="Phone"
+              value={formData.phone}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
+              onBlur={() => handleFieldBlur('phone')}
+              required
+              className={`text-left ${touched.phone && errors.phone ? 'border-destructive' : ''}`}
+            />
+            {touched.phone && errors.phone && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.phone}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) => handleFieldChange('email', e.target.value)}
+              onBlur={() => handleFieldBlur('email')}
+              required
+              className={`text-left ${touched.email && errors.email ? 'border-destructive' : ''}`}
+            />
+            {touched.email && errors.email && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.email}
+              </p>
+            )}
+          </div>
           <Textarea
             placeholder="Your message..."
             value={formData.message}
