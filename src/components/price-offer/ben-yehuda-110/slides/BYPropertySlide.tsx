@@ -10,7 +10,6 @@ const BYPropertySlide = () => {
     { icon: Maximize, text: "Weighted area: approx. 69.9 sqm" },
     { icon: Sun, text: "Two private outdoor spaces" },
     { icon: Shield, text: "MAMAD (secure room)" },
-    { icon: ArrowUpDown, text: "Elevator" },
     { icon: FileCheck, text: "Full ownership, clear registration" }
   ];
 
@@ -18,7 +17,8 @@ const BYPropertySlide = () => {
     { icon: Building2, text: "Boutique residential building" },
     { icon: Layers, text: "4 floors | 15 apartments" },
     { icon: Users, text: "Duplex units on top floors" },
-    { icon: Sparkles, text: "Residential, well-maintained atmosphere" }
+    { icon: ArrowUpDown, text: "Elevator" },
+    { icon: Sparkles, text: "Well-maintained residential atmosphere" }
   ];
 
   return (
