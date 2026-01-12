@@ -51,13 +51,13 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-start pt-12 md:pt-16 text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          POSITIONING & STRATEGY
+          Positioning & Strategy
         </h2>
 
         {/* Decorative Line */}
@@ -69,7 +69,7 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
             className="text-white text-sm md:text-lg lg:text-xl font-light italic"
             style={{ textShadow: softShadow }}
           >
-            "This is not just an apartment — it is a coastal Old North lifestyle asset."
+            "Not just an apartment — a coastal Old North lifestyle asset."
           </p>
         </div>
 
@@ -90,7 +90,7 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
                 </div>
                 
                 <h3 
-                  className="text-xs md:text-sm font-serif text-white mb-2 text-center"
+                  className="text-sm md:text-base font-serif text-white mb-2 text-center"
                   style={{ textShadow: softShadow }}
                 >
                   {column.title}
@@ -99,7 +99,7 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
                   {column.items.map((item, index) => (
                     <li key={index} className="flex items-start gap-1.5">
                       <span className="text-[#f5c242] mt-0.5 text-xs">•</span>
-                      <span className="text-white/90 text-[11px] md:text-sm font-light">{item}</span>
+                      <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
                     </li>
                   ))}
                 </ul>
