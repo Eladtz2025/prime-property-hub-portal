@@ -10,11 +10,20 @@ const BYNeighborhoodSlide = ({ content }: BYNeighborhoodSlideProps) => {
   
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
-      {/* Background Image - Full opacity, no overlay */}
+      {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: `url('/images/Ben Yehuda 110/IMG_5763.JPG')`,
+        }}
+      />
+      
+      {/* Warm sand/orange filter overlay */}
+      <div 
+        className="absolute inset-0" 
+        style={{ 
+          backgroundColor: 'rgba(180, 140, 100, 0.15)',
+          mixBlendMode: 'multiply'
         }}
       />
       
