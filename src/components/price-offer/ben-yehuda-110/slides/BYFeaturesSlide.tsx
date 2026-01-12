@@ -41,7 +41,7 @@ const BYFeaturesSlide = () => {
           className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          Unique Features
+          Unique Features & Positioning
         </h2>
 
         {/* Decorative Line */}
