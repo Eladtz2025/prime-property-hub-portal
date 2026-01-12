@@ -1,6 +1,11 @@
 import cityMarketLogo from "@/assets/city-market-icon.png";
 
-const BYTitleSlide = () => {
+interface BYTitleSlideProps {
+  currentSlide?: number;
+  totalSlides?: number;
+}
+
+const BYTitleSlide = ({ currentSlide = 1, totalSlides = 10 }: BYTitleSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
   
   return (
@@ -21,18 +26,28 @@ const BYTitleSlide = () => {
           mixBlendMode: 'overlay'
         }}
       />
+
+      {/* Logo - Top Left Corner */}
+      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
+        <img 
+          src={cityMarketLogo} 
+          alt="City Market Properties" 
+          className="h-10 md:h-12 lg:h-14 w-auto"
+        />
+      </div>
+
+      {/* Slide Counter - Top Right Corner */}
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20">
+        <span 
+          className="text-white/80 text-sm md:text-base font-light tracking-wider"
+          style={{ textShadow: softShadow }}
+        >
+          {currentSlide} of {totalSlides}
+        </span>
+      </div>
       
       {/* Content - centered */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8">
-        {/* Logo */}
-        <div className="mb-4 md:mb-8">
-          <img 
-            src={cityMarketLogo} 
-            alt="City Market Properties" 
-            className="h-12 md:h-16 lg:h-20 w-auto"
-          />
-        </div>
-
         {/* Decorative Line */}
         <div className="w-16 md:w-24 h-px bg-white mb-4 md:mb-6" />
 
