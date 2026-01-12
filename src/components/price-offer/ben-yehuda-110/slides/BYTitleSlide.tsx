@@ -17,7 +17,7 @@ const BYTitleSlide = () => {
       <div 
         className="absolute inset-0" 
         style={{ 
-          backgroundColor: 'rgba(180, 140, 100, 0.50)',
+          backgroundColor: 'rgba(180, 140, 100, 0.75)',
           mixBlendMode: 'overlay'
         }}
       />
