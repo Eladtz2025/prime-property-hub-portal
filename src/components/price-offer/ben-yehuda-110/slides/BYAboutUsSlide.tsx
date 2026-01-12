@@ -22,7 +22,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/ben-yehuda-110/99F9645C-C602-48C6-9476-D2ED18714BAF.jpeg')`,
+          backgroundImage: `url('/images/ben-yehuda-110/WhatsApp Image 2026-01-12 at 18.45.28.jpeg')`,
         }}
       />
       
@@ -36,13 +36,13 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8" dir="ltr">
         {/* Title */}
         <h2 
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          CITY MARKET PROPERTIES
+          City Market Properties
         </h2>
 
         {/* Decorative Line */}
