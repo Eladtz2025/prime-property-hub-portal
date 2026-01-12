@@ -447,6 +447,48 @@ function buildSearchUrls(config: ScoutConfig): string[] {
   return urls;
 }
 
+// Clean markdown content to remove navigation and focus on property listings
+function cleanMarkdownContent(markdown: string, source: string): string {
+  if (source === 'madlan') {
+    // Look for patterns that indicate property listings start
+    const listingPatterns = [
+      /דירות להשכרה בתל[-\s]?אביב/,
+      /דירות למכירה בתל[-\s]?אביב/,
+      /דירות להשכרה/,
+      /דירות למכירה/,
+      /נמצאו \d+ דירות/,
+      /\d+ דירות נמצאו/,
+      /₪.*חד[׳']/,  // Price followed by rooms indicator
+    ];
+    
+    for (const pattern of listingPatterns) {
+      const match = markdown.search(pattern);
+      if (match > 0) {
+        // Start from a bit before the match to include context
+        return markdown.substring(Math.max(0, match - 100));
+      }
+    }
+  }
+  
+  if (source === 'homeless') {
+    // For homeless, look for property listing indicators
+    const listingPatterns = [
+      /דירות להשכרה/,
+      /דירות למכירה/,
+      /\d+ ח[׳'].*\d+ מ"ר/,  // Rooms and size pattern
+    ];
+    
+    for (const pattern of listingPatterns) {
+      const match = markdown.search(pattern);
+      if (match > 0) {
+        return markdown.substring(Math.max(0, match - 100));
+      }
+    }
+  }
+  
+  return markdown;
+}
+
 async function extractPropertiesWithAI(
   markdown: string,
   html: string,
@@ -464,6 +506,35 @@ async function extractPropertiesWithAI(
 Ignore any "recommended", "similar", or "you might also like" listings from OTHER cities.`
     : '';
 
+  // Source-specific parsing instructions
+  const sourceSpecificInstructions = source === 'madlan' 
+    ? `
+
+MADLAN SPECIFIC INSTRUCTIONS:
+- Each property card contains: price in ₪ format (e.g., ‏5,300 ‏₪), rooms (חד׳), floor (קומה), size in sqm (מ"ר)
+- Address format: "דירה, [street], [neighborhood]" or "פנטהאוז, [street], [neighborhood]"
+- Look for property links containing: /listings/ followed by the listing ID
+- Extract source_id from URL patterns like: https://www.madlan.co.il/listings/[ID]
+- Ignore navigation, filters, and "דירות נוספות" recommendation sections
+- Focus on the main property list, not featured or sponsored listings
+- Extract at least 10-15 properties if available on the page`
+    : source === 'homeless'
+    ? `
+
+HOMELESS SPECIFIC INSTRUCTIONS:
+- Each property shows: rooms (חד׳), floor, size in sqm (מ"ר), and price
+- Look for property links and extract IDs from URLs
+- Address typically includes street and city
+- Extract source_id from the URL or listing identifier`
+    : source === 'yad2'
+    ? `
+
+YAD2 SPECIFIC INSTRUCTIONS:
+- Each property card has: price, rooms, size, floor, and address
+- Look for item IDs in the listings (usually numeric)
+- Extract source_id from data attributes or URL patterns`
+    : '';
+
   const systemPrompt = `You are a real estate data extraction expert. Extract property listings from the provided content.
 Return a JSON array of properties with these fields:
 - source_id: unique ID from the listing (look for item IDs, listing numbers)
@@ -479,12 +550,17 @@ Return a JSON array of properties with these fields:
 - description: short description
 - images: array of image URLs if found
 - features: object with boolean keys like {parking: true, elevator: true, balcony: true, mamad: true}
+${sourceSpecificInstructions}
 ${cityFilter}
 Return ONLY valid JSON array. If no properties found, return [].`;
 
-  const userPrompt = `Extract all property listings from this ${source} page content:
+  // Clean the markdown to remove navigation and focus on listings
+  const cleanedMarkdown = cleanMarkdownContent(markdown, source);
 
-${markdown.substring(0, 15000)}`;
+  const userPrompt = `Extract all property listings from this ${source} page content.
+Focus on the main property list and extract at least 10 properties if available.
+
+${cleanedMarkdown.substring(0, 30000)}`;
 
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
