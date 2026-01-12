@@ -249,9 +249,12 @@ export const ScoutConfigManager: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="yad2">יד2</SelectItem>
-                      <SelectItem value="madlan">מדלן</SelectItem>
-                      <SelectItem value="both">שניהם</SelectItem>
+                      <SelectItem value="madlan">מדל"ן</SelectItem>
+                      <SelectItem value="yad2_private">יד2 - פרטיים בלבד</SelectItem>
+                      <SelectItem value="yad2">יד2 - הכל</SelectItem>
+                      <SelectItem value="homeless">הומלס</SelectItem>
+                      <SelectItem value="both">מדל"ן + יד2 פרטיים</SelectItem>
+                      <SelectItem value="all">כל המקורות</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -386,8 +389,15 @@ export const ScoutConfigManager: React.FC = () => {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="outline">{config.source}</Badge>
-                    <Badge variant="outline">{config.property_type === 'rent' ? 'השכרה' : 'מכירה'}</Badge>
+                    <Badge variant="outline">
+                      {config.source === 'madlan' ? 'מדל"ן' :
+                       config.source === 'yad2_private' ? 'יד2 פרטיים' :
+                       config.source === 'yad2' ? 'יד2' :
+                       config.source === 'homeless' ? 'הומלס' :
+                       config.source === 'both' ? 'מדל"ן + יד2' :
+                       config.source === 'all' ? 'כל המקורות' : config.source}
+                    </Badge>
+                    <Badge variant="outline">{config.property_type === 'rent' ? 'השכרה' : config.property_type === 'sale' ? 'מכירה' : 'השכרה + מכירה'}</Badge>
                     {config.cities?.map(city => (
                       <Badge key={city} variant="outline">{city}</Badge>
                     ))}

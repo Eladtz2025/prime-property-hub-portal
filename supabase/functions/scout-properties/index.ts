@@ -9,7 +9,7 @@ const corsHeaders = {
 interface ScoutConfig {
   id: string;
   name: string;
-  source: 'yad2' | 'madlan' | 'both';
+  source: 'yad2' | 'yad2_private' | 'madlan' | 'homeless' | 'both' | 'all';
   property_type: 'rent' | 'sale' | 'both';
   cities: string[];
   neighborhoods: string[];
@@ -76,7 +76,8 @@ serve(async (req) => {
     if (manual_url) {
       // Manual URL scraping
       const detectedSource = manual_url.includes('yad2') ? 'yad2' : 
-                            manual_url.includes('madlan') ? 'madlan' : 'other';
+                            manual_url.includes('madlan') ? 'madlan' :
+                            manual_url.includes('homeless') ? 'homeless' : 'other';
       const detectedType = manual_url.includes('rent') || manual_url.includes('להשכרה') ? 'rent' : 'sale';
       
       configs = [{
@@ -290,20 +291,40 @@ function buildSearchUrls(config: ScoutConfig): string[] {
     return [config.search_url];
   }
 
-  const sources = config.source === 'both' ? ['yad2', 'madlan'] : [config.source];
+  // Determine which sources to scan
+  let sources: string[] = [];
+  if (config.source === 'both') {
+    sources = ['madlan', 'yad2_private']; // Madlan + Yad2 private
+  } else if (config.source === 'all') {
+    sources = ['madlan', 'yad2_private', 'yad2', 'homeless']; // All sources
+  } else {
+    sources = [config.source];
+  }
+
   const types = config.property_type === 'both' ? ['rent', 'sale'] : [config.property_type];
 
   for (const source of sources) {
     for (const type of types) {
-      if (source === 'yad2') {
+      if (source === 'yad2' || source === 'yad2_private') {
         // Build Yad2 URL
         let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
         const params = new URLSearchParams();
         
         if (config.cities?.length) {
-          // Yad2 uses city codes, but we'll add city names for now
-          params.set('city', config.cities.join(','));
+          // Map Hebrew city names to Yad2 format
+          const cityMap: Record<string, string> = {
+            'תל אביב': 'תל אביב יפו',
+            'תל אביב יפו': 'תל אביב יפו'
+          };
+          const cityName = cityMap[config.cities[0]] || config.cities[0];
+          params.set('city', cityName);
         }
+        
+        // Add private owner filter for yad2_private
+        if (source === 'yad2_private') {
+          params.set('propertyGroup', 'פרטי'); // Filter for private owners only
+        }
+        
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
@@ -313,11 +334,25 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         urls.push(url);
         
       } else if (source === 'madlan') {
-        // Build Madlan URL
+        // Build Madlan URL - Madlan is the priority source
         let url = `https://www.madlan.co.il/${type === 'rent' ? 'rent' : 'sale'}`;
         
         if (config.cities?.length) {
-          url += `/${config.cities[0].replace(/\s+/g, '-')}`;
+          // Map city names for Madlan URL format
+          const citySlug = config.cities[0].replace(/\s+/g, '-');
+          url += `/${citySlug}`;
+        }
+        urls.push(url);
+        
+      } else if (source === 'homeless') {
+        // Build Homeless URL
+        let url = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}`;
+        
+        if (config.cities?.length) {
+          // Homeless uses query params for location
+          const params = new URLSearchParams();
+          params.set('location', config.cities[0]);
+          url += '?' + params.toString();
         }
         urls.push(url);
       }
@@ -335,7 +370,8 @@ async function extractPropertiesWithAI(
   apiKey: string
 ): Promise<ScrapedProperty[]> {
   const source = sourceUrl.includes('yad2') ? 'yad2' : 
-                 sourceUrl.includes('madlan') ? 'madlan' : 'other';
+                 sourceUrl.includes('madlan') ? 'madlan' :
+                 sourceUrl.includes('homeless') ? 'homeless' : 'other';
 
   const systemPrompt = `You are a real estate data extraction expert. Extract property listings from the provided content.
 Return a JSON array of properties with these fields:
