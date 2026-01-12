@@ -73,6 +73,7 @@ const MemorandumFormPage = React.lazy(() => import('./pages/MemorandumFormPage')
 const SaleMemorandumFormPage = React.lazy(() => import('./pages/SaleMemorandumFormPage'));
 const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingFormPage'));
 const PhotoStudio = React.lazy(() => import('./pages/PhotoStudio'));
+const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -368,6 +369,17 @@ const AppContent: React.FC = () => {
                   </Layout>
                 } 
               />
+              <Route 
+                path="/admin-dashboard/property-scout" 
+                element={
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="manager">
+                      <AdminPropertyScout />
+                    </ProtectedRoute>
+                  </Layout>
+                } 
+              />
+              
               
               
               {/* Owner Portal - Separate from Admin */}
