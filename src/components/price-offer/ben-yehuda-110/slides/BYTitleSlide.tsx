@@ -27,17 +27,24 @@ const BYTitleSlide = ({ currentSlide = 1, totalSlides = 10 }: BYTitleSlideProps)
         }}
       />
 
-      {/* Logo - Top Left Corner */}
-      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
+      {/* Slide Counter - Bottom Left Corner */}
+      <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 z-20">
+        <span 
+          dir="ltr"
+          className="text-white text-sm md:text-base font-light tracking-wider bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm"
+          style={{ textShadow: softShadow }}
+        >
+          {currentSlide} of {totalSlides}
+        </span>
+      </div>
+
+      {/* Logo - Bottom Right Corner */}
+      <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-20">
         <img 
           src={cityMarketLogo} 
           alt="City Market Properties" 
           className="h-10 md:h-12 lg:h-14 w-auto"
         />
-      </div>
-
-      {/* Slide Counter - Top Right Corner */}
-      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20">
         <span 
           dir="ltr"
           className="text-white text-sm md:text-base font-light tracking-wider bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm"
