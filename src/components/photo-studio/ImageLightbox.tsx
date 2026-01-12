@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 
 interface ImageLightboxProps {
   images: string[];
@@ -21,6 +21,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   onDownload
 }) => {
   const [zoom, setZoom] = React.useState(1);
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
@@ -57,12 +58,22 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Reset zoom when image changes
+  useEffect(() => {
+    setZoom(1);
+  }, [currentIndex]);
+
   const handleDownload = async () => {
-    if (onDownload && images[currentIndex]) {
-      onDownload(images[currentIndex]);
-    } else if (images[currentIndex]) {
+    const currentImage = images[currentIndex];
+    if (!currentImage) return;
+    
+    setIsDownloading(true);
+    
+    if (onDownload) {
+      onDownload(currentImage);
+    } else {
       try {
-        const response = await fetch(images[currentIndex]);
+        const response = await fetch(currentImage);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -76,6 +87,8 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         console.error('Download failed:', error);
       }
     }
+    
+    setIsDownloading(false);
   };
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.5, 3));
@@ -101,6 +114,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                 size="icon"
                 className="bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                 onClick={handleZoomOut}
+                aria-label="הקטן תמונה"
               >
                 <ZoomOut className="h-5 w-5" />
               </Button>
@@ -109,6 +123,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                 size="icon"
                 className="bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                 onClick={handleZoomIn}
+                aria-label="הגדל תמונה"
               >
                 <ZoomIn className="h-5 w-5" />
               </Button>
@@ -120,14 +135,21 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                 size="icon"
                 className="bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                 onClick={handleDownload}
+                disabled={isDownloading}
+                aria-label="הורד תמונה"
               >
-                <Download className="h-5 w-5" />
+                {isDownloading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5" />
+                )}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                 onClick={onClose}
+                aria-label="סגור תצוגה מלאה"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -140,8 +162,8 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
             style={{ touchAction: 'pinch-zoom' }}
           >
             <img
-              src={images[currentIndex]}
-              alt={`Image ${currentIndex + 1}`}
+              src={currentImage}
+              alt={`תמונה ${currentIndex + 1} מתוך ${images.length}`}
               className="max-w-full max-h-[80vh] object-contain transition-transform"
               style={{ transform: `scale(${zoom})` }}
               draggable={false}
@@ -157,6 +179,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                   size="icon"
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                   onClick={handleNext}
+                  aria-label="תמונה הבאה"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
@@ -167,6 +190,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                   size="icon"
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
                   onClick={handlePrevious}
+                  aria-label="תמונה קודמת"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </Button>

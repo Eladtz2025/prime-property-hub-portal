@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Download, Loader2, ImagePlus, Save } from 'lucide-react';
+import { Sparkles, Download, Loader2, ImagePlus, Save, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
+import { downloadImage, roomTypeTranslations, styleTranslations } from './utils';
 
 const roomTypes = [
   { value: 'living_room', label: 'סלון' },
@@ -35,6 +36,7 @@ export const ImageGenerationTab: React.FC = () => {
   const [style, setStyle] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -49,10 +51,11 @@ export const ImageGenerationTab: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      const roomLabel = roomTypes.find(r => r.value === roomType)?.label || roomType;
-      const styleLabel = styles.find(s => s.value === style)?.label || style;
+      // Use English translations for the AI prompt
+      const roomTypeEn = roomTypeTranslations[roomType] || roomType;
+      const styleEn = styleTranslations[style] || style;
       
-      const prompt = `A professional real estate photography of a ${styleLabel} style ${roomLabel} in Tel Aviv, Israel. High-end interior design, natural lighting, spacious and inviting. ${customPrompt}`.trim();
+      const prompt = `A professional real estate photography of a ${styleEn} style ${roomTypeEn} in Tel Aviv, Israel. High-end interior design, natural lighting, spacious and inviting. ${customPrompt}`.trim();
 
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
         body: { prompt, type: 'generate' }
@@ -73,20 +76,14 @@ export const ImageGenerationTab: React.FC = () => {
   };
 
   const handleDownload = async (imageUrl: string, index: number) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `property-image-${index + 1}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error('שגיאה בהורדת התמונה');
-    }
+    setDownloadingIndex(index);
+    await downloadImage(imageUrl, `property-image-${index + 1}.png`);
+    setDownloadingIndex(null);
+  };
+
+  const handleClearAll = () => {
+    setGeneratedImages([]);
+    toast.success('כל התמונות נמחקו');
   };
 
   const openLightbox = (index: number) => {
@@ -105,7 +102,21 @@ export const ImageGenerationTab: React.FC = () => {
         {/* Gallery - Show first on mobile */}
         <Card className="order-1 lg:order-2">
           <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-lg md:text-xl">תמונות שנוצרו</CardTitle>
+            <CardTitle className="flex items-center justify-between text-lg md:text-xl">
+              <span>תמונות שנוצרו</span>
+              {generatedImages.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label="נקה את כל התמונות"
+                >
+                  <Trash2 className="h-4 w-4 ml-1" />
+                  נקה הכל
+                </Button>
+              )}
+            </CardTitle>
             <CardDescription className="text-sm">
               {generatedImages.length > 0 
                 ? `${generatedImages.length} תמונות נוצרו`
@@ -127,9 +138,10 @@ export const ImageGenerationTab: React.FC = () => {
                   <div key={index} className="relative group rounded-lg overflow-hidden">
                     <img 
                       src={imageUrl} 
-                      alt={`Generated property ${index + 1}`}
+                      alt={`תמונת נכס ${index + 1}`}
                       className="w-full aspect-video object-cover cursor-pointer"
                       onClick={() => openLightbox(index)}
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 md:transition-opacity flex items-center justify-center gap-2">
                       <Button
@@ -137,6 +149,7 @@ export const ImageGenerationTab: React.FC = () => {
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); handleSaveToProperty(imageUrl); }}
                         className="min-h-[44px]"
+                        aria-label="שמור תמונה לנכס"
                       >
                         <Save className="h-4 w-4 ml-1" />
                         <span className="hidden sm:inline">שמור</span>
@@ -146,8 +159,14 @@ export const ImageGenerationTab: React.FC = () => {
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); handleDownload(imageUrl, index); }}
                         className="min-h-[44px]"
+                        disabled={downloadingIndex === index}
+                        aria-label="הורד תמונה"
                       >
-                        <Download className="h-4 w-4 ml-1" />
+                        {downloadingIndex === index ? (
+                          <Loader2 className="h-4 w-4 animate-spin ml-1" />
+                        ) : (
+                          <Download className="h-4 w-4 ml-1" />
+                        )}
                         <span className="hidden sm:inline">הורד</span>
                       </Button>
                     </div>
@@ -158,6 +177,7 @@ export const ImageGenerationTab: React.FC = () => {
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); handleSaveToProperty(imageUrl); }}
                         className="flex-1 min-h-[36px] text-xs"
+                        aria-label="שמור תמונה לנכס"
                       >
                         <Save className="h-3 w-3 ml-1" />
                         שמור
@@ -167,8 +187,14 @@ export const ImageGenerationTab: React.FC = () => {
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); handleDownload(imageUrl, index); }}
                         className="flex-1 min-h-[36px] text-xs"
+                        disabled={downloadingIndex === index}
+                        aria-label="הורד תמונה"
                       >
-                        <Download className="h-3 w-3 ml-1" />
+                        {downloadingIndex === index ? (
+                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                        ) : (
+                          <Download className="h-3 w-3 ml-1" />
+                        )}
                         הורד
                       </Button>
                     </div>
@@ -192,9 +218,9 @@ export const ImageGenerationTab: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
             <div className="space-y-2">
-              <Label>סוג חדר</Label>
+              <Label htmlFor="room-type">סוג חדר</Label>
               <Select value={roomType} onValueChange={setRoomType}>
-                <SelectTrigger className="min-h-[44px]">
+                <SelectTrigger className="min-h-[44px]" id="room-type">
                   <SelectValue placeholder="בחר סוג חדר" />
                 </SelectTrigger>
                 <SelectContent>
@@ -208,9 +234,9 @@ export const ImageGenerationTab: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>סגנון עיצוב</Label>
+              <Label htmlFor="style">סגנון עיצוב</Label>
               <Select value={style} onValueChange={setStyle}>
-                <SelectTrigger className="min-h-[44px]">
+                <SelectTrigger className="min-h-[44px]" id="style">
                   <SelectValue placeholder="בחר סגנון" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,8 +250,9 @@ export const ImageGenerationTab: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>תיאור נוסף (אופציונלי)</Label>
+              <Label htmlFor="custom-prompt">תיאור נוסף (אופציונלי)</Label>
               <Textarea 
+                id="custom-prompt"
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
                 placeholder="הוסף פרטים נוספים כמו: נוף לים, רצפת עץ, תקרה גבוהה..."
