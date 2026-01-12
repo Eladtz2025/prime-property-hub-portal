@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.check-seo-rendered]
 verify_jwt = false
+
+[functions.scout-properties]
+verify_jwt = false
+
+[functions.match-scouted-to-leads]
+verify_jwt = false

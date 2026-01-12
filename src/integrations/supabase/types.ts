@@ -1948,6 +1948,203 @@ export type Database = {
           },
         ]
       }
+      scout_configs: {
+        Row: {
+          cities: string[] | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          last_run_results: Json | null
+          last_run_status: string | null
+          max_price: number | null
+          max_rooms: number | null
+          max_size: number | null
+          min_price: number | null
+          min_rooms: number | null
+          min_size: number | null
+          name: string
+          neighborhoods: string[] | null
+          property_type: string
+          search_url: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          cities?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_results?: Json | null
+          last_run_status?: string | null
+          max_price?: number | null
+          max_rooms?: number | null
+          max_size?: number | null
+          min_price?: number | null
+          min_rooms?: number | null
+          min_size?: number | null
+          name: string
+          neighborhoods?: string[] | null
+          property_type: string
+          search_url?: string | null
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          cities?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_results?: Json | null
+          last_run_status?: string | null
+          max_price?: number | null
+          max_rooms?: number | null
+          max_size?: number | null
+          min_price?: number | null
+          min_rooms?: number | null
+          min_size?: number | null
+          name?: string
+          neighborhoods?: string[] | null
+          property_type?: string
+          search_url?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scout_runs: {
+        Row: {
+          completed_at: string | null
+          config_id: string | null
+          error_message: string | null
+          id: string
+          leads_matched: number | null
+          new_properties: number | null
+          properties_found: number | null
+          source: string
+          started_at: string
+          status: string
+          whatsapp_sent: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          config_id?: string | null
+          error_message?: string | null
+          id?: string
+          leads_matched?: number | null
+          new_properties?: number | null
+          properties_found?: number | null
+          source: string
+          started_at?: string
+          status?: string
+          whatsapp_sent?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          config_id?: string | null
+          error_message?: string | null
+          id?: string
+          leads_matched?: number | null
+          new_properties?: number | null
+          properties_found?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+          whatsapp_sent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_runs_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "scout_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scouted_properties: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          description: string | null
+          features: Json | null
+          first_seen_at: string
+          floor: number | null
+          id: string
+          images: Json | null
+          last_seen_at: string
+          matched_leads: Json | null
+          neighborhood: string | null
+          price: number | null
+          property_type: string | null
+          raw_data: Json | null
+          rooms: number | null
+          size: number | null
+          source: string
+          source_id: string | null
+          source_url: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          first_seen_at?: string
+          floor?: number | null
+          id?: string
+          images?: Json | null
+          last_seen_at?: string
+          matched_leads?: Json | null
+          neighborhood?: string | null
+          price?: number | null
+          property_type?: string | null
+          raw_data?: Json | null
+          rooms?: number | null
+          size?: number | null
+          source: string
+          source_id?: string | null
+          source_url: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          first_seen_at?: string
+          floor?: number | null
+          id?: string
+          images?: Json | null
+          last_seen_at?: string
+          matched_leads?: Json | null
+          neighborhood?: string | null
+          price?: number | null
+          property_type?: string | null
+          raw_data?: Json | null
+          rooms?: number | null
+          size?: number | null
+          source?: string
+          source_id?: string | null
+          source_url?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       seo_checks: {
         Row: {
           ai_analysis: Json | null
