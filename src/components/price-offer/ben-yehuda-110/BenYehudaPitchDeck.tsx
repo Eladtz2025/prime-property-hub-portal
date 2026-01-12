@@ -119,50 +119,55 @@ const BenYehudaPitchDeck = () => {
         ))}
       </div>
 
-      {/* Page Counter - Bottom Left with transparent background */}
-      <div className="absolute bottom-20 md:bottom-24 left-4 z-30">
+      {/* Navigation Buttons with Page Counter */}
+      <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-between px-4">
+        {/* Page Counter - Left side */}
         <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
           <span 
+            dir="ltr"
             className="text-white text-xs md:text-sm font-light tracking-wide"
             style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
           >
             {currentSlide + 1} of {slides.length}
           </span>
         </div>
-      </div>
 
-      {/* Navigation Buttons */}
-      <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-center gap-4 px-4">
-        <button
-          onClick={prevSlide}
-          disabled={currentSlide === 0}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        
-        {/* Slide Indicators */}
-        <div className="flex items-center gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentSlide
-                  ? "w-6 bg-white"
-                  : "w-2 bg-white/40 hover:bg-white/60"
-              }`}
-            />
-          ))}
+        {/* Center Navigation: Arrows + Dots */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={prevSlide}
+            disabled={currentSlide === 0}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          
+          {/* Slide Indicators */}
+          <div className="flex items-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index === currentSlide
+                    ? "w-6 bg-white"
+                    : "w-2 bg-white/40 hover:bg-white/60"
+                }`}
+              />
+            ))}
+          </div>
+          
+          <button
+            onClick={nextSlide}
+            disabled={currentSlide === slides.length - 1}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
         </div>
-        
-        <button
-          onClick={nextSlide}
-          disabled={currentSlide === slides.length - 1}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
+
+        {/* Empty space for balance */}
+        <div className="w-16 md:w-20" />
       </div>
     </div>
   );
