@@ -36,106 +36,101 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-16 overflow-y-auto" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
-          className="text-3xl md:text-5xl font-serif font-light text-white mb-6 md:mb-8"
+          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
           CITY MARKET PROPERTIES
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-[#f5c242] mb-6 md:mb-8" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
-        {/* Opening Quote - With Background Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-5 mb-6">
+        {/* Opening Quote - Hidden on mobile */}
+        <div className="hidden md:block w-full max-w-3xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 mb-4">
           <p 
-            className="text-white text-lg md:text-xl font-light leading-relaxed"
+            className="text-white text-base font-light leading-relaxed"
             style={{ textShadow: softShadow }}
           >
             Selling in prime Tel Aviv requires more than exposure.
-          </p>
-          <p 
-            className="text-white text-lg md:text-xl font-light italic mt-2"
-            style={{ textShadow: softShadow }}
-          >
-            It requires local intelligence, precise positioning, and human insight.
+            <span className="italic ml-1">It requires local intelligence, precise positioning, and human insight.</span>
           </p>
         </div>
 
         {/* Boutique Approach Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-left mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Briefcase className="w-5 h-5 text-[#f5c242]" />
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left mb-3 md:mb-4">
+          <div className="flex items-center gap-2 mb-2 md:mb-3">
+            <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             <h3 
-              className="text-lg md:text-xl font-serif text-white"
+              className="text-sm md:text-lg font-serif text-white"
               style={{ textShadow: softShadow }}
             >
               Boutique Approach
             </h3>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-1 md:space-y-2">
             {boutiqueApproach.map((item, index) => (
               <li key={index} className="flex items-start gap-2">
-                <span className="text-[#f5c242] mt-1">•</span>
-                <span className="text-white/90 text-sm md:text-base font-light">{item}</span>
+                <span className="text-[#f5c242] mt-0.5">•</span>
+                <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Two Profile Cards */}
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-4 mb-3 md:mb-4">
           {/* Elad Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-4">
-              <Award className="w-7 h-7 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2 md:mb-3">
+              <Award className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
             </div>
             <h4 
-              className="text-lg font-serif text-white mb-2"
+              className="text-sm md:text-base font-serif text-white mb-1 md:mb-2"
               style={{ textShadow: softShadow }}
             >
               Elad Tzabari
             </h4>
-            <div className="mb-3">
+            <div className="mb-1 md:mb-2">
               <span 
-                className="text-4xl md:text-5xl font-bold text-[#f5c242]"
+                className="text-2xl md:text-4xl font-bold text-[#f5c242]"
                 style={{ textShadow: softShadow }}
               >
                 15+
               </span>
-              <span className="text-white/80 text-sm ml-2">Years</span>
+              <span className="text-white/80 text-xs ml-1">Years</span>
             </div>
-            <p className="text-white/90 text-sm font-light">
+            <p className="text-white/90 text-xs font-light">
               Tel Aviv market expertise
             </p>
           </div>
 
           {/* Tali Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-4">
-              <Globe className="w-7 h-7 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2 md:mb-3">
+              <Globe className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
             </div>
             <h4 
-              className="text-lg font-serif text-white mb-2"
+              className="text-sm md:text-base font-serif text-white mb-1 md:mb-2"
               style={{ textShadow: softShadow }}
             >
               Tali Silberberg
             </h4>
-            <p className="text-white/90 text-sm font-light leading-relaxed">
-              International perspective, communication, and trust-building
+            <p className="text-white/90 text-xs font-light leading-relaxed">
+              International perspective & trust-building
             </p>
           </div>
         </div>
 
         {/* Closing Quote */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-5 md:p-8 border border-[#f5c242]/30">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 border border-[#f5c242]/30">
           <p 
-            className="text-white text-base md:text-lg lg:text-xl font-light italic leading-relaxed"
+            className="text-white text-xs md:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
-            "Together, we bridge local authenticity and global demand, positioning homes not merely as assets — but as places people genuinely want to live."
+            "Together, we bridge local authenticity and global demand, positioning homes as places people genuinely want to live."
           </p>
         </div>
       </div>

@@ -6,9 +6,7 @@ const BYNeighborhoodSlide = () => {
   const locationHighlights = [
     "Steps from the beach and promenade",
     "Fully walkable daily life",
-    "Cafés, bakeries, galleries, and neighborhood services",
-    "Established, proven residential area",
-    "Coastal living without car dependency"
+    "Cafés, bakeries, galleries, and neighborhood services"
   ];
 
   const appealsTo = [
@@ -37,32 +35,32 @@ const BYNeighborhoodSlide = () => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-12 py-16 overflow-y-auto" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
-          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-6"
+          className="text-lg md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-4"
           style={{ textShadow: softShadow }}
         >
           Old North | Ben Yehuda · Dizengoff · Gordon
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-20 h-px bg-[#f5c242] mb-6" />
+        <div className="w-16 md:w-20 h-px bg-[#f5c242] mb-3 md:mb-4" />
 
         {/* Beach Distance Banner */}
-        <div className="bg-[#f5c242]/20 backdrop-blur-sm border border-[#f5c242]/40 rounded-xl px-8 py-4 mb-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#f5c242] flex items-center justify-center">
-            <Waves className="w-7 h-7 text-white" />
+        <div className="bg-[#f5c242]/20 backdrop-blur-sm border border-[#f5c242]/40 rounded-xl px-4 md:px-8 py-2 md:py-3 mb-3 md:mb-4 flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242] flex items-center justify-center">
+            <Waves className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </div>
           <div className="text-left">
             <span 
-              className="text-4xl md:text-5xl font-bold text-[#f5c242]"
+              className="text-2xl md:text-4xl font-bold text-[#f5c242]"
               style={{ textShadow: softShadow }}
             >
               3
             </span>
             <span 
-              className="text-xl md:text-2xl font-light text-white ml-2"
+              className="text-base md:text-xl font-light text-white ml-2"
               style={{ textShadow: softShadow }}
             >
               min to the beach
@@ -70,48 +68,44 @@ const BYNeighborhoodSlide = () => {
           </div>
         </div>
 
-        {/* Stylized Map */}
-        <div className="w-full max-w-2xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-5 mb-6">
-          <div className="relative h-32 md:h-40">
+        {/* Stylized Map - Hidden on mobile */}
+        <div className="hidden md:block w-full max-w-2xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 mb-4">
+          <div className="relative h-28">
             {/* Map Lines */}
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 120">
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
               {/* Streets */}
-              <line x1="50" y1="60" x2="350" y2="60" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
-              <line x1="200" y1="20" x2="200" y2="100" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+              <line x1="50" y1="50" x2="350" y2="50" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+              <line x1="200" y1="15" x2="200" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
               
               {/* Location dots with labels */}
-              {/* Ben Yehuda 110 - Center */}
-              <circle cx="200" cy="60" r="8" fill="#f5c242" />
-              <text x="200" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
+              <circle cx="200" cy="50" r="8" fill="#f5c242" />
+              <text x="200" y="75" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
               
-              {/* Gordon Beach */}
-              <circle cx="80" cy="60" r="6" fill="rgba(255,255,255,0.8)" />
-              <text x="80" y="45" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
+              <circle cx="80" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+              <text x="80" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
               
-              {/* Dizengoff */}
-              <circle cx="320" cy="60" r="6" fill="rgba(255,255,255,0.8)" />
-              <text x="320" y="45" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
+              <circle cx="320" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+              <text x="320" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
               
-              {/* Distance annotations */}
-              <text x="140" y="55" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
-              <text x="260" y="55" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
+              <text x="140" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
+              <text x="260" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
             </svg>
           </div>
         </div>
 
         {/* Location Highlights */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 md:p-8 text-left mb-6">
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-5 text-left mb-3 md:mb-4">
           <h3 
-            className="text-lg md:text-xl font-medium text-white mb-5 flex items-center gap-2"
+            className="text-sm md:text-lg font-medium text-white mb-2 md:mb-3 flex items-center gap-2"
             style={{ textShadow: softShadow }}
           >
-            <MapPin className="w-5 h-5 text-[#f5c242]" />
+            <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             Location Highlights
           </h3>
-          <ul className="space-y-3">
+          <ul className="space-y-1.5 md:space-y-2">
             {locationHighlights.map((highlight, index) => (
-              <li key={index} className="flex items-start gap-3 text-white/90 text-base md:text-lg">
-                <span className="text-[#f5c242] mt-1">•</span>
+              <li key={index} className="flex items-start gap-2 text-white/90 text-xs md:text-sm">
+                <span className="text-[#f5c242] mt-0.5">•</span>
                 <span>{highlight}</span>
               </li>
             ))}
@@ -119,23 +113,23 @@ const BYNeighborhoodSlide = () => {
         </div>
 
         {/* Appeals To */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-6 md:p-8">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-4 md:p-5">
           <h3 
-            className="text-lg md:text-xl font-medium text-white mb-4"
+            className="text-sm md:text-lg font-medium text-white mb-2 md:mb-3"
             style={{ textShadow: softShadow }}
           >
             Appeals to
           </h3>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
             {appealsTo.map((audience, index) => {
               const icons = [Coffee, ShoppingBag, TreePalm];
               const IconComponent = icons[index];
               return (
                 <span 
                   key={index} 
-                  className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm md:text-base font-light flex items-center gap-2"
+                  className="bg-white/20 backdrop-blur-sm px-3 md:px-4 py-1.5 md:py-2 rounded-full text-white text-xs md:text-sm font-light flex items-center gap-2"
                 >
-                  <IconComponent className="w-4 h-4 text-[#f5c242]" />
+                  <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242]" />
                   {audience}
                 </span>
               );
