@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Eraser, Upload, Download, Loader2, Trash2, Save, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
@@ -29,6 +30,7 @@ export const ElementRemovalTab: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [removalDescription, setRemovalDescription] = useState('');
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -293,7 +295,8 @@ export const ElementRemovalTab: React.FC = () => {
           prompt: 'Remove the masked elements from this image naturally, fill the area with appropriate background',
           image: base64Image,
           mask: maskBase64,
-          type: 'inpaint'
+          type: 'inpaint',
+          removalDescription: removalDescription.trim() || undefined
         }
       });
 
@@ -305,6 +308,7 @@ export const ElementRemovalTab: React.FC = () => {
         setResultUrl(data.imageUrl);
         toast.success('האלמנטים הוסרו בהצלחה!');
         setHasMask(false);
+        setRemovalDescription('');
       }
     } catch (error: any) {
       console.error('Error removing elements:', error);
@@ -472,6 +476,23 @@ export const ElementRemovalTab: React.FC = () => {
                     className="touch-none"
                     aria-labelledby="brush-size-label"
                   />
+                </div>
+
+                {/* Removal Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="removal-description">תיאור מה להסיר (אופציונלי)</Label>
+                  <Textarea
+                    id="removal-description"
+                    value={removalDescription}
+                    onChange={(e) => setRemovalDescription(e.target.value)}
+                    placeholder="לדוגמה: הסר את הכיסא הכחול, מחק את הכבלים על הרצפה..."
+                    maxLength={200}
+                    rows={2}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    הוסף תיאור טקסטואלי לשיפור דיוק ההסרה
+                  </p>
                 </div>
 
                 {/* Actions */}

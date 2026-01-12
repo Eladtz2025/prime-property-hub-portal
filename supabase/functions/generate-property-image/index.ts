@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { type, prompt, image, mask, enhancementType } = await req.json();
+    const { type, prompt, image, mask, enhancementType, removalDescription } = await req.json();
 
     console.log(`Processing ${type} request`);
 
@@ -59,13 +59,21 @@ serve(async (req) => {
       ];
     } else if (type === 'inpaint') {
       // Element removal (inpainting)
+      // Build prompt based on whether user provided description
+      let inpaintPrompt = "Remove the objects marked in white on the mask from the image. Fill in the removed areas naturally with background that matches the surrounding area. Keep the rest of the image exactly the same.";
+      
+      if (removalDescription && removalDescription.trim()) {
+        inpaintPrompt = `Remove the following from the image: ${removalDescription.trim()}. The areas to remove are marked in white on the mask. Fill in the removed areas naturally with background that matches the surrounding area. Keep the rest of the image exactly the same.`;
+        console.log('Using user-provided removal description:', removalDescription);
+      }
+      
       messages = [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Remove the objects marked in white on the mask from the image. Fill in the removed areas naturally with background that matches the surrounding area. Keep the rest of the image exactly the same."
+              text: inpaintPrompt
             },
             {
               type: "image_url",
