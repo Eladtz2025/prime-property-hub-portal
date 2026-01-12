@@ -120,7 +120,7 @@ const BenYehudaPitchDeck = () => {
       </div>
 
       {/* Navigation Buttons with Page Counter */}
-      <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-between px-4">
+      <div dir="ltr" className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-between px-4">
         {/* Page Counter - Left side */}
         <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
           <span 
