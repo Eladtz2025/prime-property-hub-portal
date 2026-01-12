@@ -26,13 +26,13 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
     {
       number: 3,
       period: "Weeks 4–6",
-      description: "Feedback, negotiations",
+      description: "Soft launch to qualified buyers",
       icon: MessageSquare
     },
     {
       number: 4,
       period: "Ongoing",
-      description: "Offer management & closing",
+      description: "Buyer feedback & negotiations",
       icon: CheckCircle
     }
   ];
@@ -63,7 +63,7 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          TIMELINE
+          Timeline
         </h2>
 
         {/* Decorative Line */}
@@ -103,7 +103,7 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
                   key={index}
                   className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 text-center"
                 >
-                  <IconComponent className="w-5 h-5 text-[#f5c242] mx-auto mb-2" />
+                  <IconComponent className="w-6 h-6 text-[#f5c242] mx-auto mb-2" strokeWidth={1.5} />
                   <p 
                     className="text-[#f5c242] font-medium text-sm mb-1"
                     style={{ textShadow: softShadow }}
