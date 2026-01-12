@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Eraser, Upload, Download, Loader2, Trash2, Save } from 'lucide-react';
+import { Eraser, Upload, Download, Loader2, Trash2, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
@@ -201,6 +201,33 @@ export const ElementRemovalTab: React.FC = () => {
     }
     setHasMask(false);
   };
+
+  const handleClearSelection = useCallback(() => {
+    if (prevImageUrlRef.current) {
+      URL.revokeObjectURL(prevImageUrlRef.current);
+      prevImageUrlRef.current = '';
+    }
+    setSelectedFile(null);
+    setImageUrl('');
+    setResultUrl('');
+    setHasMask(false);
+    
+    // Clear canvases
+    const canvas = canvasRef.current;
+    const maskCanvas = maskCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    if (maskCanvas) {
+      const ctx = maskCanvas.getContext('2d');
+      ctx?.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
 
   const handleRemove = async () => {
     if (!selectedFile || !maskCanvasRef.current) {
@@ -419,6 +446,15 @@ export const ElementRemovalTab: React.FC = () => {
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                   />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 left-2 h-8 w-8 bg-background/80 hover:bg-background z-10"
+                    onClick={handleClearSelection}
+                    aria-label="בחר תמונה אחרת"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 {/* Brush Size */}

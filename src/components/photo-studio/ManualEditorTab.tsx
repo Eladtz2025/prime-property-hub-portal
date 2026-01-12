@@ -161,6 +161,50 @@ export const ManualEditorTab: React.FC = () => {
     });
   }, [fabricCanvas]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!fabricCanvas) return;
+      
+      // Check if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+      
+      // Ctrl/Cmd + Z = Undo
+      if (ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z = Redo
+      else if ((ctrlKey && e.key === 'y') || (ctrlKey && e.shiftKey && e.key === 'z')) {
+        e.preventDefault();
+        handleRedo();
+      }
+      // Delete or Backspace = Delete selected
+      else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        const activeObjects = fabricCanvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          activeObjects.forEach(obj => fabricCanvas.remove(obj));
+          fabricCanvas.discardActiveObject();
+          fabricCanvas.renderAll();
+        }
+      }
+      // Escape = Deselect all
+      else if (e.key === 'Escape') {
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.renderAll();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fabricCanvas, handleUndo, handleRedo]);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && fabricCanvas) {
