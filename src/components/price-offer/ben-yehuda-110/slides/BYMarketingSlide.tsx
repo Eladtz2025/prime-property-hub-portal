@@ -23,7 +23,10 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 py-16">
         {/* Section Label */}
-        <p className="text-sm font-medium text-[#4a9a9a] tracking-[0.3em] mb-4">
+        <p 
+          className="text-sm font-medium text-white/70 tracking-[0.3em] mb-4"
+          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+        >
           06 / 10
         </p>
         
@@ -31,7 +34,10 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
         <div className="w-16 h-px bg-[#f5c242] mb-8" />
 
         {/* Title */}
-        <h2 className="text-3xl md:text-5xl font-serif font-light text-[#2d3b3a] mb-8">
+        <h2 
+          className="text-3xl md:text-5xl font-serif font-light text-white mb-8"
+          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+        >
           {content?.title || "MARKETING STRATEGY"}
         </h2>
 
