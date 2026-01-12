@@ -99,7 +99,7 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
                   {column.items.map((item, index) => (
                     <li key={index} className="flex items-start gap-1.5">
                       <span className="text-[#f5c242] mt-0.5 text-xs">•</span>
-                      <span className="text-white/90 text-[10px] md:text-xs font-light">{item}</span>
+                      <span className="text-white/90 text-[11px] md:text-sm font-light">{item}</span>
                     </li>
                   ))}
                 </ul>
