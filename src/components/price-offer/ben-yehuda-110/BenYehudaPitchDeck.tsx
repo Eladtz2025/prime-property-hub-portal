@@ -144,7 +144,7 @@ const BenYehudaPitchDeck = () => {
           </button>
           
           {/* Slide Indicators */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row-reverse items-center gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
