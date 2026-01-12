@@ -399,15 +399,46 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         urls.push(url);
         
       } else if (source === 'homeless') {
-        // Build Homeless URL
-        let url = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}`;
+        // Homeless city codes mapping (for rent - uses inumber1 format)
+        // Format: inumber1=topArea,area,city
+        const homelessCityMap: Record<string, { code: string }> = {
+          'תל אביב': { code: '17,1,150' },
+          'תל אביב יפו': { code: '17,1,150' },
+          'ירושלים': { code: '1,1,3000' },
+          'חיפה': { code: '4,1,4000' },
+          'ראשון לציון': { code: '17,2,8300' },
+          'פתח תקווה': { code: '17,3,7900' },
+          'אשדוד': { code: '17,12,70' },
+          'נתניה': { code: '11,1,7400' },
+          'באר שבע': { code: '6,1,9000' },
+          'חולון': { code: '17,1,6600' },
+          'בת ים': { code: '17,1,6200' },
+          'רמת גן': { code: '17,1,8600' },
+          'הרצליה': { code: '17,4,6400' },
+          'רעננה': { code: '11,2,8700' },
+        };
+
+        // Build Homeless URL - different format for rent vs sale
+        let url: string;
         
-        if (config.cities?.length) {
-          // Homeless uses query params for location
-          const params = new URLSearchParams();
-          params.set('location', config.cities[0]);
-          url += '?' + params.toString();
+        if (type === 'rent') {
+          // Rent uses: /rent/inumber1=17,1,150
+          url = 'https://www.homeless.co.il/rent/';
+          if (config.cities?.length) {
+            const cityData = homelessCityMap[config.cities[0]];
+            if (cityData) {
+              url += `inumber1=${cityData.code}`;
+            }
+          }
+        } else {
+          // Sale uses: /sale/city=תל אביב (URL encoded)
+          url = 'https://www.homeless.co.il/sale/';
+          if (config.cities?.length) {
+            url += `city=${encodeURIComponent(config.cities[0])}`;
+          }
         }
+        
+        console.log(`Built Homeless URL: ${url}`);
         urls.push(url);
       }
     }
