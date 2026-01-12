@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,6 +34,15 @@ const roomTypes: RoomTypeOption[] = [
   { value: 'dining_room', label: 'פינת אוכל' },
   { value: 'office', label: 'חדר עבודה' },
   { value: 'balcony', label: 'מרפסת' },
+  { value: 'staircase', label: 'חדר מדרגות' },
+  { value: 'entrance', label: 'מבואה / כניסה' },
+  { value: 'hallway', label: 'מסדרון' },
+  { value: 'storage', label: 'מחסן' },
+  { value: 'laundry', label: 'חדר כביסה' },
+  { value: 'terrace', label: 'גג / מרפסת גג' },
+  { value: 'garden', label: 'גינה' },
+  { value: 'exterior', label: 'חזית בניין' },
+  { value: 'other', label: 'אחר (הגדר ידנית)' },
 ];
 
 const styles: StyleOption[] = [
@@ -54,6 +64,7 @@ export const VirtualStagingTab: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [stagingMode, setStagingMode] = useState<StagingMode>('add');
   const [roomType, setRoomType] = useState<string>('living_room');
+  const [customRoomType, setCustomRoomType] = useState('');
   const [style, setStyle] = useState<string>('modern');
   const [customDescription, setCustomDescription] = useState('');
   const [comparisonPosition, setComparisonPosition] = useState(50);
@@ -138,8 +149,10 @@ export const VirtualStagingTab: React.FC = () => {
 
       const base64Image = await base64Promise;
 
-      // Get English translations for AI
-      const roomTypeEn = roomTypeTranslations[roomType] || roomType;
+      // Get English translations for AI - use custom text for "other" room type
+      const roomTypeEn = roomType === 'other' 
+        ? (customRoomType.trim() || 'room')
+        : (roomTypeTranslations[roomType] || roomType);
       const styleEn = styleTranslations[style] || style;
 
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
@@ -260,6 +273,17 @@ export const VirtualStagingTab: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* Custom room type input when "other" is selected */}
+                {roomType === 'other' && (
+                  <Input
+                    value={customRoomType}
+                    onChange={(e) => setCustomRoomType(e.target.value)}
+                    placeholder="תאר את סוג החדר (למשל: לובי, חדר ארונות, מרתף...)"
+                    maxLength={50}
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               {/* Style */}
