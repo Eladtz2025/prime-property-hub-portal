@@ -147,7 +147,7 @@ const BenYehudaPitchDeck = () => {
               onClick={() => goToSlide(index)}
               className={`h-2 rounded-full transition-all ${
                 index === currentSlide
-                  ? "w-6 bg-[#f5c242]"
+                  ? "w-6 bg-white"
                   : "w-2 bg-[#2d3b3a]/30 hover:bg-[#2d3b3a]/50"
               }`}
             />
