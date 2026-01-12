@@ -119,14 +119,16 @@ const BenYehudaPitchDeck = () => {
         ))}
       </div>
 
-      {/* Page Counter - Top Right */}
-      <div className="absolute top-4 right-4 z-30">
-        <span 
-          className="text-white text-xs md:text-sm font-light tracking-wide"
-          style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
-        >
-          {currentSlide + 1} of {slides.length}
-        </span>
+      {/* Page Counter - Bottom Left with transparent background */}
+      <div className="absolute bottom-20 md:bottom-24 left-4 z-30">
+        <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
+          <span 
+            className="text-white text-xs md:text-sm font-light tracking-wide"
+            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+          >
+            {currentSlide + 1} of {slides.length}
+          </span>
+        </div>
       </div>
 
       {/* Navigation Buttons */}
