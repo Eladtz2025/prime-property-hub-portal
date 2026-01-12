@@ -24,7 +24,7 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/ben-yehuda-110/IMG_5758.JPG')`,
+          backgroundImage: `url('/images/ben-yehuda-110/image-1 (1).png')`,
         }}
       />
       
