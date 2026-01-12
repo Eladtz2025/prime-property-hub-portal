@@ -23,7 +23,7 @@ const BYMarketingIISlide = ({ content }: BYMarketingIISlideProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/ben-yehuda-110/IMG_5295.jpeg')`,
+          backgroundImage: `url('/images/ben-yehuda-110/WhatsApp Image 2026-01-12 at 18.21.59.jpeg')`,
         }}
       />
       
