@@ -13,12 +13,12 @@ const BYTimelineSlide = ({ content }: BYTimelineSlideProps) => {
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: `url('/images/Ben Yehuda 110/IMG_5305.jpeg')`,
-          opacity: 0.35,
+          opacity: 0.65,
         }}
       />
       
       {/* Beige Overlay */}
-      <div className="absolute inset-0 bg-[#d4c5b5]/75" />
+      <div className="absolute inset-0 bg-[#d4c5b5]/45" />
       
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 py-16">
