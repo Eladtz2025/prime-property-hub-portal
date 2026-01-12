@@ -16,7 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Languages, Loader2 } from 'lucide-react';
+import { Languages, Loader2, AlertCircle } from 'lucide-react';
+import { phoneSchema, emailSchema, validateField } from '@/utils/formValidation';
+import { cn } from '@/lib/utils';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -39,6 +41,22 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   const canViewPhone = canViewPhoneNumbers(permissions);
   const canEdit = hasPermission('properties', 'update');
   const queryClient = useQueryClient();
+  const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
+  const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
+
+  const handleFieldBlur = (field: 'ownerPhone' | 'ownerEmail' | 'tenantPhone') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = (formData as any)[field] || '';
+    let error: string | null = null;
+    
+    if (field === 'ownerPhone' || field === 'tenantPhone') {
+      error = validateField(phoneSchema, value);
+    } else if (field === 'ownerEmail') {
+      error = validateField(emailSchema, value);
+    }
+    
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
 
   // Load approved users for agent selection
   const { data: users = [] } = useQuery({
@@ -70,6 +88,8 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
       neighborhood_en: ''
     };
     setFormData(updatedProperty as any);
+    setErrors({});
+    setTouched({});
     
     // Load images and English fields from property when modal opens
     if (isOpen && property.id) {
@@ -216,6 +236,27 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   };
 
   const handleSave = async () => {
+    // Validate phone and email fields
+    const ownerPhoneError = validateField(phoneSchema, formData.ownerPhone || '');
+    const ownerEmailError = validateField(emailSchema, formData.ownerEmail || '');
+    const tenantPhoneError = validateField(phoneSchema, formData.tenantPhone || '');
+    
+    setTouched({ ownerPhone: true, ownerEmail: true, tenantPhone: true });
+    setErrors({ 
+      ownerPhone: ownerPhoneError || undefined, 
+      ownerEmail: ownerEmailError || undefined, 
+      tenantPhone: tenantPhoneError || undefined 
+    });
+    
+    if (ownerPhoneError || ownerEmailError || tenantPhoneError) {
+      toast({
+        title: "שגיאה בטופס",
+        description: "אנא תקן את השגיאות לפני השמירה",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setLoading(true);
       

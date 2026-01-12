@@ -11,10 +11,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers } from "lucide-react";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
+import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
+import { cn } from "@/lib/utils";
 
 interface Agent {
   id: string;
@@ -119,6 +121,24 @@ export const ExpandableCustomerRow = ({
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
+  const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+
+  const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = formData[field] || '';
+    let error: string | null = null;
+    
+    if (field === 'name') {
+      error = validateField(requiredNameSchema, value);
+    } else if (field === 'phone') {
+      error = validateField(phoneSchema, value);
+    } else if (field === 'email') {
+      error = validateField(emailSchema, value);
+    }
+    
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
 
   const timeSince = getTimeSinceContact(customer.last_contact_date, customer.created_at);
   const assignedAgent = agents.find(a => a.id === customer.assigned_agent_id);
@@ -143,6 +163,19 @@ export const ExpandableCustomerRow = ({
   };
 
   const handleSaveForm = async () => {
+    // Validate before save
+    const nameError = validateField(requiredNameSchema, formData.name || '');
+    const phoneError = validateField(phoneSchema, formData.phone || '');
+    const emailError = validateField(emailSchema, formData.email || '');
+    
+    setTouched({ name: true, phone: true, email: true });
+    setErrors({ name: nameError || undefined, phone: phoneError || undefined, email: emailError || undefined });
+    
+    if (nameError || phoneError || emailError) {
+      toast({ title: 'שגיאה בטופס', description: 'אנא תקן את השגיאות לפני השמירה', variant: 'destructive' });
+      return;
+    }
+    
     setLoading(true);
     try {
       const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
@@ -356,30 +389,51 @@ export const ExpandableCustomerRow = ({
               <div className="p-4 space-y-4">
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <Label className="text-xs">שם מלא</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">שם מלא *</Label>
                     <Input
                       value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="h-8 text-sm"
+                      onBlur={() => handleFieldBlur('name')}
+                      className={cn("h-8 text-sm", touched.name && errors.name && 'border-destructive')}
                     />
+                    {touched.name && errors.name && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{errors.name}</span>
+                      </p>
+                    )}
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <Label className="text-xs">אימייל</Label>
                     <Input
                       type="email"
                       value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="h-8 text-sm"
+                      onBlur={() => handleFieldBlur('email')}
+                      className={cn("h-8 text-sm", touched.email && errors.email && 'border-destructive')}
                     />
+                    {touched.email && errors.email && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{errors.email}</span>
+                      </p>
+                    )}
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <Label className="text-xs">טלפון</Label>
                     <Input
                       value={formData.phone || ''}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="h-8 text-sm"
+                      onBlur={() => handleFieldBlur('phone')}
+                      className={cn("h-8 text-sm", touched.phone && errors.phone && 'border-destructive')}
                     />
+                    {touched.phone && errors.phone && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{errors.phone}</span>
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-xs">סוג עסקה</Label>

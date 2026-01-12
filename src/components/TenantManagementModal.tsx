@@ -20,8 +20,10 @@ import {
   Receipt,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
+import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -93,6 +95,24 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
   const [communications, setCommunications] = useState<TenantCommunication[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [tenantErrors, setTenantErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
+  const [tenantTouched, setTenantTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+
+  const handleTenantFieldBlur = (field: 'name' | 'phone' | 'email') => {
+    setTenantTouched(prev => ({ ...prev, [field]: true }));
+    const value = tenantForm[field] || '';
+    let error: string | null = null;
+    
+    if (field === 'name') {
+      error = validateField(requiredNameSchema, value);
+    } else if (field === 'phone') {
+      error = validateField(phoneSchema, value);
+    } else if (field === 'email') {
+      error = validateField(emailSchema, value);
+    }
+    
+    setTenantErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
 
   // Tenant form state
   const [tenantForm, setTenantForm] = useState({
@@ -135,10 +155,14 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
         lease_end_date: tenant.lease_end_date ? new Date(tenant.lease_end_date) : undefined,
         is_active: tenant.is_active
       });
+      setTenantErrors({});
+      setTenantTouched({});
       
       loadTenantData(tenant.id);
     } else {
       resetForms();
+      setTenantErrors({});
+      setTenantTouched({});
     }
   }, [tenant]);
 
@@ -192,14 +216,24 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
   };
 
   const handleSaveTenant = async () => {
-    if (!user || !tenantForm.name) {
+    // Validate all fields
+    const nameError = validateField(requiredNameSchema, tenantForm.name || '');
+    const phoneError = validateField(phoneSchema, tenantForm.phone || '');
+    const emailError = validateField(emailSchema, tenantForm.email || '');
+    
+    setTenantTouched({ name: true, phone: true, email: true });
+    setTenantErrors({ name: nameError || undefined, phone: phoneError || undefined, email: emailError || undefined });
+    
+    if (nameError || phoneError || emailError) {
       toast({
-        title: "שגיאה",
-        description: "אנא מלא את השם של הדייר",
+        title: "שגיאה בטופס",
+        description: "אנא תקן את השגיאות לפני השמירה",
         variant: "destructive"
       });
       return;
     }
+
+    if (!user) return;
 
     setIsLoading(true);
     try {
@@ -418,9 +452,16 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
                       placeholder="שם הדייר"
                       value={tenantForm.name}
                       onChange={(e) => setTenantForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="text-right"
+                      onBlur={() => handleTenantFieldBlur('name')}
+                      className={cn("text-right", tenantTouched.name && tenantErrors.name && 'border-destructive')}
                       required
                     />
+                    {tenantTouched.name && tenantErrors.name && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{tenantErrors.name}</span>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-right">טלפון</Label>
@@ -429,8 +470,15 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
                       placeholder="050-1234567"
                       value={tenantForm.phone}
                       onChange={(e) => setTenantForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="text-right"
+                      onBlur={() => handleTenantFieldBlur('phone')}
+                      className={cn("text-right", tenantTouched.phone && tenantErrors.phone && 'border-destructive')}
                     />
+                    {tenantTouched.phone && tenantErrors.phone && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{tenantErrors.phone}</span>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-right">אימייל</Label>
@@ -440,8 +488,15 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
                       placeholder="tenant@example.com"
                       value={tenantForm.email}
                       onChange={(e) => setTenantForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="text-right"
+                      onBlur={() => handleTenantFieldBlur('email')}
+                      className={cn("text-right", tenantTouched.email && tenantErrors.email && 'border-destructive')}
                     />
+                    {tenantTouched.email && tenantErrors.email && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{tenantErrors.email}</span>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-right">סטטוס</Label>
