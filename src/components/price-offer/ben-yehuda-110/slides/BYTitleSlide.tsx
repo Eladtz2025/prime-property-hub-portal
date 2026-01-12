@@ -39,7 +39,7 @@ const BYTitleSlide = ({ currentSlide = 1, totalSlides = 10 }: BYTitleSlideProps)
       {/* Slide Counter - Top Right Corner */}
       <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20">
         <span 
-          className="text-white/80 text-sm md:text-base font-light tracking-wider"
+          className="text-white text-sm md:text-base font-light tracking-wider bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm"
           style={{ textShadow: softShadow }}
         >
           {currentSlide} of {totalSlides}
