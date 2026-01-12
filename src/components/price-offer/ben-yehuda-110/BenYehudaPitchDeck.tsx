@@ -122,8 +122,8 @@ const BenYehudaPitchDeck = () => {
       {/* Navigation Buttons */}
       <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-center gap-4 px-4">
         <button
-          onClick={nextSlide}
-          disabled={currentSlide === slides.length - 1}
+          onClick={prevSlide}
+          disabled={currentSlide === 0}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -145,8 +145,8 @@ const BenYehudaPitchDeck = () => {
         </div>
         
         <button
-          onClick={prevSlide}
-          disabled={currentSlide === 0}
+          onClick={nextSlide}
+          disabled={currentSlide === slides.length - 1}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronRight className="h-6 w-6" />
