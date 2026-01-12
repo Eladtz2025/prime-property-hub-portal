@@ -24,7 +24,7 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
       <div 
         className="absolute inset-0" 
         style={{ 
-          backgroundColor: 'rgba(180, 140, 100, 0.35)',
+          backgroundColor: 'rgba(180, 140, 100, 0.50)',
           mixBlendMode: 'overlay'
         }}
       />
