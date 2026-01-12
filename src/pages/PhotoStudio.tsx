@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Wand2, Eraser, PenTool } from 'lucide-react';
 import { ImageGenerationTab } from '@/components/photo-studio/ImageGenerationTab';
 import { AutoEnhanceTab } from '@/components/photo-studio/AutoEnhanceTab';
 import { ElementRemovalTab } from '@/components/photo-studio/ElementRemovalTab';
 import { ManualEditorTab } from '@/components/photo-studio/ManualEditorTab';
+import { PhotoStudioErrorBoundary } from '@/components/photo-studio/PhotoStudioErrorBoundary';
 
 const PhotoStudio: React.FC = () => {
   const [activeTab, setActiveTab] = useState('generate');
@@ -56,19 +56,27 @@ const PhotoStudio: React.FC = () => {
         </TabsList>
 
         <TabsContent value="generate" className="mt-6">
-          <ImageGenerationTab />
+          <PhotoStudioErrorBoundary tabName="יצירת תמונות">
+            <ImageGenerationTab />
+          </PhotoStudioErrorBoundary>
         </TabsContent>
 
         <TabsContent value="enhance" className="mt-6">
-          <AutoEnhanceTab />
+          <PhotoStudioErrorBoundary tabName="שיפור אוטומטי">
+            <AutoEnhanceTab />
+          </PhotoStudioErrorBoundary>
         </TabsContent>
 
         <TabsContent value="remove" className="mt-6">
-          <ElementRemovalTab />
+          <PhotoStudioErrorBoundary tabName="הסרת אלמנטים">
+            <ElementRemovalTab />
+          </PhotoStudioErrorBoundary>
         </TabsContent>
 
         <TabsContent value="edit" className="mt-6">
-          <ManualEditorTab />
+          <PhotoStudioErrorBoundary tabName="עריכה ידנית">
+            <ManualEditorTab />
+          </PhotoStudioErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>

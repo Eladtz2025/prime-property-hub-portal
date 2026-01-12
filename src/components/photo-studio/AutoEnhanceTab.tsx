@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Wand2, Upload, Download, Loader2, ArrowLeftRight, Save } from 'lucide-react';
+import { Wand2, Upload, Download, Loader2, ArrowLeftRight, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
@@ -27,6 +27,7 @@ export const AutoEnhanceTab: React.FC = () => {
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -59,6 +60,20 @@ export const AutoEnhanceTab: React.FC = () => {
       setPreviewUrl(newUrl);
       setEnhancedUrl('');
       setShowComparison(false);
+    }
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    if (prevPreviewUrlRef.current) {
+      URL.revokeObjectURL(prevPreviewUrlRef.current);
+      prevPreviewUrlRef.current = '';
+    }
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setEnhancedUrl('');
+    setShowComparison(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   }, []);
 
@@ -290,11 +305,25 @@ export const AutoEnhanceTab: React.FC = () => {
                 aria-label="בחר קובץ תמונה"
               />
               {previewUrl ? (
-                <img 
-                  src={previewUrl} 
-                  alt="תצוגה מקדימה" 
-                  className="max-h-32 md:max-h-48 mx-auto rounded-lg"
-                />
+                <div className="relative">
+                  <img 
+                    src={previewUrl} 
+                    alt="תצוגה מקדימה" 
+                    className="max-h-32 md:max-h-48 mx-auto rounded-lg"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 h-8 w-8 bg-background/80 hover:bg-background rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearSelection();
+                    }}
+                    aria-label="נקה בחירה"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               ) : (
                 <>
                   <Upload className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-4" />
@@ -348,13 +377,16 @@ export const AutoEnhanceTab: React.FC = () => {
         </Card>
       </div>
 
-      {/* Lightbox - show both before and after */}
+      {/* Lightbox - show both before and after with proper navigation */}
       <ImageLightbox
-        images={enhancedUrl ? [enhancedUrl, previewUrl].filter(Boolean) : []}
-        currentIndex={0}
+        images={enhancedUrl ? [previewUrl, enhancedUrl].filter(Boolean) : []}
+        currentIndex={lightboxIndex}
         isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        onNavigate={() => {}}
+        onClose={() => {
+          setLightboxOpen(false);
+          setLightboxIndex(0);
+        }}
+        onNavigate={setLightboxIndex}
       />
 
       {/* Save Dialog */}
