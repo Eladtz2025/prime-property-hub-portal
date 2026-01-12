@@ -4,7 +4,8 @@ import {
   Home, 
   Building, 
   Users, 
-  Briefcase
+  Briefcase,
+  Search
 } from 'lucide-react';
 import {
   Sidebar,
@@ -33,6 +34,7 @@ const ownerItems = [
 // Admin navigation items
 const adminItems = [
   { title: 'לוח בקרה', url: '/admin-dashboard', icon: Briefcase, requiredRole: 'admin' },
+  { title: 'סקאוט נדל"ן', url: '/admin-dashboard/property-scout', icon: Search, requiredRole: 'admin' },
 ];
 
 export function AppSidebar() {
