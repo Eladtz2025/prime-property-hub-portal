@@ -12,14 +12,14 @@ const BYTitleSlide = () => {
       backgroundColor: 'rgba(180, 140, 100, 0.85)',
       mixBlendMode: 'overlay'
     }} />
+
+      {/* Logo - Bottom Right */}
+      <div className="absolute bottom-20 md:bottom-24 right-4 z-20">
+        <img src={cityMarketLogo} alt="City Market Properties" className="h-10 md:h-14 lg:h-16 w-auto" />
+      </div>
       
       {/* Content - centered */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8">
-        {/* Logo */}
-        <div className="mb-4 md:mb-8">
-          <img src={cityMarketLogo} alt="City Market Properties" className="h-12 md:h-16 lg:h-20 w-auto" />
-        </div>
-
         {/* Decorative Line */}
         <div className="w-16 md:w-24 h-px bg-white mb-4 md:mb-6" />
 
@@ -29,9 +29,6 @@ const BYTitleSlide = () => {
       }}>
           BEN YEHUDA 110
         </h1>
-        
-        {/* Subtitle */}
-        
 
         {/* Decorative Line */}
         <div className="w-16 md:w-24 h-px bg-white mb-4 md:mb-6" />
