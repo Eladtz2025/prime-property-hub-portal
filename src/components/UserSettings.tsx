@@ -7,12 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock } from 'lucide-react';
+import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { validateField, phoneSchema, israeliIdSchema, FormErrors, FormTouched } from '@/utils/formValidation';
+
+type FormFields = 'phone' | 'id_number';
 
 export const UserSettings: React.FC = () => {
   const { profile, user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors<FormFields>>({});
+  const [touched, setTouched] = useState<FormTouched<FormFields>>({});
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -21,6 +26,34 @@ export const UserSettings: React.FC = () => {
     id_number: '',
     address: '',
   });
+
+  const validateFormField = (field: FormFields, value: string) => {
+    let error: string | null = null;
+    switch (field) {
+      case 'phone':
+        error = validateField(phoneSchema, value);
+        break;
+      case 'id_number':
+        error = validateField(israeliIdSchema, value);
+        break;
+    }
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+    return !error;
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'phone' || field === 'id_number') {
+      if (touched[field as FormFields]) {
+        validateFormField(field as FormFields, value);
+      }
+    }
+  };
+
+  const handleFieldBlur = (field: FormFields) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateFormField(field, formData[field]);
+  };
 
   // Update form data when profile changes
   useEffect(() => {
@@ -38,6 +71,22 @@ export const UserSettings: React.FC = () => {
 
   const handleSave = async () => {
     if (!user?.id) return;
+
+    // Validate fields before saving
+    const phoneValid = !formData.phone || validateFormField('phone', formData.phone);
+    const idValid = !formData.id_number || validateFormField('id_number', formData.id_number);
+    
+    if (formData.phone) setTouched(prev => ({ ...prev, phone: true }));
+    if (formData.id_number) setTouched(prev => ({ ...prev, id_number: true }));
+
+    if (!phoneValid || !idValid) {
+      toast({
+        title: "שגיאה",
+        description: "נא לתקן את השדות המסומנים",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -147,10 +196,18 @@ export const UserSettings: React.FC = () => {
               id="phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
+              onBlur={() => handleFieldBlur('phone')}
               placeholder="05X-XXXXXXX"
               dir="ltr"
+              className={touched.phone && errors.phone ? 'border-destructive' : ''}
             />
+            {touched.phone && errors.phone && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.phone}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -161,7 +218,7 @@ export const UserSettings: React.FC = () => {
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) => handleFieldChange('address', e.target.value)}
               placeholder="הזן כתובת"
             />
           </div>
@@ -182,7 +239,7 @@ export const UserSettings: React.FC = () => {
               <Input
                 id="broker_license_number"
                 value={formData.broker_license_number}
-                onChange={(e) => setFormData({ ...formData, broker_license_number: e.target.value })}
+                onChange={(e) => handleFieldChange('broker_license_number', e.target.value)}
                 placeholder="הזן מספר רישיון תיווך"
                 dir="ltr"
               />
@@ -196,10 +253,19 @@ export const UserSettings: React.FC = () => {
               <Input
                 id="id_number"
                 value={formData.id_number}
-                onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                onChange={(e) => handleFieldChange('id_number', e.target.value)}
+                onBlur={() => handleFieldBlur('id_number')}
                 placeholder="הזן מספר תעודת זהות"
                 dir="ltr"
+                maxLength={9}
+                className={touched.id_number && errors.id_number ? 'border-destructive' : ''}
               />
+              {touched.id_number && errors.id_number && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.id_number}
+                </p>
+              )}
             </div>
           </div>
         </div>

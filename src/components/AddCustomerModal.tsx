@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers } from "lucide-react";
+import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
+import { validateField, requiredPhoneSchema, emailSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -17,9 +18,13 @@ interface AddCustomerModalProps {
   onSave: () => void;
 }
 
+type FormFields = 'name' | 'phone' | 'email';
+
 export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors<FormFields>>({});
+  const [touched, setTouched] = useState<FormTouched<FormFields>>({});
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -58,11 +63,56 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     view_preference: '' as string,
   });
 
+  const validateFormField = (field: FormFields, value: string) => {
+    let error: string | null = null;
+    switch (field) {
+      case 'name':
+        error = validateField(requiredNameSchema, value);
+        break;
+      case 'phone':
+        error = validateField(requiredPhoneSchema, value);
+        break;
+      case 'email':
+        error = validateField(emailSchema, value);
+        break;
+    }
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+    return !error;
+  };
+
+  const handleFieldChange = (field: FormFields, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      validateFormField(field, value);
+    }
+  };
+
+  const handleFieldBlur = (field: FormFields) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateFormField(field, formData[field]);
+  };
+
   const handleSave = async () => {
-    if (!formData.name || !formData.phone) {
+    // Validate all required fields
+    const nameValid = validateFormField('name', formData.name);
+    const phoneValid = validateFormField('phone', formData.phone);
+    const emailValid = validateFormField('email', formData.email);
+    
+    setTouched({ name: true, phone: true, email: true });
+
+    if (!nameValid || !phoneValid) {
       toast({
         title: 'שגיאה',
-        description: 'שם וטלפון הם שדות חובה',
+        description: 'נא לתקן את השדות המסומנים',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.email && !emailValid) {
+      toast({
+        title: 'שגיאה',
+        description: 'כתובת אימייל לא תקינה',
         variant: 'destructive',
       });
       return;
@@ -184,17 +234,33 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               <Label>שם מלא *</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleFieldChange('name', e.target.value)}
+                onBlur={() => handleFieldBlur('name')}
                 placeholder="שם מלא"
+                className={touched.name && errors.name ? 'border-destructive' : ''}
               />
+              {touched.name && errors.name && (
+                <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.name}
+                </p>
+              )}
             </div>
             <div>
               <Label>טלפון *</Label>
               <Input
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handleFieldChange('phone', e.target.value)}
+                onBlur={() => handleFieldBlur('phone')}
                 placeholder="050-1234567"
+                className={touched.phone && errors.phone ? 'border-destructive' : ''}
               />
+              {touched.phone && errors.phone && (
+                <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.phone}
+                </p>
+              )}
             </div>
           </div>
 
@@ -204,9 +270,17 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               <Input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => handleFieldChange('email', e.target.value)}
+                onBlur={() => handleFieldBlur('email')}
                 placeholder="email@example.com"
+                className={touched.email && errors.email ? 'border-destructive' : ''}
               />
+              {touched.email && errors.email && (
+                <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.email}
+                </p>
+              )}
             </div>
             <div>
               <Label>מקור</Label>

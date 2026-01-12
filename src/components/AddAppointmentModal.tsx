@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, ExternalLink } from 'lucide-react';
+import { CalendarIcon, Clock, ExternalLink, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Property } from '@/types/property';
+import { validateField, phoneSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
 interface AddAppointmentModalProps {
   isOpen: boolean;
@@ -40,6 +41,8 @@ const timeSlots = [
   '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'
 ];
 
+type FormFields = 'clientName' | 'clientPhone';
+
 export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
   isOpen,
   onClose,
@@ -57,6 +60,34 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
     appointmentType: property ? 'viewing' : 'meeting',
     notes: ''
   });
+  const [errors, setErrors] = useState<FormErrors<FormFields>>({});
+  const [touched, setTouched] = useState<FormTouched<FormFields>>({});
+
+  const validateFormField = (field: FormFields, value: string) => {
+    let error: string | null = null;
+    switch (field) {
+      case 'clientName':
+        error = validateField(requiredNameSchema, value);
+        break;
+      case 'clientPhone':
+        error = validateField(phoneSchema, value);
+        break;
+    }
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+    return !error;
+  };
+
+  const handleFieldChange = (field: FormFields, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      validateFormField(field, value);
+    }
+  };
+
+  const handleFieldBlur = (field: FormFields) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateFormField(field, formData[field]);
+  };
 
   const handleSubmit = async (addToCalendar: boolean = false) => {
     if (!formData.clientName || !formData.appointmentDate || !formData.appointmentTime) {
@@ -108,6 +139,8 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
       appointmentType: property ? 'viewing' : 'meeting',
       notes: ''
     });
+    setErrors({});
+    setTouched({});
     onClose();
   };
 
@@ -170,10 +203,17 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
             <Label className="text-right block">שם הלקוח *</Label>
             <Input
               value={formData.clientName}
-              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              onChange={(e) => handleFieldChange('clientName', e.target.value)}
+              onBlur={() => handleFieldBlur('clientName')}
               placeholder="הזן שם לקוח"
-              className="text-right"
+              className={`text-right ${touched.clientName && errors.clientName ? 'border-destructive' : ''}`}
             />
+            {touched.clientName && errors.clientName && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.clientName}
+              </p>
+            )}
           </div>
 
           {/* Client Phone */}
@@ -181,11 +221,18 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
             <Label className="text-right block">טלפון</Label>
             <Input
               value={formData.clientPhone}
-              onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+              onChange={(e) => handleFieldChange('clientPhone', e.target.value)}
+              onBlur={() => handleFieldBlur('clientPhone')}
               placeholder="050-0000000"
-              className="text-right"
+              className={`text-right ${touched.clientPhone && errors.clientPhone ? 'border-destructive' : ''}`}
               dir="ltr"
             />
+            {touched.clientPhone && errors.clientPhone && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.clientPhone}
+              </p>
+            )}
           </div>
 
           {/* Location - only when no property */}
