@@ -22,31 +22,10 @@ const BYTitleSlide = () => {
         }}
       />
       
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between px-6 md:px-12 pt-6">
-        <p 
-          className="text-sm font-light text-white/80 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          01 / 10
-        </p>
-        <p 
-          className="text-sm font-light text-white/80 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          Presentation
-        </p>
-      </div>
-      
-      {/* Thin horizontal line */}
-      <div className="relative z-10 w-full px-6 md:px-12 mt-4">
-        <div className="w-full h-px bg-white/30" />
-      </div>
-      
-      {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-8">
+      {/* Content - positioned higher */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-8 pt-16 md:pt-24">
         {/* Logo */}
-        <div className="mb-12">
+        <div className="mb-8">
           <img 
             src={cityMarketLogo} 
             alt="City Market Properties" 
@@ -55,7 +34,7 @@ const BYTitleSlide = () => {
         </div>
 
         {/* Decorative Line */}
-        <div className="w-24 h-px bg-[#f5c242] mb-8" />
+        <div className="w-24 h-px bg-white mb-6" />
 
         {/* Main Title */}
         <h1 
@@ -67,37 +46,21 @@ const BYTitleSlide = () => {
         
         {/* Subtitle */}
         <h2 
-          className="text-xl md:text-2xl lg:text-3xl font-light text-white/90 tracking-widest mb-8"
+          className="text-xl md:text-2xl lg:text-3xl font-light text-white/90 tracking-widest mb-6"
           style={{ textShadow: softShadow }}
         >
           OLD NORTH TEL AVIV
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-24 h-px bg-[#f5c242] mb-8" />
+        <div className="w-24 h-px bg-white mb-6" />
 
         {/* Company Name */}
         <p 
-          className="text-sm md:text-base font-medium text-[#f5c242] tracking-[0.3em]"
+          className="text-sm md:text-base font-medium text-white tracking-[0.3em]"
           style={{ textShadow: softShadow }}
         >
           CITY MARKET PROPERTIES
-        </p>
-      </div>
-      
-      {/* Footer */}
-      <div className="relative z-10 flex items-center justify-between px-6 md:px-12 pb-6">
-        <p 
-          className="text-sm font-light text-white/60 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          2025
-        </p>
-        <p 
-          className="text-sm font-light text-white/60 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          ctmarketproperties.com
         </p>
       </div>
     </div>

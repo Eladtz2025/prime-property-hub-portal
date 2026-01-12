@@ -27,27 +27,6 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         }}
       />
       
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between px-6 md:px-12 pt-6">
-        <p 
-          className="text-sm font-light text-white/80 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          09 / 10
-        </p>
-        <p 
-          className="text-sm font-light text-white/80 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          Presentation
-        </p>
-      </div>
-      
-      {/* Thin horizontal line */}
-      <div className="relative z-10 w-full px-6 md:px-12 mt-4">
-        <div className="w-full h-px bg-white/30" />
-      </div>
-      
       {/* Content */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-8 py-16">
         {/* Title */}
@@ -59,7 +38,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-[#f5c242] mb-8" />
+        <div className="w-16 h-px bg-white mb-8" />
 
         {/* Content Box */}
         <div className="bg-[#8b7765]/85 backdrop-blur-sm rounded-lg p-8 md:p-12 max-w-3xl">
@@ -67,22 +46,6 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
             {content?.description || "Content coming soon..."}
           </p>
         </div>
-      </div>
-      
-      {/* Footer */}
-      <div className="relative z-10 flex items-center justify-between px-6 md:px-12 pb-6">
-        <p 
-          className="text-sm font-light text-white/60 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          2025
-        </p>
-        <p 
-          className="text-sm font-light text-white/60 tracking-widest"
-          style={{ textShadow: softShadow }}
-        >
-          ctmarketproperties.com
-        </p>
       </div>
     </div>
   );
