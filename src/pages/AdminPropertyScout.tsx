@@ -12,7 +12,7 @@ const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
 
   return (
-    <ProtectedRoute allowedRoles={['super_admin', 'admin', 'manager']}>
+    <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-6" dir="rtl">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
