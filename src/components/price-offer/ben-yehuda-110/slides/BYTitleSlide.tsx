@@ -1,4 +1,3 @@
-import cityMarketLogo from "@/assets/city-market-icon.png";
 const BYTitleSlide = () => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
   return <div className="relative flex h-full w-full flex-col overflow-hidden">
@@ -12,11 +11,6 @@ const BYTitleSlide = () => {
       backgroundColor: 'rgba(180, 140, 100, 0.85)',
       mixBlendMode: 'overlay'
     }} />
-
-      {/* Logo - Bottom Right */}
-      <div className="absolute bottom-20 md:bottom-24 right-4 z-20">
-        <img src={cityMarketLogo} alt="City Market Properties" className="h-10 md:h-14 lg:h-16 w-auto" />
-      </div>
       
       {/* Content - centered */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8">

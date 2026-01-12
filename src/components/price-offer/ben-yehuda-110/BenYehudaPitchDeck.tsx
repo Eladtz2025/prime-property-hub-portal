@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import cityMarketLogo from "@/assets/city-market-icon.png";
 import BYTitleSlide from "./slides/BYTitleSlide";
 import BYPropertySlide from "./slides/BYPropertySlide";
 import BYFeaturesSlide from "./slides/BYFeaturesSlide";
@@ -110,8 +111,8 @@ const BenYehudaPitchDeck = () => {
               index === currentSlide
                 ? "opacity-100 translate-x-0"
                 : index < currentSlide
-                ? "opacity-0 -translate-x-full"
-                : "opacity-0 translate-x-full"
+                ? "opacity-0 translate-x-full"
+                : "opacity-0 -translate-x-full"
             }`}
           >
             {slide.component}
@@ -166,8 +167,8 @@ const BenYehudaPitchDeck = () => {
           </button>
         </div>
 
-        {/* Empty space for balance */}
-        <div className="w-16 md:w-20" />
+        {/* Logo - Right side */}
+        <img src={cityMarketLogo} alt="City Market Properties" className="h-10 md:h-14 w-auto" />
       </div>
     </div>
   );
