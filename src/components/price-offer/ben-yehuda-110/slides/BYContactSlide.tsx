@@ -12,12 +12,10 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
 
   const checklist = [
-    "Exclusive sales representation with City Market Properties",
-    "Agreed pricing and positioning strategy",
-    "Controlled, strategic exposure from day one",
-    "Regular updates and market feedback",
-    "Clear reporting on buyer interest and activity",
-    "Begin preparation and targeted marketing"
+    "Exclusive sales representation",
+    "Agreed pricing strategy",
+    "Strategic exposure",
+    "Regular updates & feedback"
   ];
   
   return (
@@ -40,37 +38,37 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-16 overflow-y-auto" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
-          className="text-3xl md:text-5xl font-serif font-light text-white mb-6 md:mb-8"
+          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
           NEXT STEPS
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-[#f5c242] mb-6 md:mb-8" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Unified Checklist Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 md:p-8 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-6 mb-3 md:mb-4">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             {checklist.map((item, index) => (
-              <div key={index} className="flex items-start gap-3 text-left">
-                <CheckCircle2 className="w-5 h-5 text-[#f5c242] flex-shrink-0 mt-0.5" />
-                <span className="text-white/90 text-sm md:text-base font-light">{item}</span>
+              <div key={index} className="flex items-start gap-2 text-left">
+                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242] flex-shrink-0 mt-0.5" />
+                <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Call to Action Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-5 md:p-6 mb-8 border border-[#f5c242]/30">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6 border border-[#f5c242]/30">
           <p 
-            className="text-white text-base md:text-lg lg:text-xl font-light italic leading-relaxed"
+            className="text-white text-xs md:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
-            "Move forward with a focused, professional strategy designed to protect value and attract the right buyer."
+            "Move forward with a focused strategy designed to protect value and attract the right buyer."
           </p>
         </div>
 
@@ -78,54 +76,46 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
         <img 
           src={cityMarketLogo} 
           alt="City Market Properties" 
-          className="h-16 md:h-20 w-auto opacity-90 mb-4"
+          className="h-10 md:h-16 w-auto opacity-90 mb-2 md:mb-3"
         />
         
         <p 
-          className="text-base md:text-lg font-medium text-white tracking-[0.2em] mb-4"
+          className="text-sm md:text-base font-medium text-white tracking-[0.2em] mb-2 md:mb-3"
           style={{ textShadow: softShadow }}
         >
           CITY MARKET PROPERTIES
         </p>
 
         <p 
-          className="text-white text-base md:text-lg font-light mb-5"
+          className="text-white text-xs md:text-base font-light mb-3 md:mb-4"
           style={{ textShadow: softShadow }}
         >
           Tali Silberberg · Elad Tzabari
         </p>
 
         {/* Contact Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
           <a 
             href="tel:054-228-4477" 
-            className="flex items-center gap-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-6 py-3 rounded-full"
+            className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
           >
-            <Phone className="w-5 h-5 text-[#f5c242]" />
-            <span className="text-white text-base md:text-lg font-medium">054-228-4477</span>
-          </a>
-          
-          <a 
-            href="tel:054-228-4477" 
-            className="flex items-center gap-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-6 py-3 rounded-full"
-          >
-            <Phone className="w-5 h-5 text-[#f5c242]" />
-            <span className="text-white text-base md:text-lg font-medium">054-228-4477</span>
+            <Phone className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
+            <span className="text-white text-sm md:text-base font-medium">054-228-4477</span>
           </a>
 
           <a 
             href="https://wa.me/972542284477" 
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 bg-[#25D366] hover:bg-[#20bd5a] transition-colors px-6 py-3 rounded-full"
+            className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
           >
-            <MessageCircle className="w-5 h-5 text-white" />
-            <span className="text-white text-base md:text-lg font-medium">WhatsApp</span>
+            <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+            <span className="text-white text-sm md:text-base font-medium">WhatsApp</span>
           </a>
         </div>
 
         <p 
-          className="text-white/70 text-sm font-light tracking-wider mt-6"
+          className="text-white/70 text-xs font-light tracking-wider mt-3 md:mt-4"
           style={{ textShadow: softShadow }}
         >
           Licensed Brokerage | Israel

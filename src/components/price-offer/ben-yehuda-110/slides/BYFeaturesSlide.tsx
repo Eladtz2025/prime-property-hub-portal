@@ -35,32 +35,32 @@ const BYFeaturesSlide = () => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-12 py-16 overflow-y-auto" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
-          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-6"
+          className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
           UNIQUE FEATURES & POSITIONING
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-20 h-px bg-white/60 mb-8" />
+        <div className="w-16 md:w-20 h-px bg-white/60 mb-4 md:mb-6" />
 
         {/* Two Column Layout for Features */}
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
           {/* Key Features */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-left">
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
             <h3 
-              className="text-lg md:text-xl font-medium text-white mb-4"
+              className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
               style={{ textShadow: softShadow }}
             >
               Key Features
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2 md:space-y-3">
               {keyFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3 text-white/90 text-sm md:text-base">
-                  <span className="text-[#f5c242] mt-1">•</span>
+                <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                  <span className="text-[#f5c242] mt-0.5">•</span>
                   <span>{feature}</span>
                 </li>
               ))}
@@ -68,17 +68,17 @@ const BYFeaturesSlide = () => {
           </div>
 
           {/* Rare Combination */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 text-left">
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
             <h3 
-              className="text-lg md:text-xl font-medium text-white mb-4"
+              className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
               style={{ textShadow: softShadow }}
             >
               Rare Combination
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2 md:space-y-3">
               {rareCombination.map((item, index) => (
-                <li key={index} className="flex items-start gap-3 text-white/90 text-sm md:text-base">
-                  <span className="text-[#f5c242] mt-1">•</span>
+                <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                  <span className="text-[#f5c242] mt-0.5">•</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -87,15 +87,15 @@ const BYFeaturesSlide = () => {
         </div>
 
         {/* Positioning - Full Width */}
-        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-6 md:p-8">
+        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-4 md:p-6">
           <h3 
-            className="text-lg md:text-xl font-medium text-white mb-3"
+            className="text-base md:text-lg font-medium text-white mb-2 md:mb-3"
             style={{ textShadow: softShadow }}
           >
             Positioning
           </h3>
           <p 
-            className="text-white text-lg md:text-xl lg:text-2xl font-light italic"
+            className="text-white text-base md:text-xl lg:text-2xl font-light italic"
             style={{ textShadow: softShadow }}
           >
             "A lifestyle-driven urban asset — not a standard apartment."

@@ -41,43 +41,43 @@ const BYPropertySlide = () => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-12 py-16 overflow-y-auto">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8">
         {/* Main Title */}
         <h1 
-          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-6"
+          className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
           3-Room Duplex Apartment | Approx. 70 sqm
         </h1>
 
         {/* Decorative Line */}
-        <div className="w-20 h-px bg-[#f5c242] mb-8" />
+        <div className="w-16 md:w-20 h-px bg-[#f5c242] mb-4 md:mb-6" />
 
         {/* Two Column Layout */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6" dir="ltr">
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6" dir="ltr">
           {/* The Apartment */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 md:p-8 text-left">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
-                <Home className="w-5 h-5 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
+                <Home className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
               </div>
               <h3 
-                className="text-lg md:text-xl font-serif font-medium text-white uppercase tracking-wider"
+                className="text-base md:text-lg font-serif font-medium text-white uppercase tracking-wider"
                 style={{ textShadow: softShadow }}
               >
                 The Apartment
               </h3>
             </div>
-            <ul className="space-y-3">
+            <ul className="space-y-1.5 md:space-y-2">
               {apartmentDetails.map((detail, index) => {
                 const IconComponent = detail.icon;
                 return (
                   <li 
                     key={index}
-                    className="flex items-start gap-3 text-white/90 text-sm md:text-base font-light"
+                    className="flex items-start gap-2 text-white/90 text-xs md:text-sm font-light"
                     style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
                   >
-                    <IconComponent className="w-4 h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
+                    <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
                     <span>{detail.text}</span>
                   </li>
                 );
@@ -86,28 +86,28 @@ const BYPropertySlide = () => {
           </div>
 
           {/* The Building */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 md:p-8 text-left">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
+                <Building2 className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
               </div>
               <h3 
-                className="text-lg md:text-xl font-serif font-medium text-white uppercase tracking-wider"
+                className="text-base md:text-lg font-serif font-medium text-white uppercase tracking-wider"
                 style={{ textShadow: softShadow }}
               >
                 The Building
               </h3>
             </div>
-            <ul className="space-y-3">
+            <ul className="space-y-1.5 md:space-y-2">
               {buildingDetails.map((detail, index) => {
                 const IconComponent = detail.icon;
                 return (
                   <li 
                     key={index}
-                    className="flex items-start gap-3 text-white/90 text-sm md:text-base font-light"
+                    className="flex items-start gap-2 text-white/90 text-xs md:text-sm font-light"
                     style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
                   >
-                    <IconComponent className="w-4 h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
+                    <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
                     <span>{detail.text}</span>
                   </li>
                 );

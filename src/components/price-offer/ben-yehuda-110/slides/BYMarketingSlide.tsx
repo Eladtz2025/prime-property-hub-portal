@@ -12,25 +12,22 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
 
   const visualStrategy = [
     "Professional photography and video",
-    "Lifestyle-led storytelling (light, elevation, outdoor living)",
-    "Construction framed as temporary friction / long-term upside"
+    "Lifestyle-led storytelling"
   ];
 
   const targetedAudiences = [
     "Local lifestyle buyers",
-    "Foreign residents & overseas buyers",
-    "Investors focused on proven demand"
+    "Foreign residents & overseas buyers"
   ];
 
   const exposureStrategy = [
     "Curated launch before mass advertising",
-    "Private networks and off-market reach",
-    "Precision over saturation"
+    "Private networks and off-market reach"
   ];
 
   const columns = [
-    { icon: Camera, title: "Visual & Narrative Strategy", items: visualStrategy },
-    { icon: Users, title: "Targeted Audiences", items: targetedAudiences },
+    { icon: Camera, title: "Visual Strategy", items: visualStrategy },
+    { icon: Users, title: "Target Audiences", items: targetedAudiences },
     { icon: Target, title: "Exposure Strategy", items: exposureStrategy }
   ];
   
@@ -54,22 +51,22 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-16 overflow-y-auto" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
         {/* Title */}
         <h2 
-          className="text-3xl md:text-5xl font-serif font-light text-white mb-6 md:mb-8"
+          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
           POSITIONING & STRATEGY
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 h-px bg-[#f5c242] mb-6 md:mb-8" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Positioning Quote */}
-        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-5 md:p-6 mb-6 md:mb-8">
+        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6">
           <p 
-            className="text-white text-lg md:text-xl lg:text-2xl font-light italic"
+            className="text-white text-sm md:text-lg lg:text-xl font-light italic"
             style={{ textShadow: softShadow }}
           >
             "This is not just an apartment — it is a coastal Old North lifestyle asset."
@@ -77,32 +74,32 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
         </div>
 
         {/* Three Column Grid with Icons */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+        <div className="w-full max-w-5xl grid grid-cols-3 gap-2 md:gap-4">
           {columns.map((column, columnIndex) => {
             const IconComponent = column.icon;
             return (
               <div 
                 key={columnIndex}
-                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-5 text-left"
+                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left"
               >
                 {/* Large Icon */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-14 h-14 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
-                    <IconComponent className="w-7 h-7 text-[#f5c242]" />
+                <div className="flex justify-center mb-2 md:mb-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
+                    <IconComponent className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
                   </div>
                 </div>
                 
                 <h3 
-                  className="text-base md:text-lg font-serif text-white mb-3 text-center"
+                  className="text-xs md:text-sm font-serif text-white mb-2 text-center"
                   style={{ textShadow: softShadow }}
                 >
                   {column.title}
                 </h3>
-                <ul className="space-y-2">
+                <ul className="space-y-1 md:space-y-2">
                   {column.items.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-[#f5c242] mt-1 text-sm">•</span>
-                      <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
+                    <li key={index} className="flex items-start gap-1.5">
+                      <span className="text-[#f5c242] mt-0.5 text-xs">•</span>
+                      <span className="text-white/90 text-[10px] md:text-xs font-light">{item}</span>
                     </li>
                   ))}
                 </ul>
