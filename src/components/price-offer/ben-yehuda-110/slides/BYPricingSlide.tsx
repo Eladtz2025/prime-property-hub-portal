@@ -44,7 +44,7 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          MARKET REALITY
+          Market Context
         </h2>
 
         {/* Decorative Line */}
@@ -131,15 +131,6 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
           </ul>
         </div>
 
-        {/* Conclusion Box */}
-        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-6 border border-[#f5c242]/30">
-          <p 
-            className="text-white text-sm md:text-lg lg:text-xl font-light italic"
-            style={{ textShadow: softShadow }}
-          >
-            "Pricing is market-aligned, defensible, and intentional."
-          </p>
-        </div>
       </div>
     </div>
   );
