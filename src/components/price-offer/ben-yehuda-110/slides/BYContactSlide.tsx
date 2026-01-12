@@ -13,9 +13,9 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
 
   const checklist = [
     "Exclusive sales representation",
-    "Agreed pricing strategy",
-    "Strategic exposure",
-    "Regular updates & feedback"
+    "Aligned pricing strategy",
+    "Controlled, strategic exposure",
+    "Ongoing updates & market feedback"
   ];
   
   return (
@@ -38,13 +38,13 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-8 md:pt-12 pb-6 md:pb-8" dir="ltr">
         {/* Title */}
         <h2 
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          NEXT STEPS
+          Next Steps
         </h2>
 
         {/* Decorative Line */}
@@ -63,63 +63,66 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
         </div>
 
         {/* Call to Action Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6 border border-[#f5c242]/30">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-3 md:mb-4 border border-[#f5c242]/30">
           <p 
             className="text-white text-xs md:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
-            "Move forward with a focused strategy designed to protect value and attract the right buyer."
+            "Move forward with a focused strategy that protects value and attracts the right buyer."
           </p>
         </div>
 
-        {/* Large Logo */}
-        <img 
-          src={cityMarketLogo} 
-          alt="City Market Properties" 
-          className="h-10 md:h-16 w-auto opacity-90 mb-2 md:mb-3"
-        />
-        
-        <p 
-          className="text-sm md:text-base font-medium text-white tracking-[0.2em] mb-2 md:mb-3"
-          style={{ textShadow: softShadow }}
-        >
-          CITY MARKET PROPERTIES
-        </p>
-
-        <p 
-          className="text-white text-xs md:text-base font-light mb-3 md:mb-4"
-          style={{ textShadow: softShadow }}
-        >
-          Tali Silberberg · Elad Tzabari
-        </p>
-
-        {/* Contact Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
-          <a 
-            href="tel:054-228-4477" 
-            className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
+        {/* Contact Info Box */}
+        <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-6 flex flex-col items-center">
+          {/* Large Logo */}
+          <img 
+            src={cityMarketLogo} 
+            alt="City Market Properties" 
+            className="h-10 md:h-16 w-auto opacity-90 mb-2 md:mb-3"
+          />
+          
+          <p 
+            className="text-sm md:text-base font-medium text-white mb-2 md:mb-3"
+            style={{ textShadow: softShadow }}
           >
-            <Phone className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
-            <span className="text-white text-sm md:text-base font-medium">054-228-4477</span>
-          </a>
+            City Market Properties
+          </p>
 
-          <a 
-            href="https://wa.me/972542284477" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
+          <p 
+            className="text-white text-xs md:text-base font-light mb-3 md:mb-4"
+            style={{ textShadow: softShadow }}
           >
-            <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            <span className="text-white text-sm md:text-base font-medium">WhatsApp</span>
-          </a>
+            Tali Silberberg · Elad Tzabari
+          </p>
+
+          {/* Contact Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
+            <a 
+              href="tel:054-228-4477" 
+              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
+            >
+              <Phone className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
+              <span className="text-white text-sm md:text-base font-medium">054-228-4477</span>
+            </a>
+
+            <a 
+              href="https://wa.me/972542284477" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] transition-colors px-4 md:px-6 py-2 md:py-2.5 rounded-full"
+            >
+              <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+              <span className="text-white text-sm md:text-base font-medium">WhatsApp</span>
+            </a>
+          </div>
+
+          <p 
+            className="text-white/70 text-xs font-light tracking-wider mt-3 md:mt-4"
+            style={{ textShadow: softShadow }}
+          >
+            Licensed Brokerage | Israel
+          </p>
         </div>
-
-        <p 
-          className="text-white/70 text-xs font-light tracking-wider mt-3 md:mt-4"
-          style={{ textShadow: softShadow }}
-        >
-          Licensed Brokerage | Israel
-        </p>
       </div>
     </div>
   );
