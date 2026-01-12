@@ -133,8 +133,23 @@ serve(async (req) => {
       // Build search URLs
       const urls = buildSearchUrls(config);
 
-      for (const url of urls) {
-        console.log(`Scraping URL: ${url}`);
+      const maxPropertiesPerConfig = 100;
+      
+      for (let urlIndex = 0; urlIndex < urls.length; urlIndex++) {
+        const url = urls[urlIndex];
+        console.log(`Scraping URL ${urlIndex + 1}/${urls.length}: ${url}`);
+
+        // Check if we've reached max properties for this config
+        if (allProperties.length >= maxPropertiesPerConfig) {
+          console.log(`Reached max properties limit (${maxPropertiesPerConfig}), stopping scan for config: ${config.name}`);
+          break;
+        }
+
+        // Add delay between requests to avoid rate limiting (skip first request)
+        if (urlIndex > 0) {
+          console.log('Waiting 2 seconds before next request...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
 
         try {
           // Use Firecrawl to scrape
@@ -286,8 +301,9 @@ serve(async (req) => {
 
 function buildSearchUrls(config: ScoutConfig): string[] {
   const urls: string[] = [];
+  const pagesToScan = 3; // Scan 3 pages per source for ~60 properties each
 
-  // If custom URL provided, use it
+  // If custom URL provided, use it (no pagination for manual URLs)
   if (config.search_url) {
     return [config.search_url];
   }
@@ -388,15 +404,20 @@ function buildSearchUrls(config: ScoutConfig): string[] {
           pathType = type === 'rent' ? 'for-rent' : 'for-sale';
         }
         
-        let url = `https://www.madlan.co.il/${pathType}`;
+        let baseUrl = `https://www.madlan.co.il/${pathType}`;
         
         if (config.cities?.length) {
           const hebrewCity = config.cities[0];
           const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
-          url += `/${citySlug}`;
+          baseUrl += `/${citySlug}`;
         }
-        console.log(`Built Madlan URL: ${url}`);
-        urls.push(url);
+        
+        // Add pagination - Madlan uses ?page=X
+        for (let page = 1; page <= pagesToScan; page++) {
+          const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+          console.log(`Built Madlan URL (page ${page}): ${url}`);
+          urls.push(url);
+        }
         
       } else if (source === 'homeless') {
         // Homeless city codes mapping (for rent - uses inumber1 format)
@@ -419,27 +440,32 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         };
 
         // Build Homeless URL - different format for rent vs sale
-        let url: string;
+        let baseUrl: string;
         
         if (type === 'rent') {
           // Rent uses: /rent/inumber1=17,1,150
-          url = 'https://www.homeless.co.il/rent/';
+          baseUrl = 'https://www.homeless.co.il/rent/';
           if (config.cities?.length) {
             const cityData = homelessCityMap[config.cities[0]];
             if (cityData) {
-              url += `inumber1=${cityData.code}`;
+              baseUrl += `inumber1=${cityData.code}`;
             }
           }
         } else {
           // Sale uses: /sale/city=תל אביב (URL encoded)
-          url = 'https://www.homeless.co.il/sale/';
+          baseUrl = 'https://www.homeless.co.il/sale/';
           if (config.cities?.length) {
-            url += `city=${encodeURIComponent(config.cities[0])}`;
+            baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
           }
         }
         
-        console.log(`Built Homeless URL: ${url}`);
-        urls.push(url);
+        // Add pagination - Homeless uses /page/X or ?page=X
+        for (let page = 1; page <= pagesToScan; page++) {
+          const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
+          const url = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+          console.log(`Built Homeless URL (page ${page}): ${url}`);
+          urls.push(url);
+        }
       }
     }
   }
