@@ -22,7 +22,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/Ben Yehuda 110/99F9645C-C602-48C6-9476-D2ED18714BAF.jpeg')`,
+          backgroundImage: `url('/images/ben-yehuda-110/99F9645C-C602-48C6-9476-D2ED18714BAF.jpeg')`,
         }}
       />
       
