@@ -70,6 +70,12 @@ export const roomTypeTranslations: Record<string, string> = {
   'balcony': 'balcony',
   'exterior': 'building exterior',
   'garden': 'garden',
+  'staircase': 'staircase area',
+  'entrance': 'entrance hall / foyer',
+  'hallway': 'hallway / corridor',
+  'storage': 'storage room',
+  'laundry': 'laundry room',
+  'terrace': 'rooftop terrace',
 };
 
 /**
