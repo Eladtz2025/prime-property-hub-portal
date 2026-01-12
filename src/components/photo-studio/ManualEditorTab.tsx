@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { 
   PenTool, 
   Upload, 
@@ -11,26 +12,39 @@ import {
   RotateCcw,
   Type,
   Square,
+  Circle,
   ZoomIn,
   ZoomOut,
   Trash2,
-  Save
+  Save,
+  Undo,
+  Redo,
+  Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Canvas as FabricCanvas, FabricImage, Rect, IText } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Rect, IText, Circle as FabricCircle } from 'fabric';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
+import { validateFileSize } from './utils';
 
 export const ManualEditorTab: React.FC = () => {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [textInput, setTextInput] = useState('טקסט');
+  const [textColor, setTextColor] = useState('#000000');
+  const [fontSize, setFontSize] = useState(24);
+  const [strokeColor, setStrokeColor] = useState('#000000');
   const [canvasSize, setCanvasSize] = useState({ width: 600, height: 400 });
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [exportedImageUrl, setExportedImageUrl] = useState('');
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const isRestoringRef = useRef(false);
 
   // Calculate responsive canvas size
   const updateCanvasSize = useCallback(() => {
@@ -65,7 +79,30 @@ export const ManualEditorTab: React.FC = () => {
     };
   }, [updateCanvasSize]);
 
-  // Create/update fabric canvas when size changes - with proper cleanup
+  // Save state to history
+  const saveToHistory = useCallback(() => {
+    if (!fabricCanvas || isRestoringRef.current) return;
+    
+    const json = JSON.stringify(fabricCanvas.toJSON());
+    
+    // Remove any states after current index (when we add new action after undo)
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    
+    // Add new state
+    historyRef.current.push(json);
+    historyIndexRef.current = historyRef.current.length - 1;
+    
+    // Limit history to 20 states
+    if (historyRef.current.length > 20) {
+      historyRef.current.shift();
+      historyIndexRef.current--;
+    }
+    
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(false);
+  }, [fabricCanvas]);
+
+  // Create/update fabric canvas when size changes - with proper state preservation
   useEffect(() => {
     if (!canvasRef.current || canvasSize.width === 0) return;
 
@@ -78,18 +115,57 @@ export const ManualEditorTab: React.FC = () => {
     // Enable touch support
     canvas.allowTouchScrolling = false;
 
+    // Listen for object changes to save history
+    const handleModification = () => saveToHistory();
+    canvas.on('object:added', handleModification);
+    canvas.on('object:modified', handleModification);
+    canvas.on('object:removed', handleModification);
+
     setFabricCanvas(canvas);
 
     return () => {
+      canvas.off('object:added', handleModification);
+      canvas.off('object:modified', handleModification);
+      canvas.off('object:removed', handleModification);
       canvas.dispose();
       setFabricCanvas(null);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasSize.width, canvasSize.height]);
 
+  const handleUndo = useCallback(() => {
+    if (!fabricCanvas || historyIndexRef.current <= 0) return;
+    
+    isRestoringRef.current = true;
+    historyIndexRef.current--;
+    
+    fabricCanvas.loadFromJSON(JSON.parse(historyRef.current[historyIndexRef.current]), () => {
+      fabricCanvas.renderAll();
+      isRestoringRef.current = false;
+      setCanUndo(historyIndexRef.current > 0);
+      setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+    });
+  }, [fabricCanvas]);
+
+  const handleRedo = useCallback(() => {
+    if (!fabricCanvas || historyIndexRef.current >= historyRef.current.length - 1) return;
+    
+    isRestoringRef.current = true;
+    historyIndexRef.current++;
+    
+    fabricCanvas.loadFromJSON(JSON.parse(historyRef.current[historyIndexRef.current]), () => {
+      fabricCanvas.renderAll();
+      isRestoringRef.current = false;
+      setCanUndo(historyIndexRef.current > 0);
+      setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+    });
+  }, [fabricCanvas]);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && fabricCanvas) {
+      if (!validateFileSize(file)) return;
+      
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       
@@ -110,9 +186,17 @@ export const ManualEditorTab: React.FC = () => {
         fabricCanvas.clear();
         fabricCanvas.add(img);
         fabricCanvas.renderAll();
+        
+        // Reset history
+        historyRef.current = [];
+        historyIndexRef.current = -1;
+        saveToHistory();
+        
+        URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error loading image:', error);
         toast.error('שגיאה בטעינת התמונה');
+        URL.revokeObjectURL(url);
       }
     }
   };
@@ -121,6 +205,8 @@ export const ManualEditorTab: React.FC = () => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/') && fabricCanvas) {
+      if (!validateFileSize(file)) return;
+      
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       
@@ -140,9 +226,17 @@ export const ManualEditorTab: React.FC = () => {
         fabricCanvas.clear();
         fabricCanvas.add(img);
         fabricCanvas.renderAll();
+        
+        // Reset history
+        historyRef.current = [];
+        historyIndexRef.current = -1;
+        saveToHistory();
+        
+        URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error loading image:', error);
         toast.error('שגיאה בטעינת התמונה');
+        URL.revokeObjectURL(url);
       }
     }
   };
@@ -162,8 +256,8 @@ export const ManualEditorTab: React.FC = () => {
       left: 100,
       top: 100,
       fontFamily: 'Arial',
-      fontSize: 24,
-      fill: '#000000',
+      fontSize: fontSize,
+      fill: textColor,
     });
     fabricCanvas.add(text);
     fabricCanvas.setActiveObject(text);
@@ -178,11 +272,26 @@ export const ManualEditorTab: React.FC = () => {
       width: 100,
       height: 100,
       fill: 'transparent',
-      stroke: '#000000',
+      stroke: strokeColor,
       strokeWidth: 2,
     });
     fabricCanvas.add(rect);
     fabricCanvas.setActiveObject(rect);
+    fabricCanvas.renderAll();
+  };
+
+  const handleAddCircle = () => {
+    if (!fabricCanvas) return;
+    const circle = new FabricCircle({
+      left: 100,
+      top: 100,
+      radius: 50,
+      fill: 'transparent',
+      stroke: strokeColor,
+      strokeWidth: 2,
+    });
+    fabricCanvas.add(circle);
+    fabricCanvas.setActiveObject(circle);
     fabricCanvas.renderAll();
   };
 
@@ -284,39 +393,92 @@ export const ManualEditorTab: React.FC = () => {
                 accept="image/*"
                 onChange={handleFileSelect}
                 className="hidden"
+                aria-label="בחר קובץ תמונה"
               />
               <Button 
                 variant="outline" 
                 className="w-full min-h-[44px]"
                 onClick={() => fileInputRef.current?.click()}
+                aria-label="העלה תמונה לעריכה"
               >
                 <Upload className="h-4 w-4 ml-2" />
                 העלה תמונה
               </Button>
             </div>
 
+            {/* Undo/Redo */}
+            <div className="space-y-2">
+              <Label>היסטוריה</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="min-h-[44px]"
+                  aria-label="בטל פעולה אחרונה"
+                >
+                  <Undo className="h-4 w-4 ml-1" />
+                  בטל
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  className="min-h-[44px]"
+                  aria-label="בצע מחדש"
+                >
+                  <Redo className="h-4 w-4 ml-1" />
+                  חזור
+                </Button>
+              </div>
+            </div>
+
             {/* Transform Tools */}
             <div className="space-y-2">
               <Label>טרנספורמציות</Label>
               <div className="grid grid-cols-4 gap-2">
-                <Button variant="outline" size="icon" onClick={() => handleRotate(-90)} title="סובב שמאלה" className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleRotate(-90)} 
+                  className="min-h-[44px]"
+                  aria-label="סובב שמאלה"
+                >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => handleRotate(90)} title="סובב ימינה" className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleRotate(90)} 
+                  className="min-h-[44px]"
+                  aria-label="סובב ימינה"
+                >
                   <RotateCw className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} title="הגדל" className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleZoom('in')} 
+                  className="min-h-[44px]"
+                  aria-label="הגדל"
+                >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} title="הקטן" className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleZoom('out')} 
+                  className="min-h-[44px]"
+                  aria-label="הקטן"
+                >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Add Elements */}
+            {/* Text Tools */}
             <div className="space-y-2">
-              <Label>הוסף אלמנטים</Label>
+              <Label>הוסף טקסט</Label>
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <Input 
@@ -325,25 +487,99 @@ export const ManualEditorTab: React.FC = () => {
                     placeholder="טקסט"
                     className="flex-1 min-h-[44px]"
                   />
-                  <Button variant="outline" size="icon" onClick={handleAddText} className="min-h-[44px] min-w-[44px]">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleAddText} 
+                    className="min-h-[44px] min-w-[44px]"
+                    aria-label="הוסף טקסט"
+                  >
                     <Type className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button variant="outline" className="w-full min-h-[44px]" onClick={handleAddRectangle}>
-                  <Square className="h-4 w-4 ml-2" />
-                  הוסף מסגרת
-                </Button>
+                <div className="flex gap-2 items-center">
+                  <div className="flex items-center gap-1 flex-1">
+                    <Palette className="h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="color"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="w-8 h-8 rounded cursor-pointer border"
+                      aria-label="בחר צבע טקסט"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Slider
+                      value={[fontSize]}
+                      onValueChange={([value]) => setFontSize(value)}
+                      min={12}
+                      max={72}
+                      step={2}
+                      className="touch-none"
+                      aria-label="גודל פונט"
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground w-8">{fontSize}px</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Shape Tools */}
+            <div className="space-y-2">
+              <Label>הוסף צורות</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2 items-center mb-2">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="color"
+                    value={strokeColor}
+                    onChange={(e) => setStrokeColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border"
+                    aria-label="בחר צבע מסגרת"
+                  />
+                  <span className="text-xs text-muted-foreground">צבע מסגרת</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="min-h-[44px]" 
+                    onClick={handleAddRectangle}
+                    aria-label="הוסף מלבן"
+                  >
+                    <Square className="h-4 w-4 ml-2" />
+                    מלבן
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="min-h-[44px]" 
+                    onClick={handleAddCircle}
+                    aria-label="הוסף עיגול"
+                  >
+                    <Circle className="h-4 w-4 ml-2" />
+                    עיגול
+                  </Button>
+                </div>
               </div>
             </div>
 
             {/* Delete */}
-            <Button variant="destructive" className="w-full min-h-[44px]" onClick={handleDeleteSelected}>
+            <Button 
+              variant="destructive" 
+              className="w-full min-h-[44px]" 
+              onClick={handleDeleteSelected}
+              aria-label="מחק אובייקט נבחר"
+            >
               <Trash2 className="h-4 w-4 ml-2" />
               מחק נבחר
             </Button>
 
             {/* Save to Property */}
-            <Button variant="secondary" className="w-full min-h-[44px]" onClick={handleSaveToProperty}>
+            <Button 
+              variant="secondary" 
+              className="w-full min-h-[44px]" 
+              onClick={handleSaveToProperty}
+              aria-label="שמור תמונה לנכס"
+            >
               <Save className="h-4 w-4 ml-2" />
               שמור לנכס
             </Button>
@@ -352,11 +588,21 @@ export const ManualEditorTab: React.FC = () => {
             <div className="space-y-2">
               <Label>ייצוא</Label>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => handleDownload('png')} className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleDownload('png')} 
+                  className="min-h-[44px]"
+                  aria-label="הורד כ-PNG"
+                >
                   <Download className="h-4 w-4 ml-1" />
                   PNG
                 </Button>
-                <Button variant="outline" onClick={() => handleDownload('jpeg')} className="min-h-[44px]">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleDownload('jpeg')} 
+                  className="min-h-[44px]"
+                  aria-label="הורד כ-JPG"
+                >
                   <Download className="h-4 w-4 ml-1" />
                   JPG
                 </Button>

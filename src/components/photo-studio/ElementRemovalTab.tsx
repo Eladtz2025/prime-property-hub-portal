@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
+import { validateFileSize, downloadImage } from './utils';
 
 // Calculate initial brush size based on screen
 const getInitialBrushSize = () => {
@@ -25,6 +26,7 @@ export const ElementRemovalTab: React.FC = () => {
   const [hasMask, setHasMask] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -33,27 +35,48 @@ export const ElementRemovalTab: React.FC = () => {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Store previous URL for cleanup
+  const prevImageUrlRef = useRef<string>('');
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (prevImageUrlRef.current) {
+        URL.revokeObjectURL(prevImageUrlRef.current);
+      }
+    };
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!validateFileSize(file)) return;
       loadImage(file);
     }
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      if (!validateFileSize(file)) return;
       loadImage(file);
     }
-  };
+  }, []);
 
-  const loadImage = (file: File) => {
+  const loadImage = useCallback((file: File) => {
+    // Cleanup previous URL
+    if (prevImageUrlRef.current) {
+      URL.revokeObjectURL(prevImageUrlRef.current);
+    }
+    
     setSelectedFile(file);
     setResultUrl('');
     setHasMask(false);
+    
     const url = URL.createObjectURL(file);
+    prevImageUrlRef.current = url;
     setImageUrl(url);
 
     const img = new Image();
@@ -62,7 +85,7 @@ export const ElementRemovalTab: React.FC = () => {
       initializeCanvases(img);
     };
     img.src = url;
-  };
+  }, []);
 
   const initializeCanvases = (img: HTMLImageElement) => {
     const canvas = canvasRef.current;
@@ -137,30 +160,37 @@ export const ElementRemovalTab: React.FC = () => {
     setHasMask(true);
   }, [brushSize]);
 
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    // Draw at initial click position
+    const pos = getMousePos(e);
+    drawAt(pos.x, pos.y);
+  }, [drawAt]);
+
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const pos = getMousePos(e);
     drawAt(pos.x, pos.y);
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     setIsDrawing(true);
     const pos = getTouchPos(e);
     drawAt(pos.x, pos.y);
-  };
+  }, [getTouchPos, drawAt]);
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDrawing) return;
     const pos = getTouchPos(e);
     drawAt(pos.x, pos.y);
-  };
+  }, [isDrawing, getTouchPos, drawAt]);
 
-  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     setIsDrawing(false);
-  };
+  }, []);
 
   const handleClearMask = () => {
     const maskCanvas = maskCanvasRef.current;
@@ -260,20 +290,9 @@ export const ElementRemovalTab: React.FC = () => {
 
   const handleDownload = async () => {
     if (!resultUrl) return;
-    try {
-      const response = await fetch(resultUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cleaned-property-image.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error('שגיאה בהורדת התמונה');
-    }
+    setIsDownloading(true);
+    await downloadImage(resultUrl, 'cleaned-property-image.png');
+    setIsDownloading(false);
   };
 
   return (
@@ -286,12 +305,29 @@ export const ElementRemovalTab: React.FC = () => {
               <span>תוצאה</span>
               {resultUrl && (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSaveDialogOpen(true)} className="min-h-[44px]">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSaveDialogOpen(true)} 
+                    className="min-h-[44px]"
+                    aria-label="שמור תמונה לנכס"
+                  >
                     <Save className="h-4 w-4 ml-1" />
                     <span className="hidden sm:inline">שמור לנכס</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload} className="min-h-[44px]">
-                    <Download className="h-4 w-4 ml-1" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleDownload} 
+                    className="min-h-[44px]"
+                    disabled={isDownloading}
+                    aria-label="הורד תמונה מעובדת"
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1" />
+                    ) : (
+                      <Download className="h-4 w-4 ml-1" />
+                    )}
                     <span className="hidden sm:inline">הורד</span>
                   </Button>
                 </div>
@@ -305,7 +341,7 @@ export const ElementRemovalTab: React.FC = () => {
             {resultUrl ? (
               <img 
                 src={resultUrl} 
-                alt="Result" 
+                alt="תמונה מעובדת" 
                 className="w-full rounded-lg cursor-pointer"
                 onClick={() => setLightboxOpen(true)}
                 loading="lazy"
@@ -339,6 +375,10 @@ export const ElementRemovalTab: React.FC = () => {
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
+                role="button"
+                tabIndex={0}
+                aria-label="העלה תמונה להסרת אלמנטים"
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
               >
                 <input
                   ref={fileInputRef}
@@ -346,10 +386,14 @@ export const ElementRemovalTab: React.FC = () => {
                   accept="image/*"
                   onChange={handleFileSelect}
                   className="hidden"
+                  aria-label="בחר קובץ תמונה"
                 />
                 <Upload className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-sm md:text-base">
                   גרור תמונה לכאן או לחץ לבחירה
+                </p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  גודל מקסימלי: 10MB
                 </p>
               </div>
             ) : (
@@ -367,7 +411,7 @@ export const ElementRemovalTab: React.FC = () => {
                   <canvas
                     ref={maskCanvasRef}
                     className="absolute top-0 left-0 cursor-crosshair"
-                    onMouseDown={() => setIsDrawing(true)}
+                    onMouseDown={handleMouseDown}
                     onMouseUp={() => setIsDrawing(false)}
                     onMouseLeave={() => setIsDrawing(false)}
                     onMouseMove={draw}
@@ -380,7 +424,7 @@ export const ElementRemovalTab: React.FC = () => {
                 {/* Brush Size */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>גודל מברשת</Label>
+                    <Label id="brush-size-label">גודל מברשת</Label>
                     <span className="text-sm text-muted-foreground">{brushSize}px</span>
                   </div>
                   <Slider
@@ -390,16 +434,27 @@ export const ElementRemovalTab: React.FC = () => {
                     max={100}
                     step={5}
                     className="touch-none"
+                    aria-labelledby="brush-size-label"
                   />
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleClearMask} className="flex-1 min-h-[44px]">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleClearMask} 
+                    className="flex-1 min-h-[44px]"
+                    aria-label="נקה את הסימון"
+                  >
                     <Trash2 className="h-4 w-4 ml-1" />
                     נקה סימון
                   </Button>
-                  <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 min-h-[44px]">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="flex-1 min-h-[44px]"
+                    aria-label="העלה תמונה אחרת"
+                  >
                     <Upload className="h-4 w-4 ml-1" />
                     <span className="hidden sm:inline">העלה אחרת</span>
                     <span className="sm:hidden">העלה</span>

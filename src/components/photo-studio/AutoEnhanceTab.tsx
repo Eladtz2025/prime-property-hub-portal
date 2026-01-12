@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
+import { validateFileSize, downloadImage, enhancementTypeTranslations } from './utils';
 
 const enhancementTypes = [
   { value: 'lighting', label: 'שיפור תאורה וצבעים', description: 'התאמת בהירות, ניגודיות וצבעים' },
@@ -22,32 +23,65 @@ export const AutoEnhanceTab: React.FC = () => {
   const [enhancedUrl, setEnhancedUrl] = useState<string>('');
   const [enhancementType, setEnhancementType] = useState('general');
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Store previous URL for cleanup
+  const prevPreviewUrlRef = useRef<string>('');
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (prevPreviewUrlRef.current) {
+        URL.revokeObjectURL(prevPreviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!validateFileSize(file)) return;
+      
+      // Cleanup previous URL
+      if (prevPreviewUrlRef.current) {
+        URL.revokeObjectURL(prevPreviewUrlRef.current);
+      }
+      
+      const newUrl = URL.createObjectURL(file);
+      prevPreviewUrlRef.current = newUrl;
+      
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setPreviewUrl(newUrl);
       setEnhancedUrl('');
       setShowComparison(false);
     }
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      if (!validateFileSize(file)) return;
+      
+      // Cleanup previous URL
+      if (prevPreviewUrlRef.current) {
+        URL.revokeObjectURL(prevPreviewUrlRef.current);
+      }
+      
+      const newUrl = URL.createObjectURL(file);
+      prevPreviewUrlRef.current = newUrl;
+      
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setPreviewUrl(newUrl);
       setEnhancedUrl('');
       setShowComparison(false);
     }
-  };
+  }, []);
 
   const handleEnhance = async () => {
     if (!selectedFile) {
@@ -65,11 +99,15 @@ export const AutoEnhanceTab: React.FC = () => {
       });
       const base64Image = await base64Promise;
 
+      // Get English prompt for the enhancement type
+      const enhancementPrompt = enhancementTypeTranslations[enhancementType] || enhancementTypeTranslations.general;
+
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
         body: { 
           type: 'enhance',
           image: base64Image,
-          enhancementType
+          enhancementType,
+          prompt: enhancementPrompt
         }
       });
 
@@ -90,25 +128,20 @@ export const AutoEnhanceTab: React.FC = () => {
 
   const handleDownload = async () => {
     if (!enhancedUrl) return;
-    try {
-      const response = await fetch(enhancedUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `enhanced-property-image.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error('שגיאה בהורדת התמונה');
-    }
+    setIsDownloading(true);
+    await downloadImage(enhancedUrl, 'enhanced-property-image.png');
+    setIsDownloading(false);
   };
 
   const handleSliderTouch = (e: React.TouchEvent<HTMLInputElement>) => {
     // Allow touch interaction on the slider
     e.stopPropagation();
+  };
+
+  // Calculate before image width properly to avoid division by zero
+  const getBeforeImageWidth = () => {
+    if (sliderPosition <= 0) return '100%';
+    return `${10000 / sliderPosition}%`;
   };
 
   return (
@@ -121,12 +154,29 @@ export const AutoEnhanceTab: React.FC = () => {
               <span>תוצאה</span>
               {enhancedUrl && (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSaveDialogOpen(true)} className="min-h-[44px]">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSaveDialogOpen(true)} 
+                    className="min-h-[44px]"
+                    aria-label="שמור תמונה לנכס"
+                  >
                     <Save className="h-4 w-4 ml-1" />
                     <span className="hidden sm:inline">שמור לנכס</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload} className="min-h-[44px]">
-                    <Download className="h-4 w-4 ml-1" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleDownload} 
+                    className="min-h-[44px]"
+                    disabled={isDownloading}
+                    aria-label="הורד תמונה משופרת"
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1" />
+                    ) : (
+                      <Download className="h-4 w-4 ml-1" />
+                    )}
                     <span className="hidden sm:inline">הורד</span>
                   </Button>
                 </div>
@@ -147,7 +197,7 @@ export const AutoEnhanceTab: React.FC = () => {
                   {/* After Image (full) */}
                   <img 
                     src={enhancedUrl} 
-                    alt="After" 
+                    alt="תמונה אחרי שיפור" 
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   
@@ -158,9 +208,9 @@ export const AutoEnhanceTab: React.FC = () => {
                   >
                     <img 
                       src={previewUrl} 
-                      alt="Before" 
+                      alt="תמונה לפני שיפור" 
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={{ width: sliderPosition > 0 ? `${10000 / sliderPosition}%` : '100%', maxWidth: 'none' }}
+                      style={{ width: getBeforeImageWidth(), maxWidth: 'none' }}
                     />
                   </div>
 
@@ -185,6 +235,7 @@ export const AutoEnhanceTab: React.FC = () => {
                     onTouchMove={handleSliderTouch}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize"
                     style={{ touchAction: 'none' }}
+                    aria-label="גרור להשוואה בין לפני לאחרי"
                   />
 
                   {/* Labels */}
@@ -225,6 +276,10 @@ export const AutoEnhanceTab: React.FC = () => {
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
+              role="button"
+              tabIndex={0}
+              aria-label="העלה תמונה לשיפור"
+              onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
             >
               <input
                 ref={fileInputRef}
@@ -232,11 +287,12 @@ export const AutoEnhanceTab: React.FC = () => {
                 accept="image/*"
                 onChange={handleFileSelect}
                 className="hidden"
+                aria-label="בחר קובץ תמונה"
               />
               {previewUrl ? (
                 <img 
                   src={previewUrl} 
-                  alt="Preview" 
+                  alt="תצוגה מקדימה" 
                   className="max-h-32 md:max-h-48 mx-auto rounded-lg"
                 />
               ) : (
@@ -244,6 +300,9 @@ export const AutoEnhanceTab: React.FC = () => {
                   <Upload className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-sm md:text-base">
                     גרור תמונה לכאן או לחץ לבחירה
+                  </p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    גודל מקסימלי: 10MB
                   </p>
                 </>
               )}
@@ -289,9 +348,9 @@ export const AutoEnhanceTab: React.FC = () => {
         </Card>
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox - show both before and after */}
       <ImageLightbox
-        images={enhancedUrl ? [enhancedUrl] : []}
+        images={enhancedUrl ? [enhancedUrl, previewUrl].filter(Boolean) : []}
         currentIndex={0}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
