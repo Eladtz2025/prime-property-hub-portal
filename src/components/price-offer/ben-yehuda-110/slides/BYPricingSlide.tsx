@@ -26,7 +26,7 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/Ben Yehuda 110/IMG_5765.JPG')`,
+          backgroundImage: `url('/images/ben-yehuda-110/IMG_5765.JPG')`,
         }}
       />
       
