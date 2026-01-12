@@ -21,7 +21,7 @@ const BYFeaturesSlide = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/ben-yehuda-110/IMG_5762.jpeg')`,
+          backgroundImage: `url('/images/ben-yehuda-110/cleaned-property-image (4).png')`,
         }}
       />
       
