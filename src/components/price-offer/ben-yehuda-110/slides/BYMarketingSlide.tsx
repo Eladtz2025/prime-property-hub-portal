@@ -64,7 +64,7 @@ const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Positioning Quote */}
-        <div className="w-full max-w-4xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6">
+        <div className="w-full max-w-5xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6">
           <p 
             className="text-white text-sm md:text-lg lg:text-xl font-light italic"
             style={{ textShadow: softShadow }}
