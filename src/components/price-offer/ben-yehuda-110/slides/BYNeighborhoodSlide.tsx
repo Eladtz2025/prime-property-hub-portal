@@ -53,7 +53,7 @@ const BYNeighborhoodSlide = () => {
           <div className="relative hidden md:flex w-full bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 items-center justify-center">
             
             {/* Beach Badge - Small square, positioned inside map on left */}
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 bg-[#f5c242]/25 backdrop-blur-sm border border-[#f5c242]/50 rounded-lg p-3 flex flex-col items-center justify-center z-10">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 bg-[#f5c242]/25 backdrop-blur-sm border border-[#f5c242]/50 rounded-lg px-5 py-3 flex flex-col items-center justify-center z-10">
               <div className="w-10 h-10 rounded-full bg-[#f5c242] flex items-center justify-center mb-1">
                 <Waves className="w-5 h-5 text-white" />
               </div>
@@ -67,18 +67,18 @@ const BYNeighborhoodSlide = () => {
             </div>
             
             {/* SVG Map */}
-            <div className="relative h-24 w-full pl-20">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 100">
-                <line x1="80" y1="50" x2="350" y2="50" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
-                <line x1="215" y1="15" x2="215" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
-                <circle cx="215" cy="50" r="8" fill="#f5c242" />
-                <text x="215" y="75" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
-                <circle cx="100" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
-                <text x="100" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
-                <circle cx="330" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
-                <text x="330" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
-                <text x="157" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
-                <text x="272" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
+            <div className="relative h-24 w-full pl-28">
+              <svg className="w-full h-full" viewBox="0 0 420 100">
+                <line x1="40" y1="50" x2="380" y2="50" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+                <line x1="210" y1="15" x2="210" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+                <circle cx="210" cy="50" r="8" fill="#f5c242" />
+                <text x="210" y="75" textAnchor="middle" fill="white" fontSize="10" fontWeight="500">Ben Yehuda 110</text>
+                <circle cx="60" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+                <text x="60" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Gordon Beach</text>
+                <circle cx="360" cy="50" r="6" fill="rgba(255,255,255,0.8)" />
+                <text x="360" y="35" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="9">Dizengoff St.</text>
+                <text x="135" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">3 min</text>
+                <text x="285" y="45" textAnchor="middle" fill="#f5c242" fontSize="8">2 min</text>
               </svg>
             </div>
           </div>
