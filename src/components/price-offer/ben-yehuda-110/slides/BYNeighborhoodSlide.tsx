@@ -6,7 +6,7 @@ interface BYNeighborhoodSlideProps {
 }
 
 const BYNeighborhoodSlide = ({ content }: BYNeighborhoodSlideProps) => {
-  const softShadow = '0 2px 16px rgba(0,0,0,0.5), 0 6px 30px rgba(0,0,0,0.4), 0 10px 50px rgba(0,0,0,0.3)';
+  const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
   
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
