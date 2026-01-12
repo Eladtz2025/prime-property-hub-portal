@@ -65,6 +65,8 @@ export const roomTypeTranslations: Record<string, string> = {
   'bedroom': 'bedroom',
   'kitchen': 'kitchen',
   'bathroom': 'bathroom',
+  'dining_room': 'dining room',
+  'office': 'home office',
   'balcony': 'balcony',
   'exterior': 'building exterior',
   'garden': 'garden',
@@ -81,6 +83,7 @@ export const styleTranslations: Record<string, string> = {
   'scandinavian': 'scandinavian',
   'industrial': 'industrial',
   'mediterranean': 'mediterranean',
+  'bohemian': 'bohemian',
 };
 
 /**

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, Wand2, Eraser, PenTool } from 'lucide-react';
+import { Sparkles, Wand2, Eraser, PenTool, Sofa } from 'lucide-react';
 import { ImageGenerationTab } from '@/components/photo-studio/ImageGenerationTab';
 import { AutoEnhanceTab } from '@/components/photo-studio/AutoEnhanceTab';
 import { ElementRemovalTab } from '@/components/photo-studio/ElementRemovalTab';
 import { ManualEditorTab } from '@/components/photo-studio/ManualEditorTab';
+import { VirtualStagingTab } from '@/components/photo-studio/VirtualStagingTab';
 import { PhotoStudioErrorBoundary } from '@/components/photo-studio/PhotoStudioErrorBoundary';
 
 const PhotoStudio: React.FC = () => {
@@ -20,7 +21,7 @@ const PhotoStudio: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50">
           <TabsTrigger 
             value="generate" 
             className="flex items-center gap-2 py-3 data-[state=active]:bg-background"
@@ -36,6 +37,14 @@ const PhotoStudio: React.FC = () => {
             <Wand2 className="h-4 w-4" />
             <span className="hidden sm:inline">שיפור אוטומטי</span>
             <span className="sm:hidden">שיפור</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="staging" 
+            className="flex items-center gap-2 py-3 data-[state=active]:bg-background"
+          >
+            <Sofa className="h-4 w-4" />
+            <span className="hidden sm:inline">עיצוב ריהוט</span>
+            <span className="sm:hidden">ריהוט</span>
           </TabsTrigger>
           <TabsTrigger 
             value="remove" 
@@ -64,6 +73,12 @@ const PhotoStudio: React.FC = () => {
         <TabsContent value="enhance" className="mt-6">
           <PhotoStudioErrorBoundary tabName="שיפור אוטומטי">
             <AutoEnhanceTab />
+          </PhotoStudioErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="staging" className="mt-6">
+          <PhotoStudioErrorBoundary tabName="עיצוב ריהוט">
+            <VirtualStagingTab />
           </PhotoStudioErrorBoundary>
         </TabsContent>
 

@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { type, prompt, image, mask, enhancementType, removalDescription } = await req.json();
+    const { type, prompt, image, mask, enhancementType, removalDescription, stagingMode, roomType, style, customDescription } = await req.json();
 
     console.log(`Processing ${type} request`);
 
@@ -85,6 +85,42 @@ serve(async (req) => {
               type: "image_url",
               image_url: {
                 url: mask
+              }
+            }
+          ]
+        }
+      ];
+    } else if (type === 'staging') {
+      // Virtual staging - add or replace furniture
+      let stagingPrompt = '';
+      
+      if (stagingMode === 'add') {
+        stagingPrompt = `Add ${style} style furniture to this empty ${roomType}. Make it look like a professionally staged home for real estate photography. The furniture should be high quality and appropriate for the room size and layout.`;
+      } else {
+        stagingPrompt = `Replace the existing furniture in this ${roomType} with ${style} style furniture. Keep the room layout and architecture the same, but update all furniture and decor to match the ${style} aesthetic. Make it look like a professionally staged home.`;
+      }
+      
+      if (customDescription && customDescription.trim()) {
+        stagingPrompt += ` Specifically include: ${customDescription.trim()}.`;
+        console.log('Using custom furniture description:', customDescription);
+      }
+      
+      stagingPrompt += ' Ensure the result looks realistic and naturally lit.';
+      
+      console.log('Staging prompt:', stagingPrompt);
+      
+      messages = [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: stagingPrompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: image
               }
             }
           ]
