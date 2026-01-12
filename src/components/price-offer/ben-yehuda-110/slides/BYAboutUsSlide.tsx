@@ -118,8 +118,17 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
             >
               Tali Silberberg
             </h4>
-            <p className="text-white/90 text-xs font-light leading-relaxed">
-              International perspective & trust-building
+            <div className="mb-1 md:mb-2">
+              <span 
+                className="text-2xl md:text-4xl font-bold text-[#f5c242]"
+                style={{ textShadow: softShadow }}
+              >
+                10+
+              </span>
+              <span className="text-white/80 text-xs ml-1">Years</span>
+            </div>
+            <p className="text-white/90 text-xs font-light">
+              International perspective
             </p>
           </div>
         </div>

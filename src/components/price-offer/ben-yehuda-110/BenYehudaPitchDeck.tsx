@@ -126,7 +126,7 @@ const BenYehudaPitchDeck = () => {
           disabled={currentSlide === 0}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronLeft className="h-6 w-6" />
         </button>
         
         {/* Slide Indicators */}
@@ -149,7 +149,7 @@ const BenYehudaPitchDeck = () => {
           disabled={currentSlide === slides.length - 1}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronRight className="h-6 w-6" />
         </button>
       </div>
     </div>
