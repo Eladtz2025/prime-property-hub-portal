@@ -101,16 +101,6 @@ const BenYehudaPitchDeck = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#d4c5b5]">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4">
-        <p className="text-sm font-light text-[#2d3b3a]/60 tracking-wider">
-          {String(currentSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
-        </p>
-        <p className="text-sm font-light text-[#2d3b3a]/60 tracking-wider">
-          PRESENTATION
-        </p>
-      </div>
-
       {/* Slides Container */}
       <div className="relative h-full w-full">
         {slides.map((slide, index) => (
@@ -136,7 +126,7 @@ const BenYehudaPitchDeck = () => {
           disabled={currentSlide === 0}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8b7765]/30 backdrop-blur-sm text-[#2d3b3a] transition-all hover:bg-[#8b7765]/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronRight className="h-6 w-6" />
         </button>
         
         {/* Slide Indicators */}
@@ -159,18 +149,8 @@ const BenYehudaPitchDeck = () => {
           disabled={currentSlide === slides.length - 1}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8b7765]/30 backdrop-blur-sm text-[#2d3b3a] transition-all hover:bg-[#8b7765]/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronLeft className="h-6 w-6" />
         </button>
-      </div>
-
-      {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4">
-        <p className="text-xs font-light text-[#2d3b3a]/40 tracking-wider">
-          2025
-        </p>
-        <p className="text-xs font-light text-[#2d3b3a]/40 tracking-wider">
-          ctmarketproperties.com
-        </p>
       </div>
     </div>
   );

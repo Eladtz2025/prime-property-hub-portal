@@ -6,7 +6,7 @@ interface BYMarketingSlideProps {
 }
 
 const BYMarketingSlide = ({ content }: BYMarketingSlideProps) => {
-  const softShadow = '0 2px 12px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.2)';
+  const softShadow = '0 2px 16px rgba(0,0,0,0.5), 0 6px 30px rgba(0,0,0,0.4), 0 10px 50px rgba(0,0,0,0.3)';
   
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
