@@ -11,7 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
-import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers } from "lucide-react";
+import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
+import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
+import { cn } from "@/lib/utils";
 
 interface Agent {
   id: string;
@@ -31,15 +33,52 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(customer || {});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
+  const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
 
   useEffect(() => {
     if (customer) {
       setFormData(customer);
+      setErrors({});
+      setTouched({});
     }
   }, [customer]);
 
+  const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = formData[field] || '';
+    let error: string | null = null;
+    
+    if (field === 'name') {
+      error = validateField(requiredNameSchema, value);
+    } else if (field === 'phone') {
+      error = validateField(phoneSchema, value);
+    } else if (field === 'email') {
+      error = validateField(emailSchema, value);
+    }
+    
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
+
   const handleSave = async () => {
     if (!customer) return;
+    
+    // Validate all fields before save
+    const nameError = validateField(requiredNameSchema, formData.name || '');
+    const phoneError = validateField(phoneSchema, formData.phone || '');
+    const emailError = validateField(emailSchema, formData.email || '');
+    
+    setTouched({ name: true, phone: true, email: true });
+    setErrors({ name: nameError || undefined, phone: phoneError || undefined, email: emailError || undefined });
+    
+    if (nameError || phoneError || emailError) {
+      toast({
+        title: 'שגיאה בטופס',
+        description: 'אנא תקן את השגיאות לפני השמירה',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setLoading(true);
     try {
@@ -120,30 +159,54 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
         <div className="space-y-4">
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>שם מלא</Label>
+            <div className="space-y-1">
+              <Label>שם מלא *</Label>
               <Input
                 value={formData.name || ''}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onBlur={() => handleFieldBlur('name')}
+                className={cn(touched.name && errors.name && 'border-destructive')}
               />
+              {touched.name && errors.name && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                  <span>{errors.name}</span>
+                </p>
+              )}
             </div>
-            <div>
+            <div className="space-y-1">
               <Label>אימייל</Label>
               <Input
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onBlur={() => handleFieldBlur('email')}
+                className={cn(touched.email && errors.email && 'border-destructive')}
               />
+              {touched.email && errors.email && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                  <span>{errors.email}</span>
+                </p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div>
+            <div className="space-y-1">
               <Label>טלפון</Label>
               <Input
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onBlur={() => handleFieldBlur('phone')}
+                className={cn(touched.phone && errors.phone && 'border-destructive')}
               />
+              {touched.phone && errors.phone && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                  <span>{errors.phone}</span>
+                </p>
+              )}
             </div>
             <div>
               <Label>סטטוס</Label>

@@ -25,6 +25,9 @@ import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { useQuery } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
+import { phoneSchema, emailSchema, validateField } from '@/utils/formValidation';
+import { cn } from '@/lib/utils';
 
 interface AddPropertyModalProps {
   isOpen: boolean;
@@ -89,6 +92,22 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const [uploadedImages, setUploadedImages] = useState<PropertyImage[]>([]);
   const { logActivity } = useActivityLogger();
   const { toast } = useToast();
+  const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
+  const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
+
+  const handleFieldBlur = (field: 'ownerPhone' | 'ownerEmail' | 'tenantPhone') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = formData[field] || '';
+    let error: string | null = null;
+    
+    if (field === 'ownerPhone' || field === 'tenantPhone') {
+      error = validateField(phoneSchema, value);
+    } else if (field === 'ownerEmail') {
+      error = validateField(emailSchema, value);
+    }
+    
+    setErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
 
   // Load approved users for agent selection
   const { data: users = [] } = useQuery({
@@ -118,11 +137,22 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       return;
     }
 
-    // Email validation
-    if (formData.ownerEmail && !formData.ownerEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    // Validate phone and email fields
+    const ownerPhoneError = validateField(phoneSchema, formData.ownerPhone);
+    const ownerEmailError = validateField(emailSchema, formData.ownerEmail);
+    const tenantPhoneError = validateField(phoneSchema, formData.tenantPhone);
+    
+    setTouched({ ownerPhone: true, ownerEmail: true, tenantPhone: true });
+    setErrors({ 
+      ownerPhone: ownerPhoneError || undefined, 
+      ownerEmail: ownerEmailError || undefined, 
+      tenantPhone: tenantPhoneError || undefined 
+    });
+    
+    if (ownerPhoneError || ownerEmailError || tenantPhoneError) {
       toast({
-        title: "שגיאה",
-        description: "כתובת אימייל בעלים לא תקינה",
+        title: "שגיאה בטופס",
+        description: "אנא תקן את השגיאות לפני השמירה",
         variant: "destructive"
       });
       return;
@@ -521,25 +551,41 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="ownerPhone">טלפון בעלים</Label>
                     <Input
                       id="ownerPhone"
                       value={formData.ownerPhone}
                       onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+                      onBlur={() => handleFieldBlur('ownerPhone')}
                       placeholder="050-1234567"
+                      className={cn(touched.ownerPhone && errors.ownerPhone && 'border-destructive')}
                     />
+                    {touched.ownerPhone && errors.ownerPhone && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{errors.ownerPhone}</span>
+                      </p>
+                    )}
                   </div>
                   
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="ownerEmail">אימייל בעלים</Label>
                     <Input
                       id="ownerEmail"
                       type="email"
                       value={formData.ownerEmail}
                       onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+                      onBlur={() => handleFieldBlur('ownerEmail')}
                       placeholder="email@example.com"
+                      className={cn(touched.ownerEmail && errors.ownerEmail && 'border-destructive')}
                     />
+                    {touched.ownerEmail && errors.ownerEmail && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                        <span>{errors.ownerEmail}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </AccordionContent>
@@ -587,14 +633,22 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="tenantPhone">טלפון</Label>
                       <Input
                         id="tenantPhone"
                         value={formData.tenantPhone}
                         onChange={(e) => handleInputChange('tenantPhone', e.target.value)}
+                        onBlur={() => handleFieldBlur('tenantPhone')}
                         placeholder="050-1234567"
+                        className={cn(touched.tenantPhone && errors.tenantPhone && 'border-destructive')}
                       />
+                      {touched.tenantPhone && errors.tenantPhone && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                          <span>{errors.tenantPhone}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </AccordionContent>
