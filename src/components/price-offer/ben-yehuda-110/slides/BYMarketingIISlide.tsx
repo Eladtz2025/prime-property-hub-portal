@@ -50,7 +50,7 @@ const BYMarketingIISlide = ({ content }: BYMarketingIISlideProps) => {
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
           style={{ textShadow: softShadow }}
         >
-          WHY CITY MARKET
+          Why City Market
         </h2>
 
         {/* Decorative Line */}
@@ -59,15 +59,15 @@ const BYMarketingIISlide = ({ content }: BYMarketingIISlideProps) => {
         {/* Opening Statement */}
         <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6">
           <p 
-            className="text-white text-sm md:text-lg font-light italic"
+            className="text-white text-sm md:text-lg font-semibold"
             style={{ textShadow: softShadow }}
           >
-            "Buyers at this level respond to confidence and clarity."
+            Buyers at this level respond to clarity, control, and confidence.
           </p>
         </div>
 
         {/* Our Approach - Cards Grid */}
-        <div className="w-full max-w-4xl grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div className="w-full max-w-3xl grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
           {ourApproach.map((item, index) => {
             const IconComponent = item.icon;
             return (
@@ -84,24 +84,18 @@ const BYMarketingIISlide = ({ content }: BYMarketingIISlideProps) => {
           })}
         </div>
 
-        {/* Result Box */}
+        {/* Bottom Statement Box */}
         <div 
-          className="w-full max-w-3xl rounded-xl p-4 md:p-8 border-2 border-[#f5c242]/50"
+          className="w-full max-w-3xl rounded-xl p-3 md:p-5 mb-8 md:mb-12 border-2 border-[#f5c242]/50"
           style={{
             background: 'radial-gradient(ellipse at center, rgba(139,119,101,0.9) 0%, rgba(139,119,101,0.7) 100%)'
           }}
         >
-          <h3 
-            className="text-xs md:text-base font-serif text-[#f5c242] mb-2 md:mb-3"
-            style={{ textShadow: softShadow }}
-          >
-            Result
-          </h3>
           <p 
-            className="text-white text-lg md:text-2xl lg:text-3xl font-light italic"
+            className="text-white text-lg md:text-2xl lg:text-3xl font-semibold"
             style={{ textShadow: softShadow }}
           >
-            "We manage buyer behavior, not just listings."
+            We manage buyer behavior, not just listings.
           </p>
         </div>
       </div>
