@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { Wand2, Upload, Download, Loader2, ArrowLeftRight, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export const AutoEnhanceTab: React.FC = () => {
   const [enhancementType, setEnhancementType] = useState('general');
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [customDescription, setCustomDescription] = useState('');
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -115,7 +117,10 @@ export const AutoEnhanceTab: React.FC = () => {
       const base64Image = await base64Promise;
 
       // Get English prompt for the enhancement type
-      const enhancementPrompt = enhancementTypeTranslations[enhancementType] || enhancementTypeTranslations.general;
+      let enhancementPrompt = enhancementTypeTranslations[enhancementType] || enhancementTypeTranslations.general;
+      if (customDescription.trim()) {
+        enhancementPrompt += `. Additional instructions: ${customDescription.trim()}`;
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
         body: { 
@@ -131,6 +136,7 @@ export const AutoEnhanceTab: React.FC = () => {
       if (data?.imageUrl) {
         setEnhancedUrl(data.imageUrl);
         setShowComparison(true);
+        setCustomDescription('');
         toast.success('התמונה שופרה בהצלחה!');
       }
     } catch (error: any) {
@@ -356,7 +362,23 @@ export const AutoEnhanceTab: React.FC = () => {
               </RadioGroup>
             </div>
 
-            <Button 
+            {/* Custom Description */}
+            <div className="space-y-2">
+              <Label htmlFor="custom-description">הוראות נוספות (אופציונלי)</Label>
+              <Textarea
+                id="custom-description"
+                placeholder="תאר מה ברצונך לשפר או לשנות בתמונה..."
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+                className="min-h-[80px] resize-none"
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground text-left">
+                {customDescription.length}/200
+              </p>
+            </div>
+
+            <Button
               onClick={handleEnhance} 
               className="w-full min-h-[44px]"
               disabled={isEnhancing || !selectedFile}
