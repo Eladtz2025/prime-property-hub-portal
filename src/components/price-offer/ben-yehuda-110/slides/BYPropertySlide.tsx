@@ -44,25 +44,17 @@ const BYPropertySlide = () => {
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-12 py-16 overflow-y-auto">
         {/* Main Title */}
         <h1 
-          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-2"
+          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-6"
           style={{ textShadow: softShadow }}
         >
           3-Room Duplex Apartment | Approx. 70 sqm
         </h1>
 
-        {/* Subtitle */}
-        <h2 
-          className="text-lg md:text-xl lg:text-2xl font-light text-white/90 mb-6"
-          style={{ textShadow: softShadow }}
-        >
-          Ben Yehuda 110, Apartment 14
-        </h2>
-
         {/* Decorative Line */}
         <div className="w-20 h-px bg-white/60 mb-8" />
 
         {/* Two Column Layout */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6" dir="ltr">
           {/* The Apartment */}
           <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-6 md:p-8 text-left">
             <div className="flex items-center gap-3 mb-5">
