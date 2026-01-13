@@ -1,13 +1,22 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Building2, Check, ChevronsUpDown, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Building2 } from 'lucide-react';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface PropertySelectorProps {
   value?: string;
@@ -31,6 +40,8 @@ export interface PropertyData {
 }
 
 const PropertySelector = ({ value, onChange }: PropertySelectorProps) => {
+  const [open, setOpen] = useState(false);
+
   const { data: properties, isLoading } = useQuery({
     queryKey: ['properties-for-pitch-deck'],
     queryFn: async () => {
@@ -44,13 +55,22 @@ const PropertySelector = ({ value, onChange }: PropertySelectorProps) => {
     },
   });
 
-  const handleChange = (propertyId: string) => {
+  const selectedProperty = properties?.find(p => p.id === value);
+
+  const handleSelect = (propertyId: string) => {
     if (propertyId === 'none') {
       onChange(undefined);
     } else {
       const property = properties?.find(p => p.id === propertyId);
       onChange(propertyId, property);
     }
+    setOpen(false);
+  };
+
+  const getDisplayText = () => {
+    if (isLoading) return 'טוען...';
+    if (!value || !selectedProperty) return 'בחר נכס (אופציונלי)';
+    return `${selectedProperty.address}, ${selectedProperty.city}${selectedProperty.rooms ? ` · ${selectedProperty.rooms} חד'` : ''}`;
   };
 
   return (
@@ -59,22 +79,65 @@ const PropertySelector = ({ value, onChange }: PropertySelectorProps) => {
         <Building2 className="h-4 w-4" />
         קישור לנכס
       </label>
-      <Select value={value || 'none'} onValueChange={handleChange}>
-        <SelectTrigger>
-          <SelectValue placeholder={isLoading ? 'טוען...' : 'בחר נכס (אופציונלי)'} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">ללא קישור לנכס</SelectItem>
-          {properties?.map((property) => (
-            <SelectItem key={property.id} value={property.id}>
-              {property.address}, {property.city}
-              {property.rooms && ` · ${property.rooms} חד'`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            <span className="truncate">{getDisplayText()}</span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[400px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="חפש לפי כתובת או עיר..." />
+            <CommandList>
+              <CommandEmpty>לא נמצאו נכסים</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="none"
+                  onSelect={() => handleSelect('none')}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      !value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  ללא קישור לנכס
+                </CommandItem>
+                {properties?.map((property) => (
+                  <CommandItem
+                    key={property.id}
+                    value={`${property.address} ${property.city} ${property.title || ''}`}
+                    onSelect={() => handleSelect(property.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === property.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col">
+                      <span>{property.address}, {property.city}</span>
+                      {property.rooms && (
+                        <span className="text-xs text-muted-foreground">
+                          {property.rooms} חד' {property.property_size && `· ${property.property_size} מ"ר`}
+                        </span>
+                      )}
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       <p className="text-xs text-muted-foreground">
-        בחירת נכס תמלא אוטומטית את פרטי הנכס במצגת
+        בחירת נכס תמלא אוטומטית את פרטי הנכס ופרטי הקשר במצגת
       </p>
     </div>
   );
