@@ -379,31 +379,34 @@ const PresentationExclusivityForm = () => {
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <div className="max-w-2xl mx-auto">
+      {/* Language Toggle - Fixed Top Left */}
+      <div className="fixed top-4 left-4 z-50 flex gap-2">
+        <Button
+          size="sm"
+          variant={language === 'en' ? 'default' : 'outline'}
+          onClick={() => setLanguage('en')}
+          className={language === 'en' ? 'bg-[#f5c242] text-[#2d3b3a]' : 'bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30'}
+        >
+          EN
+        </Button>
+        <Button
+          size="sm"
+          variant={language === 'he' ? 'default' : 'outline'}
+          onClick={() => setLanguage('he')}
+          className={language === 'he' ? 'bg-[#f5c242] text-[#2d3b3a]' : 'bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30'}
+        >
+          עב
+        </Button>
+      </div>
+
+      {/* Logo - Fixed Bottom Right */}
+      <div className="fixed bottom-8 right-4 z-50">
+        <img src={cityMarketLogo} alt="City Market Properties" className="h-10 md:h-14 w-auto" />
+      </div>
+
+      <div className="max-w-2xl mx-auto pt-12">
         {/* Header */}
         <div className="text-center mb-6">
-          <img src={cityMarketLogo} alt="City Market Properties" className="h-12 mx-auto mb-3 opacity-90" />
-          
-          {/* Language Toggle */}
-          <div className="flex justify-center gap-2 mb-4">
-            <Button
-              size="sm"
-              variant={language === 'en' ? 'default' : 'outline'}
-              onClick={() => setLanguage('en')}
-              className={language === 'en' ? 'bg-[#f5c242] text-[#2d3b3a]' : 'border-white/30 text-white'}
-            >
-              EN
-            </Button>
-            <Button
-              size="sm"
-              variant={language === 'he' ? 'default' : 'outline'}
-              onClick={() => setLanguage('he')}
-              className={language === 'he' ? 'bg-[#f5c242] text-[#2d3b3a]' : 'border-white/30 text-white'}
-            >
-              עב
-            </Button>
-          </div>
-          
           <h1 
             className="text-2xl md:text-3xl font-bold text-white mb-1"
             style={{ textShadow: softShadow }}

@@ -15,6 +15,7 @@ import BYContactSlide from "./slides/BYContactSlide";
 const BenYehudaPitchDeck = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'he'>('en');
 
   const slides = [
     { component: <BYTitleSlide /> },
@@ -102,6 +103,30 @@ const BenYehudaPitchDeck = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#d4c5b5]">
+      {/* Language Toggle - Fixed Top Left */}
+      <div className="absolute top-4 left-4 z-40 flex gap-2">
+        <button
+          onClick={() => setLanguage('en')}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+            language === 'en' 
+              ? 'bg-[#f5c242] text-[#2d3b3a]' 
+              : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+          }`}
+        >
+          EN
+        </button>
+        <button
+          onClick={() => setLanguage('he')}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+            language === 'he' 
+              ? 'bg-[#f5c242] text-[#2d3b3a]' 
+              : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+          }`}
+        >
+          עב
+        </button>
+      </div>
+
       {/* Slides Container */}
       <div className="relative h-full w-full">
         {slides.map((slide, index) => (
