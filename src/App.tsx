@@ -77,6 +77,7 @@ const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout')
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
+const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -321,6 +322,26 @@ const AppContent: React.FC = () => {
                   <Layout onLogout={signOut}>
                     <ProtectedRoute requiredRole="admin">
                       <PriceOfferBuilder />
+                    </ProtectedRoute>
+                  </Layout>
+                } 
+              />
+              <Route 
+                path="/admin-dashboard/pitch-decks/new" 
+                element={
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="admin">
+                      <PitchDeckBuilder />
+                    </ProtectedRoute>
+                  </Layout>
+                } 
+              />
+              <Route 
+                path="/admin-dashboard/pitch-decks/:id" 
+                element={
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="admin">
+                      <PitchDeckBuilder />
                     </ProtectedRoute>
                   </Layout>
                 } 

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
@@ -12,12 +11,13 @@ import {
   Users, 
   DollarSign,
   ChevronDown,
-  Plus
+  Presentation
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrokerageFormsMobileList } from '@/components/BrokerageFormsMobileList';
 import AdminPriceOffersContent from '@/components/AdminPriceOffersContent';
 import LegalFormsList from '@/components/forms/LegalFormsList';
+import PitchDecksList from '@/components/pitch-deck/builder/PitchDecksList';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FormCounts {
@@ -26,6 +26,7 @@ interface FormCounts {
   exclusivity: number;
   broker_sharing: number;
   price_offers: number;
+  pitch_decks: number;
 }
 
 const AdminForms = () => {
@@ -36,6 +37,7 @@ const AdminForms = () => {
     exclusivity: 0,
     broker_sharing: 0,
     price_offers: 0,
+    pitch_decks: 0,
   });
   const [openSections, setOpenSections] = useState({
     brokerage: true,
@@ -43,6 +45,7 @@ const AdminForms = () => {
     exclusivity: true,
     broker_sharing: true,
     price_offers: true,
+    pitch_decks: true,
   });
 
   useEffect(() => {
@@ -70,12 +73,18 @@ const AdminForms = () => {
         .from('price_offers')
         .select('*', { count: 'exact', head: true });
 
+      // Fetch pitch decks count
+      const { count: pitchDecksCount } = await supabase
+        .from('pitch_decks')
+        .select('*', { count: 'exact', head: true });
+
       setCounts({
         brokerage: brokerageCount || 0,
         memorandum: memorandumCount,
         exclusivity: exclusivityCount,
         broker_sharing: brokerSharingCount,
         price_offers: priceOffersCount || 0,
+        pitch_decks: pitchDecksCount || 0,
       });
     } catch (error) {
       console.error('Error fetching form counts:', error);
@@ -140,6 +149,14 @@ const AdminForms = () => {
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
       onClick: () => window.open('/price-offer-editor/new', '_blank'),
+    },
+    {
+      id: 'pitch_deck',
+      label: 'מצגת',
+      icon: Presentation,
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-50 dark:bg-pink-950/30',
+      onClick: () => window.location.href = '/admin-dashboard/pitch-decks/new',
     },
   ];
 
@@ -302,6 +319,30 @@ const AdminForms = () => {
               </Card>
             </Collapsible>
           </div>
+
+          {/* Pitch Decks Section - Full Width */}
+          <Collapsible 
+            open={openSections.pitch_decks} 
+            onOpenChange={() => toggleSection('pitch_decks')}
+          >
+            <Card>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Presentation className="h-5 w-5 text-pink-600" />
+                    <h2 className="font-semibold text-lg">מצגות</h2>
+                    <Badge variant="secondary">{counts.pitch_decks}</Badge>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.pitch_decks ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <PitchDecksList />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </div>
       </div>
     </div>
