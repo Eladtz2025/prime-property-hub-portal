@@ -36,7 +36,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-8 md:pt-10 lg:pt-12 pb-16 md:pb-20 lg:pb-24" dir="ltr">
         {/* Title */}
         <h2 
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
@@ -49,7 +49,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Boutique Approach Box with Quote */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left mb-2 md:mb-3">
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 text-left mb-1.5 md:mb-2 lg:mb-3">
           {/* Quote inside the box - Hidden on mobile */}
           <p 
             className="hidden md:block text-white text-sm font-light leading-relaxed mb-3 pb-3 border-b border-white/20"
@@ -79,7 +79,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </div>
 
         {/* Two Profile Cards */}
-        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-4 mb-2">
+        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-3 lg:gap-4 mb-1.5 md:mb-2">
           {/* Elad Card */}
           <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
@@ -132,9 +132,9 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </div>
 
         {/* Closing Quote */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 border border-[#f5c242]/30">
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 border border-[#f5c242]/30">
           <p 
-            className="text-white text-xs md:text-base font-light italic leading-relaxed"
+            className="text-white text-[10px] md:text-sm lg:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
             "Together, we bridge local authenticity and global demand, positioning homes as places people genuinely want to live."
