@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.match-scouted-to-leads]
 verify_jwt = false
+
+[functions.check-property-availability]
+verify_jwt = false

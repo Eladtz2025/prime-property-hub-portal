@@ -137,7 +137,7 @@ serve(async (req) => {
               score: m.matchScore,
               reasons: m.matchReasons
             })),
-            status: 'notified'
+            status: 'matched'
           })
           .eq('id', property.id);
 
@@ -179,10 +179,10 @@ serve(async (req) => {
           }
         }
       } else {
-        // No matches, just mark as notified (processed)
+        // No matches, just mark as matched (processed)
         await supabase
           .from('scouted_properties')
-          .update({ status: 'notified', matched_leads: [] })
+          .update({ status: 'matched', matched_leads: [] })
           .eq('id', property.id);
       }
     }

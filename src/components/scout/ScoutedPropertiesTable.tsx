@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, BarChart3, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 interface ScoutedProperty {
@@ -32,25 +32,102 @@ interface ScoutedProperty {
   features: Record<string, boolean> | null;
   images: string[] | null;
   description: string | null;
+  is_active?: boolean;
 }
+
+const PAGE_SIZE = 20;
 
 export const ScoutedPropertiesTable: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProperty, setSelectedProperty] = useState<ScoutedProperty | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<ScoutedProperty | null>(null);
 
-  const { data: properties, isLoading } = useQuery({
-    queryKey: ['scouted-properties', statusFilter, sourceFilter],
+  // Statistics query
+  const { data: stats } = useQuery({
+    queryKey: ['scouted-properties-stats'],
     queryFn: async () => {
+      const today = startOfDay(new Date()).toISOString();
+      const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }).toISOString();
+
+      // Total count
+      const { count: totalCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true });
+
+      // Today count
+      const { count: todayCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .gte('first_seen_at', today);
+
+      // This week count
+      const { count: weekCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .gte('first_seen_at', weekStart);
+
+      // By source
+      const { data: sourceData } = await supabase
+        .from('scouted_properties')
+        .select('source');
+
+      const sourceCounts = sourceData?.reduce((acc, item) => {
+        acc[item.source] = (acc[item.source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // Inactive count
+      const { count: inactiveCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', false);
+
+      return {
+        total: totalCount || 0,
+        today: todayCount || 0,
+        week: weekCount || 0,
+        bySources: sourceCounts,
+        inactive: inactiveCount || 0
+      };
+    }
+  });
+
+  // Total count for pagination
+  const { data: totalCount } = useQuery({
+    queryKey: ['scouted-properties-count', statusFilter, sourceFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true });
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (sourceFilter !== 'all') {
+        query = query.eq('source', sourceFilter);
+      }
+
+      const { count } = await query;
+      return count || 0;
+    }
+  });
+
+  const { data: properties, isLoading } = useQuery({
+    queryKey: ['scouted-properties', statusFilter, sourceFilter, currentPage],
+    queryFn: async () => {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       let query = supabase
         .from('scouted_properties')
         .select('*')
         .order('first_seen_at', { ascending: false })
-        .limit(100);
+        .range(from, to);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
@@ -75,6 +152,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
       toast.success('הנכס הועבר לארכיון');
     },
     onError: () => {
@@ -92,6 +170,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
       toast.success(`נמצאו ${data.leads_matched} התאמות, נשלחו ${data.whatsapp_sent} הודעות`);
     },
     onError: () => {
@@ -153,6 +232,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
       toast.success('הנכס יובא בהצלחה למערכת!', {
         action: {
           label: 'צפה בנכס',
@@ -182,16 +262,23 @@ export const ScoutedPropertiesTable: React.FC = () => {
     );
   });
 
-  const getStatusBadge = (status: string) => {
+  const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
+
+  const getStatusBadge = (status: string, isActive?: boolean) => {
+    if (isActive === false) {
+      return <Badge variant="outline" className="text-red-600 border-red-600">לא פעיל</Badge>;
+    }
     switch (status) {
       case 'new':
         return <Badge variant="default" className="bg-green-500">חדש</Badge>;
-      case 'notified':
-        return <Badge variant="secondary">נשלח</Badge>;
+      case 'matched':
+        return <Badge variant="secondary">עבר התאמה</Badge>;
       case 'archived':
         return <Badge variant="outline">ארכיון</Badge>;
       case 'imported':
         return <Badge className="bg-blue-500">יובא למערכת</Badge>;
+      case 'inactive':
+        return <Badge variant="outline" className="text-red-600 border-red-600">לא פעיל</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -212,16 +299,85 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // Reset to page 1 when filters change
+  const handleFilterChange = (setter: (value: string) => void) => (value: string) => {
+    setCurrentPage(1);
+    setter(value);
+  };
+
+  if (isLoading && !properties) {
     return <div className="text-center py-8">טוען...</div>;
   }
 
   return (
     <>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">סה"כ דירות</p>
+                <p className="text-2xl font-bold">{stats?.total || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">נוספו היום</p>
+                <p className="text-2xl font-bold">{stats?.today || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Calendar className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">השבוע</p>
+                <p className="text-2xl font-bold">{stats?.week || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <BarChart3 className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">לפי מקור</p>
+                <div className="flex gap-2 flex-wrap text-xs mt-1">
+                  <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
+                  <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
+                  <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>דירות שנסרקו ({filteredProperties?.length || 0})</span>
+            <span>דירות שנסרקו ({totalCount || 0})</span>
           </CardTitle>
           
           <div className="flex flex-wrap gap-4 mt-4">
@@ -237,20 +393,21 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </div>
             </div>
             
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="סטטוס" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="new">חדש</SelectItem>
-                <SelectItem value="notified">נשלח</SelectItem>
+                <SelectItem value="matched">עבר התאמה</SelectItem>
                 <SelectItem value="imported">יובא</SelectItem>
                 <SelectItem value="archived">ארכיון</SelectItem>
+                <SelectItem value="inactive">לא פעיל</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <Select value={sourceFilter} onValueChange={handleFilterChange(setSourceFilter)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="מקור" />
               </SelectTrigger>
@@ -283,7 +440,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {filteredProperties?.map((property) => (
-                  <TableRow key={property.id}>
+                  <TableRow key={property.id} className={property.is_active === false ? 'opacity-60' : ''}>
                     <TableCell>{getSourceBadge(property.source)}</TableCell>
                     <TableCell>
                       <div>
@@ -298,7 +455,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     </TableCell>
                     <TableCell>{property.rooms || '-'}</TableCell>
                     <TableCell>{property.size ? `${property.size} מ"ר` : '-'}</TableCell>
-                    <TableCell>{getStatusBadge(property.status)}</TableCell>
+                    <TableCell>{getStatusBadge(property.status, property.is_active)}</TableCell>
                     <TableCell>
                       {property.matched_leads?.length > 0 ? (
                         <Dialog>
@@ -420,6 +577,38 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  הקודם
+                </Button>
+                <span className="text-sm">
+                  עמוד {currentPage} מתוך {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  הבא
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
