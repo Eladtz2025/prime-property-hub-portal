@@ -1192,6 +1192,115 @@ export type Database = {
         }
         Relationships: []
       }
+      pitch_deck_slides: {
+        Row: {
+          background_image: string | null
+          created_at: string
+          deck_id: string
+          id: string
+          is_visible: boolean
+          slide_data: Json
+          slide_order: number
+          slide_type: string
+          updated_at: string
+        }
+        Insert: {
+          background_image?: string | null
+          created_at?: string
+          deck_id: string
+          id?: string
+          is_visible?: boolean
+          slide_data?: Json
+          slide_order?: number
+          slide_type: string
+          updated_at?: string
+        }
+        Update: {
+          background_image?: string | null
+          created_at?: string
+          deck_id?: string
+          id?: string
+          is_visible?: boolean
+          slide_data?: Json
+          slide_order?: number
+          slide_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitch_deck_slides_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "pitch_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pitch_decks: {
+        Row: {
+          agent_names: string | null
+          contact_phone: string | null
+          contact_whatsapp: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          language: string
+          last_viewed_at: string | null
+          overlay_opacity: number | null
+          property_id: string | null
+          slug: string
+          theme_color: string | null
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          agent_names?: string | null
+          contact_phone?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_viewed_at?: string | null
+          overlay_opacity?: number | null
+          property_id?: string | null
+          slug: string
+          theme_color?: string | null
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          agent_names?: string | null
+          contact_phone?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_viewed_at?: string | null
+          overlay_opacity?: number | null
+          property_id?: string | null
+          slug?: string
+          theme_color?: string | null
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitch_decks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_offer_blocks: {
         Row: {
           block_data: Json
