@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, Plus, ExternalLink, Loader2, Calendar, User, Building, Users } from 'lucide-react';
+import { FileText, Download, Plus, ExternalLink, Loader2, Calendar, User, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { generateMemorandumPDF } from '@/lib/memorandum-pdf-generator';
@@ -25,6 +25,11 @@ interface LegalForm {
   form_data: unknown;
 }
 
+interface LegalFormsListProps {
+  formType?: 'memorandum' | 'exclusivity' | 'broker_sharing';
+  hideHeader?: boolean;
+}
+
 const formTypeLabels: Record<string, string> = {
   memorandum: 'זיכרון דברים',
   exclusivity: 'הסכם בלעדיות',
@@ -40,15 +45,15 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
   signed: { label: 'נחתם', variant: 'default' },
 };
 
-export const LegalFormsList = () => {
+export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListProps) => {
   const [forms, setForms] = useState<LegalForm[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>(formType || 'all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchForms();
-  }, [filterType]);
+  }, [filterType, formType]);
 
   const fetchForms = async () => {
     setLoading(true);
@@ -58,8 +63,10 @@ export const LegalFormsList = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (filterType !== 'all') {
-        query = query.eq('form_type', filterType);
+      // Use prop formType if provided, otherwise use filterType state
+      const typeToFilter = formType || (filterType !== 'all' ? filterType : null);
+      if (typeToFilter) {
+        query = query.eq('form_type', typeToFilter);
       }
 
       const { data, error } = await query;
@@ -73,13 +80,13 @@ export const LegalFormsList = () => {
     }
   };
 
-  const handleNewForm = (formType: string) => {
+  const handleNewForm = (type: string) => {
     const routes: Record<string, string> = {
       memorandum: '/memorandum-form/new',
       exclusivity: '/exclusivity-form/new',
       broker_sharing: '/broker-sharing-form/new',
     };
-    window.open(routes[formType] || '/memorandum-form/new', '_blank');
+    window.open(routes[type] || '/memorandum-form/new', '_blank');
   };
 
   const handleDownloadPDF = async (form: LegalForm) => {
@@ -174,48 +181,53 @@ export const LegalFormsList = () => {
 
   return (
     <div className="space-y-4 text-right" dir="rtl">
-      {/* Header with filters and new form button */}
-      <div className="flex flex-col sm:flex-row-reverse gap-3 justify-between items-start sm:items-center">
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="סנן לפי סוג" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הטפסים</SelectItem>
-            <SelectItem value="memorandum">זיכרון דברים</SelectItem>
-            <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
-            <SelectItem value="broker_sharing">שיתוף מתווכים</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Header with filters and new form button - only show if hideHeader is false */}
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row-reverse gap-3 justify-between items-start sm:items-center">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="סנן לפי סוג" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל הטפסים</SelectItem>
+              <SelectItem value="memorandum">זיכרון דברים</SelectItem>
+              <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
+              <SelectItem value="broker_sharing">שיתוף מתווכים</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select onValueChange={handleNewForm}>
-          <SelectTrigger className="w-full sm:w-48">
-            <div className="flex flex-row-reverse items-center gap-2">
-              <Plus className="h-4 w-4" />
-              <span>טופס חדש</span>
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="memorandum">זיכרון דברים</SelectItem>
-            <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
-            <SelectItem value="broker_sharing">שיתוף מתווכים</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <Select onValueChange={handleNewForm}>
+            <SelectTrigger className="w-full sm:w-48">
+              <div className="flex flex-row-reverse items-center gap-2">
+                <Plus className="h-4 w-4" />
+                <span>טופס חדש</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="memorandum">זיכרון דברים</SelectItem>
+              <SelectItem value="exclusivity">הסכם בלעדיות</SelectItem>
+              <SelectItem value="broker_sharing">שיתוף מתווכים</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Forms list */}
       {forms.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg mb-2">אין טפסים משפטיים</h3>
-            <p className="text-muted-foreground mb-4">צור טופס חדש כדי להתחיל</p>
-            <Button onClick={() => handleNewForm('memorandum')} className="gap-2">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <FileText className="h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-muted-foreground">אין טפסים עדיין</p>
+          {formType && (
+            <Button 
+              variant="link" 
+              onClick={() => handleNewForm(formType)} 
+              className="mt-2 gap-1.5"
+            >
               <Plus className="h-4 w-4" />
-              צור זיכרון דברים
+              צור טופס חדש
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       ) : (
         <div className="grid gap-3">
           {forms.map((form) => (
@@ -227,9 +239,11 @@ export const LegalFormsList = () => {
                       <Badge variant={statusLabels[form.status]?.variant || 'secondary'}>
                         {statusLabels[form.status]?.label || form.status}
                       </Badge>
-                      <Badge variant="outline">
-                        {formTypeLabels[form.form_type] || form.form_type}
-                      </Badge>
+                      {!formType && (
+                        <Badge variant="outline">
+                          {formTypeLabels[form.form_type] || form.form_type}
+                        </Badge>
+                      )}
                       {form.language === 'en' && (
                         <Badge variant="outline">EN</Badge>
                       )}
