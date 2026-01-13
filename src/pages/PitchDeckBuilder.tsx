@@ -62,13 +62,48 @@ const PitchDeckBuilder = () => {
     }
   }, [deck]);
 
+  // Hebrew to English transliteration for URL slug
+  const hebrewToSlug = (text: string): string => {
+    const hebrewMap: Record<string, string> = {
+      'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h',
+      'ו': 'v', 'ז': 'z', 'ח': 'ch', 'ט': 't', 'י': 'y',
+      'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm',
+      'נ': 'n', 'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p',
+      'ף': 'f', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k', 'ר': 'r',
+      'ש': 'sh', 'ת': 't'
+    };
+    
+    return text
+      .split('')
+      .map(char => hebrewMap[char] || char)
+      .join('')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   const handlePropertyChange = (newPropertyId: string | undefined, property?: PropertyData) => {
     setPropertyId(newPropertyId);
     
-    // Auto-fill from property
+    // Auto-fill title and slug from property
     if (property) {
-      setTitle(`${property.address}, ${property.city}`);
-      setSlug(property.address.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+      const fullTitle = `${property.address}, ${property.city}`;
+      setTitle(fullTitle);
+      setSlug(hebrewToSlug(fullTitle));
+      
+      // Auto-fill agent info from property owner
+      if (property.owner_name && !agentNames) {
+        setAgentNames(property.owner_name);
+      }
+      if (property.owner_phone && !contactPhone) {
+        setContactPhone(property.owner_phone);
+        setContactWhatsapp(property.owner_phone.replace(/[^0-9+]/g, ''));
+      }
+    } else {
+      setTitle('');
+      setSlug('');
     }
   };
 
@@ -200,27 +235,14 @@ const PitchDeckBuilder = () => {
                       onChange={handlePropertyChange}
                     />
                     
-                    <div className="space-y-2">
-                      <Label>שם המצגת</Label>
-                      <Input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="בן יהודה 110, תל אביב"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>כתובת URL (slug)</Label>
-                      <Input
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                        placeholder="ben-yehuda-110"
-                        dir="ltr"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        הלינק יהיה: /offer/{slug || 'slug'}
-                      </p>
-                    </div>
+                    {title && (
+                      <div className="p-3 bg-muted/50 rounded-lg space-y-1">
+                        <p className="text-sm font-medium">{title}</p>
+                        <p className="text-xs text-muted-foreground" dir="ltr">
+                          /offer/{slug || 'slug'}
+                        </p>
+                      </div>
+                    )}
                     
                     <div className="flex items-center justify-between">
                       <Label>שפה</Label>
