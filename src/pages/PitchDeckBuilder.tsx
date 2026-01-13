@@ -64,24 +64,87 @@ const PitchDeckBuilder = () => {
 
   // Hebrew to English transliteration for URL slug
   const hebrewToSlug = (text: string): string => {
-    const hebrewMap: Record<string, string> = {
-      'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h',
-      'ו': 'v', 'ז': 'z', 'ח': 'ch', 'ט': 't', 'י': 'y',
-      'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm',
+    // Common Hebrew words/phrases with proper transliteration
+    const commonWords: Record<string, string> = {
+      'תל אביב-יפו': 'tel-aviv-yafo',
+      'תל אביב יפו': 'tel-aviv-yafo',
+      'תל-אביב-יפו': 'tel-aviv-yafo',
+      'תל-אביב': 'tel-aviv',
+      'תל אביב': 'tel-aviv',
+      'ירושלים': 'jerusalem',
+      'חיפה': 'haifa',
+      'באר שבע': 'beer-sheva',
+      'ראשון לציון': 'rishon-lezion',
+      'פתח תקווה': 'petah-tikva',
+      'אשדוד': 'ashdod',
+      'נתניה': 'netanya',
+      'הרצליה': 'herzliya',
+      'רמת גן': 'ramat-gan',
+      'בני ברק': 'bnei-brak',
+      'גבעתיים': 'givatayim',
+      'רחובות': 'rehovot',
+      'כפר סבא': 'kfar-saba',
+      'רעננה': 'raanana',
+      'הוד השרון': 'hod-hasharon',
+      'יפו': 'yafo',
+      'רחוב': '',
+      'שדרות': 'sderot',
+      'דרך': 'derech',
+    };
+
+    // Common Hebrew name patterns with vowels
+    const namePatterns: Array<[RegExp, string]> = [
+      [/בן יהודה/g, 'ben-yehuda'],
+      [/רוטשילד/g, 'rothschild'],
+      [/הרצל/g, 'herzl'],
+      [/דיזנגוף/g, 'dizengoff'],
+      [/אלנבי/g, 'allenby'],
+      [/יצחק אלחנן/g, 'yitzhak-elhanan'],
+      [/זלטופולסקי/g, 'zlatopolsky'],
+      [/ביאליק/g, 'bialik'],
+      [/ויצמן/g, 'weizmann'],
+      [/ז'בוטינסקי/g, 'jabotinsky'],
+      [/סוקולוב/g, 'sokolov'],
+      [/נורדאו/g, 'nordau'],
+      [/גורדון/g, 'gordon'],
+      [/פרישמן/g, 'frishman'],
+      [/ארלוזורוב/g, 'arlozorov'],
+      [/קפלן/g, 'kaplan'],
+      [/לינקולן/g, 'lincoln'],
+      [/וושינגטון/g, 'washington'],
+    ];
+
+    let result = text;
+
+    // First, replace common words/cities
+    for (const [hebrew, english] of Object.entries(commonWords)) {
+      result = result.replace(new RegExp(hebrew, 'g'), english);
+    }
+
+    // Then, replace common name patterns
+    for (const [pattern, replacement] of namePatterns) {
+      result = result.replace(pattern, replacement);
+    }
+
+    // For remaining Hebrew characters, use smarter transliteration with vowels
+    const hebrewWithVowels: Record<string, string> = {
+      'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'a',
+      'ו': 'o', 'ז': 'z', 'ח': 'h', 'ט': 't', 'י': 'i',
+      'כ': 'k', 'ך': 'kh', 'ל': 'l', 'מ': 'm', 'ם': 'm',
       'נ': 'n', 'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p',
       'ף': 'f', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k', 'ר': 'r',
       'ש': 'sh', 'ת': 't'
     };
-    
-    return text
+
+    // Process remaining Hebrew characters
+    result = result
       .split('')
-      .map(char => hebrewMap[char] || char)
+      .map(char => hebrewWithVowels[char] || char)
       .join('')
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    return result;
   };
 
   const handlePropertyChange = (newPropertyId: string | undefined, property?: PropertyData) => {
