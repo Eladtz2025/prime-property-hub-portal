@@ -37,6 +37,9 @@ export interface PropertyData {
   owner_name?: string;
   owner_phone?: string;
   owner_email?: string;
+  // Agent details from assigned_user_id
+  agent_name?: string;
+  agent_phone?: string;
 }
 
 const PropertySelector = ({ value, onChange }: PropertySelectorProps) => {
@@ -47,11 +50,22 @@ const PropertySelector = ({ value, onChange }: PropertySelectorProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, title, address, city, rooms, property_size, floor, elevator, parking, balcony, owner_name, owner_phone, owner_email')
+        .select(`
+          id, title, address, city, rooms, property_size, floor, elevator, parking, balcony, 
+          owner_name, owner_phone, owner_email,
+          assigned_user:profiles!properties_assigned_user_id_fkey(full_name, phone)
+        `)
         .order('address', { ascending: true });
       
       if (error) throw error;
-      return data as PropertyData[];
+      
+      // Map the nested assigned_user to flat agent fields
+      return data.map((property: any) => ({
+        ...property,
+        agent_name: property.assigned_user?.full_name || undefined,
+        agent_phone: property.assigned_user?.phone || undefined,
+        assigned_user: undefined, // Remove nested object
+      })) as PropertyData[];
     },
   });
 
