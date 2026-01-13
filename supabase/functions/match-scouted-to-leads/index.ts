@@ -219,6 +219,21 @@ serve(async (req) => {
   }
 });
 
+// Helper function to calculate allowed price deviation based on price range and type
+function getAllowedDeviation(price: number, propertyType: string, direction: 'up' | 'down'): number {
+  if (propertyType === 'rent') {
+    // Rent deviations
+    if (price <= 5000) return direction === 'up' ? 0.20 : 0.30;
+    if (price <= 10000) return direction === 'up' ? 0.17 : 0.25;
+    return direction === 'up' ? 0.15 : 0.20;
+  } else {
+    // Sale deviations
+    if (price <= 1500000) return direction === 'up' ? 0.15 : 0.25;
+    if (price <= 3000000) return direction === 'up' ? 0.12 : 0.20;
+    return direction === 'up' ? 0.10 : 0.15;
+  }
+}
+
 function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResult {
   // Property type MUST match - this is a mandatory filter
   // Handle value differences: scouted uses 'rent'/'sale', leads use 'rental'/'sale'
@@ -246,30 +261,59 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     reasons.push('דירה למכירה - מתאים לחיפוש');
   }
 
-  // Price match (30 points)
+  // Price match with dynamic flexible ranges (30 points)
   maxScore += 30;
   if (property.price && (lead.budget_min || lead.budget_max)) {
     const minBudget = lead.budget_min || 0;
     const maxBudget = lead.budget_max || Infinity;
+    const propType = propertyType || 'rent';
     
     if (property.price >= minBudget && property.price <= maxBudget) {
+      // Perfect match - within budget range
       score += 30;
       reasons.push('מחיר בטווח התקציב');
-    } else if (property.price <= maxBudget * 1.1) {
-      score += 15; // Within 10% of max budget
-      reasons.push('מחיר קרוב לתקציב');
+    } else if (property.price < minBudget && minBudget > 0) {
+      // Below budget - check if within allowed deviation
+      const allowedDown = getAllowedDeviation(minBudget, propType, 'down');
+      const minAllowed = minBudget * (1 - allowedDown);
+      if (property.price >= minAllowed) {
+        score += 25;
+        reasons.push('מחיר נמוך מהתקציב');
+      }
+      // If even below minAllowed, still no penalty - cheaper is good
+    } else if (property.price > maxBudget && maxBudget < Infinity) {
+      // Above budget - check if within allowed deviation
+      const allowedUp = getAllowedDeviation(maxBudget, propType, 'up');
+      const maxAllowed = maxBudget * (1 + allowedUp);
+      const percentAbove = ((property.price - maxBudget) / maxBudget) * 100;
+      
+      if (property.price <= maxAllowed) {
+        // Within allowed deviation - graduated scoring
+        if (percentAbove <= (allowedUp * 100) / 2) {
+          score += 20;
+          reasons.push(`מחיר מעט מעל התקציב (${Math.round(percentAbove)}%)`);
+        } else {
+          score += 10;
+          reasons.push(`מחיר מעל התקציב (${Math.round(percentAbove)}%)`);
+        }
+      }
+      // Beyond allowed deviation - no points
     }
   }
 
-  // Rooms match (20 points)
-  maxScore += 20;
+  // Rooms match (25 points - increased from 20)
+  maxScore += 25;
   if (property.rooms && (lead.rooms_min || lead.rooms_max)) {
     const minRooms = lead.rooms_min || 0;
     const maxRooms = lead.rooms_max || Infinity;
     
     if (property.rooms >= minRooms && property.rooms <= maxRooms) {
-      score += 20;
+      score += 25;
       reasons.push('מספר חדרים מתאים');
+    } else if (property.rooms === minRooms - 0.5 || property.rooms === maxRooms + 0.5) {
+      // Half room difference is acceptable
+      score += 15;
+      reasons.push('מספר חדרים קרוב');
     }
   }
 
@@ -282,17 +326,21 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     if (property.size >= minSize && property.size <= maxSize) {
       score += 15;
       reasons.push('גודל מתאים');
+    } else if (property.size >= minSize * 0.9 && property.size <= maxSize * 1.1) {
+      // Within 10% of size range
+      score += 10;
+      reasons.push('גודל קרוב לדרישות');
     }
   }
 
-  // City match (20 points)
-  maxScore += 20;
+  // City match (15 points - reduced from 20)
+  maxScore += 15;
   if (property.city && lead.preferred_cities?.length) {
     const cityMatch = lead.preferred_cities.some(c => 
       property.city.includes(c) || c.includes(property.city)
     );
     if (cityMatch) {
-      score += 20;
+      score += 15;
       reasons.push('עיר מועדפת');
     }
   }
@@ -309,24 +357,47 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
 
-  // Features match (5 points total)
+  // Features match with penalties (15 points base - increased from 5)
+  maxScore += 15;
   if (property.features) {
-    if (lead.elevator_required && property.features.elevator) {
-      score += 2;
-      reasons.push('יש מעלית');
+    // Elevator check
+    if (lead.elevator_required) {
+      if (property.features.elevator === true) {
+        score += 5;
+        reasons.push('יש מעלית ✓');
+      } else if (property.features.elevator === false) {
+        score -= 8;
+        reasons.push('אין מעלית ✗');
+      }
+      // If elevator is undefined, don't penalize
     }
-    if (lead.parking_required && property.features.parking) {
-      score += 2;
-      reasons.push('יש חניה');
+    
+    // Parking check
+    if (lead.parking_required) {
+      if (property.features.parking === true) {
+        score += 5;
+        reasons.push('יש חניה ✓');
+      } else if (property.features.parking === false) {
+        score -= 8;
+        reasons.push('אין חניה ✗');
+      }
     }
-    if (lead.balcony_required && property.features.balcony) {
-      score += 1;
-      reasons.push('יש מרפסת');
+    
+    // Balcony check (lighter penalty)
+    if (lead.balcony_required) {
+      if (property.features.balcony === true) {
+        score += 5;
+        reasons.push('יש מרפסת ✓');
+      } else if (property.features.balcony === false) {
+        score -= 3;
+        reasons.push('אין מרפסת');
+      }
     }
-    maxScore += 5;
   }
 
-  const matchScore = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  // Ensure score doesn't go below 0
+  const finalScore = Math.max(0, score);
+  const matchScore = maxScore > 0 ? Math.round((finalScore / maxScore) * 100) : 0;
 
   return {
     lead,
