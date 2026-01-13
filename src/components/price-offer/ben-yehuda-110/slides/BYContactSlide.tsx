@@ -49,7 +49,32 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-4" />
+
+        {/* Steps Navigation */}
+        <div className="flex items-center justify-center gap-2 md:gap-4 mb-3 md:mb-4">
+          {/* Step 1 */}
+          <Link 
+            to="/offer/ben-yehuda-110/pricing"
+            className="flex items-center gap-2 bg-[#f5c242] hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all"
+          >
+            <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 1</span>
+          </Link>
+          
+          {/* Arrow */}
+          <div className="flex items-center">
+            <div className="w-6 md:w-12 h-px bg-[#f5c242]" />
+            <ArrowRight className="w-4 h-4 text-[#f5c242] -ml-1" />
+          </div>
+          
+          {/* Step 2 */}
+          <Link 
+            to="/offer/ben-yehuda-110/exclusivity"
+            className="flex items-center gap-2 bg-[#f5c242] hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all"
+          >
+            <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 2</span>
+          </Link>
+        </div>
 
         {/* Unified Checklist Box */}
         <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-2 md:mb-3">
@@ -63,22 +88,15 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
           </div>
         </div>
 
-        {/* Call to Action Box - Now Clickable */}
-        <Link 
-          to="/offer/ben-yehuda-110/exclusivity"
-          className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-4 mb-2 md:mb-3 border border-[#f5c242]/30 hover:bg-[#8b7765]/90 hover:border-[#f5c242]/50 transition-all cursor-pointer block group"
-        >
+        {/* Quote Box */}
+        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-4 mb-2 md:mb-3 border border-[#f5c242]/30">
           <p 
             className="text-white text-xs md:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
             Move forward with a focused strategy that protects value and attracts the right buyer.
           </p>
-          <p className="text-[#f5c242] text-xs mt-2 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-            Click to proceed with exclusive listing
-            <ArrowRight className="h-3 w-3" />
-          </p>
-        </Link>
+        </div>
 
         {/* Contact Info Box */}
         <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-3 md:p-4 flex flex-col items-center">
