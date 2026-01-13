@@ -52,17 +52,40 @@ export const BrokerageFormsMobileList: React.FC = () => {
   const { data: pendingTokens, isLoading: tokensLoading } = useQuery({
     queryKey: ['pending-brokerage-tokens'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch pending tokens
+      const { data: tokens, error: tokensError } = await supabase
         .from('brokerage_form_tokens')
-        .select(`
-          *,
-          creator:profiles!created_by(full_name)
-        `)
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (tokensError) throw tokensError;
+      if (!tokens || tokens.length === 0) return [];
+
+      // Get unique creator IDs
+      const creatorIds = [...new Set(tokens.map(t => t.created_by).filter(Boolean))];
+      
+      // Fetch creator names if there are any creator IDs
+      let creatorsMap: Record<string, string> = {};
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', creatorIds);
+        
+        if (profiles) {
+          creatorsMap = profiles.reduce((acc, p) => {
+            acc[p.id] = p.full_name || '';
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
+      // Merge creator names into tokens
+      return tokens.map(token => ({
+        ...token,
+        creator: token.created_by ? { full_name: creatorsMap[token.created_by] || null } : null
+      }));
     },
   });
 
