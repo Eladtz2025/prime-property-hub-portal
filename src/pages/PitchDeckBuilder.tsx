@@ -38,7 +38,6 @@ const PitchDeckBuilder = () => {
   const [isActive, setIsActive] = useState(false);
   const [propertyId, setPropertyId] = useState<string | undefined>();
   const [contactPhone, setContactPhone] = useState('');
-  const [contactWhatsapp, setContactWhatsapp] = useState('');
   const [agentNames, setAgentNames] = useState('');
   const [themeColor, setThemeColor] = useState('#f5c242');
   const [overlayOpacity, setOverlayOpacity] = useState(0.85);
@@ -55,7 +54,6 @@ const PitchDeckBuilder = () => {
       setIsActive(deck.is_active);
       setPropertyId(deck.property_id || undefined);
       setContactPhone(deck.contact_phone || '');
-      setContactWhatsapp(deck.contact_whatsapp || '');
       setAgentNames(deck.agent_names || '');
       setThemeColor(deck.theme_color || '#f5c242');
       setOverlayOpacity(deck.overlay_opacity || 0.85);
@@ -162,7 +160,6 @@ const PitchDeckBuilder = () => {
       }
       if (property.owner_phone && !contactPhone) {
         setContactPhone(property.owner_phone);
-        setContactWhatsapp(property.owner_phone.replace(/[^0-9+]/g, ''));
       }
     } else {
       setTitle('');
@@ -187,7 +184,7 @@ const PitchDeckBuilder = () => {
           is_active: isActive,
           property_id: propertyId,
           contact_phone: contactPhone,
-          contact_whatsapp: contactWhatsapp,
+          contact_whatsapp: contactPhone,
           agent_names: agentNames,
           theme_color: themeColor,
           overlay_opacity: overlayOpacity,
@@ -202,7 +199,7 @@ const PitchDeckBuilder = () => {
           is_active: isActive,
           property_id: propertyId || null,
           contact_phone: contactPhone,
-          contact_whatsapp: contactWhatsapp,
+          contact_whatsapp: contactPhone,
           agent_names: agentNames,
           theme_color: themeColor,
           overlay_opacity: overlayOpacity,
@@ -343,21 +340,11 @@ const PitchDeckBuilder = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>טלפון</Label>
+                      <Label>טלפון (לשיחות ווואטסאפ)</Label>
                       <Input
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
-                        placeholder="+972-50-000-0000"
-                        dir="ltr"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>וואטסאפ</Label>
-                      <Input
-                        value={contactWhatsapp}
-                        onChange={(e) => setContactWhatsapp(e.target.value)}
-                        placeholder="+972500000000"
+                        placeholder="050-000-0000"
                         dir="ltr"
                       />
                     </div>
