@@ -67,6 +67,23 @@ export const BrokerageFormsMobileList: React.FC = () => {
     },
   });
 
+  const deleteFormMutation = useMutation({
+    mutationFn: async (formId: string) => {
+      const { error } = await supabase
+        .from('brokerage_forms')
+        .delete()
+        .eq('id', formId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brokerage-forms'] });
+      toast.success('הטופס נמחק בהצלחה');
+    },
+    onError: () => {
+      toast.error('שגיאה במחיקת הטופס');
+    },
+  });
+
   const { data: forms, isLoading: formsLoading } = useQuery({
     queryKey: ['brokerage-forms'],
     queryFn: async () => {
@@ -211,7 +228,7 @@ export const BrokerageFormsMobileList: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {pendingTokens?.slice(0, 4).map((tokenRecord: any) => {
+            {pendingTokens?.map((tokenRecord: any) => {
               const formData = tokenRecord.form_data as any || {};
               const properties = formData.properties as any[] || [];
               const expiresAt = new Date(tokenRecord.expires_at);
@@ -317,11 +334,12 @@ export const BrokerageFormsMobileList: React.FC = () => {
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
+                              מחק
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -349,11 +367,6 @@ export const BrokerageFormsMobileList: React.FC = () => {
                 </Card>
               );
             })}
-            {pendingCount > 4 && (
-              <p className="text-xs text-muted-foreground text-center">
-                ועוד {pendingCount - 4} טפסים נוספים...
-              </p>
-            )}
           </div>
         )}
 
@@ -372,7 +385,7 @@ export const BrokerageFormsMobileList: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {forms?.slice(0, 4).map((form) => {
+            {forms?.map((form) => {
               const properties = form.properties as any[] || [];
 
               return (
@@ -427,6 +440,37 @@ export const BrokerageFormsMobileList: React.FC = () => {
                               )}
                               PDF
                             </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="gap-1.5 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  מחק
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>מחיקת טופס חתום</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    האם אתה בטוח שברצונך למחוק את הטופס החתום של {form.client_name}?
+                                    פעולה זו לא ניתנת לביטול.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => deleteFormMutation.mutate(form.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    מחק
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </CardContent>
@@ -569,11 +613,6 @@ export const BrokerageFormsMobileList: React.FC = () => {
                 </Sheet>
               );
             })}
-            {signedCount > 4 && (
-              <p className="text-xs text-muted-foreground text-center">
-                ועוד {signedCount - 4} טפסים נוספים...
-              </p>
-            )}
           </div>
         )}
       </div>

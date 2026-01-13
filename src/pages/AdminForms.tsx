@@ -177,7 +177,7 @@ const AdminForms = () => {
 
         {/* Sections */}
         <div className="space-y-4">
-          {/* Brokerage Forms Section */}
+          {/* Brokerage Forms Section - Full Width */}
           <Collapsible 
             open={openSections.brokerage} 
             onOpenChange={() => toggleSection('brokerage')}
@@ -201,101 +201,107 @@ const AdminForms = () => {
             </Card>
           </Collapsible>
 
-          {/* Memorandum Section */}
-          <Collapsible 
-            open={openSections.memorandum} 
-            onOpenChange={() => toggleSection('memorandum')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-amber-600" />
-                    <h2 className="font-semibold text-lg">זיכרון דברים</h2>
-                    <Badge variant="secondary">{counts.memorandum}</Badge>
+          {/* Row: Memorandum + Exclusivity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Memorandum Section */}
+            <Collapsible 
+              open={openSections.memorandum} 
+              onOpenChange={() => toggleSection('memorandum')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-amber-600" />
+                      <h2 className="font-semibold text-lg">זיכרון דברים</h2>
+                      <Badge variant="secondary">{counts.memorandum}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.memorandum ? 'rotate-180' : ''}`} />
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.memorandum ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <LegalFormsList formType="memorandum" hideHeader />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <LegalFormsList formType="memorandum" hideHeader />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-          {/* Exclusivity Section */}
-          <Collapsible 
-            open={openSections.exclusivity} 
-            onOpenChange={() => toggleSection('exclusivity')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Star className="h-5 w-5 text-orange-600" />
-                    <h2 className="font-semibold text-lg">הסכמי בלעדיות</h2>
-                    <Badge variant="secondary">{counts.exclusivity}</Badge>
+            {/* Exclusivity Section */}
+            <Collapsible 
+              open={openSections.exclusivity} 
+              onOpenChange={() => toggleSection('exclusivity')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Star className="h-5 w-5 text-orange-600" />
+                      <h2 className="font-semibold text-lg">הסכמי בלעדיות</h2>
+                      <Badge variant="secondary">{counts.exclusivity}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.exclusivity ? 'rotate-180' : ''}`} />
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.exclusivity ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <LegalFormsList formType="exclusivity" hideHeader />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <LegalFormsList formType="exclusivity" hideHeader />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
 
-          {/* Broker Sharing Section */}
-          <Collapsible 
-            open={openSections.broker_sharing} 
-            onOpenChange={() => toggleSection('broker_sharing')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-teal-600" />
-                    <h2 className="font-semibold text-lg">שיתוף מתווכים</h2>
-                    <Badge variant="secondary">{counts.broker_sharing}</Badge>
+          {/* Row: Broker Sharing + Price Offers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Broker Sharing Section */}
+            <Collapsible 
+              open={openSections.broker_sharing} 
+              onOpenChange={() => toggleSection('broker_sharing')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-5 w-5 text-teal-600" />
+                      <h2 className="font-semibold text-lg">שיתוף מתווכים</h2>
+                      <Badge variant="secondary">{counts.broker_sharing}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.broker_sharing ? 'rotate-180' : ''}`} />
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.broker_sharing ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <LegalFormsList formType="broker_sharing" hideHeader />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <LegalFormsList formType="broker_sharing" hideHeader />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-          {/* Price Offers Section */}
-          <Collapsible 
-            open={openSections.price_offers} 
-            onOpenChange={() => toggleSection('price_offers')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
-                    <h2 className="font-semibold text-lg">הצעות מחיר</h2>
-                    <Badge variant="secondary">{counts.price_offers}</Badge>
+            {/* Price Offers Section */}
+            <Collapsible 
+              open={openSections.price_offers} 
+              onOpenChange={() => toggleSection('price_offers')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                      <h2 className="font-semibold text-lg">הצעות מחיר</h2>
+                      <Badge variant="secondary">{counts.price_offers}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.price_offers ? 'rotate-180' : ''}`} />
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.price_offers ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <AdminPriceOffersContent />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <AdminPriceOffersContent />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
         </div>
       </div>
     </div>
