@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Home, Phone, Mail, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { Home, Phone, Mail, Calendar, CheckCircle2, Loader2, Ruler } from 'lucide-react';
 import { z } from 'zod';
 
 // Validation schema
@@ -17,18 +18,26 @@ const clientIntakeSchema = z.object({
   name: z.string().min(2, 'שם חייב להכיל לפחות 2 תווים'),
   phone: z.string().regex(/^0[0-9]{8,9}$/, 'מספר טלפון לא תקין'),
   email: z.string().email('אימייל לא תקין').optional().or(z.literal('')),
-  property_type: z.enum(['rent', 'sale']),
+  property_type: z.enum(['rental', 'sale']),
   budget_min: z.number().min(0).optional(),
   budget_max: z.number().min(0).optional(),
   rooms_min: z.number().min(1).max(10).optional(),
   rooms_max: z.number().min(1).max(10).optional(),
+  size_min: z.number().min(0).optional(),
+  size_max: z.number().min(0).optional(),
   preferred_cities: z.string().optional(),
+  preferred_neighborhoods: z.string().optional(),
   move_in_date: z.string().optional(),
   parking_required: z.boolean(),
   elevator_required: z.boolean(),
   balcony_required: z.boolean(),
   pets: z.boolean(),
   message: z.string().optional(),
+  // Rental-specific
+  tenant_type: z.string().optional(),
+  // Sale-specific
+  cash_available: z.number().min(0).optional(),
+  new_or_second_hand: z.string().optional(),
 });
 
 type FormData = z.infer<typeof clientIntakeSchema>;
@@ -48,28 +57,51 @@ const CITIES = [
   'נתניה',
 ];
 
+const TENANT_TYPES = [
+  { value: 'single', label: 'יחיד/ה' },
+  { value: 'couple', label: 'זוג' },
+  { value: 'family', label: 'משפחה' },
+  { value: 'roommates', label: 'שותפים' },
+];
+
+const NEW_OR_SECOND_HAND_OPTIONS = [
+  { value: 'new', label: 'חדש מקבלן' },
+  { value: 'second_hand', label: 'יד שנייה' },
+  { value: 'both', label: 'שניהם' },
+];
+
 export default function ClientIntakePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Get agent reference from URL
+  const agentPhone = searchParams.get('ref');
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
     phone: '',
     email: '',
-    property_type: 'rent',
+    property_type: 'rental',
     budget_min: undefined,
     budget_max: undefined,
     rooms_min: undefined,
     rooms_max: undefined,
+    size_min: undefined,
+    size_max: undefined,
     preferred_cities: '',
+    preferred_neighborhoods: '',
     move_in_date: '',
     parking_required: false,
     elevator_required: false,
     balcony_required: false,
     pets: false,
     message: '',
+    tenant_type: '',
+    cash_available: undefined,
+    new_or_second_hand: '',
   });
 
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
@@ -116,31 +148,59 @@ export default function ClientIntakePage() {
         return;
       }
 
-      // Prepare data for database
-      const leadData = {
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email?.trim() || null,
-        property_type: formData.property_type,
-        budget_min: formData.budget_min || null,
-        budget_max: formData.budget_max || null,
-        rooms_min: formData.rooms_min || null,
-        rooms_max: formData.rooms_max || null,
-        preferred_cities: selectedCities.length > 0 ? selectedCities : null,
-        move_in_date: formData.move_in_date || null,
-        parking_required: formData.parking_required,
-        elevator_required: formData.elevator_required,
-        balcony_required: formData.balcony_required,
-        pets: formData.pets,
-        message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rent' ? 'שכירות' : 'רכישה'}`,
-        source: 'client_form',
-        status: 'new',
-        priority: 'medium',
-      };
+      // Find agent by phone if ref parameter exists
+      let assignedAgentId: string | null = null;
+      if (agentPhone) {
+        const normalizedPhone = agentPhone.replace(/[-\s]/g, '');
+        const { data: agent } = await supabase
+          .from('profiles')
+          .select('id')
+          .or(`phone.eq.${normalizedPhone},phone.eq.${agentPhone}`)
+          .single();
+        
+        if (agent) {
+          assignedAgentId = agent.id;
+        }
+      }
 
+      // Prepare neighborhoods as array
+      const neighborhoodsArray = formData.preferred_neighborhoods?.trim() 
+        ? formData.preferred_neighborhoods.split(',').map(n => n.trim()).filter(Boolean)
+        : null;
+
+      // Prepare data for database - using inline object for proper typing
       const { error } = await supabase
         .from('contact_leads')
-        .insert(leadData);
+        .insert({
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email?.trim() || null,
+          property_type: formData.property_type,
+          budget_min: formData.budget_min || null,
+          budget_max: formData.budget_max || null,
+          rooms_min: formData.rooms_min || null,
+          rooms_max: formData.rooms_max || null,
+          size_min: formData.size_min || null,
+          size_max: formData.size_max || null,
+          preferred_cities: selectedCities.length > 0 ? selectedCities : null,
+          preferred_neighborhoods: neighborhoodsArray,
+          move_in_date: formData.move_in_date || null,
+          parking_required: formData.parking_required,
+          elevator_required: formData.elevator_required,
+          balcony_required: formData.balcony_required,
+          pets: formData.pets,
+          message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
+          source: 'client_form',
+          status: 'new',
+          priority: 'medium',
+          // Rental-specific fields
+          tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
+          // Sale-specific fields
+          cash_available: formData.property_type === 'sale' && formData.cash_available ? formData.cash_available : null,
+          new_or_second_hand: formData.property_type === 'sale' && formData.new_or_second_hand ? formData.new_or_second_hand : null,
+          // Agent assignment
+          assigned_agent_id: assignedAgentId,
+        });
 
       if (error) throw error;
 
@@ -262,8 +322,8 @@ export default function ClientIntakePage() {
                   className="flex gap-4"
                 >
                   <div className="flex items-center space-x-2 space-x-reverse">
-                    <RadioGroupItem value="rent" id="rent" />
-                    <Label htmlFor="rent" className="cursor-pointer">שכירות</Label>
+                    <RadioGroupItem value="rental" id="rental" />
+                    <Label htmlFor="rental" className="cursor-pointer">שכירות</Label>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="sale" id="sale" />
@@ -275,7 +335,7 @@ export default function ClientIntakePage() {
               {/* Budget */}
               <div>
                 <Label className="mb-2 block">
-                  תקציב {formData.property_type === 'rent' ? '(₪ לחודש)' : '(₪)'}
+                  תקציב {formData.property_type === 'rental' ? '(₪ לחודש)' : '(₪)'}
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -328,6 +388,36 @@ export default function ClientIntakePage() {
                 </div>
               </div>
 
+              {/* Size */}
+              <div>
+                <Label className="mb-2 block flex items-center gap-1">
+                  <Ruler className="w-4 h-4" />
+                  גודל דירה (מ״ר)
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={formData.size_min || ''}
+                      onChange={(e) => handleInputChange('size_min', e.target.value ? Number(e.target.value) : undefined)}
+                      placeholder="מינימום"
+                      className="min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={formData.size_max || ''}
+                      onChange={(e) => handleInputChange('size_max', e.target.value ? Number(e.target.value) : undefined)}
+                      placeholder="מקסימום"
+                      className="min-h-[44px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Cities */}
               <div>
                 <Label className="mb-2 block">ערים מועדפות</Label>
@@ -349,6 +439,23 @@ export default function ClientIntakePage() {
                 </div>
               </div>
 
+              {/* Neighborhoods */}
+              {selectedCities.length > 0 && (
+                <div>
+                  <Label htmlFor="neighborhoods" className="mb-2 block">
+                    שכונות מועדפות (אופציונלי)
+                  </Label>
+                  <Input
+                    id="neighborhoods"
+                    value={formData.preferred_neighborhoods || ''}
+                    onChange={(e) => handleInputChange('preferred_neighborhoods', e.target.value)}
+                    placeholder="הפרידו בפסיקים: צפון תל אביב, רמת אביב..."
+                    className="min-h-[44px]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">הזינו שכונות מועדפות, מופרדות בפסיקים</p>
+                </div>
+              )}
+
               {/* Move-in Date */}
               <div>
                 <Label htmlFor="move_in_date" className="flex items-center gap-1">
@@ -365,6 +472,74 @@ export default function ClientIntakePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Rental-specific fields */}
+          {formData.property_type === 'rental' && (
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">פרטי שוכר</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label className="mb-2 block">סוג שוכר</Label>
+                  <Select
+                    value={formData.tenant_type || ''}
+                    onValueChange={(value) => handleInputChange('tenant_type', value)}
+                  >
+                    <SelectTrigger className="min-h-[44px]">
+                      <SelectValue placeholder="בחרו סוג שוכר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TENANT_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Sale-specific fields */}
+          {formData.property_type === 'sale' && (
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">פרטי רכישה</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="cash_available" className="mb-2 block">הון עצמי (₪)</Label>
+                  <Input
+                    id="cash_available"
+                    type="number"
+                    min={0}
+                    value={formData.cash_available || ''}
+                    onChange={(e) => handleInputChange('cash_available', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="סכום ההון העצמי הזמין"
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <Label className="mb-2 block">סוג נכס מועדף</Label>
+                  <RadioGroup
+                    value={formData.new_or_second_hand || ''}
+                    onValueChange={(value) => handleInputChange('new_or_second_hand', value)}
+                    className="flex flex-wrap gap-3"
+                  >
+                    {NEW_OR_SECOND_HAND_OPTIONS.map(option => (
+                      <div key={option.value} className="flex items-center space-x-2 space-x-reverse">
+                        <RadioGroupItem value={option.value} id={option.value} />
+                        <Label htmlFor={option.value} className="cursor-pointer">{option.label}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Requirements */}
           <Card className="mb-4">
