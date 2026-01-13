@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,20 @@ import {
   Loader2,
   MapPin,
   AlertTriangle,
-  Banknote
+  Banknote,
+  Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -36,6 +48,25 @@ import {
 
 export const BrokerageFormsMobileList: React.FC = () => {
   const [downloadingFormId, setDownloadingFormId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const deleteTokenMutation = useMutation({
+    mutationFn: async (tokenId: string) => {
+      const { error } = await supabase
+        .from('brokerage_form_tokens')
+        .delete()
+        .eq('id', tokenId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-brokerage-tokens'] });
+      toast.success('הטופס נמחק בהצלחה');
+    },
+    onError: () => {
+      toast.error('שגיאה במחיקת הטופס');
+    },
+  });
+
   const { data: forms, isLoading: formsLoading } = useQuery({
     queryKey: ['brokerage-forms'],
     queryFn: async () => {
@@ -166,16 +197,21 @@ export const BrokerageFormsMobileList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 text-right" dir="rtl">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" dir="rtl">
       {/* Pending Tokens Section */}
-      {pendingCount > 0 && (
-        <div>
-          <div className="flex flex-row-reverse items-center gap-2 mb-3">
-            <Clock className="h-4 w-4 text-yellow-600" />
-            <h3 className="text-sm font-semibold">בהמתנה לחתימה ({pendingCount})</h3>
+      <div className="space-y-3">
+        <div className="flex flex-row-reverse items-center gap-2">
+          <Clock className="h-4 w-4 text-yellow-600" />
+          <h3 className="text-sm font-semibold">בהמתנה לחתימה ({pendingCount})</h3>
+        </div>
+        {pendingCount === 0 ? (
+          <div className="text-center py-6 bg-muted/30 rounded-lg border border-dashed">
+            <Clock className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+            <p className="text-sm text-muted-foreground">אין טפסים ממתינים</p>
           </div>
-          <div className="space-y-3">
-            {pendingTokens?.map((tokenRecord: any) => {
+        ) : (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {pendingTokens?.slice(0, 4).map((tokenRecord: any) => {
               const formData = tokenRecord.form_data as any || {};
               const properties = formData.properties as any[] || [];
               const expiresAt = new Date(tokenRecord.expires_at);
@@ -278,25 +314,65 @@ export const BrokerageFormsMobileList: React.FC = () => {
                           <MessageCircle className="h-3.5 w-3.5" />
                           שלח
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>מחיקת טופס ממתין</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                האם אתה בטוח שברצונך למחוק את הטופס הממתין?
+                                פעולה זו לא ניתנת לביטול.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>ביטול</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteTokenMutation.mutate(tokenRecord.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                מחק
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               );
             })}
+            {pendingCount > 4 && (
+              <p className="text-xs text-muted-foreground text-center">
+                ועוד {pendingCount - 4} טפסים נוספים...
+              </p>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
 
       {/* Signed Forms Section */}
-      {signedCount > 0 && (
-        <div>
-          <div className="flex flex-row-reverse items-center gap-2 mb-3">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <h3 className="text-sm font-semibold">חתומים ({signedCount})</h3>
+      <div className="space-y-3">
+        <div className="flex flex-row-reverse items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <h3 className="text-sm font-semibold">חתומים ({signedCount})</h3>
+        </div>
+        {signedCount === 0 ? (
+          <div className="text-center py-6 bg-muted/30 rounded-lg border border-dashed">
+            <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+            <p className="text-sm text-muted-foreground">אין טפסים חתומים</p>
           </div>
-          <div className="space-y-3">
-            {forms?.map((form) => {
+        ) : (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {forms?.slice(0, 4).map((form) => {
               const properties = form.properties as any[] || [];
 
               return (
@@ -493,9 +569,14 @@ export const BrokerageFormsMobileList: React.FC = () => {
                 </Sheet>
               );
             })}
+            {signedCount > 4 && (
+              <p className="text-xs text-muted-foreground text-center">
+                ועוד {signedCount - 4} טפסים נוספים...
+              </p>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
