@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Download, Loader2, ImagePlus, Save, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sparkles, Download, Loader2, ImagePlus, Save, Trash2, Home, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
@@ -31,10 +32,26 @@ const styles = [
   { value: 'mediterranean', label: 'ים תיכוני' },
 ];
 
+const freeformCategories = [
+  { value: 'transactions', label: 'עסקאות נדל"ן', promptPrefix: 'A professional real estate photography of' },
+  { value: 'professionals', label: 'אנשי מקצוע', promptPrefix: 'Professional photography of' },
+  { value: 'objects', label: 'אובייקטים', promptPrefix: 'High quality product photography of' },
+  { value: 'marketing', label: 'שיווק ופרסום', promptPrefix: 'Professional marketing image of' },
+  { value: 'general', label: 'כללי', promptPrefix: '' },
+];
+
 export const ImageGenerationTab: React.FC = () => {
+  // Room mode state
   const [roomType, setRoomType] = useState('');
   const [style, setStyle] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
+  
+  // Freeform mode state
+  const [generationMode, setGenerationMode] = useState<'rooms' | 'freeform'>('rooms');
+  const [freeformCategory, setFreeformCategory] = useState('');
+  const [freeformPrompt, setFreeformPrompt] = useState('');
+  
+  // Common state
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -44,19 +61,32 @@ export const ImageGenerationTab: React.FC = () => {
   const [selectedImageForSave, setSelectedImageForSave] = useState('');
 
   const handleGenerate = async () => {
-    if (!roomType || !style) {
-      toast.error('יש לבחור סוג חדר וסגנון');
-      return;
+    let prompt = '';
+    
+    if (generationMode === 'rooms') {
+      if (!roomType || !style) {
+        toast.error('יש לבחור סוג חדר וסגנון');
+        return;
+      }
+      // Use English translations for the AI prompt
+      const roomTypeEn = roomTypeTranslations[roomType] || roomType;
+      const styleEn = styleTranslations[style] || style;
+      prompt = `A professional real estate photography of a ${styleEn} style ${roomTypeEn} in Tel Aviv, Israel. High-end interior design, natural lighting, spacious and inviting. ${customPrompt}`.trim();
+    } else {
+      // Freeform mode
+      if (!freeformPrompt.trim()) {
+        toast.error('יש להזין תיאור לתמונה');
+        return;
+      }
+      const category = freeformCategories.find(c => c.value === freeformCategory);
+      const prefix = category?.promptPrefix || '';
+      prompt = prefix 
+        ? `${prefix} ${freeformPrompt}. Professional high-quality image, realistic photography style.`
+        : `${freeformPrompt}. Professional high-quality image, realistic photography style.`;
     }
 
     setIsGenerating(true);
     try {
-      // Use English translations for the AI prompt
-      const roomTypeEn = roomTypeTranslations[roomType] || roomType;
-      const styleEn = styleTranslations[style] || style;
-      
-      const prompt = `A professional real estate photography of a ${styleEn} style ${roomTypeEn} in Tel Aviv, Israel. High-end interior design, natural lighting, spacious and inviting. ${customPrompt}`.trim();
-
       const { data, error } = await supabase.functions.invoke('generate-property-image', {
         body: { prompt, type: 'generate' }
       });
@@ -96,6 +126,10 @@ export const ImageGenerationTab: React.FC = () => {
     setSaveDialogOpen(true);
   };
 
+  const canGenerate = generationMode === 'rooms' 
+    ? roomType && style 
+    : freeformPrompt.trim().length > 0;
+
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -129,7 +163,10 @@ export const ImageGenerationTab: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-48 md:h-64 bg-muted/30 rounded-lg border-2 border-dashed">
                 <Sparkles className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground text-center text-sm md:text-base px-4">
-                  בחר סוג חדר וסגנון ולחץ על "צור תמונה"
+                  {generationMode === 'rooms' 
+                    ? 'בחר סוג חדר וסגנון ולחץ על "צור תמונה"'
+                    : 'הזן תיאור לתמונה ולחץ על "צור תמונה"'
+                  }
                 </p>
               </div>
             ) : (
@@ -217,53 +254,108 @@ export const ImageGenerationTab: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
-            <div className="space-y-2">
-              <Label htmlFor="room-type">סוג חדר</Label>
-              <Select value={roomType} onValueChange={setRoomType}>
-                <SelectTrigger className="min-h-[44px]" id="room-type">
-                  <SelectValue placeholder="בחר סוג חדר" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roomTypes.map(room => (
-                    <SelectItem key={room.value} value={room.value}>
-                      {room.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Mode Toggle */}
+            <Tabs value={generationMode} onValueChange={(v) => setGenerationMode(v as 'rooms' | 'freeform')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="rooms" className="gap-2">
+                  <Home className="h-4 w-4" />
+                  יצירת חדרים
+                </TabsTrigger>
+                <TabsTrigger value="freeform" className="gap-2">
+                  <Wand2 className="h-4 w-4" />
+                  יצירה חופשית
+                </TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="style">סגנון עיצוב</Label>
-              <Select value={style} onValueChange={setStyle}>
-                <SelectTrigger className="min-h-[44px]" id="style">
-                  <SelectValue placeholder="בחר סגנון" />
-                </SelectTrigger>
-                <SelectContent>
-                  {styles.map(s => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Rooms Mode */}
+              <TabsContent value="rooms" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="room-type">סוג חדר</Label>
+                  <Select value={roomType} onValueChange={setRoomType}>
+                    <SelectTrigger className="min-h-[44px]" id="room-type">
+                      <SelectValue placeholder="בחר סוג חדר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomTypes.map(room => (
+                        <SelectItem key={room.value} value={room.value}>
+                          {room.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="custom-prompt">תיאור נוסף (אופציונלי)</Label>
-              <Textarea 
-                id="custom-prompt"
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="הוסף פרטים נוספים כמו: נוף לים, רצפת עץ, תקרה גבוהה..."
-                className="min-h-[80px] md:min-h-[100px]"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="style">סגנון עיצוב</Label>
+                  <Select value={style} onValueChange={setStyle}>
+                    <SelectTrigger className="min-h-[44px]" id="style">
+                      <SelectValue placeholder="בחר סגנון" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {styles.map(s => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-prompt">תיאור נוסף (אופציונלי)</Label>
+                  <Textarea 
+                    id="custom-prompt"
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder="הוסף פרטים נוספים כמו: נוף לים, רצפת עץ, תקרה גבוהה..."
+                    className="min-h-[80px] md:min-h-[100px]"
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Freeform Mode */}
+              <TabsContent value="freeform" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="freeform-category">קטגוריה (אופציונלי)</Label>
+                  <Select value={freeformCategory} onValueChange={setFreeformCategory}>
+                    <SelectTrigger className="min-h-[44px]" id="freeform-category">
+                      <SelectValue placeholder="בחר קטגוריה לשיפור התוצאה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {freeformCategories.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    בחירת קטגוריה עוזרת ל-AI להבין את ההקשר טוב יותר
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="freeform-prompt">תיאור התמונה *</Label>
+                  <Textarea 
+                    id="freeform-prompt"
+                    value={freeformPrompt}
+                    onChange={(e) => setFreeformPrompt(e.target.value)}
+                    placeholder="תאר את התמונה שברצונך ליצור, לדוגמא:
+• בעל נכס חותם בלעדיות למתווך במשרד יוקרתי
+• מתווך מציג דירה ללקוחות צעירים
+• לחיצת ידיים על עסקת נדל״ן
+• מפתחות דירה על שולחן עם חוזה
+• שלט ״למכירה״ מול בניין מודרני"
+                    className="min-h-[120px] md:min-h-[140px]"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <Button 
               onClick={handleGenerate} 
               className="w-full min-h-[44px]"
-              disabled={isGenerating || !roomType || !style}
+              disabled={isGenerating || !canGenerate}
             >
               {isGenerating ? (
                 <>
