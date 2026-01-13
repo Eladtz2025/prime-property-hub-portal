@@ -76,6 +76,7 @@ export const CustomerTableView = ({
             <TableHead className="text-right">סטטוס</TableHead>
             <TableHead className="text-right">עדיפות</TableHead>
             <TableHead className="text-right">סוכן</TableHead>
+            <TableHead className="text-right">התאמות</TableHead>
             <TableHead className="text-right">
               <SortableHeader label="קשר אחרון" sortKey="last_contact" />
             </TableHead>
