@@ -17,7 +17,8 @@ import {
   MessageCircle, 
   Download,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from "lucide-react";
 import { 
   usePresentationExclusivityTranslation, 
@@ -398,6 +399,18 @@ const PresentationExclusivityForm = () => {
           עב
         </Button>
       </div>
+
+      {/* Back to Presentation Button - Top Right */}
+      <button
+        onClick={() => navigate('/offer/ben-yehuda-110')}
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all"
+        style={{ textShadow: softShadow }}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span className="text-sm font-medium">
+          {language === 'he' ? 'חזרה למצגת' : 'Back to Presentation'}
+        </span>
+      </button>
 
       {/* Logo - Fixed Bottom Right */}
       <div className="fixed bottom-8 right-4 z-50">
