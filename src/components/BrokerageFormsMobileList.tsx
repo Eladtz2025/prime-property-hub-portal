@@ -16,7 +16,10 @@ import {
   Building,
   Calendar,
   Download,
-  Loader2
+  Loader2,
+  MapPin,
+  AlertTriangle,
+  Banknote
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -51,7 +54,10 @@ export const BrokerageFormsMobileList: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('brokerage_form_tokens')
-        .select('*')
+        .select(`
+          *,
+          creator:profiles!created_by(full_name)
+        `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -59,6 +65,15 @@ export const BrokerageFormsMobileList: React.FC = () => {
       return data;
     },
   });
+
+  // Helper functions
+  const getDayOfWeek = (date: Date) => format(date, 'EEEE', { locale: he });
+  
+  const getDaysAgo = (date: Date) => {
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
 
   const copyTokenLink = (token: string) => {
     const link = `${window.location.origin}/brokerage-form/${token}`;
@@ -137,21 +152,27 @@ export const BrokerageFormsMobileList: React.FC = () => {
             <h3 className="text-sm font-semibold">בהמתנה לחתימה ({pendingCount})</h3>
           </div>
           <div className="space-y-3">
-            {pendingTokens?.map((tokenRecord) => {
+            {pendingTokens?.map((tokenRecord: any) => {
               const formData = tokenRecord.form_data as any || {};
               const properties = formData.properties as any[] || [];
               const expiresAt = new Date(tokenRecord.expires_at);
+              const createdAt = new Date(tokenRecord.created_at);
               const isExpiringSoon = expiresAt.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+              const daysAgo = getDaysAgo(createdAt);
+              const isWaitingTooLong = daysAgo >= 3;
+              const firstProperty = properties[0];
+              const creatorName = tokenRecord.creator?.full_name;
 
               return (
                 <Card 
                   key={tokenRecord.id} 
-                  className="border-r-4 border-r-yellow-500 bg-card"
+                  className={`border-r-4 bg-card ${isWaitingTooLong ? 'border-r-orange-500' : 'border-r-yellow-500'}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        {/* Status badges */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline" className="gap-1 text-yellow-700 border-yellow-300 bg-yellow-50">
                             <Clock className="h-3 w-3" />
                             ממתין
@@ -161,15 +182,56 @@ export const BrokerageFormsMobileList: React.FC = () => {
                               יפוג בקרוב
                             </Badge>
                           )}
+                          {isWaitingTooLong && (
+                            <Badge variant="outline" className="gap-1 text-orange-700 border-orange-300 bg-orange-50 text-xs">
+                              <AlertTriangle className="h-3 w-3" />
+                              {daysAgo} ימים
+                            </Badge>
+                          )}
                         </div>
+
+                        {/* Agent name */}
+                        {creatorName && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium">{creatorName}</span>
+                          </div>
+                        )}
+
+                        {/* Property address */}
+                        {firstProperty?.address && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <span className="truncate">{firstProperty.address}</span>
+                          </div>
+                        )}
+
+                        {/* Property price */}
+                        {firstProperty?.price && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Banknote className="h-3.5 w-3.5" />
+                            <span>₪{Number(firstProperty.price).toLocaleString()}</span>
+                          </div>
+                        )}
                         
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        {/* Properties count */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Building className="h-3.5 w-3.5" />
                           <span>{properties.length} נכסים</span>
                         </div>
                         
+                        {/* Created date with day of week */}
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
+                          <span>
+                            נוצר: {getDayOfWeek(createdAt)}, {format(createdAt, 'dd/MM/yyyy', { locale: he })}
+                            {daysAgo > 0 && ` (לפני ${daysAgo} ${daysAgo === 1 ? 'יום' : 'ימים'})`}
+                          </span>
+                        </div>
+
+                        {/* Expires date */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
                           <span>יפוג: {format(expiresAt, 'dd/MM/yyyy', { locale: he })}</span>
                         </div>
                       </div>
