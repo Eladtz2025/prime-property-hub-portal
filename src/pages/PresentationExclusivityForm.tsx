@@ -374,12 +374,27 @@ const PresentationExclusivityForm = () => {
 
   return (
     <div 
-      className="min-h-screen py-6 px-4"
-      style={{ 
-        background: 'linear-gradient(135deg, #8b7765 0%, #6d5a4a 100%)',
-      }}
+      className="min-h-screen py-6 px-4 relative"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
+      {/* Background Image */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url(/images/exclusivity-signing-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+      {/* Warm overlay for readability */}
+      <div 
+        className="fixed inset-0 z-0" 
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(139, 119, 101, 0.85) 0%, rgba(109, 90, 74, 0.85) 100%)'
+        }} 
+      />
+
       {/* Language Toggle - Fixed Top Left */}
       <div className="fixed top-4 left-4 z-50 flex gap-2">
         <Button
