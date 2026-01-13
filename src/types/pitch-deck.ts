@@ -80,9 +80,10 @@ export interface FeaturesSlideData {
 
 export interface NeighborhoodSlideData {
   title: string;
-  subtitle: string;
-  location_highlights: Array<{ icon: string; text: string }>;
-  appeals_to: Array<{ icon: string; text: string }>;
+  subtitle?: string;
+  beach_distance?: number;
+  location_highlights?: string[];
+  appeals_to?: string[];
 }
 
 export interface PricingSlideData {
@@ -97,38 +98,40 @@ export interface PricingSlideData {
 
 export interface MarketingSlideData {
   title: string;
-  positioning_quote: string;
-  visual_strategy: Array<{ icon: string; text: string }>;
-  target_audiences: Array<{ icon: string; text: string }>;
-  exposure_strategy: Array<{ icon: string; text: string }>;
+  positioning_quote?: string;
+  visual_strategy?: string[];
+  target_audiences?: string[];
+  exposure_strategy?: string[];
 }
 
 export interface TimelineSlideData {
   title: string;
-  timeline_items: Array<{
-    number: string;
+  timeline_items?: Array<{
+    number: number;
     period: string;
     description: string;
     icon: string;
   }>;
 }
 
-export interface Marketing2SlideData {
+export interface MarketingIISlideData {
   title: string;
-  opening_statement: string;
-  approach_items: Array<{ icon: string; text: string }>;
-  bottom_statement: string;
+  opening_statement?: string;
+  our_approach?: Array<{ icon: string; text: string }>;
+  bottom_statement?: string;
 }
 
 export interface AboutUsSlideData {
   title: string;
-  boutique_quote: string;
-  team_members: Array<{
+  boutique_quote?: string;
+  boutique_approach?: string[];
+  team_members?: Array<{
     name: string;
-    title: string;
-    phone: string;
-    image?: string;
+    years: string;
+    expertise: string;
+    icon: string;
   }>;
+  closing_quote?: string;
 }
 
 export interface ContactSlideData {
@@ -149,7 +152,7 @@ export type SlideData =
   | PricingSlideData
   | MarketingSlideData
   | TimelineSlideData
-  | Marketing2SlideData
+  | MarketingIISlideData
   | AboutUsSlideData
   | ContactSlideData
   | Record<string, unknown>;
@@ -220,17 +223,13 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_data: {
       title: 'Old North',
       subtitle: 'Ben Yehuda · Dizengoff · Gordon',
+      beach_distance: 3,
       location_highlights: [
-        { icon: 'Waves', text: '3 min walk to beach' },
-        { icon: 'MapPin', text: 'Prime residential street' },
-        { icon: 'Coffee', text: 'Cafes & restaurants' },
-        { icon: 'ShoppingBag', text: 'Boutique shopping' },
+        'Steps from the beach and promenade',
+        'Fully walkable daily life',
+        'Cafés, bakeries, galleries, and neighborhood services',
       ],
-      appeals_to: [
-        { icon: 'Users', text: 'Young professionals' },
-        { icon: 'Briefcase', text: 'Investors' },
-        { icon: 'TreePalm', text: 'Beach lifestyle seekers' },
-      ],
+      appeals_to: ['Lifestyle buyers', 'Foreign residents', 'Long-term investors'],
     } as NeighborhoodSlideData,
   },
   {
@@ -257,21 +256,9 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_data: {
       title: 'Marketing Strategy',
       positioning_quote: 'Positioned as a lifestyle asset for buyers seeking character, light, and space in a central location.',
-      visual_strategy: [
-        { icon: 'Camera', text: 'Professional photography' },
-        { icon: 'Video', text: 'Video walkthrough' },
-        { icon: 'Palette', text: 'Premium branding' },
-      ],
-      target_audiences: [
-        { icon: 'User', text: 'Young professionals' },
-        { icon: 'Users', text: 'Couples upgrading' },
-        { icon: 'TrendingUp', text: 'Investors' },
-      ],
-      exposure_strategy: [
-        { icon: 'Globe', text: 'Digital platforms' },
-        { icon: 'Building2', text: 'Broker network' },
-        { icon: 'Target', text: 'Direct outreach' },
-      ],
+      visual_strategy: ['Professional photography', 'Video walkthrough', 'Premium branding'],
+      target_audiences: ['Young professionals', 'Couples upgrading', 'Investors'],
+      exposure_strategy: ['Digital platforms', 'Broker network', 'Direct outreach'],
     } as MarketingSlideData,
   },
   {
@@ -281,10 +268,10 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_data: {
       title: 'Timeline',
       timeline_items: [
-        { number: '1', period: 'Week 1-2', description: 'Preparation & Photography', icon: 'Camera' },
-        { number: '2', period: 'Week 2-4', description: 'Launch & Marketing', icon: 'Megaphone' },
-        { number: '3', period: 'Week 4-8', description: 'Showings & Offers', icon: 'Users' },
-        { number: '4', period: 'Week 8+', description: 'Negotiation & Close', icon: 'Handshake' },
+        { number: 1, period: 'Week 1-2', description: 'Preparation & Photography', icon: 'FileSearch' },
+        { number: 2, period: 'Week 2-4', description: 'Launch & Marketing', icon: 'Users' },
+        { number: 3, period: 'Week 4-8', description: 'Showings & Offers', icon: 'MessageSquare' },
+        { number: 4, period: 'Week 8+', description: 'Negotiation & Close', icon: 'CheckCircle' },
       ],
     } as TimelineSlideData,
   },
@@ -295,25 +282,27 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_data: {
       title: 'Why City Market',
       opening_statement: 'Buyers at this level respond to clarity, control, and confidence.',
-      approach_items: [
+      our_approach: [
         { icon: 'UserCheck', text: 'Pre-screened buyers only' },
         { icon: 'MessageSquare', text: 'Narrative control throughout' },
         { icon: 'Shield', text: 'Strategic negotiation' },
       ],
       bottom_statement: 'We manage buyer behavior, not just listings.',
-    } as Marketing2SlideData,
+    } as MarketingIISlideData,
   },
   {
     slide_type: 'about',
     slide_order: 8,
     is_visible: true,
     slide_data: {
-      title: 'About Us',
+      title: 'City Market Properties',
       boutique_quote: 'As a boutique team, we ensure consistent, senior-level engagement throughout every transaction.',
+      boutique_approach: ['Boutique, limited-client approach', 'Tailored strategy for each property', 'Discretion, clarity, and control'],
       team_members: [
-        { name: 'Eli Cohen', title: 'Senior Broker', phone: '+972-50-000-0000' },
-        { name: 'Dana Levi', title: 'Associate Broker', phone: '+972-50-000-0001' },
+        { name: 'Elad Tzabari', years: '15+', expertise: 'Tel Aviv market expertise', icon: 'Award' },
+        { name: 'Tali Silberberg', years: '10+', expertise: 'International perspective', icon: 'Globe' },
       ],
+      closing_quote: 'Together, we bridge local authenticity and global demand.',
     } as AboutUsSlideData,
   },
   {
