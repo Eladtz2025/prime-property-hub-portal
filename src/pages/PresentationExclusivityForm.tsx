@@ -395,8 +395,10 @@ const PresentationExclusivityForm = () => {
         }} 
       />
 
-      {/* Language Toggle - Fixed Top Left */}
-      <div className="fixed top-4 left-4 z-50 flex gap-2">
+      {/* All content above background */}
+      <div className="relative z-10">
+        {/* Language Toggle - Fixed Top Left */}
+        <div className="fixed top-4 left-4 z-50 flex gap-2">
         <Button
           size="sm"
           variant={language === 'en' ? 'default' : 'outline'}
@@ -753,6 +755,7 @@ const PresentationExclusivityForm = () => {
           <p>{t.companyName} · {t.agentName} · {t.agentLicense}</p>
         </div>
       </div>
+      </div> {/* Close z-10 wrapper */}
     </div>
   );
 };
