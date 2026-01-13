@@ -62,45 +62,13 @@ const PitchDeckBuilder = () => {
     }
   }, [deck]);
 
-  // Hebrew to English transliteration for slug generation
-  const hebrewToSlug = (text: string): string => {
-    const translitMap: Record<string, string> = {
-      'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h',
-      'ו': 'v', 'ז': 'z', 'ח': 'ch', 'ט': 't', 'י': 'y',
-      'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm',
-      'נ': 'n', 'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p',
-      'ף': 'p', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k', 'ר': 'r',
-      'ש': 'sh', 'ת': 't', ' ': '-', ',': ''
-    };
-    
-    return text
-      .split('')
-      .map(c => translitMap[c] !== undefined ? translitMap[c] : c)
-      .join('')
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
   const handlePropertyChange = (newPropertyId: string | undefined, property?: PropertyData) => {
     setPropertyId(newPropertyId);
     
     // Auto-fill from property
     if (property) {
-      const fullAddress = `${property.address}, ${property.city}`;
-      setTitle(fullAddress);
-      setSlug(hebrewToSlug(fullAddress));
-      
-      // Auto-fill contact info from property owner
-      if (property.owner_phone) {
-        setContactPhone(property.owner_phone);
-        setContactWhatsapp(property.owner_phone.replace(/[^0-9+]/g, ''));
-      }
-      if (property.owner_name) {
-        setAgentNames(property.owner_name);
-      }
+      setTitle(`${property.address}, ${property.city}`);
+      setSlug(property.address.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
     }
   };
 

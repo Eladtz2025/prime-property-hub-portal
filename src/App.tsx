@@ -78,7 +78,6 @@ const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
-const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -130,10 +129,7 @@ const AppContent: React.FC = () => {
           <Route path="/price-offer/:token" element={<PriceOfferView />} />
           <Route path="/offer-luxury/:token" element={<PriceOfferLuxuryView />} />
           <Route path="/offer-light/:token" element={<PriceOfferLightView />} />
-          {/* Dynamic Pitch Deck View - must come before static routes */}
-          <Route path="/offer/:slug" element={<DynamicPitchDeckView />} />
-          {/* Keep static Ben Yehuda routes for backward compatibility */}
-          <Route path="/offer/ben-yehuda-110-static" element={<BenYehudaPitchDeck />} />
+          <Route path="/offer/ben-yehuda-110" element={<BenYehudaPitchDeck />} />
           <Route path="/offer/ben-yehuda-110/pricing" element={<PresentationPricingPage />} />
           <Route path="/offer/ben-yehuda-110/exclusivity" element={<PresentationExclusivityForm />} />
           
