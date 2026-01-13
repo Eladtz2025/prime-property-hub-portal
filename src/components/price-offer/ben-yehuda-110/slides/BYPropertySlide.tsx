@@ -43,7 +43,7 @@ const BYPropertySlide = () => {
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8">
         {/* Main Title */}
         <h1 
-          className="text-lg md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
+          className="text-lg md:text-2xl lg:text-3xl font-serif font-light text-white mb-3 md:mb-6 whitespace-nowrap"
           style={{ textShadow: softShadow }}
         >
           <span className="md:hidden">3-Room Duplex | ~70 sqm</span>
