@@ -74,6 +74,7 @@ const SaleMemorandumFormPage = React.lazy(() => import('./pages/SaleMemorandumFo
 const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingFormPage'));
 const PhotoStudio = React.lazy(() => import('./pages/PhotoStudio'));
 const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
+const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -117,6 +118,9 @@ const AppContent: React.FC = () => {
           {/* Broker Sharing Form Routes - Clean pages without layout */}
           <Route path="/broker-sharing-form/new" element={<BrokerSharingFormPage />} />
           <Route path="/broker-sharing-form/:token" element={<BrokerSharingFormPage />} />
+          
+          {/* Client Intake Form - Public form for leads */}
+          <Route path="/client-intake" element={<ClientIntakePage />} />
           
           {/* Price Offer Public Views - Clean pages without layout */}
           <Route path="/price-offer/:token" element={<PriceOfferView />} />
