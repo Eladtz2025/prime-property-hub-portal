@@ -96,7 +96,7 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
         </div>
 
         {/* Visual Price Range Bar */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-3 md:p-4 mb-3 md:mb-4">
+        <div className="w-full max-w-4xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-3 md:p-4 mb-3 md:mb-4">
           <p className="text-white/80 text-xs mb-2 font-light">Market Price Range — Ben Yehuda Area 2024</p>
           <div className="relative h-6 md:h-8 bg-white/10 rounded-full overflow-hidden">
             <div 
@@ -114,7 +114,7 @@ const BYPricingSlide = ({ content }: BYPricingSlideProps) => {
         </div>
 
         {/* Strategic Positioning */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 text-left mb-6 md:mb-8">
+        <div className="w-full max-w-4xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 text-left mb-6 md:mb-8">
           <h3 
             className="text-sm md:text-lg font-serif text-white mb-2"
             style={{ textShadow: softShadow }}
