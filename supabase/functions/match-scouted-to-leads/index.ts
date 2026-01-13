@@ -220,9 +220,31 @@ serve(async (req) => {
 });
 
 function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResult {
+  // Property type MUST match - this is a mandatory filter
+  // Handle value differences: scouted uses 'rent'/'sale', leads use 'rental'/'sale'
+  const leadPropertyType = lead.property_type;
+  const propertyType = property.property_type;
+  
+  if (leadPropertyType && propertyType) {
+    const isRental = propertyType === 'rent' && (leadPropertyType === 'rental' || leadPropertyType === 'rent');
+    const isSale = propertyType === 'sale' && leadPropertyType === 'sale';
+    
+    if (!isRental && !isSale) {
+      // Property type doesn't match - return zero score
+      return { lead, matchScore: 0, matchReasons: [] };
+    }
+  }
+  
   let score = 0;
   let maxScore = 0;
   const reasons: string[] = [];
+  
+  // Add property type match to reasons
+  if (propertyType === 'rent') {
+    reasons.push('דירה להשכרה - מתאים לחיפוש');
+  } else if (propertyType === 'sale') {
+    reasons.push('דירה למכירה - מתאים לחיפוש');
+  }
 
   // Price match (30 points)
   maxScore += 30;
