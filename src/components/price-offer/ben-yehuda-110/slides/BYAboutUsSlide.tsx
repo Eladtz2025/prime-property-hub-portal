@@ -48,19 +48,17 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         {/* Decorative Line */}
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
-        {/* Opening Quote - Hidden on mobile */}
-        <div className="hidden md:block w-full max-w-3xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 mb-4">
+        {/* Boutique Approach Box with Quote */}
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left mb-2 md:mb-3">
+          {/* Quote inside the box - Hidden on mobile */}
           <p 
-            className="text-white text-base font-light leading-relaxed"
+            className="hidden md:block text-white text-sm font-light leading-relaxed mb-3 pb-3 border-b border-white/20"
             style={{ textShadow: softShadow }}
           >
             Selling in prime Tel Aviv requires more than exposure.
             <span className="italic ml-1">It requires local intelligence, precise positioning, and human insight.</span>
           </p>
-        </div>
-
-        {/* Boutique Approach Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-left mb-3 md:mb-4">
+          
           <div className="flex items-center gap-2 mb-2 md:mb-3">
             <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             <h3 
@@ -81,53 +79,53 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </div>
 
         {/* Two Profile Cards */}
-        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-4 mb-3 md:mb-4">
+        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-4 mb-2">
           {/* Elad Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2 md:mb-3">
-              <Award className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
+              <Award className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             </div>
             <h4 
-              className="text-sm md:text-base font-serif text-white mb-1 md:mb-2"
+              className="text-xs md:text-sm font-serif text-white mb-1"
               style={{ textShadow: softShadow }}
             >
               Elad Tzabari
             </h4>
-            <div className="mb-1 md:mb-2">
+            <div className="mb-1">
               <span 
-                className="text-2xl md:text-4xl font-bold text-[#f5c242]"
+                className="text-xl md:text-3xl font-bold text-[#f5c242]"
                 style={{ textShadow: softShadow }}
               >
                 15+
               </span>
-              <span className="text-white/80 text-xs ml-1">Years</span>
+              <span className="text-white/80 text-[10px] ml-1">Years</span>
             </div>
-            <p className="text-white/90 text-xs font-light">
+            <p className="text-white/90 text-[10px] md:text-xs font-light">
               Tel Aviv market expertise
             </p>
           </div>
 
           {/* Tali Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2 md:mb-3">
-              <Globe className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
+              <Globe className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             </div>
             <h4 
-              className="text-sm md:text-base font-serif text-white mb-1 md:mb-2"
+              className="text-xs md:text-sm font-serif text-white mb-1"
               style={{ textShadow: softShadow }}
             >
               Tali Silberberg
             </h4>
-            <div className="mb-1 md:mb-2">
+            <div className="mb-1">
               <span 
-                className="text-2xl md:text-4xl font-bold text-[#f5c242]"
+                className="text-xl md:text-3xl font-bold text-[#f5c242]"
                 style={{ textShadow: softShadow }}
               >
                 10+
               </span>
-              <span className="text-white/80 text-xs ml-1">Years</span>
+              <span className="text-white/80 text-[10px] ml-1">Years</span>
             </div>
-            <p className="text-white/90 text-xs font-light">
+            <p className="text-white/90 text-[10px] md:text-xs font-light">
               International perspective
             </p>
           </div>
