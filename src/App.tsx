@@ -75,6 +75,7 @@ const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingForm
 const PhotoStudio = React.lazy(() => import('./pages/PhotoStudio'));
 const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
+const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -127,6 +128,7 @@ const AppContent: React.FC = () => {
           <Route path="/offer-luxury/:token" element={<PriceOfferLuxuryView />} />
           <Route path="/offer-light/:token" element={<PriceOfferLightView />} />
           <Route path="/offer/ben-yehuda-110" element={<BenYehudaPitchDeck />} />
+          <Route path="/offer/ben-yehuda-110/exclusivity" element={<PresentationExclusivityForm />} />
           
           {/* Public pages - Redirects to /he/ */}
           <Route path="/" element={<Navigate to="/he" replace />} />
