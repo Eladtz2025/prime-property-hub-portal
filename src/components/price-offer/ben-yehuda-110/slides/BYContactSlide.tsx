@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom";
 import cityMarketLogo from "@/assets/city-market-icon.png";
-import { Phone, CheckCircle2, MessageCircle } from "lucide-react";
+import { Phone, CheckCircle2, MessageCircle, ArrowRight } from "lucide-react";
 
 interface BYContactSlideProps {
   content?: {
@@ -62,15 +63,22 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
           </div>
         </div>
 
-        {/* Call to Action Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-4 mb-2 md:mb-3 border border-[#f5c242]/30">
+        {/* Call to Action Box - Now Clickable */}
+        <Link 
+          to="/offer/ben-yehuda-110/exclusivity"
+          className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-4 mb-2 md:mb-3 border border-[#f5c242]/30 hover:bg-[#8b7765]/90 hover:border-[#f5c242]/50 transition-all cursor-pointer block group"
+        >
           <p 
             className="text-white text-xs md:text-base font-light italic leading-relaxed"
             style={{ textShadow: softShadow }}
           >
             Move forward with a focused strategy that protects value and attracts the right buyer.
           </p>
-        </div>
+          <p className="text-[#f5c242] text-xs mt-2 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+            Click to proceed with exclusive listing
+            <ArrowRight className="h-3 w-3" />
+          </p>
+        </Link>
 
         {/* Contact Info Box */}
         <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-3 md:p-4 flex flex-col items-center">
