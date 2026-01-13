@@ -11,12 +11,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
+import { useCustomerMatches } from "@/hooks/useCustomerMatches";
 
 interface Agent {
   id: string;
@@ -101,6 +103,106 @@ const formatBudget = (min?: number | null, max?: number | null) => {
   if (min) return `₪${formatNum(min)}+`;
   if (max) return `עד ₪${formatNum(max)}`;
   return '-';
+};
+
+// Separate component for matches to avoid hook call in render
+const CustomerMatchesCell = ({ customerId, customerName, customerPhone }: { customerId: string; customerName: string; customerPhone?: string | null }) => {
+  const { data: matches = [], isLoading } = useCustomerMatches(customerId);
+
+  const handleSendWhatsApp = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
+    if (!customerPhone) return;
+    
+    const message = encodeURIComponent(
+      `שלום ${customerName}!\n\n` +
+      `מצאתי דירה שיכולה להתאים לך:\n` +
+      `📍 ${property.city || ''}\n` +
+      `🏠 ${property.rooms ? `${property.rooms} חדרים` : ''} ${property.size ? `| ${property.size} מ"ר` : ''}\n` +
+      `💰 ${property.price ? `₪${property.price.toLocaleString()}` : ''}\n\n` +
+      `לפרטים נוספים: ${property.source_url}\n\n` +
+      `אשמח לתאם צפייה, מה אומר/ת?`
+    );
+    window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
+  };
+
+  if (isLoading) {
+    return <span className="text-muted-foreground text-sm">...</span>;
+  }
+
+  if (matches.length === 0) {
+    return <span className="text-muted-foreground text-sm">-</span>;
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-primary hover:text-primary">
+          <Home className="h-3 w-3" />
+          {matches.length} דירות
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Home className="h-5 w-5" />
+            דירות שהותאמו ל{customerName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 mt-4">
+          {matches.map((match) => (
+            <div key={match.id} className="p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {match.city && <span>{match.city}</span>}
+                    {match.rooms && <span> | {match.rooms} חד'</span>}
+                    {match.size && <span> | {match.size} מ"ר</span>}
+                    {match.price && <span> | ₪{match.price.toLocaleString()}</span>}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0">
+                  {match.matchScore}% התאמה
+                </Badge>
+              </div>
+              
+              {match.matchReasons && match.matchReasons.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {match.matchReasons.map((reason, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {reason}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              <div className="mt-3 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => window.open(match.source_url, '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                  צפה במקור
+                </Button>
+                {customerPhone && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs text-green-600 hover:text-green-700"
+                    onClick={() => handleSendWhatsApp(match)}
+                  >
+                    <MessageSquare className="h-3 w-3 ml-1" />
+                    שלח ב-WhatsApp
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 export const ExpandableCustomerRow = ({
@@ -356,6 +458,9 @@ export const ExpandableCustomerRow = ({
             </span>
           )}
         </TableCell>
+        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+          <CustomerMatchesCell customerId={customer.id} customerName={customer.name} customerPhone={customer.phone} />
+        </TableCell>
         <TableCell className="text-right">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.bg} ${timeSince.color}`}>
             <Clock className="h-3 w-3" />
@@ -383,7 +488,7 @@ export const ExpandableCustomerRow = ({
 
       {/* Expanded Edit Section */}
       <TableRow className={isExpanded ? '' : 'hidden'}>
-        <TableCell colSpan={9} className="p-0 border-0">
+        <TableCell colSpan={10} className="p-0 border-0">
           <Collapsible open={isExpanded}>
             <CollapsibleContent className="bg-muted/20 border-t">
               <div className="p-4 space-y-4">
