@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileSignature, FileText, Scale } from 'lucide-react';
+import { Plus, FileSignature, FileText, Scale, Link2, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { BrokerageFormsMobileList } from '@/components/BrokerageFormsMobileList';
 import AdminPriceOffersContent from '@/components/AdminPriceOffersContent';
 import LegalFormsList from '@/components/forms/LegalFormsList';
 
 const AdminForms = () => {
   const [activeTab, setActiveTab] = useState('brokerage');
+  const [copied, setCopied] = useState(false);
 
   const handleNewBrokerageForm = () => {
     window.open('/brokerage-form/new', '_blank');
+  };
+
+  const handleCopyClientIntakeLink = () => {
+    const link = `${window.location.origin}/client-intake`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    toast.success('הלינק הועתק!', {
+      description: 'עכשיו אפשר לשלוח ללקוח'
+    });
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -18,17 +30,29 @@ const AdminForms = () => {
       <div className="p-4 text-right">
         <div className="flex flex-row-reverse items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">טפסים</h1>
-          {activeTab === 'brokerage' && (
+          <div className="flex gap-2 flex-row-reverse">
             <Button
-              onClick={handleNewBrokerageForm}
+              onClick={handleCopyClientIntakeLink}
               size="sm"
+              variant="outline"
               className="gap-1.5 flex-row-reverse"
             >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">טופס תיווך</span>
-              <span className="sm:hidden">חדש</span>
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Link2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">לינק ללקוח</span>
+              <span className="sm:hidden">לינק</span>
             </Button>
-          )}
+            {activeTab === 'brokerage' && (
+              <Button
+                onClick={handleNewBrokerageForm}
+                size="sm"
+                className="gap-1.5 flex-row-reverse"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">טופס תיווך</span>
+                <span className="sm:hidden">חדש</span>
+              </Button>
+            )}
+          </div>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
