@@ -674,7 +674,19 @@ ${cleanedMarkdown.substring(0, 30000)}`;
     }
 
     // Filter out non-residential properties
-    const invalidKeywords = ['כלב', 'חתול', 'משרד', 'חנות', 'חניה', 'מחסן', 'עסק', 'קליניקה', 'מרפאה'];
+    const invalidKeywords = [
+      // בעלי חיים
+      'כלב', 'חתול', 'כלבים', 'חתולים',
+      // מסחרי
+      'משרד', 'משרדים', 'חנות', 'חנויות', 
+      'מסחרי', 'מסחרית', 'עסק', 'עסקים',
+      // שירותים
+      'קליניקה', 'מרפאה', 'מספרה', 'בית קפה',
+      // אחסון/חניה
+      'חניה', 'חניון', 'מחסן', 'מחסנים',
+      // תעשייה
+      'מפעל', 'מחסן לוגיסטי', 'אולם'
+    ];
     filteredProperties = filteredProperties.filter((p: any) => {
       const title = (p.title || '').toLowerCase();
       const description = (p.description || '').toLowerCase();
@@ -685,6 +697,22 @@ ${cleanedMarkdown.substring(0, 30000)}`;
         console.log(`Filtered out non-residential: ${p.title}`);
         return false;
       }
+      
+      // Check for title/property_type mismatch
+      if (propertyType === 'rent') {
+        // If scraping rent but title says "למכירה" without "להשכרה" - likely wrong listing
+        if (title.includes('למכירה') && !title.includes('להשכרה')) {
+          console.log(`Filtered out mismatched property type (sale in rent scrape): ${p.title}`);
+          return false;
+        }
+      } else if (propertyType === 'sale') {
+        // If scraping sale but title says "להשכרה" without "למכירה" - likely wrong listing
+        if (title.includes('להשכרה') && !title.includes('למכירה')) {
+          console.log(`Filtered out mismatched property type (rent in sale scrape): ${p.title}`);
+          return false;
+        }
+      }
+      
       return true;
     });
     console.log(`Property type filter: ${properties.length} -> ${filteredProperties.length} residential properties`);
