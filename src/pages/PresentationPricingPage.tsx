@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, TrendingUp, MapPin, Home, BarChart3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, ExternalLink } from "lucide-react";
 import cityMarketLogo from "@/assets/city-market-icon.png";
 
 const PresentationPricingPage = () => {
@@ -14,21 +14,14 @@ const PresentationPricingPage = () => {
       backToPresentation: "Back to Presentation",
       title: "Pricing Strategy",
       subtitle: "Market Analysis & Recommended Positioning",
-      marketContext: "Market Context",
-      avgPricePerSqm: "Avg. Price/sqm",
-      transactionRange: "Transaction Range",
-      avgSize: "Avg. Size",
-      priceRange: "Price Range Analysis",
-      lowEnd: "Low End",
-      highEnd: "High End",
-      recommended: "Recommended",
-      strategicPosition: "Strategic Positioning",
-      bullets: [
-        "Positioned in the upper tier of comparable sales",
-        "Price reflects premium for location & condition",
-        "Room for negotiation while maintaining value",
-        "Aligned with current market momentum"
-      ],
+      optionA: "Option A",
+      optionB: "Option B",
+      premiumDesc: "Premium price for location & renovation",
+      competitiveDesc: "Competitive price for quick sale",
+      estimatedTime: "Estimated time to sell",
+      months: "months",
+      recentlySold: "Recently Sold in Area",
+      currentlyForSale: "Currently For Sale",
       continueToStep2: "Continue to Step 2",
       exclusiveAgreement: "Exclusive Agreement"
     },
@@ -36,21 +29,14 @@ const PresentationPricingPage = () => {
       backToPresentation: "חזרה למצגת",
       title: "אסטרטגיית תמחור",
       subtitle: "ניתוח שוק ומיצוב מומלץ",
-      marketContext: "הקשר שוק",
-      avgPricePerSqm: "מחיר ממוצע למ״ר",
-      transactionRange: "טווח עסקאות",
-      avgSize: "גודל ממוצע",
-      priceRange: "ניתוח טווח מחירים",
-      lowEnd: "גבול תחתון",
-      highEnd: "גבול עליון",
-      recommended: "מומלץ",
-      strategicPosition: "מיצוב אסטרטגי",
-      bullets: [
-        "ממוקם בשכבה העליונה של עסקאות דומות",
-        "המחיר משקף פרמיה על מיקום ומצב",
-        "מרווח למשא ומתן תוך שמירה על ערך",
-        "מותאם למומנטום הנוכחי בשוק"
-      ],
+      optionA: "אופציה א׳",
+      optionB: "אופציה ב׳",
+      premiumDesc: "מחיר פרימיום למיקום וחידוש",
+      competitiveDesc: "מחיר תחרותי למכירה מהירה",
+      estimatedTime: "זמן משוער למכירה",
+      months: "חודשים",
+      recentlySold: "נמכרו לאחרונה באזור",
+      currentlyForSale: "כרגע למכירה",
       continueToStep2: "המשך לשלב 2",
       exclusiveAgreement: "הסכם בלעדיות"
     }
@@ -58,6 +44,17 @@ const PresentationPricingPage = () => {
 
   const t = translations[language];
   const isRTL = language === 'he';
+
+  const recentlySoldProperties = [
+    { address: "Ben Yehuda 98", price: "₪4.1M", size: "60 sqm" },
+    { address: "Dizengoff 145", price: "₪3.8M", size: "55 sqm" },
+    { address: "Ben Yehuda 122", price: "₪4.3M", size: "65 sqm" },
+  ];
+
+  const currentlyForSaleProperties = [
+    { address: "Ben Yehuda 95", price: "₪4.4M", size: "62 sqm" },
+    { address: "Dizengoff 130", price: "₪4.0M", size: "58 sqm" },
+  ];
 
   return (
     <div className="min-h-screen w-full relative overflow-auto" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -76,6 +73,13 @@ const PresentationPricingPage = () => {
           backgroundColor: 'rgba(180, 140, 100, 0.85)',
           mixBlendMode: 'overlay'
         }}
+      />
+
+      {/* Logo - Fixed Bottom Right */}
+      <img 
+        src={cityMarketLogo} 
+        alt="City Market Properties" 
+        className="fixed bottom-4 right-4 h-10 md:h-14 w-auto z-50"
       />
 
       {/* All content above background */}
@@ -110,14 +114,7 @@ const PresentationPricingPage = () => {
         </Link>
 
         {/* Main Content */}
-        <div className="min-h-screen flex flex-col items-center justify-start px-4 md:px-8 pt-20 pb-8">
-          {/* Logo */}
-          <img 
-            src={cityMarketLogo} 
-            alt="City Market Properties" 
-            className="h-12 md:h-16 w-auto mb-4"
-          />
-
+        <div className="min-h-screen flex flex-col items-center justify-start px-4 md:px-8 pt-14 pb-20">
           {/* Title */}
           <h1 
             className="text-3xl md:text-5xl font-serif font-light text-white mb-2 text-center"
@@ -126,87 +123,135 @@ const PresentationPricingPage = () => {
             {t.title}
           </h1>
           <p 
-            className="text-white/80 text-sm md:text-lg mb-6 text-center"
+            className="text-white/80 text-sm md:text-lg mb-4 text-center"
             style={{ textShadow: softShadow }}
           >
             {t.subtitle}
           </p>
 
           {/* Decorative Line */}
-          <div className="w-16 h-px bg-[#f5c242] mb-8" />
+          <div className="w-16 h-px bg-[#f5c242] mb-6" />
 
-          {/* Market Statistics */}
-          <div className="w-full max-w-4xl mb-6">
-            <h2 
-              className="text-xl md:text-2xl font-serif text-white mb-4 text-center"
-              style={{ textShadow: softShadow }}
-            >
-              {t.marketContext}
-            </h2>
-            <div className="grid grid-cols-3 gap-3 md:gap-6">
-              <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
-                <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-[#f5c242] mx-auto mb-2" />
-                <p className="text-[#f5c242] text-xl md:text-3xl font-bold">₪58K</p>
-                <p className="text-white/70 text-xs md:text-sm">{t.avgPricePerSqm}</p>
-              </div>
-              <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
-                <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-[#f5c242] mx-auto mb-2" />
-                <p className="text-[#f5c242] text-lg md:text-2xl font-bold">₪2.9M-5.7M</p>
-                <p className="text-white/70 text-xs md:text-sm">{t.transactionRange}</p>
-              </div>
-              <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-center">
-                <Home className="w-6 h-6 md:w-8 md:h-8 text-[#f5c242] mx-auto mb-2" />
-                <p className="text-[#f5c242] text-xl md:text-3xl font-bold">62m²</p>
-                <p className="text-white/70 text-xs md:text-sm">{t.avgSize}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Price Range Bar */}
-          <div className="w-full max-w-4xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 mb-6">
-            <h3 
-              className="text-lg md:text-xl font-serif text-white mb-4 text-center"
-              style={{ textShadow: softShadow }}
-            >
-              {t.priceRange}
-            </h3>
-            <div className="relative h-12 md:h-16 bg-gradient-to-r from-[#8b7765] via-[#f5c242] to-[#e85c3a] rounded-full overflow-hidden mb-4">
-              {/* Recommended marker */}
-              <div 
-                className="absolute top-0 bottom-0 w-1 bg-white"
-                style={{ left: '65%' }}
-              />
-              <div 
-                className="absolute -top-6 transform -translate-x-1/2 text-white text-xs font-medium"
-                style={{ left: '65%', textShadow: softShadow }}
+          {/* Two Pricing Options */}
+          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+            {/* Option A - Premium */}
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-center border border-[#f5c242]/30">
+              <span 
+                className="text-[#f5c242] text-sm md:text-base font-medium tracking-widest uppercase"
+                style={{ textShadow: softShadow }}
               >
-                {t.recommended}
+                {t.optionA}
+              </span>
+              <p 
+                className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
+                style={{ textShadow: softShadow }}
+              >
+                ₪4,250,000
+              </p>
+              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
+              <p 
+                className="text-white/80 text-sm md:text-base mb-4"
+                style={{ textShadow: softShadow }}
+              >
+                {t.premiumDesc}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-[#f5c242]">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm md:text-base">
+                  7-11 {t.months}
+                </span>
               </div>
+              <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>
             </div>
-            <div className={`flex justify-between text-white/80 text-xs md:text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <span>₪2.9M ({t.lowEnd})</span>
-              <span className="text-[#f5c242] font-bold">₪4.2M</span>
-              <span>₪5.7M ({t.highEnd})</span>
+
+            {/* Option B - Competitive */}
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-center border border-[#f5c242]/30">
+              <span 
+                className="text-[#f5c242] text-sm md:text-base font-medium tracking-widest uppercase"
+                style={{ textShadow: softShadow }}
+              >
+                {t.optionB}
+              </span>
+              <p 
+                className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
+                style={{ textShadow: softShadow }}
+              >
+                ₪3,950,000
+              </p>
+              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
+              <p 
+                className="text-white/80 text-sm md:text-base mb-4"
+                style={{ textShadow: softShadow }}
+              >
+                {t.competitiveDesc}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-[#f5c242]">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm md:text-base">
+                  3-5 {t.months}
+                </span>
+              </div>
+              <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>
             </div>
           </div>
 
-          {/* Strategic Positioning */}
-          <div className="w-full max-w-4xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 mb-8">
-            <h3 
-              className="text-lg md:text-xl font-serif text-white mb-4 flex items-center gap-2"
-              style={{ textShadow: softShadow }}
-            >
-              <MapPin className="w-5 h-5 text-[#f5c242]" />
-              {t.strategicPosition}
-            </h3>
-            <ul className={`space-y-2 ${isRTL ? 'text-right' : 'text-left'}`}>
-              {t.bullets.map((bullet, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-[#f5c242] mt-1">•</span>
-                  <span className="text-white/90 text-sm md:text-base">{bullet}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Property Links Section */}
+          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+            {/* Recently Sold */}
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5">
+              <h3 
+                className="text-[#f5c242] text-sm md:text-base font-medium mb-3"
+                style={{ textShadow: softShadow }}
+              >
+                {t.recentlySold}
+              </h3>
+              <div className="space-y-2">
+                {recentlySoldProperties.map((property, index) => (
+                  <a
+                    key={index}
+                    href="#"
+                    className="flex items-center justify-between bg-white/10 hover:bg-white/20 transition-colors rounded-md px-3 py-2 group"
+                  >
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-white text-xs md:text-sm">{property.address}</span>
+                      <span className="text-white/60 text-xs">({property.size})</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-[#f5c242] text-xs md:text-sm font-medium">{property.price}</span>
+                      <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Currently For Sale */}
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5">
+              <h3 
+                className="text-[#f5c242] text-sm md:text-base font-medium mb-3"
+                style={{ textShadow: softShadow }}
+              >
+                {t.currentlyForSale}
+              </h3>
+              <div className="space-y-2">
+                {currentlyForSaleProperties.map((property, index) => (
+                  <a
+                    key={index}
+                    href="#"
+                    className="flex items-center justify-between bg-white/10 hover:bg-white/20 transition-colors rounded-md px-3 py-2 group"
+                  >
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-white text-xs md:text-sm">{property.address}</span>
+                      <span className="text-white/60 text-xs">({property.size})</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-[#f5c242] text-xs md:text-sm font-medium">{property.price}</span>
+                      <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Continue to Step 2 */}
