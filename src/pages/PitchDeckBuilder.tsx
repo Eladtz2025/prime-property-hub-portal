@@ -154,12 +154,12 @@ const PitchDeckBuilder = () => {
       setTitle(fullTitle);
       setSlug(hebrewToSlug(fullTitle));
       
-      // Auto-fill agent info from property owner
-      if (property.owner_name && !agentNames) {
-        setAgentNames(property.owner_name);
+      // Auto-fill agent info from assigned agent (not property owner)
+      if (property.agent_name && !agentNames) {
+        setAgentNames(property.agent_name);
       }
-      if (property.owner_phone && !contactPhone) {
-        setContactPhone(property.owner_phone);
+      if (property.agent_phone && !contactPhone) {
+        setContactPhone(property.agent_phone);
       }
     } else {
       setTitle('');
