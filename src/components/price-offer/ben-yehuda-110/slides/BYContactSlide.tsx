@@ -49,7 +49,7 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-4" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-6 md:mb-10" />
 
         {/* Steps Navigation */}
         <div className="flex items-center justify-center gap-2 md:gap-4 mb-3 md:mb-4">
