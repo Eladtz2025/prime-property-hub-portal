@@ -173,7 +173,7 @@ const AdminForms = () => {
         </div>
 
         {/* Action Cubes Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
           {actionCubes.map((cube) => {
             const Icon = cube.icon;
             return (
