@@ -234,6 +234,9 @@ serve(async (req) => {
           .update({ last_seen_at: new Date().toISOString() })
           .eq('id', existing.id);
       } else {
+        // Normalize city name before saving
+        const normalizedCity = normalizeCityName(property.city);
+        
         // Insert new property
         const { error: insertError } = await supabase
           .from('scouted_properties')
@@ -242,7 +245,7 @@ serve(async (req) => {
             source_url: property.source_url,
             source_id: property.source_id,
             title: property.title,
-            city: property.city,
+            city: normalizedCity,
             neighborhood: property.neighborhood,
             address: property.address,
             price: property.price,
@@ -298,6 +301,20 @@ serve(async (req) => {
     });
   }
 });
+
+// Normalize city names for consistent storage
+function normalizeCityName(city: string | undefined): string | undefined {
+  if (!city) return city;
+  
+  const cityLower = city.trim();
+  
+  // Normalize Tel Aviv variations to standard format
+  if (cityLower.includes('תל אביב') || cityLower.includes('תל-אביב')) {
+    return 'תל אביב יפו';
+  }
+  
+  return city.trim();
+}
 
 function buildSearchUrls(config: ScoutConfig): string[] {
   const urls: string[] = [];
@@ -561,7 +578,14 @@ YAD2 SPECIFIC INSTRUCTIONS:
 - Extract source_id from data attributes or URL patterns`
     : '';
 
-  const systemPrompt = `You are a real estate data extraction expert. Extract property listings from the provided content.
+  const systemPrompt = `You are a real estate data extraction expert. Extract RESIDENTIAL property listings ONLY.
+
+CRITICAL FILTERING RULES:
+- Extract ONLY residential properties: apartments (דירה), penthouses (פנטהאוז), mini-penthouses (מיני פנטהאוז), private houses (בית פרטי), garden apartments (דירת גן), studios (סטודיו)
+- IGNORE completely: offices (משרדים), stores (חנויות), commercial spaces, parking spots, storage units
+- IGNORE completely: pet listings (כלבים, חתולים), vehicle listings, general classifieds
+- IGNORE completely: projects under construction unless specifically residential apartments
+
 Return a JSON array of properties with these fields:
 - source_id: unique ID from the listing (look for item IDs, listing numbers)
 - source_url: full URL to the listing if available, otherwise use "${sourceUrl}"
@@ -622,17 +646,48 @@ ${cleanedMarkdown.substring(0, 30000)}`;
 
     const properties = JSON.parse(jsonMatch[0]);
     
-    // Filter by target cities if specified (backup filter)
+    // Helper to normalize city names for comparison
+    const normalizeCity = (city: string): string => {
+      if (!city) return '';
+      return city.trim()
+        .replace(/[-–—\s]+/g, '') // Remove dashes and spaces
+        .replace(/יפו/g, '')       // Remove "יפו" suffix
+        .replace(/ישראל/g, '');   // Remove "ישראל" suffix
+    };
+
+    // Filter by target cities if specified (strict filter)
     let filteredProperties = properties;
     if (targetCities?.length) {
+      const normalizedTargets = targetCities.map(normalizeCity);
+      
       filteredProperties = properties.filter((p: any) => {
-        const propCity = p.city?.trim();
-        return targetCities.some(targetCity => 
-          propCity?.includes(targetCity) || targetCity.includes(propCity)
+        if (!p.city) return false;
+        const normalizedPropCity = normalizeCity(p.city);
+        
+        // Check for exact match or strong partial match (target must be >= 4 chars)
+        return normalizedTargets.some(target => 
+          normalizedPropCity === target || 
+          (target.length >= 4 && normalizedPropCity.includes(target))
         );
       });
-      console.log(`Filtered ${properties.length} -> ${filteredProperties.length} properties for cities: ${targetCities.join(', ')}`);
+      console.log(`City filter: ${properties.length} -> ${filteredProperties.length} properties for cities: ${targetCities.join(', ')}`);
     }
+
+    // Filter out non-residential properties
+    const invalidKeywords = ['כלב', 'חתול', 'משרד', 'חנות', 'חניה', 'מחסן', 'עסק', 'קליניקה', 'מרפאה'];
+    filteredProperties = filteredProperties.filter((p: any) => {
+      const title = (p.title || '').toLowerCase();
+      const description = (p.description || '').toLowerCase();
+      const combined = title + ' ' + description;
+      
+      // Reject if contains invalid keywords
+      if (invalidKeywords.some(kw => combined.includes(kw))) {
+        console.log(`Filtered out non-residential: ${p.title}`);
+        return false;
+      }
+      return true;
+    });
+    console.log(`Property type filter: ${properties.length} -> ${filteredProperties.length} residential properties`);
 
     return filteredProperties.map((p: any) => ({
       source,
