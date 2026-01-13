@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePitchDeck, useCreatePitchDeck, useUpdatePitchDeck, useUpdateSlide } from '@/hooks/usePitchDecks';
 import { PitchDeckSlide } from '@/types/pitch-deck';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -168,8 +169,17 @@ const PitchDeckBuilder = () => {
   };
 
   const handleSave = async () => {
+    console.log('handleSave called', { title, slug, isNew, propertyId });
+    
     if (!title || !slug) {
       toast.error('יש למלא שם וכתובת URL');
+      return;
+    }
+    
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('יש להתחבר כדי לשמור מצגת');
       return;
     }
     
@@ -177,6 +187,7 @@ const PitchDeckBuilder = () => {
     
     try {
       if (isNew) {
+        console.log('Creating new pitch deck...');
         const newDeck = await createMutation.mutateAsync({
           title,
           slug,
@@ -189,6 +200,8 @@ const PitchDeckBuilder = () => {
           theme_color: themeColor,
           overlay_opacity: overlayOpacity,
         });
+        console.log('Created deck:', newDeck);
+        toast.success('המצגת נוצרה בהצלחה');
         navigate(`/admin-dashboard/pitch-decks/${newDeck.id}`);
       } else if (id) {
         await updateMutation.mutateAsync({
@@ -204,7 +217,11 @@ const PitchDeckBuilder = () => {
           theme_color: themeColor,
           overlay_opacity: overlayOpacity,
         });
+        toast.success('המצגת נשמרה בהצלחה');
       }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('שגיאה בשמירה: ' + (error as Error).message);
     } finally {
       setIsSaving(false);
     }
@@ -246,15 +263,19 @@ const PitchDeckBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {!isNew && (
-              <Button
-                variant="outline"
-                onClick={() => window.open(`/offer/${slug}`, '_blank')}
-              >
-                <Eye className="h-4 w-4 ml-2" />
-                תצוגה מקדימה
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isNew) {
+                  toast.info('יש לשמור את המצגת לפני תצוגה מקדימה');
+                } else {
+                  window.open(`/offer/${slug}`, '_blank');
+                }
+              }}
+            >
+              <Eye className="h-4 w-4 ml-2" />
+              תצוגה מקדימה
+            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <Loader2 className="h-4 w-4 ml-2 animate-spin" />
