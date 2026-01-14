@@ -542,12 +542,38 @@ const BrokerageFormPage = () => {
         }
       });
 
-      // If remote sign, update token status
+      // If remote sign, update token status and notify agent
       if (mode === 'remote-sign' && token) {
         await supabase
           .from('brokerage_form_tokens')
           .update({ status: 'signed', signed_at: new Date().toISOString() })
           .eq('token', token);
+
+        // Send notification to agent
+        try {
+          const { data: tokenData } = await supabase
+            .from('brokerage_form_tokens')
+            .select('created_by, form_data')
+            .eq('token', token)
+            .single();
+          
+          if (tokenData?.created_by) {
+            const formData = tokenData.form_data as any;
+            const firstProperty = properties.find(p => p.address);
+            await supabase.functions.invoke('notify-form-signed', {
+              body: {
+                formType: 'brokerage',
+                clientName,
+                clientPhone,
+                agentId: tokenData.created_by,
+                propertyAddress: firstProperty?.address
+              }
+            });
+          }
+        } catch (notifyError) {
+          console.error('Error sending notification:', notifyError);
+          // Don't fail the form save if notification fails
+        }
       }
 
       toast.success(t.formSaved);

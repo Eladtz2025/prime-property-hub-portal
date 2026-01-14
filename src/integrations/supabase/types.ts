@@ -360,6 +360,7 @@ export type Database = {
           budget_min: number | null
           cash_available: number | null
           created_at: string | null
+          created_by: string | null
           elevator_required: boolean | null
           email: string | null
           flexible_move_date: boolean | null
@@ -403,6 +404,7 @@ export type Database = {
           budget_min?: number | null
           cash_available?: number | null
           created_at?: string | null
+          created_by?: string | null
           elevator_required?: boolean | null
           email?: string | null
           flexible_move_date?: boolean | null
@@ -446,6 +448,7 @@ export type Database = {
           budget_min?: number | null
           cash_available?: number | null
           created_at?: string | null
+          created_by?: string | null
           elevator_required?: boolean | null
           email?: string | null
           flexible_move_date?: boolean | null

@@ -167,6 +167,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           floor_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.floor_preference || null : null,
           view_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.view_preference || null : null,
           assigned_agent_id: user?.id || null,
+          created_by: user?.id || null,
         });
 
       if (error) throw error;
