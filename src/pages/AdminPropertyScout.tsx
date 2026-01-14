@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History, BarChart3 } from 'lucide-react';
+import { Search, Settings, History, Wand2 } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ScoutConfigManager } from '@/components/scout/ScoutConfigManager';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
@@ -15,16 +15,12 @@ const AdminPropertyScout: React.FC = () => {
     <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-6" dir="rtl">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">🔍 Property Scout</h1>
-              <p className="text-muted-foreground">
-                סריקה אוטומטית של אתרי נדל"ן והתאמה ללקוחות
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold">🔍 Property Scout</h1>
+            <p className="text-muted-foreground">
+              סריקה אוטומטית של אתרי נדל"ן והתאמה ללקוחות
+            </p>
           </div>
-
-          <ManualScoutForm />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -41,9 +37,9 @@ const AdminPropertyScout: React.FC = () => {
               <History className="h-4 w-4" />
               היסטוריית ריצות
             </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              סטטיסטיקות
+            <TabsTrigger value="manual" className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" />
+              סריקה ידנית
             </TabsTrigger>
           </TabsList>
 
@@ -59,8 +55,8 @@ const AdminPropertyScout: React.FC = () => {
             <ScoutRunHistory />
           </TabsContent>
 
-          <TabsContent value="stats" className="mt-6">
-            <ScoutStats />
+          <TabsContent value="manual" className="mt-6">
+            <ManualScoutForm />
           </TabsContent>
         </Tabs>
       </div>

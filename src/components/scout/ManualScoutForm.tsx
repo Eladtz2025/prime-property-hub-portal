@@ -61,14 +61,14 @@ export const ManualScoutForm: React.FC = () => {
   const matchMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('match-scouted-to-leads', {
-        body: { send_whatsapp: true }
+        body: { send_whatsapp: false }
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-      toast.success(`הותאמו ${data.leads_matched} לקוחות, נשלחו ${data.whatsapp_sent} הודעות`);
+      toast.success(`הותאמו ${data.leads_matched} לקוחות`);
     },
     onError: (error) => {
       console.error('Match error:', error);
@@ -143,7 +143,7 @@ export const ManualScoutForm: React.FC = () => {
               {matchMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin ml-2" />
               ) : null}
-              התאם ושלח
+              התאם
             </Button>
           </div>
           
