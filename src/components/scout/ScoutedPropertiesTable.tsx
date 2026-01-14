@@ -33,6 +33,7 @@ interface ScoutedProperty {
   images: string[] | null;
   description: string | null;
   is_active?: boolean;
+  is_private?: boolean | null;
 }
 
 const PAGE_SIZE = 20;
@@ -494,7 +495,17 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <TableBody>
                 {filteredProperties?.map((property) => (
                   <TableRow key={property.id} className={property.is_active === false ? 'opacity-60' : ''}>
-                    <TableCell>{getSourceBadge(property.source)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {getSourceBadge(property.source)}
+                        {property.is_private === true && (
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300 w-fit">פרטי</Badge>
+                        )}
+                        {property.is_private === false && (
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300 w-fit">תיווך</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{property.title || 'ללא כותרת'}</p>

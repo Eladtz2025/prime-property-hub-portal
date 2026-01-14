@@ -37,6 +37,79 @@ interface ScrapedProperty {
   images?: string[];
   features?: Record<string, boolean>;
   raw_data?: any;
+  is_private?: boolean | null;
+}
+
+// User agents for retry mechanism
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+];
+
+// Scrape with retry mechanism using different user agents
+async function scrapeWithRetry(url: string, firecrawlApiKey: string, maxRetries = 3): Promise<any> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+
+      console.log(`Scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+
+      const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          formats: ['markdown', 'html'],
+          onlyMainContent: true,
+          waitFor: 5000, // Increased to 5 seconds for dynamic content
+          headers: {
+            'User-Agent': userAgents[attempt % userAgents.length],
+            'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+          }
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Scrape successful for ${url}`);
+        return data;
+      }
+
+      const errorText = await response.text();
+      console.warn(`Attempt ${attempt + 1} failed for ${url}, status: ${response.status}, error: ${errorText}`);
+
+      // Wait before retry with exponential backoff
+      if (attempt < maxRetries - 1) {
+        const waitTime = 3000 * (attempt + 1);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`Attempt ${attempt + 1} timeout for ${url}`);
+      } else {
+        console.error(`Attempt ${attempt + 1} error for ${url}:`, error);
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const waitTime = 3000 * (attempt + 1);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
+    }
+  }
+
+  console.error(`All ${maxRetries} retry attempts failed for ${url}`);
+  return null;
 }
 
 serve(async (req) => {
@@ -152,7 +225,7 @@ serve(async (req) => {
       // Build search URLs
       const urls = buildSearchUrls(config);
 
-      const maxPropertiesPerConfig = 100;
+      const maxPropertiesPerConfig = 500; // Increased from 100 to handle more pages
       
       for (let urlIndex = 0; urlIndex < urls.length; urlIndex++) {
         const url = urls[urlIndex];
@@ -166,47 +239,25 @@ serve(async (req) => {
 
         // Add delay between requests to avoid rate limiting (skip first request)
         if (urlIndex > 0) {
-          console.log('Waiting 2 seconds before next request...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          const delay = 2000 + Math.random() * 1000; // 2-3 seconds random delay
+          console.log(`Waiting ${Math.round(delay)}ms before next request...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
 
         try {
-          // Use Firecrawl to scrape with timeout
+          // Use Firecrawl with retry mechanism
           if (!firecrawlApiKey) {
             console.warn('FIRECRAWL_API_KEY not configured');
             continue;
           }
 
-          // Add timeout to Firecrawl requests
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-          let scrapeResponse;
-          try {
-            scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${firecrawlApiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                url,
-                formats: ['markdown', 'html'],
-                onlyMainContent: true,
-                waitFor: 3000, // Wait for dynamic content
-              }),
-              signal: controller.signal,
-            });
-          } finally {
-            clearTimeout(timeoutId);
-          }
-
-          if (!scrapeResponse.ok) {
-            console.error(`Firecrawl error for ${url}:`, await scrapeResponse.text());
+          const scrapeData = await scrapeWithRetry(url, firecrawlApiKey);
+          
+          if (!scrapeData) {
+            console.error(`All retry attempts failed for ${url}, continuing to next URL`);
             continue;
           }
 
-          const scrapeData = await scrapeResponse.json();
           const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
           const html = scrapeData.data?.html || scrapeData.html || '';
 
@@ -216,13 +267,17 @@ serve(async (req) => {
             continue;
           }
 
+          // Determine if this is a private source
+          const isPrivateSource = url.includes('dealerType=1') || config.source === 'yad2_private';
+
           const extractedProperties = await extractPropertiesWithAI(
             markdown, 
             html, 
             url,
             config.property_type === 'both' ? 'rent' : config.property_type,
             lovableApiKey,
-            config.cities
+            config.cities,
+            isPrivateSource
           );
 
           console.log(`Extracted ${extractedProperties.length} properties from ${url}`);
@@ -230,11 +285,7 @@ serve(async (req) => {
           totalPropertiesFound += extractedProperties.length;
 
         } catch (scrapeError) {
-          if (scrapeError instanceof Error && scrapeError.name === 'AbortError') {
-            console.error(`Timeout scraping ${url} (exceeded 30s)`);
-          } else {
-            console.error(`Error scraping ${url}:`, scrapeError);
-          }
+          console.error(`Error processing ${url}:`, scrapeError);
           continue;
         }
       }
@@ -271,7 +322,7 @@ serve(async (req) => {
         // Normalize city name before saving
         const normalizedCity = normalizeCityName(property.city);
         
-        // Insert new property
+        // Insert new property with is_private field
         const { error: insertError } = await supabase
           .from('scouted_properties')
           .insert({
@@ -291,7 +342,8 @@ serve(async (req) => {
             images: property.images || [],
             features: property.features || {},
             raw_data: property.raw_data,
-            status: 'new'
+            status: 'new',
+            is_private: property.is_private
           });
 
         if (!insertError) {
@@ -365,7 +417,7 @@ function normalizeCityName(city: string | undefined): string | undefined {
 
 function buildSearchUrls(config: ScoutConfig): string[] {
   const urls: string[] = [];
-  const pagesToScan = 3; // Scan 3 pages per source for ~60 properties each
+  const pagesToScan = 30; // Increased from 3 to 30 pages for ~600 properties per source
 
   // If custom URL provided, use it (no pagination for manual URLs)
   if (config.search_url) {
@@ -373,11 +425,14 @@ function buildSearchUrls(config: ScoutConfig): string[] {
   }
 
   // Determine which sources to scan
+  // IMPORTANT: yad2 and yad2_private now always scan both types
   let sources: string[] = [];
-  if (config.source === 'both') {
-    sources = ['madlan', 'yad2_private']; // Madlan + Yad2 private
+  if (config.source === 'yad2' || config.source === 'yad2_private') {
+    sources = ['yad2', 'yad2_private']; // Always scan both private and broker
+  } else if (config.source === 'both') {
+    sources = ['madlan', 'yad2', 'yad2_private']; // Madlan + both Yad2 types
   } else if (config.source === 'all') {
-    sources = ['madlan', 'madlan_projects', 'yad2_private', 'yad2', 'homeless']; // All sources including new projects
+    sources = ['madlan', 'madlan_projects', 'yad2', 'yad2_private', 'homeless']; // All sources
   } else {
     sources = [config.source];
   }
@@ -422,20 +477,27 @@ function buildSearchUrls(config: ScoutConfig): string[] {
           }
         }
         
+        params.set('propertyGroup', 'apartments');
+        
         // Add private owner filter for yad2_private
         if (source === 'yad2_private') {
-          params.set('propertyGroup', 'apartments');
           params.set('dealerType', '1'); // Private owners only
         }
+        // Note: yad2 (broker) doesn't need dealerType filter - it returns all
         
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
-        if (params.toString()) {
-          url += '?' + params.toString();
+        // Add pagination for Yad2 - uses page parameter
+        for (let page = 1; page <= pagesToScan; page++) {
+          const pageParams = new URLSearchParams(params);
+          if (page > 1) {
+            pageParams.set('page', page.toString());
+          }
+          const pageUrl = url + '?' + pageParams.toString();
+          console.log(`Built Yad2 ${source === 'yad2_private' ? 'private' : 'broker'} URL (page ${page}): ${pageUrl}`);
+          urls.push(pageUrl);
         }
-        console.log(`Built Yad2 URL: ${url}`);
-        urls.push(url);
         
       } else if (source === 'madlan' || source === 'madlan_projects') {
         // Madlan city mapping - Hebrew name to URL format (with -ישראל suffix)
@@ -585,9 +647,10 @@ async function extractPropertiesWithAI(
   sourceUrl: string,
   propertyType: 'rent' | 'sale',
   apiKey: string,
-  targetCities?: string[]
+  targetCities?: string[],
+  isPrivateSource?: boolean
 ): Promise<ScrapedProperty[]> {
-  const source = sourceUrl.includes('yad2') ? 'yad2' : 
+  const source = sourceUrl.includes('yad2') ? (isPrivateSource ? 'yad2_private' : 'yad2') : 
                  sourceUrl.includes('madlan') ? 'madlan' :
                  sourceUrl.includes('homeless') ? 'homeless' : 'other';
 
@@ -616,7 +679,7 @@ HOMELESS SPECIFIC INSTRUCTIONS:
 - Look for property links and extract IDs from URLs
 - Address typically includes street and city
 - Extract source_id from the URL or listing identifier`
-    : source === 'yad2'
+    : (source === 'yad2' || source === 'yad2_private')
     ? `
 
 YAD2 SPECIFIC INSTRUCTIONS:
@@ -780,7 +843,8 @@ ${cleanedMarkdown.substring(0, 30000)}`;
       description: p.description,
       images: p.images || [],
       features: p.features || {},
-      raw_data: p
+      raw_data: p,
+      is_private: isPrivateSource === true ? true : isPrivateSource === false ? false : null
     }));
 
   } catch (error) {
