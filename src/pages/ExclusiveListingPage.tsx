@@ -394,6 +394,31 @@ const ExclusiveListingPage = () => {
 
       if (error) throw error;
 
+      // Send notification to agent
+      if (token) {
+        try {
+          const { data: formRecord } = await supabase
+            .from('exclusive_listing_forms')
+            .select('created_by')
+            .eq('token', token)
+            .single();
+          
+          if (formRecord?.created_by) {
+            await supabase.functions.invoke('notify-form-signed', {
+              body: {
+                formType: 'exclusivity',
+                clientName: ownerName,
+                clientPhone: ownerPhone,
+                agentId: formRecord.created_by,
+                propertyAddress
+              }
+            });
+          }
+        } catch (notifyError) {
+          console.error('Error sending notification:', notifyError);
+        }
+      }
+
       toast.success(t.formSaved);
       setTimeout(() => {
         window.close();

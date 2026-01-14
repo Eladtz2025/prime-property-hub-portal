@@ -95,3 +95,9 @@ verify_jwt = false
 
 [functions.trigger-scout-all]
 verify_jwt = false
+
+[functions.notify-form-signed]
+verify_jwt = false
+
+[functions.reset-all-matches]
+verify_jwt = false
