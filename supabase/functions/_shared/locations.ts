@@ -22,7 +22,8 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון הישן החלק הדרום מערבי',
         'צפון הישן',
         'old north',
-        'oldnorth'
+        'oldnorth',
+        'צפון הישן / צפון החדש'
       ] 
     },
     { 
@@ -52,7 +53,8 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'לב תל אביב החלק המערבי',
         'מרכז',
         'center',
-        'לב העיר דרום'
+        'לב העיר דרום',
+        'לבהעיר'
       ] 
     },
     { 
@@ -214,14 +216,30 @@ export const CITY_ALIASES: Record<string, string[]> = {
   'פתח תקווה': ['פ"ת', 'פתח-תקווה', 'petach tikva'],
 };
 
-// Find neighborhood config by its value
-export function getNeighborhoodConfig(value: string, city?: string): Neighborhood | null {
+// Find neighborhood config by its value, label, or aliases
+export function getNeighborhoodConfig(searchValue: string, city?: string): Neighborhood | null {
   const citiesToSearch = city ? [city] : Object.keys(NEIGHBORHOODS);
+  const normalizedSearch = searchValue.trim().toLowerCase();
   
   for (const cityKey of citiesToSearch) {
     const neighborhoods = NEIGHBORHOODS[cityKey];
     if (neighborhoods) {
-      const found = neighborhoods.find(n => n.value === value);
+      // 1. Try exact value match first
+      let found = neighborhoods.find(n => n.value === searchValue);
+      if (found) return found;
+      
+      // 2. Try label match (case-insensitive)
+      found = neighborhoods.find(n => n.label.toLowerCase() === normalizedSearch);
+      if (found) return found;
+      
+      // 3. Try alias match (case-insensitive, partial match)
+      found = neighborhoods.find(n => 
+        n.aliases.some(alias => 
+          alias.toLowerCase() === normalizedSearch ||
+          normalizedSearch.includes(alias.toLowerCase()) ||
+          alias.toLowerCase().includes(normalizedSearch)
+        )
+      );
       if (found) return found;
     }
   }
