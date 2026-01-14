@@ -678,6 +678,380 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
           </>
         );
 
+      case 'marketing':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>ציטוט מיצוב</Label>
+              <Textarea
+                value={(slideData.positioning_quote as string) || ''}
+                onChange={(e) => handleDataChange('positioning_quote', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>אסטרטגיה ויזואלית</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('visual_strategy')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.visual_strategy as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('visual_strategy', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('visual_strategy', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>קהלי יעד</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('target_audiences')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.target_audiences as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('target_audiences', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('target_audiences', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>אסטרטגיית חשיפה</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('exposure_strategy')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.exposure_strategy as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('exposure_strategy', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('exposure_strategy', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
+      case 'timeline':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>שלבי ציר הזמן</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('timeline_items', { number: '1', period: '', description: '', icon: 'FileSearch' })}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף שלב
+                </Button>
+              </div>
+              {(slideData.timeline_items as Array<{ number: number; period: string; description: string; icon: string }> || []).map((item, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">שלב {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem('timeline_items', index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={item.period}
+                      onChange={(e) => handleArrayItemChange('timeline_items', index, 'period', e.target.value)}
+                      placeholder="תקופה (לדוג׳: שבוע 1-2)"
+                      dir="auto"
+                    />
+                    <Input
+                      value={item.icon}
+                      onChange={(e) => handleArrayItemChange('timeline_items', index, 'icon', e.target.value)}
+                      placeholder="אייקון"
+                    />
+                  </div>
+                  <Input
+                    value={item.description}
+                    onChange={(e) => handleArrayItemChange('timeline_items', index, 'description', e.target.value)}
+                    placeholder="תיאור"
+                    dir="auto"
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
+      case 'marketing2':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>הצהרה פותחת</Label>
+              <Textarea
+                value={(slideData.opening_statement as string) || ''}
+                onChange={(e) => handleDataChange('opening_statement', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>הגישה שלנו</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('our_approach', { icon: 'Check', text: '' })}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.our_approach as Array<{ icon: string; text: string }> || []).map((item, index) => (
+                <div key={index} className="flex gap-2 items-start">
+                  <Input
+                    value={item.icon}
+                    onChange={(e) => handleArrayItemChange('our_approach', index, 'icon', e.target.value)}
+                    placeholder="אייקון"
+                    className="w-24"
+                  />
+                  <Input
+                    value={item.text}
+                    onChange={(e) => handleArrayItemChange('our_approach', index, 'text', e.target.value)}
+                    placeholder="טקסט"
+                    className="flex-1"
+                    dir="auto"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveArrayItem('our_approach', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>הצהרה תחתונה</Label>
+              <Textarea
+                value={(slideData.bottom_statement as string) || ''}
+                onChange={(e) => handleDataChange('bottom_statement', e.target.value)}
+                dir="auto"
+              />
+            </div>
+          </>
+        );
+
+      case 'about':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>ציטוט בוטיק</Label>
+              <Textarea
+                value={(slideData.boutique_quote as string) || ''}
+                onChange={(e) => handleDataChange('boutique_quote', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>גישה בוטיקית</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('boutique_approach')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.boutique_approach as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('boutique_approach', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('boutique_approach', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>חברי צוות</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('team_members', { name: '', years: '', expertise: '', icon: 'Award' })}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף חבר צוות
+                </Button>
+              </div>
+              {(slideData.team_members as Array<{ name: string; years: string; expertise: string; icon: string }> || []).map((item, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">חבר צוות {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem('team_members', index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={item.name}
+                      onChange={(e) => handleArrayItemChange('team_members', index, 'name', e.target.value)}
+                      placeholder="שם"
+                      dir="auto"
+                    />
+                    <Input
+                      value={item.years}
+                      onChange={(e) => handleArrayItemChange('team_members', index, 'years', e.target.value)}
+                      placeholder="שנות ניסיון"
+                    />
+                  </div>
+                  <Input
+                    value={item.expertise}
+                    onChange={(e) => handleArrayItemChange('team_members', index, 'expertise', e.target.value)}
+                    placeholder="התמחות"
+                    dir="auto"
+                  />
+                  <Input
+                    value={item.icon}
+                    onChange={(e) => handleArrayItemChange('team_members', index, 'icon', e.target.value)}
+                    placeholder="אייקון"
+                    className="w-32"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-2">
+              <Label>ציטוט סיום</Label>
+              <Textarea
+                value={(slideData.closing_quote as string) || ''}
+                onChange={(e) => handleDataChange('closing_quote', e.target.value)}
+                dir="auto"
+              />
+            </div>
+          </>
+        );
+
       default:
         return (
           <div className="space-y-3">
