@@ -490,11 +490,17 @@ export const ExpandableCustomerRow = ({
           balcony_required: formData.balcony_required ?? null,
           elevator_required: formData.elevator_required ?? null,
           yard_required: formData.yard_required ?? null,
+          roof_required: formData.roof_required ?? null,
           // Flexibility flags
           parking_flexible: formData.parking_flexible ?? true,
           balcony_flexible: formData.balcony_flexible ?? true,
           elevator_flexible: formData.elevator_flexible ?? true,
           yard_flexible: formData.yard_flexible ?? true,
+          roof_flexible: formData.roof_flexible ?? true,
+          // Outdoor space any (OR logic)
+          outdoor_space_any: formData.outdoor_space_any ?? false,
+          // Pets flexibility
+          pets_flexible: isRental ? formData.pets_flexible ?? true : null,
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
           property_to_sell: isSale ? formData.property_to_sell : null,
