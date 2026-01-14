@@ -67,7 +67,7 @@ async function scrapeWithRetry(url: string, firecrawlApiKey: string, maxRetries 
           url,
           formats: ['markdown', 'html'],
           onlyMainContent: true,
-          waitFor: 5000, // Increased to 5 seconds for dynamic content
+          waitFor: 3000, // 3 seconds for dynamic content
           headers: {
             'User-Agent': userAgents[attempt % userAgents.length],
             'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
@@ -217,7 +217,7 @@ serve(async (req) => {
 
     let totalPropertiesFound = 0;
     let totalNewProperties = 0;
-    const allProperties: ScrapedProperty[] = [];
+    // allProperties array removed - saving immediately after each page now
 
     for (const config of configs) {
       console.log(`Processing config: ${config.name}`);
@@ -239,7 +239,7 @@ serve(async (req) => {
 
         // Add delay between requests to avoid rate limiting (skip first request)
         if (urlIndex > 0) {
-          const delay = 2000 + Math.random() * 1000; // 2-3 seconds random delay
+          const delay = 1000 + Math.random() * 500; // 1-1.5 seconds random delay
           console.log(`Waiting ${Math.round(delay)}ms before next request...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -278,8 +278,60 @@ serve(async (req) => {
           );
 
           console.log(`Extracted ${extractedProperties.length} properties from ${url}`);
-          allProperties.push(...extractedProperties);
+          
+          // SAVE IMMEDIATELY after each page - prevent data loss on timeout
+          for (const property of extractedProperties) {
+            const { data: existing } = await supabase
+              .from('scouted_properties')
+              .select('id')
+              .eq('source', property.source)
+              .eq('source_id', property.source_id)
+              .maybeSingle();
+
+            if (existing) {
+              // Update last_seen_at for existing property
+              await supabase
+                .from('scouted_properties')
+                .update({ last_seen_at: new Date().toISOString() })
+                .eq('id', existing.id);
+            } else {
+              // Normalize city name before saving
+              const normalizedCity = normalizeCityName(property.city);
+              
+              // Insert new property with is_private field
+              const { error: insertError } = await supabase
+                .from('scouted_properties')
+                .insert({
+                  source: property.source,
+                  source_url: property.source_url,
+                  source_id: property.source_id,
+                  title: property.title,
+                  city: normalizedCity,
+                  neighborhood: property.neighborhood,
+                  address: property.address,
+                  price: property.price,
+                  rooms: property.rooms,
+                  size: property.size,
+                  floor: property.floor,
+                  property_type: property.property_type,
+                  description: property.description,
+                  images: property.images || [],
+                  features: property.features || {},
+                  raw_data: property.raw_data,
+                  status: 'new',
+                  is_private: property.is_private
+                });
+
+              if (!insertError) {
+                totalNewProperties++;
+              } else {
+                console.error('Insert error:', insertError);
+              }
+            }
+          }
+          
           totalPropertiesFound += extractedProperties.length;
+          console.log(`Saved ${extractedProperties.length} properties. Total so far: ${totalPropertiesFound} found, ${totalNewProperties} new`);
 
         } catch (scrapeError) {
           console.error(`Error processing ${url}:`, scrapeError);
@@ -294,60 +346,9 @@ serve(async (req) => {
           .update({
             last_run_at: new Date().toISOString(),
             last_run_status: 'completed',
-            last_run_results: { properties_found: allProperties.length }
+            last_run_results: { properties_found: totalPropertiesFound }
           })
           .eq('id', config.id);
-      }
-    }
-
-    // Save new properties to database
-    for (const property of allProperties) {
-      const { data: existing } = await supabase
-        .from('scouted_properties')
-        .select('id')
-        .eq('source', property.source)
-        .eq('source_id', property.source_id)
-        .maybeSingle();
-
-      if (existing) {
-        // Update last_seen_at for existing property
-        await supabase
-          .from('scouted_properties')
-          .update({ last_seen_at: new Date().toISOString() })
-          .eq('id', existing.id);
-      } else {
-        // Normalize city name before saving
-        const normalizedCity = normalizeCityName(property.city);
-        
-        // Insert new property with is_private field
-        const { error: insertError } = await supabase
-          .from('scouted_properties')
-          .insert({
-            source: property.source,
-            source_url: property.source_url,
-            source_id: property.source_id,
-            title: property.title,
-            city: normalizedCity,
-            neighborhood: property.neighborhood,
-            address: property.address,
-            price: property.price,
-            rooms: property.rooms,
-            size: property.size,
-            floor: property.floor,
-            property_type: property.property_type,
-            description: property.description,
-            images: property.images || [],
-            features: property.features || {},
-            raw_data: property.raw_data,
-            status: 'new',
-            is_private: property.is_private
-          });
-
-        if (!insertError) {
-          totalNewProperties++;
-        } else {
-          console.error('Insert error:', insertError);
-        }
       }
     }
 
