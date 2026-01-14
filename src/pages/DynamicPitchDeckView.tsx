@@ -24,9 +24,9 @@ const DynamicPitchDeckView = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [language, setLanguage] = useState<'en' | 'he'>('en');
 
-  // Get visible slides sorted by order
+  // Get visible slides sorted by order (with validation)
   const slides = deck?.slides
-    ?.filter(s => s.is_visible)
+    ?.filter(s => s && s.is_visible && s.slide_data)
     ?.sort((a, b) => a.slide_order - b.slide_order) || [];
 
   const goToSlide = useCallback((index: number) => {
@@ -102,43 +102,55 @@ const DynamicPitchDeckView = () => {
 
   // Render slide based on type
   const renderSlide = (slide: PitchDeckSlide) => {
-    const overlayOpacity = deck?.overlay_opacity || 0.85;
-    const bgImage = slide.background_image;
+    try {
+      const overlayOpacity = deck?.overlay_opacity || 0.85;
+      const bgImage = slide.background_image;
 
-    switch (slide.slide_type as SlideType) {
-      case 'title':
-        return <DynamicTitleSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'property':
-        return <DynamicPropertySlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'features':
-        return <DynamicFeaturesSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'neighborhood':
-        return <DynamicNeighborhoodSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'pricing':
-        return <DynamicPricingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'marketing':
-        return <DynamicMarketingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'timeline':
-        return <DynamicTimelineSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'marketing2':
-      case 'marketing_ii':
-        return <DynamicMarketingIISlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'about':
-        return <DynamicAboutUsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
-      case 'contact':
-        return (
-          <DynamicContactSlide 
-            data={slide.slide_data as any} 
-            backgroundImage={bgImage} 
-            overlayOpacity={overlayOpacity}
-            slug={slug}
-            contactPhone={deck?.contact_phone}
-            contactWhatsapp={deck?.contact_whatsapp}
-            agentNames={deck?.agent_names}
-          />
-        );
-      default:
-        return <div className="flex items-center justify-center h-full text-white">Unknown slide type</div>;
+      console.log('Rendering slide:', slide.slide_type, slide.id, slide.slide_data);
+
+      switch (slide.slide_type as SlideType) {
+        case 'title':
+          return <DynamicTitleSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'property':
+          return <DynamicPropertySlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'features':
+          return <DynamicFeaturesSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'neighborhood':
+          return <DynamicNeighborhoodSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'pricing':
+          return <DynamicPricingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'marketing':
+          return <DynamicMarketingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'timeline':
+          return <DynamicTimelineSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'marketing2':
+        case 'marketing_ii':
+          return <DynamicMarketingIISlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'about':
+          return <DynamicAboutUsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'contact':
+          return (
+            <DynamicContactSlide 
+              data={slide.slide_data as any} 
+              backgroundImage={bgImage} 
+              overlayOpacity={overlayOpacity}
+              slug={slug}
+              contactPhone={deck?.contact_phone}
+              contactWhatsapp={deck?.contact_whatsapp}
+              agentNames={deck?.agent_names}
+            />
+          );
+        default:
+          console.warn('Unknown slide type:', slide.slide_type);
+          return <div className="flex items-center justify-center h-full text-white">Unknown slide type: {slide.slide_type}</div>;
+      }
+    } catch (error) {
+      console.error('Error rendering slide:', slide.slide_type, slide.id, error);
+      return (
+        <div className="flex items-center justify-center h-full text-white bg-red-900/50">
+          <p>Error loading slide: {slide.slide_type}</p>
+        </div>
+      );
     }
   };
 
