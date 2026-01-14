@@ -7,6 +7,34 @@ import { NEIGHBORHOODS, Neighborhood, CITIES } from "@/config/locations";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Building2 } from "lucide-react";
 
+// Helper function to normalize city names to canonical form for NEIGHBORHOODS lookup
+function normalizeCityValue(city: string): string {
+  if (!city) return city;
+  const normalized = city.toLowerCase().trim().replace(/[-\s]/g, '');
+  
+  // Handle Tel Aviv variations
+  if (normalized.includes('תלאביב') || 
+      (normalized.includes('תל') && normalized.includes('אביב')) ||
+      normalized === 'תא' ||
+      normalized.includes('telaviv') ||
+      (normalized.includes('tel') && normalized.includes('aviv'))) {
+    return 'תל אביב יפו';
+  }
+  
+  // Handle Ramat Gan variations
+  if (normalized.includes('רמתגן') || 
+      (normalized.includes('רמת') && normalized.includes('גן'))) {
+    return 'רמת גן';
+  }
+  
+  // Handle Givatayim variations
+  if (normalized.includes('גבעתיים') || normalized.includes('גבעתים')) {
+    return 'גבעתיים';
+  }
+  
+  return city;
+}
+
 interface NeighborhoodSelectorProps {
   selectedCities: string[];
   selectedNeighborhoods: string[];
@@ -24,9 +52,11 @@ export function NeighborhoodSelector({
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
   for (const cityValue of selectedCities) {
-    const neighborhoods = NEIGHBORHOODS[cityValue];
+    // Normalize city value to find neighborhoods
+    const normalizedCity = normalizeCityValue(cityValue);
+    const neighborhoods = NEIGHBORHOODS[normalizedCity];
     if (neighborhoods) {
-      const cityConfig = CITIES.find(c => c.value === cityValue);
+      const cityConfig = CITIES.find(c => c.value === normalizedCity || c.value === cityValue);
       availableNeighborhoods.push({
         city: cityValue,
         cityLabel: cityConfig?.label || cityValue,
@@ -101,9 +131,11 @@ export function NeighborhoodSelectorCompact({
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
   for (const cityValue of selectedCities) {
-    const neighborhoods = NEIGHBORHOODS[cityValue];
+    // Normalize city value to find neighborhoods
+    const normalizedCity = normalizeCityValue(cityValue);
+    const neighborhoods = NEIGHBORHOODS[normalizedCity];
     if (neighborhoods) {
-      const cityConfig = CITIES.find(c => c.value === cityValue);
+      const cityConfig = CITIES.find(c => c.value === normalizedCity || c.value === cityValue);
       availableNeighborhoods.push({
         city: cityValue,
         cityLabel: cityConfig?.label || cityValue,
@@ -180,9 +212,11 @@ export function NeighborhoodSelectorDropdown({
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
   for (const cityValue of selectedCities) {
-    const neighborhoods = NEIGHBORHOODS[cityValue];
+    // Normalize city value to find neighborhoods
+    const normalizedCity = normalizeCityValue(cityValue);
+    const neighborhoods = NEIGHBORHOODS[normalizedCity];
     if (neighborhoods) {
-      const cityConfig = CITIES.find(c => c.value === cityValue);
+      const cityConfig = CITIES.find(c => c.value === normalizedCity || c.value === cityValue);
       availableNeighborhoods.push({
         city: cityValue,
         cityLabel: cityConfig?.label || cityValue,
