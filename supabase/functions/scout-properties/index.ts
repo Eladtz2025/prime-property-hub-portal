@@ -443,7 +443,6 @@ function detectBroker(title: string, description: string): boolean {
 function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
   const urls: string[] = [];
   
-  // Determine source - only Yad2 uses distributed scanning for now
   const source = config.source === 'yad2_private' ? 'yad2' : config.source;
   const types = config.property_type === 'both' ? ['rent', 'sale'] : [config.property_type];
   
@@ -495,6 +494,49 @@ function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
       
       const pageUrl = url + '?' + params.toString();
       console.log(`Built Yad2 single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
+      
+    } else if (source === 'madlan' || source === 'madlan_projects') {
+      // Madlan city mapping
+      const madlanCityMap: Record<string, string> = {
+        'תל אביב': 'תל-אביב-יפו-ישראל',
+        'תל אביב יפו': 'תל-אביב-יפו-ישראל',
+        'ירושלים': 'ירושלים-ישראל',
+        'חיפה': 'חיפה-ישראל',
+        'ראשון לציון': 'ראשון-לציון-ישראל',
+        'פתח תקווה': 'פתח-תקווה-ישראל',
+        'אשדוד': 'אשדוד-ישראל',
+        'נתניה': 'נתניה-ישראל',
+        'באר שבע': 'באר-שבע-ישראל',
+        'חולון': 'חולון-ישראל',
+        'בת ים': 'בת-ים-ישראל',
+        'רמת גן': 'רמת-גן-ישראל',
+        'הרצליה': 'הרצליה-ישראל',
+        'רעננה': 'רעננה-ישראל',
+        'גבעתיים': 'גבעתיים-ישראל',
+        'כפר סבא': 'כפר-סבא-ישראל',
+        'הוד השרון': 'הוד-השרון-ישראל',
+        'רמת השרון': 'רמת-השרון-ישראל',
+      };
+
+      let pathType: string;
+      if (source === 'madlan_projects') {
+        pathType = 'projects-for-sale';
+      } else {
+        pathType = type === 'rent' ? 'for-rent' : 'for-sale';
+      }
+      
+      let baseUrl = `https://www.madlan.co.il/${pathType}`;
+      
+      if (config.cities?.length) {
+        const hebrewCity = config.cities[0];
+        const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+        baseUrl += `/${citySlug}`;
+      }
+      
+      // Add page parameter for Madlan
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+      console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
     }
   }
