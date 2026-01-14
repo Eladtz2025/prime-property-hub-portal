@@ -37,7 +37,11 @@ const clientIntakeSchema = z.object({
   yard_required: z.boolean(),
   pets: z.boolean(),
   flexible_move_date: z.boolean(),
-  requirements_flexible: z.boolean(),
+  parking_flexible: z.boolean(),
+  elevator_flexible: z.boolean(),
+  balcony_flexible: z.boolean(),
+  yard_flexible: z.boolean(),
+  pets_flexible: z.boolean(),
   message: z.string().optional(),
   // Rental-specific
   tenant_type: z.string().optional(),
@@ -64,11 +68,11 @@ const NEW_OR_SECOND_HAND_OPTIONS = [
 ];
 
 const REQUIREMENTS_OPTIONS = [
-  { value: 'parking', label: 'חניה', field: 'parking_required' },
-  { value: 'elevator', label: 'מעלית', field: 'elevator_required' },
-  { value: 'balcony', label: 'מרפסת', field: 'balcony_required' },
-  { value: 'yard', label: 'חצר/גינה', field: 'yard_required' },
-  { value: 'pets', label: 'חיית מחמד', field: 'pets' },
+  { value: 'parking', label: 'חניה', field: 'parking_required', flexibleField: 'parking_flexible' },
+  { value: 'elevator', label: 'מעלית', field: 'elevator_required', flexibleField: 'elevator_flexible' },
+  { value: 'balcony', label: 'מרפסת', field: 'balcony_required', flexibleField: 'balcony_flexible' },
+  { value: 'yard', label: 'חצר/גינה', field: 'yard_required', flexibleField: 'yard_flexible' },
+  { value: 'pets', label: 'חיית מחמד', field: 'pets', flexibleField: 'pets_flexible' },
 ] as const;
 
 export default function ClientIntakePage() {
@@ -99,7 +103,11 @@ export default function ClientIntakePage() {
     yard_required: false,
     pets: false,
     flexible_move_date: true,
-    requirements_flexible: true,
+    parking_flexible: true,
+    elevator_flexible: true,
+    balcony_flexible: true,
+    yard_flexible: true,
+    pets_flexible: true,
     message: '',
     tenant_type: '',
     cash_available: undefined,
@@ -209,11 +217,11 @@ export default function ClientIntakePage() {
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
             yard_required: formData.yard_required,
-            // Set flexibility based on requirements_flexible
-            parking_flexible: formData.requirements_flexible,
-            elevator_flexible: formData.requirements_flexible,
-            balcony_flexible: formData.requirements_flexible,
-            yard_flexible: formData.requirements_flexible,
+            // Set individual flexibility
+            parking_flexible: formData.parking_flexible,
+            elevator_flexible: formData.elevator_flexible,
+            balcony_flexible: formData.balcony_flexible,
+            yard_flexible: formData.yard_flexible,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'merged_form',
@@ -251,11 +259,11 @@ export default function ClientIntakePage() {
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
             yard_required: formData.yard_required,
-            // Set flexibility based on requirements_flexible
-            parking_flexible: formData.requirements_flexible,
-            elevator_flexible: formData.requirements_flexible,
-            balcony_flexible: formData.requirements_flexible,
-            yard_flexible: formData.requirements_flexible,
+            // Set individual flexibility
+            parking_flexible: formData.parking_flexible,
+            elevator_flexible: formData.elevator_flexible,
+            balcony_flexible: formData.balcony_flexible,
+            yard_flexible: formData.yard_flexible,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'client_form',
@@ -451,14 +459,14 @@ export default function ClientIntakePage() {
                 </label>
               </div>
 
-              {/* Requirements dropdown + Flexible checkbox */}
-              <div className="flex items-center gap-3">
+              {/* Requirements dropdown + Tenant type on same row */}
+              <div className="grid grid-cols-2 gap-3">
                 <Popover open={requirementsOpen} onOpenChange={setRequirementsOpen}>
                   <PopoverTrigger asChild>
                     <Button 
                       type="button"
                       variant="outline" 
-                      className="flex-1 justify-between h-11 text-sm font-normal"
+                      className="justify-between h-11 text-sm font-normal"
                     >
                       <span className="flex items-center gap-2">
                         <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -467,62 +475,67 @@ export default function ClientIntakePage() {
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-56 p-2 bg-background border shadow-lg z-50" align="start">
+                  <PopoverContent className="w-72 p-2 bg-background border shadow-lg z-50" align="start">
                     <div className="space-y-1">
                       {REQUIREMENTS_OPTIONS.map((opt) => (
                         <div
                           key={opt.value}
-                          onClick={() => handleInputChange(opt.field as keyof FormData, !formData[opt.field as keyof FormData])}
                           className={cn(
-                            "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                            "flex items-center justify-between p-2 rounded transition-colors",
                             formData[opt.field as keyof FormData]
                               ? "bg-primary/10"
                               : "hover:bg-muted"
                           )}
                         >
-                          <Checkbox
-                            checked={!!formData[opt.field as keyof FormData]}
-                            onCheckedChange={(checked) => handleInputChange(opt.field as keyof FormData, !!checked)}
-                          />
-                          <span className="text-sm">{opt.label}</span>
+                          <div 
+                            className="flex items-center gap-2 flex-1 cursor-pointer"
+                            onClick={() => handleInputChange(opt.field as keyof FormData, !formData[opt.field as keyof FormData])}
+                          >
+                            <Checkbox
+                              checked={!!formData[opt.field as keyof FormData]}
+                              onCheckedChange={(checked) => handleInputChange(opt.field as keyof FormData, !!checked)}
+                            />
+                            <span className="text-sm">{opt.label}</span>
+                          </div>
+                          <label 
+                            className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Checkbox
+                              checked={!!formData[opt.flexibleField as keyof FormData]}
+                              onCheckedChange={(checked) => handleInputChange(opt.flexibleField as keyof FormData, !!checked)}
+                            />
+                            <span className="text-xs">גמיש</span>
+                          </label>
                         </div>
                       ))}
                     </div>
                   </PopoverContent>
                 </Popover>
-                <label className="flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                  <Checkbox
-                    checked={formData.requirements_flexible}
-                    onCheckedChange={(checked) => handleInputChange('requirements_flexible', !!checked)}
-                  />
-                  <span className="text-sm">גמיש</span>
-                </label>
+                
+                {/* Tenant type - only for rental */}
+                {formData.property_type === 'rental' ? (
+                  <Select
+                    value={formData.tenant_type || ''}
+                    onValueChange={(value) => handleInputChange('tenant_type', value)}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="סוג שוכר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TENANT_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div /> // Empty placeholder to maintain grid
+                )}
               </div>
             </CardContent>
           </Card>
-
-          {/* Rental-specific fields */}
-          {formData.property_type === 'rental' && (
-            <Card className="mb-4">
-              <CardContent className="pt-4">
-                <Select
-                  value={formData.tenant_type || ''}
-                  onValueChange={(value) => handleInputChange('tenant_type', value)}
-                >
-                  <SelectTrigger className="min-h-[44px]">
-                    <SelectValue placeholder="סוג שוכר" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TENANT_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Sale-specific fields */}
           {formData.property_type === 'sale' && (
