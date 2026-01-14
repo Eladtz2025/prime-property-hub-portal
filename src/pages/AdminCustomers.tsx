@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, RefreshCcw, Loader2 } from "lucide-react";
+import { Search, Plus, RefreshCcw, Loader2, Building2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { useBrokerData, type BrokerWithPropertyNames } from "@/hooks/useBrokerData";
 import { CustomerTableView } from "@/components/CustomerTableView";
@@ -40,6 +41,8 @@ export default function AdminCustomers() {
   const [deleteBrokerId, setDeleteBrokerId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isMatchingAll, setIsMatchingAll] = useState(false);
+  const [isScanningOwn, setIsScanningOwn] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     customers,
@@ -113,6 +116,20 @@ export default function AdminCustomers() {
       toast.error('שגיאה בחישוב מחדש');
     } finally {
       setIsMatchingAll(false);
+    }
+  };
+
+  const handleScanOwnProperties = async () => {
+    setIsScanningOwn(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['own-property-matches'] });
+      toast.success('ההתאמות לנכסים שלנו עודכנו');
+      fetchCustomers();
+    } catch (error) {
+      console.error('Scan own properties error:', error);
+      toast.error('שגיאה בסריקת נכסים');
+    } finally {
+      setIsScanningOwn(false);
     }
   };
 
@@ -250,6 +267,20 @@ export default function AdminCustomers() {
                 <RefreshCcw className="h-4 w-4 ml-2" />
               )}
               חשב התאמות מחדש
+            </Button>
+            <Button 
+              onClick={handleScanOwnProperties} 
+              size="sm" 
+              variant="outline"
+              disabled={isScanningOwn}
+              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            >
+              {isScanningOwn ? (
+                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+              ) : (
+                <Building2 className="h-4 w-4 ml-2" />
+              )}
+              סרוק נכסים שלנו
             </Button>
             <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline">
               <Plus className="h-4 w-4 ml-2" />
