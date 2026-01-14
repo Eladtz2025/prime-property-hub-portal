@@ -35,6 +35,45 @@ function normalizeCityValue(city: string): string {
   return city;
 }
 
+// Helper function to normalize neighborhood values to canonical form
+// This handles cases where DB has variations like "צפון הישן" instead of "צפון_ישן"
+function normalizeNeighborhoodValue(value: string, cities: string[]): string {
+  if (!value) return value;
+  const normalized = value.toLowerCase().trim();
+  
+  // Try to find the neighborhood in any of the selected cities
+  for (const city of cities) {
+    const normalizedCity = normalizeCityValue(city);
+    const cityNeighborhoods = NEIGHBORHOODS[normalizedCity];
+    if (!cityNeighborhoods) continue;
+    
+    for (const neighborhood of cityNeighborhoods) {
+      // Check exact value match
+      if (neighborhood.value.toLowerCase() === normalized) {
+        return neighborhood.value;
+      }
+      // Check label match (e.g., "צפון ישן" -> "צפון_ישן")
+      if (neighborhood.label.toLowerCase() === normalized) {
+        return neighborhood.value;
+      }
+      // Check aliases
+      for (const alias of neighborhood.aliases) {
+        if (alias.toLowerCase() === normalized || 
+            normalized.includes(alias.toLowerCase()) ||
+            alias.toLowerCase().includes(normalized)) {
+          return neighborhood.value;
+        }
+      }
+    }
+  }
+  return value;
+}
+
+// Normalize an array of neighborhoods to canonical values
+function normalizeNeighborhoods(neighborhoods: string[], cities: string[]): string[] {
+  return neighborhoods.map(n => normalizeNeighborhoodValue(n, cities));
+}
+
 interface NeighborhoodSelectorProps {
   selectedCities: string[];
   selectedNeighborhoods: string[];
@@ -48,6 +87,9 @@ export function NeighborhoodSelector({
   onChange,
   className 
 }: NeighborhoodSelectorProps) {
+  // Normalize selected neighborhoods to canonical values
+  const normalizedSelection = normalizeNeighborhoods(selectedNeighborhoods, selectedCities);
+  
   // Get all neighborhoods for selected cities
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
@@ -65,11 +107,18 @@ export function NeighborhoodSelector({
     }
   }
 
+  const isNeighborhoodSelected = (neighborhoodValue: string) => {
+    return normalizedSelection.includes(neighborhoodValue);
+  };
+
   const toggleNeighborhood = (neighborhoodValue: string) => {
-    if (selectedNeighborhoods.includes(neighborhoodValue)) {
-      onChange(selectedNeighborhoods.filter(n => n !== neighborhoodValue));
+    if (isNeighborhoodSelected(neighborhoodValue)) {
+      // Remove - filter out both the canonical value and any variations
+      const newSelection = normalizedSelection.filter(n => n !== neighborhoodValue);
+      onChange(newSelection);
     } else {
-      onChange([...selectedNeighborhoods, neighborhoodValue]);
+      // Add the canonical value
+      onChange([...normalizedSelection, neighborhoodValue]);
     }
   };
 
@@ -98,7 +147,7 @@ export function NeighborhoodSelector({
                 onClick={() => toggleNeighborhood(neighborhood.value)}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm transition-colors border",
-                  selectedNeighborhoods.includes(neighborhood.value)
+                  isNeighborhoodSelected(neighborhood.value)
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background hover:bg-muted border-border"
                 )}
@@ -127,6 +176,9 @@ export function NeighborhoodSelectorCompact({
   onChange,
   className 
 }: NeighborhoodSelectorCompactProps) {
+  // Normalize selected neighborhoods to canonical values
+  const normalizedSelection = normalizeNeighborhoods(selectedNeighborhoods, selectedCities);
+  
   // Get all neighborhoods for selected cities
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
@@ -144,11 +196,16 @@ export function NeighborhoodSelectorCompact({
     }
   }
 
+  const isNeighborhoodSelected = (neighborhoodValue: string) => {
+    return normalizedSelection.includes(neighborhoodValue);
+  };
+
   const toggleNeighborhood = (neighborhoodValue: string) => {
-    if (selectedNeighborhoods.includes(neighborhoodValue)) {
-      onChange(selectedNeighborhoods.filter(n => n !== neighborhoodValue));
+    if (isNeighborhoodSelected(neighborhoodValue)) {
+      const newSelection = normalizedSelection.filter(n => n !== neighborhoodValue);
+      onChange(newSelection);
     } else {
-      onChange([...selectedNeighborhoods, neighborhoodValue]);
+      onChange([...normalizedSelection, neighborhoodValue]);
     }
   };
 
@@ -174,7 +231,7 @@ export function NeighborhoodSelectorCompact({
               <div key={neighborhood.value} className="flex items-center gap-2">
                 <Checkbox
                   id={`neighborhood-${neighborhood.value}`}
-                  checked={selectedNeighborhoods.includes(neighborhood.value)}
+                  checked={isNeighborhoodSelected(neighborhood.value)}
                   onCheckedChange={() => toggleNeighborhood(neighborhood.value)}
                 />
                 <Label 
@@ -207,6 +264,9 @@ export function NeighborhoodSelectorDropdown({
   className 
 }: NeighborhoodSelectorDropdownProps) {
   const [open, setOpen] = useState(false);
+  
+  // Normalize selected neighborhoods to canonical values
+  const normalizedSelection = normalizeNeighborhoods(selectedNeighborhoods, selectedCities);
 
   // Get all neighborhoods for selected cities
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
@@ -225,26 +285,31 @@ export function NeighborhoodSelectorDropdown({
     }
   }
 
+  const isNeighborhoodSelected = (neighborhoodValue: string) => {
+    return normalizedSelection.includes(neighborhoodValue);
+  };
+
   const toggleNeighborhood = (neighborhoodValue: string) => {
-    if (selectedNeighborhoods.includes(neighborhoodValue)) {
-      onChange(selectedNeighborhoods.filter(n => n !== neighborhoodValue));
+    if (isNeighborhoodSelected(neighborhoodValue)) {
+      const newSelection = normalizedSelection.filter(n => n !== neighborhoodValue);
+      onChange(newSelection);
     } else {
-      onChange([...selectedNeighborhoods, neighborhoodValue]);
+      onChange([...normalizedSelection, neighborhoodValue]);
     }
   };
 
   const getDisplayText = () => {
     if (selectedCities.length === 0) return "בחר עיר קודם";
-    if (selectedNeighborhoods.length === 0) return "בחר שכונות...";
-    if (selectedNeighborhoods.length === 1) {
+    if (normalizedSelection.length === 0) return "בחר שכונות...";
+    if (normalizedSelection.length === 1) {
       // Find the neighborhood label
       for (const { neighborhoods } of availableNeighborhoods) {
-        const n = neighborhoods.find(n => n.value === selectedNeighborhoods[0]);
+        const n = neighborhoods.find(n => n.value === normalizedSelection[0]);
         if (n) return n.label;
       }
-      return selectedNeighborhoods[0];
+      return normalizedSelection[0];
     }
-    return `${selectedNeighborhoods.length} שכונות נבחרו`;
+    return `${normalizedSelection.length} שכונות נבחרו`;
   };
 
   const isDisabled = selectedCities.length === 0;
@@ -280,13 +345,13 @@ export function NeighborhoodSelectorDropdown({
                     onClick={() => toggleNeighborhood(neighborhood.value)}
                     className={cn(
                       "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
-                      selectedNeighborhoods.includes(neighborhood.value)
+                      isNeighborhoodSelected(neighborhood.value)
                         ? "bg-primary/10"
                         : "hover:bg-muted"
                     )}
                   >
                     <Checkbox
-                      checked={selectedNeighborhoods.includes(neighborhood.value)}
+                      checked={isNeighborhoodSelected(neighborhood.value)}
                       onCheckedChange={() => toggleNeighborhood(neighborhood.value)}
                     />
                     <span className="text-sm">{neighborhood.label}</span>
