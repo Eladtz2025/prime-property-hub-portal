@@ -12,6 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Home, Phone, Mail, Calendar, CheckCircle2, Loader2, Ruler } from 'lucide-react';
 import { z } from 'zod';
+import { CITIES } from '@/config/locations';
+import { CitySelector } from '@/components/ui/city-selector';
+import { NeighborhoodSelector } from '@/components/ui/neighborhood-selector';
 
 // Validation schema
 const clientIntakeSchema = z.object({
@@ -42,20 +45,7 @@ const clientIntakeSchema = z.object({
 
 type FormData = z.infer<typeof clientIntakeSchema>;
 
-const CITIES = [
-  'תל אביב',
-  'רמת גן',
-  'גבעתיים',
-  'בני ברק',
-  'חולון',
-  'בת ים',
-  'הרצליה',
-  'רעננה',
-  'כפר סבא',
-  'פתח תקווה',
-  'ראשון לציון',
-  'נתניה',
-];
+// CITIES is now imported from @/config/locations
 
 const TENANT_TYPES = [
   { value: 'single', label: 'יחיד/ה' },
@@ -105,6 +95,7 @@ export default function ClientIntakePage() {
   });
 
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -112,14 +103,6 @@ export default function ClientIntakePage() {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-  };
-
-  const toggleCity = (city: string) => {
-    setSelectedCities(prev => 
-      prev.includes(city) 
-        ? prev.filter(c => c !== city)
-        : [...prev, city]
-    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,10 +146,8 @@ export default function ClientIntakePage() {
         }
       }
 
-      // Prepare neighborhoods as array
-      const neighborhoodsArray = formData.preferred_neighborhoods?.trim() 
-        ? formData.preferred_neighborhoods.split(',').map(n => n.trim()).filter(Boolean)
-        : null;
+      // Use selected neighborhoods array directly
+      const neighborhoodsArray = selectedNeighborhoods.length > 0 ? selectedNeighborhoods : null;
 
       // Prepare data for database - using inline object for proper typing
       const { error } = await supabase
@@ -421,38 +402,23 @@ export default function ClientIntakePage() {
               {/* Cities */}
               <div>
                 <Label className="mb-2 block">ערים מועדפות</Label>
-                <div className="flex flex-wrap gap-2">
-                  {CITIES.map(city => (
-                    <button
-                      key={city}
-                      type="button"
-                      onClick={() => toggleCity(city)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        selectedCities.includes(city)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted hover:bg-muted/80'
-                      }`}
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
+                <CitySelector 
+                  selectedCities={selectedCities}
+                  onChange={setSelectedCities}
+                />
               </div>
 
               {/* Neighborhoods */}
               {selectedCities.length > 0 && (
                 <div>
-                  <Label htmlFor="neighborhoods" className="mb-2 block">
+                  <Label className="mb-2 block">
                     שכונות מועדפות (אופציונלי)
                   </Label>
-                  <Input
-                    id="neighborhoods"
-                    value={formData.preferred_neighborhoods || ''}
-                    onChange={(e) => handleInputChange('preferred_neighborhoods', e.target.value)}
-                    placeholder="הפרידו בפסיקים: צפון תל אביב, רמת אביב..."
-                    className="min-h-[44px]"
+                  <NeighborhoodSelector
+                    selectedCities={selectedCities}
+                    selectedNeighborhoods={selectedNeighborhoods}
+                    onChange={setSelectedNeighborhoods}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">הזינו שכונות מועדפות, מופרדות בפסיקים</p>
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { matchNeighborhood } from "../_shared/locations.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -345,15 +346,14 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
 
-  // Neighborhood match (10 points)
+  // Neighborhood match using aliases (10 points)
   maxScore += 10;
   if (property.neighborhood && lead.preferred_neighborhoods?.length) {
-    const neighborhoodMatch = lead.preferred_neighborhoods.some(n => 
-      property.neighborhood.includes(n) || n.includes(property.neighborhood)
-    );
-    if (neighborhoodMatch) {
+    const city = property.city || 'תל אביב יפו';
+    const isMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
+    if (isMatch) {
       score += 10;
-      reasons.push('שכונה מועדפת');
+      reasons.push(`שכונה מועדפת: ${property.neighborhood}`);
     }
   }
 
