@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle, ExternalLink } from "lucide-react";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle, ExternalLink, RefreshCcw, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -240,10 +240,27 @@ export const ExpandableCustomerRow = ({
     property_type: normalizePropertyType(customer.property_type) || customer.property_type,
   }));
   const [loading, setLoading] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+
+  const handleMatchLead = async () => {
+    setIsMatching(true);
+    try {
+      await supabase.functions.invoke('match-scouted-to-leads', {
+        body: { lead_id: customer.id, send_whatsapp: false }
+      });
+      toast({ title: 'התאמה הושלמה', description: 'ההתאמות עודכנו בהצלחה' });
+      onSave(); // Refresh data
+    } catch (error) {
+      console.error('Match error:', error);
+      toast({ title: 'שגיאה', description: 'לא ניתן להתאים נכסים', variant: 'destructive' });
+    } finally {
+      setIsMatching(false);
+    }
+  };
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -355,26 +372,32 @@ export const ExpandableCustomerRow = ({
 
       if (error) throw error;
 
-      // Re-run matching if preferences changed
-      if (preferencesChanged) {
-        try {
-          await supabase.functions.invoke('match-scouted-to-leads', {
-            body: { lead_id: customer.id, send_whatsapp: false }
-          });
-          toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו וההתאמות חושבו מחדש' });
-        } catch (matchError) {
-          console.error('Error re-matching:', matchError);
-          toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו (שגיאה בחישוב התאמות)' });
-        }
-      } else {
-        toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו' });
-      }
-      
+      // Save completed - show success toast immediately
+      toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח נשמרו' });
       onSave();
       onToggleExpand();
+      setLoading(false);
+
+      // Re-run matching in background if preferences changed
+      if (preferencesChanged) {
+        setIsMatching(true);
+        supabase.functions.invoke('match-scouted-to-leads', {
+          body: { lead_id: customer.id, send_whatsapp: false }
+        })
+        .then(() => {
+          toast({ description: 'ההתאמות עודכנו בהצלחה' });
+          onSave(); // Refresh to show new matches
+        })
+        .catch((matchError) => {
+          console.error('Error re-matching:', matchError);
+          toast({ description: 'שגיאה בעדכון התאמות', variant: 'destructive' });
+        })
+        .finally(() => {
+          setIsMatching(false);
+        });
+      }
     } catch (error) {
       toast({ title: 'שגיאה', description: 'לא ניתן לעדכן את פרטי הלקוח', variant: 'destructive' });
-    } finally {
       setLoading(false);
     }
   };
@@ -506,7 +529,23 @@ export const ExpandableCustomerRow = ({
           )}
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-          <CustomerMatchesCell customerId={customer.id} customerName={customer.name} customerPhone={customer.phone} />
+          <div className="flex items-center gap-1">
+            <CustomerMatchesCell customerId={customer.id} customerName={customer.name} customerPhone={customer.phone} />
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 w-7 p-0"
+              onClick={() => handleMatchLead()}
+              disabled={isMatching}
+              title="התאם נכסים"
+            >
+              {isMatching ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
         </TableCell>
         <TableCell className="text-right">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.bg} ${timeSince.color}`}>

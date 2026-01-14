@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, RefreshCcw, Loader2 } from "lucide-react";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { useBrokerData, type BrokerWithPropertyNames } from "@/hooks/useBrokerData";
 import { CustomerTableView } from "@/components/CustomerTableView";
@@ -39,6 +39,7 @@ export default function AdminCustomers() {
   const [editBroker, setEditBroker] = useState<BrokerWithPropertyNames | null>(null);
   const [deleteBrokerId, setDeleteBrokerId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [isMatchingAll, setIsMatchingAll] = useState(false);
 
   const {
     customers,
@@ -82,6 +83,22 @@ export default function AdminCustomers() {
   const handleSaveBroker = () => {
     fetchBrokers();
     setEditBroker(null);
+  };
+
+  const handleMatchAllLeads = async () => {
+    setIsMatchingAll(true);
+    try {
+      await supabase.functions.invoke('match-scouted-to-leads', {
+        body: { send_whatsapp: false }
+      });
+      toast.success('כל הלקוחות הותאמו בהצלחה');
+      fetchCustomers();
+    } catch (error) {
+      console.error('Match all error:', error);
+      toast.error('שגיאה בהתאמת לקוחות');
+    } finally {
+      setIsMatchingAll(false);
+    }
   };
 
   const handleEditBroker = (broker: BrokerWithPropertyNames) => {
@@ -205,6 +222,19 @@ export default function AdminCustomers() {
             <Button onClick={() => setAddCustomerModalOpen(true)} size="sm">
               <Plus className="h-4 w-4 ml-2" />
               לקוח חדש
+            </Button>
+            <Button 
+              onClick={handleMatchAllLeads} 
+              size="sm" 
+              variant="outline"
+              disabled={isMatchingAll}
+            >
+              {isMatchingAll ? (
+                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 ml-2" />
+              )}
+              התאם את כולם
             </Button>
             <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline">
               <Plus className="h-4 w-4 ml-2" />
