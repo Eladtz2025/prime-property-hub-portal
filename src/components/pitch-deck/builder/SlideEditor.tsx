@@ -496,38 +496,6 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>תווית שלב 1</Label>
-                <Input
-                  value={(slideData.step1_label as string) || ''}
-                  onChange={(e) => handleDataChange('step1_label', e.target.value)}
-                  dir="auto"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>לינק שלב 1</Label>
-                <Input
-                  value={(slideData.step1_link as string) || ''}
-                  onChange={(e) => handleDataChange('step1_link', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>תווית שלב 2</Label>
-                <Input
-                  value={(slideData.step2_label as string) || ''}
-                  onChange={(e) => handleDataChange('step2_label', e.target.value)}
-                  dir="auto"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>לינק שלב 2</Label>
-                <Input
-                  value={(slideData.step2_link as string) || ''}
-                  onChange={(e) => handleDataChange('step2_link', e.target.value)}
-                />
-              </div>
-            </div>
           </>
         );
 
