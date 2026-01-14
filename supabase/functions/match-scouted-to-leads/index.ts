@@ -40,6 +40,12 @@ interface ContactLead {
   elevator_required: boolean;
   parking_required: boolean;
   balcony_required: boolean;
+  yard_required: boolean;
+  // Flexibility flags - if false, the requirement is MUST
+  elevator_flexible: boolean;
+  parking_flexible: boolean;
+  balcony_flexible: boolean;
+  yard_flexible: boolean;
 }
 
 interface MatchResult {
@@ -307,6 +313,13 @@ function getAllowedDeviation(price: number, propertyType: string, direction: 'up
 }
 
 function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResult {
+  // ===== CRITICAL MUST FILTERS - Lead must have city to get matches =====
+  
+  // Lead without preferred cities = NO MATCHES
+  if (!lead.preferred_cities?.length) {
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדרה עיר מועדפת - לא ניתן להתאים'] };
+  }
+  
   // ===== STRICT FILTERS - No flexibility =====
   
   // Property type MUST match - this is a mandatory filter
@@ -324,8 +337,8 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
   
-  // City MUST match if lead specified preferences
-  if (lead.preferred_cities?.length && property.city) {
+  // City MUST match (we already verified lead has cities above)
+  if (property.city) {
     const cityMatch = lead.preferred_cities.some(c => 
       property.city!.includes(c) || c.includes(property.city!)
     );
@@ -344,6 +357,44 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
     if (!isNeighborhoodMatch) {
       return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`] };
+    }
+  }
+  
+  // ===== MINIMUM ROOMS IS MUST =====
+  if (lead.rooms_min && property.rooms) {
+    if (property.rooms < lead.rooms_min) {
+      return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.rooms_min} חדרים, בנכס יש ${property.rooms}`] };
+    }
+  }
+  
+  // ===== FEATURE MUST FILTERS (when not flexible) =====
+  if (property.features) {
+    // Elevator - MUST if required and NOT flexible
+    if (lead.elevator_required && lead.elevator_flexible === false) {
+      if (property.features.elevator === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין בנכס'] };
+      }
+    }
+    
+    // Parking - MUST if required and NOT flexible
+    if (lead.parking_required && lead.parking_flexible === false) {
+      if (property.features.parking === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין בנכס'] };
+      }
+    }
+    
+    // Balcony - MUST if required and NOT flexible
+    if (lead.balcony_required && lead.balcony_flexible === false) {
+      if (property.features.balcony === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'] };
+      }
+    }
+    
+    // Yard - MUST if required and NOT flexible
+    if (lead.yard_required && lead.yard_flexible === false) {
+      if (property.features.yard === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'] };
+      }
     }
   }
   
@@ -399,7 +450,7 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
 
-  // Rooms match (25 points - increased from 20)
+  // Rooms match (25 points) - minimum is MUST (handled above), only score for max
   maxScore += 25;
   if (property.rooms && (lead.rooms_min || lead.rooms_max)) {
     const minRooms = lead.rooms_min || 0;
@@ -408,11 +459,12 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     if (property.rooms >= minRooms && property.rooms <= maxRooms) {
       score += 25;
       reasons.push('מספר חדרים מתאים');
-    } else if (property.rooms === minRooms - 0.5 || property.rooms === maxRooms + 0.5) {
-      // Half room difference is acceptable
+    } else if (property.rooms > maxRooms && property.rooms <= maxRooms + 0.5) {
+      // Half room above max is acceptable
       score += 15;
       reasons.push('מספר חדרים קרוב');
     }
+    // Below minimum is already filtered as MUST above
   }
 
   // Size match (15 points)
@@ -447,40 +499,50 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     reasons.push(`שכונה מועדפת: ${property.neighborhood}`);
   }
 
-  // Features match with penalties (15 points base - increased from 5)
+  // Features match with penalties (15 points base) - ONLY for flexible features
   maxScore += 15;
   if (property.features) {
-    // Elevator check
-    if (lead.elevator_required) {
+    // Elevator check - only if flexible (MUST already handled above)
+    if (lead.elevator_required && (lead.elevator_flexible === true || lead.elevator_flexible === undefined)) {
       if (property.features.elevator === true) {
-        score += 5;
+        score += 4;
         reasons.push('יש מעלית ✓');
       } else if (property.features.elevator === false) {
-        score -= 8;
+        score -= 6;
         reasons.push('אין מעלית ✗');
       }
-      // If elevator is undefined, don't penalize
     }
     
-    // Parking check
-    if (lead.parking_required) {
+    // Parking check - only if flexible
+    if (lead.parking_required && (lead.parking_flexible === true || lead.parking_flexible === undefined)) {
       if (property.features.parking === true) {
-        score += 5;
+        score += 4;
         reasons.push('יש חניה ✓');
       } else if (property.features.parking === false) {
-        score -= 8;
+        score -= 6;
         reasons.push('אין חניה ✗');
       }
     }
     
-    // Balcony check (lighter penalty)
-    if (lead.balcony_required) {
+    // Balcony check - only if flexible
+    if (lead.balcony_required && (lead.balcony_flexible === true || lead.balcony_flexible === undefined)) {
       if (property.features.balcony === true) {
-        score += 5;
+        score += 4;
         reasons.push('יש מרפסת ✓');
       } else if (property.features.balcony === false) {
         score -= 3;
         reasons.push('אין מרפסת');
+      }
+    }
+    
+    // Yard check - only if flexible
+    if (lead.yard_required && (lead.yard_flexible === true || lead.yard_flexible === undefined)) {
+      if (property.features.yard === true) {
+        score += 4;
+        reasons.push('יש חצר ✓');
+      } else if (property.features.yard === false) {
+        score -= 5;
+        reasons.push('אין חצר');
       }
     }
   }
@@ -498,39 +560,37 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
 
 function buildWhatsAppMessage(property: ScoutedProperty, match: MatchResult): string {
   const priceStr = property.price 
-    ? `₪${property.price.toLocaleString()}` 
-    : 'לא צוין';
+    ? `₪${property.price.toLocaleString()}`
+    : 'מחיר לא ידוע';
   
-  const roomsStr = property.rooms ? `${property.rooms} חדרים` : '';
-  const sizeStr = property.size ? `${property.size} מ"ר` : '';
-  const details = [roomsStr, sizeStr].filter(Boolean).join(' | ');
+  return `שלום ${match.lead.name}! 🏠
 
-  return `🏠 *נמצאה דירה שמתאימה לך!*
+מצאתי דירה שיכולה להתאים לך:
 
-שלום ${match.lead.name},
+📍 ${property.city}${property.neighborhood ? ` - ${property.neighborhood}` : ''}
+${property.address ? `🏢 ${property.address}` : ''}
+💰 ${priceStr}${property.property_type === 'rent' ? '/חודש' : ''}
+🛏️ ${property.rooms} חדרים
+📐 ${property.size} מ"ר
 
-מצאנו דירה חדשה ב${property.city}${property.neighborhood ? ` - ${property.neighborhood}` : ''}:
+${match.matchReasons.slice(0, 3).join('\n')}
 
-📍 *${property.title || property.address || 'דירה חדשה'}*
-💰 מחיר: ${priceStr}
-${details ? `📐 ${details}` : ''}
+לצפייה בנכס: ${property.source_url}
 
-✅ *למה זה מתאים לך:*
-${match.matchReasons.map(r => `• ${r}`).join('\n')}
-
-🔗 לצפייה במודעה:
-${property.source_url}
-
----
-נשמח לעזור לך לתאם ביקור! 📞`;
+מה אומר/ת?`;
 }
 
 function cleanPhoneNumber(phone: string): string {
+  // Remove all non-digits
   let cleaned = phone.replace(/\D/g, '');
   
+  // If starts with 0, replace with 972
   if (cleaned.startsWith('0')) {
-    cleaned = '972' + cleaned.substring(1);
-  } else if (!cleaned.startsWith('972')) {
+    cleaned = '972' + cleaned.slice(1);
+  }
+  
+  // If doesn't start with country code, add 972
+  if (!cleaned.startsWith('972')) {
     cleaned = '972' + cleaned;
   }
   

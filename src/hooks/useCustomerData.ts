@@ -36,6 +36,13 @@ export interface Customer {
   parking_required: boolean | null;
   balcony_required: boolean | null;
   elevator_required: boolean | null;
+  // Yard requirement
+  yard_required: boolean | null;
+  // Flexibility flags for features
+  elevator_flexible: boolean | null;
+  parking_flexible: boolean | null;
+  balcony_flexible: boolean | null;
+  yard_flexible: boolean | null;
   // Purchase-specific fields
   purchase_purpose: string | null;
   cash_available: number | null;

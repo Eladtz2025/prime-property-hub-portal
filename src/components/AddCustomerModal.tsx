@@ -57,6 +57,12 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     parking_required: false,
     balcony_required: false,
     elevator_required: false,
+    yard_required: false,
+    // Flexibility flags
+    parking_flexible: true,
+    balcony_flexible: true,
+    elevator_flexible: true,
+    yard_flexible: true,
     // Purchase-specific
     purchase_purpose: '' as string,
     cash_available: null as number | null,
@@ -66,6 +72,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     renovation_budget: null as number | null,
     new_or_second_hand: '' as string,
     floor_preference: '' as string,
+    view_preference: '' as string,
     view_preference: '' as string,
   });
 
@@ -527,36 +534,88 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
 
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">דרישות מהנכס:</Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Parking */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="parking_required"
                         checked={formData.parking_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, parking_required: !!checked })}
                       />
-                      <Label htmlFor="parking_required" className="flex items-center gap-1 cursor-pointer">
+                      <Label htmlFor="parking_required" className="flex items-center gap-1 cursor-pointer flex-1">
                         <Car className="h-4 w-4" />
                         חניה
                       </Label>
+                      {formData.parking_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="parking_flexible"
+                            checked={formData.parking_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, parking_flexible: !!checked })}
+                          />
+                          <Label htmlFor="parking_flexible" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Balcony */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="balcony_required"
                         checked={formData.balcony_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, balcony_required: !!checked })}
                       />
-                      <Label htmlFor="balcony_required" className="cursor-pointer">מרפסת</Label>
+                      <Label htmlFor="balcony_required" className="cursor-pointer flex-1">מרפסת</Label>
+                      {formData.balcony_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="balcony_flexible"
+                            checked={formData.balcony_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, balcony_flexible: !!checked })}
+                          />
+                          <Label htmlFor="balcony_flexible" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Elevator */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="elevator_required"
                         checked={formData.elevator_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, elevator_required: !!checked })}
                       />
-                      <Label htmlFor="elevator_required" className="flex items-center gap-1 cursor-pointer">
+                      <Label htmlFor="elevator_required" className="flex items-center gap-1 cursor-pointer flex-1">
                         <Building2 className="h-4 w-4" />
                         מעלית
                       </Label>
+                      {formData.elevator_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="elevator_flexible"
+                            checked={formData.elevator_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, elevator_flexible: !!checked })}
+                          />
+                          <Label htmlFor="elevator_flexible" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
+                    </div>
+                    {/* Yard */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
+                      <Checkbox
+                        id="yard_required"
+                        checked={formData.yard_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, yard_required: !!checked })}
+                      />
+                      <Label htmlFor="yard_required" className="cursor-pointer flex-1">חצר</Label>
+                      {formData.yard_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="yard_flexible"
+                            checked={formData.yard_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, yard_flexible: !!checked })}
+                          />
+                          <Label htmlFor="yard_flexible" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
