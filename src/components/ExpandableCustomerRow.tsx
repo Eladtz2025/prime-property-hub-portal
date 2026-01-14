@@ -129,12 +129,14 @@ const CustomerMatchesCell = ({
   customerId, 
   customerName, 
   customerPhone,
-  preferredCities 
+  preferredCities,
+  preferredNeighborhoods
 }: { 
   customerId: string; 
   customerName: string; 
   customerPhone?: string | null;
   preferredCities?: string[] | null;
+  preferredNeighborhoods?: string[] | null;
 }) => {
   const { data: matches = [], isLoading } = useCustomerMatches(customerId);
 
@@ -153,15 +155,34 @@ const CustomerMatchesCell = ({
     window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
   };
 
-  // Check if customer can receive matches (must have preferred cities)
-  const canMatch = preferredCities && preferredCities.length > 0;
+  // Check if customer can receive matches
+  const hasCities = preferredCities && preferredCities.length > 0;
+  const hasNeighborhoods = preferredNeighborhoods && preferredNeighborhoods.length > 0;
 
   if (isLoading) {
     return <span className="text-muted-foreground text-sm">...</span>;
   }
 
-  // Missing required data - show red X with tooltip
-  if (!canMatch) {
+  // Missing neighborhoods - show red X with tooltip
+  if (!hasNeighborhoods) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center justify-center">
+              <X className="h-4 w-4 text-red-500" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>חסרות שכונות מועדפות</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Missing cities - show red X with tooltip
+  if (!hasCities) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -661,6 +682,7 @@ export const ExpandableCustomerRow = ({
               customerName={customer.name} 
               customerPhone={customer.phone}
               preferredCities={customer.preferred_cities}
+              preferredNeighborhoods={customer.preferred_neighborhoods}
             />
             <Button 
               size="sm" 

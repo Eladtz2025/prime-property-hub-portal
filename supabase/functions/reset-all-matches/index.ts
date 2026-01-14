@@ -113,11 +113,36 @@ serve(async (req) => {
     let totalMatches = 0;
     let propertiesWithMatches = 0;
 
-    // Step 4: For each property, calculate matches with all leads
+    // Step 4: Update matching_status for leads without neighborhoods (they can't be matched)
+    const leadsWithoutNeighborhoods = leads.filter(l => !l.preferred_neighborhoods?.length);
+    const leadsWithNeighborhoods = leads.filter(l => l.preferred_neighborhoods?.length > 0);
+    
+    if (leadsWithoutNeighborhoods.length > 0) {
+      console.log(`Marking ${leadsWithoutNeighborhoods.length} leads as missing_neighborhoods`);
+      for (const lead of leadsWithoutNeighborhoods) {
+        await supabase
+          .from('contact_leads')
+          .update({ matching_status: 'missing_neighborhoods' })
+          .eq('id', lead.id);
+      }
+    }
+
+    // Mark leads with neighborhoods as eligible
+    if (leadsWithNeighborhoods.length > 0) {
+      console.log(`${leadsWithNeighborhoods.length} leads are eligible for matching`);
+      for (const lead of leadsWithNeighborhoods) {
+        await supabase
+          .from('contact_leads')
+          .update({ matching_status: 'eligible' })
+          .eq('id', lead.id);
+      }
+    }
+
+    // Step 5: For each property, calculate matches ONLY with eligible leads
     for (const property of properties) {
       const matches: { lead_id: string; name: string; phone: string; score: number; reasons: string[] }[] = [];
 
-      for (const lead of leads) {
+      for (const lead of leadsWithNeighborhoods) {
         const matchResult = calculateMatch(property, lead);
         if (matchResult.matchScore >= 60) {
           matches.push({
@@ -149,11 +174,13 @@ serve(async (req) => {
     }
 
     console.log(`Completed: ${propertiesWithMatches} properties with matches, ${totalMatches} total matches`);
+    console.log(`Leads without neighborhoods (skipped): ${leadsWithoutNeighborhoods.length}`);
 
     return new Response(JSON.stringify({
       success: true,
       properties_processed: properties.length,
-      leads_checked: leads.length,
+      leads_checked: leadsWithNeighborhoods.length,
+      leads_skipped: leadsWithoutNeighborhoods.length,
       properties_with_matches: propertiesWithMatches,
       total_matches: totalMatches
     }), {
