@@ -32,8 +32,9 @@ const DynamicContactSlide = ({
   ];
 
   const checklist = data.checklist?.length ? data.checklist : defaultChecklist;
-  const step1Link = data.step1_link || (slug ? `/offer/${slug}/pricing` : '#');
-  const step2Link = data.step2_link || (slug ? `/offer/${slug}/exclusivity` : '#');
+  // Always use dynamic slug-based links (ignore any hardcoded values in database)
+  const step1Link = slug ? `/offer/${slug}/pricing` : '#';
+  const step2Link = slug ? `/offer/${slug}/exclusivity` : '#';
   
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
