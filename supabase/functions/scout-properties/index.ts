@@ -600,6 +600,48 @@ function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
       const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
       console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
+      
+    } else if (source === 'homeless') {
+      // Homeless city codes mapping
+      const homelessCityMap: Record<string, { code: string }> = {
+        'תל אביב': { code: '17,1,150' },
+        'תל אביב יפו': { code: '17,1,150' },
+        'ירושלים': { code: '1,1,3000' },
+        'חיפה': { code: '4,1,4000' },
+        'ראשון לציון': { code: '17,2,8300' },
+        'פתח תקווה': { code: '17,3,7900' },
+        'אשדוד': { code: '17,12,70' },
+        'נתניה': { code: '11,1,7400' },
+        'באר שבע': { code: '6,1,9000' },
+        'חולון': { code: '17,1,6600' },
+        'בת ים': { code: '17,1,6200' },
+        'רמת גן': { code: '17,1,8600' },
+        'הרצליה': { code: '17,4,6400' },
+        'רעננה': { code: '11,2,8700' },
+      };
+
+      let baseUrl: string;
+      
+      if (type === 'rent') {
+        baseUrl = 'https://www.homeless.co.il/rent/';
+        if (config.cities?.length) {
+          const cityData = homelessCityMap[config.cities[0]];
+          if (cityData) {
+            baseUrl += `inumber1=${cityData.code}`;
+          }
+        }
+      } else {
+        baseUrl = 'https://www.homeless.co.il/sale/';
+        if (config.cities?.length) {
+          baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
+        }
+      }
+      
+      // Add page parameter for Homeless
+      const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+      console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
     }
   }
   
@@ -616,17 +658,15 @@ function buildSearchUrls(config: ScoutConfig): string[] {
   }
 
   // Determine which sources to scan
-  // homeless is temporarily disabled, yad2/yad2_private merged into single yad2
   let sources: string[] = [];
   if (config.source === 'yad2' || config.source === 'yad2_private') {
     sources = ['yad2']; // Single scan for all Yad2 (private + broker)
   } else if (config.source === 'both') {
     sources = ['madlan', 'yad2']; // Madlan + Yad2
   } else if (config.source === 'all') {
-    sources = ['madlan', 'yad2']; // Without homeless for now
+    sources = ['madlan', 'yad2', 'homeless']; // All sources including Homeless
   } else if (config.source === 'homeless') {
-    sources = []; // Temporarily disabled
-    console.log('Homeless source is temporarily disabled');
+    sources = ['homeless']; // Homeless enabled
   } else {
     sources = [config.source];
   }
