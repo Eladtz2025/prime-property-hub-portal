@@ -182,7 +182,7 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_order: 0,
     is_visible: true,
     slide_data: {
-      main_title: 'Property Name',
+      main_title: '',
       subtitle: 'CITY MARKET PROPERTIES',
     } as TitleSlideData,
   },
@@ -191,19 +191,9 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_order: 1,
     is_visible: true,
     slide_data: {
-      title: 'Duplex Apartment | 3-Room | Approx. 70 sqm',
-      apartment_details: [
-        { icon: 'Layers', text: 'Duplex spanning two floors' },
-        { icon: 'Square', text: 'Interior area: ~70 sqm' },
-        { icon: 'Trees', text: 'Private roof terrace' },
-        { icon: 'Shield', text: 'Secure room (mamad)' },
-      ],
-      building_details: [
-        { icon: 'Building2', text: 'Boutique residential building' },
-        { icon: 'Layers', text: '5 floors' },
-        { icon: 'ArrowUp', text: 'Elevator available' },
-        { icon: 'Home', text: 'Well-maintained atmosphere' },
-      ],
+      title: '',
+      apartment_details: [],
+      building_details: [],
     } as PropertySlideData,
   },
   {
@@ -212,14 +202,9 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     is_visible: true,
     slide_data: {
       title: 'Unique Features & Positioning',
-      key_features: [
-        'True duplex separation between bedroom and living spaces',
-        'Private roof terrace with legal registration',
-        'Elevated position above street level',
-        'Strong natural light and open flow',
-      ],
-      value_elements: ['Outdoor space', 'Secure room', 'Elevator', 'Central coastal location'],
-      quote: 'A lifestyle-driven urban asset, not a standard apartment.',
+      key_features: [],
+      value_elements: [],
+      quote: '',
     } as FeaturesSlideData,
   },
   {
@@ -227,15 +212,11 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     slide_order: 3,
     is_visible: true,
     slide_data: {
-      title: 'Old North',
-      subtitle: 'Ben Yehuda · Dizengoff · Gordon',
-      beach_distance: 3,
-      location_highlights: [
-        'Steps from the beach and promenade',
-        'Fully walkable daily life',
-        'Cafés, bakeries, galleries, and neighborhood services',
-      ],
-      appeals_to: ['Lifestyle buyers', 'Foreign residents', 'Long-term investors'],
+      title: '',
+      subtitle: '',
+      beach_distance: 0,
+      location_highlights: [],
+      appeals_to: [],
     } as NeighborhoodSlideData,
   },
   {
@@ -244,15 +225,12 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     is_visible: true,
     slide_data: {
       title: 'Market Context',
-      price_per_sqm: '₪58K',
-      sales_range: '₪2.9M–5.7M',
-      avg_deal_size: '62 sqm',
-      min_price: 2.9,
-      max_price: 5.7,
-      strategic_points: [
-        'Priced within the active market band',
-        'Reflects current conditions and comparable recent sales',
-      ],
+      price_per_sqm: '',
+      sales_range: '',
+      avg_deal_size: '',
+      min_price: 0,
+      max_price: 0,
+      strategic_points: [],
     } as PricingSlideData,
   },
   {
@@ -261,10 +239,10 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     is_visible: true,
     slide_data: {
       title: 'Marketing Strategy',
-      positioning_quote: 'Positioned as a lifestyle asset for buyers seeking character, light, and space in a central location.',
-      visual_strategy: ['Professional photography', 'Video walkthrough', 'Premium branding'],
-      target_audiences: ['Young professionals', 'Couples upgrading', 'Investors'],
-      exposure_strategy: ['Digital platforms', 'Broker network', 'Direct outreach'],
+      positioning_quote: '',
+      visual_strategy: [],
+      target_audiences: [],
+      exposure_strategy: [],
     } as MarketingSlideData,
   },
   {
