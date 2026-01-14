@@ -493,9 +493,18 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
   // Price match with dynamic flexible ranges (30 points)
   maxScore += 30;
   if (property.price && (lead.budget_min || lead.budget_max)) {
-    const minBudget = lead.budget_min || 0;
     const maxBudget = lead.budget_max || Infinity;
     const propType = propertyType || 'rent';
+    
+    // Calculate automatic minimum budget if not explicitly set
+    // This prevents matching apartments way below the customer's budget range
+    let minBudget = lead.budget_min;
+    if (!minBudget && lead.budget_max) {
+      const allowedDown = getAllowedDeviation(lead.budget_max, propType, 'down');
+      minBudget = Math.floor(lead.budget_max * (1 - allowedDown));
+    } else if (!minBudget) {
+      minBudget = 0;
+    }
     
     if (property.price >= minBudget && property.price <= maxBudget) {
       // Perfect match - within budget range
