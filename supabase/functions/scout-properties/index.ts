@@ -51,6 +51,25 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  // Clean up stuck runs older than 1 hour at the start of each execution
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { data: stuckRuns } = await supabase
+    .from('scout_runs')
+    .update({
+      status: 'failed',
+      error_message: 'Timeout - automatically cleaned',
+      completed_at: new Date().toISOString()
+    })
+    .eq('status', 'running')
+    .lt('started_at', oneHourAgo)
+    .select('id');
+  
+  if (stuckRuns?.length) {
+    console.log(`Cleaned up ${stuckRuns.length} stuck runs`);
+  }
+
+  let runId: string | undefined;
+
   try {
     const { config_id, manual_url, source } = await req.json();
 
@@ -69,7 +88,7 @@ serve(async (req) => {
       console.error('Failed to create run record:', runError);
     }
 
-    const runId = runData?.id;
+    runId = runData?.id;
 
     let configs: ScoutConfig[] = [];
 
@@ -152,25 +171,35 @@ serve(async (req) => {
         }
 
         try {
-          // Use Firecrawl to scrape
+          // Use Firecrawl to scrape with timeout
           if (!firecrawlApiKey) {
             console.warn('FIRECRAWL_API_KEY not configured');
             continue;
           }
 
-          const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${firecrawlApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              url,
-              formats: ['markdown', 'html'],
-              onlyMainContent: true,
-              waitFor: 3000, // Wait for dynamic content
-            }),
-          });
+          // Add timeout to Firecrawl requests
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+          let scrapeResponse;
+          try {
+            scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${firecrawlApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url,
+                formats: ['markdown', 'html'],
+                onlyMainContent: true,
+                waitFor: 3000, // Wait for dynamic content
+              }),
+              signal: controller.signal,
+            });
+          } finally {
+            clearTimeout(timeoutId);
+          }
 
           if (!scrapeResponse.ok) {
             console.error(`Firecrawl error for ${url}:`, await scrapeResponse.text());
@@ -201,7 +230,12 @@ serve(async (req) => {
           totalPropertiesFound += extractedProperties.length;
 
         } catch (scrapeError) {
-          console.error(`Error scraping ${url}:`, scrapeError);
+          if (scrapeError instanceof Error && scrapeError.name === 'AbortError') {
+            console.error(`Timeout scraping ${url} (exceeded 30s)`);
+          } else {
+            console.error(`Error scraping ${url}:`, scrapeError);
+          }
+          continue;
         }
       }
 
@@ -292,6 +326,19 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Scout error:', error);
+    
+    // Update run record to failed status if we have a runId
+    if (runId) {
+      await supabase
+        .from('scout_runs')
+        .update({
+          status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', runId);
+    }
+    
     return new Response(JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
