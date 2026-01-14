@@ -19,6 +19,8 @@ import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
+import { CitySelectorCompact } from "@/components/ui/city-selector";
+import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
 
 interface Agent {
   id: string;
@@ -600,21 +602,18 @@ export const ExpandableCustomerRow = ({
                 {/* Locations & Dates */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs">ערים מועדפות (מופרד בפסיקים)</Label>
-                    <Input
-                      value={formData.preferred_cities?.join(', ') || ''}
-                      onChange={(e) => setFormData({ ...formData, preferred_cities: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                      placeholder="תל אביב, רמת גן"
-                      className="h-8 text-sm"
+                    <Label className="text-xs">ערים מועדפות</Label>
+                    <CitySelectorCompact
+                      selectedCities={formData.preferred_cities || []}
+                      onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">שכונות מועדפות (מופרד בפסיקים)</Label>
-                    <Input
-                      value={formData.preferred_neighborhoods?.join(', ') || ''}
-                      onChange={(e) => setFormData({ ...formData, preferred_neighborhoods: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                      placeholder="רוטשילד, דיזנגוף"
-                      className="h-8 text-sm"
+                    <Label className="text-xs">שכונות מועדפות</Label>
+                    <NeighborhoodSelectorCompact
+                      selectedCities={formData.preferred_cities || []}
+                      selectedNeighborhoods={formData.preferred_neighborhoods || []}
+                      onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
                     />
                   </div>
                 </div>
