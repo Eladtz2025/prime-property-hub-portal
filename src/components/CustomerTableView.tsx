@@ -70,12 +70,9 @@ export const CustomerTableView = ({
             <TableHead className="text-right">
               <SortableHeader label="שם לקוח" sortKey="name" />
             </TableHead>
-            <TableHead className="text-right">טלפון</TableHead>
             <TableHead className="text-right">סוג עסקה</TableHead>
             <TableHead className="text-right">תקציב</TableHead>
-            <TableHead className="text-right">סטטוס</TableHead>
             <TableHead className="text-right">עדיפות</TableHead>
-            <TableHead className="text-right">סוכן</TableHead>
             <TableHead className="text-right">התאמות</TableHead>
             <TableHead className="text-right">
               <SortableHeader label="קשר אחרון" sortKey="last_contact" />
