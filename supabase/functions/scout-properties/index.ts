@@ -333,6 +333,17 @@ serve(async (req) => {
           totalPropertiesFound += extractedProperties.length;
           console.log(`Saved ${extractedProperties.length} properties. Total so far: ${totalPropertiesFound} found, ${totalNewProperties} new`);
 
+          // Update scout_runs incrementally after each page
+          if (runId) {
+            await supabase
+              .from('scout_runs')
+              .update({
+                properties_found: totalPropertiesFound,
+                new_properties: totalNewProperties
+              })
+              .eq('id', runId);
+          }
+
         } catch (scrapeError) {
           console.error(`Error processing ${url}:`, scrapeError);
           continue;
