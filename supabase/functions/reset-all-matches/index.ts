@@ -258,17 +258,51 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       }
     }
     
-    // Balcony - MUST if required and NOT flexible
-    if (lead.balcony_required && lead.balcony_flexible === false) {
-      if (property.features.balcony === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'] };
+    // Outdoor space features - OR mode vs AND mode
+    if (lead.outdoor_space_any) {
+      // OR mode: at least one of the selected outdoor features MUST exist
+      const outdoorOptions: string[] = [];
+      if (lead.balcony_required) outdoorOptions.push('balcony');
+      if (lead.yard_required) outdoorOptions.push('yard');
+      if (lead.roof_required) outdoorOptions.push('roof');
+      
+      if (outdoorOptions.length > 0) {
+        const hasAnyOutdoor = outdoorOptions.some(opt => 
+          property.features[opt] === true
+        );
+        
+        // If none of the required outdoor options exist, disqualify
+        if (!hasAnyOutdoor) {
+          const optionsText = outdoorOptions.map(opt => {
+            if (opt === 'balcony') return 'מרפסת';
+            if (opt === 'yard') return 'חצר';
+            if (opt === 'roof') return 'גג';
+            return opt;
+          }).join(' או ');
+          return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין בנכס`] };
+        }
       }
-    }
-    
-    // Yard - MUST if required and NOT flexible
-    if (lead.yard_required && lead.yard_flexible === false) {
-      if (property.features.yard === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'] };
+    } else {
+      // AND mode: each feature is checked individually
+      // Balcony - MUST if required and NOT flexible
+      if (lead.balcony_required && lead.balcony_flexible === false) {
+        if (property.features.balcony === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'] };
+        }
+      }
+      
+      // Yard - MUST if required and NOT flexible
+      if (lead.yard_required && lead.yard_flexible === false) {
+        if (property.features.yard === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'] };
+        }
+      }
+      
+      // Roof - MUST if required and NOT flexible
+      if (lead.roof_required && lead.roof_flexible === false) {
+        if (property.features.roof === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין בנכס'] };
+        }
       }
     }
   }

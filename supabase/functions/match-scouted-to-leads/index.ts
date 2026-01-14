@@ -396,7 +396,7 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     
     // Outdoor space features - OR mode vs AND mode
     if (lead.outdoor_space_any) {
-      // OR mode: at least one of the selected outdoor features must exist
+      // OR mode: at least one of the selected outdoor features MUST exist
       const outdoorOptions: string[] = [];
       if (lead.balcony_required) outdoorOptions.push('balcony');
       if (lead.yard_required) outdoorOptions.push('yard');
@@ -406,8 +406,17 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
         const hasAnyOutdoor = outdoorOptions.some(opt => 
           property.features[opt] === true
         );
-        // In OR mode with requirements set, we don't immediately disqualify
-        // but we'll handle scoring later
+        
+        // If none of the required outdoor options exist, disqualify
+        if (!hasAnyOutdoor) {
+          const optionsText = outdoorOptions.map(opt => {
+            if (opt === 'balcony') return 'מרפסת';
+            if (opt === 'yard') return 'חצר';
+            if (opt === 'roof') return 'גג';
+            return opt;
+          }).join(' או ');
+          return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין בנכס`] };
+        }
       }
     } else {
       // AND mode: each feature is checked individually
