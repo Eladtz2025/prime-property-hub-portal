@@ -267,17 +267,14 @@ serve(async (req) => {
             continue;
           }
 
-          // Determine if this is a private source
-          const isPrivateSource = url.includes('dealerType=1') || config.source === 'yad2_private';
-
+          // Extract properties - is_private will be detected from content
           const extractedProperties = await extractPropertiesWithAI(
             markdown, 
             html, 
             url,
             config.property_type === 'both' ? 'rent' : config.property_type,
             lovableApiKey,
-            config.cities,
-            isPrivateSource
+            config.cities
           );
 
           console.log(`Extracted ${extractedProperties.length} properties from ${url}`);
@@ -415,9 +412,22 @@ function normalizeCityName(city: string | undefined): string | undefined {
   return city.trim();
 }
 
+// Detect broker from title/description keywords
+function detectBroker(title: string, description: string): boolean {
+  const brokerKeywords = [
+    'תיווך', 'נדל"ן', 'נדלן', 'סוכנות', 'משרד',
+    'רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'century21',
+    'קולדוול בנקר', 'coldwell', 'מתווך', 'agency', 'real estate',
+    'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות'
+  ];
+  
+  const text = `${title || ''} ${description || ''}`.toLowerCase();
+  return brokerKeywords.some(keyword => text.includes(keyword.toLowerCase()));
+}
+
 function buildSearchUrls(config: ScoutConfig): string[] {
   const urls: string[] = [];
-  const pagesToScan = 30; // Increased from 3 to 30 pages for ~600 properties per source
+  const pagesToScan = 7; // ~140 properties per source+type (7 pages x ~20 per page)
 
   // If custom URL provided, use it (no pagination for manual URLs)
   if (config.search_url) {
@@ -425,14 +435,17 @@ function buildSearchUrls(config: ScoutConfig): string[] {
   }
 
   // Determine which sources to scan
-  // IMPORTANT: yad2 and yad2_private now always scan both types
+  // homeless is temporarily disabled, yad2/yad2_private merged into single yad2
   let sources: string[] = [];
   if (config.source === 'yad2' || config.source === 'yad2_private') {
-    sources = ['yad2', 'yad2_private']; // Always scan both private and broker
+    sources = ['yad2']; // Single scan for all Yad2 (private + broker)
   } else if (config.source === 'both') {
-    sources = ['madlan', 'yad2', 'yad2_private']; // Madlan + both Yad2 types
+    sources = ['madlan', 'yad2']; // Madlan + Yad2
   } else if (config.source === 'all') {
-    sources = ['madlan', 'madlan_projects', 'yad2', 'yad2_private', 'homeless']; // All sources
+    sources = ['madlan', 'yad2']; // Without homeless for now
+  } else if (config.source === 'homeless') {
+    sources = []; // Temporarily disabled
+    console.log('Homeless source is temporarily disabled');
   } else {
     sources = [config.source];
   }
@@ -479,11 +492,8 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         
         params.set('propertyGroup', 'apartments');
         
-        // Add private owner filter for yad2_private
-        if (source === 'yad2_private') {
-          params.set('dealerType', '1'); // Private owners only
-        }
-        // Note: yad2 (broker) doesn't need dealerType filter - it returns all
+        // No dealerType filter - scan ALL listings (private + broker)
+        // is_private will be detected from content keywords
         
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
@@ -495,7 +505,7 @@ function buildSearchUrls(config: ScoutConfig): string[] {
             pageParams.set('page', page.toString());
           }
           const pageUrl = url + '?' + pageParams.toString();
-          console.log(`Built Yad2 ${source === 'yad2_private' ? 'private' : 'broker'} URL (page ${page}): ${pageUrl}`);
+          console.log(`Built Yad2 URL (page ${page}): ${pageUrl}`);
           urls.push(pageUrl);
         }
         
@@ -647,10 +657,9 @@ async function extractPropertiesWithAI(
   sourceUrl: string,
   propertyType: 'rent' | 'sale',
   apiKey: string,
-  targetCities?: string[],
-  isPrivateSource?: boolean
+  targetCities?: string[]
 ): Promise<ScrapedProperty[]> {
-  const source = sourceUrl.includes('yad2') ? (isPrivateSource ? 'yad2_private' : 'yad2') : 
+  const source = sourceUrl.includes('yad2') ? 'yad2' : 
                  sourceUrl.includes('madlan') ? 'madlan' :
                  sourceUrl.includes('homeless') ? 'homeless' : 'other';
 
@@ -827,25 +836,30 @@ ${cleanedMarkdown.substring(0, 30000)}`;
     });
     console.log(`Property type filter: ${properties.length} -> ${filteredProperties.length} residential properties`);
 
-    return filteredProperties.map((p: any) => ({
-      source,
-      source_url: p.source_url || sourceUrl,
-      source_id: p.source_id || `${source}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title: p.title,
-      city: p.city,
-      neighborhood: p.neighborhood,
-      address: p.address,
-      price: p.price ? parseInt(p.price) : undefined,
-      rooms: p.rooms ? parseFloat(p.rooms) : undefined,
-      size: p.size ? parseInt(p.size) : undefined,
-      floor: p.floor !== undefined ? parseInt(p.floor) : undefined,
-      property_type: propertyType,
-      description: p.description,
-      images: p.images || [],
-      features: p.features || {},
-      raw_data: p,
-      is_private: isPrivateSource === true ? true : isPrivateSource === false ? false : null
-    }));
+    return filteredProperties.map((p: any) => {
+      // Detect if this is a broker listing based on content keywords
+      const isBroker = detectBroker(p.title || '', p.description || '');
+      
+      return {
+        source,
+        source_url: p.source_url || sourceUrl,
+        source_id: p.source_id || `${source}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: p.title,
+        city: p.city,
+        neighborhood: p.neighborhood,
+        address: p.address,
+        price: p.price ? parseInt(p.price) : undefined,
+        rooms: p.rooms ? parseFloat(p.rooms) : undefined,
+        size: p.size ? parseInt(p.size) : undefined,
+        floor: p.floor !== undefined ? parseInt(p.floor) : undefined,
+        property_type: propertyType,
+        description: p.description,
+        images: p.images || [],
+        features: p.features || {},
+        raw_data: p,
+        is_private: !isBroker // true = private (no broker keywords), false = broker
+      };
+    });
 
   } catch (error) {
     console.error('AI extraction failed:', error);
