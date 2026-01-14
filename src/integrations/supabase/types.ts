@@ -383,6 +383,7 @@ export type Database = {
           parking_flexible: boolean | null
           parking_required: boolean | null
           pets: boolean | null
+          pets_flexible: boolean | null
           phone: string
           preferred_cities: string[] | null
           preferred_neighborhoods: string[] | null
@@ -437,6 +438,7 @@ export type Database = {
           parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
+          pets_flexible?: boolean | null
           phone: string
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
@@ -491,6 +493,7 @@ export type Database = {
           parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
+          pets_flexible?: boolean | null
           phone?: string
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
