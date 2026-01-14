@@ -500,28 +500,43 @@ export const LiveScanStatus: React.FC = () => {
 
   return (
     <Card className="p-4 bg-muted/30">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <span className="font-medium">אין סריקות פעילות</span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Building2 className="h-4 w-4" />
-          <span>
-            סריקה אחרונה: {formatDistanceToNow(new Date(lastCompletedBatch.completed_at), { locale: he, addSuffix: true })}
-            {' - '}
-            <span className="font-semibold">{lastCompletedBatch.properties_found}</span> נכסים
-          </span>
-          {lastCompletedBatch.new_properties > 0 && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700">
-              {lastCompletedBatch.new_properties} חדשים
-            </Badge>
-          )}
-          {lastCompletedBatch.leads_matched > 0 && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-              {lastCompletedBatch.leads_matched} התאמות
-            </Badge>
-          )}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span>
+              סריקה אחרונה: {formatDistanceToNow(new Date(lastCompletedBatch.completed_at), { locale: he, addSuffix: true })}
+              {' - '}
+              <span className="font-semibold">{lastCompletedBatch.properties_found}</span> נכסים
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            {lastCompletedBatch.by_source?.yad2 > 0 && (
+              <span className="text-orange-600">יד2: {lastCompletedBatch.by_source.yad2}</span>
+            )}
+            {lastCompletedBatch.by_source?.homeless > 0 && (
+              <span className="text-purple-600">הומלס: {lastCompletedBatch.by_source.homeless}</span>
+            )}
+            {lastCompletedBatch.by_source?.madlan > 0 && (
+              <span className="text-blue-600">מדלן: {lastCompletedBatch.by_source.madlan}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {lastCompletedBatch.new_properties > 0 && (
+              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                {lastCompletedBatch.new_properties} חדשים
+              </Badge>
+            )}
+            {lastCompletedBatch.leads_matched > 0 && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                {lastCompletedBatch.leads_matched} התאמות
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </Card>
