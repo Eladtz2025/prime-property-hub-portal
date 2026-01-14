@@ -2709,6 +2709,22 @@ export type Database = {
         Returns: Json
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_customer_matches: {
+        Args: { customer_uuid: string }
+        Returns: {
+          city: string
+          id: string
+          is_private: boolean
+          match_reasons: string[]
+          match_score: number
+          price: number
+          rooms: number
+          size: number
+          source: string
+          source_url: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
