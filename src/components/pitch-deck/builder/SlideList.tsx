@@ -61,8 +61,9 @@ const SlideList = ({
             return (
               <div
                 key={slide.id}
+                onClick={() => onSelectSlide(slide)}
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                  "flex items-center gap-2 p-2 rounded-lg border transition-colors cursor-pointer",
                   selectedSlideId === slide.id 
                     ? "border-primary bg-primary/5" 
                     : "border-border hover:border-primary/30 hover:bg-accent/50",
@@ -79,7 +80,7 @@ const SlideList = ({
                 
                 <span className="flex-1 text-sm truncate">{label}</span>
                 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="ghost"
                     size="icon"
