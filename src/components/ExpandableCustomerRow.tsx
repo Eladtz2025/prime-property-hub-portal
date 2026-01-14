@@ -19,8 +19,8 @@ import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
-import { CitySelectorCompact } from "@/components/ui/city-selector";
-import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
+import { CitySelectorDropdown } from "@/components/ui/city-selector";
+import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 
 interface Agent {
   id: string;
@@ -285,6 +285,14 @@ export const ExpandableCustomerRow = ({
       const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
       const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
 
+      // Check if location preferences changed
+      const citiesChanged = JSON.stringify(formData.preferred_cities?.sort()) !== JSON.stringify(customer.preferred_cities?.sort());
+      const neighborhoodsChanged = JSON.stringify(formData.preferred_neighborhoods?.sort()) !== JSON.stringify(customer.preferred_neighborhoods?.sort());
+      const preferencesChanged = citiesChanged || neighborhoodsChanged || 
+        formData.budget_min !== customer.budget_min || formData.budget_max !== customer.budget_max ||
+        formData.rooms_min !== customer.rooms_min || formData.rooms_max !== customer.rooms_max ||
+        formData.property_type !== customer.property_type;
+
       const { error } = await supabase
         .from('contact_leads')
         .update({
@@ -324,7 +332,21 @@ export const ExpandableCustomerRow = ({
 
       if (error) throw error;
 
-      toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו' });
+      // Re-run matching if preferences changed
+      if (preferencesChanged) {
+        try {
+          await supabase.functions.invoke('match-scouted-to-leads', {
+            body: { lead_id: customer.id, send_whatsapp: false }
+          });
+          toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו וההתאמות חושבו מחדש' });
+        } catch (matchError) {
+          console.error('Error re-matching:', matchError);
+          toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו (שגיאה בחישוב התאמות)' });
+        }
+      } else {
+        toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח עודכנו' });
+      }
+      
       onSave();
       onToggleExpand();
     } catch (error) {
@@ -603,14 +625,14 @@ export const ExpandableCustomerRow = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">ערים מועדפות</Label>
-                    <CitySelectorCompact
+                    <CitySelectorDropdown
                       selectedCities={formData.preferred_cities || []}
                       onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
                     />
                   </div>
                   <div>
                     <Label className="text-xs">שכונות מועדפות</Label>
-                    <NeighborhoodSelectorCompact
+                    <NeighborhoodSelectorDropdown
                       selectedCities={formData.preferred_cities || []}
                       selectedNeighborhoods={formData.preferred_neighborhoods || []}
                       onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}

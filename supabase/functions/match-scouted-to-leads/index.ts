@@ -61,8 +61,79 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { property_id, send_whatsapp = true, run_id } = await req.json();
+    const { property_id, lead_id, send_whatsapp = true, run_id } = await req.json();
 
+    // If lead_id is provided, re-match this specific lead against all relevant properties
+    if (lead_id) {
+      console.log(`Re-matching lead ${lead_id}`);
+      
+      // Get the specific lead
+      const { data: lead, error: leadError } = await supabase
+        .from('contact_leads')
+        .select('*')
+        .eq('id', lead_id)
+        .single();
+
+      if (leadError || !lead) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Lead not found'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Get all properties that could potentially match (new or matched)
+      const { data: properties, error: propError } = await supabase
+        .from('scouted_properties')
+        .select('*')
+        .in('status', ['new', 'matched']);
+
+      if (propError) throw propError;
+
+      let updatedCount = 0;
+
+      for (const property of properties || []) {
+        const matchResult = calculateMatch(property, lead);
+        const currentMatches = property.matched_leads || [];
+        
+        // Remove this lead from current matches
+        const filteredMatches = currentMatches.filter((m: any) => m.lead_id !== lead_id);
+        
+        // Add back if score is high enough
+        if (matchResult.matchScore >= 60) {
+          filteredMatches.push({
+            lead_id: lead.id,
+            name: lead.name,
+            phone: lead.phone,
+            score: matchResult.matchScore,
+            reasons: matchResult.matchReasons
+          });
+          updatedCount++;
+        }
+
+        // Update property with new matches
+        await supabase
+          .from('scouted_properties')
+          .update({
+            matched_leads: filteredMatches,
+            status: filteredMatches.length > 0 ? 'matched' : property.status
+          })
+          .eq('id', property.id);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        lead_id,
+        properties_checked: properties?.length || 0,
+        matches_updated: updatedCount
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Original logic: match new properties to all active leads
     // Get new properties to match
     let query = supabase
       .from('scouted_properties')
