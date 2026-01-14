@@ -77,9 +77,23 @@ const priorityLabels: Record<string, string> = {
 };
 
 const propertyTypeLabels: Record<string, string> = {
-  rental: 'שכירות',
+  rental: 'השכרה',
   sale: 'מכירה',
   both: 'שניהם',
+  // Legacy values for backwards compatibility
+  rent: 'השכרה',
+  purchase: 'מכירה',
+  RENT: 'השכרה',
+  SALE: 'מכירה',
+};
+
+// Normalize property_type to standard values
+const normalizePropertyType = (type: string | null | undefined): string | null => {
+  if (!type) return null;
+  const lower = type.toLowerCase();
+  if (lower === 'rent') return 'rental';
+  if (lower === 'purchase') return 'sale';
+  return type;
 };
 
 const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) => {
@@ -221,7 +235,10 @@ export const ExpandableCustomerRow = ({
   agents = [],
 }: ExpandableCustomerRowProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<Customer>>(customer);
+  const [formData, setFormData] = useState<Partial<Customer>>(() => ({
+    ...customer,
+    property_type: normalizePropertyType(customer.property_type) || customer.property_type,
+  }));
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
@@ -282,16 +299,22 @@ export const ExpandableCustomerRow = ({
     
     setLoading(true);
     try {
-      const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
-      const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
+      // Normalize property_type before save
+      const normalizedPropertyType = normalizePropertyType(formData.property_type);
+      const isRental = normalizedPropertyType === 'rental' || normalizedPropertyType === 'both';
+      const isSale = normalizedPropertyType === 'sale' || normalizedPropertyType === 'both';
 
-      // Check if location preferences changed
+      // Check if any matching-related preferences changed
       const citiesChanged = JSON.stringify(formData.preferred_cities?.sort()) !== JSON.stringify(customer.preferred_cities?.sort());
       const neighborhoodsChanged = JSON.stringify(formData.preferred_neighborhoods?.sort()) !== JSON.stringify(customer.preferred_neighborhoods?.sort());
       const preferencesChanged = citiesChanged || neighborhoodsChanged || 
         formData.budget_min !== customer.budget_min || formData.budget_max !== customer.budget_max ||
         formData.rooms_min !== customer.rooms_min || formData.rooms_max !== customer.rooms_max ||
-        formData.property_type !== customer.property_type;
+        normalizedPropertyType !== normalizePropertyType(customer.property_type) ||
+        formData.parking_required !== customer.parking_required ||
+        formData.elevator_required !== customer.elevator_required ||
+        formData.balcony_required !== customer.balcony_required ||
+        formData.pets !== customer.pets;
 
       const { error } = await supabase
         .from('contact_leads')
@@ -308,7 +331,7 @@ export const ExpandableCustomerRow = ({
           rooms_max: formData.rooms_max,
           preferred_cities: formData.preferred_cities,
           preferred_neighborhoods: formData.preferred_neighborhoods,
-          property_type: formData.property_type,
+          property_type: normalizedPropertyType,
           move_in_date: formData.move_in_date,
           notes: formData.notes,
           next_followup_date: formData.next_followup_date,
