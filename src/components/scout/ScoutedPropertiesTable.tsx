@@ -93,26 +93,33 @@ export const ScoutedPropertiesTable: React.FC = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // Last scan results
-      const { data: lastRun } = await supabase
+      // Last scan results - aggregate all runs from the last batch (within 5 minutes of each other)
+      const { data: lastRuns } = await supabase
         .from('scout_runs')
-        .select('started_at')
+        .select('source, properties_found, new_properties, completed_at')
         .eq('status', 'completed')
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('completed_at', { ascending: false })
+        .limit(20); // Get enough to cover a batch
 
       let lastScanBySources: Record<string, number> = { yad2: 0, homeless: 0, madlan: 0 };
-      if (lastRun?.started_at) {
-        const { data: lastScanData } = await supabase
-          .from('scouted_properties')
-          .select('source')
-          .gte('last_seen_at', lastRun.started_at);
+      
+      if (lastRuns && lastRuns.length > 0) {
+        // Find the latest completion time
+        const latestCompletedAt = new Date(lastRuns[0].completed_at);
         
-        lastScanBySources = lastScanData?.reduce((acc, item) => {
-          acc[item.source] = (acc[item.source] || 0) + 1;
+        // Get all runs that completed within 5 minutes of the latest
+        const batchWindowStart = new Date(latestCompletedAt.getTime() - 5 * 60 * 1000);
+        
+        const batchRuns = lastRuns.filter(run => 
+          new Date(run.completed_at) >= batchWindowStart
+        );
+        
+        // Aggregate by source
+        lastScanBySources = batchRuns.reduce((acc, run) => {
+          const source = run.source || 'other';
+          acc[source] = (acc[source] || 0) + (run.properties_found || 0);
           return acc;
-        }, { yad2: 0, homeless: 0, madlan: 0 } as Record<string, number>) || { yad2: 0, homeless: 0, madlan: 0 };
+        }, { yad2: 0, homeless: 0, madlan: 0 } as Record<string, number>);
       }
 
       // Inactive count

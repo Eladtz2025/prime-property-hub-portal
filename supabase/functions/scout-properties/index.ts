@@ -129,39 +129,27 @@ serve(async (req) => {
   const { data: stuckRuns } = await supabase
     .from('scout_runs')
     .update({
-      status: 'completed', // Mark as completed with properties found so far (not failed)
-      error_message: 'Timeout - completed with partial results',
+      status: 'failed',
+      error_message: 'Timeout - scan took longer than 10 minutes and was automatically stopped',
       completed_at: new Date().toISOString()
     })
     .eq('status', 'running')
     .lt('started_at', tenMinutesAgo)
-    .select('id, properties_found');
+    .select('id, properties_found, source');
   
   if (stuckRuns?.length) {
-    console.log(`Cleaned up ${stuckRuns.length} stuck runs (marked as completed with partial results)`);
+    console.log(`Cleaned up ${stuckRuns.length} stuck runs:`, stuckRuns.map(r => `${r.id} (${r.source})`).join(', '));
   }
 
   let runId: string | undefined;
+  let currentRunSource: string = 'manual';
 
   try {
     const { config_id, manual_url, source, page } = await req.json();
 
-    // Create a run record
-    const { data: runData, error: runError } = await supabase
-      .from('scout_runs')
-      .insert({
-        config_id: config_id || null,
-        source: source || 'manual',
-        status: 'running'
-      })
-      .select()
-      .single();
+    // Set initial source from request
+    currentRunSource = source || 'manual';
 
-    if (runError) {
-      console.error('Failed to create run record:', runError);
-    }
-
-    runId = runData?.id;
 
     let configs: ScoutConfig[] = [];
 
@@ -222,12 +210,32 @@ serve(async (req) => {
     for (const config of configs) {
       console.log(`Processing config: ${config.name}${page !== undefined ? ` (page ${page} only)` : ''}`);
 
+      // Create a run record for this config with the correct source
+      currentRunSource = config.source || 'manual';
+      const { data: runData, error: runError } = await supabase
+        .from('scout_runs')
+        .insert({
+          config_id: config.id !== 'manual' ? config.id : null,
+          source: currentRunSource,
+          status: 'running'
+        })
+        .select()
+        .single();
+
+      if (runError) {
+        console.error('Failed to create run record:', runError);
+      }
+      runId = runData?.id;
+      console.log(`Created run record: ${runId} for source: ${currentRunSource}`);
+
       // Build search URLs - if specific page provided, build URL for that page only
       const urls = page !== undefined 
         ? buildSinglePageUrl(config, page)
         : buildSearchUrls(config);
 
       const maxPropertiesPerConfig = 500; // Increased from 100 to handle more pages
+      let configPropertiesFound = 0;
+      let configNewProperties = 0;
       
       for (let urlIndex = 0; urlIndex < urls.length; urlIndex++) {
         const url = urls[urlIndex];
@@ -326,6 +334,7 @@ serve(async (req) => {
 
               if (!insertError) {
                 totalNewProperties++;
+                configNewProperties++;
               } else {
                 console.error('Insert error:', insertError);
               }
@@ -333,15 +342,16 @@ serve(async (req) => {
           }
           
           totalPropertiesFound += extractedProperties.length;
-          console.log(`Saved ${extractedProperties.length} properties. Total so far: ${totalPropertiesFound} found, ${totalNewProperties} new`);
+          configPropertiesFound += extractedProperties.length;
+          console.log(`Saved ${extractedProperties.length} properties. Config total: ${configPropertiesFound} found, ${configNewProperties} new`);
 
-          // Update scout_runs incrementally after each page
+          // Update scout_runs incrementally after each page with per-config counts
           if (runId) {
             await supabase
               .from('scout_runs')
               .update({
-                properties_found: totalPropertiesFound,
-                new_properties: totalNewProperties
+                properties_found: configPropertiesFound,
+                new_properties: configNewProperties
               })
               .eq('id', runId);
           }
@@ -352,6 +362,20 @@ serve(async (req) => {
         }
       }
 
+      // Complete this config's run record
+      if (runId) {
+        await supabase
+          .from('scout_runs')
+          .update({
+            status: 'completed',
+            properties_found: configPropertiesFound,
+            new_properties: configNewProperties,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', runId);
+        console.log(`Completed run ${runId}: ${configPropertiesFound} found, ${configNewProperties} new`);
+      }
+
       // Update config last run
       if (config.id !== 'manual') {
         await supabase
@@ -359,24 +383,13 @@ serve(async (req) => {
           .update({
             last_run_at: new Date().toISOString(),
             last_run_status: 'completed',
-            last_run_results: { properties_found: totalPropertiesFound }
+            last_run_results: { properties_found: configPropertiesFound }
           })
           .eq('id', config.id);
       }
     }
 
-    // Update run record
-    if (runId) {
-      await supabase
-        .from('scout_runs')
-        .update({
-          status: 'completed',
-          properties_found: totalPropertiesFound,
-          new_properties: totalNewProperties,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', runId);
-    }
+    // Run records are now completed per-config, no need for final update here
 
     // Trigger lead matching if new properties were found (fire and forget)
     if (totalNewProperties > 0) {
