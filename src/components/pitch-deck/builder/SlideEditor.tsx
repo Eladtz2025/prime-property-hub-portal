@@ -5,16 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Upload, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
+import BackgroundImagePicker from './BackgroundImagePicker';
 
 interface SlideEditorProps {
   slide: PitchDeckSlide;
   language: 'he' | 'en';
+  propertyId?: string;
   onUpdate: (updates: Partial<PitchDeckSlide>) => void;
   onClose: () => void;
 }
 
-const SlideEditor = ({ slide, language, onUpdate, onClose }: SlideEditorProps) => {
+const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEditorProps) => {
   const [slideData, setSlideData] = useState<Record<string, unknown>>(slide.slide_data as Record<string, unknown>);
   const [backgroundImage, setBackgroundImage] = useState(slide.background_image || '');
 
@@ -496,15 +498,11 @@ const SlideEditor = ({ slide, language, onUpdate, onClose }: SlideEditorProps) =
       </CardHeader>
       <CardContent className="space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
         {/* Background Image */}
-        <div className="space-y-2">
-          <Label>תמונת רקע (URL)</Label>
-          <Input
-            value={backgroundImage}
-            onChange={(e) => handleBackgroundChange(e.target.value)}
-            placeholder="/images/..."
-            dir="ltr"
-          />
-        </div>
+        <BackgroundImagePicker
+          propertyId={propertyId}
+          value={backgroundImage}
+          onChange={handleBackgroundChange}
+        />
         
         {/* Dynamic Fields */}
         {renderFields()}
