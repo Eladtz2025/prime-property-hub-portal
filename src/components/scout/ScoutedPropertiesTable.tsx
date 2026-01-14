@@ -63,9 +63,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
   const [minBudget, setMinBudget] = useState<string>('');
   const [maxBudget, setMaxBudget] = useState<string>('');
-  const [cityFilter, setCityFilter] = useState<string>('all');
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all');
   const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
+  
+  // Applied filters state - data only loads when this is set (after search click)
+  const [appliedFilters, setAppliedFilters] = useState<{
+    rooms: string;
+    minBudget: string;
+    maxBudget: string;
+    neighborhood: string;
+    features: string[];
+    status: string;
+    source: string;
+  } | null>(null);
 
   // Statistics query
   const { data: stats } = useQuery({
@@ -159,90 +169,78 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
-  // Fetch distinct cities
-  const { data: cities } = useQuery({
-    queryKey: ['scouted-properties-cities'],
+  // Fetch neighborhoods - only Tel Aviv
+  const { data: neighborhoods } = useQuery({
+    queryKey: ['scouted-properties-neighborhoods-tel-aviv'],
     queryFn: async () => {
       const { data } = await supabase
         .from('scouted_properties')
-        .select('city')
-        .not('city', 'is', null);
-      const uniqueCities = [...new Set(data?.map(d => d.city).filter(Boolean))].sort() as string[];
-      return uniqueCities;
-    }
-  });
-
-  // Fetch neighborhoods based on selected city
-  const { data: neighborhoods } = useQuery({
-    queryKey: ['scouted-properties-neighborhoods', cityFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from('scouted_properties')
         .select('neighborhood')
-        .not('neighborhood', 'is', null);
+        .not('neighborhood', 'is', null)
+        .ilike('city', '%תל אביב%');
       
-      if (cityFilter !== 'all') {
-        query = query.eq('city', cityFilter);
-      }
-      
-      const { data } = await query;
       const uniqueNeighborhoods = [...new Set(data?.map(d => d.neighborhood).filter(Boolean))].sort() as string[];
       return uniqueNeighborhoods;
     }
   });
 
-  // Build query filters helper
-  const applyFilters = (query: any) => {
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter);
+  // Build query filters helper - uses appliedFilters
+  const applyFilters = (query: any, filters: NonNullable<typeof appliedFilters>) => {
+    // Always filter for Tel Aviv
+    query = query.ilike('city', '%תל אביב%');
+    
+    if (filters.status !== 'all') {
+      query = query.eq('status', filters.status);
     }
-    if (sourceFilter !== 'all') {
-      query = query.eq('source', sourceFilter);
+    if (filters.source !== 'all') {
+      query = query.eq('source', filters.source);
     }
-    if (roomsFilter !== 'all') {
-      if (roomsFilter === '5+') {
+    if (filters.rooms !== 'all') {
+      if (filters.rooms === '5+') {
         query = query.gte('rooms', 5);
-      } else if (roomsFilter === '6+') {
+      } else if (filters.rooms === '6+') {
         query = query.gte('rooms', 6);
       } else {
-        query = query.eq('rooms', parseFloat(roomsFilter));
+        query = query.eq('rooms', parseFloat(filters.rooms));
       }
     }
-    if (minBudget) {
-      query = query.gte('price', parseInt(minBudget));
+    if (filters.minBudget) {
+      query = query.gte('price', parseInt(filters.minBudget));
     }
-    if (maxBudget) {
-      query = query.lte('price', parseInt(maxBudget));
+    if (filters.maxBudget) {
+      query = query.lte('price', parseInt(filters.maxBudget));
     }
-    if (cityFilter !== 'all') {
-      query = query.eq('city', cityFilter);
-    }
-    if (neighborhoodFilter !== 'all') {
+    if (filters.neighborhood !== 'all') {
       // Use ilike for partial matching to include sub-neighborhoods
-      query = query.ilike('neighborhood', `%${neighborhoodFilter}%`);
+      query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
     }
     // Note: features filter requires special handling since it's JSONB
     return query;
   };
 
-  // Total count for pagination
+  // Total count for pagination - only runs when appliedFilters is set
   const { data: totalCount } = useQuery({
-    queryKey: ['scouted-properties-count', statusFilter, sourceFilter, roomsFilter, minBudget, maxBudget, cityFilter, neighborhoodFilter, featuresFilter],
+    queryKey: ['scouted-properties-count', appliedFilters],
     queryFn: async () => {
+      if (!appliedFilters) return 0;
+      
       let query = supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true });
 
-      query = applyFilters(query);
+      query = applyFilters(query, appliedFilters);
 
       const { count } = await query;
       return count || 0;
-    }
+    },
+    enabled: appliedFilters !== null
   });
 
   const { data: properties, isLoading } = useQuery({
-    queryKey: ['scouted-properties', statusFilter, sourceFilter, roomsFilter, minBudget, maxBudget, cityFilter, neighborhoodFilter, featuresFilter, currentPage],
+    queryKey: ['scouted-properties', appliedFilters, currentPage],
     queryFn: async () => {
+      if (!appliedFilters) return [];
+      
       const from = (currentPage - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -252,22 +250,23 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .order('first_seen_at', { ascending: false })
         .range(from, to);
 
-      query = applyFilters(query);
+      query = applyFilters(query, appliedFilters);
 
       const { data, error } = await query;
       if (error) throw error;
       
       // Filter features client-side (JSONB containment query is complex)
       let filtered = data as ScoutedProperty[];
-      if (featuresFilter.length > 0) {
+      if (appliedFilters.features.length > 0) {
         filtered = filtered.filter(p => {
           if (!p.features) return false;
-          return featuresFilter.every(f => p.features?.[f] === true);
+          return appliedFilters.features.every(f => p.features?.[f] === true);
         });
       }
       
       return filtered;
-    }
+    },
+    enabled: appliedFilters !== null
   });
 
   const archiveMutation = useMutation({
@@ -427,17 +426,18 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   };
 
-  // Reset to page 1 when filters change
-  const handleFilterChange = (setter: (value: string) => void) => (value: string) => {
+  // Handle search button click
+  const handleSearch = () => {
     setCurrentPage(1);
-    setter(value);
-  };
-
-  // Reset neighborhood when city changes
-  const handleCityChange = (value: string) => {
-    setCurrentPage(1);
-    setCityFilter(value);
-    setNeighborhoodFilter('all'); // Reset neighborhood when city changes
+    setAppliedFilters({
+      rooms: roomsFilter,
+      minBudget,
+      maxBudget,
+      neighborhood: neighborhoodFilter,
+      features: featuresFilter,
+      status: statusFilter,
+      source: sourceFilter
+    });
   };
 
   // Toggle feature filter
@@ -459,19 +459,18 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setRoomsFilter('all');
     setMinBudget('');
     setMaxBudget('');
-    setCityFilter('all');
     setNeighborhoodFilter('all');
     setFeaturesFilter([]);
+    setAppliedFilters(null);
   };
 
   // Check if any filters are active
   const hasActiveFilters = statusFilter !== 'all' || sourceFilter !== 'all' || 
     roomsFilter !== 'all' || minBudget !== '' || maxBudget !== '' ||
-    cityFilter !== 'all' || neighborhoodFilter !== 'all' || featuresFilter.length > 0;
+    neighborhoodFilter !== 'all' || featuresFilter.length > 0;
 
-  if (isLoading && !properties) {
-    return <div className="text-center py-8">טוען...</div>;
-  }
+  // Show empty state if no search has been performed yet
+  const showEmptyState = appliedFilters === null;
 
   return (
     <>
@@ -564,7 +563,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </div>
             </div>
             
-            <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="סטטוס" />
               </SelectTrigger>
@@ -578,7 +577,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
-            <Select value={sourceFilter} onValueChange={handleFilterChange(setSourceFilter)}>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="מקור" />
               </SelectTrigger>
@@ -592,9 +591,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
             </Select>
           </div>
 
-          {/* Row 2: Rooms + Budget + City + Neighborhood + Features */}
+          {/* Row 2: Rooms + Budget + Neighborhood + Features + Search */}
           <div className="flex flex-wrap gap-3 mt-3">
-            <Select value={roomsFilter} onValueChange={handleFilterChange(setRoomsFilter)}>
+            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
               <SelectTrigger className="w-[110px]">
                 <SelectValue placeholder="חדרים" />
               </SelectTrigger>
@@ -611,42 +610,24 @@ export const ScoutedPropertiesTable: React.FC = () => {
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="מחיר מינ'"
+                placeholder="ממחיר"
                 value={minBudget}
-                onChange={(e) => {
-                  setCurrentPage(1);
-                  setMinBudget(e.target.value);
-                }}
+                onChange={(e) => setMinBudget(e.target.value)}
                 className="w-[100px]"
               />
               <span className="text-muted-foreground">-</span>
               <Input
                 type="number"
-                placeholder="מחיר מקס'"
+                placeholder="עד מחיר"
                 value={maxBudget}
-                onChange={(e) => {
-                  setCurrentPage(1);
-                  setMaxBudget(e.target.value);
-                }}
+                onChange={(e) => setMaxBudget(e.target.value)}
                 className="w-[100px]"
               />
             </div>
 
-            <Select value={cityFilter} onValueChange={handleCityChange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="עיר" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הערים</SelectItem>
-                {cities?.map(city => (
-                  <SelectItem key={city} value={city}>{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={neighborhoodFilter} onValueChange={handleFilterChange(setNeighborhoodFilter)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="שכונה" />
+            <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="שכונה בתל אביב" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל השכונות</SelectItem>
@@ -685,6 +666,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 </div>
               </PopoverContent>
             </Popover>
+
+            <Button onClick={handleSearch} className="gap-2">
+              <Search className="h-4 w-4" />
+              חפש
+            </Button>
           </div>
         </CardHeader>
 
@@ -705,7 +691,27 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProperties?.map((property) => (
+                {showEmptyState ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                      <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-1">בחר פילטרים ולחץ "חפש"</p>
+                      <p className="text-sm">הדירות יוצגו לאחר החיפוש</p>
+                    </TableCell>
+                  </TableRow>
+                ) : isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      טוען...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredProperties?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      לא נמצאו דירות התואמות את החיפוש
+                    </TableCell>
+                  </TableRow>
+                ) : filteredProperties?.map((property) => (
                   <TableRow key={property.id} className={property.is_active === false ? 'opacity-60' : ''}>
                     <TableCell>
                       <div className="flex flex-col gap-1">
@@ -842,14 +848,6 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                
-                {(!filteredProperties || filteredProperties.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      לא נמצאו דירות
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>
