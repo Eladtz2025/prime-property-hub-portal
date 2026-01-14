@@ -106,7 +106,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
         const { data: lastScanData } = await supabase
           .from('scouted_properties')
           .select('source')
-          .gte('first_seen_at', lastRun.started_at);
+          .gte('last_seen_at', lastRun.started_at);
         
         lastScanBySources = lastScanData?.reduce((acc, item) => {
           acc[item.source] = (acc[item.source] || 0) + 1;
