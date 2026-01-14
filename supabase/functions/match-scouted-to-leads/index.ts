@@ -50,11 +50,11 @@ serve(async (req) => {
         });
       }
 
-      // Get all properties that could potentially match (new or matched)
+      // Get all active properties for matching
       const { data: properties, error: propError } = await supabase
         .from('scouted_properties')
         .select('*')
-        .in('status', ['new', 'matched']);
+        .eq('is_active', true);
 
       if (propError) throw propError;
 
@@ -99,12 +99,11 @@ serve(async (req) => {
       });
     }
 
-    // Original logic: match new properties to all active leads
-    // Get new properties to match
+    // Match all active properties to all active leads
     let query = supabase
       .from('scouted_properties')
       .select('*')
-      .eq('status', 'new');
+      .eq('is_active', true);
 
     if (property_id) {
       query = query.eq('id', property_id);
