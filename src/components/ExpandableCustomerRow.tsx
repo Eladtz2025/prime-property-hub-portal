@@ -686,9 +686,32 @@ export const ExpandableCustomerRow = ({
       >
         <TableCell className="font-medium text-right">
           <div className="flex items-center gap-2">
+            {/* WhatsApp button next to name */}
+            {customer.phone && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-6 w-6 p-0 text-green-600 hover:text-green-700" 
+                onClick={handleWhatsApp} 
+                title="WhatsApp"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            )}
             <div>
               <div className="flex items-center gap-2">
-                {customer.name}
+                {/* Name as clickable blue link for calling */}
+                {customer.phone ? (
+                  <a 
+                    href={`tel:${customer.phone}`}
+                    className="font-medium text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {customer.name}
+                  </a>
+                ) : (
+                  <span className="font-medium text-sm">{customer.name}</span>
+                )}
                 {customerMissingFields.length > 0 && (
                   <TooltipProvider>
                     <Tooltip>
@@ -712,9 +735,6 @@ export const ExpandableCustomerRow = ({
           </div>
         </TableCell>
         <TableCell className="text-right">
-          {customer.phone ? formatIsraeliPhone(customer.phone) : '-'}
-        </TableCell>
-        <TableCell className="text-right">
           {customer.property_type ? (
             <Badge variant="outline" className="gap-1">
               {customer.property_type === 'rental' ? (
@@ -729,32 +749,6 @@ export const ExpandableCustomerRow = ({
           ) : (
             <span className="text-muted-foreground text-sm">-</span>
           )}
-        </TableCell>
-        <TableCell className="text-right">
-          <span className="text-sm font-medium">
-            {formatBudget(customer.budget_min, customer.budget_max)}
-          </span>
-        </TableCell>
-        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-          <Select 
-            value={customer.status} 
-            onValueChange={(value) => onUpdateStatus(customer.id, value)}
-          >
-            <SelectTrigger className="h-7 text-xs w-[100px] border-0 bg-transparent p-0">
-              <Badge className={`${statusColors[customer.status]} text-xs`}>
-                {statusLabels[customer.status]}
-              </Badge>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">חדש</SelectItem>
-              <SelectItem value="contacted">נוצר קשר</SelectItem>
-              <SelectItem value="active">פעיל</SelectItem>
-              <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
-              <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
-              <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
-              <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
-            </SelectContent>
-          </Select>
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
           <Select 
@@ -773,30 +767,6 @@ export const ExpandableCustomerRow = ({
               <SelectItem value="urgent">דחוף</SelectItem>
             </SelectContent>
           </Select>
-        </TableCell>
-        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-          {onAssignAgent && agents.length > 0 ? (
-            <Select 
-              value={customer.assigned_agent_id || "none"} 
-              onValueChange={(value) => onAssignAgent(customer.id, value === "none" ? null : value)}
-            >
-              <SelectTrigger className="h-7 text-xs w-[100px]">
-                <SelectValue placeholder="בחר" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-</SelectItem>
-                {agents.map(agent => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.full_name || agent.email.split('@')[0]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <span className="text-muted-foreground text-sm">
-              {assignedAgent?.full_name || assignedAgent?.email.split('@')[0] || '-'}
-            </span>
-          )}
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
@@ -836,16 +806,6 @@ export const ExpandableCustomerRow = ({
         </TableCell>
         <TableCell>
           <div className="flex gap-1 items-center">
-            {customer.phone && (
-              <>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={handleCall} title="התקשר">
-                  <Phone className="h-3 w-3" />
-                </Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-green-600 hover:text-green-700" onClick={handleWhatsApp} title="WhatsApp">
-                  <MessageSquare className="h-3 w-3" />
-                </Button>
-              </>
-            )}
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}>
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
@@ -855,7 +815,7 @@ export const ExpandableCustomerRow = ({
 
       {/* Expanded Edit Section */}
       <TableRow className={isExpanded ? '' : 'hidden'}>
-        <TableCell colSpan={10} className="p-0 border-0">
+        <TableCell colSpan={7} className="p-0 border-0">
           <Collapsible open={isExpanded}>
             <CollapsibleContent className="bg-muted/20 border-t">
               <div className="p-4 space-y-4">
