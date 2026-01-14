@@ -457,6 +457,7 @@ const PitchDeckBuilder = () => {
           <div className="lg:col-span-8">
             {selectedSlide ? (
               <SlideEditor
+                key={selectedSlide.id}
                 slide={selectedSlide}
                 language={language}
                 propertyId={propertyId}
