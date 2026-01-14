@@ -49,6 +49,8 @@ export interface Customer {
   roof_required: boolean | null;
   roof_flexible: boolean | null;
   outdoor_space_any: boolean | null;
+  // Pets flexibility
+  pets_flexible: boolean | null;
   // Purchase-specific fields
   purchase_purpose: string | null;
   cash_available: number | null;
