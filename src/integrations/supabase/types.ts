@@ -378,6 +378,7 @@ export type Database = {
           new_or_second_hand: string | null
           next_followup_date: string | null
           notes: string | null
+          outdoor_space_any: boolean | null
           parking_flexible: boolean | null
           parking_required: boolean | null
           pets: boolean | null
@@ -390,6 +391,8 @@ export type Database = {
           property_type: string | null
           purchase_purpose: string | null
           renovation_budget: number | null
+          roof_flexible: boolean | null
+          roof_required: boolean | null
           rooms_max: number | null
           rooms_min: number | null
           size_max: number | null
@@ -428,6 +431,7 @@ export type Database = {
           new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          outdoor_space_any?: boolean | null
           parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
@@ -440,6 +444,8 @@ export type Database = {
           property_type?: string | null
           purchase_purpose?: string | null
           renovation_budget?: number | null
+          roof_flexible?: boolean | null
+          roof_required?: boolean | null
           rooms_max?: number | null
           rooms_min?: number | null
           size_max?: number | null
@@ -478,6 +484,7 @@ export type Database = {
           new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          outdoor_space_any?: boolean | null
           parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
@@ -490,6 +497,8 @@ export type Database = {
           property_type?: string | null
           purchase_purpose?: string | null
           renovation_budget?: number | null
+          roof_flexible?: boolean | null
+          roof_required?: boolean | null
           rooms_max?: number | null
           rooms_min?: number | null
           size_max?: number | null
