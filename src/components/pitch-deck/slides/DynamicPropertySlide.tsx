@@ -13,7 +13,9 @@ import {
   Sun,
   Wind,
   Car,
-  Trees
+  Trees,
+  Maximize,
+  FileCheck
 } from 'lucide-react';
 
 interface DynamicPropertySlideProps {
@@ -50,6 +52,8 @@ const iconMap: Record<string, LucideIcon> = {
   Trees,
   home: Home,
   shield: Shield,
+  Maximize,
+  FileCheck,
 };
 
 const DynamicPropertySlide = ({ 
