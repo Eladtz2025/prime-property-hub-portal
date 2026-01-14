@@ -475,6 +475,8 @@ export const ExpandableCustomerRow = ({
           budget_max: formData.budget_max,
           rooms_min: formData.rooms_min,
           rooms_max: formData.rooms_max,
+          size_min: formData.size_min ?? null,
+          size_max: formData.size_max ?? null,
           preferred_cities: formData.preferred_cities,
           preferred_neighborhoods: formData.preferred_neighborhoods,
           property_type: normalizedPropertyType,
@@ -809,8 +811,8 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Budget, Rooms, Cities, Neighborhoods - Combined Row */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                {/* Budget, Rooms, Size, Cities, Neighborhoods - Combined Row */}
+                <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
                   <div>
                     <Label className="text-xs">תקציב מינ.</Label>
                     <Input
@@ -846,6 +848,24 @@ export const ExpandableCustomerRow = ({
                       step="0.5"
                       value={formData.rooms_max || ''}
                       onChange={(e) => setFormData({ ...formData, rooms_max: parseFloat(e.target.value) || null })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">מ"ר מינ.</Label>
+                    <Input
+                      type="number"
+                      value={formData.size_min || ''}
+                      onChange={(e) => setFormData({ ...formData, size_min: parseInt(e.target.value) || null })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">מ"ר מקס.</Label>
+                    <Input
+                      type="number"
+                      value={formData.size_max || ''}
+                      onChange={(e) => setFormData({ ...formData, size_max: parseInt(e.target.value) || null })}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -905,10 +925,12 @@ export const ExpandableCustomerRow = ({
                             <SelectValue placeholder="בחר" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="student">סטודנט</SelectItem>
-                            <SelectItem value="employee">שכיר</SelectItem>
-                            <SelectItem value="family">משפחה</SelectItem>
+                            <SelectItem value="single">יחיד/ה</SelectItem>
                             <SelectItem value="couple">זוג</SelectItem>
+                            <SelectItem value="family">משפחה</SelectItem>
+                            <SelectItem value="roommates">שותפים</SelectItem>
+                            <SelectItem value="student">סטודנט/ית</SelectItem>
+                            <SelectItem value="employee">שכיר/ה</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

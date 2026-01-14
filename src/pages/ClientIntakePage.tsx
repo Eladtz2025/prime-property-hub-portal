@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Home, Phone, Mail, Calendar, CheckCircle2, Loader2, Ruler } from 'lucide-react';
 import { z } from 'zod';
-import { CITIES } from '@/config/locations';
+
 import { CitySelector } from '@/components/ui/city-selector';
 import { NeighborhoodSelector } from '@/components/ui/neighborhood-selector';
 
@@ -34,7 +34,9 @@ const clientIntakeSchema = z.object({
   parking_required: z.boolean(),
   elevator_required: z.boolean(),
   balcony_required: z.boolean(),
+  yard_required: z.boolean(),
   pets: z.boolean(),
+  flexible_move_date: z.boolean(),
   message: z.string().optional(),
   // Rental-specific
   tenant_type: z.string().optional(),
@@ -52,6 +54,8 @@ const TENANT_TYPES = [
   { value: 'couple', label: 'זוג' },
   { value: 'family', label: 'משפחה' },
   { value: 'roommates', label: 'שותפים' },
+  { value: 'student', label: 'סטודנט/ית' },
+  { value: 'employee', label: 'שכיר/ה' },
 ];
 
 const NEW_OR_SECOND_HAND_OPTIONS = [
@@ -61,7 +65,6 @@ const NEW_OR_SECOND_HAND_OPTIONS = [
 ];
 
 export default function ClientIntakePage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -87,7 +90,9 @@ export default function ClientIntakePage() {
     parking_required: false,
     elevator_required: false,
     balcony_required: false,
+    yard_required: false,
     pets: false,
+    flexible_move_date: true,
     message: '',
     tenant_type: '',
     cash_available: undefined,
@@ -181,9 +186,16 @@ export default function ClientIntakePage() {
             preferred_cities: mergedCities.length > 0 ? mergedCities : null,
             preferred_neighborhoods: mergedNeighborhoods.length > 0 ? mergedNeighborhoods : null,
             move_in_date: formData.move_in_date || null,
+            flexible_move_date: formData.flexible_move_date ?? true,
             parking_required: formData.parking_required,
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
+            yard_required: formData.yard_required,
+            // Default flexibility flags for features from public form
+            parking_flexible: true,
+            elevator_flexible: true,
+            balcony_flexible: true,
+            yard_flexible: true,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'merged_form',
@@ -217,9 +229,16 @@ export default function ClientIntakePage() {
             preferred_cities: selectedCities.length > 0 ? selectedCities : null,
             preferred_neighborhoods: neighborhoodsArray,
             move_in_date: formData.move_in_date || null,
+            flexible_move_date: formData.flexible_move_date ?? true,
             parking_required: formData.parking_required,
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
+            yard_required: formData.yard_required,
+            // Default flexibility flags for features from public form
+            parking_flexible: true,
+            elevator_flexible: true,
+            balcony_flexible: true,
+            yard_flexible: true,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'client_form',
@@ -589,10 +608,24 @@ export default function ClientIntakePage() {
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
+                    checked={formData.yard_required}
+                    onCheckedChange={(checked) => handleInputChange('yard_required', !!checked)}
+                  />
+                  <span>חצר/גינה</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
                     checked={formData.pets}
                     onCheckedChange={(checked) => handleInputChange('pets', !!checked)}
                   />
                   <span>חיית מחמד</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={formData.flexible_move_date}
+                    onCheckedChange={(checked) => handleInputChange('flexible_move_date', !!checked)}
+                  />
+                  <span>תאריך כניסה גמיש</span>
                 </label>
               </div>
             </CardContent>
