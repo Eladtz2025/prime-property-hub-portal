@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 const PitchDeckBuilder = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const isNew = id === 'new';
+  const isNew = !id;
   
   const { data: deck, isLoading } = usePitchDeck(isNew ? undefined : id);
   const createMutation = useCreatePitchDeck();
