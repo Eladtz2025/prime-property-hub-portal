@@ -124,17 +124,17 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Clean up stuck runs older than 10 minutes at the start of each execution
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  // Clean up stuck runs older than 30 minutes at the start of each execution
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data: stuckRuns } = await supabase
     .from('scout_runs')
     .update({
       status: 'failed',
-      error_message: 'Timeout - scan took longer than 10 minutes and was automatically stopped',
+      error_message: 'Timeout - scan took longer than 30 minutes and was automatically stopped',
       completed_at: new Date().toISOString()
     })
     .eq('status', 'running')
-    .lt('started_at', tenMinutesAgo)
+    .lt('started_at', thirtyMinutesAgo)
     .select('id, properties_found, source');
   
   if (stuckRuns?.length) {
