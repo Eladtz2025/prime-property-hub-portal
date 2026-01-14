@@ -424,6 +424,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">סריקה אחרונה</p>
+                <p className="text-2xl font-bold">
+                  {(stats?.lastScanBySources?.yad2 || 0) + 
+                   (stats?.lastScanBySources?.homeless || 0) + 
+                   (stats?.lastScanBySources?.madlan || 0)}
+                </p>
                 <div className="flex gap-2 flex-wrap text-xs mt-1">
                   <span className="text-orange-600">יד2: {stats?.lastScanBySources?.yad2 || 0}</span>
                   <span className="text-purple-600">הומלס: {stats?.lastScanBySources?.homeless || 0}</span>
