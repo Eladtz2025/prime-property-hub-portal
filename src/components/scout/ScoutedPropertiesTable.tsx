@@ -218,7 +218,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
       query = query.eq('city', cityFilter);
     }
     if (neighborhoodFilter !== 'all') {
-      query = query.eq('neighborhood', neighborhoodFilter);
+      // Use ilike for partial matching to include sub-neighborhoods
+      query = query.ilike('neighborhood', `%${neighborhoodFilter}%`);
     }
     // Note: features filter requires special handling since it's JSONB
     return query;
