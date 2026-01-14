@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
 import { validateField, requiredPhoneSchema, emailSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
+import { CitySelectorCompact } from "@/components/ui/city-selector";
+import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -428,28 +430,23 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           </div>
 
           <div>
-            <Label>ערים מועדפות (הפרד בפסיקים)</Label>
-            <Input
-              value={formData.preferred_cities.join(', ')}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                preferred_cities: e.target.value.split(',').map(c => c.trim()).filter(c => c) 
-              })}
-              placeholder="תל אביב, רמת גן"
+            <Label className="mb-2 block">ערים מועדפות</Label>
+            <CitySelectorCompact
+              selectedCities={formData.preferred_cities}
+              onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
             />
           </div>
 
-          <div>
-            <Label>שכונות מועדפות (הפרד בפסיקים)</Label>
-            <Input
-              value={formData.preferred_neighborhoods.join(', ')}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                preferred_neighborhoods: e.target.value.split(',').map(n => n.trim()).filter(n => n) 
-              })}
-              placeholder="נווה צדק, פלורנטין"
-            />
-          </div>
+          {formData.preferred_cities.length > 0 && (
+            <div>
+              <Label className="mb-2 block">שכונות מועדפות</Label>
+              <NeighborhoodSelectorCompact
+                selectedCities={formData.preferred_cities}
+                selectedNeighborhoods={formData.preferred_neighborhoods}
+                onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
+              />
+            </div>
+          )}
 
           {/* Rental-specific fields */}
           {isRental && (

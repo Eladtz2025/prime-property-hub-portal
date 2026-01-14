@@ -14,6 +14,8 @@ import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
 import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
+import { CitySelectorCompact } from "@/components/ui/city-selector";
+import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
 
 interface Agent {
   id: string;
@@ -314,22 +316,23 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           </div>
 
           <div>
-            <Label>ערים מועדפות (מופרד בפסיקים)</Label>
-            <Input
-              value={formData.preferred_cities?.join(', ') || ''}
-              onChange={(e) => setFormData({ ...formData, preferred_cities: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-              placeholder="תל אביב, רמת גן, גבעתיים"
+            <Label className="mb-2 block">ערים מועדפות</Label>
+            <CitySelectorCompact
+              selectedCities={formData.preferred_cities || []}
+              onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
             />
           </div>
 
-          <div>
-            <Label>שכונות מועדפות (מופרד בפסיקים)</Label>
-            <Input
-              value={formData.preferred_neighborhoods?.join(', ') || ''}
-              onChange={(e) => setFormData({ ...formData, preferred_neighborhoods: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-              placeholder="רוטשילד, דיזנגוף, פלורנטין"
-            />
-          </div>
+          {(formData.preferred_cities?.length || 0) > 0 && (
+            <div>
+              <Label className="mb-2 block">שכונות מועדפות</Label>
+              <NeighborhoodSelectorCompact
+                selectedCities={formData.preferred_cities || []}
+                selectedNeighborhoods={formData.preferred_neighborhoods || []}
+                onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
