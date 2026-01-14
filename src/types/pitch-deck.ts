@@ -44,7 +44,8 @@ export type SlideType =
   | 'timeline'
   | 'marketing2'
   | 'about'
-  | 'contact';
+  | 'contact'
+  | 'step1_pricing';
 
 export interface PitchDeckSlide {
   id: string;
@@ -150,6 +151,21 @@ export interface ContactSlideData {
   step2_link: string;
 }
 
+export interface Step1PricingSlideData {
+  title: string;
+  subtitle: string;
+  option_a_price: string;
+  option_a_description: string;
+  option_a_months_min: number;
+  option_a_months_max: number;
+  option_b_price: string;
+  option_b_description: string;
+  option_b_months_min: number;
+  option_b_months_max: number;
+  recently_sold: Array<{ address: string; price: string; size: string }>;
+  currently_for_sale: Array<{ address: string; price: string; size: string }>;
+}
+
 export type SlideData = 
   | TitleSlideData
   | PropertySlideData
@@ -161,6 +177,7 @@ export type SlideData =
   | MarketingIISlideData
   | AboutUsSlideData
   | ContactSlideData
+  | Step1PricingSlideData
   | Record<string, unknown>;
 
 export const SLIDE_TYPE_LABELS: Record<SlideType, { he: string; en: string }> = {
@@ -174,6 +191,7 @@ export const SLIDE_TYPE_LABELS: Record<SlideType, { he: string; en: string }> = 
   marketing2: { he: 'למה אנחנו', en: 'Why Us' },
   about: { he: 'אודותינו', en: 'About Us' },
   contact: { he: 'יצירת קשר', en: 'Contact' },
+  step1_pricing: { he: 'Step 1 - תמחור', en: 'Step 1 - Pricing' },
 };
 
 export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at' | 'updated_at'>[] = [
@@ -307,5 +325,31 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
       step2_label: 'Exclusivity',
       step2_link: '/exclusivity',
     } as ContactSlideData,
+  },
+  {
+    slide_type: 'step1_pricing',
+    slide_order: 10,
+    is_visible: true,
+    slide_data: {
+      title: 'אסטרטגיית תמחור',
+      subtitle: 'ניתוח שוק ומיצוב מומלץ',
+      option_a_price: '₪4,250,000',
+      option_a_description: 'מחיר פרימיום למיקום וחידוש',
+      option_a_months_min: 7,
+      option_a_months_max: 11,
+      option_b_price: '₪3,950,000',
+      option_b_description: 'מחיר תחרותי למכירה מהירה',
+      option_b_months_min: 3,
+      option_b_months_max: 5,
+      recently_sold: [
+        { address: 'Ben Yehuda 98', price: '₪4.1M', size: '60 sqm' },
+        { address: 'Dizengoff 145', price: '₪3.8M', size: '55 sqm' },
+        { address: 'Ben Yehuda 122', price: '₪4.3M', size: '65 sqm' },
+      ],
+      currently_for_sale: [
+        { address: 'Ben Yehuda 95', price: '₪4.4M', size: '62 sqm' },
+        { address: 'Dizengoff 130', price: '₪4.0M', size: '58 sqm' },
+      ],
+    } as Step1PricingSlideData,
   },
 ];

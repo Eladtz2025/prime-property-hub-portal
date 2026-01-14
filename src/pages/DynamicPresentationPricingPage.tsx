@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Clock, ExternalLink, Loader2 } from "lucide-react";
 import cityMarketLogo from "@/assets/city-market-icon.png";
 import { usePitchDeckBySlug } from "@/hooks/usePitchDecks";
+import { Step1PricingSlideData } from "@/types/pitch-deck";
 
 const DynamicPresentationPricingPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -48,14 +49,18 @@ const DynamicPresentationPricingPage = () => {
   const t = translations[language];
   const isRTL = language === 'he';
 
-  // Sample data - in a real scenario, this could come from the pitch deck or another data source
-  const recentlySoldProperties = [
+  // Get pricing data from the step1_pricing slide
+  const step1Slide = deck?.slides?.find(s => s.slide_type === 'step1_pricing');
+  const pricingData = step1Slide?.slide_data as Step1PricingSlideData | undefined;
+
+  // Fallback values if slide data doesn't exist
+  const recentlySoldProperties = pricingData?.recently_sold || [
     { address: "Ben Yehuda 98", price: "₪4.1M", size: "60 sqm" },
     { address: "Dizengoff 145", price: "₪3.8M", size: "55 sqm" },
     { address: "Ben Yehuda 122", price: "₪4.3M", size: "65 sqm" },
   ];
 
-  const currentlyForSaleProperties = [
+  const currentlyForSaleProperties = pricingData?.currently_for_sale || [
     { address: "Ben Yehuda 95", price: "₪4.4M", size: "62 sqm" },
     { address: "Dizengoff 130", price: "₪4.0M", size: "58 sqm" },
   ];
@@ -148,13 +153,13 @@ const DynamicPresentationPricingPage = () => {
             className="text-3xl md:text-5xl font-serif font-light text-white mb-2 text-center"
             style={{ textShadow: softShadow }}
           >
-            {t.title}
+            {pricingData?.title || t.title}
           </h1>
           <p 
             className="text-white/80 text-sm md:text-lg mb-1 text-center"
             style={{ textShadow: softShadow }}
           >
-            {t.subtitle}
+            {pricingData?.subtitle || t.subtitle}
           </p>
           <p 
             className="text-[#f5c242] text-sm md:text-base mb-4 text-center"
@@ -180,19 +185,19 @@ const DynamicPresentationPricingPage = () => {
                 className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
                 style={{ textShadow: softShadow }}
               >
-                ₪4,250,000
+                {pricingData?.option_a_price || '₪4,250,000'}
               </p>
               <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
               <p 
                 className="text-white/80 text-sm md:text-base mb-4"
                 style={{ textShadow: softShadow }}
               >
-                {t.premiumDesc}
+                {pricingData?.option_a_description || t.premiumDesc}
               </p>
               <div className="flex items-center justify-center gap-2 text-[#f5c242]">
                 <Clock className="w-4 h-4" />
                 <span className="text-sm md:text-base">
-                  7-11 {t.months}
+                  {pricingData?.option_a_months_min || 7}-{pricingData?.option_a_months_max || 11} {t.months}
                 </span>
               </div>
               <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>
@@ -210,19 +215,19 @@ const DynamicPresentationPricingPage = () => {
                 className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
                 style={{ textShadow: softShadow }}
               >
-                ₪3,950,000
+                {pricingData?.option_b_price || '₪3,950,000'}
               </p>
               <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
               <p 
                 className="text-white/80 text-sm md:text-base mb-4"
                 style={{ textShadow: softShadow }}
               >
-                {t.competitiveDesc}
+                {pricingData?.option_b_description || t.competitiveDesc}
               </p>
               <div className="flex items-center justify-center gap-2 text-[#f5c242]">
                 <Clock className="w-4 h-4" />
                 <span className="text-sm md:text-base">
-                  3-5 {t.months}
+                  {pricingData?.option_b_months_min || 3}-{pricingData?.option_b_months_max || 5} {t.months}
                 </span>
               </div>
               <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>

@@ -1052,6 +1052,210 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
           </>
         );
 
+      case 'step1_pricing':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>כותרת משנה</Label>
+              <Input
+                value={(slideData.subtitle as string) || ''}
+                onChange={(e) => handleDataChange('subtitle', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            {/* Option A */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+              <h4 className="font-medium text-sm">אופציה א׳ (פרימיום)</h4>
+              <div className="space-y-2">
+                <Label>מחיר</Label>
+                <Input
+                  value={(slideData.option_a_price as string) || ''}
+                  onChange={(e) => handleDataChange('option_a_price', e.target.value)}
+                  placeholder="₪4,250,000"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>תיאור</Label>
+                <Input
+                  value={(slideData.option_a_description as string) || ''}
+                  onChange={(e) => handleDataChange('option_a_description', e.target.value)}
+                  dir="auto"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label>חודשים (מינ׳)</Label>
+                  <Input
+                    type="number"
+                    value={(slideData.option_a_months_min as number) || 0}
+                    onChange={(e) => handleDataChange('option_a_months_min', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>חודשים (מקס׳)</Label>
+                  <Input
+                    type="number"
+                    value={(slideData.option_a_months_max as number) || 0}
+                    onChange={(e) => handleDataChange('option_a_months_max', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Option B */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+              <h4 className="font-medium text-sm">אופציה ב׳ (תחרותי)</h4>
+              <div className="space-y-2">
+                <Label>מחיר</Label>
+                <Input
+                  value={(slideData.option_b_price as string) || ''}
+                  onChange={(e) => handleDataChange('option_b_price', e.target.value)}
+                  placeholder="₪3,950,000"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>תיאור</Label>
+                <Input
+                  value={(slideData.option_b_description as string) || ''}
+                  onChange={(e) => handleDataChange('option_b_description', e.target.value)}
+                  dir="auto"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label>חודשים (מינ׳)</Label>
+                  <Input
+                    type="number"
+                    value={(slideData.option_b_months_min as number) || 0}
+                    onChange={(e) => handleDataChange('option_b_months_min', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>חודשים (מקס׳)</Label>
+                  <Input
+                    type="number"
+                    value={(slideData.option_b_months_max as number) || 0}
+                    onChange={(e) => handleDataChange('option_b_months_max', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Recently Sold */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>נמכרו לאחרונה</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('recently_sold', { address: '', price: '', size: '' })}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.recently_sold as Array<{ address: string; price: string; size: string }> || []).map((item, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">נכס {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem('recently_sold', index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      value={item.address}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'address', e.target.value)}
+                      placeholder="כתובת"
+                      dir="auto"
+                    />
+                    <Input
+                      value={item.price}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'price', e.target.value)}
+                      placeholder="מחיר"
+                      dir="ltr"
+                    />
+                    <Input
+                      value={item.size}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'size', e.target.value)}
+                      placeholder="גודל"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Currently For Sale */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>כרגע למכירה</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('currently_for_sale', { address: '', price: '', size: '' })}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.currently_for_sale as Array<{ address: string; price: string; size: string }> || []).map((item, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">נכס {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem('currently_for_sale', index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      value={item.address}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'address', e.target.value)}
+                      placeholder="כתובת"
+                      dir="auto"
+                    />
+                    <Input
+                      value={item.price}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'price', e.target.value)}
+                      placeholder="מחיר"
+                      dir="ltr"
+                    />
+                    <Input
+                      value={item.size}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'size', e.target.value)}
+                      placeholder="גודל"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
       default:
         return (
           <div className="space-y-3">
