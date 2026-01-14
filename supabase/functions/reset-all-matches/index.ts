@@ -203,7 +203,11 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
   }
   
   // Neighborhood MUST match if lead specified preferences
-  if (lead.preferred_neighborhoods?.length && property.neighborhood) {
+  if (lead.preferred_neighborhoods?.length) {
+    // If property has no neighborhood, it CANNOT match a lead with neighborhood preferences
+    if (!property.neighborhood) {
+      return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'] };
+    }
     const city = property.city || 'תל אביב יפו';
     const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
     if (!isNeighborhoodMatch) {
