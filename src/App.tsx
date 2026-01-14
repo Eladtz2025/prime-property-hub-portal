@@ -78,6 +78,7 @@ const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
+const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -132,6 +133,8 @@ const AppContent: React.FC = () => {
           <Route path="/offer/ben-yehuda-110" element={<BenYehudaPitchDeck />} />
           <Route path="/offer/ben-yehuda-110/pricing" element={<PresentationPricingPage />} />
           <Route path="/offer/ben-yehuda-110/exclusivity" element={<PresentationExclusivityForm />} />
+          {/* Dynamic Pitch Deck Routes */}
+          <Route path="/offer/:slug" element={<DynamicPitchDeckView />} />
           
           {/* Public pages - Redirects to /he/ */}
           <Route path="/" element={<Navigate to="/he" replace />} />
