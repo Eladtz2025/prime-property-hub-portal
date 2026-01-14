@@ -73,7 +73,6 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     new_or_second_hand: '' as string,
     floor_preference: '' as string,
     view_preference: '' as string,
-    view_preference: '' as string,
   });
 
   const validateFormField = (field: FormFields, value: string) => {
@@ -211,6 +210,11 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         parking_required: false,
         balcony_required: false,
         elevator_required: false,
+        yard_required: false,
+        parking_flexible: true,
+        balcony_flexible: true,
+        elevator_flexible: true,
+        yard_flexible: true,
         purchase_purpose: '',
         cash_available: null,
         property_to_sell: false,
