@@ -77,6 +77,8 @@ const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout')
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
+const DynamicPresentationPricingPage = React.lazy(() => import('./pages/DynamicPresentationPricingPage'));
+const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/DynamicPresentationExclusivityForm'));
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
@@ -134,6 +136,8 @@ const AppContent: React.FC = () => {
           <Route path="/offer/ben-yehuda-110/pricing" element={<PresentationPricingPage />} />
           <Route path="/offer/ben-yehuda-110/exclusivity" element={<PresentationExclusivityForm />} />
           {/* Dynamic Pitch Deck Routes */}
+          <Route path="/offer/:slug/pricing" element={<DynamicPresentationPricingPage />} />
+          <Route path="/offer/:slug/exclusivity" element={<DynamicPresentationExclusivityForm />} />
           <Route path="/offer/:slug" element={<DynamicPitchDeckView />} />
           
           {/* Public pages - Redirects to /he/ */}
