@@ -89,9 +89,9 @@ const FULL_SLIDES_DATA: SlideData[] = [
       ],
       appeals_to_title: 'Appeals to',
       appeals_to: [
-        { icon: 'Coffee', text: 'Lifestyle buyers' },
-        { icon: 'ShoppingBag', text: 'Foreign residents' },
-        { icon: 'TreePalm', text: 'Long-term investors' }
+        'Lifestyle buyers',
+        'Foreign residents',
+        'Long-term investors'
       ],
       map_landmarks: [
         { name: 'Gordon Beach', distance: '3 min', position: 'left' },
@@ -107,16 +107,14 @@ const FULL_SLIDES_DATA: SlideData[] = [
     is_visible: true,
     slide_data: {
       title: 'Market Context',
-      stats: [
-        { icon: 'TrendingUp', value: '₪58K', label: 'Price per sqm' },
-        { icon: 'BarChart3', value: '₪2.9M–5.7M', label: 'Sales Range' },
-        { icon: 'Home', value: '62 sqm', label: 'Average Deal Size' }
-      ],
+      price_per_sqm: '₪58K',
+      sales_range: '₪2.9M–5.7M',
+      avg_deal_size: '62 sqm',
       price_range_title: 'Market Price Range — Ben Yehuda Area 2024',
       min_price: '2.9',
       max_price: '5.7',
       strategic_title: 'Strategic Positioning',
-      strategic_positioning: [
+      strategic_points: [
         'Priced within the active market band',
         'Reflects current conditions — not peak-cycle pricing'
       ]
@@ -130,31 +128,17 @@ const FULL_SLIDES_DATA: SlideData[] = [
     slide_data: {
       title: 'Positioning & Strategy',
       positioning_quote: 'Not just an apartment — a coastal Old North lifestyle asset.',
-      columns: [
-        {
-          icon: 'Camera',
-          title: 'Visual Strategy',
-          items: [
-            'Professional photography and video',
-            'Lifestyle-led storytelling'
-          ]
-        },
-        {
-          icon: 'Users',
-          title: 'Target Audiences',
-          items: [
-            'Local lifestyle buyers',
-            'Foreign residents & overseas buyers'
-          ]
-        },
-        {
-          icon: 'Target',
-          title: 'Exposure Strategy',
-          items: [
-            'Curated launch before mass advertising',
-            'Private networks and off-market reach'
-          ]
-        }
+      visual_strategy: [
+        'Professional photography and video',
+        'Lifestyle-led storytelling'
+      ],
+      target_audiences: [
+        'Local lifestyle buyers',
+        'Foreign residents & overseas buyers'
+      ],
+      exposure_strategy: [
+        'Curated launch before mass advertising',
+        'Private networks and off-market reach'
       ]
     }
   },
@@ -196,7 +180,7 @@ const FULL_SLIDES_DATA: SlideData[] = [
     is_visible: true,
     slide_data: {
       title: 'City Market Properties',
-      intro_quote: 'Selling in prime Tel Aviv requires more than exposure. It requires local intelligence, precise positioning, and human insight.',
+      boutique_quote: 'Selling in prime Tel Aviv requires more than exposure. It requires local intelligence, precise positioning, and human insight.',
       boutique_title: 'Boutique Approach',
       boutique_approach: [
         'Boutique, limited-client approach',
@@ -208,13 +192,13 @@ const FULL_SLIDES_DATA: SlideData[] = [
           name: 'Elad Tzabari',
           icon: 'Award',
           years: '15+',
-          description: 'Tel Aviv market expertise'
+          expertise: 'Tel Aviv market expertise'
         },
         {
           name: 'Tali Silberberg',
           icon: 'Globe',
           years: '10+',
-          description: 'International perspective'
+          expertise: 'International perspective'
         }
       ],
       closing_quote: 'Together, we bridge local authenticity and global demand, positioning homes as places people genuinely want to live.'
