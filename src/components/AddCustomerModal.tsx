@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
 import { validateField, requiredPhoneSchema, emailSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 import { CitySelectorCompact } from "@/components/ui/city-selector";
@@ -24,6 +25,7 @@ type FormFields = 'name' | 'phone' | 'email';
 
 export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors<FormFields>>({});
   const [touched, setTouched] = useState<FormTouched<FormFields>>({});
@@ -160,6 +162,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           new_or_second_hand: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.new_or_second_hand || null : null,
           floor_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.floor_preference || null : null,
           view_preference: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.view_preference || null : null,
+          assigned_agent_id: user?.id || null,
         });
 
       if (error) throw error;

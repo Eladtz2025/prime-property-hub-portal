@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle, ExternalLink, RefreshCcw, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -300,28 +301,48 @@ export const ExpandableCustomerRow = ({
     }
   };
 
-  // Validate required fields
-  const validateRequiredFields = (): string[] => {
-    const errors: string[] = [];
+  // Get missing recommended fields (for warning display, not blocking save)
+  const getMissingRecommendedFields = (data: typeof formData): string[] => {
+    const missing: string[] = [];
     
-    if (!formData.name?.trim()) errors.push('שם מלא');
-    if (!formData.phone?.trim()) errors.push('טלפון');
-    if (!formData.property_type) errors.push('סוג עסקה');
-    if (!formData.budget_min) errors.push('תקציב מינימום');
-    if (!formData.rooms_min) errors.push('חדרים מינימום');
-    if (!formData.preferred_cities?.length) errors.push('ערים מועדפות');
-    if (!formData.preferred_neighborhoods?.length) errors.push('שכונות מועדפות');
-    if (!formData.move_in_date) errors.push('תאריך כניסה');
+    if (!data.property_type) missing.push('סוג עסקה');
+    if (!data.budget_min) missing.push('תקציב מינימום');
+    if (!data.rooms_min) missing.push('חדרים מינימום');
+    if (!data.preferred_cities?.length) missing.push('ערים');
+    if (!data.preferred_neighborhoods?.length) missing.push('שכונות');
+    if (!data.move_in_date) missing.push('תאריך כניסה');
     
-    // Rental-specific required fields
-    const isRental = formData.property_type === 'rental' || formData.property_type === 'rent';
+    // Rental-specific recommended fields
+    const isRental = data.property_type === 'rental' || data.property_type === 'rent';
     if (isRental) {
-      if (!formData.tenant_type) errors.push('סוג דייר');
-      if (formData.pets === undefined || formData.pets === null) errors.push('חיות');
+      if (!data.tenant_type) missing.push('סוג דייר');
+      if (data.pets === undefined || data.pets === null) missing.push('חיות');
     }
     
-    return errors;
+    return missing;
   };
+
+  // Check if customer has missing fields (for row display)
+  const getCustomerMissingFields = (): string[] => {
+    const missing: string[] = [];
+    
+    if (!customer.property_type) missing.push('סוג עסקה');
+    if (!customer.budget_min) missing.push('תקציב מינימום');
+    if (!customer.rooms_min) missing.push('חדרים מינימום');
+    if (!customer.preferred_cities?.length) missing.push('ערים');
+    if (!customer.preferred_neighborhoods?.length) missing.push('שכונות');
+    if (!customer.move_in_date) missing.push('תאריך כניסה');
+    
+    const isRental = customer.property_type === 'rental' || customer.property_type === 'rent';
+    if (isRental) {
+      if (!customer.tenant_type) missing.push('סוג דייר');
+      if (customer.pets === undefined || customer.pets === null) missing.push('חיות');
+    }
+    
+    return missing;
+  };
+  
+  const customerMissingFields = getCustomerMissingFields();
 
   const handleSaveForm = async () => {
     // Validate basic fields
@@ -337,15 +358,15 @@ export const ExpandableCustomerRow = ({
       return;
     }
     
-    // Validate required fields
-    const requiredErrors = validateRequiredFields();
-    if (requiredErrors.length > 0) {
+    // Check for missing recommended fields (warning only, don't block save)
+    const missingFields = getMissingRecommendedFields(formData);
+    if (missingFields.length > 0) {
       toast({ 
-        title: 'שדות חובה חסרים', 
-        description: `נא למלא: ${requiredErrors.join(', ')}`,
-        variant: 'destructive' 
+        title: 'שדות מומלצים חסרים', 
+        description: `מומלץ למלא: ${missingFields.join(', ')}`,
+        variant: 'default' 
       });
-      return;
+      // Don't return - allow save to continue
     }
     
     setLoading(true);
@@ -465,6 +486,18 @@ export const ExpandableCustomerRow = ({
             <div>
               <div className="flex items-center gap-2">
                 {customer.name}
+                {customerMissingFields.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircle className="h-4 w-4 text-amber-500 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px]">
+                        <p className="text-sm">שדות חסרים: {customerMissingFields.join(', ')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {customer.is_hidden && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">לא רלוונטי</Badge>
                 )}
