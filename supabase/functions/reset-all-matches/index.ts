@@ -199,6 +199,21 @@ serve(async (req) => {
   }
 });
 
+// Helper function to normalize city names to canonical form
+function normalizeCityName(city: string): string {
+  if (!city) return city;
+  const normalized = city.toLowerCase().trim().replace(/[-\s]/g, '');
+  
+  // Handle all Tel Aviv variations - English and Hebrew
+  const telAvivVariations = ['תלאביב', 'תלאביביפו', 'telaviv', 'telavivyafo', 'tlv', 'תא', 'תלאביב', 'tel-aviv'];
+  if (telAvivVariations.some(v => normalized === v || normalized.includes(v)) || 
+      (normalized.includes('תל') && normalized.includes('אביב')) ||
+      (normalized.includes('tel') && normalized.includes('aviv'))) {
+    return 'תל אביב יפו';
+  }
+  return city.trim();
+}
+
 // Helper function to calculate allowed price deviation
 function getAllowedDeviation(price: number, propertyType: string, direction: 'up' | 'down'): number {
   if (propertyType === 'rent') {
@@ -235,11 +250,15 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
   
-  // City MUST match
+  // City MUST match - use normalized city names
   if (property.city) {
-    const cityMatch = lead.preferred_cities.some(c => 
-      property.city!.includes(c) || c.includes(property.city!)
-    );
+    const normalizedPropertyCity = normalizeCityName(property.city);
+    const cityMatch = lead.preferred_cities.some(c => {
+      const normalizedLeadCity = normalizeCityName(c);
+      return normalizedPropertyCity === normalizedLeadCity ||
+             normalizedPropertyCity.includes(normalizedLeadCity) ||
+             normalizedLeadCity.includes(normalizedPropertyCity);
+    });
     if (!cityMatch) {
       return { lead, matchScore: 0, matchReasons: [`עיר לא מתאימה: ${property.city}`] };
     }
