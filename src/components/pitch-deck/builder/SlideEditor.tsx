@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PitchDeckSlide, SlideType, SLIDE_TYPE_LABELS } from '@/types/pitch-deck';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,12 @@ interface SlideEditorProps {
 const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEditorProps) => {
   const [slideData, setSlideData] = useState<Record<string, unknown>>(slide.slide_data as Record<string, unknown>);
   const [backgroundImage, setBackgroundImage] = useState(slide.background_image || '');
+
+  // Sync state when slide prop changes
+  useEffect(() => {
+    setSlideData(slide.slide_data as Record<string, unknown>);
+    setBackgroundImage(slide.background_image || '');
+  }, [slide.id]);
 
   const handleDataChange = (key: string, value: unknown) => {
     const newData = { ...slideData, [key]: value };
@@ -457,6 +463,153 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                   onChange={(e) => handleDataChange('step2_link', e.target.value)}
                 />
               </div>
+            </div>
+          </>
+        );
+
+      case 'neighborhood':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>כותרת משנית</Label>
+              <Input
+                value={(slideData.subtitle as string) || ''}
+                onChange={(e) => handleDataChange('subtitle', e.target.value)}
+                dir="auto"
+                placeholder="Ben Yehuda · Dizengoff · Gordon"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>מרחק מהחוף (דקות)</Label>
+              <Input
+                type="number"
+                value={(slideData.beach_distance as number) || ''}
+                onChange={(e) => handleDataChange('beach_distance', parseInt(e.target.value) || 0)}
+              />
+            </div>
+            
+            {/* Map settings */}
+            <div className="pt-4 border-t space-y-3">
+              <Label className="text-base font-medium">הגדרות מפה</Label>
+              <div className="space-y-2">
+                <Label>שם הנכס (מרכז המפה)</Label>
+                <Input
+                  value={(slideData.property_name as string) || ''}
+                  onChange={(e) => handleDataChange('property_name', e.target.value)}
+                  dir="auto"
+                  placeholder="Ben Yehuda 110"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>ציון דרך שמאלי</Label>
+                  <Input
+                    value={(slideData.left_landmark as string) || ''}
+                    onChange={(e) => handleDataChange('left_landmark', e.target.value)}
+                    placeholder="Gordon Beach"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>מרחק שמאל</Label>
+                  <Input
+                    value={(slideData.left_distance as string) || ''}
+                    onChange={(e) => handleDataChange('left_distance', e.target.value)}
+                    placeholder="3 min"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>ציון דרך ימני</Label>
+                  <Input
+                    value={(slideData.right_landmark as string) || ''}
+                    onChange={(e) => handleDataChange('right_landmark', e.target.value)}
+                    placeholder="Dizengoff"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>מרחק ימין</Label>
+                  <Input
+                    value={(slideData.right_distance as string) || ''}
+                    onChange={(e) => handleDataChange('right_distance', e.target.value)}
+                    placeholder="5 min"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <Label>דגשי מיקום</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('location_highlights')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.location_highlights as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('location_highlights', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('location_highlights', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>מתאים ל...</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddStringArrayItem('appeals_to')}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף
+                </Button>
+              </div>
+              {(slideData.appeals_to as string[] || []).map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleStringArrayChange('appeals_to', index, e.target.value)}
+                    dir="auto"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveStringArrayItem('appeals_to', index)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
             </div>
           </>
         );
