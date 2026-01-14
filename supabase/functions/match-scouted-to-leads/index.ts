@@ -354,17 +354,21 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
   
-  // Neighborhood MUST match if lead specified preferences
-  if (lead.preferred_neighborhoods?.length) {
-    // If property has no neighborhood, it CANNOT match a lead with neighborhood preferences
-    if (!property.neighborhood) {
-      return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'] };
-    }
-    const city = property.city || 'תל אביב יפו';
-    const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
-    if (!isNeighborhoodMatch) {
-      return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`] };
-    }
+  // Lead MUST have preferred neighborhoods to get matches
+  if (!lead.preferred_neighborhoods?.length) {
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדרו שכונות מועדפות - לא ניתן להתאים'] };
+  }
+
+  // Property MUST have neighborhood defined
+  if (!property.neighborhood) {
+    return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'] };
+  }
+
+  // Neighborhood MUST match
+  const city = property.city || 'תל אביב יפו';
+  const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
+  if (!isNeighborhoodMatch) {
+    return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`] };
   }
   
   // ===== MINIMUM ROOMS IS MUST =====
