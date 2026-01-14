@@ -182,9 +182,29 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       value: 'נמל_תל_אביב', 
       label: 'נמל תל אביב', 
       aliases: [
-        'תל ברוך צפון', 
-        'תל ברוך',
-        'tel aviv port'
+        'כ״ג יורדי הסירה',
+        'יורדי הסירה',
+        'נחשון',
+        'ירמיהו',
+        'הושע',
+        'שער ציון',
+        'zion gate',
+        'צידון',
+        'התערוכה',
+        'נמל הנביא',
+        'מיכה',
+        'סמטת מיכה',
+        'tel aviv port',
+        'the port'
+      ] 
+    },
+    { 
+      value: 'תל_ברוך', 
+      label: 'תל ברוך', 
+      aliases: [
+        'תל ברוך צפון',
+        'תל ברוך דרום',
+        'tel baruch'
       ] 
     },
     { 
@@ -334,12 +354,7 @@ export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhood
       }
     }
     
-    // Fallback: direct string matching
-    const normalizedLeadNeighborhood = leadNeighborhood.trim().toLowerCase();
-    if (normalizedPropertyNeighborhood.includes(normalizedLeadNeighborhood) ||
-        normalizedLeadNeighborhood.includes(normalizedPropertyNeighborhood)) {
-      return true;
-    }
+    // No fallback - only match via configured neighborhoods
   }
   
   return false;
