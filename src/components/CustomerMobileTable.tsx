@@ -439,12 +439,22 @@ export const CustomerMobileTable = ({
             {/* Dates */}
             <div>
               <Label className="text-xs">תאריך כניסה</Label>
-              <Input
-                type="date"
-                value={formData.move_in_date || ''}
-                onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-                className="h-9"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={formData.move_in_date || ''}
+                  onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                  className="h-9 flex-1"
+                />
+                <div className="flex items-center gap-1">
+                  <Checkbox 
+                    id={`move-date-flex-mobile`}
+                    checked={formData.flexible_move_date !== false}
+                    onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                  />
+                  <Label htmlFor={`move-date-flex-mobile`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                </div>
+              </div>
             </div>
 
             {/* Agent */}
