@@ -144,7 +144,7 @@ serve(async (req) => {
   let runId: string | undefined;
 
   try {
-    const { config_id, manual_url, source } = await req.json();
+    const { config_id, manual_url, source, page } = await req.json();
 
     // Create a run record
     const { data: runData, error: runError } = await supabase
@@ -220,10 +220,12 @@ serve(async (req) => {
     // allProperties array removed - saving immediately after each page now
 
     for (const config of configs) {
-      console.log(`Processing config: ${config.name}`);
+      console.log(`Processing config: ${config.name}${page !== undefined ? ` (page ${page} only)` : ''}`);
 
-      // Build search URLs
-      const urls = buildSearchUrls(config);
+      // Build search URLs - if specific page provided, build URL for that page only
+      const urls = page !== undefined 
+        ? buildSinglePageUrl(config, page)
+        : buildSearchUrls(config);
 
       const maxPropertiesPerConfig = 500; // Increased from 100 to handle more pages
       
@@ -435,6 +437,69 @@ function detectBroker(title: string, description: string): boolean {
   
   const text = `${title || ''} ${description || ''}`.toLowerCase();
   return brokerKeywords.some(keyword => text.includes(keyword.toLowerCase()));
+}
+
+// Build URL for a single specific page (used in distributed scanning)
+function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
+  const urls: string[] = [];
+  
+  // Determine source - only Yad2 uses distributed scanning for now
+  const source = config.source === 'yad2_private' ? 'yad2' : config.source;
+  const types = config.property_type === 'both' ? ['rent', 'sale'] : [config.property_type];
+  
+  for (const type of types) {
+    if (source === 'yad2' || source === 'yad2_private') {
+      // Yad2 city codes mapping
+      const yad2CityMap: Record<string, { topArea: string; area: string; city: string }> = {
+        'תל אביב': { topArea: '2', area: '1', city: '5000' },
+        'תל אביב יפו': { topArea: '2', area: '1', city: '5000' },
+        'ירושלים': { topArea: '1', area: '1', city: '3000' },
+        'חיפה': { topArea: '3', area: '1', city: '4000' },
+        'ראשון לציון': { topArea: '2', area: '2', city: '8300' },
+        'פתח תקווה': { topArea: '2', area: '3', city: '7900' },
+        'אשדוד': { topArea: '2', area: '12', city: '70' },
+        'נתניה': { topArea: '4', area: '1', city: '7400' },
+        'באר שבע': { topArea: '5', area: '1', city: '9000' },
+        'חולון': { topArea: '2', area: '1', city: '6600' },
+        'בת ים': { topArea: '2', area: '1', city: '6200' },
+        'רמת גן': { topArea: '2', area: '1', city: '8600' },
+        'הרצליה': { topArea: '2', area: '4', city: '6400' },
+        'רעננה': { topArea: '4', area: '2', city: '8700' },
+        'גבעתיים': { topArea: '2', area: '1', city: '2650' },
+        'כפר סבא': { topArea: '4', area: '2', city: '6900' },
+        'הוד השרון': { topArea: '4', area: '2', city: '6500' },
+        'רמת השרון': { topArea: '2', area: '4', city: '8800' },
+      };
+
+      let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
+      const params = new URLSearchParams();
+      
+      if (config.cities?.length) {
+        const cityData = yad2CityMap[config.cities[0]];
+        if (cityData) {
+          params.set('topArea', cityData.topArea);
+          params.set('area', cityData.area);
+          params.set('city', cityData.city);
+        }
+      }
+      
+      params.set('propertyGroup', 'apartments');
+      
+      if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
+      if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+      
+      // Set specific page
+      if (page > 1) {
+        params.set('page', page.toString());
+      }
+      
+      const pageUrl = url + '?' + params.toString();
+      console.log(`Built Yad2 single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
+    }
+  }
+  
+  return urls;
 }
 
 function buildSearchUrls(config: ScoutConfig): string[] {
