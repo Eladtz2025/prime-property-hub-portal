@@ -15,13 +15,14 @@ import {
   Eye, 
   Settings, 
   Layers,
-  ExternalLink,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-react';
 import PropertySelector, { PropertyData } from '@/components/pitch-deck/builder/PropertySelector';
 import SlideList from '@/components/pitch-deck/builder/SlideList';
 import SlideEditor from '@/components/pitch-deck/builder/SlideEditor';
 import { toast } from 'sonner';
+import { createBenYehuda110New } from '@/utils/migrateBenYehuda110';
 
 const PitchDeckBuilder = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +46,7 @@ const PitchDeckBuilder = () => {
   
   const [selectedSlide, setSelectedSlide] = useState<PitchDeckSlide | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // Load deck data
   useEffect(() => {
@@ -255,6 +257,23 @@ const PitchDeckBuilder = () => {
     updateSlideMutation.mutate({ id: slideId, is_visible: isVisible });
   };
 
+  const handleMigrateBenYehuda = async () => {
+    setIsMigrating(true);
+    try {
+      const result = await createBenYehuda110New();
+      if (result.success && result.deckId) {
+        toast.success('המצגת נוצרה בהצלחה!');
+        navigate(`/admin-dashboard/pitch-decks/${result.deckId}`);
+      } else {
+        toast.error(result.error || 'שגיאה ביצירת המצגת');
+      }
+    } catch (error) {
+      toast.error('שגיאה: ' + (error as Error).message);
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   if (isLoading && !isNew) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -278,6 +297,21 @@ const PitchDeckBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {isNew && (
+              <Button
+                variant="outline"
+                onClick={handleMigrateBenYehuda}
+                disabled={isMigrating}
+                className="text-amber-600 border-amber-600 hover:bg-amber-50"
+              >
+                {isMigrating ? (
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4 ml-2" />
+                )}
+                צור Ben Yehuda 110
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => {
