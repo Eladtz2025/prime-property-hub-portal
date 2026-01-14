@@ -113,7 +113,6 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           property_type: formData.property_type,
           move_in_date: formData.move_in_date,
           notes: formData.notes,
-          next_followup_date: formData.next_followup_date,
           // Rental-specific
           pets: isRental ? formData.pets : null,
           tenant_type: isRental ? formData.tenant_type : null,
@@ -121,6 +120,11 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           parking_required: isRental ? formData.parking_required : null,
           balcony_required: isRental ? formData.balcony_required : null,
           elevator_required: isRental ? formData.elevator_required : null,
+          yard_required: isRental ? formData.yard_required : null,
+          parking_flexible: isRental ? formData.parking_flexible : null,
+          balcony_flexible: isRental ? formData.balcony_flexible : null,
+          elevator_flexible: isRental ? formData.elevator_flexible : null,
+          yard_flexible: isRental ? formData.yard_flexible : null,
           // Purchase-specific
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
@@ -357,23 +361,13 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>תאריך כניסה מבוקש</Label>
-              <Input
-                type="date"
-                value={formData.move_in_date || ''}
-                onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>מעקב הבא</Label>
-              <Input
-                type="datetime-local"
-                value={formData.next_followup_date || ''}
-                onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
-              />
-            </div>
+          <div>
+            <Label>תאריך כניסה מבוקש</Label>
+            <Input
+              type="date"
+              value={formData.move_in_date || ''}
+              onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+            />
           </div>
 
           {/* Rental-specific fields */}
@@ -432,36 +426,88 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
 
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">דרישות מהנכס:</Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Parking */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="edit-parking"
                         checked={!!formData.parking_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, parking_required: !!checked })}
                       />
-                      <Label htmlFor="edit-parking" className="flex items-center gap-1 cursor-pointer">
+                      <Label htmlFor="edit-parking" className="flex items-center gap-1 cursor-pointer flex-1">
                         <Car className="h-4 w-4" />
                         חניה
                       </Label>
+                      {formData.parking_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="edit-parking-flex"
+                            checked={formData.parking_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, parking_flexible: !!checked })}
+                          />
+                          <Label htmlFor="edit-parking-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Balcony */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="edit-balcony"
                         checked={!!formData.balcony_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, balcony_required: !!checked })}
                       />
-                      <Label htmlFor="edit-balcony" className="cursor-pointer">מרפסת</Label>
+                      <Label htmlFor="edit-balcony" className="cursor-pointer flex-1">מרפסת</Label>
+                      {formData.balcony_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="edit-balcony-flex"
+                            checked={formData.balcony_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, balcony_flexible: !!checked })}
+                          />
+                          <Label htmlFor="edit-balcony-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Elevator */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
                       <Checkbox
                         id="edit-elevator"
                         checked={!!formData.elevator_required}
                         onCheckedChange={(checked) => setFormData({ ...formData, elevator_required: !!checked })}
                       />
-                      <Label htmlFor="edit-elevator" className="flex items-center gap-1 cursor-pointer">
+                      <Label htmlFor="edit-elevator" className="flex items-center gap-1 cursor-pointer flex-1">
                         <Building2 className="h-4 w-4" />
                         מעלית
                       </Label>
+                      {formData.elevator_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="edit-elevator-flex"
+                            checked={formData.elevator_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, elevator_flexible: !!checked })}
+                          />
+                          <Label htmlFor="edit-elevator-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
+                    </div>
+                    {/* Yard */}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
+                      <Checkbox
+                        id="edit-yard"
+                        checked={!!formData.yard_required}
+                        onCheckedChange={(checked) => setFormData({ ...formData, yard_required: !!checked })}
+                      />
+                      <Label htmlFor="edit-yard" className="cursor-pointer flex-1">חצר</Label>
+                      {formData.yard_required && (
+                        <div className="flex items-center gap-1 border-r pr-2">
+                          <Checkbox
+                            id="edit-yard-flex"
+                            checked={formData.yard_flexible !== false}
+                            onCheckedChange={(checked) => setFormData({ ...formData, yard_flexible: !!checked })}
+                          />
+                          <Label htmlFor="edit-yard-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

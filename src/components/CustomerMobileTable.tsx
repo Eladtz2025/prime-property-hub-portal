@@ -147,13 +147,17 @@ export const CustomerMobileTable = ({
           property_type: formData.property_type,
           move_in_date: formData.move_in_date,
           notes: formData.notes,
-          next_followup_date: formData.next_followup_date,
           pets: isRental ? formData.pets : null,
           tenant_type: isRental ? formData.tenant_type : null,
           flexible_move_date: isRental ? formData.flexible_move_date : null,
           parking_required: isRental ? formData.parking_required : null,
           balcony_required: isRental ? formData.balcony_required : null,
           elevator_required: isRental ? formData.elevator_required : null,
+          yard_required: isRental ? formData.yard_required : null,
+          parking_flexible: isRental ? formData.parking_flexible : null,
+          balcony_flexible: isRental ? formData.balcony_flexible : null,
+          elevator_flexible: isRental ? formData.elevator_flexible : null,
+          yard_flexible: isRental ? formData.yard_flexible : null,
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
           property_to_sell: isSale ? formData.property_to_sell : null,
@@ -433,25 +437,14 @@ export const CustomerMobileTable = ({
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">תאריך כניסה</Label>
-                <Input
-                  type="date"
-                  value={formData.move_in_date || ''}
-                  onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-                  className="h-9"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">מעקב הבא</Label>
-                <Input
-                  type="datetime-local"
-                  value={formData.next_followup_date || ''}
-                  onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
-                  className="h-9"
-                />
-              </div>
+            <div>
+              <Label className="text-xs">תאריך כניסה</Label>
+              <Input
+                type="date"
+                value={formData.move_in_date || ''}
+                onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                className="h-9"
+              />
             </div>
 
             {/* Agent */}
@@ -497,7 +490,7 @@ export const CustomerMobileTable = ({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 pt-5">
+                  <div className="flex flex-wrap items-center gap-2 pt-5">
                     <div className="flex items-center gap-1">
                       <Checkbox id="m-pets" checked={!!formData.pets} onCheckedChange={(c) => setFormData({ ...formData, pets: !!c })} />
                       <Label htmlFor="m-pets" className="text-xs"><Dog className="h-3 w-3" /></Label>
@@ -509,6 +502,10 @@ export const CustomerMobileTable = ({
                     <div className="flex items-center gap-1">
                       <Checkbox id="m-elevator" checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
                       <Label htmlFor="m-elevator" className="text-xs"><Building2 className="h-3 w-3" /></Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="m-yard" checked={!!formData.yard_required} onCheckedChange={(c) => setFormData({ ...formData, yard_required: !!c })} />
+                      <Label htmlFor="m-yard" className="text-xs">חצר</Label>
                     </div>
                   </div>
                 </div>

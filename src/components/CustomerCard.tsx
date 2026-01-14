@@ -319,16 +319,6 @@ export const CustomerCard = ({
             </div>
           )}
 
-          {/* Next Followup */}
-          {customer.next_followup_date && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex flex-row-reverse items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">מעקב הבא:</span>
-                <span>{format(new Date(customer.next_followup_date), 'dd/MM/yyyy HH:mm', { locale: he })}</span>
-              </div>
-            </div>
-          )}
 
           {/* Full Details */}
           <div className="grid grid-cols-2 gap-3 text-sm">

@@ -495,19 +495,6 @@ export const CustomerDetailSheet = ({
             </>
           )}
 
-          {/* Next Followup */}
-          {customer.next_followup_date && (
-            <>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">מעקב הבא:</span>
-                  <span>{format(new Date(customer.next_followup_date), 'dd/MM/yyyy HH:mm', { locale: he })}</span>
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
 
           {/* Assigned Agent Info */}
           {assignedAgent && (
