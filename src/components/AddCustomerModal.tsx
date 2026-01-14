@@ -14,6 +14,7 @@ import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, La
 import { validateField, requiredPhoneSchema, emailSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 import { CitySelectorCompact } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
+import { COUNTRY_CODES, combinePhoneNumber } from '@/utils/phoneCountryCodes';
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors<FormFields>>({});
   const [touched, setTouched] = useState<FormTouched<FormFields>>({});
+  const [phoneCountry, setPhoneCountry] = useState('IL');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,7 +51,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     move_in_date: '',
     notes: '',
     // Rental-specific
-    pets: false,
+    pets: null as boolean | null,
     tenant_type: '' as string,
     flexible_move_date: false,
     parking_required: false,
@@ -124,12 +126,14 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     
     setLoading(true);
     try {
+      const fullPhone = combinePhoneNumber(phoneCountry, formData.phone);
+      
       const { error } = await supabase
         .from('contact_leads')
         .insert({
           name: formData.name,
           email: formData.email || null,
-          phone: formData.phone,
+          phone: fullPhone,
           message: formData.message || 'לקוח נוסף ידנית',
           status: formData.status,
           priority: formData.priority,
@@ -173,6 +177,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
       });
       
       // Reset form
+      setPhoneCountry('IL');
       setFormData({
         name: '',
         email: '',
@@ -192,7 +197,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         preferred_neighborhoods: [],
         move_in_date: '',
         notes: '',
-        pets: false,
+        pets: null,
         tenant_type: '',
         flexible_move_date: false,
         parking_required: false,
@@ -253,13 +258,27 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             </div>
             <div>
               <Label>טלפון *</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => handleFieldChange('phone', e.target.value)}
-                onBlur={() => handleFieldBlur('phone')}
-                placeholder="050-1234567"
-                className={touched.phone && errors.phone ? 'border-destructive' : ''}
-              />
+              <div className="flex gap-2">
+                <Select value={phoneCountry} onValueChange={setPhoneCountry}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map(country => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => handleFieldChange('phone', e.target.value)}
+                  onBlur={() => handleFieldBlur('phone')}
+                  placeholder={phoneCountry === 'IL' ? '050-1234567' : '555-123-4567'}
+                  className={`flex-1 ${touched.phone && errors.phone ? 'border-destructive' : ''}`}
+                />
+              </div>
               {touched.phone && errors.phone && (
                 <p className="text-sm text-destructive flex items-center gap-1 mt-1">
                   <AlertCircle className="h-3 w-3" />
@@ -477,18 +496,25 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="pets"
-                      checked={formData.pets}
-                      onCheckedChange={(checked) => setFormData({ ...formData, pets: !!checked })}
-                    />
-                    <Label htmlFor="pets" className="flex items-center gap-1 cursor-pointer">
+                  <div>
+                    <Label className="flex items-center gap-1">
                       <Dog className="h-4 w-4" />
-                      יש חיות מחמד
+                      חיות מחמד
                     </Label>
+                    <Select 
+                      value={formData.pets === true ? 'yes' : formData.pets === false ? 'no' : ''} 
+                      onValueChange={(value) => setFormData({ ...formData, pets: value === 'yes' ? true : value === 'no' ? false : null })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">יש חיות מחמד</SelectItem>
+                        <SelectItem value="no">אין חיות מחמד</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-6">
                     <Checkbox
                       id="flexible_move_date"
                       checked={formData.flexible_move_date}
