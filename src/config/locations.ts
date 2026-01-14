@@ -56,7 +56,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון הישן החלק הדרום מערבי',
         'צפון הישן',
         'old north',
-        'oldnorth'
+        'oldnorth',
+        'צפון הישן / צפון החדש',
+        'צפון החדש / צפון הישן'
       ] 
     },
     { 
@@ -70,10 +72,12 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון החדש החלק הדרומי',
         'הצפון החדש סביבת כיכר המדינה',
         'הצפון החדש סביבת כיכר',
+        'הצפון החדש - כיכר המדינה',
         'new north',
         'צפון החדש',
         'לואי מרשל',
-        'louis marshall'
+        'louis marshall',
+        'יהודה המכבי, הצפון החדש - צפון'
       ] 
     },
     { 
@@ -83,10 +87,11 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'לב העיר', 
         'לב תל אביב', 
         'לב העיר צפון',
+        'לב העיר דרום',
+        'לב תל אביב, לב העיר צפון',
         'לב תל אביב החלק המערבי',
         'מרכז',
-        'center',
-        'לב העיר דרום'
+        'center'
       ] 
     },
     { 
@@ -115,6 +120,8 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'מונטיפיורי', 
         'שרונה', 
         'גני שרונה',
+        'גני שרונה, קרית הממשלה',
+        'קרית הממשלה',
         'rothschild'
       ] 
     },
@@ -132,7 +139,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       aliases: [
         'אזור ככר המדינה', 
         'הצפון החדש סביבת כיכר המדינה',
+        'הצפון החדש - כיכר המדינה',
         'סביבת כיכר המדינה',
+        'זכות לדירה בכיכר המדינה',
         'kikar hamedina'
       ] 
     },
@@ -142,8 +151,10 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       aliases: [
         'רמת אביב החדשה', 
         'רמת אביב ג', 
+        'רמת אביב ג\'',
         'נופי ים', 
         'הגוש הגדול',
+        'הגוש הגדול, רמת אביב החדשה, נופי ים',
         'ramat aviv'
       ] 
     },
@@ -167,6 +178,8 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'גני צהלה', 
         'צהלון', 
         'רמות צהלה',
+        'גני צהלה, רמות צהלה',
+        'כוכב הצפון',
         'tzahala'
       ] 
     },
@@ -175,6 +188,7 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       label: 'בבלי', 
       aliases: [
         'שיכון בבלי',
+        'הבשן',
         'bavli'
       ] 
     },
@@ -218,6 +232,37 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'כפר שלם', 
         'יד אליהו',
         'south tel aviv'
+      ] 
+    },
+    { 
+      value: 'אזורי_חן', 
+      label: 'אזורי חן', 
+      aliases: [
+        'אזורי חן, גימל החדשה',
+        'גימל החדשה'
+      ] 
+    },
+    { 
+      value: 'נווה_אביבים', 
+      label: 'נווה אביבים', 
+      aliases: [
+        'נוה אביבים',
+        'neve avivim'
+      ] 
+    },
+    { 
+      value: 'הדר_יוסף', 
+      label: 'הדר יוסף', 
+      aliases: [
+        'hadar yosef'
+      ] 
+    },
+    { 
+      value: 'נווה_שרת', 
+      label: 'נווה שרת', 
+      aliases: [
+        'נוה שרת',
+        'neve sharet'
       ] 
     },
     { 
