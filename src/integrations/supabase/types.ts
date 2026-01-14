@@ -2188,6 +2188,7 @@ export type Database = {
           id: string
           images: Json | null
           is_active: boolean | null
+          is_private: boolean | null
           last_seen_at: string
           matched_leads: Json | null
           neighborhood: string | null
@@ -2214,6 +2215,7 @@ export type Database = {
           id?: string
           images?: Json | null
           is_active?: boolean | null
+          is_private?: boolean | null
           last_seen_at?: string
           matched_leads?: Json | null
           neighborhood?: string | null
@@ -2240,6 +2242,7 @@ export type Database = {
           id?: string
           images?: Json | null
           is_active?: boolean | null
+          is_private?: boolean | null
           last_seen_at?: string
           matched_leads?: Json | null
           neighborhood?: string | null
