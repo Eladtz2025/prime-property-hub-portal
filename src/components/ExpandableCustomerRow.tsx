@@ -844,8 +844,8 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Dates, Tenant Type, Pets, Features - Combined Row (Rental) / Agent (All) */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                {/* Dates, Tenant Type, Pets, Features, Agent - Combined Row */}
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                   <div>
                     <Label className="text-xs">מתאריך</Label>
                     <div className="flex items-center gap-2">
@@ -905,7 +905,7 @@ export const ExpandableCustomerRow = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-2 space-y-2">
+                      <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">דרישות מהנכס:</Label>
                         <PropertyRequirementsDropdown
                           values={{
