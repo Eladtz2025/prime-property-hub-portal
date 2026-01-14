@@ -40,13 +40,14 @@ interface ScoutedProperty {
 
 const PAGE_SIZE = 20;
 
-const ROOM_OPTIONS = ['all', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+', '6+'];
 const FEATURE_OPTIONS = [
   { key: 'elevator', label: 'מעלית' },
   { key: 'parking', label: 'חניה' },
   { key: 'balcony', label: 'מרפסת' },
   { key: 'mamad', label: 'ממ"ד' },
   { key: 'storage', label: 'מחסן' },
+  { key: 'roof', label: 'גג' },
+  { key: 'yard', label: 'חצר' },
 ];
 
 export const ScoutedPropertiesTable: React.FC = () => {
@@ -60,7 +61,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<ScoutedProperty | null>(null);
   
   // New filter states
-  const [roomsFilter, setRoomsFilter] = useState<string>('all');
+  const [roomsMin, setRoomsMin] = useState<string>('');
+  const [roomsMax, setRoomsMax] = useState<string>('');
   const [minBudget, setMinBudget] = useState<string>('');
   const [maxBudget, setMaxBudget] = useState<string>('');
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all');
@@ -68,7 +70,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   
   // Applied filters state - data only loads when this is set (after search click)
   const [appliedFilters, setAppliedFilters] = useState<{
-    rooms: string;
+    roomsMin: string;
+    roomsMax: string;
     minBudget: string;
     maxBudget: string;
     neighborhood: string;
@@ -195,14 +198,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
     if (filters.source !== 'all') {
       query = query.eq('source', filters.source);
     }
-    if (filters.rooms !== 'all') {
-      if (filters.rooms === '5+') {
-        query = query.gte('rooms', 5);
-      } else if (filters.rooms === '6+') {
-        query = query.gte('rooms', 6);
-      } else {
-        query = query.eq('rooms', parseFloat(filters.rooms));
-      }
+    if (filters.roomsMin) {
+      query = query.gte('rooms', parseFloat(filters.roomsMin));
+    }
+    if (filters.roomsMax) {
+      query = query.lte('rooms', parseFloat(filters.roomsMax));
     }
     if (filters.minBudget) {
       query = query.gte('price', parseInt(filters.minBudget));
@@ -430,7 +430,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const handleSearch = () => {
     setCurrentPage(1);
     setAppliedFilters({
-      rooms: roomsFilter,
+      roomsMin,
+      roomsMax,
       minBudget,
       maxBudget,
       neighborhood: neighborhoodFilter,
@@ -456,7 +457,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setSourceFilter('all');
-    setRoomsFilter('all');
+    setRoomsMin('');
+    setRoomsMax('');
     setMinBudget('');
     setMaxBudget('');
     setNeighborhoodFilter('all');
@@ -466,7 +468,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
   // Check if any filters are active
   const hasActiveFilters = statusFilter !== 'all' || sourceFilter !== 'all' || 
-    roomsFilter !== 'all' || minBudget !== '' || maxBudget !== '' ||
+    roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
     neighborhoodFilter !== 'all' || featuresFilter.length > 0;
 
   // Show empty state if no search has been performed yet
@@ -538,96 +540,61 @@ export const ScoutedPropertiesTable: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>דירות שנסרקו ({totalCount || 0})</span>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
-                <X className="h-4 w-4 ml-1" />
-                נקה פילטרים
-              </Button>
-            )}
-          </CardTitle>
-          
-          {/* Row 1: Search + Status + Source */}
-          <div className="flex flex-wrap gap-3 mt-4">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="חיפוש לפי עיר, שכונה..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
-                />
-              </div>
-            </div>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Title */}
+            <CardTitle className="whitespace-nowrap ml-2">
+              דירות שנסרקו ({totalCount || 0})
+            </CardTitle>
             
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="סטטוס" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסטטוסים</SelectItem>
-                <SelectItem value="new">חדש</SelectItem>
-                <SelectItem value="matched">עבר התאמה</SelectItem>
-                <SelectItem value="imported">יובא</SelectItem>
-                <SelectItem value="archived">ארכיון</SelectItem>
-                <SelectItem value="inactive">לא פעיל</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Rooms Range */}
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                placeholder="מחדרים"
+                value={roomsMin}
+                onChange={(e) => setRoomsMin(e.target.value)}
+                className="w-[70px] h-9"
+                step="0.5"
+                min="1"
+                max="10"
+              />
+              <span className="text-muted-foreground text-sm">-</span>
+              <Input
+                type="number"
+                placeholder="עד"
+                value={roomsMax}
+                onChange={(e) => setRoomsMax(e.target.value)}
+                className="w-[55px] h-9"
+                step="0.5"
+                min="1"
+                max="10"
+              />
+            </div>
 
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="מקור" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל המקורות</SelectItem>
-                <SelectItem value="yad2">יד2</SelectItem>
-                <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
-                <SelectItem value="madlan">מדלן</SelectItem>
-                <SelectItem value="homeless">הומלס</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Row 2: Rooms + Budget + Neighborhood + Features + Search */}
-          <div className="flex flex-wrap gap-3 mt-3">
-            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className="w-[110px]">
-                <SelectValue placeholder="חדרים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל החדרים</SelectItem>
-                {ROOM_OPTIONS.slice(1).map(room => (
-                  <SelectItem key={room} value={room}>
-                    {room.includes('+') ? `${room} ומעלה` : `${room} חדרים`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-2">
+            {/* Budget Range */}
+            <div className="flex items-center gap-1">
               <Input
                 type="number"
                 placeholder="ממחיר"
                 value={minBudget}
                 onChange={(e) => setMinBudget(e.target.value)}
-                className="w-[100px]"
+                className="w-[80px] h-9"
               />
-              <span className="text-muted-foreground">-</span>
+              <span className="text-muted-foreground text-sm">-</span>
               <Input
                 type="number"
-                placeholder="עד מחיר"
+                placeholder="עד"
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-[100px]"
+                className="w-[80px] h-9"
               />
             </div>
 
+            {/* Neighborhood */}
             <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="שכונה בתל אביב" />
+              <SelectTrigger className="w-[130px] h-9">
+                <SelectValue placeholder="שכונה" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל השכונות</SelectItem>
@@ -637,13 +604,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
+            {/* Features */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-9 gap-1 px-2">
+                  <Filter className="h-3 w-3" />
                   תוספות
                   {featuresFilter.length > 0 && (
-                    <Badge variant="secondary" className="mr-1 h-5 w-5 p-0 flex items-center justify-center">
+                    <Badge variant="secondary" className="h-4 w-4 p-0 flex items-center justify-center text-xs">
                       {featuresFilter.length}
                     </Badge>
                   )}
@@ -667,10 +635,47 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </PopoverContent>
             </Popover>
 
-            <Button onClick={handleSearch} className="gap-2">
-              <Search className="h-4 w-4" />
+            {/* Status */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[100px] h-9">
+                <SelectValue placeholder="סטטוס" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
+                <SelectItem value="new">חדש</SelectItem>
+                <SelectItem value="matched">עבר התאמה</SelectItem>
+                <SelectItem value="imported">יובא</SelectItem>
+                <SelectItem value="archived">ארכיון</SelectItem>
+                <SelectItem value="inactive">לא פעיל</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Source */}
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[95px] h-9">
+                <SelectValue placeholder="מקור" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל המקורות</SelectItem>
+                <SelectItem value="yad2">יד2</SelectItem>
+                <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
+                <SelectItem value="madlan">מדלן</SelectItem>
+                <SelectItem value="homeless">הומלס</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Search Button */}
+            <Button onClick={handleSearch} size="sm" className="h-9 gap-1">
+              <Search className="h-3 w-3" />
               חפש
             </Button>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 text-muted-foreground px-2">
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </CardHeader>
 
