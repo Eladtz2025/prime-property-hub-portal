@@ -355,12 +355,14 @@ export type Database = {
       contact_leads: {
         Row: {
           assigned_agent_id: string | null
+          balcony_flexible: boolean | null
           balcony_required: boolean | null
           budget_max: number | null
           budget_min: number | null
           cash_available: number | null
           created_at: string | null
           created_by: string | null
+          elevator_flexible: boolean | null
           elevator_required: boolean | null
           email: string | null
           flexible_move_date: boolean | null
@@ -376,6 +378,7 @@ export type Database = {
           new_or_second_hand: string | null
           next_followup_date: string | null
           notes: string | null
+          parking_flexible: boolean | null
           parking_required: boolean | null
           pets: boolean | null
           phone: string
@@ -397,15 +400,19 @@ export type Database = {
           updated_at: string | null
           urgency_level: string | null
           view_preference: string | null
+          yard_flexible: boolean | null
+          yard_required: boolean | null
         }
         Insert: {
           assigned_agent_id?: string | null
+          balcony_flexible?: boolean | null
           balcony_required?: boolean | null
           budget_max?: number | null
           budget_min?: number | null
           cash_available?: number | null
           created_at?: string | null
           created_by?: string | null
+          elevator_flexible?: boolean | null
           elevator_required?: boolean | null
           email?: string | null
           flexible_move_date?: boolean | null
@@ -421,6 +428,7 @@ export type Database = {
           new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
           phone: string
@@ -442,15 +450,19 @@ export type Database = {
           updated_at?: string | null
           urgency_level?: string | null
           view_preference?: string | null
+          yard_flexible?: boolean | null
+          yard_required?: boolean | null
         }
         Update: {
           assigned_agent_id?: string | null
+          balcony_flexible?: boolean | null
           balcony_required?: boolean | null
           budget_max?: number | null
           budget_min?: number | null
           cash_available?: number | null
           created_at?: string | null
           created_by?: string | null
+          elevator_flexible?: boolean | null
           elevator_required?: boolean | null
           email?: string | null
           flexible_move_date?: boolean | null
@@ -466,6 +478,7 @@ export type Database = {
           new_or_second_hand?: string | null
           next_followup_date?: string | null
           notes?: string | null
+          parking_flexible?: boolean | null
           parking_required?: boolean | null
           pets?: boolean | null
           phone?: string
@@ -487,6 +500,8 @@ export type Database = {
           updated_at?: string | null
           urgency_level?: string | null
           view_preference?: string | null
+          yard_flexible?: boolean | null
+          yard_required?: boolean | null
         }
         Relationships: [
           {

@@ -417,9 +417,15 @@ export const ExpandableCustomerRow = ({
           pets: isRental ? formData.pets : null,
           tenant_type: isRental ? formData.tenant_type : null,
           flexible_move_date: isRental ? formData.flexible_move_date : null,
-          parking_required: isRental ? formData.parking_required : null,
-          balcony_required: isRental ? formData.balcony_required : null,
-          elevator_required: isRental ? formData.elevator_required : null,
+          parking_required: formData.parking_required ?? null,
+          balcony_required: formData.balcony_required ?? null,
+          elevator_required: formData.elevator_required ?? null,
+          yard_required: formData.yard_required ?? null,
+          // Flexibility flags
+          parking_flexible: formData.parking_flexible ?? true,
+          balcony_flexible: formData.balcony_flexible ?? true,
+          elevator_flexible: formData.elevator_flexible ?? true,
+          yard_flexible: formData.yard_flexible ?? true,
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
           property_to_sell: isSale ? formData.property_to_sell : null,
@@ -838,14 +844,69 @@ export const ExpandableCustomerRow = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="flex items-center gap-3 pt-5">
-                        <div className="flex items-center gap-1">
-                          <Checkbox id={`parking-${customer.id}`} checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />
-                          <Label htmlFor={`parking-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer"><Car className="h-3 w-3" />חניה</Label>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Checkbox id={`elevator-${customer.id}`} checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
-                          <Label htmlFor={`elevator-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer"><Building2 className="h-3 w-3" />מעלית</Label>
+                      <div className="col-span-2 space-y-2">
+                        <Label className="text-xs text-muted-foreground">דרישות מהנכס:</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {/* Parking */}
+                          <div className="flex items-center gap-1 p-1.5 rounded border bg-background">
+                            <Checkbox id={`parking-${customer.id}`} checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />
+                            <Label htmlFor={`parking-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer flex-1"><Car className="h-3 w-3" />חניה</Label>
+                            {formData.parking_required && (
+                              <div className="flex items-center gap-0.5 border-r pr-1">
+                                <Checkbox 
+                                  id={`parking-flex-${customer.id}`} 
+                                  checked={formData.parking_flexible !== false}
+                                  onCheckedChange={(c) => setFormData({ ...formData, parking_flexible: !!c })} 
+                                />
+                                <Label htmlFor={`parking-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                              </div>
+                            )}
+                          </div>
+                          {/* Elevator */}
+                          <div className="flex items-center gap-1 p-1.5 rounded border bg-background">
+                            <Checkbox id={`elevator-${customer.id}`} checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
+                            <Label htmlFor={`elevator-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer flex-1"><Building2 className="h-3 w-3" />מעלית</Label>
+                            {formData.elevator_required && (
+                              <div className="flex items-center gap-0.5 border-r pr-1">
+                                <Checkbox 
+                                  id={`elevator-flex-${customer.id}`} 
+                                  checked={formData.elevator_flexible !== false}
+                                  onCheckedChange={(c) => setFormData({ ...formData, elevator_flexible: !!c })} 
+                                />
+                                <Label htmlFor={`elevator-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                              </div>
+                            )}
+                          </div>
+                          {/* Balcony */}
+                          <div className="flex items-center gap-1 p-1.5 rounded border bg-background">
+                            <Checkbox id={`balcony-${customer.id}`} checked={!!formData.balcony_required} onCheckedChange={(c) => setFormData({ ...formData, balcony_required: !!c })} />
+                            <Label htmlFor={`balcony-${customer.id}`} className="text-xs cursor-pointer flex-1">מרפסת</Label>
+                            {formData.balcony_required && (
+                              <div className="flex items-center gap-0.5 border-r pr-1">
+                                <Checkbox 
+                                  id={`balcony-flex-${customer.id}`} 
+                                  checked={formData.balcony_flexible !== false}
+                                  onCheckedChange={(c) => setFormData({ ...formData, balcony_flexible: !!c })} 
+                                />
+                                <Label htmlFor={`balcony-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                              </div>
+                            )}
+                          </div>
+                          {/* Yard */}
+                          <div className="flex items-center gap-1 p-1.5 rounded border bg-background">
+                            <Checkbox id={`yard-${customer.id}`} checked={!!formData.yard_required} onCheckedChange={(c) => setFormData({ ...formData, yard_required: !!c })} />
+                            <Label htmlFor={`yard-${customer.id}`} className="text-xs cursor-pointer flex-1">חצר</Label>
+                            {formData.yard_required && (
+                              <div className="flex items-center gap-0.5 border-r pr-1">
+                                <Checkbox 
+                                  id={`yard-flex-${customer.id}`} 
+                                  checked={formData.yard_flexible !== false}
+                                  onCheckedChange={(c) => setFormData({ ...formData, yard_flexible: !!c })} 
+                                />
+                                <Label htmlFor={`yard-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </>
