@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Clock, Building2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -38,6 +40,15 @@ interface ScoutedProperty {
 
 const PAGE_SIZE = 20;
 
+const ROOM_OPTIONS = ['all', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+', '6+'];
+const FEATURE_OPTIONS = [
+  { key: 'elevator', label: 'מעלית' },
+  { key: 'parking', label: 'חניה' },
+  { key: 'balcony', label: 'מרפסת' },
+  { key: 'mamad', label: 'ממ"ד' },
+  { key: 'storage', label: 'מחסן' },
+];
+
 export const ScoutedPropertiesTable: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,6 +58,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<ScoutedProperty | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<ScoutedProperty | null>(null);
+  
+  // New filter states
+  const [roomsFilter, setRoomsFilter] = useState<string>('all');
+  const [minBudget, setMinBudget] = useState<string>('');
+  const [maxBudget, setMaxBudget] = useState<string>('');
+  const [cityFilter, setCityFilter] = useState<string>('all');
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all');
+  const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
 
   // Statistics query
   const { data: stats } = useQuery({
@@ -140,20 +159,80 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
+  // Fetch distinct cities
+  const { data: cities } = useQuery({
+    queryKey: ['scouted-properties-cities'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('scouted_properties')
+        .select('city')
+        .not('city', 'is', null);
+      const uniqueCities = [...new Set(data?.map(d => d.city).filter(Boolean))].sort() as string[];
+      return uniqueCities;
+    }
+  });
+
+  // Fetch neighborhoods based on selected city
+  const { data: neighborhoods } = useQuery({
+    queryKey: ['scouted-properties-neighborhoods', cityFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('scouted_properties')
+        .select('neighborhood')
+        .not('neighborhood', 'is', null);
+      
+      if (cityFilter !== 'all') {
+        query = query.eq('city', cityFilter);
+      }
+      
+      const { data } = await query;
+      const uniqueNeighborhoods = [...new Set(data?.map(d => d.neighborhood).filter(Boolean))].sort() as string[];
+      return uniqueNeighborhoods;
+    }
+  });
+
+  // Build query filters helper
+  const applyFilters = (query: any) => {
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+    if (sourceFilter !== 'all') {
+      query = query.eq('source', sourceFilter);
+    }
+    if (roomsFilter !== 'all') {
+      if (roomsFilter === '5+') {
+        query = query.gte('rooms', 5);
+      } else if (roomsFilter === '6+') {
+        query = query.gte('rooms', 6);
+      } else {
+        query = query.eq('rooms', parseFloat(roomsFilter));
+      }
+    }
+    if (minBudget) {
+      query = query.gte('price', parseInt(minBudget));
+    }
+    if (maxBudget) {
+      query = query.lte('price', parseInt(maxBudget));
+    }
+    if (cityFilter !== 'all') {
+      query = query.eq('city', cityFilter);
+    }
+    if (neighborhoodFilter !== 'all') {
+      query = query.eq('neighborhood', neighborhoodFilter);
+    }
+    // Note: features filter requires special handling since it's JSONB
+    return query;
+  };
+
   // Total count for pagination
   const { data: totalCount } = useQuery({
-    queryKey: ['scouted-properties-count', statusFilter, sourceFilter],
+    queryKey: ['scouted-properties-count', statusFilter, sourceFilter, roomsFilter, minBudget, maxBudget, cityFilter, neighborhoodFilter, featuresFilter],
     queryFn: async () => {
       let query = supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true });
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-      if (sourceFilter !== 'all') {
-        query = query.eq('source', sourceFilter);
-      }
+      query = applyFilters(query);
 
       const { count } = await query;
       return count || 0;
@@ -161,7 +240,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   });
 
   const { data: properties, isLoading } = useQuery({
-    queryKey: ['scouted-properties', statusFilter, sourceFilter, currentPage],
+    queryKey: ['scouted-properties', statusFilter, sourceFilter, roomsFilter, minBudget, maxBudget, cityFilter, neighborhoodFilter, featuresFilter, currentPage],
     queryFn: async () => {
       const from = (currentPage - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -172,16 +251,21 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .order('first_seen_at', { ascending: false })
         .range(from, to);
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-      if (sourceFilter !== 'all') {
-        query = query.eq('source', sourceFilter);
-      }
+      query = applyFilters(query);
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as ScoutedProperty[];
+      
+      // Filter features client-side (JSONB containment query is complex)
+      let filtered = data as ScoutedProperty[];
+      if (featuresFilter.length > 0) {
+        filtered = filtered.filter(p => {
+          if (!p.features) return false;
+          return featuresFilter.every(f => p.features?.[f] === true);
+        });
+      }
+      
+      return filtered;
     }
   });
 
@@ -348,6 +432,42 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setter(value);
   };
 
+  // Reset neighborhood when city changes
+  const handleCityChange = (value: string) => {
+    setCurrentPage(1);
+    setCityFilter(value);
+    setNeighborhoodFilter('all'); // Reset neighborhood when city changes
+  };
+
+  // Toggle feature filter
+  const toggleFeature = (feature: string) => {
+    setCurrentPage(1);
+    setFeaturesFilter(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setCurrentPage(1);
+    setSearchTerm('');
+    setStatusFilter('all');
+    setSourceFilter('all');
+    setRoomsFilter('all');
+    setMinBudget('');
+    setMaxBudget('');
+    setCityFilter('all');
+    setNeighborhoodFilter('all');
+    setFeaturesFilter([]);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = statusFilter !== 'all' || sourceFilter !== 'all' || 
+    roomsFilter !== 'all' || minBudget !== '' || maxBudget !== '' ||
+    cityFilter !== 'all' || neighborhoodFilter !== 'all' || featuresFilter.length > 0;
+
   if (isLoading && !properties) {
     return <div className="text-center py-8">טוען...</div>;
   }
@@ -421,9 +541,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>דירות שנסרקו ({totalCount || 0})</span>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
+                <X className="h-4 w-4 ml-1" />
+                נקה פילטרים
+              </Button>
+            )}
           </CardTitle>
           
-          <div className="flex flex-wrap gap-4 mt-4">
+          {/* Row 1: Search + Status + Source */}
+          <div className="flex flex-wrap gap-3 mt-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -437,11 +564,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
             </div>
             
             <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="סטטוס" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="new">חדש</SelectItem>
                 <SelectItem value="matched">עבר התאמה</SelectItem>
                 <SelectItem value="imported">יובא</SelectItem>
@@ -451,17 +578,112 @@ export const ScoutedPropertiesTable: React.FC = () => {
             </Select>
 
             <Select value={sourceFilter} onValueChange={handleFilterChange(setSourceFilter)}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="מקור" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="all">כל המקורות</SelectItem>
                 <SelectItem value="yad2">יד2</SelectItem>
                 <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
                 <SelectItem value="madlan">מדלן</SelectItem>
                 <SelectItem value="homeless">הומלס</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Row 2: Rooms + Budget + City + Neighborhood + Features */}
+          <div className="flex flex-wrap gap-3 mt-3">
+            <Select value={roomsFilter} onValueChange={handleFilterChange(setRoomsFilter)}>
+              <SelectTrigger className="w-[110px]">
+                <SelectValue placeholder="חדרים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל החדרים</SelectItem>
+                {ROOM_OPTIONS.slice(1).map(room => (
+                  <SelectItem key={room} value={room}>
+                    {room.includes('+') ? `${room} ומעלה` : `${room} חדרים`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                placeholder="מחיר מינ'"
+                value={minBudget}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setMinBudget(e.target.value);
+                }}
+                className="w-[100px]"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                placeholder="מחיר מקס'"
+                value={maxBudget}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setMaxBudget(e.target.value);
+                }}
+                className="w-[100px]"
+              />
+            </div>
+
+            <Select value={cityFilter} onValueChange={handleCityChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="עיר" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הערים</SelectItem>
+                {cities?.map(city => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={neighborhoodFilter} onValueChange={handleFilterChange(setNeighborhoodFilter)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="שכונה" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל השכונות</SelectItem>
+                {neighborhoods?.map(n => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Filter className="h-4 w-4" />
+                  תוספות
+                  {featuresFilter.length > 0 && (
+                    <Badge variant="secondary" className="mr-1 h-5 w-5 p-0 flex items-center justify-center">
+                      {featuresFilter.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48" align="start">
+                <div className="space-y-2">
+                  {FEATURE_OPTIONS.map(feature => (
+                    <div key={feature.key} className="flex items-center gap-2">
+                      <Checkbox
+                        id={feature.key}
+                        checked={featuresFilter.includes(feature.key)}
+                        onCheckedChange={() => toggleFeature(feature.key)}
+                      />
+                      <label htmlFor={feature.key} className="text-sm cursor-pointer">
+                        {feature.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </CardHeader>
 
