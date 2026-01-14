@@ -371,6 +371,7 @@ export type Database = {
           lawyer_details: string | null
           message: string
           move_in_date: string | null
+          move_out_date: string | null
           name: string
           new_or_second_hand: string | null
           next_followup_date: string | null
@@ -415,6 +416,7 @@ export type Database = {
           lawyer_details?: string | null
           message: string
           move_in_date?: string | null
+          move_out_date?: string | null
           name: string
           new_or_second_hand?: string | null
           next_followup_date?: string | null
@@ -459,6 +461,7 @@ export type Database = {
           lawyer_details?: string | null
           message?: string
           move_in_date?: string | null
+          move_out_date?: string | null
           name?: string
           new_or_second_hand?: string | null
           next_followup_date?: string | null

@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
+
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, TrendingUp, Baby, Wrench, Eye, Layers, AlertCircle, ExternalLink, RefreshCcw, Loader2 } from "lucide-react";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, Car, Building2, AlertCircle, ExternalLink, RefreshCcw, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -730,10 +730,10 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Budget & Rooms */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Budget, Rooms, Cities, Neighborhoods - Combined Row */}
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div>
-                    <Label className="text-xs">תקציב מינימום</Label>
+                    <Label className="text-xs">תקציב מינ.</Label>
                     <Input
                       type="number"
                       value={formData.budget_min || ''}
@@ -742,7 +742,7 @@ export const ExpandableCustomerRow = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">תקציב מקסימום</Label>
+                    <Label className="text-xs">תקציב מקס.</Label>
                     <Input
                       type="number"
                       value={formData.budget_max || ''}
@@ -751,7 +751,7 @@ export const ExpandableCustomerRow = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">חדרים מינימום</Label>
+                    <Label className="text-xs">חד' מינ.</Label>
                     <Input
                       type="number"
                       step="0.5"
@@ -761,7 +761,7 @@ export const ExpandableCustomerRow = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">חדרים מקסימום</Label>
+                    <Label className="text-xs">חד' מקס.</Label>
                     <Input
                       type="number"
                       step="0.5"
@@ -770,19 +770,15 @@ export const ExpandableCustomerRow = ({
                       className="h-8 text-sm"
                     />
                   </div>
-                </div>
-
-                {/* Locations & Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs">ערים מועדפות</Label>
+                    <Label className="text-xs">ערים</Label>
                     <CitySelectorDropdown
                       selectedCities={formData.preferred_cities || []}
                       onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">שכונות מועדפות</Label>
+                    <Label className="text-xs">שכונות</Label>
                     <NeighborhoodSelectorDropdown
                       selectedCities={formData.preferred_cities || []}
                       selectedNeighborhoods={formData.preferred_neighborhoods || []}
@@ -791,9 +787,10 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Dates, Tenant Type, Pets, Features - Combined Row (Rental) / Agent (All) */}
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div>
-                    <Label className="text-xs">תאריך כניסה</Label>
+                    <Label className="text-xs">מתאריך</Label>
                     <Input
                       type="date"
                       value={formData.move_in_date || ''}
@@ -802,43 +799,16 @@ export const ExpandableCustomerRow = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">מעקב הבא</Label>
+                    <Label className="text-xs">עד תאריך</Label>
                     <Input
-                      type="datetime-local"
-                      value={formData.next_followup_date || ''}
-                      onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
+                      type="date"
+                      value={formData.move_out_date || ''}
+                      onChange={(e) => setFormData({ ...formData, move_out_date: e.target.value })}
                       className="h-8 text-sm"
                     />
                   </div>
-                  <div>
-                    <Label className="text-xs">סוכן מטפל</Label>
-                    <Select 
-                      value={formData.assigned_agent_id || 'none'} 
-                      onValueChange={(value) => setFormData({ ...formData, assigned_agent_id: value === 'none' ? null : value })}
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue placeholder="בחר סוכן" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">ללא סוכן</SelectItem>
-                        {agents.map(agent => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.full_name || agent.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Rental-specific fields */}
-                {isRental && (
-                  <div className="space-y-2 p-3 bg-background/50 rounded-lg">
-                    <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                      <Home className="h-3 w-3" />
-                      פרטי שכירות
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {isRental ? (
+                    <>
                       <div>
                         <Label className="text-xs">סוג דייר</Label>
                         <Select value={formData.tenant_type || ''} onValueChange={(value) => setFormData({ ...formData, tenant_type: value })}>
@@ -854,13 +824,13 @@ export const ExpandableCustomerRow = ({
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs flex items-center gap-1"><Dog className="h-3 w-3" />חיות מחמד</Label>
+                        <Label className="text-xs flex items-center gap-1"><Dog className="h-3 w-3" />חיות</Label>
                         <Select 
                           value={formData.pets === true ? 'yes' : formData.pets === false ? 'no' : ''} 
                           onValueChange={(value) => setFormData({ ...formData, pets: value === 'yes' ? true : value === 'no' ? false : null })}
                         >
                           <SelectTrigger className="h-8 text-sm">
-                            <SelectValue placeholder="בחר..." />
+                            <SelectValue placeholder="בחר" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="yes">יש</SelectItem>
@@ -868,14 +838,62 @@ export const ExpandableCustomerRow = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="flex items-center gap-2 pt-5">
-                        <Checkbox id={`parking-${customer.id}`} checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />
-                        <Label htmlFor={`parking-${customer.id}`} className="text-xs flex items-center gap-1 cursor-pointer"><Car className="h-3 w-3" />חניה</Label>
+                      <div className="flex items-center gap-3 pt-5">
+                        <div className="flex items-center gap-1">
+                          <Checkbox id={`parking-${customer.id}`} checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />
+                          <Label htmlFor={`parking-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer"><Car className="h-3 w-3" />חניה</Label>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Checkbox id={`elevator-${customer.id}`} checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
+                          <Label htmlFor={`elevator-${customer.id}`} className="text-xs flex items-center gap-0.5 cursor-pointer"><Building2 className="h-3 w-3" />מעלית</Label>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 pt-5">
-                        <Checkbox id={`elevator-${customer.id}`} checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
-                        <Label htmlFor={`elevator-${customer.id}`} className="text-xs flex items-center gap-1 cursor-pointer"><Building2 className="h-3 w-3" />מעלית</Label>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Label className="text-xs">מעקב הבא</Label>
+                        <Input
+                          type="datetime-local"
+                          value={formData.next_followup_date || ''}
+                          onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
+                          className="h-8 text-sm"
+                        />
                       </div>
+                    </>
+                  )}
+                  <div>
+                    <Label className="text-xs">סוכן</Label>
+                    <Select 
+                      value={formData.assigned_agent_id || 'none'} 
+                      onValueChange={(value) => setFormData({ ...formData, assigned_agent_id: value === 'none' ? null : value })}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="בחר" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">ללא</SelectItem>
+                        {agents.map(agent => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            {agent.full_name || agent.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Rental followup - separate small row */}
+                {isRental && (
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <div>
+                      <Label className="text-xs">מעקב הבא</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formData.next_followup_date || ''}
+                        onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
+                        className="h-8 text-sm"
+                      />
                     </div>
                   </div>
                 )}
