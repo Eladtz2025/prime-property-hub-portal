@@ -121,6 +121,7 @@ const DynamicPitchDeckView = () => {
       case 'timeline':
         return <DynamicTimelineSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
       case 'marketing2':
+      case 'marketing_ii':
         return <DynamicMarketingIISlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
       case 'about':
         return <DynamicAboutUsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;

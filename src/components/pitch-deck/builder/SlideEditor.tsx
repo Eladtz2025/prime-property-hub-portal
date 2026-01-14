@@ -863,6 +863,7 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
         );
 
       case 'marketing2':
+      case 'marketing_ii':
         return (
           <>
             <div className="space-y-2">
