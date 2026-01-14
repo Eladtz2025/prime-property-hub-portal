@@ -526,8 +526,11 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       if (property.price >= minAllowed) {
         score += 25;
         reasons.push('מחיר נמוך מהתקציב');
+      } else {
+        // Even significantly cheaper still gets some score - cheaper is good!
+        score += 15;
+        reasons.push('מחיר נמוך משמעותית מהתקציב');
       }
-      // If even below minAllowed, still no penalty - cheaper is good
     } else if (property.price > maxBudget && maxBudget < Infinity) {
       // Above budget - check if within allowed deviation
       const allowedUp = getAllowedDeviation(maxBudget, propType, 'up');
