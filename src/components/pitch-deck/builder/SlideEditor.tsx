@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PitchDeckSlide, SlideType, SLIDE_TYPE_LABELS } from '@/types/pitch-deck';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, Check } from 'lucide-react';
 import BackgroundImagePicker from './BackgroundImagePicker';
 
 interface SlideEditorProps {
@@ -19,17 +19,81 @@ interface SlideEditorProps {
 const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEditorProps) => {
   const [slideData, setSlideData] = useState<Record<string, unknown>>(slide.slide_data as Record<string, unknown>);
   const [backgroundImage, setBackgroundImage] = useState(slide.background_image || '');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savedIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<Partial<PitchDeckSlide>>({});
 
   // Sync state when slide prop changes
   useEffect(() => {
     setSlideData(slide.slide_data as Record<string, unknown>);
     setBackgroundImage(slide.background_image || '');
+    setHasUnsavedChanges(false);
+    setShowSaved(false);
   }, [slide.id]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-save before component unmounts (switching slides)
+  useEffect(() => {
+    return () => {
+      if (hasUnsavedChanges && Object.keys(pendingUpdatesRef.current).length > 0) {
+        onUpdate(pendingUpdatesRef.current);
+      }
+    };
+  }, [hasUnsavedChanges, onUpdate]);
+
+  const debouncedSave = useCallback((updates: Partial<PitchDeckSlide>) => {
+    // Accumulate updates
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+    setHasUnsavedChanges(true);
+    setShowSaved(false);
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      setIsSaving(true);
+      onUpdate(pendingUpdatesRef.current);
+      pendingUpdatesRef.current = {};
+      
+      // Show saved indicator after a short delay
+      setTimeout(() => {
+        setIsSaving(false);
+        setHasUnsavedChanges(false);
+        setShowSaved(true);
+        
+        // Hide saved indicator after 2 seconds
+        if (savedIndicatorTimeoutRef.current) {
+          clearTimeout(savedIndicatorTimeoutRef.current);
+        }
+        savedIndicatorTimeoutRef.current = setTimeout(() => {
+          setShowSaved(false);
+        }, 2000);
+      }, 300);
+    }, 500);
+  }, [onUpdate]);
 
   const handleDataChange = (key: string, value: unknown) => {
     const newData = { ...slideData, [key]: value };
     setSlideData(newData);
-    onUpdate({ slide_data: newData });
+    debouncedSave({ slide_data: newData });
   };
 
   const handleArrayItemChange = (key: string, index: number, field: string, value: string) => {
@@ -70,7 +134,7 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
 
   const handleBackgroundChange = (value: string) => {
     setBackgroundImage(value);
-    onUpdate({ background_image: value });
+    debouncedSave({ background_image: value });
   };
 
   const renderFields = () => {
@@ -642,8 +706,20 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-base">
+        <CardTitle className="text-base flex items-center gap-2">
           עריכת סלייד: {SLIDE_TYPE_LABELS[slide.slide_type]?.he || slide.slide_type}
+          {isSaving && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1 font-normal">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              שומר...
+            </span>
+          )}
+          {showSaved && !isSaving && !hasUnsavedChanges && (
+            <span className="text-xs text-green-600 flex items-center gap-1 font-normal">
+              <Check className="h-3 w-3" />
+              נשמר
+            </span>
+          )}
         </CardTitle>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
