@@ -73,7 +73,6 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     new_or_second_hand: '' as string,
     floor_preference: '' as string,
     view_preference: '' as string,
-    view_preference: '' as string,
   });
 
   const validateFormField = (field: FormFields, value: string) => {
@@ -163,6 +162,11 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           parking_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.parking_required : null,
           balcony_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.balcony_required : null,
           elevator_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.elevator_required : null,
+          yard_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.yard_required : null,
+          parking_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.parking_flexible : null,
+          balcony_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.balcony_flexible : null,
+          elevator_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.elevator_flexible : null,
+          yard_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.yard_flexible : null,
           // Purchase-specific
           purchase_purpose: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.purchase_purpose || null : null,
           cash_available: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.cash_available : null,
@@ -211,6 +215,11 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         parking_required: false,
         balcony_required: false,
         elevator_required: false,
+        yard_required: false,
+        parking_flexible: true,
+        balcony_flexible: true,
+        elevator_flexible: true,
+        yard_flexible: true,
         purchase_purpose: '',
         cash_available: null,
         property_to_sell: false,

@@ -170,7 +170,19 @@ const CustomerMatchesCell = ({ customerId, customerName, customerPhone }: { cust
             <div key={match.id} className="p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
+                    {match.is_private === false && (
+                      <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
+                        תיווך
+                      </Badge>
+                    )}
+                    {match.is_private === true && (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                        פרטי
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {match.city && <span>{match.city}</span>}
                     {match.rooms && <span> | {match.rooms} חד'</span>}
@@ -910,19 +922,7 @@ export const ExpandableCustomerRow = ({
                         </div>
                       </div>
                     </>
-                  ) : (
-                    <>
-                      <div>
-                        <Label className="text-xs">מעקב הבא</Label>
-                        <Input
-                          type="datetime-local"
-                          value={formData.next_followup_date || ''}
-                          onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    </>
-                  )}
+                  ) : null}
                   <div>
                     <Label className="text-xs">סוכן</Label>
                     <Select 
@@ -944,20 +944,6 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Rental followup - separate small row */}
-                {isRental && (
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    <div>
-                      <Label className="text-xs">מעקב הבא</Label>
-                      <Input
-                        type="datetime-local"
-                        value={formData.next_followup_date || ''}
-                        onChange={(e) => setFormData({ ...formData, next_followup_date: e.target.value })}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Purchase-specific fields */}
                 {isSale && (

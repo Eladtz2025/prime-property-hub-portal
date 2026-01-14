@@ -18,6 +18,7 @@ interface ScoutedProperty {
   size: number | null;
   source: string;
   source_url: string;
+  is_private: boolean | null;
   matched_leads: MatchedLead[];
 }
 
@@ -30,6 +31,7 @@ interface CustomerMatch {
   size: number | null;
   source: string;
   source_url: string;
+  is_private: boolean | null;
   matchScore: number;
   matchReasons: string[];
 }
@@ -40,7 +42,7 @@ export const useCustomerMatches = (customerId: string) => {
     queryFn: async (): Promise<CustomerMatch[]> => {
       const { data, error } = await supabase
         .from('scouted_properties')
-        .select('id, title, city, price, rooms, size, source, source_url, matched_leads')
+        .select('id, title, city, price, rooms, size, source, source_url, is_private, matched_leads')
         .not('matched_leads', 'is', null);
 
       if (error) throw error;
@@ -64,6 +66,7 @@ export const useCustomerMatches = (customerId: string) => {
             size: property.size,
             source: property.source,
             source_url: property.source_url,
+            is_private: property.is_private,
             matchScore: leadMatch.score || 0,
             matchReasons: leadMatch.reasons || [],
           });
