@@ -307,6 +307,8 @@ function getAllowedDeviation(price: number, propertyType: string, direction: 'up
 }
 
 function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResult {
+  // ===== STRICT FILTERS - No flexibility =====
+  
   // Property type MUST match - this is a mandatory filter
   // Handle value differences: scouted uses 'rent'/'sale', leads use 'rental'/'sale'
   const leadPropertyType = lead.property_type;
@@ -318,10 +320,30 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     
     if (!isRental && !isSale) {
       // Property type doesn't match - return zero score
-      return { lead, matchScore: 0, matchReasons: [] };
+      return { lead, matchScore: 0, matchReasons: ['סוג עסקה לא מתאים'] };
     }
   }
   
+  // City MUST match if lead specified preferences
+  if (lead.preferred_cities?.length && property.city) {
+    const cityMatch = lead.preferred_cities.some(c => 
+      property.city!.includes(c) || c.includes(property.city!)
+    );
+    if (!cityMatch) {
+      return { lead, matchScore: 0, matchReasons: [`עיר לא מתאימה: ${property.city}`] };
+    }
+  }
+  
+  // Neighborhood MUST match if lead specified preferences
+  if (lead.preferred_neighborhoods?.length && property.neighborhood) {
+    const city = property.city || 'תל אביב יפו';
+    const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
+    if (!isNeighborhoodMatch) {
+      return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`] };
+    }
+  }
+  
+  // ===== FLEXIBLE SCORING - continues below =====
   let score = 0;
   let maxScore = 0;
   const reasons: string[] = [];
@@ -405,27 +427,20 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
     }
   }
 
-  // City match (15 points - reduced from 20)
+  // City match (15 points) - already validated as strict filter above
   maxScore += 15;
   if (property.city && lead.preferred_cities?.length) {
-    const cityMatch = lead.preferred_cities.some(c => 
-      property.city.includes(c) || c.includes(property.city)
-    );
-    if (cityMatch) {
-      score += 15;
-      reasons.push('עיר מועדפת');
-    }
+    // If we got here, city already matches (passed strict filter)
+    score += 15;
+    reasons.push('עיר מועדפת');
   }
 
-  // Neighborhood match using aliases (10 points)
+  // Neighborhood match (10 points) - already validated as strict filter above
   maxScore += 10;
   if (property.neighborhood && lead.preferred_neighborhoods?.length) {
-    const city = property.city || 'תל אביב יפו';
-    const isMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
-    if (isMatch) {
-      score += 10;
-      reasons.push(`שכונה מועדפת: ${property.neighborhood}`);
-    }
+    // If we got here, neighborhood already matches (passed strict filter)
+    score += 10;
+    reasons.push(`שכונה מועדפת: ${property.neighborhood}`);
   }
 
   // Features match with penalties (15 points base - increased from 5)

@@ -14,23 +14,37 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ========== Validation Schemas with Hebrew Error Messages ==========
 
-// Phone validation schema - returns clear error message
+// Phone validation schema - supports Israeli and international formats
 export const phoneSchema = z.string()
   .trim()
   .refine((val) => {
     if (!val) return true; // Optional - empty is ok
-    const cleaned = val.replace(/[-\s]/g, '');
-    return israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
-  }, 'מספר טלפון לא תקין. לדוגמה: 050-1234567');
+    const cleaned = val.replace(/[-\s()]/g, '');
+    
+    // Israeli format
+    const isIsraeli = israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
+    
+    // International format: starts with + followed by 7-15 digits
+    const isInternational = /^\+?[1-9]\d{6,14}$/.test(cleaned);
+    
+    return isIsraeli || isInternational;
+  }, 'מספר טלפון לא תקין');
 
-// Required phone validation
+// Required phone validation - supports Israeli and international formats
 export const requiredPhoneSchema = z.string()
   .trim()
   .min(1, 'מספר טלפון הוא שדה חובה')
   .refine((val) => {
-    const cleaned = val.replace(/[-\s]/g, '');
-    return israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
-  }, 'מספר טלפון לא תקין. לדוגמה: 050-1234567');
+    const cleaned = val.replace(/[-\s()]/g, '');
+    
+    // Israeli format
+    const isIsraeli = israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
+    
+    // International format: starts with + followed by 7-15 digits
+    const isInternational = /^\+?[1-9]\d{6,14}$/.test(cleaned);
+    
+    return isIsraeli || isInternational;
+  }, 'מספר טלפון לא תקין');
 
 // Email validation schema
 export const emailSchema = z.string()
