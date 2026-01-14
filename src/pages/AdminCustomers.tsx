@@ -101,6 +101,21 @@ export default function AdminCustomers() {
     }
   };
 
+  const handleResetAllMatches = async () => {
+    setIsMatchingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-all-matches', {});
+      if (error) throw error;
+      toast.success(`חושב מחדש: ${data.total_matches} התאמות ב-${data.properties_with_matches} נכסים`);
+      fetchCustomers();
+    } catch (error) {
+      console.error('Reset matches error:', error);
+      toast.error('שגיאה בחישוב מחדש');
+    } finally {
+      setIsMatchingAll(false);
+    }
+  };
+
   const handleEditBroker = (broker: BrokerWithPropertyNames) => {
     setEditBroker(broker);
     setAddBrokerModalOpen(true);
@@ -224,7 +239,7 @@ export default function AdminCustomers() {
               לקוח חדש
             </Button>
             <Button 
-              onClick={handleMatchAllLeads} 
+              onClick={handleResetAllMatches} 
               size="sm" 
               variant="outline"
               disabled={isMatchingAll}
@@ -234,7 +249,7 @@ export default function AdminCustomers() {
               ) : (
                 <RefreshCcw className="h-4 w-4 ml-2" />
               )}
-              התאם את כולם
+              חשב התאמות מחדש
             </Button>
             <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline">
               <Plus className="h-4 w-4 ml-2" />
