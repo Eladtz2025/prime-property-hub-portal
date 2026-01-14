@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, BarChart3, Building2 } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Clock, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -82,7 +82,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .gte('first_seen_at', weekStart);
 
-      // By source
+      // By source (total)
       const { data: sourceData } = await supabase
         .from('scouted_properties')
         .select('source');
@@ -91,6 +91,28 @@ export const ScoutedPropertiesTable: React.FC = () => {
         acc[item.source] = (acc[item.source] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};
+
+      // Last scan results
+      const { data: lastRun } = await supabase
+        .from('scout_runs')
+        .select('started_at')
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let lastScanBySources: Record<string, number> = { yad2: 0, homeless: 0, madlan: 0 };
+      if (lastRun?.started_at) {
+        const { data: lastScanData } = await supabase
+          .from('scouted_properties')
+          .select('source')
+          .gte('first_seen_at', lastRun.started_at);
+        
+        lastScanBySources = lastScanData?.reduce((acc, item) => {
+          acc[item.source] = (acc[item.source] || 0) + 1;
+          return acc;
+        }, { yad2: 0, homeless: 0, madlan: 0 } as Record<string, number>) || { yad2: 0, homeless: 0, madlan: 0 };
+      }
 
       // Inactive count
       const { count: inactiveCount } = await supabase
@@ -104,6 +126,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
         todayBySources,
         week: weekCount || 0,
         bySources: sourceCounts,
+        lastScanBySources,
         inactive: inactiveCount || 0
       };
     }
@@ -334,6 +357,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">סה"כ דירות</p>
                 <p className="text-2xl font-bold">{stats?.total || 0}</p>
+                <div className="flex gap-2 flex-wrap text-xs mt-1">
+                  <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
+                  <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
+                  <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -384,14 +412,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10">
-                <BarChart3 className="h-5 w-5 text-purple-500" />
+                <Clock className="h-5 w-5 text-purple-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">לפי מקור</p>
+                <p className="text-sm text-muted-foreground">סריקה אחרונה</p>
                 <div className="flex gap-2 flex-wrap text-xs mt-1">
-                  <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
-                  <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
-                  <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
+                  <span className="text-orange-600">יד2: {stats?.lastScanBySources?.yad2 || 0}</span>
+                  <span className="text-purple-600">הומלס: {stats?.lastScanBySources?.homeless || 0}</span>
+                  <span className="text-blue-600">מדלן: {stats?.lastScanBySources?.madlan || 0}</span>
                 </div>
               </div>
             </div>
