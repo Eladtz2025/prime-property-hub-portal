@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface MatchedLead {
   lead_id: string;
-  matchScore: number;
-  matchReasons?: string[];
+  score: number;
+  reasons?: string[];
+  name?: string;
+  phone?: string;
 }
 
 interface ScoutedProperty {
@@ -62,8 +64,8 @@ export const useCustomerMatches = (customerId: string) => {
             size: property.size,
             source: property.source,
             source_url: property.source_url,
-            matchScore: leadMatch.matchScore || 0,
-            matchReasons: leadMatch.matchReasons || [],
+            matchScore: leadMatch.score || 0,
+            matchReasons: leadMatch.reasons || [],
           });
         }
       }
