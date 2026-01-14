@@ -42,86 +42,55 @@ Deno.serve(async (req) => {
 
     console.log(`🚀 Trigger Scout Pages - Config: ${config.name} (${config.source})`);
 
-    // Determine if this is a Yad2 config (needs distributed scanning)
-    const isYad2 = config.source === 'yad2' || config.source === 'yad2_private';
-    
-    if (isYad2) {
-      // Yad2: Distributed scanning - 12 pages, each in separate call
-      const pagesToScan = 12;
-      const triggeredPages: number[] = [];
+    // All sources now use distributed scanning - 12 pages each in separate calls
+    const pagesToScan = 12;
+    const triggeredPages: number[] = [];
 
-      console.log(`📄 Yad2 detected - triggering ${pagesToScan} separate page scans`);
+    console.log(`📄 Triggering ${pagesToScan} separate page scans for: ${config.name} (${config.source})`);
 
-      for (let page = 1; page <= pagesToScan; page++) {
-        try {
-          console.log(`🔄 Triggering page ${page}/${pagesToScan} for: ${config.name}`);
-          
-          // Fire and forget - don't await the response
-          fetch(`${supabaseUrl}/functions/v1/scout-properties`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              config_id: config.id,
-              page: page  // New: specific page to scan
-            }),
-          }).catch(err => {
-            console.error(`❌ Failed to trigger page ${page}:`, err);
-          });
+    for (let page = 1; page <= pagesToScan; page++) {
+      try {
+        console.log(`🔄 Triggering page ${page}/${pagesToScan} for: ${config.name}`);
+        
+        // Fire and forget - don't await the response
+        fetch(`${supabaseUrl}/functions/v1/scout-properties`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            config_id: config.id,
+            page: page
+          }),
+        }).catch(err => {
+          console.error(`❌ Failed to trigger page ${page}:`, err);
+        });
 
-          triggeredPages.push(page);
-          
-          // 2 second delay between page triggers to prevent overload
-          if (page < pagesToScan) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-          
-        } catch (err) {
-          console.error(`❌ Error triggering page ${page}:`, err);
+        triggeredPages.push(page);
+        
+        // 2 second delay between page triggers to prevent overload
+        if (page < pagesToScan) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
+        
+      } catch (err) {
+        console.error(`❌ Error triggering page ${page}:`, err);
       }
-
-      console.log(`✅ Triggered ${triggeredPages.length} page scans for ${config.name}`);
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          config: config.name,
-          source: config.source,
-          mode: 'distributed',
-          pages_triggered: triggeredPages.length,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else {
-      // Madlan/Other: Regular scanning (existing behavior)
-      console.log(`📄 ${config.source} detected - using regular scan (no page distribution)`);
-
-      fetch(`${supabaseUrl}/functions/v1/scout-properties`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ config_id: config.id }),
-      }).catch(err => {
-        console.error(`❌ Failed to trigger ${config.name}:`, err);
-      });
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          config: config.name,
-          source: config.source,
-          mode: 'regular',
-          pages_triggered: 1,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
+
+    console.log(`✅ Triggered ${triggeredPages.length} page scans for ${config.name}`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        config: config.name,
+        source: config.source,
+        mode: 'distributed',
+        pages_triggered: triggeredPages.length,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('❌ Trigger Scout Pages failed:', error);

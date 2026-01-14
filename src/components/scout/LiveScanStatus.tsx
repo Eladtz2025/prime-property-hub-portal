@@ -43,7 +43,25 @@ export const LiveScanStatus: React.FC = () => {
     refetchInterval: 3000,
   });
 
-  // Query for last completed scan
+  // Query for recently completed scans in this batch (last 5 minutes) to show page progress
+  const { data: recentCompleted } = useQuery({
+    queryKey: ['recent-completed-scans'],
+    queryFn: async () => {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('scout_runs')
+        .select('id, source, status, properties_found, new_properties, completed_at, scout_configs(name)')
+        .eq('status', 'completed')
+        .gte('completed_at', fiveMinutesAgo)
+        .order('completed_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 3000,
+  });
+
+  // Query for last completed scan (for idle state)
   const { data: lastCompleted } = useQuery({
     queryKey: ['last-completed-scan'],
     queryFn: async () => {
@@ -63,20 +81,44 @@ export const LiveScanStatus: React.FC = () => {
 
   const isScanning = runningScans && runningScans.length > 0;
 
-  // Aggregate stats from running scans
-  const totalFound = runningScans?.reduce((sum, run) => sum + (run.properties_found || 0), 0) || 0;
-  const totalNew = runningScans?.reduce((sum, run) => sum + (run.new_properties || 0), 0) || 0;
+  // Group running + recently completed by source to show page progress
+  const sourceProgress = React.useMemo(() => {
+    const progress: Record<string, { 
+      running: number; 
+      completed: number; 
+      total: number;
+      found: number; 
+      new: number;
+    }> = {};
+    
+    // Count running scans per source
+    runningScans?.forEach(run => {
+      const source = run.source;
+      if (!progress[source]) {
+        progress[source] = { running: 0, completed: 0, total: 12, found: 0, new: 0 };
+      }
+      progress[source].running += 1;
+      progress[source].found += run.properties_found || 0;
+      progress[source].new += run.new_properties || 0;
+    });
+    
+    // Count recently completed scans per source (from same batch)
+    recentCompleted?.forEach(run => {
+      const source = run.source;
+      if (!progress[source]) {
+        progress[source] = { running: 0, completed: 0, total: 12, found: 0, new: 0 };
+      }
+      progress[source].completed += 1;
+      progress[source].found += run.properties_found || 0;
+      progress[source].new += run.new_properties || 0;
+    });
+    
+    return progress;
+  }, [runningScans, recentCompleted]);
 
-  // Group by source
-  const sourceStats = runningScans?.reduce((acc, run) => {
-    const source = run.source;
-    if (!acc[source]) {
-      acc[source] = { found: 0, new: 0 };
-    }
-    acc[source].found += run.properties_found || 0;
-    acc[source].new += run.new_properties || 0;
-    return acc;
-  }, {} as Record<string, { found: number; new: number }>);
+  // Aggregate totals
+  const totalFound = Object.values(sourceProgress).reduce((sum, s) => sum + s.found, 0);
+  const totalNew = Object.values(sourceProgress).reduce((sum, s) => sum + s.new, 0);
 
   // Calculate elapsed time
   const getElapsedTime = () => {
@@ -132,10 +174,12 @@ export const LiveScanStatus: React.FC = () => {
         <Progress value={getProgress()} className="h-2 mb-3" />
 
         <div className="flex flex-wrap items-center gap-4 mb-2">
-          {sourceStats && Object.entries(sourceStats).map(([source, stats]) => (
+          {Object.entries(sourceProgress).map(([source, stats]) => (
             <div key={source} className="flex items-center gap-2">
               {getSourceBadge(source)}
               <span className="text-sm">
+                <span className="font-semibold">{stats.completed + stats.running}</span>/12 דפים
+                {' · '}
                 <span className="font-semibold">{stats.found}</span> נכסים
                 {stats.new > 0 && (
                   <span className="text-green-600 mr-1">({stats.new} חדשים)</span>
@@ -155,14 +199,6 @@ export const LiveScanStatus: React.FC = () => {
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {runningScans?.map(run => (
-            <div key={run.id} className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>{run.scout_configs?.name || run.source}</span>
-            </div>
-          ))}
-        </div>
       </Card>
     );
   }
