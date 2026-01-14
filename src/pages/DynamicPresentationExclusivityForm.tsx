@@ -35,7 +35,7 @@ const DynamicPresentationExclusivityForm = () => {
   const token = searchParams.get('token');
   const { data: deck, isLoading: deckLoading } = usePitchDeckBySlug(slug);
   
-  const [language, setLanguage] = useState<PresentationExclusivityLanguage>('he');
+  const [language, setLanguage] = useState<PresentationExclusivityLanguage>('en');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);

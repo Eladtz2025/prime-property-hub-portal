@@ -9,7 +9,7 @@ import { Step1PricingSlideData } from "@/types/pitch-deck";
 const DynamicPresentationPricingPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: deck, isLoading } = usePitchDeckBySlug(slug);
-  const [language, setLanguage] = useState<'en' | 'he'>('he');
+  const [language, setLanguage] = useState<'en' | 'he'>('en');
   
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
 
