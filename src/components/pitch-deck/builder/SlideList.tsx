@@ -37,8 +37,10 @@ const SLIDE_ICONS: Record<string, React.ElementType> = {
   marketing: Megaphone,
   timeline: Clock,
   marketing2: Users,
+  marketing_ii: Users,
   about: Info,
   contact: Phone,
+  step1_pricing: DollarSign,
 };
 
 const SlideList = ({ 

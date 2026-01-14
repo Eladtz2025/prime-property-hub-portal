@@ -1,84 +1,125 @@
 import { PropertySlideData } from '@/types/pitch-deck';
-import { 
-  Layers, Square, Home, Maximize, Sun, Shield, ArrowUpDown, 
-  FileCheck, Building2, Sparkles, LucideIcon 
+import {
+  LucideIcon,
+  Square,
+  Layers,
+  ArrowUpDown,
+  Compass,
+  Building2,
+  Shield,
+  Lightbulb,
+  Sparkles,
+  Home,
+  Sun,
+  Wind,
+  Car,
+  Trees
 } from 'lucide-react';
 
 interface DynamicPropertySlideProps {
-  data: PropertySlideData;
+  data: PropertySlideData & {
+    // Old format fields
+    address?: string;
+    floor?: string | number;
+    rooms?: string | number;
+    size?: string;
+    price?: string;
+    description?: string;
+  };
   backgroundImage?: string;
   overlayOpacity?: number;
 }
 
 const iconMap: Record<string, LucideIcon> = {
-  Layers, Square, Home, Maximize, Sun, Shield, 
-  ArrowUpDown, FileCheck, Building2, Sparkles
+  Square,
+  Layers,
+  ArrowUpDown,
+  Compass,
+  Building2,
+  Shield,
+  Lightbulb,
+  Sparkles,
+  Home,
+  sun: Sun,
+  Sun,
+  wind: Wind,
+  Wind,
+  car: Car,
+  Car,
+  trees: Trees,
+  Trees,
+  home: Home,
+  shield: Shield,
 };
 
 const DynamicPropertySlide = ({ 
   data, 
-  backgroundImage = '/images/ben-yehuda-110/IMG_5760.JPG',
+  backgroundImage = '/images/ben-yehuda-110/cleaned-property-image (2).png',
   overlayOpacity = 0.85 
 }: DynamicPropertySlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+
+  // Build apartment details from new or old format
+  const apartmentDetails = data.apartment_details?.length 
+    ? data.apartment_details 
+    : [
+        data.rooms && { icon: 'Layers', text: `${data.rooms} Rooms` },
+        data.size && { icon: 'Square', text: data.size },
+        data.floor && { icon: 'ArrowUpDown', text: `Floor ${data.floor}` },
+        data.price && { icon: 'Sparkles', text: data.price },
+      ].filter(Boolean) as Array<{ icon: string; text: string }>;
+
+  // Building details from new format (old format didn't have this)
+  const buildingDetails = data.building_details || [];
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center" 
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url('${backgroundImage}')` }}
       />
       
       {/* Warm sand/orange filter overlay */}
       <div 
         className="absolute inset-0" 
-        style={{
+        style={{ 
           backgroundColor: `rgba(180, 140, 100, ${overlayOpacity})`,
           mixBlendMode: 'overlay'
         }}
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8">
-        {/* Main Title */}
-        <h1 
-          className="text-lg md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
+        {/* Title */}
+        <h2 
+          className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-2 md:mb-4"
           style={{ textShadow: softShadow }}
         >
-          <span className="md:hidden">{data.title_mobile || data.title}</span>
-          <span className="hidden md:inline">{data.title}</span>
-        </h1>
+          <span className="hidden md:block">{data.title || 'A Rare Opportunity in the Heart of the City'}</span>
+          <span className="md:hidden">{data.title_mobile || data.title || 'A Rare Opportunity'}</span>
+        </h2>
 
         {/* Decorative Line */}
-        <div className="w-16 md:w-20 h-px bg-[#f5c242] mb-4 md:mb-6" />
+        <div className="w-16 md:w-20 h-px bg-white/60 mb-4 md:mb-6" />
 
         {/* Two Column Layout */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6" dir="ltr">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
           {/* The Apartment */}
           <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
-            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
-                <Home className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
-              </div>
-              <h3 
-                className="text-base md:text-lg font-serif font-medium text-white uppercase tracking-wider"
-                style={{ textShadow: softShadow }}
-              >
-                The Apartment
-              </h3>
-            </div>
-            <ul className="space-y-1.5 md:space-y-2">
-              {(data.apartment_details || []).map((detail, index) => {
-                const IconComponent = iconMap[detail.icon] || Home;
+            <h3 
+              className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
+              style={{ textShadow: softShadow }}
+            >
+              The Apartment
+            </h3>
+            <ul className="space-y-2 md:space-y-3">
+              {apartmentDetails.map((item, index) => {
+                const Icon = iconMap[item.icon] || Square;
                 return (
-                  <li 
-                    key={index} 
-                    className="flex items-start gap-2 text-white/90 text-xs md:text-sm font-light"
-                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
-                  >
-                    <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
-                    <span>{detail.text}</span>
+                  <li key={index} className="flex items-center gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                    <Icon className="h-4 w-4 text-[#f5c242]" />
+                    <span>{item.text}</span>
                   </li>
                 );
               })}
@@ -86,34 +127,27 @@ const DynamicPropertySlide = ({
           </div>
 
           {/* The Building */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
-            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center">
-                <Building2 className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
-              </div>
+          {buildingDetails.length > 0 && (
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
               <h3 
-                className="text-base md:text-lg font-serif font-medium text-white uppercase tracking-wider"
+                className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
                 style={{ textShadow: softShadow }}
               >
                 The Building
               </h3>
+              <ul className="space-y-2 md:space-y-3">
+                {buildingDetails.map((item, index) => {
+                  const Icon = iconMap[item.icon] || Building2;
+                  return (
+                    <li key={index} className="flex items-center gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                      <Icon className="h-4 w-4 text-[#f5c242]" />
+                      <span>{item.text}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <ul className="space-y-1.5 md:space-y-2">
-              {(data.building_details || []).map((detail, index) => {
-                const IconComponent = iconMap[detail.icon] || Building2;
-                return (
-                  <li 
-                    key={index} 
-                    className="flex items-start gap-2 text-white/90 text-xs md:text-sm font-light"
-                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
-                  >
-                    <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242] mt-0.5 flex-shrink-0" />
-                    <span>{detail.text}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+          )}
         </div>
       </div>
     </div>

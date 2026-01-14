@@ -43,6 +43,7 @@ export type SlideType =
   | 'marketing'
   | 'timeline'
   | 'marketing2'
+  | 'marketing_ii'
   | 'about'
   | 'contact'
   | 'step1_pricing';
@@ -189,6 +190,7 @@ export const SLIDE_TYPE_LABELS: Record<SlideType, { he: string; en: string }> = 
   marketing: { he: 'אסטרטגיה שיווקית', en: 'Marketing' },
   timeline: { he: 'ציר זמן', en: 'Timeline' },
   marketing2: { he: 'למה אנחנו', en: 'Why Us' },
+  marketing_ii: { he: 'נוכחות דיגיטלית', en: 'Digital Presence' },
   about: { he: 'אודותינו', en: 'About Us' },
   contact: { he: 'יצירת קשר', en: 'Contact' },
   step1_pricing: { he: 'Step 1 - תמחור', en: 'Step 1 - Pricing' },

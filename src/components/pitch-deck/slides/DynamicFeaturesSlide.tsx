@@ -1,7 +1,16 @@
 import { FeaturesSlideData } from '@/types/pitch-deck';
 
+interface OldFeature {
+  title?: string;
+  description?: string;
+  icon?: string;
+}
+
 interface DynamicFeaturesSlideProps {
-  data: FeaturesSlideData;
+  data: FeaturesSlideData & {
+    // Old format fields
+    features?: OldFeature[];
+  };
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -12,6 +21,16 @@ const DynamicFeaturesSlide = ({
   overlayOpacity = 0.85 
 }: DynamicFeaturesSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+
+  // Build key_features from new or old format
+  const keyFeatures = data.key_features?.length 
+    ? data.key_features 
+    : (data.features || []).slice(0, 3).map(f => f.title || f.description || '').filter(Boolean);
+
+  // Build value_elements from new or old format (second half of old features)
+  const valueElements = data.value_elements?.length 
+    ? data.value_elements 
+    : (data.features || []).slice(3).map(f => f.title || f.description || '').filter(Boolean);
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
@@ -46,40 +65,44 @@ const DynamicFeaturesSlide = ({
         {/* Two Column Layout for Features */}
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
           {/* Key Features */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
-            <h3 
-              className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
-              style={{ textShadow: softShadow }}
-            >
-              Key Features
-            </h3>
-            <ul className="space-y-2 md:space-y-3">
-              {(data.key_features || []).map((feature, index) => (
-                <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
-                  <span className="text-[#f5c242] mt-0.5">•</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {keyFeatures.length > 0 && (
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+              <h3 
+                className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
+                style={{ textShadow: softShadow }}
+              >
+                Key Features
+              </h3>
+              <ul className="space-y-2 md:space-y-3">
+                {keyFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                    <span className="text-[#f5c242] mt-0.5">•</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Value Elements */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
-            <h3 
-              className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
-              style={{ textShadow: softShadow }}
-            >
-              Value Elements
-            </h3>
-            <ul className="space-y-2 md:space-y-3">
-              {(data.value_elements || []).map((item, index) => (
-                <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
-                  <span className="text-[#f5c242] mt-0.5">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {valueElements.length > 0 && (
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+              <h3 
+                className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
+                style={{ textShadow: softShadow }}
+              >
+                Value Elements
+              </h3>
+              <ul className="space-y-2 md:space-y-3">
+                {valueElements.map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 md:gap-3 text-white/90 text-xs md:text-sm">
+                    <span className="text-[#f5c242] mt-0.5">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Quote - Full Width */}
