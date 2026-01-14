@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
-import { Dog, Car, Building2, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
+import { Dog, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
+import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
 import { CitySelectorCompact } from "@/components/ui/city-selector";
@@ -437,90 +438,30 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
 
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">דרישות מהנכס:</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Parking */}
-                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                      <Checkbox
-                        id="edit-parking"
-                        checked={!!formData.parking_required}
-                        onCheckedChange={(checked) => setFormData({ ...formData, parking_required: !!checked })}
-                      />
-                      <Label htmlFor="edit-parking" className="flex items-center gap-1 cursor-pointer flex-1">
-                        <Car className="h-4 w-4" />
-                        חניה
-                      </Label>
-                      {formData.parking_required && (
-                        <div className="flex items-center gap-1 border-r pr-2">
-                          <Checkbox
-                            id="edit-parking-flex"
-                            checked={formData.parking_flexible !== false}
-                            onCheckedChange={(checked) => setFormData({ ...formData, parking_flexible: !!checked })}
-                          />
-                          <Label htmlFor="edit-parking-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
-                        </div>
-                      )}
-                    </div>
-                    {/* Balcony */}
-                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                      <Checkbox
-                        id="edit-balcony"
-                        checked={!!formData.balcony_required}
-                        onCheckedChange={(checked) => setFormData({ ...formData, balcony_required: !!checked })}
-                      />
-                      <Label htmlFor="edit-balcony" className="cursor-pointer flex-1">מרפסת</Label>
-                      {formData.balcony_required && (
-                        <div className="flex items-center gap-1 border-r pr-2">
-                          <Checkbox
-                            id="edit-balcony-flex"
-                            checked={formData.balcony_flexible !== false}
-                            onCheckedChange={(checked) => setFormData({ ...formData, balcony_flexible: !!checked })}
-                          />
-                          <Label htmlFor="edit-balcony-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
-                        </div>
-                      )}
-                    </div>
-                    {/* Elevator */}
-                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                      <Checkbox
-                        id="edit-elevator"
-                        checked={!!formData.elevator_required}
-                        onCheckedChange={(checked) => setFormData({ ...formData, elevator_required: !!checked })}
-                      />
-                      <Label htmlFor="edit-elevator" className="flex items-center gap-1 cursor-pointer flex-1">
-                        <Building2 className="h-4 w-4" />
-                        מעלית
-                      </Label>
-                      {formData.elevator_required && (
-                        <div className="flex items-center gap-1 border-r pr-2">
-                          <Checkbox
-                            id="edit-elevator-flex"
-                            checked={formData.elevator_flexible !== false}
-                            onCheckedChange={(checked) => setFormData({ ...formData, elevator_flexible: !!checked })}
-                          />
-                          <Label htmlFor="edit-elevator-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
-                        </div>
-                      )}
-                    </div>
-                    {/* Yard */}
-                    <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                      <Checkbox
-                        id="edit-yard"
-                        checked={!!formData.yard_required}
-                        onCheckedChange={(checked) => setFormData({ ...formData, yard_required: !!checked })}
-                      />
-                      <Label htmlFor="edit-yard" className="cursor-pointer flex-1">חצר</Label>
-                      {formData.yard_required && (
-                        <div className="flex items-center gap-1 border-r pr-2">
-                          <Checkbox
-                            id="edit-yard-flex"
-                            checked={formData.yard_flexible !== false}
-                            onCheckedChange={(checked) => setFormData({ ...formData, yard_flexible: !!checked })}
-                          />
-                          <Label htmlFor="edit-yard-flex" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <PropertyRequirementsDropdown
+                    values={{
+                      parking_required: formData.parking_required,
+                      parking_flexible: formData.parking_flexible,
+                      balcony_required: formData.balcony_required,
+                      balcony_flexible: formData.balcony_flexible,
+                      elevator_required: formData.elevator_required,
+                      elevator_flexible: formData.elevator_flexible,
+                      yard_required: formData.yard_required,
+                      yard_flexible: formData.yard_flexible,
+                    }}
+                    onChange={(vals) => setFormData({
+                      ...formData,
+                      parking_required: vals.parking_required,
+                      parking_flexible: vals.parking_flexible,
+                      balcony_required: vals.balcony_required,
+                      balcony_flexible: vals.balcony_flexible,
+                      elevator_required: vals.elevator_required,
+                      elevator_flexible: vals.elevator_flexible,
+                      yard_required: vals.yard_required,
+                      yard_flexible: vals.yard_flexible,
+                    })}
+                    className="w-full"
+                  />
                 </div>
               </div>
             </>
