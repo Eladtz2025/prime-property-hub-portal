@@ -371,6 +371,7 @@ export type Database = {
           is_hidden: boolean | null
           last_contact_date: string | null
           lawyer_details: string | null
+          matching_status: string | null
           message: string
           move_in_date: string | null
           move_out_date: string | null
@@ -424,6 +425,7 @@ export type Database = {
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
+          matching_status?: string | null
           message: string
           move_in_date?: string | null
           move_out_date?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
+          matching_status?: string | null
           message?: string
           move_in_date?: string | null
           move_out_date?: string | null
