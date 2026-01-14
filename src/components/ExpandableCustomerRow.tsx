@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, AlertCircle, ExternalLink, RefreshCcw, Loader2 } from "lucide-react";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, AlertCircle, ExternalLink, RefreshCcw, Loader2, Building2 } from "lucide-react";
 import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
+import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
@@ -130,17 +132,37 @@ const CustomerMatchesCell = ({
   customerName, 
   customerPhone,
   preferredCities,
-  preferredNeighborhoods
+  preferredNeighborhoods,
+  budgetMin,
+  budgetMax,
+  roomsMin,
+  roomsMax,
+  propertyType
 }: { 
   customerId: string; 
   customerName: string; 
   customerPhone?: string | null;
   preferredCities?: string[] | null;
   preferredNeighborhoods?: string[] | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  roomsMin?: number | null;
+  roomsMax?: number | null;
+  propertyType?: string | null;
 }) => {
-  const { data: matches = [], isLoading } = useCustomerMatches(customerId);
+  const { data: scoutedMatches = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
+  const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
+    id: customerId,
+    budget_min: budgetMin,
+    budget_max: budgetMax,
+    rooms_min: roomsMin,
+    rooms_max: roomsMax,
+    preferred_cities: preferredCities,
+    preferred_neighborhoods: preferredNeighborhoods,
+    property_type: propertyType
+  });
 
-  const handleSendWhatsApp = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
+  const handleSendWhatsAppScouted = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
     if (!customerPhone) return;
     
     const message = encodeURIComponent(
@@ -155,9 +177,24 @@ const CustomerMatchesCell = ({
     window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
   };
 
+  const handleSendWhatsAppOwn = (property: { title: string | null; address: string; city: string; rooms: number | null; property_size: number | null; monthly_rent: number | null }) => {
+    if (!customerPhone) return;
+    
+    const message = encodeURIComponent(
+      `שלום ${customerName}!\n\n` +
+      `מצאתי דירה שיכולה להתאים לך:\n` +
+      `📍 ${property.city}, ${property.address}\n` +
+      `🏠 ${property.rooms ? `${property.rooms} חדרים` : ''} ${property.property_size ? `| ${property.property_size} מ"ר` : ''}\n` +
+      `💰 ${property.monthly_rent ? `₪${property.monthly_rent.toLocaleString()}` : ''}\n\n` +
+      `אשמח לתאם צפייה, מה אומר/ת?`
+    );
+    window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
+  };
+
   // Check if customer can receive matches
   const hasCities = preferredCities && preferredCities.length > 0;
   const hasNeighborhoods = preferredNeighborhoods && preferredNeighborhoods.length > 0;
+  const isLoading = isLoadingScouted || isLoadingOwn;
 
   if (isLoading) {
     return <span className="text-muted-foreground text-sm">...</span>;
@@ -199,92 +236,170 @@ const CustomerMatchesCell = ({
     );
   }
 
+  const totalMatches = scoutedMatches.length + ownMatches.length;
+
   // Has data but no matches found
-  if (matches.length === 0) {
+  if (totalMatches === 0) {
     return <span className="text-muted-foreground text-sm">אין התאמה</span>;
   }
 
-  // Has matches - show button
+  // Has matches - show buttons
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-primary hover:text-primary">
-          <Home className="h-3 w-3" />
-          {matches.length} דירות
-        </Button>
+        <div className="flex items-center gap-1">
+          {ownMatches.length > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+              <Building2 className="h-3 w-3" />
+              {ownMatches.length}
+            </Button>
+          )}
+          {scoutedMatches.length > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800">
+              <Home className="h-3 w-3" />
+              {scoutedMatches.length}
+            </Button>
+          )}
+        </div>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" />
             דירות שהותאמו ל{customerName}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 mt-4">
-          {matches.map((match) => (
-            <div key={match.id} className="p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-              <div className="flex justify-between items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
-                    {match.is_private === false && (
-                      <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
-                        תיווך
-                      </Badge>
-                    )}
-                    {match.is_private === true && (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                        פרטי
-                      </Badge>
+        
+        <Tabs defaultValue={ownMatches.length > 0 ? "own" : "scouted"} className="mt-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="own" className="gap-2 data-[state=active]:bg-green-100 data-[state=active]:text-green-800">
+              <Building2 className="h-4 w-4" />
+              נכסים שלנו ({ownMatches.length})
+            </TabsTrigger>
+            <TabsTrigger value="scouted" className="gap-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
+              <Home className="h-4 w-4" />
+              נכסים נסרקים ({scoutedMatches.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="own" className="space-y-3 mt-4">
+            {ownMatches.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים שלנו</p>
+            ) : (
+              ownMatches.map((match) => (
+                <div key={match.id} className="p-3 border border-green-200 rounded-lg bg-green-50/50 hover:bg-green-100/50 transition-colors">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{match.title || match.address}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {match.city && <span>{match.city}</span>}
+                        {match.neighborhood && <span> - {match.neighborhood}</span>}
+                        {match.rooms && <span> | {match.rooms} חד'</span>}
+                        {match.property_size && <span> | {match.property_size} מ"ר</span>}
+                        {match.monthly_rent && <span> | ₪{match.monthly_rent.toLocaleString()}</span>}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-700">
+                      נכס שלנו
+                    </Badge>
+                  </div>
+                  
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => window.open(`/admin-dashboard?property=${match.id}`, '_blank')}
+                    >
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                      צפה בנכס
+                    </Button>
+                    {customerPhone && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs text-green-600 hover:text-green-700"
+                        onClick={() => handleSendWhatsAppOwn(match)}
+                      >
+                        <MessageSquare className="h-3 w-3 ml-1" />
+                        שלח ב-WhatsApp
+                      </Button>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {match.city && <span>{match.city}</span>}
-                    {match.rooms && <span> | {match.rooms} חד'</span>}
-                    {match.size && <span> | {match.size} מ"ר</span>}
-                    {match.price && <span> | ₪{match.price.toLocaleString()}</span>}
-                  </p>
                 </div>
-                <Badge variant="secondary" className="shrink-0">
-                  {match.matchScore}% התאמה
-                </Badge>
-              </div>
-              
-              {match.matchReasons && match.matchReasons.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {match.matchReasons.map((reason, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {reason}
+              ))
+            )}
+          </TabsContent>
+          
+          <TabsContent value="scouted" className="space-y-3 mt-4">
+            {scoutedMatches.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים נסרקים</p>
+            ) : (
+              scoutedMatches.map((match) => (
+                <div key={match.id} className="p-3 border border-purple-200 rounded-lg bg-purple-50/50 hover:bg-purple-100/50 transition-colors">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
+                        {match.is_private === false && (
+                          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
+                            תיווך
+                          </Badge>
+                        )}
+                        {match.is_private === true && (
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                            פרטי
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {match.city && <span>{match.city}</span>}
+                        {match.rooms && <span> | {match.rooms} חד'</span>}
+                        {match.size && <span> | {match.size} מ"ר</span>}
+                        {match.price && <span> | ₪{match.price.toLocaleString()}</span>}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 bg-purple-100 text-purple-700">
+                      {match.matchScore}% התאמה
                     </Badge>
-                  ))}
+                  </div>
+                  
+                  {match.matchReasons && match.matchReasons.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {match.matchReasons.map((reason, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {reason}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => window.open(match.source_url, '_blank')}
+                    >
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                      צפה במקור
+                    </Button>
+                    {customerPhone && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs text-green-600 hover:text-green-700"
+                        onClick={() => handleSendWhatsAppScouted(match)}
+                      >
+                        <MessageSquare className="h-3 w-3 ml-1" />
+                        שלח ב-WhatsApp
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
-              
-              <div className="mt-3 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => window.open(match.source_url, '_blank')}
-                >
-                  <ExternalLink className="h-3 w-3 ml-1" />
-                  צפה במקור
-                </Button>
-                {customerPhone && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs text-green-600 hover:text-green-700"
-                    onClick={() => handleSendWhatsApp(match)}
-                  >
-                    <MessageSquare className="h-3 w-3 ml-1" />
-                    שלח ב-WhatsApp
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -691,6 +806,11 @@ export const ExpandableCustomerRow = ({
               customerPhone={customer.phone}
               preferredCities={customer.preferred_cities}
               preferredNeighborhoods={customer.preferred_neighborhoods}
+              budgetMin={customer.budget_min}
+              budgetMax={customer.budget_max}
+              roomsMin={customer.rooms_min}
+              roomsMax={customer.rooms_max}
+              propertyType={customer.property_type}
             />
             <Button 
               size="sm" 
