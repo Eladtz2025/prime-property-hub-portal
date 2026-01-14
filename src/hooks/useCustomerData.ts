@@ -15,6 +15,8 @@ export interface Customer {
   budget_max: number | null;
   rooms_min: number | null;
   rooms_max: number | null;
+  size_min: number | null;
+  size_max: number | null;
   preferred_cities: string[] | null;
   preferred_neighborhoods: string[] | null;
   property_type: string | null;
