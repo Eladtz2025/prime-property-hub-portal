@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.check-property-availability]
 verify_jwt = false
+
+[functions.trigger-scout-all]
+verify_jwt = false
