@@ -71,7 +71,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון החדש סביבת כיכר המדינה',
         'הצפון החדש סביבת כיכר',
         'new north',
-        'צפון החדש'
+        'צפון החדש',
+        'לואי מרשל',
+        'louis marshall'
       ] 
     },
     { 
