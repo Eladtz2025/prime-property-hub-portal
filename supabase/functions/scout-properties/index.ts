@@ -441,17 +441,51 @@ function normalizeCityName(city: string | undefined): string | undefined {
   return city.trim();
 }
 
-// Detect broker from title/description keywords
-function detectBroker(title: string, description: string): boolean {
+// Detect broker from title/description keywords and raw data
+function detectBroker(title: string, description: string, rawData?: Record<string, unknown>): boolean {
   const brokerKeywords = [
     'תיווך', 'נדל"ן', 'נדלן', 'סוכנות', 'משרד',
     'רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'century21',
-    'קולדוול בנקר', 'coldwell', 'מתווך', 'agency', 'real estate',
-    'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות'
+    'קולדוול בנקר', 'coldwell', 'מתווך', 'מתווכת', 'agency', 'real estate',
+    'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות',
+    'רישיון', 'license', 'יועץ נדלן', 'סוכן נדלן', 'broker'
   ];
   
   const text = `${title || ''} ${description || ''}`.toLowerCase();
-  return brokerKeywords.some(keyword => text.includes(keyword.toLowerCase()));
+  
+  // Check 1: Broker keywords in text
+  if (brokerKeywords.some(keyword => text.includes(keyword.toLowerCase()))) {
+    return true;
+  }
+  
+  // Check 2: 7-digit brokerage license number pattern
+  const licensePattern = /\b\d{7}\b/;
+  if (licensePattern.test(text)) {
+    return true;
+  }
+  
+  // Check 3: rawData fields (for Madlan properties)
+  if (rawData) {
+    const contactName = String(rawData.contactName || rawData.advertiserName || rawData.contact_name || '').toLowerCase();
+    const advertiserType = String(rawData.advertiserType || rawData.advertiser_type || '').toLowerCase();
+    
+    // Check broker keywords in contact/advertiser name
+    if (brokerKeywords.some(k => contactName.includes(k.toLowerCase()))) {
+      return true;
+    }
+    
+    // Check advertiser type
+    if (advertiserType === 'תיווך' || advertiserType === 'broker' || advertiserType === 'agency') {
+      return true;
+    }
+    
+    // Check if rawData has explicit broker flag
+    if (rawData.isBroker === true || rawData.is_broker === true) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 // Build URL for a single specific page (used in distributed scanning)
@@ -971,8 +1005,8 @@ ${cleanedMarkdown.substring(0, 30000)}`;
     console.log(`Property type filter: ${properties.length} -> ${filteredProperties.length} residential properties`);
 
     return filteredProperties.map((p: any) => {
-      // Detect if this is a broker listing based on content keywords
-      const isBroker = detectBroker(p.title || '', p.description || '');
+      // Detect if this is a broker listing based on content keywords and raw data
+      const isBroker = detectBroker(p.title || '', p.description || '', p);
       
       return {
         source,
