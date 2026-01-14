@@ -162,6 +162,21 @@ const PitchDeckBuilder = () => {
       if (property.agent_phone && !contactPhone) {
         setContactPhone(property.agent_phone);
       }
+      
+      // Auto-update Title slide with address only (without city)
+      if (deck?.slides) {
+        const titleSlide = deck.slides.find(s => s.slide_type === 'title');
+        if (titleSlide) {
+          const currentData = titleSlide.slide_data as Record<string, unknown>;
+          updateSlideMutation.mutate({
+            id: titleSlide.id,
+            slide_data: {
+              ...currentData,
+              main_title: property.address, // e.g., "זלטופולסקי 19" - without city
+            }
+          });
+        }
+      }
     } else {
       setTitle('');
       setSlug('');
@@ -444,6 +459,7 @@ const PitchDeckBuilder = () => {
               <SlideEditor
                 slide={selectedSlide}
                 language={language}
+                propertyId={propertyId}
                 onUpdate={handleSlideUpdate}
                 onClose={() => setSelectedSlide(null)}
               />
