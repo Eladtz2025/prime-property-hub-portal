@@ -520,6 +520,9 @@ export const CustomerMobileTable = ({
                       elevator_flexible: formData.elevator_flexible,
                       yard_required: formData.yard_required,
                       yard_flexible: formData.yard_flexible,
+                      roof_required: formData.roof_required,
+                      roof_flexible: formData.roof_flexible,
+                      outdoor_space_any: formData.outdoor_space_any,
                     }}
                     onChange={(vals) => setFormData({
                       ...formData,
@@ -531,6 +534,9 @@ export const CustomerMobileTable = ({
                       elevator_flexible: vals.elevator_flexible,
                       yard_required: vals.yard_required,
                       yard_flexible: vals.yard_flexible,
+                      roof_required: vals.roof_required,
+                      roof_flexible: vals.roof_flexible,
+                      outdoor_space_any: vals.outdoor_space_any,
                     })}
                     compact
                     className="w-full"

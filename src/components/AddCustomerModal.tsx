@@ -64,6 +64,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     balcony_flexible: true,
     elevator_flexible: true,
     yard_flexible: true,
+    roof_required: false,
+    roof_flexible: true,
+    outdoor_space_any: false,
     // Purchase-specific
     purchase_purpose: '' as string,
     cash_available: null as number | null,
@@ -221,6 +224,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         balcony_flexible: true,
         elevator_flexible: true,
         yard_flexible: true,
+        roof_required: false,
+        roof_flexible: true,
+        outdoor_space_any: false,
         purchase_purpose: '',
         cash_available: null,
         property_to_sell: false,
@@ -557,6 +563,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                       elevator_flexible: formData.elevator_flexible,
                       yard_required: formData.yard_required,
                       yard_flexible: formData.yard_flexible,
+                      roof_required: formData.roof_required,
+                      roof_flexible: formData.roof_flexible,
+                      outdoor_space_any: formData.outdoor_space_any,
                     }}
                     onChange={(vals) => setFormData({
                       ...formData,
@@ -568,6 +577,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                       elevator_flexible: vals.elevator_flexible ?? true,
                       yard_required: vals.yard_required ?? false,
                       yard_flexible: vals.yard_flexible ?? true,
+                      roof_required: vals.roof_required ?? false,
+                      roof_flexible: vals.roof_flexible ?? true,
+                      outdoor_space_any: vals.outdoor_space_any ?? false,
                     })}
                     className="w-full"
                   />

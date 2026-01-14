@@ -43,6 +43,10 @@ export interface Customer {
   parking_flexible: boolean | null;
   balcony_flexible: boolean | null;
   yard_flexible: boolean | null;
+  // Roof and outdoor space options
+  roof_required: boolean | null;
+  roof_flexible: boolean | null;
+  outdoor_space_any: boolean | null;
   // Purchase-specific fields
   purchase_purpose: string | null;
   cash_available: number | null;
