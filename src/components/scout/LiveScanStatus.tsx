@@ -79,20 +79,47 @@ export const LiveScanStatus: React.FC = () => {
     refetchInterval: 3000,
   });
 
-  // Query for last completed scan (for idle state)
-  const { data: lastCompleted } = useQuery({
-    queryKey: ['last-completed-scan'],
+  // Query for last completed batch (aggregate all runs in the last batch for idle state)
+  const { data: lastCompletedBatch } = useQuery({
+    queryKey: ['last-completed-batch'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get the latest completed run
+      const { data: latestRun, error: latestError } = await supabase
         .from('scout_runs')
-        .select('id, source, properties_found, new_properties, leads_matched, completed_at')
+        .select('completed_at')
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
         .limit(1)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as CompletedRun | null;
+      if (latestError || !latestRun) return null;
+      
+      // Get all runs that completed within 5 minutes of the latest
+      const batchWindowStart = new Date(
+        new Date(latestRun.completed_at).getTime() - 5 * 60 * 1000
+      ).toISOString();
+      
+      const { data: batchRuns, error: batchError } = await supabase
+        .from('scout_runs')
+        .select('source, properties_found, new_properties, leads_matched, completed_at')
+        .eq('status', 'completed')
+        .gte('completed_at', batchWindowStart)
+        .order('completed_at', { ascending: false });
+      
+      if (batchError || !batchRuns?.length) return null;
+      
+      // Aggregate totals
+      return {
+        properties_found: batchRuns.reduce((sum, r) => sum + (r.properties_found || 0), 0),
+        new_properties: batchRuns.reduce((sum, r) => sum + (r.new_properties || 0), 0),
+        leads_matched: batchRuns.reduce((sum, r) => sum + (r.leads_matched || 0), 0),
+        completed_at: batchRuns[0].completed_at,
+        runs_count: batchRuns.length,
+        by_source: batchRuns.reduce((acc, r) => {
+          acc[r.source] = (acc[r.source] || 0) + (r.properties_found || 0);
+          return acc;
+        }, {} as Record<string, number>)
+      };
     },
     refetchInterval: 10000,
   });
@@ -466,8 +493,8 @@ export const LiveScanStatus: React.FC = () => {
     );
   }
 
-  // No active scans - show last completed (or nothing if completion summary was just shown)
-  if (!lastCompleted) {
+  // No active scans - show last completed batch (or nothing if completion summary was just shown)
+  if (!lastCompletedBatch) {
     return null;
   }
 
@@ -478,21 +505,23 @@ export const LiveScanStatus: React.FC = () => {
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <span className="font-medium">אין סריקות פעילות</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Building2 className="h-4 w-4" />
           <span>
-            סריקה אחרונה: {formatDistanceToNow(new Date(lastCompleted.completed_at), { locale: he, addSuffix: true })}
+            סריקה אחרונה: {formatDistanceToNow(new Date(lastCompletedBatch.completed_at), { locale: he, addSuffix: true })}
             {' - '}
-            <span className="font-medium">{lastCompleted.properties_found}</span> נכסים
-            {lastCompleted.new_properties && lastCompleted.new_properties > 0 && (
-              <span className="text-green-600"> ({lastCompleted.new_properties} חדשים)</span>
-            )}
-            {lastCompleted.leads_matched && lastCompleted.leads_matched > 0 && (
-              <span className="text-purple-600 mr-2">
-                · {lastCompleted.leads_matched} התאמות
-              </span>
-            )}
+            <span className="font-semibold">{lastCompletedBatch.properties_found}</span> נכסים
           </span>
+          {lastCompletedBatch.new_properties > 0 && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700">
+              {lastCompletedBatch.new_properties} חדשים
+            </Badge>
+          )}
+          {lastCompletedBatch.leads_matched > 0 && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+              {lastCompletedBatch.leads_matched} התאמות
+            </Badge>
+          )}
         </div>
       </div>
     </Card>
