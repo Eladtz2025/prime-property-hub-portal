@@ -42,13 +42,13 @@ Deno.serve(async (req) => {
     const triggered: string[] = [];
     const errors: string[] = [];
 
-    // Trigger scout-properties for each config separately (fire and forget)
+    // Trigger trigger-scout-pages for each config (handles distributed scanning for Yad2)
     for (const config of configs) {
       try {
-        console.log(`🔄 Triggering scan for: ${config.name} (${config.id})`);
+        console.log(`🔄 Triggering scan for: ${config.name} (${config.id}) via trigger-scout-pages`);
         
-        // Fire and forget - don't await the response
-        fetch(`${supabaseUrl}/functions/v1/scout-properties`, {
+        // Fire and forget - calls trigger-scout-pages which handles page distribution
+        fetch(`${supabaseUrl}/functions/v1/trigger-scout-pages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseServiceKey}`,
