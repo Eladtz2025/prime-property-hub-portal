@@ -355,7 +355,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   return (
     <>
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -411,29 +411,6 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">השבוע</p>
                 <p className="text-2xl font-bold">{stats?.week || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <Clock className="h-5 w-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">סריקה אחרונה</p>
-                <p className="text-2xl font-bold">
-                  {(stats?.lastScanBySources?.yad2 || 0) + 
-                   (stats?.lastScanBySources?.homeless || 0) + 
-                   (stats?.lastScanBySources?.madlan || 0)}
-                </p>
-                <div className="flex gap-2 flex-wrap text-xs mt-1">
-                  <span className="text-orange-600">יד2: {stats?.lastScanBySources?.yad2 || 0}</span>
-                  <span className="text-purple-600">הומלס: {stats?.lastScanBySources?.homeless || 0}</span>
-                  <span className="text-blue-600">מדלן: {stats?.lastScanBySources?.madlan || 0}</span>
-                </div>
               </div>
             </div>
           </CardContent>
