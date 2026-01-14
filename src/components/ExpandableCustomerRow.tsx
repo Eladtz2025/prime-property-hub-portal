@@ -300,8 +300,31 @@ export const ExpandableCustomerRow = ({
     }
   };
 
+  // Validate required fields
+  const validateRequiredFields = (): string[] => {
+    const errors: string[] = [];
+    
+    if (!formData.name?.trim()) errors.push('שם מלא');
+    if (!formData.phone?.trim()) errors.push('טלפון');
+    if (!formData.property_type) errors.push('סוג עסקה');
+    if (!formData.budget_min) errors.push('תקציב מינימום');
+    if (!formData.rooms_min) errors.push('חדרים מינימום');
+    if (!formData.preferred_cities?.length) errors.push('ערים מועדפות');
+    if (!formData.preferred_neighborhoods?.length) errors.push('שכונות מועדפות');
+    if (!formData.move_in_date) errors.push('תאריך כניסה');
+    
+    // Rental-specific required fields
+    const isRental = formData.property_type === 'rental' || formData.property_type === 'rent';
+    if (isRental) {
+      if (!formData.tenant_type) errors.push('סוג דייר');
+      if (formData.pets === undefined || formData.pets === null) errors.push('חיות');
+    }
+    
+    return errors;
+  };
+
   const handleSaveForm = async () => {
-    // Validate before save
+    // Validate basic fields
     const nameError = validateField(requiredNameSchema, formData.name || '');
     const phoneError = validateField(phoneSchema, formData.phone || '');
     const emailError = validateField(emailSchema, formData.email || '');
@@ -311,6 +334,17 @@ export const ExpandableCustomerRow = ({
     
     if (nameError || phoneError || emailError) {
       toast({ title: 'שגיאה בטופס', description: 'אנא תקן את השגיאות לפני השמירה', variant: 'destructive' });
+      return;
+    }
+    
+    // Validate required fields
+    const requiredErrors = validateRequiredFields();
+    if (requiredErrors.length > 0) {
+      toast({ 
+        title: 'שדות חובה חסרים', 
+        description: `נא למלא: ${requiredErrors.join(', ')}`,
+        variant: 'destructive' 
+      });
       return;
     }
     

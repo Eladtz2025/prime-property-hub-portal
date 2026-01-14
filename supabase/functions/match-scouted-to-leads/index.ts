@@ -118,7 +118,7 @@ serve(async (req) => {
           .from('scouted_properties')
           .update({
             matched_leads: filteredMatches,
-            status: filteredMatches.length > 0 ? 'matched' : property.status
+            status: filteredMatches.length > 0 ? 'matched' : 'new'
           })
           .eq('id', property.id);
       }
