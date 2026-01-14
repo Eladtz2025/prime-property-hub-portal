@@ -46,6 +46,9 @@ interface ContactLead {
   parking_flexible: boolean;
   balcony_flexible: boolean;
   yard_flexible: boolean;
+  // Move-in date fields
+  move_in_date: string | null;
+  flexible_move_date: boolean;
 }
 
 interface MatchResult {
@@ -264,6 +267,22 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       }
     }
   }
+  
+  // ===== MOVE-IN DATE - MUST if not flexible =====
+  // Note: Currently scouted_properties doesn't have available_date field
+  // For now, we'll skip this filter but keep the structure for future use
+  // When available_date is added to scouted_properties, uncomment below:
+  /*
+  if (lead.move_in_date && !lead.flexible_move_date) {
+    const leadMoveIn = new Date(lead.move_in_date);
+    const propertyAvailable = property.available_date ? new Date(property.available_date) : null;
+    
+    // If property has availability date and it's after lead's required move-in, disqualify
+    if (propertyAvailable && propertyAvailable > leadMoveIn) {
+      return { lead, matchScore: 0, matchReasons: ['תאריך כניסה לא מתאים'] };
+    }
+  }
+  */
   
   // ===== FLEXIBLE SCORING =====
   let score = 0;

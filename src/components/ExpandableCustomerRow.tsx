@@ -124,7 +124,17 @@ const formatBudget = (min?: number | null, max?: number | null) => {
 };
 
 // Separate component for matches to avoid hook call in render
-const CustomerMatchesCell = ({ customerId, customerName, customerPhone }: { customerId: string; customerName: string; customerPhone?: string | null }) => {
+const CustomerMatchesCell = ({ 
+  customerId, 
+  customerName, 
+  customerPhone,
+  preferredCities 
+}: { 
+  customerId: string; 
+  customerName: string; 
+  customerPhone?: string | null;
+  preferredCities?: string[] | null;
+}) => {
   const { data: matches = [], isLoading } = useCustomerMatches(customerId);
 
   const handleSendWhatsApp = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
@@ -142,14 +152,37 @@ const CustomerMatchesCell = ({ customerId, customerName, customerPhone }: { cust
     window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
   };
 
+  // Check if customer can receive matches (must have preferred cities)
+  const canMatch = preferredCities && preferredCities.length > 0;
+
   if (isLoading) {
     return <span className="text-muted-foreground text-sm">...</span>;
   }
 
-  if (matches.length === 0) {
-    return <span className="text-muted-foreground text-sm">-</span>;
+  // Missing required data - show red X with tooltip
+  if (!canMatch) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center justify-center">
+              <X className="h-4 w-4 text-red-500" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>חסרה עיר מועדפת</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   }
 
+  // Has data but no matches found
+  if (matches.length === 0) {
+    return <span className="text-muted-foreground text-sm">אין התאמה</span>;
+  }
+
+  // Has matches - show button
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -622,7 +655,12 @@ export const ExpandableCustomerRow = ({
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
-            <CustomerMatchesCell customerId={customer.id} customerName={customer.name} customerPhone={customer.phone} />
+            <CustomerMatchesCell 
+              customerId={customer.id} 
+              customerName={customer.name} 
+              customerPhone={customer.phone}
+              preferredCities={customer.preferred_cities}
+            />
             <Button 
               size="sm" 
               variant="ghost" 
@@ -809,12 +847,22 @@ export const ExpandableCustomerRow = ({
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div>
                     <Label className="text-xs">מתאריך</Label>
-                    <Input
-                      type="date"
-                      value={formData.move_in_date || ''}
-                      onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-                      className="h-8 text-sm"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={formData.move_in_date || ''}
+                        onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                        className="h-8 text-sm flex-1"
+                      />
+                      <div className="flex items-center gap-1">
+                        <Checkbox 
+                          id={`move-date-flex-${customer.id}`}
+                          checked={formData.flexible_move_date !== false}
+                          onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                        />
+                        <Label htmlFor={`move-date-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs">עד תאריך</Label>

@@ -394,11 +394,22 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             </div>
             <div>
               <Label>תאריך כניסה/רכישה משוער</Label>
-              <Input
-                type="date"
-                value={formData.move_in_date}
-                onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={formData.move_in_date}
+                  onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                  className="flex-1"
+                />
+                <div className="flex items-center gap-1.5">
+                  <Checkbox 
+                    id="move-date-flex-add"
+                    checked={formData.flexible_move_date !== false}
+                    onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                  />
+                  <Label htmlFor="move-date-flex-add" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -530,14 +541,6 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                         <SelectItem value="no">אין חיות מחמד</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="flex items-center gap-2 pt-6">
-                    <Checkbox
-                      id="flexible_move_date"
-                      checked={formData.flexible_move_date}
-                      onCheckedChange={(checked) => setFormData({ ...formData, flexible_move_date: !!checked })}
-                    />
-                    <Label htmlFor="flexible_move_date" className="cursor-pointer">גמישות בתאריך כניסה</Label>
                   </div>
                 </div>
 

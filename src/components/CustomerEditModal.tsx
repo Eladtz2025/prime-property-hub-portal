@@ -363,11 +363,22 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
 
           <div>
             <Label>תאריך כניסה מבוקש</Label>
-            <Input
-              type="date"
-              value={formData.move_in_date || ''}
-              onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={formData.move_in_date || ''}
+                onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-1.5">
+                <Checkbox 
+                  id="move-date-flex-edit"
+                  checked={formData.flexible_move_date !== false}
+                  onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                />
+                <Label htmlFor="move-date-flex-edit" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+              </div>
+            </div>
           </div>
 
           {/* Rental-specific fields */}
