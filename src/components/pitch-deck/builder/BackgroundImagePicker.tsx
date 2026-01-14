@@ -181,9 +181,9 @@ const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImageP
 
       {/* Current Image Preview */}
       {value && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">תצוגה מקדימה:</p>
-          <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">נבחר:</p>
+          <div className="w-16 h-10 rounded overflow-hidden border bg-muted flex-shrink-0">
             <img 
               src={value} 
               alt="תצוגה מקדימה"
