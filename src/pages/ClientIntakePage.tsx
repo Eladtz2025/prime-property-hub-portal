@@ -27,6 +27,7 @@ const clientIntakeSchema = z.object({
   budget_max: z.number().min(0).optional(),
   rooms_min: z.number().min(1).max(10).optional(),
   rooms_max: z.number().min(1).max(10).optional(),
+  size_min: z.number().min(0).optional(),
   size_max: z.number().min(0).optional(),
   preferred_cities: z.string().optional(),
   preferred_neighborhoods: z.string().optional(),
@@ -35,13 +36,16 @@ const clientIntakeSchema = z.object({
   elevator_required: z.boolean(),
   balcony_required: z.boolean(),
   yard_required: z.boolean(),
+  roof_required: z.boolean(),
   pets: z.boolean(),
   flexible_move_date: z.boolean(),
   parking_flexible: z.boolean(),
   elevator_flexible: z.boolean(),
   balcony_flexible: z.boolean(),
   yard_flexible: z.boolean(),
+  roof_flexible: z.boolean(),
   pets_flexible: z.boolean(),
+  outdoor_space_any: z.boolean(),
   message: z.string().optional(),
   // Rental-specific
   tenant_type: z.string().optional(),
@@ -72,6 +76,7 @@ const REQUIREMENTS_OPTIONS = [
   { value: 'elevator', label: 'מעלית', field: 'elevator_required', flexibleField: 'elevator_flexible' },
   { value: 'balcony', label: 'מרפסת', field: 'balcony_required', flexibleField: 'balcony_flexible' },
   { value: 'yard', label: 'חצר/גינה', field: 'yard_required', flexibleField: 'yard_flexible' },
+  { value: 'roof', label: 'גג/גישה לגג', field: 'roof_required', flexibleField: 'roof_flexible' },
   { value: 'pets', label: 'חיית מחמד', field: 'pets', flexibleField: 'pets_flexible' },
 ] as const;
 
@@ -93,6 +98,7 @@ export default function ClientIntakePage() {
     budget_max: undefined,
     rooms_min: undefined,
     rooms_max: undefined,
+    size_min: undefined,
     size_max: undefined,
     preferred_cities: '',
     preferred_neighborhoods: '',
@@ -101,13 +107,16 @@ export default function ClientIntakePage() {
     elevator_required: false,
     balcony_required: false,
     yard_required: false,
+    roof_required: false,
     pets: false,
     flexible_move_date: true,
     parking_flexible: true,
     elevator_flexible: true,
     balcony_flexible: true,
     yard_flexible: true,
+    roof_flexible: true,
     pets_flexible: true,
+    outdoor_space_any: false,
     message: '',
     tenant_type: '',
     cash_available: undefined,
@@ -207,7 +216,7 @@ export default function ClientIntakePage() {
             budget_max: formData.budget_max || null,
             rooms_min: formData.rooms_min || null,
             rooms_max: formData.rooms_max || null,
-            size_min: null,
+            size_min: formData.size_min || null,
             size_max: formData.size_max || null,
             preferred_cities: mergedCities.length > 0 ? mergedCities : null,
             preferred_neighborhoods: mergedNeighborhoods.length > 0 ? mergedNeighborhoods : null,
@@ -217,11 +226,15 @@ export default function ClientIntakePage() {
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
             yard_required: formData.yard_required,
+            roof_required: formData.roof_required,
+            outdoor_space_any: formData.outdoor_space_any,
             // Set individual flexibility
             parking_flexible: formData.parking_flexible,
             elevator_flexible: formData.elevator_flexible,
             balcony_flexible: formData.balcony_flexible,
             yard_flexible: formData.yard_flexible,
+            roof_flexible: formData.roof_flexible,
+            pets_flexible: formData.pets_flexible,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'merged_form',
@@ -249,7 +262,7 @@ export default function ClientIntakePage() {
             budget_max: formData.budget_max || null,
             rooms_min: formData.rooms_min || null,
             rooms_max: formData.rooms_max || null,
-            size_min: null,
+            size_min: formData.size_min || null,
             size_max: formData.size_max || null,
             preferred_cities: selectedCities.length > 0 ? selectedCities : null,
             preferred_neighborhoods: neighborhoodsArray,
@@ -259,11 +272,15 @@ export default function ClientIntakePage() {
             elevator_required: formData.elevator_required,
             balcony_required: formData.balcony_required,
             yard_required: formData.yard_required,
+            roof_required: formData.roof_required,
+            outdoor_space_any: formData.outdoor_space_any,
             // Set individual flexibility
             parking_flexible: formData.parking_flexible,
             elevator_flexible: formData.elevator_flexible,
             balcony_flexible: formData.balcony_flexible,
             yard_flexible: formData.yard_flexible,
+            roof_flexible: formData.roof_flexible,
+            pets_flexible: formData.pets_flexible,
             pets: formData.pets,
             message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
             source: 'client_form',
@@ -385,13 +402,23 @@ export default function ClientIntakePage() {
                 </div>
               </RadioGroup>
 
-              {/* Budget + Size on same row */}
+              {/* Budget */}
+              <Input
+                type="number"
+                value={formData.budget_max || ''}
+                onChange={(e) => handleInputChange('budget_max', e.target.value ? Number(e.target.value) : undefined)}
+                placeholder={formData.property_type === 'rental' ? 'תקציב מקסימום ₪/חודש' : 'תקציב מקסימום ₪'}
+                className="min-h-[44px]"
+              />
+
+              {/* Size min + max */}
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   type="number"
-                  value={formData.budget_max || ''}
-                  onChange={(e) => handleInputChange('budget_max', e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder={formData.property_type === 'rental' ? 'תקציב ₪/חודש' : 'תקציב ₪'}
+                  min={0}
+                  value={formData.size_min || ''}
+                  onChange={(e) => handleInputChange('size_min', e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="גודל מ- (מ״ר)"
                   className="min-h-[44px]"
                 />
                 <Input
@@ -399,7 +426,7 @@ export default function ClientIntakePage() {
                   min={0}
                   value={formData.size_max || ''}
                   onChange={(e) => handleInputChange('size_max', e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="גודל מ״ר"
+                  placeholder="עד (מ״ר)"
                   className="min-h-[44px]"
                 />
               </div>
@@ -475,7 +502,7 @@ export default function ClientIntakePage() {
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-72 p-2 bg-background border shadow-lg z-50" align="start">
+                  <PopoverContent className="w-80 p-2 bg-background border shadow-lg z-50" align="start">
                     <div className="space-y-1">
                       {REQUIREMENTS_OPTIONS.map((opt) => (
                         <div
@@ -509,6 +536,20 @@ export default function ClientIntakePage() {
                           </label>
                         </div>
                       ))}
+                      
+                      {/* Outdoor space "any" option */}
+                      <div className="border-t pt-2 mt-2">
+                        <label 
+                          className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={formData.outdoor_space_any}
+                            onCheckedChange={(checked) => handleInputChange('outdoor_space_any', !!checked)}
+                          />
+                          <span className="text-sm text-muted-foreground">מספיק אחד מהשטחים (מרפסת/חצר/גג)</span>
+                        </label>
+                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>

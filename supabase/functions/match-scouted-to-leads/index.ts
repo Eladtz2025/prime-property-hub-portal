@@ -42,6 +42,8 @@ interface ContactLead {
   balcony_required: boolean;
   yard_required: boolean;
   roof_required: boolean;
+  pets: boolean;
+  pets_flexible: boolean;
   // Flexibility flags - if false, the requirement is MUST
   elevator_flexible: boolean;
   parking_flexible: boolean;
@@ -460,6 +462,13 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
         }
       }
     }
+    
+    // Pets - check if lead needs pets and property allows them
+    if (lead.pets === true && lead.pets_flexible === false) {
+      if (property.features.pets === false || property.features.allows_pets === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'] };
+      }
+    }
   }
   
   // ===== MOVE-IN DATE - MUST if not flexible =====
@@ -669,6 +678,17 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
           score -= 4;
           reasons.push('אין גג');
         }
+      }
+    }
+    
+    // Pets check - only if flexible
+    if (lead.pets === true && (lead.pets_flexible === true || lead.pets_flexible === undefined)) {
+      if (property.features.pets === true || property.features.allows_pets === true) {
+        score += 3;
+        reasons.push('מאפשר חיות מחמד ✓');
+      } else if (property.features.pets === false || property.features.allows_pets === false) {
+        score -= 5;
+        reasons.push('לא מאפשר חיות מחמד');
       }
     }
   }

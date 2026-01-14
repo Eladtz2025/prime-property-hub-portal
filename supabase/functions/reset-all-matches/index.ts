@@ -41,11 +41,17 @@ interface ContactLead {
   parking_required: boolean;
   balcony_required: boolean;
   yard_required: boolean;
+  roof_required: boolean;
+  pets: boolean;
+  pets_flexible: boolean;
   // Flexibility flags - if false, the requirement is MUST
   elevator_flexible: boolean;
   parking_flexible: boolean;
   balcony_flexible: boolean;
   yard_flexible: boolean;
+  roof_flexible: boolean;
+  // Outdoor space OR mode
+  outdoor_space_any: boolean;
   // Move-in date fields
   move_in_date: string | null;
   flexible_move_date: boolean;
@@ -351,6 +357,13 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
         }
       }
     }
+    
+    // Pets - check if lead needs pets and property allows them
+    if (lead.pets === true && lead.pets_flexible === false) {
+      if (property.features.pets === false || property.features.allows_pets === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'] };
+      }
+    }
   }
   
   // ===== MOVE-IN DATE - MUST if not flexible =====
@@ -492,25 +505,73 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       }
     }
     
-    // Balcony check - only if flexible
-    if (lead.balcony_required && (lead.balcony_flexible === true || lead.balcony_flexible === undefined)) {
-      if (property.features.balcony === true) {
-        score += 4;
-        reasons.push('יש מרפסת ✓');
-      } else if (property.features.balcony === false) {
-        score -= 3;
-        reasons.push('אין מרפסת');
+    // Outdoor space features - OR mode vs AND mode
+    if (lead.outdoor_space_any) {
+      // OR mode: check if at least one of the selected outdoor features exists
+      const outdoorOptions: { key: string; label: string }[] = [];
+      if (lead.balcony_required) outdoorOptions.push({ key: 'balcony', label: 'מרפסת' });
+      if (lead.yard_required) outdoorOptions.push({ key: 'yard', label: 'חצר' });
+      if (lead.roof_required) outdoorOptions.push({ key: 'roof', label: 'גג' });
+      
+      if (outdoorOptions.length > 0) {
+        const matchingOutdoor = outdoorOptions.filter(opt => 
+          property.features[opt.key] === true
+        );
+        
+        if (matchingOutdoor.length > 0) {
+          // Has at least one - good!
+          score += 5;
+          reasons.push(`יש ${matchingOutdoor.map(o => o.label).join(' / ')} ✓`);
+        } else {
+          // None of the requested outdoor spaces
+          score -= 5;
+          reasons.push(`אין שטח חיצוני (${outdoorOptions.map(o => o.label).join('/')}) ✗`);
+        }
+      }
+    } else {
+      // AND mode: each feature is checked individually (only if flexible)
+      // Balcony check - only if flexible
+      if (lead.balcony_required && (lead.balcony_flexible === true || lead.balcony_flexible === undefined)) {
+        if (property.features.balcony === true) {
+          score += 4;
+          reasons.push('יש מרפסת ✓');
+        } else if (property.features.balcony === false) {
+          score -= 3;
+          reasons.push('אין מרפסת');
+        }
+      }
+      
+      // Yard check - only if flexible
+      if (lead.yard_required && (lead.yard_flexible === true || lead.yard_flexible === undefined)) {
+        if (property.features.yard === true) {
+          score += 4;
+          reasons.push('יש חצר ✓');
+        } else if (property.features.yard === false) {
+          score -= 5;
+          reasons.push('אין חצר');
+        }
+      }
+      
+      // Roof check - only if flexible
+      if (lead.roof_required && (lead.roof_flexible === true || lead.roof_flexible === undefined)) {
+        if (property.features.roof === true) {
+          score += 4;
+          reasons.push('יש גג ✓');
+        } else if (property.features.roof === false) {
+          score -= 4;
+          reasons.push('אין גג');
+        }
       }
     }
     
-    // Yard check - only if flexible
-    if (lead.yard_required && (lead.yard_flexible === true || lead.yard_flexible === undefined)) {
-      if (property.features.yard === true) {
-        score += 4;
-        reasons.push('יש חצר ✓');
-      } else if (property.features.yard === false) {
+    // Pets check - only if flexible
+    if (lead.pets === true && (lead.pets_flexible === true || lead.pets_flexible === undefined)) {
+      if (property.features.pets === true || property.features.allows_pets === true) {
+        score += 3;
+        reasons.push('מאפשר חיות מחמד ✓');
+      } else if (property.features.pets === false || property.features.allows_pets === false) {
         score -= 5;
-        reasons.push('אין חצר');
+        reasons.push('לא מאפשר חיות מחמד');
       }
     }
   }
