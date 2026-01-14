@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users, XCircle, AlertTriangle, PartyPopper } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -42,6 +42,8 @@ interface ConfigProgress {
 
 export const LiveScanStatus: React.FC = () => {
   const queryClient = useQueryClient();
+  const [showCompletionSummary, setShowCompletionSummary] = useState(false);
+  const [completionData, setCompletionData] = useState<{ total: number; new: number; matched: number } | null>(null);
   
   // Query for running scans - refresh every 3 seconds
   const { data: runningScans } = useQuery({
@@ -130,6 +132,29 @@ export const LiveScanStatus: React.FC = () => {
   });
 
   const isScanning = runningScans && runningScans.length > 0;
+  const wasScanning = React.useRef(false);
+
+  // Detect when scanning just completed and show summary
+  useEffect(() => {
+    if (wasScanning.current && !isScanning && recentCompleted && recentCompleted.length > 0) {
+      // Scanning just finished - show completion summary
+      const total = recentCompleted.reduce((sum, r) => sum + (r.properties_found || 0), 0);
+      const newProps = recentCompleted.reduce((sum, r) => sum + (r.new_properties || 0), 0);
+      const matched = recentCompleted.reduce((sum, r) => sum + (r.leads_matched || 0), 0);
+      
+      setCompletionData({ total, new: newProps, matched });
+      setShowCompletionSummary(true);
+      
+      // Hide after 15 seconds
+      const timer = setTimeout(() => {
+        setShowCompletionSummary(false);
+        setCompletionData(null);
+      }, 15000);
+      
+      return () => clearTimeout(timer);
+    }
+    wasScanning.current = isScanning;
+  }, [isScanning, recentCompleted]);
 
   // Group by config_id to show progress per configuration
   const configProgress = React.useMemo(() => {
@@ -266,6 +291,41 @@ export const LiveScanStatus: React.FC = () => {
         return <Badge variant="outline">{source}</Badge>;
     }
   };
+
+  // Show completion summary briefly after scan ends
+  if (showCompletionSummary && completionData) {
+    return (
+      <Card className="p-4 border-2 border-green-500/50 bg-green-500/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <PartyPopper className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <span className="font-semibold text-green-700 text-lg">סריקה הושלמה!</span>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                <span><strong>{completionData.total}</strong> נכסים נמצאו</span>
+                {completionData.new > 0 && (
+                  <Badge className="bg-green-100 text-green-700">{completionData.new} חדשים</Badge>
+                )}
+                {completionData.matched > 0 && (
+                  <Badge className="bg-purple-100 text-purple-700">{completionData.matched} התאמות</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowCompletionSummary(false)}
+            className="text-muted-foreground"
+          >
+            סגור
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   // Show warning for stuck runs
   if (stuckRuns.length > 0 && !isScanning) {
@@ -406,7 +466,11 @@ export const LiveScanStatus: React.FC = () => {
     );
   }
 
-  // No active scans - show last completed
+  // No active scans - show last completed (or nothing if completion summary was just shown)
+  if (!lastCompleted) {
+    return null;
+  }
+
   return (
     <Card className="p-4 bg-muted/30">
       <div className="flex items-center justify-between">
@@ -414,24 +478,22 @@ export const LiveScanStatus: React.FC = () => {
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <span className="font-medium">אין סריקות פעילות</span>
         </div>
-        {lastCompleted && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Building2 className="h-4 w-4" />
-            <span>
-              סריקה אחרונה: {formatDistanceToNow(new Date(lastCompleted.completed_at), { locale: he, addSuffix: true })}
-              {' - '}
-              <span className="font-medium">{lastCompleted.properties_found}</span> נכסים
-              {lastCompleted.new_properties && lastCompleted.new_properties > 0 && (
-                <span className="text-green-600"> ({lastCompleted.new_properties} חדשים)</span>
-              )}
-              {lastCompleted.leads_matched && lastCompleted.leads_matched > 0 && (
-                <span className="text-purple-600 mr-2">
-                  · {lastCompleted.leads_matched} התאמות
-                </span>
-              )}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Building2 className="h-4 w-4" />
+          <span>
+            סריקה אחרונה: {formatDistanceToNow(new Date(lastCompleted.completed_at), { locale: he, addSuffix: true })}
+            {' - '}
+            <span className="font-medium">{lastCompleted.properties_found}</span> נכסים
+            {lastCompleted.new_properties && lastCompleted.new_properties > 0 && (
+              <span className="text-green-600"> ({lastCompleted.new_properties} חדשים)</span>
+            )}
+            {lastCompleted.leads_matched && lastCompleted.leads_matched > 0 && (
+              <span className="text-purple-600 mr-2">
+                · {lastCompleted.leads_matched} התאמות
+              </span>
+            )}
+          </span>
+        </div>
       </div>
     </Card>
   );
