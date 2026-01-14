@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, CheckCircle2, Clock, Building2, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -15,6 +15,7 @@ interface RunningRun {
   properties_found: number | null;
   new_properties: number | null;
   started_at: string;
+  config_id: string | null;
   scout_configs?: { name: string } | null;
 }
 
@@ -23,7 +24,18 @@ interface CompletedRun {
   source: string;
   properties_found: number | null;
   new_properties: number | null;
+  leads_matched: number | null;
   completed_at: string;
+}
+
+interface ConfigProgress {
+  name: string;
+  source: string;
+  running: number;
+  completed: number;
+  total: number;
+  found: number;
+  new: number;
 }
 
 export const LiveScanStatus: React.FC = () => {
@@ -33,7 +45,7 @@ export const LiveScanStatus: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('scout_runs')
-        .select('id, source, status, properties_found, new_properties, started_at, scout_configs(name)')
+        .select('id, source, status, properties_found, new_properties, started_at, config_id, scout_configs(name)')
         .eq('status', 'running')
         .order('started_at', { ascending: true });
       
@@ -50,7 +62,7 @@ export const LiveScanStatus: React.FC = () => {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('scout_runs')
-        .select('id, source, status, properties_found, new_properties, completed_at, scout_configs(name)')
+        .select('id, source, status, properties_found, new_properties, leads_matched, completed_at, config_id, scout_configs(name)')
         .eq('status', 'completed')
         .gte('completed_at', fiveMinutesAgo)
         .order('completed_at', { ascending: false });
@@ -67,7 +79,7 @@ export const LiveScanStatus: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('scout_runs')
-        .select('id, source, properties_found, new_properties, completed_at')
+        .select('id, source, properties_found, new_properties, leads_matched, completed_at')
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
         .limit(1)
@@ -81,7 +93,54 @@ export const LiveScanStatus: React.FC = () => {
 
   const isScanning = runningScans && runningScans.length > 0;
 
-  // Group running + recently completed by source to show page progress
+  // Group by config_id to show progress per configuration
+  const configProgress = React.useMemo(() => {
+    const progress: Record<string, ConfigProgress> = {};
+    
+    // Count running scans per config
+    runningScans?.forEach(run => {
+      const configId = run.config_id || 'manual';
+      const configName = run.scout_configs?.name || run.source;
+      if (!progress[configId]) {
+        progress[configId] = { 
+          name: configName, 
+          source: run.source, 
+          running: 0, 
+          completed: 0, 
+          total: 12, 
+          found: 0, 
+          new: 0 
+        };
+      }
+      progress[configId].running += 1;
+      progress[configId].found += run.properties_found || 0;
+      progress[configId].new += run.new_properties || 0;
+    });
+    
+    // Count recently completed scans per config
+    recentCompleted?.forEach((run: any) => {
+      const configId = run.config_id || 'manual';
+      const configName = run.scout_configs?.name || run.source;
+      if (!progress[configId]) {
+        progress[configId] = { 
+          name: configName, 
+          source: run.source, 
+          running: 0, 
+          completed: 0, 
+          total: 12, 
+          found: 0, 
+          new: 0 
+        };
+      }
+      progress[configId].completed += 1;
+      progress[configId].found += run.properties_found || 0;
+      progress[configId].new += run.new_properties || 0;
+    });
+    
+    return progress;
+  }, [runningScans, recentCompleted]);
+
+  // Also group by source for summary
   const sourceProgress = React.useMemo(() => {
     const progress: Record<string, { 
       running: number; 
@@ -91,34 +150,25 @@ export const LiveScanStatus: React.FC = () => {
       new: number;
     }> = {};
     
-    // Count running scans per source
-    runningScans?.forEach(run => {
-      const source = run.source;
+    Object.values(configProgress).forEach(config => {
+      const source = config.source;
       if (!progress[source]) {
-        progress[source] = { running: 0, completed: 0, total: 12, found: 0, new: 0 };
+        progress[source] = { running: 0, completed: 0, total: 0, found: 0, new: 0 };
       }
-      progress[source].running += 1;
-      progress[source].found += run.properties_found || 0;
-      progress[source].new += run.new_properties || 0;
-    });
-    
-    // Count recently completed scans per source (from same batch)
-    recentCompleted?.forEach(run => {
-      const source = run.source;
-      if (!progress[source]) {
-        progress[source] = { running: 0, completed: 0, total: 12, found: 0, new: 0 };
-      }
-      progress[source].completed += 1;
-      progress[source].found += run.properties_found || 0;
-      progress[source].new += run.new_properties || 0;
+      progress[source].running += config.running;
+      progress[source].completed += config.completed;
+      progress[source].total += config.total;
+      progress[source].found += config.found;
+      progress[source].new += config.new;
     });
     
     return progress;
-  }, [runningScans, recentCompleted]);
+  }, [configProgress]);
 
   // Aggregate totals
   const totalFound = Object.values(sourceProgress).reduce((sum, s) => sum + s.found, 0);
   const totalNew = Object.values(sourceProgress).reduce((sum, s) => sum + s.new, 0);
+  const totalLeadsMatched = recentCompleted?.reduce((sum, r: any) => sum + (r.leads_matched || 0), 0) || 0;
 
   // Calculate elapsed time
   const getElapsedTime = () => {
@@ -131,14 +181,39 @@ export const LiveScanStatus: React.FC = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Estimate progress (based on typical 5-minute scan)
-  const getProgress = () => {
-    if (!runningScans || runningScans.length === 0) return 0;
+  // Estimate time remaining based on progress
+  const getEstimatedTimeRemaining = () => {
+    if (!runningScans || runningScans.length === 0) return '';
+    
+    const totalConfigs = Object.keys(configProgress).length;
+    if (totalConfigs === 0) return '';
+    
+    const totalPages = totalConfigs * 12;
+    const completedPages = Object.values(configProgress).reduce((sum, c) => sum + c.completed, 0);
+    const runningPages = Object.values(configProgress).reduce((sum, c) => sum + c.running, 0);
+    
+    if (completedPages === 0) return '~5 דקות';
+    
     const earliestStart = new Date(runningScans[0].started_at);
-    const now = new Date();
-    const diffMs = now.getTime() - earliestStart.getTime();
-    const expectedDuration = 5 * 60 * 1000; // 5 minutes
-    return Math.min(95, (diffMs / expectedDuration) * 100);
+    const elapsedMs = Date.now() - earliestStart.getTime();
+    const msPerPage = elapsedMs / completedPages;
+    const remainingPages = totalPages - completedPages - runningPages;
+    const remainingMs = remainingPages * msPerPage;
+    
+    const remainingMinutes = Math.ceil(remainingMs / 60000);
+    if (remainingMinutes <= 0) return 'מסיים...';
+    return `~${remainingMinutes} דקות`;
+  };
+
+  // Overall progress percentage
+  const getOverallProgress = () => {
+    const totalConfigs = Object.keys(configProgress).length;
+    if (totalConfigs === 0) return 0;
+    
+    const totalPages = totalConfigs * 12;
+    const completedPages = Object.values(configProgress).reduce((sum, c) => sum + c.completed, 0);
+    
+    return Math.min(95, (completedPages / totalPages) * 100);
   };
 
   const getSourceBadge = (source: string) => {
@@ -163,42 +238,73 @@ export const LiveScanStatus: React.FC = () => {
               <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
               <div className="relative w-3 h-3 bg-red-500 rounded-full" />
             </div>
-            <span className="font-semibold text-lg">סריקות פעילות ({runningScans?.length})</span>
+            <span className="font-semibold text-lg">סריקות פעילות</span>
+            <Badge variant="secondary">{Object.keys(configProgress).length} קונפיגורציות</Badge>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span className="font-mono">{getElapsedTime()}</span>
-          </div>
-        </div>
-
-        <Progress value={getProgress()} className="h-2 mb-3" />
-
-        <div className="flex flex-wrap items-center gap-4 mb-2">
-          {Object.entries(sourceProgress).map(([source, stats]) => (
-            <div key={source} className="flex items-center gap-2">
-              {getSourceBadge(source)}
-              <span className="text-sm">
-                <span className="font-semibold">{stats.completed + stats.running}</span>/12 דפים
-                {' · '}
-                <span className="font-semibold">{stats.found}</span> נכסים
-                {stats.new > 0 && (
-                  <span className="text-green-600 mr-1">({stats.new} חדשים)</span>
-                )}
-              </span>
+          <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span className="font-mono">{getElapsedTime()}</span>
             </div>
-          ))}
+            <div className="text-sm">
+              נותרו: <span className="font-medium">{getEstimatedTimeRemaining()}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <Sparkles className="h-4 w-4 text-green-500" />
-          <span>
-            סה"כ נמצאו: <span className="font-bold">{totalFound}</span> נכסים
-            {totalNew > 0 && (
-              <span className="text-green-600 font-semibold mr-1"> ({totalNew} חדשים)</span>
-            )}
-          </span>
+        {/* Overall progress bar */}
+        <div className="mb-4">
+          <Progress value={getOverallProgress()} className="h-2" />
         </div>
 
+        {/* Progress per source with individual progress bars */}
+        <div className="space-y-3 mb-4">
+          {Object.entries(sourceProgress).map(([source, stats]) => {
+            const sourceConfigs = Object.values(configProgress).filter(c => c.source === source);
+            const totalPages = sourceConfigs.length * 12;
+            const completedPages = sourceConfigs.reduce((sum, c) => sum + c.completed, 0);
+            const progressPercent = totalPages > 0 ? (completedPages / totalPages) * 100 : 0;
+            
+            return (
+              <div key={source} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getSourceBadge(source)}
+                    <span className="text-sm font-medium">
+                      {completedPages}/{totalPages} דפים
+                    </span>
+                  </div>
+                  <span className="text-sm">
+                    <span className="font-semibold">{stats.found}</span> נכסים
+                    {stats.new > 0 && (
+                      <span className="text-green-600 mr-1"> ({stats.new} חדשים)</span>
+                    )}
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-1.5" />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Totals */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="h-4 w-4 text-green-500" />
+            <span>
+              סה"כ נמצאו: <span className="font-bold">{totalFound}</span> נכסים
+              {totalNew > 0 && (
+                <span className="text-green-600 font-semibold mr-1"> ({totalNew} חדשים)</span>
+              )}
+            </span>
+          </div>
+          {totalLeadsMatched > 0 && (
+            <div className="flex items-center gap-2 text-sm text-purple-600">
+              <Users className="h-4 w-4" />
+              <span><span className="font-semibold">{totalLeadsMatched}</span> התאמות לידים</span>
+            </div>
+          )}
+        </div>
       </Card>
     );
   }
@@ -220,6 +326,11 @@ export const LiveScanStatus: React.FC = () => {
               <span className="font-medium">{lastCompleted.properties_found}</span> נכסים
               {lastCompleted.new_properties && lastCompleted.new_properties > 0 && (
                 <span className="text-green-600"> ({lastCompleted.new_properties} חדשים)</span>
+              )}
+              {lastCompleted.leads_matched && lastCompleted.leads_matched > 0 && (
+                <span className="text-purple-600 mr-2">
+                  · {lastCompleted.leads_matched} התאמות
+                </span>
               )}
             </span>
           </div>

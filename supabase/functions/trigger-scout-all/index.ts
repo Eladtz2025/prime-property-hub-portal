@@ -16,7 +16,11 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('🚀 Trigger Scout All - Starting');
+    console.log('='.repeat(60));
+    console.log('🚀 TRIGGER SCOUT ALL - CRON/MANUAL EXECUTION');
+    console.log(`📅 Triggered at: ${new Date().toISOString()}`);
+    console.log(`🌍 Israel time: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`);
+    console.log('='.repeat(60));
 
     // Get all active scout configs
     const { data: configs, error: configError } = await supabase

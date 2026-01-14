@@ -53,7 +53,7 @@ async function scrapeWithRetry(url: string, firecrawlApiKey: string, maxRetries 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (edge functions have 60s limit)
 
       console.log(`Scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
@@ -124,21 +124,21 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Clean up stuck runs older than 1 hour at the start of each execution
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  // Clean up stuck runs older than 10 minutes at the start of each execution
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const { data: stuckRuns } = await supabase
     .from('scout_runs')
     .update({
-      status: 'failed',
-      error_message: 'Timeout - automatically cleaned',
+      status: 'completed', // Mark as completed with properties found so far (not failed)
+      error_message: 'Timeout - completed with partial results',
       completed_at: new Date().toISOString()
     })
     .eq('status', 'running')
-    .lt('started_at', oneHourAgo)
-    .select('id');
+    .lt('started_at', tenMinutesAgo)
+    .select('id, properties_found');
   
   if (stuckRuns?.length) {
-    console.log(`Cleaned up ${stuckRuns.length} stuck runs`);
+    console.log(`Cleaned up ${stuckRuns.length} stuck runs (marked as completed with partial results)`);
   }
 
   let runId: string | undefined;
@@ -376,6 +376,21 @@ serve(async (req) => {
           completed_at: new Date().toISOString()
         })
         .eq('id', runId);
+    }
+
+    // Trigger lead matching if new properties were found (fire and forget)
+    if (totalNewProperties > 0) {
+      console.log(`Triggering lead matching for ${totalNewProperties} new properties...`);
+      fetch(`${supabaseUrl}/functions/v1/match-scouted-to-leads`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ send_whatsapp: false }),
+      }).catch(err => {
+        console.error('Failed to trigger lead matching:', err);
+      });
     }
 
     return new Response(JSON.stringify({
