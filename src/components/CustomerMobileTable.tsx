@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Phone, MessageSquare, Save, X, Trash2, EyeOff, RotateCcw, Home, Briefcase, Dog, Car, Building2 } from "lucide-react";
+import { Phone, MessageSquare, Save, X, Trash2, EyeOff, RotateCcw, Home, Briefcase, Dog } from "lucide-react";
+import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -500,24 +501,40 @@ export const CustomerMobileTable = ({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 pt-5">
+                  <div className="flex items-center gap-2 pt-5">
                     <div className="flex items-center gap-1">
                       <Checkbox id="m-pets" checked={!!formData.pets} onCheckedChange={(c) => setFormData({ ...formData, pets: !!c })} />
-                      <Label htmlFor="m-pets" className="text-xs"><Dog className="h-3 w-3" /></Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Checkbox id="m-parking" checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />
-                      <Label htmlFor="m-parking" className="text-xs"><Car className="h-3 w-3" /></Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Checkbox id="m-elevator" checked={!!formData.elevator_required} onCheckedChange={(c) => setFormData({ ...formData, elevator_required: !!c })} />
-                      <Label htmlFor="m-elevator" className="text-xs"><Building2 className="h-3 w-3" /></Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Checkbox id="m-yard" checked={!!formData.yard_required} onCheckedChange={(c) => setFormData({ ...formData, yard_required: !!c })} />
-                      <Label htmlFor="m-yard" className="text-xs">חצר</Label>
+                      <Label htmlFor="m-pets" className="text-xs flex items-center gap-1"><Dog className="h-3 w-3" />חיות</Label>
                     </div>
                   </div>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">דרישות מהנכס</Label>
+                  <PropertyRequirementsDropdown
+                    values={{
+                      parking_required: formData.parking_required,
+                      parking_flexible: formData.parking_flexible,
+                      balcony_required: formData.balcony_required,
+                      balcony_flexible: formData.balcony_flexible,
+                      elevator_required: formData.elevator_required,
+                      elevator_flexible: formData.elevator_flexible,
+                      yard_required: formData.yard_required,
+                      yard_flexible: formData.yard_flexible,
+                    }}
+                    onChange={(vals) => setFormData({
+                      ...formData,
+                      parking_required: vals.parking_required,
+                      parking_flexible: vals.parking_flexible,
+                      balcony_required: vals.balcony_required,
+                      balcony_flexible: vals.balcony_flexible,
+                      elevator_required: vals.elevator_required,
+                      elevator_flexible: vals.elevator_flexible,
+                      yard_required: vals.yard_required,
+                      yard_flexible: vals.yard_flexible,
+                    })}
+                    compact
+                    className="w-full"
+                  />
                 </div>
               </div>
             )}
