@@ -65,6 +65,17 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .gte('first_seen_at', today);
 
+      // Today by source
+      const { data: todayBySourceData } = await supabase
+        .from('scouted_properties')
+        .select('source')
+        .gte('first_seen_at', today);
+
+      const todayBySources = todayBySourceData?.reduce((acc, item) => {
+        acc[item.source] = (acc[item.source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
       // This week count
       const { count: weekCount } = await supabase
         .from('scouted_properties')
@@ -90,6 +101,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       return {
         total: totalCount || 0,
         today: todayCount || 0,
+        todayBySources,
         week: weekCount || 0,
         bySources: sourceCounts,
         inactive: inactiveCount || 0
@@ -336,6 +348,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">נוספו היום</p>
                 <p className="text-2xl font-bold">{stats?.today || 0}</p>
+                {stats?.today > 0 && (
+                  <div className="flex gap-2 flex-wrap text-xs mt-1">
+                    {stats?.todayBySources?.yad2 > 0 && (
+                      <span className="text-orange-600">יד2: {stats.todayBySources.yad2}</span>
+                    )}
+                    {stats?.todayBySources?.homeless > 0 && (
+                      <span className="text-purple-600">הומלס: {stats.todayBySources.homeless}</span>
+                    )}
+                    {stats?.todayBySources?.madlan > 0 && (
+                      <span className="text-blue-600">מדלן: {stats.todayBySources.madlan}</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
