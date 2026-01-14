@@ -41,11 +41,15 @@ interface ContactLead {
   parking_required: boolean;
   balcony_required: boolean;
   yard_required: boolean;
+  roof_required: boolean;
   // Flexibility flags - if false, the requirement is MUST
   elevator_flexible: boolean;
   parking_flexible: boolean;
   balcony_flexible: boolean;
   yard_flexible: boolean;
+  roof_flexible: boolean;
+  // Outdoor space OR mode
+  outdoor_space_any: boolean;
   // Move-in date fields
   move_in_date: string | null;
   flexible_move_date: boolean;
@@ -386,17 +390,42 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       }
     }
     
-    // Balcony - MUST if required and NOT flexible
-    if (lead.balcony_required && lead.balcony_flexible === false) {
-      if (property.features.balcony === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'] };
+    // Outdoor space features - OR mode vs AND mode
+    if (lead.outdoor_space_any) {
+      // OR mode: at least one of the selected outdoor features must exist
+      const outdoorOptions: string[] = [];
+      if (lead.balcony_required) outdoorOptions.push('balcony');
+      if (lead.yard_required) outdoorOptions.push('yard');
+      if (lead.roof_required) outdoorOptions.push('roof');
+      
+      if (outdoorOptions.length > 0) {
+        const hasAnyOutdoor = outdoorOptions.some(opt => 
+          property.features[opt] === true
+        );
+        // In OR mode with requirements set, we don't immediately disqualify
+        // but we'll handle scoring later
       }
-    }
-    
-    // Yard - MUST if required and NOT flexible
-    if (lead.yard_required && lead.yard_flexible === false) {
-      if (property.features.yard === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'] };
+    } else {
+      // AND mode: each feature is checked individually
+      // Balcony - MUST if required and NOT flexible
+      if (lead.balcony_required && lead.balcony_flexible === false) {
+        if (property.features.balcony === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'] };
+        }
+      }
+      
+      // Yard - MUST if required and NOT flexible
+      if (lead.yard_required && lead.yard_flexible === false) {
+        if (property.features.yard === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'] };
+        }
+      }
+      
+      // Roof - MUST if required and NOT flexible
+      if (lead.roof_required && lead.roof_flexible === false) {
+        if (property.features.roof === false) {
+          return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין בנכס'] };
+        }
       }
     }
   }
@@ -543,25 +572,62 @@ function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResu
       }
     }
     
-    // Balcony check - only if flexible
-    if (lead.balcony_required && (lead.balcony_flexible === true || lead.balcony_flexible === undefined)) {
-      if (property.features.balcony === true) {
-        score += 4;
-        reasons.push('יש מרפסת ✓');
-      } else if (property.features.balcony === false) {
-        score -= 3;
-        reasons.push('אין מרפסת');
+    // Outdoor space features - OR mode vs AND mode
+    if (lead.outdoor_space_any) {
+      // OR mode: check if at least one of the selected outdoor features exists
+      const outdoorOptions: { key: string; label: string }[] = [];
+      if (lead.balcony_required) outdoorOptions.push({ key: 'balcony', label: 'מרפסת' });
+      if (lead.yard_required) outdoorOptions.push({ key: 'yard', label: 'חצר' });
+      if (lead.roof_required) outdoorOptions.push({ key: 'roof', label: 'גג' });
+      
+      if (outdoorOptions.length > 0) {
+        const matchingOutdoor = outdoorOptions.filter(opt => 
+          property.features[opt.key] === true
+        );
+        
+        if (matchingOutdoor.length > 0) {
+          // Has at least one - good!
+          score += 5;
+          reasons.push(`יש ${matchingOutdoor.map(o => o.label).join(' / ')} ✓`);
+        } else {
+          // None of the requested outdoor spaces
+          score -= 5;
+          reasons.push(`אין שטח חיצוני (${outdoorOptions.map(o => o.label).join('/')}) ✗`);
+        }
       }
-    }
-    
-    // Yard check - only if flexible
-    if (lead.yard_required && (lead.yard_flexible === true || lead.yard_flexible === undefined)) {
-      if (property.features.yard === true) {
-        score += 4;
-        reasons.push('יש חצר ✓');
-      } else if (property.features.yard === false) {
-        score -= 5;
-        reasons.push('אין חצר');
+    } else {
+      // AND mode: each feature is checked individually (only if flexible)
+      // Balcony check - only if flexible
+      if (lead.balcony_required && (lead.balcony_flexible === true || lead.balcony_flexible === undefined)) {
+        if (property.features.balcony === true) {
+          score += 4;
+          reasons.push('יש מרפסת ✓');
+        } else if (property.features.balcony === false) {
+          score -= 3;
+          reasons.push('אין מרפסת');
+        }
+      }
+      
+      // Yard check - only if flexible
+      if (lead.yard_required && (lead.yard_flexible === true || lead.yard_flexible === undefined)) {
+        if (property.features.yard === true) {
+          score += 4;
+          reasons.push('יש חצר ✓');
+        } else if (property.features.yard === false) {
+          score -= 5;
+          reasons.push('אין חצר');
+        }
+      }
+      
+      // Roof check - only if flexible
+      if (lead.roof_required && (lead.roof_flexible === true || lead.roof_flexible === undefined)) {
+        if (property.features.roof === true) {
+          score += 4;
+          reasons.push('יש גג ✓');
+        } else if (property.features.roof === false) {
+          score -= 4;
+          reasons.push('אין גג');
+        }
       }
     }
   }
