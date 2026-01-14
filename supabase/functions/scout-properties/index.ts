@@ -232,7 +232,7 @@ serve(async (req) => {
         console.log(`Scraping URL ${urlIndex + 1}/${urls.length}: ${url}`);
 
         // Check if we've reached max properties for this config
-        if (allProperties.length >= maxPropertiesPerConfig) {
+        if (totalPropertiesFound >= maxPropertiesPerConfig) {
           console.log(`Reached max properties limit (${maxPropertiesPerConfig}), stopping scan for config: ${config.name}`);
           break;
         }
