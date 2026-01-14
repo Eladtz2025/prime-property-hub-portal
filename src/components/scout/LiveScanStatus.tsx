@@ -1,12 +1,14 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users, XCircle, AlertTriangle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface RunningRun {
   id: string;
@@ -39,6 +41,8 @@ interface ConfigProgress {
 }
 
 export const LiveScanStatus: React.FC = () => {
+  const queryClient = useQueryClient();
+  
   // Query for running scans - refresh every 3 seconds
   const { data: runningScans } = useQuery({
     queryKey: ['running-scans'],
@@ -89,6 +93,40 @@ export const LiveScanStatus: React.FC = () => {
       return data as CompletedRun | null;
     },
     refetchInterval: 10000,
+  });
+
+  // Check for stuck runs (running for more than 10 minutes)
+  const stuckRuns = React.useMemo(() => {
+    if (!runningScans) return [];
+    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+    return runningScans.filter(run => new Date(run.started_at).getTime() < tenMinutesAgo);
+  }, [runningScans]);
+
+  // Mutation to clear stuck runs
+  const clearStuckRunsMutation = useMutation({
+    mutationFn: async () => {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from('scout_runs')
+        .update({
+          status: 'failed',
+          error_message: 'Manually stopped - stuck run',
+          completed_at: new Date().toISOString()
+        })
+        .eq('status', 'running')
+        .lt('started_at', tenMinutesAgo);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['running-scans'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-completed-scans'] });
+      toast.success('ריצות תקועות נוקו בהצלחה');
+    },
+    onError: (error) => {
+      toast.error('שגיאה בניקוי ריצות תקועות');
+      console.error('Failed to clear stuck runs:', error);
+    }
   });
 
   const isScanning = runningScans && runningScans.length > 0;
@@ -229,9 +267,68 @@ export const LiveScanStatus: React.FC = () => {
     }
   };
 
-  if (isScanning) {
+  // Show warning for stuck runs
+  if (stuckRuns.length > 0 && !isScanning) {
     return (
-      <Card className="p-4 border-2 border-primary/30 bg-primary/5">
+      <Card className="p-4 border-2 border-amber-500/50 bg-amber-500/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <span className="font-medium text-amber-700">
+              {stuckRuns.length} ריצות תקועות (יותר מ-10 דקות)
+            </span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => clearStuckRunsMutation.mutate()}
+            disabled={clearStuckRunsMutation.isPending}
+            className="border-amber-500 text-amber-700 hover:bg-amber-500/20"
+          >
+            {clearStuckRunsMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 ml-1" />
+                נקה ריצות תקועות
+              </>
+            )}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isScanning) {
+    // Show stuck runs warning if any
+    const hasStuckRuns = stuckRuns.length > 0;
+    
+    return (
+      <Card className={`p-4 border-2 ${hasStuckRuns ? 'border-amber-500/50 bg-amber-500/5' : 'border-primary/30 bg-primary/5'}`}>
+        {hasStuckRuns && (
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-amber-500/30">
+            <div className="flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {stuckRuns.length} ריצות תקועות (יותר מ-10 דקות)
+              </span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => clearStuckRunsMutation.mutate()}
+              disabled={clearStuckRunsMutation.isPending}
+              className="text-amber-700 hover:bg-amber-500/20 h-7 px-2"
+            >
+              {clearStuckRunsMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                'נקה'
+              )}
+            </Button>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="relative">
