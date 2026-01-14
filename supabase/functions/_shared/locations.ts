@@ -23,6 +23,7 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'צפון הישן',
         'old north',
         'oldnorth',
+        'OldNorth',
         'צפון הישן / צפון החדש'
       ] 
     },
