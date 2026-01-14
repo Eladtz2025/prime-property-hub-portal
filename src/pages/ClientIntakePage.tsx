@@ -148,42 +148,94 @@ export default function ClientIntakePage() {
 
       // Use selected neighborhoods array directly
       const neighborhoodsArray = selectedNeighborhoods.length > 0 ? selectedNeighborhoods : null;
+      const normalizedPhone = formData.phone.trim().replace(/[-\s]/g, '');
 
-      // Prepare data for database - using inline object for proper typing
-      const { error } = await supabase
+      // Check if customer with same phone already exists
+      const { data: existingCustomer } = await supabase
         .from('contact_leads')
-        .insert({
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          email: formData.email?.trim() || null,
-          property_type: formData.property_type,
-          budget_min: formData.budget_min || null,
-          budget_max: formData.budget_max || null,
-          rooms_min: formData.rooms_min || null,
-          rooms_max: formData.rooms_max || null,
-          size_min: formData.size_min || null,
-          size_max: formData.size_max || null,
-          preferred_cities: selectedCities.length > 0 ? selectedCities : null,
-          preferred_neighborhoods: neighborhoodsArray,
-          move_in_date: formData.move_in_date || null,
-          parking_required: formData.parking_required,
-          elevator_required: formData.elevator_required,
-          balcony_required: formData.balcony_required,
-          pets: formData.pets,
-          message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
-          source: 'client_form',
-          status: 'new',
-          priority: 'medium',
-          // Rental-specific fields
-          tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
-          // Sale-specific fields
-          cash_available: formData.property_type === 'sale' && formData.cash_available ? formData.cash_available : null,
-          new_or_second_hand: formData.property_type === 'sale' && formData.new_or_second_hand ? formData.new_or_second_hand : null,
-          // Agent assignment
-          assigned_agent_id: assignedAgentId,
-        });
+        .select('id, preferred_cities, preferred_neighborhoods, assigned_agent_id, status')
+        .or(`phone.eq.${normalizedPhone},phone.eq.${formData.phone.trim()}`)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingCustomer) {
+        // Merge cities and neighborhoods
+        const existingCities = existingCustomer.preferred_cities || [];
+        const existingNeighborhoods = existingCustomer.preferred_neighborhoods || [];
+        
+        const mergedCities = [...new Set([...existingCities, ...selectedCities])];
+        const mergedNeighborhoods = [...new Set([...existingNeighborhoods, ...(neighborhoodsArray || [])])];
+
+        // Update existing customer
+        const { error: updateError } = await supabase
+          .from('contact_leads')
+          .update({
+            name: formData.name.trim(),
+            email: formData.email?.trim() || null,
+            property_type: formData.property_type,
+            budget_min: formData.budget_min || null,
+            budget_max: formData.budget_max || null,
+            rooms_min: formData.rooms_min || null,
+            rooms_max: formData.rooms_max || null,
+            size_min: formData.size_min || null,
+            size_max: formData.size_max || null,
+            preferred_cities: mergedCities.length > 0 ? mergedCities : null,
+            preferred_neighborhoods: mergedNeighborhoods.length > 0 ? mergedNeighborhoods : null,
+            move_in_date: formData.move_in_date || null,
+            parking_required: formData.parking_required,
+            elevator_required: formData.elevator_required,
+            balcony_required: formData.balcony_required,
+            pets: formData.pets,
+            message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
+            source: 'merged_form',
+            // Keep existing status, don't reset to 'new'
+            // Keep existing agent if set, otherwise use new one
+            assigned_agent_id: existingCustomer.assigned_agent_id || assignedAgentId,
+            // Rental-specific fields
+            tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
+            // Sale-specific fields
+            cash_available: formData.property_type === 'sale' && formData.cash_available ? formData.cash_available : null,
+            new_or_second_hand: formData.property_type === 'sale' && formData.new_or_second_hand ? formData.new_or_second_hand : null,
+          })
+          .eq('id', existingCustomer.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new customer
+        const { error } = await supabase
+          .from('contact_leads')
+          .insert({
+            name: formData.name.trim(),
+            phone: formData.phone.trim(),
+            email: formData.email?.trim() || null,
+            property_type: formData.property_type,
+            budget_min: formData.budget_min || null,
+            budget_max: formData.budget_max || null,
+            rooms_min: formData.rooms_min || null,
+            rooms_max: formData.rooms_max || null,
+            size_min: formData.size_min || null,
+            size_max: formData.size_max || null,
+            preferred_cities: selectedCities.length > 0 ? selectedCities : null,
+            preferred_neighborhoods: neighborhoodsArray,
+            move_in_date: formData.move_in_date || null,
+            parking_required: formData.parking_required,
+            elevator_required: formData.elevator_required,
+            balcony_required: formData.balcony_required,
+            pets: formData.pets,
+            message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
+            source: 'client_form',
+            status: 'new',
+            priority: 'medium',
+            // Rental-specific fields
+            tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
+            // Sale-specific fields
+            cash_available: formData.property_type === 'sale' && formData.cash_available ? formData.cash_available : null,
+            new_or_second_hand: formData.property_type === 'sale' && formData.new_or_second_hand ? formData.new_or_second_hand : null,
+            // Agent assignment
+            assigned_agent_id: assignedAgentId,
+          });
+
+        if (error) throw error;
+      }
 
       setIsSubmitted(true);
       toast.success('הפרטים נשלחו בהצלחה!');
