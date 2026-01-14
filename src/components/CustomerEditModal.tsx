@@ -16,6 +16,7 @@ import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/u
 import { cn } from "@/lib/utils";
 import { CitySelectorCompact } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
+import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
 
 interface Agent {
   id: string;
@@ -35,12 +36,18 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(customer || {});
+  const [phoneCountry, setPhoneCountry] = useState('IL');
+  const [localPhone, setLocalPhone] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
 
   useEffect(() => {
     if (customer) {
       setFormData(customer);
+      // Parse phone number to extract country code and local number
+      const { countryCode, localNumber } = parsePhoneNumber(customer.phone);
+      setPhoneCountry(countryCode);
+      setLocalPhone(localNumber);
       setErrors({});
       setTouched({});
     }
@@ -48,7 +55,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
-    const value = formData[field] || '';
+    const value = field === 'phone' ? localPhone : (formData[field] || '');
     let error: string | null = null;
     
     if (field === 'name') {
@@ -67,7 +74,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
     
     // Validate all fields before save
     const nameError = validateField(requiredNameSchema, formData.name || '');
-    const phoneError = validateField(phoneSchema, formData.phone || '');
+    const phoneError = validateField(phoneSchema, localPhone || '');
     const emailError = validateField(emailSchema, formData.email || '');
     
     setTouched({ name: true, phone: true, email: true });
@@ -86,13 +93,14 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
     try {
       const isRental = formData.property_type === 'rental' || formData.property_type === 'both';
       const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
+      const fullPhone = combinePhoneNumber(phoneCountry, localPhone);
 
       const { error } = await supabase
         .from('contact_leads')
         .update({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: fullPhone,
           status: formData.status,
           priority: formData.priority,
           assigned_agent_id: formData.assigned_agent_id,
@@ -197,12 +205,27 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
               <Label>טלפון</Label>
-              <Input
-                value={formData.phone || ''}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                onBlur={() => handleFieldBlur('phone')}
-                className={cn(touched.phone && errors.phone && 'border-destructive')}
-              />
+              <div className="flex gap-2">
+                <Select value={phoneCountry} onValueChange={setPhoneCountry}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map(country => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={localPhone}
+                  onChange={(e) => setLocalPhone(e.target.value)}
+                  onBlur={() => handleFieldBlur('phone')}
+                  placeholder={phoneCountry === 'IL' ? '050-1234567' : '555-123-4567'}
+                  className={cn("flex-1", touched.phone && errors.phone && 'border-destructive')}
+                />
+              </div>
               {touched.phone && errors.phone && (
                 <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3 flex-shrink-0" />
@@ -379,18 +402,25 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="edit-pets"
-                      checked={!!formData.pets}
-                      onCheckedChange={(checked) => setFormData({ ...formData, pets: !!checked })}
-                    />
-                    <Label htmlFor="edit-pets" className="flex items-center gap-1 cursor-pointer">
+                  <div>
+                    <Label className="flex items-center gap-1">
                       <Dog className="h-4 w-4" />
-                      יש חיות מחמד
+                      חיות מחמד
                     </Label>
+                    <Select 
+                      value={formData.pets === true ? 'yes' : formData.pets === false ? 'no' : ''} 
+                      onValueChange={(value) => setFormData({ ...formData, pets: value === 'yes' ? true : value === 'no' ? false : null })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">יש חיות מחמד</SelectItem>
+                        <SelectItem value="no">אין חיות מחמד</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-6">
                     <Checkbox
                       id="edit-flexible"
                       checked={!!formData.flexible_move_date}

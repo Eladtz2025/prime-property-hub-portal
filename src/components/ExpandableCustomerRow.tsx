@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
+import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
 
 interface Agent {
   id: string;
@@ -240,6 +241,10 @@ export const ExpandableCustomerRow = ({
     ...customer,
     property_type: normalizePropertyType(customer.property_type) || customer.property_type,
   }));
+  // Parse phone on mount
+  const { countryCode: initialCountryCode, localNumber: initialLocalNumber } = parsePhoneNumber(customer.phone);
+  const [phoneCountry, setPhoneCountry] = useState(initialCountryCode);
+  const [localPhone, setLocalPhone] = useState(initialLocalNumber);
   const [loading, setLoading] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -265,7 +270,7 @@ export const ExpandableCustomerRow = ({
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
-    const value = formData[field] || '';
+    const value = field === 'phone' ? localPhone : (formData[field] || '');
     let error: string | null = null;
     
     if (field === 'name') {
@@ -347,7 +352,7 @@ export const ExpandableCustomerRow = ({
   const handleSaveForm = async () => {
     // Validate basic fields
     const nameError = validateField(requiredNameSchema, formData.name || '');
-    const phoneError = validateField(phoneSchema, formData.phone || '');
+    const phoneError = validateField(phoneSchema, localPhone || '');
     const emailError = validateField(emailSchema, formData.email || '');
     
     setTouched({ name: true, phone: true, email: true });
@@ -388,12 +393,14 @@ export const ExpandableCustomerRow = ({
         formData.balcony_required !== customer.balcony_required ||
         formData.pets !== customer.pets;
 
+      const fullPhone = combinePhoneNumber(phoneCountry, localPhone);
+
       const { error } = await supabase
         .from('contact_leads')
         .update({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: fullPhone,
           status: formData.status,
           priority: formData.priority,
           assigned_agent_id: formData.assigned_agent_id,
@@ -680,12 +687,27 @@ export const ExpandableCustomerRow = ({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">טלפון</Label>
-                    <Input
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      onBlur={() => handleFieldBlur('phone')}
-                      className={cn("h-8 text-sm", touched.phone && errors.phone && 'border-destructive')}
-                    />
+                    <div className="flex gap-1">
+                      <Select value={phoneCountry} onValueChange={setPhoneCountry}>
+                        <SelectTrigger className="h-8 text-xs w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRY_CODES.map(country => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={localPhone}
+                        onChange={(e) => setLocalPhone(e.target.value)}
+                        onBlur={() => handleFieldBlur('phone')}
+                        placeholder={phoneCountry === 'IL' ? '050-1234567' : '555-1234'}
+                        className={cn("h-8 text-sm flex-1", touched.phone && errors.phone && 'border-destructive')}
+                      />
+                    </div>
                     {touched.phone && errors.phone && (
                       <p className="text-xs text-destructive flex items-center gap-1">
                         <AlertCircle className="h-3 w-3 flex-shrink-0" />
@@ -831,9 +853,20 @@ export const ExpandableCustomerRow = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="flex items-center gap-2 pt-5">
-                        <Checkbox id={`pets-${customer.id}`} checked={!!formData.pets} onCheckedChange={(c) => setFormData({ ...formData, pets: !!c })} />
-                        <Label htmlFor={`pets-${customer.id}`} className="text-xs flex items-center gap-1 cursor-pointer"><Dog className="h-3 w-3" />חיות</Label>
+                      <div>
+                        <Label className="text-xs flex items-center gap-1"><Dog className="h-3 w-3" />חיות מחמד</Label>
+                        <Select 
+                          value={formData.pets === true ? 'yes' : formData.pets === false ? 'no' : ''} 
+                          onValueChange={(value) => setFormData({ ...formData, pets: value === 'yes' ? true : value === 'no' ? false : null })}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="בחר..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">יש</SelectItem>
+                            <SelectItem value="no">אין</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex items-center gap-2 pt-5">
                         <Checkbox id={`parking-${customer.id}`} checked={!!formData.parking_required} onCheckedChange={(c) => setFormData({ ...formData, parking_required: !!c })} />

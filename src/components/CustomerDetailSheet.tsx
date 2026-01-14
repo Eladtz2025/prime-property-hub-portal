@@ -269,7 +269,7 @@ export const CustomerDetailSheet = ({
           )}
 
           {/* Rental-specific details */}
-          {isRental && (customer.tenant_type || customer.pets || customer.parking_required || customer.balcony_required || customer.elevator_required || customer.flexible_move_date) && (
+          {isRental && (customer.tenant_type || customer.pets !== null || customer.parking_required || customer.balcony_required || customer.elevator_required || customer.flexible_move_date) && (
             <>
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
@@ -283,10 +283,16 @@ export const CustomerDetailSheet = ({
                       <span>{tenantTypeLabels[customer.tenant_type] || customer.tenant_type}</span>
                     </div>
                   )}
-                  {customer.pets && (
+                  {customer.pets === true && (
                     <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                       <Dog className="h-4 w-4 text-amber-600" />
                       <span>יש חיות מחמד</span>
+                    </div>
+                  )}
+                  {customer.pets === false && (
+                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <Dog className="h-4 w-4 text-green-600" />
+                      <span>אין חיות מחמד</span>
                     </div>
                   )}
                   {customer.flexible_move_date && (
