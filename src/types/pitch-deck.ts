@@ -84,6 +84,12 @@ export interface NeighborhoodSlideData {
   beach_distance?: number;
   location_highlights?: string[];
   appeals_to?: string[];
+  // Map fields
+  property_name?: string;
+  left_landmark?: string;
+  left_distance?: string;
+  right_landmark?: string;
+  right_distance?: string;
 }
 
 export interface PricingSlideData {
