@@ -27,21 +27,21 @@ const AdminPropertyScout: React.FC = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="properties" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              דירות שנמצאו
+            <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">דירות שנמצאו</span>
             </TabsTrigger>
-            <TabsTrigger value="configs" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              הגדרות סריקה
+            <TabsTrigger value="configs" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">הגדרות סריקה</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              היסטוריית ריצות
+            <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <History className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">היסטוריית ריצות</span>
             </TabsTrigger>
-            <TabsTrigger value="manual" className="flex items-center gap-2">
-              <Wand2 className="h-4 w-4" />
-              סריקה ידנית
+            <TabsTrigger value="manual" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Wand2 className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">סריקה ידנית</span>
             </TabsTrigger>
           </TabsList>
 

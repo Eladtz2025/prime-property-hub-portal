@@ -94,7 +94,8 @@ export const ScoutRunHistory: React.FC = () => {
         <CardTitle>היסטוריית ריצות ({runs?.length || 0})</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -162,6 +163,52 @@ export const ScoutRunHistory: React.FC = () => {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {runs?.map((run) => (
+            <div key={run.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(run.status)}
+                  {getStatusBadge(run.status)}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(run.started_at), 'dd/MM HH:mm', { locale: he })}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm truncate max-w-[180px]">
+                  {run.scout_configs?.name || 'ריצה ידנית'}
+                </p>
+                <Badge variant="outline" className="text-xs">{run.source}</Badge>
+              </div>
+              
+              {run.error_message && (
+                <p className="text-xs text-red-500 truncate">
+                  {run.error_message}
+                </p>
+              )}
+              
+              <div className="flex items-center gap-3 text-xs">
+                <span>נמצאו: <strong>{run.properties_found || 0}</strong></span>
+                <span className="text-green-600">חדשות: <strong>{run.new_properties || 0}</strong></span>
+                <span>התאמות: <strong>{run.leads_matched || 0}</strong></span>
+              </div>
+              
+              <div className="text-xs text-muted-foreground">
+                משך: {calculateDuration(run.started_at, run.completed_at)}
+              </div>
+            </div>
+          ))}
+
+          {(!runs || runs.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground">
+              אין היסטוריית ריצות
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

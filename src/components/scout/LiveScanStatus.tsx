@@ -416,21 +416,21 @@ export const LiveScanStatus: React.FC = () => {
           </div>
         )}
         
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <div className="relative">
               <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
               <div className="relative w-3 h-3 bg-red-500 rounded-full" />
             </div>
-            <span className="font-semibold text-lg">סריקות פעילות</span>
-            <Badge variant="secondary">{Object.keys(configProgress).length} קונפיגורציות</Badge>
+            <span className="font-semibold text-base sm:text-lg">סריקות פעילות</span>
+            <Badge variant="secondary" className="text-xs">{Object.keys(configProgress).length} קונפיג׳</Badge>
           </div>
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              <span className="font-mono">{getElapsedTime()}</span>
+              <span className="font-mono text-xs sm:text-sm">{getElapsedTime()}</span>
             </div>
-            <div className="text-sm">
+            <div className="text-xs sm:text-sm">
               נותרו: <span className="font-medium">{getEstimatedTimeRemaining()}</span>
             </div>
           </div>
