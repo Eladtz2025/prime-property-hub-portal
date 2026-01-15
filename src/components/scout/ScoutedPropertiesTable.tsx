@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -59,6 +60,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<ScoutedProperty | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<ScoutedProperty | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
   // New filter states
   const [roomsMin, setRoomsMin] = useState<string>('');
@@ -541,7 +543,175 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Mobile: Compact header with filters button */}
+          <div className="flex md:hidden items-center justify-between gap-2">
+            <CardTitle className="text-lg whitespace-nowrap">
+              דירות ({totalCount || 0})
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    פילטרים
+                    {hasActiveFilters && (
+                      <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {(roomsMin ? 1 : 0) + (roomsMax ? 1 : 0) + (minBudget ? 1 : 0) + (maxBudget ? 1 : 0) + (neighborhoodFilter !== 'all' ? 1 : 0) + featuresFilter.length + (statusFilter !== 'all' ? 1 : 0) + (sourceFilter !== 'all' ? 1 : 0)}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                  <SheetHeader className="pb-4">
+                    <SheetTitle>פילטרים</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-4">
+                    {/* Rooms Range */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">חדרים</label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          placeholder="מ-"
+                          value={roomsMin}
+                          onChange={(e) => setRoomsMin(e.target.value)}
+                          className="flex-1 h-10"
+                          step="0.5"
+                          min="1"
+                        />
+                        <span className="text-muted-foreground">-</span>
+                        <Input
+                          type="number"
+                          placeholder="עד"
+                          value={roomsMax}
+                          onChange={(e) => setRoomsMax(e.target.value)}
+                          className="flex-1 h-10"
+                          step="0.5"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Budget Range */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">תקציב</label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          placeholder="ממחיר"
+                          value={minBudget}
+                          onChange={(e) => setMinBudget(e.target.value)}
+                          className="flex-1 h-10"
+                        />
+                        <span className="text-muted-foreground">-</span>
+                        <Input
+                          type="number"
+                          placeholder="עד"
+                          value={maxBudget}
+                          onChange={(e) => setMaxBudget(e.target.value)}
+                          className="flex-1 h-10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Neighborhood */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">שכונה</label>
+                      <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="כל השכונות" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">כל השכונות</SelectItem>
+                          {neighborhoods?.map(n => (
+                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">סטטוס</label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="כל הסטטוסים" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">כל הסטטוסים</SelectItem>
+                          <SelectItem value="new">חדש</SelectItem>
+                          <SelectItem value="matched">עבר התאמה</SelectItem>
+                          <SelectItem value="imported">יובא</SelectItem>
+                          <SelectItem value="archived">ארכיון</SelectItem>
+                          <SelectItem value="inactive">לא פעיל</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Source */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">מקור</label>
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="כל המקורות" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">כל המקורות</SelectItem>
+                          <SelectItem value="yad2">יד2</SelectItem>
+                          <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
+                          <SelectItem value="madlan">מדלן</SelectItem>
+                          <SelectItem value="homeless">הומלס</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Features */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">תוספות</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {FEATURE_OPTIONS.map(feature => (
+                          <div key={feature.key} className="flex items-center gap-2 p-2 border rounded">
+                            <Checkbox
+                              id={`mobile-${feature.key}`}
+                              checked={featuresFilter.includes(feature.key)}
+                              onCheckedChange={() => toggleFeature(feature.key)}
+                            />
+                            <label htmlFor={`mobile-${feature.key}`} className="text-sm cursor-pointer">
+                              {feature.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button 
+                        onClick={() => {
+                          handleSearch();
+                          setMobileFiltersOpen(false);
+                        }} 
+                        className="flex-1"
+                      >
+                        <Search className="h-4 w-4 ml-2" />
+                        חפש
+                      </Button>
+                      {hasActiveFilters && (
+                        <Button variant="outline" onClick={clearAllFilters}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <Button onClick={handleSearch} size="sm" className="h-9">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Desktop: Original inline filters */}
+          <div className="hidden md:flex flex-wrap items-center gap-2">
             {/* Title */}
             <CardTitle className="whitespace-nowrap ml-2">
               דירות שנסרקו ({totalCount || 0})
@@ -680,7 +850,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -857,32 +1028,157 @@ export const ScoutedPropertiesTable: React.FC = () => {
             </Table>
           </div>
 
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {showEmptyState ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-1">בחר פילטרים ולחץ "חפש"</p>
+                <p className="text-sm">הדירות יוצגו לאחר החיפוש</p>
+              </div>
+            ) : isLoading ? (
+              <div className="text-center py-8">טוען...</div>
+            ) : filteredProperties?.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                לא נמצאו דירות התואמות את החיפוש
+              </div>
+            ) : filteredProperties?.map((property) => (
+              <div 
+                key={property.id} 
+                className={`border rounded-lg p-3 space-y-2 ${property.is_active === false ? 'opacity-60' : ''}`}
+              >
+                {/* Header: Source + Status + Time */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {getSourceBadge(property.source)}
+                    {property.is_private === true && (
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">פרטי</Badge>
+                    )}
+                    {property.is_private === false && (
+                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300">תיווך</Badge>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
+                  </span>
+                </div>
+
+                {/* Title + Location */}
+                <div>
+                  <p className="font-medium text-sm truncate">{property.title || 'ללא כותרת'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {property.city}{property.neighborhood ? ` - ${property.neighborhood}` : ''}
+                  </p>
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="font-medium">
+                    {property.price ? `₪${property.price.toLocaleString()}` : '-'}
+                  </span>
+                  <span>{property.rooms || '-'} חד׳</span>
+                  <span>{property.size ? `${property.size} מ"ר` : '-'}</span>
+                  {getStatusBadge(property.status, property.is_active)}
+                </div>
+
+                {/* Matched Leads */}
+                {property.matched_leads?.length > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-purple-600">
+                    <Users className="h-3 w-3" />
+                    <span>{property.matched_leads.length} התאמות</span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 pt-1 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => {
+                      setSelectedPropertyDetails(property);
+                      setDetailsDialogOpen(true);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => window.open(property.source_url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  
+                  {property.status !== 'imported' && property.status !== 'archived' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => handleImportProperty(property)}
+                      disabled={importMutation.isPending}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {property.status === 'new' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => matchLeadsMutation.mutate(property.id)}
+                      disabled={matchLeadsMutation.isPending}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {property.status !== 'archived' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => archiveMutation.mutate(property.id)}
+                    >
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
+              <div className="text-sm text-muted-foreground order-2 sm:order-1">
                 מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 order-1 sm:order-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
+                  className="h-9 px-2 sm:px-3"
                 >
                   <ChevronRight className="h-4 w-4" />
-                  הקודם
+                  <span className="hidden sm:inline mr-1">הקודם</span>
                 </Button>
                 <span className="text-sm">
-                  עמוד {currentPage} מתוך {totalPages}
+                  {currentPage}/{totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
+                  className="h-9 px-2 sm:px-3"
                 >
-                  הבא
+                  <span className="hidden sm:inline ml-1">הבא</span>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
