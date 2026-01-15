@@ -249,48 +249,65 @@ export default function AdminCustomers() {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers")} className="space-y-4">
         {/* Tabs + Buttons row */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setAddCustomerModalOpen(true)} size="sm">
-              <Plus className="h-4 w-4 ml-2" />
-              לקוח חדש
-            </Button>
-            <Button 
-              onClick={handleResetAllMatches} 
-              size="sm" 
-              variant="outline"
-              disabled={isMatchingAll}
-            >
-              {isMatchingAll ? (
-                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-              ) : (
-                <RefreshCcw className="h-4 w-4 ml-2" />
-              )}
-              חשב התאמות מחדש
-            </Button>
-            <Button 
-              onClick={handleScanOwnProperties} 
-              size="sm" 
-              variant="outline"
-              disabled={isScanningOwn}
-              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-            >
-              {isScanningOwn ? (
-                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-              ) : (
-                <Building2 className="h-4 w-4 ml-2" />
-              )}
-              סרוק נכסים שלנו
-            </Button>
-            <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline">
-              <Plus className="h-4 w-4 ml-2" />
-              מתווך חדש
-            </Button>
+        <div className="flex flex-col gap-3">
+          {/* Tabs row */}
+          <div className="flex justify-end">
+            <TabsList>
+              <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
+              <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
+            </TabsList>
           </div>
-          <TabsList>
-          <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
-            <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
-          </TabsList>
+          
+          {/* Buttons row - two rows on mobile */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* Add buttons */}
+            <div className="flex gap-2">
+              <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
+                <Plus className="h-4 w-4 sm:ml-2" />
+                <span className="hidden sm:inline">לקוח חדש</span>
+                <span className="sm:hidden">לקוח</span>
+              </Button>
+              <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-1 sm:flex-none">
+                <Plus className="h-4 w-4 sm:ml-2" />
+                <span className="hidden sm:inline">מתווך חדש</span>
+                <span className="sm:hidden">מתווך</span>
+              </Button>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleResetAllMatches} 
+                size="sm" 
+                variant="outline"
+                disabled={isMatchingAll}
+                className="flex-1 sm:flex-none"
+              >
+                {isMatchingAll ? (
+                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4 sm:ml-2" />
+                )}
+                <span className="hidden sm:inline">חשב התאמות מחדש</span>
+                <span className="sm:hidden">התאמות</span>
+              </Button>
+              <Button 
+                onClick={handleScanOwnProperties} 
+                size="sm" 
+                variant="outline"
+                disabled={isScanningOwn}
+                className="flex-1 sm:flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+              >
+                {isScanningOwn ? (
+                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
+                ) : (
+                  <Building2 className="h-4 w-4 sm:ml-2" />
+                )}
+                <span className="hidden sm:inline">סרוק נכסים שלנו</span>
+                <span className="sm:hidden">סרוק</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Customers Tab */}
