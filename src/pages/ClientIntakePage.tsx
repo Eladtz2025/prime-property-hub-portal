@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { CitySelectorDropdown } from '@/components/ui/city-selector';
 import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
 import { cn } from '@/lib/utils';
+import { normalizePhoneForComparison, getPhoneSuffix } from '@/utils/phoneNormalization';
 
 // Validation schema
 const clientIntakeSchema = z.object({
@@ -188,14 +189,21 @@ export default function ClientIntakePage() {
 
       // Use selected neighborhoods array directly
       const neighborhoodsArray = selectedNeighborhoods.length > 0 ? selectedNeighborhoods : null;
-      const normalizedPhone = formData.phone.trim().replace(/[-\s]/g, '');
+      
+      // Normalize phone for comparison - get last 9 digits for flexible matching
+      const phoneSuffix = getPhoneSuffix(formData.phone, 9);
 
-      // Check if customer with same phone already exists
-      const { data: existingCustomer } = await supabase
+      // Check if customer with same phone already exists using flexible matching
+      // Search by phone suffix to match regardless of format (+972, 05, etc.)
+      const { data: existingCustomers } = await supabase
         .from('contact_leads')
-        .select('id, preferred_cities, preferred_neighborhoods, assigned_agent_id, status')
-        .or(`phone.eq.${normalizedPhone},phone.eq.${formData.phone.trim()}`)
-        .maybeSingle();
+        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status');
+      
+      // Find matching customer by comparing normalized phone numbers
+      const existingCustomer = existingCustomers?.find(customer => {
+        const customerSuffix = getPhoneSuffix(customer.phone, 9);
+        return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
+      }) || null;
 
       if (existingCustomer) {
         // Merge cities and neighborhoods

@@ -16,6 +16,7 @@ import { validateField, requiredPhoneSchema, emailSchema, requiredNameSchema, Fo
 import { CitySelectorCompact } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorCompact } from "@/components/ui/neighborhood-selector";
 import { COUNTRY_CODES, combinePhoneNumber } from '@/utils/phoneCountryCodes';
+import { getPhoneSuffix } from '@/utils/phoneNormalization';
 
 interface AddCustomerModalProps {
   open: boolean;
@@ -138,6 +139,27 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     setLoading(true);
     try {
       const fullPhone = combinePhoneNumber(phoneCountry, formData.phone);
+      const phoneSuffix = getPhoneSuffix(fullPhone, 9);
+      
+      // Check for existing customer with same phone (flexible matching)
+      const { data: existingCustomers } = await supabase
+        .from('contact_leads')
+        .select('id, phone, name');
+      
+      const existingCustomer = existingCustomers?.find(customer => {
+        const customerSuffix = getPhoneSuffix(customer.phone, 9);
+        return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
+      });
+      
+      if (existingCustomer) {
+        toast({
+          title: 'לקוח כבר קיים',
+          description: `לקוח עם מספר טלפון זה כבר רשום במערכת (${existingCustomer.name})`,
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
       
       const { error } = await supabase
         .from('contact_leads')
