@@ -1,19 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Check, Loader2 } from 'lucide-react';
+import { Upload, Check, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 interface BackgroundImagePickerProps {
   propertyId?: string;
@@ -23,6 +16,7 @@ interface BackgroundImagePickerProps {
 
 const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImagePickerProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [scrollIndex, setScrollIndex] = useState(0);
 
   // Fetch images from property_images table
   const { data: propertyImages, isLoading } = useQuery({
@@ -97,44 +91,38 @@ const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImageP
           ) : propertyImages && propertyImages.length > 0 ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">בחר מגלריית הנכס:</p>
-              <div className="relative px-8">
-                <Carousel
-                  opts={{
-                    align: "start",
-                    direction: "rtl",
-                  }}
-                  className="w-full"
-                >
-                  <CarouselContent className="-ml-1">
-                    {propertyImages.map((img) => (
-                      <CarouselItem key={img.id} className="basis-1/4 pl-1">
-                        <button
-                          type="button"
-                          onClick={() => onChange(img.image_url)}
-                          className={cn(
-                            "aspect-video w-full rounded-md overflow-hidden cursor-pointer border-2 transition-all hover:opacity-90 relative",
-                            value === img.image_url 
-                              ? "border-primary ring-2 ring-primary/30" 
-                              : "border-transparent hover:border-muted-foreground/30"
-                          )}
-                        >
-                          <img 
-                            src={img.image_url} 
-                            alt={img.alt_text || 'תמונת נכס'}
-                            className="w-full h-full object-cover"
-                          />
-                          {value === img.image_url && (
-                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                              <Check className="h-4 w-4 text-primary-foreground bg-primary rounded-full p-0.5" />
-                            </div>
-                          )}
-                        </button>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious className="-left-2 h-6 w-6" />
-                  <CarouselNext className="-right-2 h-6 w-6" />
-                </Carousel>
+              {/* Simple grid-based gallery - Safari compatible */}
+              <div className="relative">
+                <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
+                  {propertyImages.map((img) => (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => onChange(img.image_url)}
+                      className={cn(
+                        "flex-shrink-0 w-16 h-10 rounded-md overflow-hidden cursor-pointer border-2 transition-all hover:opacity-90 relative",
+                        value === img.image_url 
+                          ? "border-primary ring-2 ring-primary/30" 
+                          : "border-transparent hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <img 
+                        src={img.image_url} 
+                        alt={img.alt_text || 'תמונת נכס'}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                      {value === img.image_url && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary-foreground bg-primary rounded-full p-0.5" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (

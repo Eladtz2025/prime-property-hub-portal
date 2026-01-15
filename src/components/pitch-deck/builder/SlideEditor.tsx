@@ -7,6 +7,21 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Plus, Trash2, Loader2, Check } from 'lucide-react';
 import BackgroundImagePicker from './BackgroundImagePicker';
+import { SlideEditorErrorBoundary } from './SlideEditorErrorBoundary';
+
+// Safe array helper - ensures we always get an array
+const safeArray = <T,>(value: unknown, fallback: T[] = []): T[] => {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return fallback;
+  return fallback;
+};
+
+// Safe string helper
+const safeString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+};
 
 interface SlideEditorProps {
   slide: PitchDeckSlide;
@@ -29,11 +44,18 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
 
   // Sync state when slide prop changes
   useEffect(() => {
-    setSlideData(slide.slide_data as Record<string, unknown>);
+    const data = slide.slide_data as Record<string, unknown>;
+    console.log('[SlideEditor] Loading slide:', {
+      id: slide.id,
+      type: slide.slide_type,
+      dataKeys: data ? Object.keys(data) : 'null',
+      data: data
+    });
+    setSlideData(data || {});
     setBackgroundImage(slide.background_image || '');
     setHasUnsavedChanges(false);
     setShowSaved(false);
-  }, [slide.id]);
+  }, [slide.id, slide.slide_type]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -97,39 +119,47 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
   };
 
   const handleArrayItemChange = (key: string, index: number, field: string, value: string) => {
-    const array = [...(slideData[key] as Array<Record<string, string>> || [])];
-    array[index] = { ...array[index], [field]: value };
-    handleDataChange(key, array);
+    const array = [...safeArray<Record<string, string>>(slideData[key])];
+    if (index >= 0 && index < array.length) {
+      array[index] = { ...(array[index] || {}), [field]: value };
+      handleDataChange(key, array);
+    }
   };
 
   const handleAddArrayItem = (key: string, template: Record<string, string>) => {
-    const array = [...(slideData[key] as Array<Record<string, string>> || [])];
+    const array = [...safeArray<Record<string, string>>(slideData[key])];
     array.push(template);
     handleDataChange(key, array);
   };
 
   const handleRemoveArrayItem = (key: string, index: number) => {
-    const array = [...(slideData[key] as Array<Record<string, string>> || [])];
-    array.splice(index, 1);
-    handleDataChange(key, array);
+    const array = [...safeArray<Record<string, string>>(slideData[key])];
+    if (index >= 0 && index < array.length) {
+      array.splice(index, 1);
+      handleDataChange(key, array);
+    }
   };
 
   const handleStringArrayChange = (key: string, index: number, value: string) => {
-    const array = [...(slideData[key] as string[] || [])];
-    array[index] = value;
-    handleDataChange(key, array);
+    const array = [...safeArray<string>(slideData[key])];
+    if (index >= 0 && index < array.length) {
+      array[index] = value;
+      handleDataChange(key, array);
+    }
   };
 
   const handleAddStringArrayItem = (key: string) => {
-    const array = [...(slideData[key] as string[] || [])];
+    const array = [...safeArray<string>(slideData[key])];
     array.push('');
     handleDataChange(key, array);
   };
 
   const handleRemoveStringArrayItem = (key: string, index: number) => {
-    const array = [...(slideData[key] as string[] || [])];
-    array.splice(index, 1);
-    handleDataChange(key, array);
+    const array = [...safeArray<string>(slideData[key])];
+    if (index >= 0 && index < array.length) {
+      array.splice(index, 1);
+      handleDataChange(key, array);
+    }
   };
 
   const handleBackgroundChange = (value: string) => {
@@ -1287,4 +1317,16 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
   );
 };
 
-export default SlideEditor;
+// Wrapped component with error boundary
+const SlideEditorWithErrorBoundary = (props: SlideEditorProps) => {
+  return (
+    <SlideEditorErrorBoundary 
+      slideType={props.slide.slide_type} 
+      slideId={props.slide.id}
+    >
+      <SlideEditor {...props} />
+    </SlideEditorErrorBoundary>
+  );
+};
+
+export default SlideEditorWithErrorBoundary;
