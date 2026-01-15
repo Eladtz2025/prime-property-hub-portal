@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Phone, MessageSquare, Save, X, Trash2, EyeOff, RotateCcw, Home, Briefcase, Dog } from "lucide-react";
 import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
+import { CitySelectorDropdown } from "@/components/ui/city-selector";
+import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -276,15 +278,15 @@ export const CustomerMobileTable = ({
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
           <SheetHeader className="pb-2">
-            <SheetTitle className="flex items-center justify-between">
-              <span>עריכת לקוח - {selectedCustomer?.name}</span>
-              <div className="flex gap-1">
+            <SheetTitle className="flex items-center justify-between gap-2">
+              <span className="text-base truncate max-w-[200px]">עריכה - {selectedCustomer?.name}</span>
+              <div className="flex gap-1 shrink-0">
                 {selectedCustomer?.phone && (
                   <>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleCall}>
+                    <Button size="sm" variant="ghost" className="h-9 w-9 p-0" onClick={handleCall}>
                       <Phone className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-green-600" onClick={handleWhatsApp}>
+                    <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-green-600" onClick={handleWhatsApp}>
                       <MessageSquare className="h-4 w-4" />
                     </Button>
                   </>
@@ -418,21 +420,20 @@ export const CustomerMobileTable = ({
 
             {/* Location */}
             <div>
-              <Label className="text-xs">ערים מועדפות (מופרד בפסיקים)</Label>
-              <Input
-                value={formData.preferred_cities?.join(', ') || ''}
-                onChange={(e) => setFormData({ ...formData, preferred_cities: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                placeholder="תל אביב, רמת גן"
+              <Label className="text-xs">ערים מועדפות</Label>
+              <CitySelectorDropdown
+                selectedCities={formData.preferred_cities || []}
+                onChange={(cities) => setFormData({ ...formData, preferred_cities: cities })}
                 className="h-9"
               />
             </div>
 
             <div>
               <Label className="text-xs">שכונות מועדפות</Label>
-              <Input
-                value={formData.preferred_neighborhoods?.join(', ') || ''}
-                onChange={(e) => setFormData({ ...formData, preferred_neighborhoods: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                placeholder="רוטשילד, דיזנגוף"
+              <NeighborhoodSelectorDropdown
+                selectedCities={formData.preferred_cities || []}
+                selectedNeighborhoods={formData.preferred_neighborhoods || []}
+                onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
                 className="h-9"
               />
             </div>
