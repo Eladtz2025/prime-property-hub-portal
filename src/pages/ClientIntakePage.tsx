@@ -218,6 +218,7 @@ export default function ClientIntakePage() {
           .from('contact_leads')
           .update({
             name: formData.name.trim(),
+            phone: formData.phone.trim(),
             email: formData.email?.trim() || null,
             property_type: formData.property_type,
             budget_min: null,
