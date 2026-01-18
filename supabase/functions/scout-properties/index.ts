@@ -675,6 +675,12 @@ function detectBroker(title: string, description: string, rawData?: Record<strin
     if (rawData.isBroker === true || rawData.is_broker === true) {
       return true;
     }
+    
+    // Check 4: Madlan-specific - rawData.description field contains broker indicator
+    const rawDescription = String(rawData.description || '').toLowerCase();
+    if (rawDescription === 'תיווך' || rawDescription.includes('מתיווך') || rawDescription.includes('תיווך')) {
+      return true;
+    }
   }
   
   return false;

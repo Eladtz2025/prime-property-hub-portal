@@ -2861,7 +2861,6 @@ export type Database = {
       detect_existing_duplicates: {
         Args: never
         Returns: {
-          alerts_created: number
           duplicates_found: number
           groups_created: number
         }[]
@@ -2876,12 +2875,12 @@ export type Database = {
           p_rooms: number
         }
         Returns: {
+          duplicate_detected_at: string
           duplicate_group_id: string
           id: string
           price: number
+          size: number
           source: string
-          source_url: string
-          title: string
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
