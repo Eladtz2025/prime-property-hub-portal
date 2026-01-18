@@ -402,8 +402,54 @@ serve(async (req) => {
               // Normalize city name before saving
               const normalizedCity = normalizeCityName(property.city);
               
-              // Insert new property with is_private field
-              const { error: insertError } = await supabase
+              // Check for duplicates before inserting
+              let duplicateGroupId: string | null = null;
+              let isPrimaryListing = true;
+              
+              if (property.address && property.rooms && normalizedCity) {
+                const { data: duplicates } = await supabase
+                  .rpc('find_duplicate_property', {
+                    p_address: property.address,
+                    p_rooms: property.rooms,
+                    p_floor: property.floor || 0,
+                    p_property_type: property.property_type || 'rental',
+                    p_city: normalizedCity,
+                    p_exclude_id: null
+                  });
+                
+                if (duplicates && duplicates.length > 0) {
+                  const primaryDuplicate = duplicates[0];
+                  duplicateGroupId = primaryDuplicate.duplicate_group_id || primaryDuplicate.id;
+                  isPrimaryListing = false;
+                  
+                  console.log(`🔄 Found duplicate: ${property.address} (${property.source}) matches ${primaryDuplicate.source}`);
+                  
+                  // Check price difference
+                  if (property.price && primaryDuplicate.price && primaryDuplicate.price > 0) {
+                    const priceDiff = Math.abs(property.price - primaryDuplicate.price);
+                    const priceDiffPercent = (priceDiff / Math.min(property.price, primaryDuplicate.price)) * 100;
+                    
+                    // If price difference > 5%, we'll create an alert after insert
+                    if (priceDiffPercent > 5) {
+                      console.log(`⚠️ Price difference: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
+                    }
+                  }
+                  
+                  // Update the primary duplicate with duplicate_group_id if it doesn't have one
+                  if (!primaryDuplicate.duplicate_group_id) {
+                    await supabase
+                      .from('scouted_properties')
+                      .update({ 
+                        duplicate_group_id: duplicateGroupId,
+                        duplicate_detected_at: new Date().toISOString()
+                      })
+                      .eq('id', primaryDuplicate.id);
+                  }
+                }
+              }
+              
+              // Insert new property with duplicate tracking
+              const { data: insertedProperty, error: insertError } = await supabase
                 .from('scouted_properties')
                 .insert({
                   source: property.source,
@@ -423,13 +469,45 @@ serve(async (req) => {
                   features: property.features || {},
                   raw_data: property.raw_data,
                   status: 'new',
-                  is_private: property.is_private
-                });
+                  is_private: property.is_private,
+                  duplicate_group_id: duplicateGroupId,
+                  is_primary_listing: isPrimaryListing,
+                  duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null
+                })
+                .select('id, price')
+                .single();
 
-              if (!insertError) {
+              if (!insertError && insertedProperty) {
                 totalNewProperties++;
                 configNewProperties++;
-              } else {
+                
+                // Create duplicate alert if price difference > 5%
+                if (duplicateGroupId && property.price) {
+                  const { data: primaryProperty } = await supabase
+                    .from('scouted_properties')
+                    .select('id, price')
+                    .eq('duplicate_group_id', duplicateGroupId)
+                    .eq('is_primary_listing', true)
+                    .single();
+                  
+                  if (primaryProperty?.price && primaryProperty.price > 0) {
+                    const priceDiff = Math.abs(property.price - primaryProperty.price);
+                    const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
+                    
+                    if (priceDiffPercent > 5) {
+                      await supabase
+                        .from('duplicate_alerts')
+                        .insert({
+                          primary_property_id: primaryProperty.id,
+                          duplicate_property_id: insertedProperty.id,
+                          price_difference: priceDiff,
+                          price_difference_percent: priceDiffPercent
+                        });
+                      console.log(`📢 Created price alert: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
+                    }
+                  }
+                }
+              } else if (insertError) {
                 console.error('Insert error:', insertError);
               }
             }

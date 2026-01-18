@@ -576,6 +576,77 @@ export type Database = {
           },
         ]
       }
+      duplicate_alerts: {
+        Row: {
+          created_at: string | null
+          detected_at: string | null
+          duplicate_property_id: string | null
+          id: string
+          is_resolved: boolean | null
+          notes: string | null
+          price_difference: number
+          price_difference_percent: number
+          primary_property_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          detected_at?: string | null
+          duplicate_property_id?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          notes?: string | null
+          price_difference: number
+          price_difference_percent: number
+          primary_property_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          detected_at?: string | null
+          duplicate_property_id?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          notes?: string | null
+          price_difference?: number
+          price_difference_percent?: number
+          primary_property_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duplicate_alerts_duplicate_property_id_fkey"
+            columns: ["duplicate_property_id"]
+            isOneToOne: false
+            referencedRelation: "scouted_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_alerts_primary_property_id_fkey"
+            columns: ["primary_property_id"]
+            isOneToOne: false
+            referencedRelation: "scouted_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_logs: {
         Row: {
           alert_sent: boolean | null
@@ -2282,16 +2353,20 @@ export type Database = {
           city: string | null
           created_at: string
           description: string | null
+          duplicate_detected_at: string | null
+          duplicate_group_id: string | null
           features: Json | null
           first_seen_at: string
           floor: number | null
           id: string
           images: Json | null
           is_active: boolean | null
+          is_primary_listing: boolean | null
           is_private: boolean | null
           last_seen_at: string
           matched_leads: Json | null
           neighborhood: string | null
+          owner_phone: string | null
           price: number | null
           property_type: string | null
           raw_data: Json | null
@@ -2309,16 +2384,20 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duplicate_detected_at?: string | null
+          duplicate_group_id?: string | null
           features?: Json | null
           first_seen_at?: string
           floor?: number | null
           id?: string
           images?: Json | null
           is_active?: boolean | null
+          is_primary_listing?: boolean | null
           is_private?: boolean | null
           last_seen_at?: string
           matched_leads?: Json | null
           neighborhood?: string | null
+          owner_phone?: string | null
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
@@ -2336,16 +2415,20 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duplicate_detected_at?: string | null
+          duplicate_group_id?: string | null
           features?: Json | null
           first_seen_at?: string
           floor?: number | null
           id?: string
           images?: Json | null
           is_active?: boolean | null
+          is_primary_listing?: boolean | null
           is_private?: boolean | null
           last_seen_at?: string
           matched_leads?: Json | null
           neighborhood?: string | null
+          owner_phone?: string | null
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
@@ -2771,6 +2854,32 @@ export type Database = {
       accept_property_invitation: {
         Args: { invitation_token: string }
         Returns: Json
+      }
+      detect_existing_duplicates: {
+        Args: never
+        Returns: {
+          alerts_created: number
+          duplicates_found: number
+          groups_created: number
+        }[]
+      }
+      find_duplicate_property: {
+        Args: {
+          p_address: string
+          p_city: string
+          p_exclude_id?: string
+          p_floor: number
+          p_property_type: string
+          p_rooms: number
+        }
+        Returns: {
+          duplicate_group_id: string
+          id: string
+          price: number
+          source: string
+          source_url: string
+          title: string
+        }[]
       }
       get_current_user_role: { Args: never; Returns: string }
       get_customer_matches: {
