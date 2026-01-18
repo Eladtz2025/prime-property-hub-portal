@@ -152,6 +152,14 @@ serve(async (req) => {
 
       for (const lead of leads) {
         const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead);
+        
+        // Debug logging for specific leads that should match
+        if (lead.name && lead.name.includes('רוני') && matchResult.matchScore < 60) {
+          console.log(`DEBUG רוני: Property ${property.title} (${property.neighborhood}, ${property.price}₪, ${property.rooms} rooms)`);
+          console.log(`  Lead preferences: neighborhoods=${lead.preferred_neighborhoods}, budget=${lead.budget_min}-${lead.budget_max}, rooms=${lead.rooms_min}-${lead.rooms_max}`);
+          console.log(`  Match score: ${matchResult.matchScore}, reasons: ${matchResult.matchReasons.join(', ')}`);
+        }
+        
         if (matchResult.matchScore >= 60) { // At least 60% match
           matches.push(matchResult);
         }
