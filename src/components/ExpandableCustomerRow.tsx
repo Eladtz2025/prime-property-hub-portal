@@ -728,9 +728,6 @@ export const ExpandableCustomerRow = ({
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">לא רלוונטי</Badge>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                {customer.email}
-              </div>
             </div>
           </div>
         </TableCell>
