@@ -67,17 +67,16 @@ export const CustomerTableView = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="text-right w-[20%]">
+            <TableHead className="text-right w-[22%]">
               <SortableHeader label="שם לקוח" sortKey="name" />
             </TableHead>
-            <TableHead className="text-right w-[12%]">סוג עסקה</TableHead>
-            <TableHead className="text-right w-[13%]">תקציב</TableHead>
-            <TableHead className="text-right w-[12%]">עדיפות</TableHead>
-            <TableHead className="text-right w-[15%]">התאמות</TableHead>
-            <TableHead className="text-right w-[16%]">
+            <TableHead className="text-right w-[14%]">סוג עסקה</TableHead>
+            <TableHead className="text-right w-[16%]">תקציב</TableHead>
+            <TableHead className="text-right w-[14%]">עדיפות</TableHead>
+            <TableHead className="text-right w-[17%]">התאמות</TableHead>
+            <TableHead className="text-right w-[17%]">
               <SortableHeader label="קשר אחרון" sortKey="last_contact" />
             </TableHead>
-            <TableHead className="text-right w-[12%]">פעולות</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

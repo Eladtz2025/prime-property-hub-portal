@@ -810,18 +810,11 @@ export const ExpandableCustomerRow = ({
             {timeSince.text}
           </span>
         </TableCell>
-        <TableCell>
-          <div className="flex gap-1 items-center">
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}>
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </TableCell>
       </TableRow>
 
       {/* Expanded Edit Section */}
       <TableRow className={isExpanded ? '' : 'hidden'}>
-        <TableCell colSpan={7} className="p-0 border-0">
+        <TableCell colSpan={6} className="p-0 border-0">
           <Collapsible open={isExpanded}>
             <CollapsibleContent className="bg-muted/20 border-t">
               <div className="p-4 space-y-4">
