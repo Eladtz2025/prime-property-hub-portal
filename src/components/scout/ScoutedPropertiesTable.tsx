@@ -95,6 +95,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     features: string[];
     status: string;
     source: string;
+    searchTerm: string;
   }>({
     roomsMin: '',
     roomsMax: '',
@@ -103,7 +104,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     neighborhood: 'all',
     features: [],
     status: 'all',
-    source: 'all'
+    source: 'all',
+    searchTerm: ''
   });
 
   // Statistics query
@@ -257,6 +259,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
       filters.features.forEach(feature => {
         query = query.eq(`features->>${feature}`, 'true');
       });
+    }
+    // Text search - search in title, address, neighborhood (DB level)
+    if (filters.searchTerm) {
+      const term = filters.searchTerm;
+      const normalizedTerm = normalizeSearch(term);
+      query = query.or(
+        `title.ilike.%${term}%,` +
+        `address.ilike.%${term}%,` +
+        `neighborhood.ilike.%${term}%,` +
+        `title.ilike.%${normalizedTerm}%,` +
+        `address.ilike.%${normalizedTerm}%,` +
+        `neighborhood.ilike.%${normalizedTerm}%`
+      );
     }
     return query;
   };
@@ -455,25 +470,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     importMutation.mutate(property);
   };
 
-  const filteredProperties = properties?.filter(p => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const normalizedTerm = normalizeSearch(term);
-    
-    // Check both original and normalized versions
-    const checkMatch = (value: string | null | undefined) => {
-      if (!value) return false;
-      const lower = value.toLowerCase();
-      return lower.includes(term) || normalizeSearch(lower).includes(normalizedTerm);
-    };
-    
-    return (
-      checkMatch(p.title) ||
-      checkMatch(p.city) ||
-      checkMatch(p.neighborhood) ||
-      checkMatch(p.address)
-    );
-  });
+  // No more client-side filtering - DB handles search via applyFilters
+  const filteredProperties = properties;
 
   const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
 
@@ -523,7 +521,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
       neighborhood: neighborhoodFilter,
       features: featuresFilter,
       status: statusFilter,
-      source: sourceFilter
+      source: sourceFilter,
+      searchTerm
     });
   };
 
@@ -557,7 +556,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
       neighborhood: 'all',
       features: [],
       status: 'all',
-      source: 'all'
+      source: 'all',
+      searchTerm: ''
     });
   };
 
