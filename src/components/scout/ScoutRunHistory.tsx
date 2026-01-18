@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, Clock, AlertTriangle } from 'lucide-react';
@@ -49,10 +50,14 @@ interface DaySummary {
 export const ScoutRunHistory: React.FC = () => {
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
   const [selectedHour, setSelectedHour] = useState<HourSummary | null>(null);
+  const [daysBack, setDaysBack] = useState(7);
 
   const { data: runs, isLoading } = useQuery({
-    queryKey: ['scout-runs'],
+    queryKey: ['scout-runs', daysBack],
     queryFn: async () => {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      
       const { data, error } = await supabase
         .from('scout_runs')
         .select(`
@@ -61,8 +66,8 @@ export const ScoutRunHistory: React.FC = () => {
             name
           )
         `)
-        .order('started_at', { ascending: false })
-        .limit(100);
+        .gte('started_at', startDate.toISOString())
+        .order('started_at', { ascending: false });
       
       if (error) throw error;
       return data as ScoutRun[];
@@ -176,10 +181,23 @@ export const ScoutRunHistory: React.FC = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            היסטוריית סריקות
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              היסטוריית סריקות
+            </CardTitle>
+            <Select value={String(daysBack)} onValueChange={(v) => setDaysBack(Number(v))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 ימים</SelectItem>
+                <SelectItem value="7">שבוע</SelectItem>
+                <SelectItem value="14">שבועיים</SelectItem>
+                <SelectItem value="30">חודש</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {groupedData.length === 0 && (
