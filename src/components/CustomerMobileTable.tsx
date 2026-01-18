@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { formatIsraeliPhone } from "@/utils/phoneFormatter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { Phone, MessageSquare, Save, X, Trash2, EyeOff, RotateCcw, Home, Briefca
 import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
+import { MobileMatchesCell } from "@/components/MobileMatchesCell";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -255,16 +255,37 @@ export const CustomerMobileTable = ({
                   onClick={() => handleSelectCustomer(customer)}
                 >
                   <TableCell className="py-2.5 px-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-sm truncate max-w-[100px] flex items-center gap-1">
-                        {customer.name}
-                        {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0">מוסתר</Badge>}
-                      </span>
+                    <div className="flex items-center gap-1.5">
                       {customer.phone && (
-                        <span className="text-[10px] text-muted-foreground truncate">
-                          {formatIsraeliPhone(customer.phone)}
-                        </span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 w-6 p-0 text-green-600 shrink-0" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const message = encodeURIComponent(`שלום ${customer.name}!`);
+                            window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
                       )}
+                      <div className="flex flex-col gap-0.5">
+                        {customer.phone ? (
+                          <a 
+                            href={`tel:${customer.phone}`}
+                            className="font-medium text-sm text-blue-600 hover:text-blue-800 truncate max-w-[80px]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {customer.name}
+                          </a>
+                        ) : (
+                          <span className="font-medium text-sm truncate max-w-[80px]">
+                            {customer.name}
+                          </span>
+                        )}
+                        {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0">מוסתר</Badge>}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-2.5 px-1 text-center">
@@ -285,7 +306,16 @@ export const CustomerMobileTable = ({
                     </span>
                   </TableCell>
                   <TableCell className="py-2.5 px-1 text-center">
-                    <span className="text-[10px] text-muted-foreground">-</span>
+                    <MobileMatchesCell
+                      customerId={customer.id}
+                      preferredNeighborhoods={customer.preferred_neighborhoods}
+                      preferredCities={customer.preferred_cities}
+                      budgetMin={customer.budget_min}
+                      budgetMax={customer.budget_max}
+                      roomsMin={customer.rooms_min}
+                      roomsMax={customer.rooms_max}
+                      propertyType={customer.property_type}
+                    />
                   </TableCell>
                   <TableCell className={`py-2.5 px-1 text-center text-[10px] font-medium ${timeAgo.color}`}>
                     {timeAgo.text}
