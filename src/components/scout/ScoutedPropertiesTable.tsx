@@ -52,6 +52,20 @@ const FEATURE_OPTIONS = [
   { key: 'yard', label: 'חצר' },
 ];
 
+// Normalize search by removing geresh/gershayim variations
+const normalizeSearch = (text: string): string => {
+  return text.replace(/[''`׳״]/g, '');
+};
+
+// Shorten neighborhood names for display
+const shortenNeighborhood = (name: string): string => {
+  return name
+    .replace(/^ה/, '')           // Remove leading ה
+    .replace(/ - /g, ' ')        // Replace " - " with space
+    .replace(/החלק ה/g, '')      // Remove "החלק ה"
+    .trim();
+};
+
 export const ScoutedPropertiesTable: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -280,8 +294,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
   
   const isScanning = runningScans && runningScans.length > 0;
   
-  // Calculate scan progress
-  const scanTotalFound = runningScans?.reduce((sum, r) => sum + (r.properties_found || 0), 0) || 0;
+  // Get matching progress (separate from scanning)
+  const matchingRun = runningScans?.find(r => r.source === 'matching');
+  const matchingProgress = matchingRun ? {
+    processed: matchingRun.properties_found || 0,
+    total: matchingRun.new_properties || 0
+  } : null;
+  
+  // Calculate scan progress (non-matching scans)
+  const nonMatchingScans = runningScans?.filter(r => r.source !== 'matching') || [];
+  const scanTotalFound = nonMatchingScans.reduce((sum, r) => sum + (r.properties_found || 0), 0);
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ['scouted-properties', appliedFilters, currentPage],
@@ -436,10 +458,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const filteredProperties = properties?.filter(p => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
+    const normalizedTerm = normalizeSearch(term);
+    
+    // Check both original and normalized versions
+    const checkMatch = (value: string | null | undefined) => {
+      if (!value) return false;
+      const lower = value.toLowerCase();
+      return lower.includes(term) || normalizeSearch(lower).includes(normalizedTerm);
+    };
+    
     return (
-      p.title?.toLowerCase().includes(term) ||
-      p.city?.toLowerCase().includes(term) ||
-      p.neighborhood?.toLowerCase().includes(term)
+      checkMatch(p.title) ||
+      checkMatch(p.city) ||
+      checkMatch(p.neighborhood) ||
+      checkMatch(p.address)
     );
   });
 
@@ -585,21 +617,40 @@ export const ScoutedPropertiesTable: React.FC = () => {
         </Card>
 
         {/* Matches Card - replaces Week card */}
-        <Card className={matchAllMutation.isPending ? 'border-primary/30 bg-primary/5' : ''}>
+        <Card className={matchAllMutation.isPending || matchingProgress ? 'border-primary/30 bg-primary/5' : ''}>
           <CardContent className="p-4">
-            {matchAllMutation.isPending ? (
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <div>
-                  <p className="text-sm font-medium">מחשב התאמות...</p>
-                  <p className="text-xs text-muted-foreground">אנא המתן</p>
+            {matchAllMutation.isPending || matchingProgress ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">מחשב התאמות...</p>
+                    {matchingProgress && matchingProgress.total > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {matchingProgress.processed} / {matchingProgress.total} נכסים
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">אנא המתן</p>
+                    )}
+                  </div>
                 </div>
+                {matchingProgress && matchingProgress.total > 0 && (
+                  <div className="space-y-1">
+                    <Progress 
+                      value={(matchingProgress.processed / matchingProgress.total) * 100} 
+                      className="h-2"
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      {Math.round((matchingProgress.processed / matchingProgress.total) * 100)}%
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
                 <Button 
                   onClick={() => matchAllMutation.mutate()}
-                  disabled={matchAllMutation.isPending || isScanning}
+                  disabled={matchAllMutation.isPending || !!matchingProgress}
                   className="w-full gap-2"
                   size="sm"
                 >
@@ -743,7 +794,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                         <SelectContent>
                           <SelectItem value="all">כל השכונות</SelectItem>
                           {neighborhoods?.map(n => (
-                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                            <SelectItem key={n} value={n}>{shortenNeighborhood(n)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -898,7 +949,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">כל השכונות</SelectItem>
                 {neighborhoods?.map(n => (
-                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                  <SelectItem key={n} value={n}>{shortenNeighborhood(n)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
