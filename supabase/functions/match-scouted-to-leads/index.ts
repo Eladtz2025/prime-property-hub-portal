@@ -163,20 +163,44 @@ serve(async (req) => {
       if (matches.length > 0) {
         totalMatched += matches.length;
 
+        const matchedLeadsData = matches.map(m => ({
+          lead_id: m.lead.id,
+          name: m.lead.name,
+          phone: m.lead.phone,
+          score: m.matchScore,
+          reasons: m.matchReasons
+        }));
+
         // Update property with matched leads
         await supabase
           .from('scouted_properties')
           .update({
-            matched_leads: matches.map(m => ({
-              lead_id: m.lead.id,
-              name: m.lead.name,
-              phone: m.lead.phone,
-              score: m.matchScore,
-              reasons: m.matchReasons
-            })),
+            matched_leads: matchedLeadsData,
             status: 'matched'
           })
           .eq('id', property.id);
+
+        // If property belongs to a duplicate group, update all properties in the group
+        if (property.duplicate_group_id) {
+          const { data: duplicateProperties } = await supabase
+            .from('scouted_properties')
+            .select('id')
+            .eq('duplicate_group_id', property.duplicate_group_id)
+            .neq('id', property.id);
+
+          if (duplicateProperties && duplicateProperties.length > 0) {
+            for (const dup of duplicateProperties) {
+              await supabase
+                .from('scouted_properties')
+                .update({
+                  matched_leads: matchedLeadsData,
+                  status: 'matched'
+                })
+                .eq('id', dup.id);
+            }
+            console.log(`Synced matches to ${duplicateProperties.length} duplicates in group ${property.duplicate_group_id}`);
+          }
+        }
 
         // Send WhatsApp to matched leads
         if (send_whatsapp && greenApiInstance && greenApiToken) {
