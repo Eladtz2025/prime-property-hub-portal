@@ -1,38 +1,21 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { AdminPWAInstallPrompt } from './AdminPWAInstallPrompt';
 import { 
   Building, 
-  Users, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  Phone, 
-  Bell, 
   TrendingUp,
-  MapPin,
-  Plus,
   Edit3,
   Check,
-  X,
-  FileText,
-  MessageSquare,
-  ChevronLeft,
-  ArrowLeft
+  X
 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
-import { AlertCard } from './AlertCard';
-import { ActivityLogsList } from './ActivityLogsList';
-import { ContactLeadsListCompact } from './ContactLeadsListCompact';
-import { BrokerageFormsListCompact } from './BrokerageFormsListCompact';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
+import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -99,9 +82,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
     setEditIncomeValue('');
   };
   
-  // Memoized calculations for performance
-  const urgentAlerts = useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
-  const highPriorityAlerts = useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
   
   // Calculate monthly income only once and memoize it
   const displayIncome = useMemo(() => {
@@ -213,40 +193,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
         </div>
 
-        {/* Urgent Alerts */}
-        {urgentAlerts.length > 0 && (
-          <Card className="border-destructive bg-destructive/10 animate-scale-in backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-destructive text-base">
-                <AlertTriangle className="h-4 w-4" />
-                התראות דחופות ({urgentAlerts.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {urgentAlerts.slice(0, 2).map((alert) => (
-                <div key={alert.id} className="bg-card/60 rounded-lg p-3 border border-destructive/20 overflow-hidden">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-destructive/10 p-2 rounded-full flex-shrink-0">
-                      <AlertTriangle className="h-3 w-3 text-destructive" />
-                    </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <div className="font-medium text-sm text-destructive truncate">{alert.message}</div>
-                      <div className="text-xs text-destructive/80 mt-1 truncate">
-                        {alert.propertyAddress} • {alert.ownerName}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {urgentAlerts.length > 2 && (
-                <Button variant="outline" size="sm" className="w-full text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
-                  הצג עוד {urgentAlerts.length - 2}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
 
@@ -259,129 +205,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         {/* Analytics Summary Card */}
         <AnalyticsSummaryCard stats={stats} />
 
-        {/* Alerts Section */}
-        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                התראות ומעקב
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {alerts.length > 0 && (
-                  <Badge variant="secondary" className="text-xs flex-shrink-0">
-                    {alerts.length}
-                  </Badge>
-                )}
-                <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
-                  <Link to="/admin-dashboard/alerts">
-                    ראה הכל
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            {alerts.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="bg-green-50 p-3 rounded-full w-fit mx-auto mb-3">
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                </div>
-                <p className="font-medium text-sm">אין התראות פעילות</p>
-                <p className="text-xs text-muted-foreground mt-1">כל הנכסים תקינים</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {alerts.slice(0, 5).map((alert, index) => (
-                  <div 
-                     key={alert.id} 
-                    className={`rounded-lg p-3 border overflow-hidden animate-fade-in ${
-                      alert.priority === 'urgent' 
-                        ? 'bg-destructive/10 border-destructive/20' 
-                        : alert.priority === 'high'
-                        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/30'
-                        : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/30'
-                    }`}
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-full flex-shrink-0 ${
-                        alert.priority === 'urgent' 
-                          ? 'bg-destructive/10' 
-                          : alert.priority === 'high'
-                          ? 'bg-orange-100 dark:bg-orange-900/30'
-                          : 'bg-blue-100 dark:bg-blue-900/30'
-                      }`}>
-                        <AlertTriangle className={`h-3 w-3 ${
-                          alert.priority === 'urgent' 
-                            ? 'text-destructive' 
-                            : alert.priority === 'high'
-                            ? 'text-orange-600 dark:text-orange-400'
-                            : 'text-blue-600 dark:text-blue-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <Badge variant="outline" className={`text-xs font-semibold mb-1 ${
-                          alert.priority === 'urgent' 
-                            ? 'border-destructive/30 text-destructive' 
-                            : alert.priority === 'high'
-                            ? 'border-orange-300 text-orange-700 dark:text-orange-400'
-                            : 'border-blue-300 text-blue-700 dark:text-blue-400'
-                        }`}>
-                          {alert.priority === 'urgent' ? 'דחוף' : alert.priority === 'high' ? 'חשוב' : 'רגיל'}
-                        </Badge>
-                        <div className={`font-medium text-sm truncate ${
-                          alert.priority === 'urgent' 
-                            ? 'text-destructive' 
-                            : alert.priority === 'high'
-                            ? 'text-orange-800 dark:text-orange-200'
-                            : 'text-blue-800 dark:text-blue-200'
-                        }`}>
-                          {alert.message}
-                        </div>
-                        <div className={`text-xs mt-1 truncate ${
-                          alert.priority === 'urgent' 
-                            ? 'text-destructive/80' 
-                            : alert.priority === 'high'
-                            ? 'text-orange-600 dark:text-orange-400'
-                            : 'text-blue-600 dark:text-blue-400'
-                        }`}>
-                          {alert.propertyAddress} • {alert.ownerName}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {alerts.length > 5 && (
-                  <Button variant="outline" size="sm" className="w-full text-xs" asChild>
-                    <Link to="/alerts">
-                      הצג עוד {alerts.length - 5} התראות
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-base font-bold text-foreground">פעילות אחרונה</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" asChild>
-                <Link to="/admin-dashboard/activity">
-                  ראה הכל
-                  <ArrowLeft className="h-3 w-3 mr-1" />
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <ActivityLogsList limit={3} />
-          </CardContent>
-        </Card>
+        {/* Development Ideas */}
+        <DevelopmentIdeasCard />
       </div>
 
       {/* Add Appointment Modal */}

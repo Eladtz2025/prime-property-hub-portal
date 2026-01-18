@@ -4,17 +4,14 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, AlertTriangle, CheckCircle, Clock, Phone, Bell, TrendingUp, Edit2, Plus, FileText, Receipt, ArrowLeft } from 'lucide-react';
+import { Building, Users, CheckCircle, Clock, Phone, TrendingUp, Edit2, ArrowLeft } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
-import { AlertCard } from './AlertCard';
-import { StatsCard } from './StatsCard';
 import { MobileDashboard } from './MobileDashboard';
-import { ActivityLogsList } from './ActivityLogsList';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
-import { BrokerageFormsList } from './BrokerageFormsList';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
+import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -30,10 +27,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const { isMobile } = useMobileOptimization();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const urgentAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'urgent'), [alerts]);
-  const highPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'high'), [alerts]);
-  const mediumPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'medium'), [alerts]);
-  const lowPriorityAlerts = React.useMemo(() => alerts.filter(alert => alert.priority === 'low'), [alerts]);
   
   // Manual monthly income state
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
@@ -204,63 +197,13 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* הדירות שלנו */}
       <ActivePropertiesCard properties={properties} />
 
-      {/* שורה 2: פגישות קרובות, התראות, פעילות ופניות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* שורה 2: פגישות קרובות, פניות ורעיונות */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* פגישות קרובות */}
         <UpcomingAppointmentsCard 
           limit={3} 
           onAddAppointment={() => setIsAppointmentModalOpen(true)}
         />
-        
-        {/* התראות ומעקב */}
-        <Card className="h-fit">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>התראות ומעקב</CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/admin/alerts')}
-              className="gap-1"
-            >
-              <span className="text-sm">ראה הכל</span>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {urgentAlerts.length === 0 && highPriorityAlerts.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                אין התראות דחופות כרגע
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {[...urgentAlerts, ...highPriorityAlerts, ...mediumPriorityAlerts, ...lowPriorityAlerts]
-                  .slice(0, 3)
-                  .map((alert) => (
-                    <AlertCard key={alert.id} alert={alert} />
-                  ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* פעילות אחרונה */}
-        <Card className="h-fit">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>פעילות אחרונה</CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/admin/activity')}
-              className="gap-1"
-            >
-              <span className="text-sm">ראה הכל</span>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <ActivityLogsList limit={3} />
-          </CardContent>
-        </Card>
 
         {/* פניות מהאתר */}
         <Card className="h-fit">
@@ -280,11 +223,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
-      </div>
 
-      {/* טפסי תיווך - רק בדסקטופ */}
-      <div className="space-y-4">
-        <BrokerageFormsList />
+        {/* רעיונות לפיתוח */}
+        <DevelopmentIdeasCard />
       </div>
 
       {/* מודל הוספת פגישה */}
