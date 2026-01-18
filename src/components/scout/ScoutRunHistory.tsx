@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface ScoutRun {
   id: string;
@@ -23,6 +23,9 @@ interface ScoutRun {
   error_message: string | null;
   started_at: string;
   completed_at: string | null;
+  retry_count?: number;
+  retry_of?: string | null;
+  max_retries?: number;
   scout_configs?: {
     name: string;
   } | null;
@@ -329,7 +332,20 @@ export const ScoutRunHistory: React.FC = () => {
             {selectedHour?.runs.map((run) => (
               <div key={run.id} className="border rounded-lg p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  {getSourceBadge(run.source)}
+                  <div className="flex items-center gap-2">
+                    {getSourceBadge(run.source)}
+                    {run.retry_of && (
+                      <Badge variant="outline" className="text-orange-500 border-orange-300 text-[10px] gap-1">
+                        <RefreshCw className="h-2.5 w-2.5" />
+                        ניסיון חוזר
+                      </Badge>
+                    )}
+                    {(run.retry_count || 0) > 0 && !run.retry_of && (
+                      <Badge variant="outline" className="text-blue-500 border-blue-300 text-[10px]">
+                        {run.retry_count}/{run.max_retries || 2} retries
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     {run.status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500" />}
                     {run.status === 'partial' && <AlertTriangle className="h-4 w-4 text-amber-500" />}
@@ -370,8 +386,17 @@ export const ScoutRunHistory: React.FC = () => {
                 </div>
                 
                 {run.error_message && (
-                  <div className="p-2 bg-red-50 dark:bg-red-950/30 rounded text-xs text-red-600">
+                  <div className={`p-2 rounded text-xs ${
+                    run.status === 'partial' 
+                      ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600' 
+                      : 'bg-red-50 dark:bg-red-950/30 text-red-600'
+                  }`}>
                     {run.error_message}
+                    {run.status === 'failed' && (run.retry_count || 0) < (run.max_retries || 2) && (
+                      <span className="block mt-1 text-muted-foreground">
+                        ⏳ יתבצע ניסיון חוזר אוטומטי
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

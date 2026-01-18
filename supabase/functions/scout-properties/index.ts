@@ -205,10 +205,15 @@ serve(async (req) => {
   let currentRunSource: string = 'manual';
 
   try {
-    const { config_id, manual_url, source, page } = await req.json();
+    const { config_id, manual_url, source, page, retry_of, retry_strategy } = await req.json();
 
     // Set initial source from request
     currentRunSource = source || 'manual';
+    
+    // Log if this is a retry
+    if (retry_of) {
+      console.log(`🔄 This is a retry of run ${retry_of}, strategy:`, retry_strategy);
+    }
 
 
     let configs: ScoutConfig[] = [];
@@ -277,7 +282,9 @@ serve(async (req) => {
         .insert({
           config_id: config.id !== 'manual' ? config.id : null,
           source: currentRunSource,
-          status: 'running'
+          status: 'running',
+          retry_of: retry_of || null,
+          retry_count: retry_of ? 1 : 0
         })
         .select()
         .single();
