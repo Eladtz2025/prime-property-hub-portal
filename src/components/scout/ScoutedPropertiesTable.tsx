@@ -168,8 +168,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .from('scout_runs')
         .select('source, properties_found, new_properties, completed_at')
         .eq('status', 'completed')
-        .order('completed_at', { ascending: false })
-        .limit(20); // Get enough to cover a batch
+  .order('completed_at', { ascending: false })
+  .limit(100); // Increased to cover full batch (~72 runs per scan)
 
       let lastScanBySources: Record<string, number> = { yad2: 0, homeless: 0, madlan: 0 };
       
