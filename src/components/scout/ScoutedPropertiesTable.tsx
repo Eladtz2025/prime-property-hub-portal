@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter, SlidersHorizontal } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -70,7 +71,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all');
   const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
   
-  // Applied filters state - data only loads when this is set (after search click)
+  // Applied filters state - starts with default values to show all properties
   const [appliedFilters, setAppliedFilters] = useState<{
     roomsMin: string;
     roomsMax: string;
@@ -80,7 +81,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
     features: string[];
     status: string;
     source: string;
-  } | null>(null);
+  }>({
+    roomsMin: '',
+    roomsMax: '',
+    minBudget: '',
+    maxBudget: '',
+    neighborhood: 'all',
+    features: [],
+    status: 'all',
+    source: 'all'
+  });
 
   // Statistics query
   const { data: stats } = useQuery({
@@ -220,12 +230,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
     return query;
   };
 
-  // Total count for pagination - only runs when appliedFilters is set
+  // Total count for pagination
   const { data: totalCount } = useQuery({
     queryKey: ['scouted-properties-count', appliedFilters],
     queryFn: async () => {
-      if (!appliedFilters) return 0;
-      
       let query = supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true });
@@ -234,15 +242,33 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
       const { count } = await query;
       return count || 0;
-    },
-    enabled: appliedFilters !== null
+    }
   });
+  
+  // Query for running scans - for the status card
+  const { data: runningScans } = useQuery({
+    queryKey: ['running-scans'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scout_runs')
+        .select('id, source, status, properties_found, new_properties, started_at')
+        .eq('status', 'running')
+        .order('started_at', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 3000,
+  });
+  
+  const isScanning = runningScans && runningScans.length > 0;
+  
+  // Calculate scan progress
+  const scanTotalFound = runningScans?.reduce((sum, r) => sum + (r.properties_found || 0), 0) || 0;
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ['scouted-properties', appliedFilters, currentPage],
     queryFn: async () => {
-      if (!appliedFilters) return [];
-      
       const from = (currentPage - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -267,8 +293,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       }
       
       return filtered;
-    },
-    enabled: appliedFilters !== null
+    }
   });
 
   const archiveMutation = useMutation({
@@ -465,7 +490,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setMaxBudget('');
     setNeighborhoodFilter('all');
     setFeaturesFilter([]);
-    setAppliedFilters(null);
+    setAppliedFilters({
+      roomsMin: '',
+      roomsMax: '',
+      minBudget: '',
+      maxBudget: '',
+      neighborhood: 'all',
+      features: [],
+      status: 'all',
+      source: 'all'
+    });
   };
 
   // Check if any filters are active
@@ -473,13 +507,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
     roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
     neighborhoodFilter !== 'all' || featuresFilter.length > 0;
 
-  // Show empty state if no search has been performed yet
-  const showEmptyState = appliedFilters === null;
-
   return (
     <>
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -537,6 +568,41 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <p className="text-2xl font-bold">{stats?.week || 0}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Scan Status Card */}
+        <Card className={isScanning ? 'border-red-500/30 bg-red-500/5' : ''}>
+          <CardContent className="p-4">
+            {isScanning ? (
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
+                  <div className="relative w-3 h-3 bg-red-500 rounded-full" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">סריקות פעילות</p>
+                  <p className="text-lg font-bold">{scanTotalFound} נמצאו</p>
+                  <Progress value={50} className="h-1.5 mt-1" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">אין סריקות פעילות</p>
+                  {stats?.lastScanBySources && (
+                    <div className="flex gap-2 flex-wrap text-xs mt-1">
+                      <span className="text-orange-600">יד2: {stats.lastScanBySources.yad2 || 0}</span>
+                      <span className="text-purple-600">הומלס: {stats.lastScanBySources.homeless || 0}</span>
+                      <span className="text-blue-600">מדלן: {stats.lastScanBySources.madlan || 0}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -867,15 +933,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {showEmptyState ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
-                      <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-1">בחר פילטרים ולחץ "חפש"</p>
-                      <p className="text-sm">הדירות יוצגו לאחר החיפוש</p>
-                    </TableCell>
-                  </TableRow>
-                ) : isLoading ? (
+                {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       טוען...
@@ -1030,13 +1088,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
-            {showEmptyState ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-1">בחר פילטרים ולחץ "חפש"</p>
-                <p className="text-sm">הדירות יוצגו לאחר החיפוש</p>
-              </div>
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="text-center py-8">טוען...</div>
             ) : filteredProperties?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
