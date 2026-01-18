@@ -2936,6 +2936,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_matching_progress: {
+        Args: {
+          p_matches_count: number
+          p_properties_count: number
+          p_run_id: string
+        }
+        Returns: {
+          leads_matched: number
+          new_properties: number
+          properties_found: number
+        }[]
+      }
     }
     Enums: {
       app_role:
