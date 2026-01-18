@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,9 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors<FormFields>>({});
   const [touched, setTouched] = useState<FormTouched<FormFields>>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const initialDataRef = useRef<string>('');
 
   const validateFormField = (field: FormFields, value: string) => {
     let error: string | null = null;
@@ -75,11 +79,36 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
         setSelectedProperties(editBroker.interested_properties || []);
         setPropertiesText(editBroker.interested_properties_text || "");
         setNotes(editBroker.notes || "");
+        initialDataRef.current = JSON.stringify({
+          name: editBroker.name,
+          phone: editBroker.phone,
+          officeName: editBroker.office_name || "",
+          selectedProperties: editBroker.interested_properties || [],
+          propertiesText: editBroker.interested_properties_text || "",
+          notes: editBroker.notes || ""
+        });
       } else {
         resetForm();
+        initialDataRef.current = JSON.stringify({ name: "", phone: "", officeName: "", selectedProperties: [], propertiesText: "", notes: "" });
       }
+      setHasChanges(false);
     }
   }, [open, editBroker]);
+
+  // Track changes
+  useEffect(() => {
+    if (!open) return;
+    const currentData = JSON.stringify({ name, phone, officeName, selectedProperties, propertiesText, notes });
+    setHasChanges(currentData !== initialDataRef.current);
+  }, [name, phone, officeName, selectedProperties, propertiesText, notes, open]);
+
+  const handleClose = () => {
+    if (hasChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      onClose();
+    }
+  };
 
   const fetchProperties = async () => {
     const { data } = await supabase
@@ -162,7 +191,8 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>{editBroker ? "עריכת מתווך" : "הוספת מתווך חדש"}</DialogTitle>
@@ -273,12 +303,39 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? "שומר..." : editBroker ? "עדכן" : "הוסף"}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               ביטול
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>יש שינויים שלא נשמרו</AlertDialogTitle>
+          <AlertDialogDescription>
+            השינויים שביצעת לא נשמרו. האם אתה בטוח שברצונך לצאת?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+            המשך לערוך
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => {
+              setShowUnsavedDialog(false);
+              setHasChanges(false);
+              onClose();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            צא בלי לשמור
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,9 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
   const [errors, setErrors] = useState<FormErrors<FormFields>>({});
   const [touched, setTouched] = useState<FormTouched<FormFields>>({});
   const [phoneCountry, setPhoneCountry] = useState('IL');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const initialFormData = useRef<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -108,6 +112,28 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
   const handleFieldBlur = (field: FormFields) => {
     setTouched(prev => ({ ...prev, [field]: true }));
     validateFormField(field, formData[field]);
+  };
+
+  // Initialize and track changes
+  useEffect(() => {
+    if (open) {
+      initialFormData.current = JSON.stringify({ ...formData, phoneCountry });
+      setHasChanges(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const currentData = JSON.stringify({ ...formData, phoneCountry });
+    setHasChanges(currentData !== initialFormData.current);
+  }, [formData, phoneCountry, open]);
+
+  const handleClose = () => {
+    if (hasChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      onClose();
+    }
   };
 
   const handleSave = async () => {
@@ -283,7 +309,8 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
   const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>הוספת לקוח חדש</DialogTitle>
@@ -784,12 +811,39 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             <Button onClick={handleSave} disabled={loading}>
               {loading ? 'שומר...' : 'שמור'}
             </Button>
-            <Button variant="outline" onClick={onClose} disabled={loading}>
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
               ביטול
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>יש שינויים שלא נשמרו</AlertDialogTitle>
+          <AlertDialogDescription>
+            השינויים שביצעת לא נשמרו. האם אתה בטוח שברצונך לצאת?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+            המשך לערוך
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => {
+              setShowUnsavedDialog(false);
+              setHasChanges(false);
+              onClose();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            צא בלי לשמור
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

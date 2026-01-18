@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePitchDeck, useCreatePitchDeck, useUpdatePitchDeck, useUpdateSlide } from '@/hooks/usePitchDecks';
 import { PitchDeckSlide } from '@/types/pitch-deck';
@@ -23,6 +23,8 @@ import SlideList from '@/components/pitch-deck/builder/SlideList';
 import SlideEditor from '@/components/pitch-deck/builder/SlideEditor';
 import { toast } from 'sonner';
 import { createBenYehuda110New } from '@/utils/migrateBenYehuda110';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 
 const PitchDeckBuilder = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +49,11 @@ const PitchDeckBuilder = () => {
   const [selectedSlide, setSelectedSlide] = useState<PitchDeckSlide | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const initialDataRef = useRef<string>('');
+
+  // Use unsaved changes hook
+  const { blocker } = useUnsavedChanges(hasUnsavedChanges);
 
   // Load deck data
   useEffect(() => {
@@ -60,8 +67,24 @@ const PitchDeckBuilder = () => {
       setAgentNames(deck.agent_names || '');
       setThemeColor(deck.theme_color || '#f5c242');
       setOverlayOpacity(deck.overlay_opacity || 0.85);
+      // Store initial data
+      initialDataRef.current = JSON.stringify({
+        title: deck.title, slug: deck.slug, language: deck.language,
+        isActive: deck.is_active, propertyId: deck.property_id,
+        contactPhone: deck.contact_phone, agentNames: deck.agent_names,
+        themeColor: deck.theme_color, overlayOpacity: deck.overlay_opacity
+      });
     }
   }, [deck]);
+
+  // Track changes
+  useEffect(() => {
+    if (!deck && !isNew) return;
+    const currentData = JSON.stringify({
+      title, slug, language, isActive, propertyId, contactPhone, agentNames, themeColor, overlayOpacity
+    });
+    setHasUnsavedChanges(currentData !== initialDataRef.current && initialDataRef.current !== '');
+  }, [title, slug, language, isActive, propertyId, contactPhone, agentNames, themeColor, overlayOpacity, deck, isNew]);
 
   // Hebrew to English transliteration for URL slug
   const hebrewToSlug = (text: string): string => {
@@ -236,6 +259,11 @@ const PitchDeckBuilder = () => {
         });
         toast.success('המצגת נשמרה בהצלחה');
       }
+      // Reset unsaved changes after successful save
+      initialDataRef.current = JSON.stringify({
+        title, slug, language, isActive, propertyId, contactPhone, agentNames, themeColor, overlayOpacity
+      });
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('שגיאה בשמירה: ' + (error as Error).message);
@@ -509,6 +537,9 @@ const PitchDeckBuilder = () => {
           </div>
         </div>
       </div>
+      
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 };
