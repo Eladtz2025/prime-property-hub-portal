@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History, Wand2 } from 'lucide-react';
+import { Search, Settings, History, Wand2, Copy } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ScoutConfigManager } from '@/components/scout/ScoutConfigManager';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
 import { ScoutStats } from '@/components/scout/ScoutStats';
 import { ManualScoutForm } from '@/components/scout/ManualScoutForm';
 import { LiveScanStatus } from '@/components/scout/LiveScanStatus';
+import { DuplicateAlertsPanel } from '@/components/scout/DuplicateAlertsPanel';
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
 
@@ -26,10 +27,14 @@ const AdminPropertyScout: React.FC = () => {
         <LiveScanStatus />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Search className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">דירות שנמצאו</span>
+            </TabsTrigger>
+            <TabsTrigger value="duplicates" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Copy className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">כפילויות</span>
             </TabsTrigger>
             <TabsTrigger value="configs" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Settings className="h-4 w-4 shrink-0" />
@@ -47,6 +52,10 @@ const AdminPropertyScout: React.FC = () => {
 
           <TabsContent value="properties" className="mt-6">
             <ScoutedPropertiesTable />
+          </TabsContent>
+
+          <TabsContent value="duplicates" className="mt-6">
+            <DuplicateAlertsPanel />
           </TabsContent>
 
           <TabsContent value="configs" className="mt-6">
