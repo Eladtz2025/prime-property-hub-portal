@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface ScoutRun {
   id: string;
@@ -140,16 +140,36 @@ export const ScoutRunHistory: React.FC = () => {
     return format(date, 'EEEE - dd/MM/yyyy', { locale: he });
   };
 
-  const getSourceBadge = (source: string) => {
+  const getSourceCount = (source: string, hourSummary: HourSummary) => {
+    return hourSummary.runs
+      .filter(run => run.source.toLowerCase() === source.toLowerCase())
+      .reduce((sum, run) => sum + (run.properties_found || 0), 0);
+  };
+
+  const getSourceBadge = (source: string, hourSummary?: HourSummary) => {
+    const count = hourSummary ? getSourceCount(source, hourSummary) : null;
+    
     switch (source.toLowerCase()) {
       case 'yad2':
-        return <Badge className="bg-orange-500 text-white text-[10px]">Yad2</Badge>;
+        return (
+          <Badge className="bg-orange-500 text-white text-[10px] gap-1">
+            Yad2 {count !== null && <span className="font-bold">{count}</span>}
+          </Badge>
+        );
       case 'homeless':
-        return <Badge className="bg-purple-500 text-white text-[10px]">Homeless</Badge>;
+        return (
+          <Badge className="bg-purple-500 text-white text-[10px] gap-1">
+            Homeless {count !== null && <span className="font-bold">{count}</span>}
+          </Badge>
+        );
       case 'madlan':
-        return <Badge className="bg-blue-500 text-white text-[10px]">Madlan</Badge>;
+        return (
+          <Badge className="bg-blue-500 text-white text-[10px] gap-1">
+            Madlan {count !== null && <span className="font-bold">{count}</span>}
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="text-[10px]">{source}</Badge>;
+        return <Badge variant="outline" className="text-[10px]">{source}{count !== null && ` ${count}`}</Badge>;
     }
   };
 
@@ -215,13 +235,17 @@ export const ScoutRunHistory: React.FC = () => {
             </div>
           )}
 
-          {groupedData.map((day, index) => (
+          {groupedData.map((day) => {
+            const isTodaySection = isToday(new Date(day.dayKey));
+            const isOpen = isTodaySection || openDays[day.dayKey];
+            
+            return (
             <Collapsible
               key={day.dayKey}
-              open={openDays[day.dayKey] ?? index === 0}
-              onOpenChange={() => toggleDay(day.dayKey)}
+              open={isOpen}
+              onOpenChange={() => !isTodaySection && toggleDay(day.dayKey)}
             >
-              <CollapsibleTrigger className="w-full">
+              <CollapsibleTrigger className={`w-full ${isTodaySection ? 'cursor-default' : ''}`} disabled={isTodaySection}>
                 <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -231,7 +255,9 @@ export const ScoutRunHistory: React.FC = () => {
                     <span className="hidden sm:inline">נמצאו: <strong>{day.totalFound}</strong></span>
                     <span className="text-green-600">חדשות: <strong>{day.totalNew}</strong></span>
                     <span className="hidden sm:inline">התאמות: <strong>{day.totalMatched}</strong></span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${openDays[day.dayKey] ?? index === 0 ? 'rotate-180' : ''}`} />
+                    {!isTodaySection && (
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    )}
                   </div>
                 </div>
               </CollapsibleTrigger>
@@ -248,17 +274,14 @@ export const ScoutRunHistory: React.FC = () => {
                         <TableHead className="w-[80px]">חדשות</TableHead>
                         <TableHead className="w-[80px]">התאמות</TableHead>
                         <TableHead className="w-[60px]">סטטוס</TableHead>
+                        <TableHead className="w-[40px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {Object.values(day.hours)
                         .sort((a, b) => b.hour.localeCompare(a.hour))
                         .map((hourSummary) => (
-                          <TableRow 
-                            key={hourSummary.hour} 
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => setSelectedHour(hourSummary)}
-                          >
+                          <TableRow key={hourSummary.hour} className="hover:bg-muted/50">
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-muted-foreground" />
@@ -268,7 +291,7 @@ export const ScoutRunHistory: React.FC = () => {
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {hourSummary.sources.map(source => (
-                                  <span key={source}>{getSourceBadge(source)}</span>
+                                  <span key={source}>{getSourceBadge(source, hourSummary)}</span>
                                 ))}
                               </div>
                             </TableCell>
@@ -276,6 +299,14 @@ export const ScoutRunHistory: React.FC = () => {
                             <TableCell className="text-green-600 font-medium">{hourSummary.totalNew}</TableCell>
                             <TableCell>{hourSummary.totalMatched}</TableCell>
                             <TableCell>{getHourStatus(hourSummary)}</TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setSelectedHour(hourSummary)}
+                                className="p-1 rounded hover:bg-muted transition-colors"
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </button>
+                            </TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
@@ -289,19 +320,26 @@ export const ScoutRunHistory: React.FC = () => {
                     .map((hourSummary) => (
                       <div 
                         key={hourSummary.hour}
-                        className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => setSelectedHour(hourSummary)}
+                        className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{hourSummary.hour}</span>
                           </div>
-                          {getHourStatus(hourSummary)}
+                          <div className="flex items-center gap-2">
+                            {getHourStatus(hourSummary)}
+                            <button
+                              onClick={() => setSelectedHour(hourSummary)}
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-1 mb-2">
                           {hourSummary.sources.map(source => (
-                            <span key={source}>{getSourceBadge(source)}</span>
+                            <span key={source}>{getSourceBadge(source, hourSummary)}</span>
                           ))}
                         </div>
                         <div className="flex items-center gap-3 text-xs">
@@ -314,7 +352,8 @@ export const ScoutRunHistory: React.FC = () => {
                 </div>
               </CollapsibleContent>
             </Collapsible>
-          ))}
+          );
+          })}
         </CardContent>
       </Card>
 
