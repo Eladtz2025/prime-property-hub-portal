@@ -212,40 +212,51 @@ serve(async (req) => {
       }
     }
 
-    // Update progress in tracking run
+    // Update progress in tracking run using atomic increment
     if (run_id) {
-      // Atomically increment the progress counter
-      const { data: currentRun } = await supabase
-        .from('scout_runs')
-        .select('properties_found, leads_matched, whatsapp_sent, new_properties')
-        .eq('id', run_id)
-        .single();
+      // Use RPC for atomic increment to avoid race conditions
+      const { data: updatedProgress, error: rpcError } = await supabase
+        .rpc('increment_matching_progress', {
+          p_run_id: run_id,
+          p_properties_count: processedCount,
+          p_matches_count: totalMatched
+        });
 
-      if (currentRun) {
-        const newProcessed = (currentRun.properties_found || 0) + processedCount;
-        const newMatched = (currentRun.leads_matched || 0) + totalMatched;
-        const newWhatsApp = (currentRun.whatsapp_sent || 0) + totalWhatsAppSent;
+      if (rpcError) {
+        console.error('RPC error:', rpcError);
+      } else if (updatedProgress && updatedProgress.length > 0) {
+        const progress = updatedProgress[0];
+        console.log(`📊 Updated progress: ${progress.properties_found}/${progress.new_properties} (batch ${batch_index})`);
         
-        // Check if this is the last batch
-        const isComplete = newProcessed >= (currentRun.new_properties || 0);
-
-        await supabase
-          .from('scout_runs')
-          .update({
-            properties_found: newProcessed,
-            leads_matched: newMatched,
-            whatsapp_sent: newWhatsApp,
-            ...(isComplete ? { 
+        // Check if this batch completed the run
+        if (progress.properties_found >= progress.new_properties) {
+          await supabase
+            .from('scout_runs')
+            .update({
               status: 'completed',
               completed_at: new Date().toISOString()
-            } : {})
-          })
-          .eq('id', run_id);
+            })
+            .eq('id', run_id);
+          
+          console.log(`🎉 Matching complete! Total matches: ${progress.leads_matched}`);
+        }
+      }
 
-        console.log(`📊 Updated progress: ${newProcessed}/${currentRun.new_properties} (batch ${batch_index})`);
+      // Update WhatsApp count separately (not in RPC)
+      if (totalWhatsAppSent > 0) {
+        const { data: currentRun } = await supabase
+          .from('scout_runs')
+          .select('whatsapp_sent')
+          .eq('id', run_id)
+          .single();
         
-        if (isComplete) {
-          console.log(`🎉 Matching complete! Total matches: ${newMatched}`);
+        if (currentRun) {
+          await supabase
+            .from('scout_runs')
+            .update({
+              whatsapp_sent: (currentRun.whatsapp_sent || 0) + totalWhatsAppSent
+            })
+            .eq('id', run_id);
         }
       }
     }
