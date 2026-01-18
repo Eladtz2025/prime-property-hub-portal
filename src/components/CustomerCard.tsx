@@ -138,10 +138,6 @@ export const CustomerCard = ({
               {customer.phone}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <Mail className="h-3 w-3" />
-            <span className="truncate max-w-[120px]">{customer.email}</span>
-          </span>
           <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.bg} ${timeSince.color}`}>
             <Clock className="h-3 w-3" />
             {timeSince.text}
