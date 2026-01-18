@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Calendar, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2 } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
@@ -127,15 +127,27 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .gte('first_seen_at', weekStart);
 
-      // By source (total)
-      const { data: sourceData } = await supabase
+      // By source (total) - use separate count queries to avoid 1000 row limit
+      const { count: yad2Count } = await supabase
         .from('scouted_properties')
-        .select('source');
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'yad2');
 
-      const sourceCounts = sourceData?.reduce((acc, item) => {
-        acc[item.source] = (acc[item.source] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
+      const { count: homelessCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'homeless');
+
+      const { count: madlanCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'madlan');
+
+      const sourceCounts = {
+        yad2: yad2Count || 0,
+        homeless: homelessCount || 0,
+        madlan: madlanCount || 0
+      };
 
       // Last scan results - aggregate all runs from the last batch (within 5 minutes of each other)
       const { data: lastRuns } = await supabase
@@ -328,6 +340,25 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
+  // Match all properties mutation
+  const matchAllMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('match-scouted-to-leads', {
+        body: { send_whatsapp: false }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`חושבו ${data.leads_matched || 0} התאמות ל-${data.properties_processed || 0} נכסים`);
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+    },
+    onError: (error) => {
+      console.error('Match error:', error);
+      toast.error('שגיאה בחישוב התאמות');
+    }
+  });
   const importMutation = useMutation({
     mutationFn: async (scoutedProperty: ScoutedProperty) => {
       // 1. Create property in properties table
@@ -553,17 +584,33 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Matches Card - replaces Week card */}
+        <Card className={matchAllMutation.isPending ? 'border-primary/30 bg-primary/5' : ''}>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Calendar className="h-5 w-5 text-blue-500" />
+            {matchAllMutation.isPending ? (
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <div>
+                  <p className="text-sm font-medium">מחשב התאמות...</p>
+                  <p className="text-xs text-muted-foreground">אנא המתן</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">השבוע</p>
-                <p className="text-2xl font-bold">{stats?.week || 0}</p>
+            ) : (
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => matchAllMutation.mutate()}
+                  disabled={matchAllMutation.isPending || isScanning}
+                  className="w-full gap-2"
+                  size="sm"
+                >
+                  <Calculator className="h-4 w-4" />
+                  חשב התאמות
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  מתאים נכסים ללקוחות
+                </p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
