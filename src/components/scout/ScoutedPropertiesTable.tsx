@@ -604,7 +604,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-col md:flex-row md:items-center md:justify-end">
           {/* Mobile: Compact header with filters button */}
           <div className="flex md:hidden items-center justify-between gap-2">
             <CardTitle className="text-lg whitespace-nowrap">
@@ -628,6 +628,17 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     <SheetTitle>פילטרים</SheetTitle>
                   </SheetHeader>
                   <div className="space-y-4">
+                    {/* Free text search - Mobile */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">חיפוש חופשי</label>
+                      <Input
+                        type="text"
+                        placeholder="חיפוש לפי כתובת, שכונה..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
                     {/* Rooms Range */}
                     <div>
                       <label className="text-sm font-medium mb-2 block">חדרים</label>
@@ -773,11 +784,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </div>
 
           {/* Desktop: Original inline filters */}
-          <div className="hidden md:flex flex-wrap items-center gap-2 justify-end" dir="rtl">
+          <div className="hidden md:flex flex-wrap items-center gap-2 w-full justify-end flex-row-reverse" dir="rtl">
             {/* Title */}
-            <CardTitle className="whitespace-nowrap ml-2">
+            <CardTitle className="whitespace-nowrap ml-4">
               דירות שנסרקו ({totalCount || 0})
             </CardTitle>
+            
+            {/* Free text search */}
+            <Input
+              type="text"
+              placeholder="חיפוש לפי כתובת, שכונה..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-[180px] h-9"
+            />
             
             {/* Rooms Range */}
             <div className="flex items-center gap-1">
