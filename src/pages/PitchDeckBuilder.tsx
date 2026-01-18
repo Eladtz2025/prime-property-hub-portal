@@ -24,7 +24,6 @@ import SlideEditor from '@/components/pitch-deck/builder/SlideEditor';
 import { toast } from 'sonner';
 import { createBenYehuda110New } from '@/utils/migrateBenYehuda110';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
-import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 
 const PitchDeckBuilder = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,8 +51,8 @@ const PitchDeckBuilder = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialDataRef = useRef<string>('');
 
-  // Use unsaved changes hook
-  const { blocker } = useUnsavedChanges(hasUnsavedChanges);
+  // Use unsaved changes hook (browser beforeunload only)
+  useUnsavedChanges(hasUnsavedChanges);
 
   // Load deck data
   useEffect(() => {
@@ -537,9 +536,6 @@ const PitchDeckBuilder = () => {
           </div>
         </div>
       </div>
-      
-      {/* Unsaved Changes Dialog */}
-      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 };
