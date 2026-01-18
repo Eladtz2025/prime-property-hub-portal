@@ -2789,6 +2789,13 @@ export type Database = {
           title: string
         }[]
       }
+      get_matches_by_hour: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          hour_key: string
+          match_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
