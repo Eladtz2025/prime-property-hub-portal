@@ -334,6 +334,16 @@ const AppContent: React.FC = () => {
                 } 
               />
               <Route 
+                path="/admin-dashboard/pitch-decks" 
+                element={
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="admin">
+                      <Navigate to="/admin-dashboard/forms" replace />
+                    </ProtectedRoute>
+                  </Layout>
+                } 
+              />
+              <Route 
                 path="/admin-dashboard/pitch-decks/new" 
                 element={
                   <Layout onLogout={signOut}>
