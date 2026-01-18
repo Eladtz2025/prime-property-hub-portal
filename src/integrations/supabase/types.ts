@@ -2217,8 +2217,11 @@ export type Database = {
           error_message: string | null
           id: string
           leads_matched: number | null
+          max_retries: number | null
           new_properties: number | null
           properties_found: number | null
+          retry_count: number | null
+          retry_of: string | null
           source: string
           started_at: string
           status: string
@@ -2230,8 +2233,11 @@ export type Database = {
           error_message?: string | null
           id?: string
           leads_matched?: number | null
+          max_retries?: number | null
           new_properties?: number | null
           properties_found?: number | null
+          retry_count?: number | null
+          retry_of?: string | null
           source: string
           started_at?: string
           status?: string
@@ -2243,8 +2249,11 @@ export type Database = {
           error_message?: string | null
           id?: string
           leads_matched?: number | null
+          max_retries?: number | null
           new_properties?: number | null
           properties_found?: number | null
+          retry_count?: number | null
+          retry_of?: string | null
           source?: string
           started_at?: string
           status?: string
@@ -2256,6 +2265,13 @@ export type Database = {
             columns: ["config_id"]
             isOneToOne: false
             referencedRelation: "scout_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_runs_retry_of_fkey"
+            columns: ["retry_of"]
+            isOneToOne: false
+            referencedRelation: "scout_runs"
             referencedColumns: ["id"]
           },
         ]
