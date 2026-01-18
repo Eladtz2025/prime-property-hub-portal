@@ -14,7 +14,6 @@ import BlockList from '@/components/price-offer/builder/BlockList';
 import SaveTemplateModal from '@/components/price-offer/templates/SaveTemplateModal';
 import { priceOfferBuilderTranslations, PriceOfferLanguage } from '@/lib/price-offer-translations';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
-import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 
 interface PriceOfferData {
   id?: string;
@@ -57,8 +56,8 @@ const PriceOfferBuilder = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialDataRef = useRef<string>('');
 
-  // Use unsaved changes hook
-  const { blocker } = useUnsavedChanges(hasUnsavedChanges);
+  // Use unsaved changes hook (browser beforeunload only)
+  useUnsavedChanges(hasUnsavedChanges);
 
   // Track changes
   useEffect(() => {
@@ -517,9 +516,6 @@ const PriceOfferBuilder = () => {
         onSave={handleSaveAsTemplate}
         saving={savingTemplate}
       />
-      
-      {/* Unsaved Changes Dialog */}
-      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 };

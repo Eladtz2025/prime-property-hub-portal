@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useBlocker } from 'react-router-dom';
 
 /**
  * Hook to manage unsaved changes warnings
  * - Shows browser confirmation on page close/refresh
- * - Blocks React Router navigation when dirty
+ * - Note: React Router navigation blocking requires Data Router (createBrowserRouter)
+ *   which is not used in this app, so we only use beforeunload event
  */
 export const useUnsavedChanges = (isDirty: boolean) => {
   // Browser close/refresh warning
@@ -20,11 +20,5 @@ export const useUnsavedChanges = (isDirty: boolean) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  // React Router navigation blocking
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      isDirty && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  return { blocker };
+  return { isDirty };
 };
