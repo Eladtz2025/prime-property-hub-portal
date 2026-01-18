@@ -82,6 +82,21 @@ const getTimeAgo = (lastContactDate: string | null, createdAt: string) => {
   return { text: `${daysDiff}י`, color: 'text-red-600' };
 };
 
+const propertyTypeLabels: Record<string, string> = {
+  rental: 'ש',
+  sale: 'מ',
+  both: 'שמ',
+};
+
+const formatBudget = (min: number | null, max: number | null) => {
+  if (!min && !max) return '-';
+  const formatNum = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}K` : n.toString();
+  if (min && max) return `₪${formatNum(min)}-${formatNum(max)}`;
+  if (min) return `₪${formatNum(min)}+`;
+  if (max) return `עד ₪${formatNum(max)}`;
+  return '-';
+};
+
 export const CustomerMobileTable = ({ 
   customers, 
   onSave,
@@ -222,9 +237,11 @@ export const CustomerMobileTable = ({
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="text-right font-semibold py-2 px-2 text-xs">שם</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-14">סטטוס</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-14">עדיפות</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-12">זמן</TableHead>
+              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-9">סוג</TableHead>
+              <TableHead className="text-right font-semibold py-2 px-1 text-xs w-16">תקציב</TableHead>
+              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-12">עדיפות</TableHead>
+              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-10">התאמות</TableHead>
+              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-10">זמן</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -239,7 +256,7 @@ export const CustomerMobileTable = ({
                 >
                   <TableCell className="py-2.5 px-2">
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-sm truncate max-w-[140px] flex items-center gap-1">
+                      <span className="font-medium text-sm truncate max-w-[100px] flex items-center gap-1">
                         {customer.name}
                         {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0">מוסתר</Badge>}
                       </span>
@@ -251,20 +268,26 @@ export const CustomerMobileTable = ({
                     </div>
                   </TableCell>
                   <TableCell className="py-2.5 px-1 text-center">
-                    <span 
-                      className={`inline-flex items-center justify-center w-full px-1.5 py-0.5 rounded text-[10px] font-medium text-white ${statusColors[customer.status]}`}
-                    >
-                      {statusLabels[customer.status]}
+                    <Badge variant="outline" className="text-[9px] px-1 py-0">
+                      {propertyTypeLabels[customer.property_type] || '-'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-2.5 px-1 text-right">
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatBudget(customer.budget_min, customer.budget_max)}
                     </span>
                   </TableCell>
                   <TableCell className="py-2.5 px-1 text-center">
                     <span 
-                      className={`inline-flex items-center justify-center w-full px-1.5 py-0.5 rounded text-[10px] font-medium text-white ${priorityColors[customer.priority]}`}
+                      className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium text-white ${priorityColors[customer.priority]}`}
                     >
                       {priorityLabels[customer.priority]}
                     </span>
                   </TableCell>
-                  <TableCell className={`py-2.5 px-1 text-center text-xs font-medium ${timeAgo.color}`}>
+                  <TableCell className="py-2.5 px-1 text-center">
+                    <span className="text-[10px] text-muted-foreground">-</span>
+                  </TableCell>
+                  <TableCell className={`py-2.5 px-1 text-center text-[10px] font-medium ${timeAgo.color}`}>
                     {timeAgo.text}
                   </TableCell>
                 </TableRow>
