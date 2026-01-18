@@ -25,6 +25,14 @@ const routeLabels: Record<string, string> = {
   '/admin-dashboard/all-features': 'כל הפיצ\'רים',
   '/admin-dashboard/import-data': 'ייבוא נתונים',
   '/admin-dashboard/import-from-storage': 'ייבוא מאחסון',
+  '/admin-dashboard/forms': 'טפסים',
+  '/admin-dashboard/pitch-decks': 'מצגות',
+  '/admin-dashboard/price-offers': 'הצעות מחיר',
+  '/admin-dashboard/customers': 'לקוחות',
+  '/admin-dashboard/leads': 'לידים',
+  '/admin-dashboard/photo-studio': 'סטודיו תמונות',
+  '/admin-dashboard/property-scout': 'סקאוט נדל"ן',
+  '/admin-dashboard/devops': 'DevOps',
   '/alerts': 'התראות',
   '/messages': 'הודעות',
   '/reports': 'דוחות',
@@ -58,7 +66,23 @@ export const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ className }) => {
         {pathnames.map((pathname, index) => {
           const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
           const isLast = index === pathnames.length - 1;
-          const label = routeLabels[routeTo] || pathname;
+          
+          // Handle dynamic paths (UUIDs and special keywords)
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pathname);
+          const isNewPath = pathname === 'new';
+          const isCreatePath = pathname === 'create';
+          const isEditPath = pathname === 'edit';
+          
+          let label: string;
+          if (isUUID) {
+            label = 'עריכה';
+          } else if (isNewPath || isCreatePath) {
+            label = 'יצירה חדשה';
+          } else if (isEditPath) {
+            label = 'עריכה';
+          } else {
+            label = routeLabels[routeTo] || pathname;
+          }
 
           return (
             <div key={routeTo} className="contents">
