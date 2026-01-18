@@ -259,14 +259,14 @@ export const DuplicateAlertsPanel: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            התראות הפרשי מחיר
+            התראות כפילויות
           </CardTitle>
         </CardHeader>
         <CardContent>
           {!alerts || alerts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Copy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>לא נמצאו התראות על הפרשי מחיר</p>
+              <p>לא נמצאו התראות כפילויות</p>
               <p className="text-sm mt-2">לחץ על "סרוק כפילויות" לזיהוי כפילויות קיימות</p>
             </div>
           ) : (
@@ -308,14 +308,22 @@ export const DuplicateAlertsPanel: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          {(alert.primary_property?.price || 0) > (alert.duplicate_property?.price || 0) ? (
-                            <TrendingDown className="h-4 w-4 text-green-500" />
+                          {alert.price_difference === 0 ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                              מחיר זהה
+                            </Badge>
                           ) : (
-                            <TrendingUp className="h-4 w-4 text-red-500" />
+                            <>
+                              {(alert.primary_property?.price || 0) > (alert.duplicate_property?.price || 0) ? (
+                                <TrendingDown className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <TrendingUp className="h-4 w-4 text-red-500" />
+                              )}
+                              <span className="text-sm">
+                                הפרש: {formatPrice(alert.price_difference)} ({alert.price_difference_percent.toFixed(1)}%)
+                              </span>
+                            </>
                           )}
-                          <span className="text-sm">
-                            הפרש: {formatPrice(alert.price_difference)} ({alert.price_difference_percent.toFixed(1)}%)
-                          </span>
                         </div>
 
                         <div className="flex items-center gap-2">
