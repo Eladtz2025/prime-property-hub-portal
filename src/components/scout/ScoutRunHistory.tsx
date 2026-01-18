@@ -79,6 +79,36 @@ export const ScoutRunHistory: React.FC = () => {
     refetchInterval: 10000
   });
 
+  // Fetch actual matches from scouted_properties grouped by hour
+  const { data: matchCounts } = useQuery({
+    queryKey: ['match-counts-by-hour', daysBack],
+    queryFn: async () => {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 1);
+      
+      const { data, error } = await supabase
+        .rpc('get_matches_by_hour', {
+          start_date: format(startDate, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd')
+        });
+      
+      if (error) {
+        console.error('Error fetching match counts:', error);
+        return {};
+      }
+      
+      // Convert array to Record<hourKey, count>
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: { hour_key: string; match_count: number }) => {
+        counts[row.hour_key] = row.match_count;
+      });
+      return counts;
+    },
+    refetchInterval: 10000
+  });
+
   const groupedData = useMemo(() => {
     if (!runs) return [];
 
@@ -117,7 +147,7 @@ export const ScoutRunHistory: React.FC = () => {
       hourGroup.runs.push(run);
       hourGroup.totalFound += run.properties_found || 0;
       hourGroup.totalNew += run.new_properties || 0;
-      hourGroup.totalMatched += run.leads_matched || 0;
+      // Don't sum leads_matched from runs - we'll use matchCounts instead
       if (!hourGroup.sources.includes(run.source)) {
         hourGroup.sources.push(run.source);
       }
@@ -127,11 +157,25 @@ export const ScoutRunHistory: React.FC = () => {
 
       dayGroups[dayKey].totalFound += run.properties_found || 0;
       dayGroups[dayKey].totalNew += run.new_properties || 0;
-      dayGroups[dayKey].totalMatched += run.leads_matched || 0;
+      // Don't sum leads_matched from runs - we'll calculate from matchCounts
     });
 
+    // Apply actual match counts from scouted_properties
+    if (matchCounts) {
+      Object.keys(dayGroups).forEach(dayKey => {
+        let dayTotalMatched = 0;
+        Object.keys(dayGroups[dayKey].hours).forEach(hourKey => {
+          const matchKey = `${dayKey}-${hourKey.replace(':00', '')}`;
+          const matchCount = matchCounts[matchKey] || 0;
+          dayGroups[dayKey].hours[hourKey].totalMatched = matchCount;
+          dayTotalMatched += matchCount;
+        });
+        dayGroups[dayKey].totalMatched = dayTotalMatched;
+      });
+    }
+
     return Object.values(dayGroups).sort((a, b) => b.dayKey.localeCompare(a.dayKey));
-  }, [runs]);
+  }, [runs, matchCounts]);
 
   const formatDayLabel = (dayKey: string) => {
     const date = new Date(dayKey);
