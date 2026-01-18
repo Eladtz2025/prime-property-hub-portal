@@ -11,8 +11,10 @@ import {
   TrendingDown, 
   TrendingUp,
   RefreshCw,
-  Copy
+  Copy,
+  Info
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -72,11 +74,11 @@ export const DuplicateAlertsPanel: React.FC = () => {
   const { data: stats } = useQuery({
     queryKey: ['duplicate-stats'],
     queryFn: async () => {
-      const { data: totalAlerts } = await supabase
+      const { count: totalAlerts } = await supabase
         .from('duplicate_alerts')
         .select('id', { count: 'exact', head: true });
 
-      const { data: unresolvedAlerts } = await supabase
+      const { count: unresolvedAlerts } = await supabase
         .from('duplicate_alerts')
         .select('id', { count: 'exact', head: true })
         .eq('is_resolved', false);
@@ -88,10 +90,25 @@ export const DuplicateAlertsPanel: React.FC = () => {
 
       const uniqueGroups = new Set(duplicateGroups?.map(d => d.duplicate_group_id)).size;
 
+      // Get count of properties that can/cannot be checked for duplicates
+      const { count: checkableCount } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('duplicate_check_possible', true);
+
+      const { count: uncheckableCount } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('duplicate_check_possible', false);
+
       return {
-        total: totalAlerts?.length || 0,
-        unresolved: unresolvedAlerts?.length || 0,
-        groups: uniqueGroups
+        total: totalAlerts || 0,
+        unresolved: unresolvedAlerts || 0,
+        groups: uniqueGroups,
+        checkable: checkableCount || 0,
+        uncheckable: uncheckableCount || 0
       };
     }
   });
@@ -224,6 +241,18 @@ export const DuplicateAlertsPanel: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Info about uncheckable properties */}
+      {stats?.uncheckable && stats.uncheckable > 0 && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <span className="font-medium">{stats.uncheckable} נכסים</span> לא ניתנים לבדיקת כפילויות (חסר מספר בניין בכתובת).
+            מתוך <span className="font-medium">{stats.checkable + stats.uncheckable}</span> נכסים פעילים, 
+            רק <span className="font-medium">{stats.checkable}</span> ({((stats.checkable / (stats.checkable + stats.uncheckable)) * 100).toFixed(0)}%) ניתנים לבדיקה.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Alerts List */}
       <Card>

@@ -403,10 +403,13 @@ serve(async (req) => {
               const normalizedCity = normalizeCityName(property.city);
               
               // Check for duplicates before inserting
+              // Only check if address contains a building number
               let duplicateGroupId: string | null = null;
               let isPrimaryListing = true;
+              const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
+              const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
               
-              if (property.address && property.rooms && normalizedCity) {
+              if (duplicateCheckPossible) {
                 const { data: duplicates } = await supabase
                   .rpc('find_duplicate_property', {
                     p_address: property.address,
@@ -463,6 +466,7 @@ serve(async (req) => {
                   rooms: property.rooms,
                   size: property.size,
                   floor: property.floor,
+                  duplicate_check_possible: duplicateCheckPossible,
                   property_type: property.property_type,
                   description: property.description,
                   images: property.images || [],

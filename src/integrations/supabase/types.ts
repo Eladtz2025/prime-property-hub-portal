@@ -2353,6 +2353,7 @@ export type Database = {
           city: string | null
           created_at: string
           description: string | null
+          duplicate_check_possible: boolean | null
           duplicate_detected_at: string | null
           duplicate_group_id: string | null
           features: Json | null
@@ -2384,6 +2385,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duplicate_check_possible?: boolean | null
           duplicate_detected_at?: string | null
           duplicate_group_id?: string | null
           features?: Json | null
@@ -2415,6 +2417,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          duplicate_check_possible?: boolean | null
           duplicate_detected_at?: string | null
           duplicate_group_id?: string | null
           features?: Json | null
