@@ -145,7 +145,7 @@ export const DuplicateAlertsPanel: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['duplicate-alerts'] });
       queryClient.invalidateQueries({ queryKey: ['duplicate-stats'] });
       if (data && data[0]) {
-        toast.success(`נמצאו ${data[0].duplicates_found} כפילויות, ${data[0].groups_created} קבוצות, ${data[0].alerts_created} התראות מחיר`);
+        toast.success(`נמצאו ${data[0].duplicates_found} כפילויות, ${data[0].groups_created} קבוצות חדשות`);
       } else {
         toast.success('סריקת כפילויות הושלמה');
       }
