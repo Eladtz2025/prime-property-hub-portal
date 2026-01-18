@@ -226,7 +226,12 @@ export const ScoutedPropertiesTable: React.FC = () => {
       // Use ilike for partial matching to include sub-neighborhoods
       query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
     }
-    // Note: features filter requires special handling since it's JSONB
+    // Filter by features in DB query (JSONB)
+    if (filters.features.length > 0) {
+      filters.features.forEach(feature => {
+        query = query.eq(`features->>${feature}`, 'true');
+      });
+    }
     return query;
   };
 
@@ -283,16 +288,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      // Filter features client-side (JSONB containment query is complex)
-      let filtered = data as ScoutedProperty[];
-      if (appliedFilters.features.length > 0) {
-        filtered = filtered.filter(p => {
-          if (!p.features) return false;
-          return appliedFilters.features.every(f => p.features?.[f] === true);
-        });
-      }
-      
-      return filtered;
+      return data as ScoutedProperty[];
     }
   });
 
@@ -777,7 +773,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </div>
 
           {/* Desktop: Original inline filters */}
-          <div className="hidden md:flex flex-wrap items-center gap-2">
+          <div className="hidden md:flex flex-wrap items-center gap-2 justify-end" dir="rtl">
             {/* Title */}
             <CardTitle className="whitespace-nowrap ml-2">
               דירות שנסרקו ({totalCount || 0})
