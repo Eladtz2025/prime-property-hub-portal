@@ -56,39 +56,35 @@ serve(async (req) => {
     let triggeredCount = 0;
     const errors: string[] = [];
 
-    // Trigger each batch with delay
+    // Trigger each batch with delay - FIRE AND FORGET (no await on response)
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
       
-      try {
-        console.log(`🚀 Triggering batch ${i + 1}/${batches.length} (${batch.length} properties)...`);
-        
-        const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ property_ids: batch })
-        });
-
+      console.log(`🚀 Triggering batch ${i + 1}/${batches.length} (${batch.length} properties)...`);
+      
+      // Fire and forget - don't await the response
+      fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ property_ids: batch })
+      }).then(response => {
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`❌ Batch ${i + 1} failed: ${errorText}`);
-          errors.push(`Batch ${i + 1}: ${errorText}`);
+          console.error(`❌ Batch ${i + 1} returned error status: ${response.status}`);
         } else {
-          triggeredCount++;
-          const result = await response.json();
-          console.log(`✅ Batch ${i + 1} completed: ${result.checked || 0} checked, ${result.marked_inactive || 0} inactive`);
+          console.log(`✅ Batch ${i + 1} triggered successfully`);
         }
-      } catch (error) {
-        console.error(`❌ Error triggering batch ${i + 1}:`, error);
-        errors.push(`Batch ${i + 1}: ${error.message}`);
-      }
+      }).catch(error => {
+        console.error(`❌ Error triggering batch ${i + 1}:`, error.message);
+      });
 
-      // Delay between batches to avoid overwhelming the system
+      triggeredCount++;
+
+      // Small delay between triggering batches to spread the load
       if (i < batches.length - 1) {
-        await sleep(2000);
+        await sleep(1500); // 1.5 seconds between triggers
       }
     }
 
