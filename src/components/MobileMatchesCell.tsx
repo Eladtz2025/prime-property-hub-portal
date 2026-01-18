@@ -23,7 +23,7 @@ export const MobileMatchesCell = ({
   roomsMax,
   propertyType,
 }: MobileMatchesCellProps) => {
-  const { data: scoutedMatches = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
+  const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
   const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
     id: customerId,
     budget_min: budgetMin,
@@ -46,7 +46,8 @@ export const MobileMatchesCell = ({
     return <X className="h-3 w-3 text-red-500 mx-auto" />;
   }
 
-  const totalMatches = scoutedMatches.length + ownMatches.length;
+  const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
+  const totalMatches = scoutedMatchCount + ownMatches.length;
 
   if (totalMatches === 0) {
     return <span className="text-[10px] text-muted-foreground">0</span>;

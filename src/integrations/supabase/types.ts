@@ -2909,6 +2909,7 @@ export type Database = {
         Args: { customer_uuid: string }
         Returns: {
           city: string
+          duplicate_group_id: string
           id: string
           is_private: boolean
           match_reasons: string[]

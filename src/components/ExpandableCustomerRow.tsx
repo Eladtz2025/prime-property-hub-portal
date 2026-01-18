@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
-import { useCustomerMatches } from "@/hooks/useCustomerMatches";
+import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
 import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
@@ -150,7 +150,7 @@ const CustomerMatchesCell = ({
   roomsMax?: number | null;
   propertyType?: string | null;
 }) => {
-  const { data: scoutedMatches = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
+  const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
   const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
     id: customerId,
     budget_min: budgetMin,
@@ -236,7 +236,9 @@ const CustomerMatchesCell = ({
     );
   }
 
-  const totalMatches = scoutedMatches.length + ownMatches.length;
+  // Calculate total individual matches from groups
+  const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
+  const totalMatches = scoutedMatchCount + ownMatches.length;
 
   // Has data but no matches found
   if (totalMatches === 0) {
@@ -254,10 +256,10 @@ const CustomerMatchesCell = ({
               {ownMatches.length}
             </Button>
           )}
-          {scoutedMatches.length > 0 && (
+          {scoutedMatchCount > 0 && (
             <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800">
               <Home className="h-3 w-3" />
-              {scoutedMatches.length}
+              {scoutedMatchCount}
             </Button>
           )}
         </div>
@@ -277,7 +279,7 @@ const CustomerMatchesCell = ({
             </TabsTrigger>
             <TabsTrigger value="scouted" className="gap-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
               <Home className="h-4 w-4" />
-              נכסים נסרקים ({scoutedMatches.length})
+              נכסים נסרקים ({scoutedMatchCount})
             </TabsTrigger>
           </TabsList>
           
@@ -331,70 +333,71 @@ const CustomerMatchesCell = ({
           </TabsContent>
           
           <TabsContent value="scouted" className="space-y-3 mt-4">
-            {scoutedMatches.length === 0 ? (
+            {scoutedMatchCount === 0 ? (
               <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים נסרקים</p>
             ) : (
-              scoutedMatches.map((match) => (
-                <div key={match.id} className="p-3 border border-purple-200 rounded-lg bg-purple-50/50 hover:bg-purple-100/50 transition-colors">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{match.title || 'דירה ללא כותרת'}</p>
-                        {match.is_private === false && (
-                          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
-                            תיווך
-                          </Badge>
-                        )}
-                        {match.is_private === true && (
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                            פרטי
-                          </Badge>
+              scoutedMatchGroups.map((group, groupIdx) => (
+                <div key={group.groupId || groupIdx} className={`flex gap-2 ${group.matches.length > 1 ? 'border border-orange-200 rounded-lg p-2 bg-orange-50/30' : ''}`}>
+                  {group.matches.map((match) => (
+                    <div 
+                      key={match.id} 
+                      className={`p-3 border border-purple-200 rounded-lg bg-purple-50/50 hover:bg-purple-100/50 transition-colors ${group.matches.length > 1 ? 'flex-1' : 'w-full'}`}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <Badge variant="outline" className="text-xs bg-slate-100 text-slate-700">
+                              {match.source}
+                            </Badge>
+                            {match.is_private === false && (
+                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
+                                תיווך
+                              </Badge>
+                            )}
+                            {match.is_private === true && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                                פרטי
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="font-medium truncate mt-1 text-sm">{match.title || 'דירה ללא כותרת'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {match.city && <span>{match.city}</span>}
+                            {match.rooms && <span> | {match.rooms} חד'</span>}
+                            {match.size && <span> | {match.size} מ"ר</span>}
+                          </p>
+                          <p className="text-sm font-semibold text-primary mt-1">
+                            {match.price ? `₪${match.price.toLocaleString()}` : 'מחיר לא צוין'}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="shrink-0 bg-purple-100 text-purple-700 text-xs">
+                          {match.matchScore}%
+                        </Badge>
+                      </div>
+                      
+                      <div className="mt-2 flex gap-1 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-xs px-2"
+                          onClick={() => window.open(match.source_url, '_blank')}
+                        >
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                          צפה
+                        </Button>
+                        {customerPhone && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs px-2 text-green-600 hover:text-green-700"
+                            onClick={() => handleSendWhatsAppScouted(match)}
+                          >
+                            <MessageSquare className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {match.city && <span>{match.city}</span>}
-                        {match.rooms && <span> | {match.rooms} חד'</span>}
-                        {match.size && <span> | {match.size} מ"ר</span>}
-                        {match.price && <span> | ₪{match.price.toLocaleString()}</span>}
-                      </p>
                     </div>
-                    <Badge variant="secondary" className="shrink-0 bg-purple-100 text-purple-700">
-                      {match.matchScore}% התאמה
-                    </Badge>
-                  </div>
-                  
-                  {match.matchReasons && match.matchReasons.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {match.matchReasons.map((reason, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {reason}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => window.open(match.source_url, '_blank')}
-                    >
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                      צפה במקור
-                    </Button>
-                    {customerPhone && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs text-green-600 hover:text-green-700"
-                        onClick={() => handleSendWhatsAppScouted(match)}
-                      >
-                        <MessageSquare className="h-3 w-3 ml-1" />
-                        שלח ב-WhatsApp
-                      </Button>
-                    )}
-                  </div>
+                  ))}
                 </div>
               ))
             )}
