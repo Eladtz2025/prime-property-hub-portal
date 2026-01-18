@@ -1,0 +1,180 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  try {
+    console.log('🎯 Starting matching orchestration...');
+
+    // Parse request body for optional parameters
+    const body = await req.json().catch(() => ({}));
+    const sendWhatsapp = body.send_whatsapp ?? false;
+
+    // Create a tracking run for progress
+    const { data: trackingRun, error: runError } = await supabase
+      .from('scout_runs')
+      .insert({
+        source: 'matching',
+        status: 'running',
+        properties_found: 0,
+        new_properties: 0
+      })
+      .select('id')
+      .single();
+
+    if (runError) {
+      console.error('Error creating tracking run:', runError);
+    }
+
+    const trackingRunId = trackingRun?.id;
+    console.log(`📊 Created tracking run: ${trackingRunId}`);
+
+    // Fetch ALL active property IDs using pagination
+    const PAGE_SIZE = 1000;
+    let allPropertyIds: string[] = [];
+    let page = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: properties, error: fetchError } = await supabase
+        .from('scouted_properties')
+        .select('id')
+        .eq('is_active', true)
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      if (fetchError) throw fetchError;
+
+      if (properties && properties.length > 0) {
+        allPropertyIds = [...allPropertyIds, ...properties.map(p => p.id)];
+        page++;
+        hasMore = properties.length === PAGE_SIZE;
+        console.log(`📄 Fetched page ${page}: ${properties.length} properties (total so far: ${allPropertyIds.length})`);
+      } else {
+        hasMore = false;
+      }
+    }
+
+    if (allPropertyIds.length === 0) {
+      console.log('✅ No properties to match');
+      
+      if (trackingRunId) {
+        await supabase
+          .from('scout_runs')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            properties_found: 0,
+            new_properties: 0
+          })
+          .eq('id', trackingRunId);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'No properties to match',
+        total_properties: 0,
+        batches_triggered: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Update tracking run with total count
+    if (trackingRunId) {
+      await supabase
+        .from('scout_runs')
+        .update({
+          new_properties: allPropertyIds.length
+        })
+        .eq('id', trackingRunId);
+    }
+
+    console.log(`📊 Found ${allPropertyIds.length} properties to match`);
+
+    // Split into batches of 100 properties
+    const batchSize = 100;
+    const batches: string[][] = [];
+    for (let i = 0; i < allPropertyIds.length; i += batchSize) {
+      batches.push(allPropertyIds.slice(i, i + batchSize));
+    }
+
+    console.log(`📦 Split into ${batches.length} batches of ~${batchSize} properties each`);
+
+    let triggeredCount = 0;
+
+    // Trigger each batch with delay - FIRE AND FORGET
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      
+      console.log(`🚀 Triggering batch ${i + 1}/${batches.length} (${batch.length} properties)...`);
+      
+      // Fire and forget - don't await the response
+      fetch(`${supabaseUrl}/functions/v1/match-batch`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          property_ids: batch,
+          run_id: trackingRunId,
+          send_whatsapp: sendWhatsapp,
+          batch_index: i + 1,
+          total_batches: batches.length
+        })
+      }).then(response => {
+        if (!response.ok) {
+          console.error(`❌ Batch ${i + 1} returned error status: ${response.status}`);
+        } else {
+          console.log(`✅ Batch ${i + 1} triggered successfully`);
+        }
+      }).catch(error => {
+        console.error(`❌ Error triggering batch ${i + 1}:`, error.message);
+      });
+
+      triggeredCount++;
+
+      // Small delay between triggering batches to spread the load
+      if (i < batches.length - 1) {
+        await sleep(500); // 0.5 seconds between triggers
+      }
+    }
+
+    console.log(`✅ Matching orchestration complete: ${triggeredCount}/${batches.length} batches triggered`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      total_properties: allPropertyIds.length,
+      batches_triggered: triggeredCount,
+      total_batches: batches.length,
+      run_id: trackingRunId
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('❌ Matching orchestration error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});

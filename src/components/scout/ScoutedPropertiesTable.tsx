@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -337,6 +337,21 @@ export const ScoutedPropertiesTable: React.FC = () => {
     total: matchingRun.new_properties || 0
   } : null;
   
+  // Track when matching completes to refresh data
+  const wasMatchingRef = useRef(false);
+  
+  useEffect(() => {
+    if (matchingProgress && matchingProgress.total > 0) {
+      wasMatchingRef.current = true;
+    } else if (wasMatchingRef.current && !matchingProgress) {
+      // Matching just completed - refresh the data
+      wasMatchingRef.current = false;
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      toast.success('חישוב ההתאמות הסתיים!');
+    }
+  }, [matchingProgress, queryClient]);
+  
   // Calculate scan progress (non-matching scans)
   const nonMatchingScans = runningScans?.filter(r => r.source !== 'matching') || [];
   const scanTotalFound = nonMatchingScans.reduce((sum, r) => sum + (r.properties_found || 0), 0);
@@ -398,23 +413,22 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
-  // Match all properties mutation
+  // Match all properties mutation - using distributed architecture
   const matchAllMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('match-scouted-to-leads', {
+      const { data, error } = await supabase.functions.invoke('trigger-matching', {
         body: { send_whatsapp: false }
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`חושבו ${data.leads_matched || 0} התאמות ל-${data.properties_processed || 0} נכסים`);
-      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      toast.success(`הופעל חישוב התאמות ל-${data.total_properties || 0} נכסים ב-${data.batches_triggered || 0} batches`);
+      // Don't invalidate immediately - let the polling pick up the progress
     },
     onError: (error) => {
       console.error('Match error:', error);
-      toast.error('שגיאה בחישוב התאמות');
+      toast.error('שגיאה בהפעלת חישוב התאמות');
     }
   });
   const importMutation = useMutation({
