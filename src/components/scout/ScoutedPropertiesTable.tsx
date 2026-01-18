@@ -784,7 +784,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </div>
 
           {/* Desktop: Original inline filters */}
-          <div className="hidden md:flex flex-wrap items-center gap-2 w-full justify-end flex-row-reverse" dir="rtl">
+          <div className="hidden md:flex flex-wrap items-center gap-2 w-full" dir="rtl">
             {/* Title */}
             <CardTitle className="whitespace-nowrap ml-4">
               דירות שנסרקו ({totalCount || 0})
