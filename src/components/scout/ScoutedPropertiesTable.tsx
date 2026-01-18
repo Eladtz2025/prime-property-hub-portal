@@ -52,6 +52,25 @@ const FEATURE_OPTIONS = [
   { key: 'yard', label: 'חצר' },
 ];
 
+// Consolidated neighborhood groups for Tel Aviv
+const NEIGHBORHOOD_GROUPS: Record<string, string[]> = {
+  'צפון ישן': ['הצפון הישן', 'צפון הישן', 'הצפון הישן - צפון', 'הצפון הישן - דרום', 'הצפון הישן החלק'],
+  'צפון חדש': ['הצפון החדש', 'צפון החדש', 'כיכר המדינה', 'סביבת כיכר המדינה'],
+  'לב העיר': ['לב העיר', 'לב תל אביב', 'מרכז העיר'],
+  'פלורנטין': ['פלורנטין', 'דרום פלורנטין'],
+  'נווה צדק': ['נווה צדק', 'נוה צדק'],
+  'נווה שאנן': ['נווה שאנן', 'נוה שאנן'],
+  'כרם התימנים': ['כרם התימנים'],
+  'יפו': ['יפו', 'יפו ג', 'יפו ד', 'יפו העתיקה', 'צפון יפו', 'מרכז יפו', 'עג\'מי'],
+  'רמת אביב': ['רמת אביב', 'רמת אביב ג', 'רמת אביב החדשה', 'נופי ים'],
+  'הצפון הירוק': ['הצפון הירוק', 'נווה אביבים', 'רמת החייל'],
+  'בבלי': ['בבלי'],
+  'הגוש הגדול': ['הגוש הגדול'],
+  'מונטיפיורי': ['מונטיפיורי'],
+  'לב תל אביב': ['לב תל אביב', 'קרית הממשלה'],
+  'שוק הפשפשים': ['שוק הפשפשים', 'שכונת התקווה'],
+};
+
 // Normalize search by removing geresh/gershayim variations
 const normalizeSearch = (text: string): string => {
   return text.replace(/[''`׳״]/g, '');
@@ -70,7 +89,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProperty, setSelectedProperty] = useState<ScoutedProperty | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -94,7 +113,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     neighborhood: string;
     features: string[];
     status: string;
-    source: string;
+    propertyType: string;
     searchTerm: string;
   }>({
     roomsMin: '',
@@ -104,7 +123,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     neighborhood: 'all',
     features: [],
     status: 'all',
-    source: 'all',
+    propertyType: 'all',
     searchTerm: ''
   });
 
@@ -235,8 +254,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     if (filters.status !== 'all') {
       query = query.eq('status', filters.status);
     }
-    if (filters.source !== 'all') {
-      query = query.eq('source', filters.source);
+    if (filters.propertyType !== 'all') {
+      query = query.eq('property_type', filters.propertyType);
     }
     if (filters.roomsMin) {
       query = query.gte('rooms', parseFloat(filters.roomsMin));
@@ -251,8 +270,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
       query = query.lte('price', parseInt(filters.maxBudget));
     }
     if (filters.neighborhood !== 'all') {
-      // Use ilike for partial matching to include sub-neighborhoods
-      query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
+      // Use neighborhood groups for consolidated matching
+      const patterns = NEIGHBORHOOD_GROUPS[filters.neighborhood] || [filters.neighborhood];
+      const orConditions = patterns.map(p => `neighborhood.ilike.%${p}%`).join(',');
+      query = query.or(orConditions);
     }
     // Filter by features in DB query (JSONB)
     if (filters.features.length > 0) {
@@ -521,7 +542,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       neighborhood: neighborhoodFilter,
       features: featuresFilter,
       status: statusFilter,
-      source: sourceFilter,
+      propertyType: propertyTypeFilter,
       searchTerm
     });
   };
@@ -541,7 +562,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setCurrentPage(1);
     setSearchTerm('');
     setStatusFilter('all');
-    setSourceFilter('all');
+    setPropertyTypeFilter('all');
     setRoomsMin('');
     setRoomsMax('');
     setMinBudget('');
@@ -556,13 +577,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
       neighborhood: 'all',
       features: [],
       status: 'all',
-      source: 'all',
+      propertyType: 'all',
       searchTerm: ''
     });
   };
 
   // Check if any filters are active
-  const hasActiveFilters = statusFilter !== 'all' || sourceFilter !== 'all' || 
+  const hasActiveFilters = statusFilter !== 'all' || propertyTypeFilter !== 'all' || 
     roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
     neighborhoodFilter !== 'all' || featuresFilter.length > 0;
 
@@ -716,7 +737,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     פילטרים
                     {hasActiveFilters && (
                       <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                        {(roomsMin ? 1 : 0) + (roomsMax ? 1 : 0) + (minBudget ? 1 : 0) + (maxBudget ? 1 : 0) + (neighborhoodFilter !== 'all' ? 1 : 0) + featuresFilter.length + (statusFilter !== 'all' ? 1 : 0) + (sourceFilter !== 'all' ? 1 : 0)}
+                        {(roomsMin ? 1 : 0) + (roomsMax ? 1 : 0) + (minBudget ? 1 : 0) + (maxBudget ? 1 : 0) + (neighborhoodFilter !== 'all' ? 1 : 0) + featuresFilter.length + (statusFilter !== 'all' ? 1 : 0) + (propertyTypeFilter !== 'all' ? 1 : 0)}
                       </Badge>
                     )}
                   </Button>
@@ -784,7 +805,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Neighborhood */}
+                    {/* Neighborhood - Consolidated groups */}
                     <div>
                       <label className="text-sm font-medium mb-2 block">שכונה</label>
                       <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
@@ -793,8 +814,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">כל השכונות</SelectItem>
-                          {neighborhoods?.map(n => (
-                            <SelectItem key={n} value={n}>{shortenNeighborhood(n)}</SelectItem>
+                          {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
+                            <SelectItem key={group} value={group}>{group}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -818,19 +839,17 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </Select>
                     </div>
 
-                    {/* Source */}
+                    {/* Property Type (Rent/Sale) */}
                     <div>
-                      <label className="text-sm font-medium mb-2 block">מקור</label>
-                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                      <label className="text-sm font-medium mb-2 block">סוג עסקה</label>
+                      <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
                         <SelectTrigger className="w-full h-10">
-                          <SelectValue placeholder="כל המקורות" />
+                          <SelectValue placeholder="כל הנכסים" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">כל המקורות</SelectItem>
-                          <SelectItem value="yad2">יד2</SelectItem>
-                          <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
-                          <SelectItem value="madlan">מדלן</SelectItem>
-                          <SelectItem value="homeless">הומלס</SelectItem>
+                          <SelectItem value="all">כל הנכסים</SelectItem>
+                          <SelectItem value="rent">השכרה</SelectItem>
+                          <SelectItem value="sale">מכירה</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -941,15 +960,15 @@ export const ScoutedPropertiesTable: React.FC = () => {
               />
             </div>
 
-            {/* Neighborhood */}
+            {/* Neighborhood - Consolidated groups */}
             <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
               <SelectTrigger className="w-[130px] h-9">
                 <SelectValue placeholder="שכונה" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל השכונות</SelectItem>
-                {neighborhoods?.map(n => (
-                  <SelectItem key={n} value={n}>{shortenNeighborhood(n)}</SelectItem>
+                {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
+                  <SelectItem key={group} value={group}>{group}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1000,17 +1019,15 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* Source */}
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            {/* Property Type (Rent/Sale) */}
+            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
               <SelectTrigger className="w-[95px] h-9">
-                <SelectValue placeholder="מקור" />
+                <SelectValue placeholder="סוג" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל המקורות</SelectItem>
-                <SelectItem value="yad2">יד2</SelectItem>
-                <SelectItem value="yad2_private">יד2 פרטי</SelectItem>
-                <SelectItem value="madlan">מדלן</SelectItem>
-                <SelectItem value="homeless">הומלס</SelectItem>
+                <SelectItem value="all">כל הנכסים</SelectItem>
+                <SelectItem value="rent">השכרה</SelectItem>
+                <SelectItem value="sale">מכירה</SelectItem>
               </SelectContent>
             </Select>
 
