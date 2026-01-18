@@ -25,7 +25,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'oldnorth',
         'OldNorth',
         'צפון הישן / צפון החדש',
-        'צפון החדש / צפון הישן'
+        'צפון החדש / צפון הישן',
+        'הצפון הישן צפון',
+        'הצפון הישן דרום'
       ] 
     },
     { 
@@ -44,7 +46,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'צפון החדש',
         'לואי מרשל',
         'louis marshall',
-        'יהודה המכבי, הצפון החדש - צפון'
+        'יהודה המכבי, הצפון החדש - צפון',
+        'הצפון החדש צפון',
+        'הצפון החדש דרום'
       ] 
     },
     { 
@@ -56,10 +60,13 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'לב העיר צפון',
         'לב העיר דרום',
         'לב תל אביב, לב העיר צפון',
+        'לב תל אביב, לב העיר דרום',
         'לב תל אביב החלק המערבי',
         'מרכז',
         'center',
-        'לבהעיר'
+        'לבהעיר',
+        'מונטיפיורי, הרכבת',
+        'הרכבת'
       ] 
     },
     { 
@@ -77,7 +84,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       label: 'נווה צדק', 
       aliases: [
         'neve tzedek',
-        'נוה צדק'
+        'נוה צדק',
+        'נוה צדק, מונטיפיורי',
+        'neve tzedek, montefiore'
       ] 
     },
     { 
@@ -110,7 +119,8 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון החדש - כיכר המדינה',
         'סביבת כיכר המדינה',
         'זכות לדירה בכיכר המדינה',
-        'kikar hamedina'
+        'kikar hamedina',
+        'ככר המדינה'
       ] 
     },
     { 
@@ -157,7 +167,9 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       aliases: [
         'שיכון בבלי',
         'הבשן',
-        'bavli'
+        'bavli',
+        'בבלי, הבשן',
+        'bavli, tel aviv'
       ] 
     },
     { 
@@ -194,12 +206,15 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       label: 'דרום תל אביב', 
       aliases: [
         'שפירא', 
-        'נווה שאנן', 
+        'נווה שאנן',
+        'נוה שאנן', 
         'התקווה', 
         'שכונת התקווה', 
         'כפר שלם', 
         'יד אליהו',
-        'south tel aviv'
+        'south tel aviv',
+        'שפירא, נחלת יצחק',
+        'נחלת יצחק, שפירא'
       ] 
     },
     { 
@@ -230,7 +245,25 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       label: 'נווה שרת', 
       aliases: [
         'נוה שרת',
-        'neve sharet'
+        'neve sharet',
+        'נווה שרת, עזרא ונחמיה',
+        'נוה שרת, עזרא ונחמיה'
+      ] 
+    },
+    { 
+      value: 'נחלת_יצחק', 
+      label: 'נחלת יצחק', 
+      aliases: [
+        'נחלת יצחק, שפירא',
+        'nachlat yitzhak'
+      ] 
+    },
+    { 
+      value: 'יד_אליהו', 
+      label: 'יד אליהו', 
+      aliases: [
+        'yad eliyahu',
+        'איצטדיון רמת גן'
       ] 
     },
   ],
@@ -291,11 +324,22 @@ export function getNeighborhoodConfig(searchValue: string, city?: string): Neigh
   return null;
 }
 
+// Normalize text for fuzzy matching - removes punctuation, extra spaces, double vavs
+function normalizeText(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[,\-–—׳'״"]/g, ' ')  // Replace punctuation with spaces
+    .replace(/\s+/g, ' ')          // Multiple spaces to single
+    .replace(/וו/g, 'ו')           // Double vav to single
+    .trim();
+}
+
 // Match a property neighborhood string against lead's selected neighborhoods
 export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhoods: string[], city: string): boolean {
   if (!propertyNeighborhood || !leadNeighborhoods?.length) return false;
   
-  const normalizedPropertyNeighborhood = propertyNeighborhood.trim().toLowerCase();
+  const normalizedProperty = normalizeText(propertyNeighborhood);
   
   // Normalize city name
   let normalizedCity = city;
@@ -311,15 +355,18 @@ export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhood
     const config = getNeighborhoodConfig(leadNeighborhood, normalizedCity);
     
     if (config) {
+      const normalizedLabel = normalizeText(config.label);
+      
       // Check if property neighborhood matches the label
-      if (normalizedPropertyNeighborhood.includes(config.label.toLowerCase())) {
+      if (normalizedProperty.includes(normalizedLabel) || normalizedLabel.includes(normalizedProperty)) {
         return true;
       }
       
-      // Check if property neighborhood matches any alias
+      // Check if property neighborhood matches any alias (with normalization)
       for (const alias of config.aliases) {
-        if (normalizedPropertyNeighborhood.includes(alias.toLowerCase()) ||
-            alias.toLowerCase().includes(normalizedPropertyNeighborhood)) {
+        const normalizedAlias = normalizeText(alias);
+        if (normalizedProperty.includes(normalizedAlias) ||
+            normalizedAlias.includes(normalizedProperty)) {
           return true;
         }
       }

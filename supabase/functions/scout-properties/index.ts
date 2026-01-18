@@ -487,14 +487,17 @@ serve(async (req) => {
 
     // Trigger lead matching if new properties were found (fire and forget)
     if (totalNewProperties > 0) {
-      console.log(`Triggering lead matching for ${totalNewProperties} new properties...`);
+      console.log(`Triggering lead matching for ${totalNewProperties} new properties with run_id: ${runId}...`);
       fetch(`${supabaseUrl}/functions/v1/match-scouted-to-leads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ send_whatsapp: false }),
+        body: JSON.stringify({ 
+          send_whatsapp: false,
+          run_id: runId 
+        }),
       }).catch(err => {
         console.error('Failed to trigger lead matching:', err);
       });
