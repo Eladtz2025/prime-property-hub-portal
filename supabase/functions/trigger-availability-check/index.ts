@@ -21,16 +21,33 @@ serve(async (req) => {
   try {
     console.log('🔍 Starting availability check orchestration...');
 
-    // Fetch all active property IDs
-    const { data: properties, error: fetchError } = await supabase
-      .from('scouted_properties')
-      .select('id')
-      .eq('status', 'matched')
-      .or('is_active.is.null,is_active.eq.true');
+    // Fetch ALL active property IDs using pagination (Supabase limits to 1000 by default)
+    const PAGE_SIZE = 1000;
+    let allProperties: { id: string }[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (fetchError) throw fetchError;
+    while (hasMore) {
+      const { data: properties, error: fetchError } = await supabase
+        .from('scouted_properties')
+        .select('id')
+        .eq('status', 'matched')
+        .or('is_active.is.null,is_active.eq.true')
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    if (!properties || properties.length === 0) {
+      if (fetchError) throw fetchError;
+
+      if (properties && properties.length > 0) {
+        allProperties = [...allProperties, ...properties];
+        page++;
+        hasMore = properties.length === PAGE_SIZE;
+        console.log(`📄 Fetched page ${page}: ${properties.length} properties (total so far: ${allProperties.length})`);
+      } else {
+        hasMore = false;
+      }
+    }
+
+    if (allProperties.length === 0) {
       console.log('✅ No properties to check');
       return new Response(JSON.stringify({
         success: true,
@@ -41,6 +58,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    const properties = allProperties;
 
     console.log(`📊 Found ${properties.length} properties to check`);
 
