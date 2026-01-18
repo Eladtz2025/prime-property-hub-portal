@@ -25,7 +25,7 @@ const AdminPropertyScout: React.FC = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`חושבו ${data.total_matches || 0} התאמות`);
+      toast.success(`חושבו ${data.leads_matched || 0} התאמות ל-${data.properties_processed || 0} נכסים`);
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
     },
     onError: (error) => {
