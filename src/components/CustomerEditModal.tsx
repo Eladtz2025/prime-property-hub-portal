@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -41,6 +42,9 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
   const [localPhone, setLocalPhone] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const initialDataRef = useRef<string>('');
 
   useEffect(() => {
     if (customer) {
@@ -51,8 +55,26 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
       setLocalPhone(localNumber);
       setErrors({});
       setTouched({});
+      setHasChanges(false);
+      // Store initial data for comparison
+      initialDataRef.current = JSON.stringify({ ...customer, phoneCountry: countryCode, localPhone: localNumber });
     }
   }, [customer]);
+
+  // Track changes
+  useEffect(() => {
+    if (!customer) return;
+    const currentData = JSON.stringify({ ...formData, phoneCountry, localPhone });
+    setHasChanges(currentData !== initialDataRef.current);
+  }, [formData, phoneCountry, localPhone, customer]);
+
+  const handleClose = () => {
+    if (hasChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      onClose();
+    }
+  };
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -165,11 +187,12 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
   const isSale = formData.property_type === 'sale' || formData.property_type === 'both';
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>עריכת לקוח - {customer.name}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>עריכת לקוח - {customer.name}</DialogTitle>
+          </DialogHeader>
 
         <div className="space-y-4">
           {/* Basic Info */}
@@ -641,7 +664,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           <CustomerPropertyMatches customer={customer} maxResults={5} />
 
           <div className="flex gap-2 justify-end pt-4">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={handleClose}>
               ביטול
             </Button>
             <Button onClick={handleSave} disabled={loading}>
@@ -651,5 +674,32 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>יש שינויים שלא נשמרו</AlertDialogTitle>
+          <AlertDialogDescription>
+            השינויים שביצעת לא נשמרו. האם אתה בטוח שברצונך לצאת?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+            המשך לערוך
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => {
+              setShowUnsavedDialog(false);
+              setHasChanges(false);
+              onClose();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            צא בלי לשמור
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

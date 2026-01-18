@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,8 @@ import BlockSelector from '@/components/price-offer/builder/BlockSelector';
 import BlockList from '@/components/price-offer/builder/BlockList';
 import SaveTemplateModal from '@/components/price-offer/templates/SaveTemplateModal';
 import { priceOfferBuilderTranslations, PriceOfferLanguage } from '@/lib/price-offer-translations';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 
 interface PriceOfferData {
   id?: string;
@@ -52,6 +54,19 @@ const PriceOfferBuilder = () => {
   const [offerId, setOfferId] = useState<string | null>(id || null);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const initialDataRef = useRef<string>('');
+
+  // Use unsaved changes hook
+  const { blocker } = useUnsavedChanges(hasUnsavedChanges);
+
+  // Track changes
+  useEffect(() => {
+    const currentData = JSON.stringify({ offerData, blocks });
+    if (initialDataRef.current && currentData !== initialDataRef.current) {
+      setHasUnsavedChanges(true);
+    }
+  }, [offerData, blocks]);
 
   // Get translations based on UI language
   const t = priceOfferBuilderTranslations[uiLanguage];
@@ -96,6 +111,17 @@ const PriceOfferBuilder = () => {
 
       if (blocksError) throw blocksError;
       setBlocks(blocksData || []);
+      
+      // Set initial data after load
+      initialDataRef.current = JSON.stringify({ offerData: {
+        property_title: offer.property_title,
+        property_details: offer.property_details,
+        language: offer.language,
+        is_active: offer.is_active,
+        slug: offer.slug || '',
+        display_type: offer.display_type || 'standard',
+      }, blocks: blocksData || [] });
+      setHasUnsavedChanges(false);
     } catch (error: any) {
       toast({
         title: t.error,
@@ -187,6 +213,10 @@ const PriceOfferBuilder = () => {
         title: activate ? t.offerPublished : t.offerSaved,
         description: activate ? t.offerPublishedDesc : t.draftSavedDesc,
       });
+      
+      // Reset unsaved changes after save
+      initialDataRef.current = JSON.stringify({ offerData, blocks });
+      setHasUnsavedChanges(false);
     } catch (error: any) {
       toast({
         title: t.saveError,
@@ -487,6 +517,9 @@ const PriceOfferBuilder = () => {
         onSave={handleSaveAsTemplate}
         saving={savingTemplate}
       />
+      
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 };
