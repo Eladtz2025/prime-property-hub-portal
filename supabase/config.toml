@@ -104,3 +104,9 @@ verify_jwt = false
 
 [functions.retry-failed-runs]
 verify_jwt = false
+
+[functions.trigger-matching]
+verify_jwt = false
+
+[functions.match-batch]
+verify_jwt = false
