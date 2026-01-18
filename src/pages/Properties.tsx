@@ -152,17 +152,6 @@ export const Properties: React.FC = memo(() => {
     setupManagementProperties();
   }, []);
 
-  // Handle edit query parameter from navigation
-  useEffect(() => {
-    const editId = searchParams.get('edit');
-    if (editId && properties.length > 0) {
-      setExpandedPropertyId(editId);
-      // Clear the query parameter
-      searchParams.delete('edit');
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, [searchParams, properties.length, setSearchParams]);
-
   const getOwnerPropertyCount = (property: Property) => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;
     return ownerPropertyCounts[ownerKey] || 1;
@@ -214,6 +203,44 @@ export const Properties: React.FC = memo(() => {
     data: filteredAndSortedProperties, 
     itemsPerPage: isMobile ? 10 : 20 
   });
+
+  // Handle edit query parameter from navigation
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && filteredAndSortedProperties.length > 0) {
+      // Find the property's index in the sorted list
+      const propertyIndex = filteredAndSortedProperties.findIndex(p => p.id === editId);
+      
+      if (propertyIndex !== -1) {
+        // Calculate which page the property is on
+        const itemsPerPage = isMobile ? 10 : 20;
+        const targetPage = Math.floor(propertyIndex / itemsPerPage) + 1;
+        
+        // Navigate to the correct page
+        goToPage(targetPage);
+        
+        // Expand the property edit row
+        setExpandedPropertyId(editId);
+      }
+      
+      // Clear the query parameter
+      searchParams.delete('edit');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, filteredAndSortedProperties, isMobile, goToPage, setSearchParams]);
+
+  // Auto-scroll to expanded property
+  useEffect(() => {
+    if (expandedPropertyId) {
+      // Wait for the DOM to update, then scroll
+      setTimeout(() => {
+        const element = document.getElementById(`property-row-${expandedPropertyId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+    }
+  }, [expandedPropertyId]);
 
   const propertiesWithWhatsApp = useMemo(() => {
     return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
@@ -463,7 +490,8 @@ export const Properties: React.FC = memo(() => {
                   <div className="space-y-3 px-2">
                     {paginatedProperties.map((property) => (
                       <React.Fragment key={property.id}>
-                        <OptimizedMobilePropertyCard
+                        <div id={`property-row-${property.id}`}>
+                          <OptimizedMobilePropertyCard
                           property={property}
                           onViewDetails={handleViewDetails}
                           onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
@@ -472,12 +500,13 @@ export const Properties: React.FC = memo(() => {
                           searchTerm={filters.searchTerm}
                           canEdit={canEditProperties}
                         />
-                        <PropertyEditRow
-                          property={property}
-                          isOpen={expandedPropertyId === property.id}
-                          onClose={() => setExpandedPropertyId(null)}
-                          onSave={handlePropertyUpdate}
-                        />
+                          <PropertyEditRow
+                            property={property}
+                            isOpen={expandedPropertyId === property.id}
+                            onClose={() => setExpandedPropertyId(null)}
+                            onSave={handlePropertyUpdate}
+                          />
+                        </div>
                       </React.Fragment>
                     ))}
                   </div>
@@ -532,7 +561,7 @@ export const Properties: React.FC = memo(() => {
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <React.Fragment key={property.id}>
-                            <TableRow className="hover:bg-muted/50">
+                            <TableRow id={`property-row-${property.id}`} className="hover:bg-muted/50">
                               <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
                                 <SearchHighlight 
                                   text={property.address} 
