@@ -36,6 +36,7 @@ interface HourSummary {
   totalMatched: number;
   sources: string[];
   hasErrors: boolean;
+  hasPartial: boolean;
   isRunning: boolean;
 }
 
@@ -104,6 +105,7 @@ export const ScoutRunHistory: React.FC = () => {
           totalMatched: 0,
           sources: [],
           hasErrors: false,
+          hasPartial: false,
           isRunning: false
         };
       }
@@ -117,6 +119,7 @@ export const ScoutRunHistory: React.FC = () => {
         hourGroup.sources.push(run.source);
       }
       if (run.status === 'failed') hourGroup.hasErrors = true;
+      if (run.status === 'partial') hourGroup.hasPartial = true;
       if (run.status === 'running') hourGroup.isRunning = true;
 
       dayGroups[dayKey].totalFound += run.properties_found || 0;
@@ -152,6 +155,9 @@ export const ScoutRunHistory: React.FC = () => {
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     }
     if (hourSummary.hasErrors) {
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    }
+    if (hourSummary.hasPartial) {
       return <AlertTriangle className="h-4 w-4 text-amber-500" />;
     }
     return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -326,6 +332,7 @@ export const ScoutRunHistory: React.FC = () => {
                   {getSourceBadge(run.source)}
                   <div className="flex items-center gap-2">
                     {run.status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    {run.status === 'partial' && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                     {run.status === 'failed' && <XCircle className="h-4 w-4 text-red-500" />}
                     {run.status === 'running' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
                     <span className="text-xs text-muted-foreground">

@@ -48,14 +48,72 @@ const userAgents = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
 ];
 
+// Validate scraped content - detect empty pages, CAPTCHAs, and blocking
+function validateScrapedContent(
+  markdown: string | undefined, 
+  html: string | undefined, 
+  source: string
+): { valid: boolean; reason?: string } {
+  const markdownLen = markdown?.length || 0;
+  const htmlLen = html?.length || 0;
+  
+  // Check minimum content length
+  if (markdownLen < 500 && htmlLen < 1000) {
+    return { valid: false, reason: `Content too short (${markdownLen} chars) - likely blocked or empty page` };
+  }
+  
+  // Check for CAPTCHA/blocking indicators
+  const blockIndicators = [
+    'captcha', 'אנחנו צריכים לוודא', 'verify you are human',
+    'blocked', 'access denied', 'בקשתך נחסמה',
+    'too many requests', 'יותר מדי בקשות', 'rate limit',
+    'cf-browser-verification', 'challenge-platform',
+    'please wait while we verify', 'checking your browser'
+  ];
+  
+  const lowerContent = ((markdown || '') + (html || '')).toLowerCase();
+  for (const indicator of blockIndicators) {
+    if (lowerContent.includes(indicator.toLowerCase())) {
+      return { valid: false, reason: `Blocked: detected "${indicator}"` };
+    }
+  }
+  
+  // Source-specific validation for Madlan
+  if (source === 'madlan') {
+    const hasListingIndicators = 
+      (markdown && (markdown.includes('₪') || markdown.includes('חד\'') || markdown.includes('חדרים'))) ||
+      (html && (html.includes('listing') || html.includes('property-card') || html.includes('נכס')));
+    
+    if (!hasListingIndicators) {
+      return { valid: false, reason: 'Madlan page has no property indicators - likely blocked or empty' };
+    }
+  }
+  
+  // Source-specific validation for Yad2
+  if (source === 'yad2') {
+    const hasListingIndicators = 
+      (markdown && (markdown.includes('₪') || markdown.includes('חד\'') || markdown.includes('חדרים'))) ||
+      (html && (html.includes('feeditem') || html.includes('feed_item')));
+    
+    if (!hasListingIndicators) {
+      return { valid: false, reason: 'Yad2 page has no property indicators - likely blocked or empty' };
+    }
+  }
+  
+  return { valid: true };
+}
+
 // Scrape with retry mechanism using different user agents
-async function scrapeWithRetry(url: string, firecrawlApiKey: string, maxRetries = 3): Promise<any> {
+async function scrapeWithRetry(url: string, firecrawlApiKey: string, source: string, maxRetries = 3): Promise<any> {
+  // Determine wait time based on source - Madlan needs longer waits
+  const waitForMs = source === 'madlan' ? 5000 : 3000;
+  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (edge functions have 60s limit)
 
-      console.log(`Scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+      console.log(`Scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, waitFor: ${waitForMs}ms)`);
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
@@ -67,10 +125,12 @@ async function scrapeWithRetry(url: string, firecrawlApiKey: string, maxRetries 
           url,
           formats: ['markdown', 'html'],
           onlyMainContent: true,
-          waitFor: 3000, // 3 seconds for dynamic content
+          waitFor: waitForMs,
           headers: {
             'User-Agent': userAgents[attempt % userAgents.length],
             'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Cache-Control': 'no-cache',
           }
         }),
         signal: controller.signal,
@@ -248,9 +308,13 @@ serve(async (req) => {
         }
 
         // Add delay between requests to avoid rate limiting (skip first request)
+        // Madlan needs longer delays to avoid blocking
         if (urlIndex > 0) {
-          const delay = 1000 + Math.random() * 500; // 1-1.5 seconds random delay
-          console.log(`Waiting ${Math.round(delay)}ms before next request...`);
+          const isMadlan = url.includes('madlan');
+          const delay = isMadlan 
+            ? 5000 + Math.random() * 3000  // 5-8 seconds for Madlan
+            : 1000 + Math.random() * 500;  // 1-1.5 seconds for others
+          console.log(`Waiting ${Math.round(delay)}ms before next request (${isMadlan ? 'Madlan - slower' : 'standard'})...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
 
@@ -261,7 +325,12 @@ serve(async (req) => {
             continue;
           }
 
-          const scrapeData = await scrapeWithRetry(url, firecrawlApiKey);
+          // Detect source from URL
+          const currentSource = url.includes('madlan') ? 'madlan' : 
+                               url.includes('yad2') ? 'yad2' : 
+                               url.includes('homeless') ? 'homeless' : 'other';
+
+          const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, currentSource);
           
           if (!scrapeData) {
             console.error(`All retry attempts failed for ${url}, continuing to next URL`);
@@ -270,6 +339,24 @@ serve(async (req) => {
 
           const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
           const html = scrapeData.data?.html || scrapeData.html || '';
+
+          // Validate scraped content - detect empty pages, CAPTCHAs, blocking
+          const validation = validateScrapedContent(markdown, html, currentSource);
+          if (!validation.valid) {
+            console.error(`Content validation failed for ${url}: ${validation.reason}`);
+            
+            // Update run with partial status and error message
+            if (runId) {
+              await supabase
+                .from('scout_runs')
+                .update({
+                  status: 'partial',
+                  error_message: validation.reason
+                })
+                .eq('id', runId);
+            }
+            continue; // Skip to next URL
+          }
 
           // Use AI to extract property data
           if (!lovableApiKey) {
@@ -650,7 +737,9 @@ function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
 
 function buildSearchUrls(config: ScoutConfig): string[] {
   const urls: string[] = [];
-  const pagesToScan = 7; // ~140 properties per source+type (7 pages x ~20 per page)
+  // Madlan gets fewer pages to reduce blocking risk
+  const defaultPagesToScan = 7; // ~140 properties per source+type (7 pages x ~20 per page)
+  const madlanPagesToScan = 4;  // ~80 properties for Madlan (4 pages - reduced to avoid blocking)
 
   // If custom URL provided, use it (no pagination for manual URLs)
   if (config.search_url) {
@@ -720,7 +809,7 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
         // Add pagination for Yad2 - uses page parameter
-        for (let page = 1; page <= pagesToScan; page++) {
+        for (let page = 1; page <= defaultPagesToScan; page++) {
           const pageParams = new URLSearchParams(params);
           if (page > 1) {
             pageParams.set('page', page.toString());
@@ -769,10 +858,10 @@ function buildSearchUrls(config: ScoutConfig): string[] {
           baseUrl += `/${citySlug}`;
         }
         
-        // Add pagination - Madlan uses ?page=X
-        for (let page = 1; page <= pagesToScan; page++) {
+        // Add pagination - Madlan uses ?page=X (fewer pages to reduce blocking)
+        for (let page = 1; page <= madlanPagesToScan; page++) {
           const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
-          console.log(`Built Madlan URL (page ${page}): ${url}`);
+          console.log(`Built Madlan URL (page ${page}/${madlanPagesToScan} - reduced for anti-blocking): ${url}`);
           urls.push(url);
         }
         
@@ -817,7 +906,7 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         }
         
         // Add pagination - Homeless uses /page/X or ?page=X
-        for (let page = 1; page <= pagesToScan; page++) {
+        for (let page = 1; page <= defaultPagesToScan; page++) {
           const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
           const url = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
           console.log(`Built Homeless URL (page ${page}): ${url}`);
