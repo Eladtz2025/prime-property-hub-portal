@@ -50,13 +50,32 @@ serve(async (req) => {
         });
       }
 
-      // Get all active properties for matching
-      const { data: properties, error: propError } = await supabase
-        .from('scouted_properties')
-        .select('*')
-        .eq('is_active', true);
+      // Get all active properties for matching (with pagination)
+      const PAGE_SIZE = 1000;
+      let allProperties: any[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (propError) throw propError;
+      while (hasMore) {
+        const { data: propBatch, error: propError } = await supabase
+          .from('scouted_properties')
+          .select('*')
+          .eq('is_active', true)
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (propError) throw propError;
+        
+        if (propBatch && propBatch.length > 0) {
+          allProperties = allProperties.concat(propBatch);
+          from += PAGE_SIZE;
+          hasMore = propBatch.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      const properties = allProperties;
+      console.log(`Lead re-match: Fetched ${properties.length} active properties`);
 
       let updatedCount = 0;
 
@@ -99,19 +118,38 @@ serve(async (req) => {
       });
     }
 
-    // Match all active properties to all active leads
-    let query = supabase
-      .from('scouted_properties')
-      .select('*')
-      .eq('is_active', true);
+    // Match all active properties to all active leads (with pagination)
+    const PAGE_SIZE = 1000;
+    let allProperties: any[] = [];
+    let from = 0;
+    let hasMore = true;
 
-    if (property_id) {
-      query = query.eq('id', property_id);
+    while (hasMore) {
+      let query = supabase
+        .from('scouted_properties')
+        .select('*')
+        .eq('is_active', true)
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (property_id) {
+        query = query.eq('id', property_id);
+      }
+
+      const { data: propBatch, error: propError } = await query;
+
+      if (propError) throw propError;
+      
+      if (propBatch && propBatch.length > 0) {
+        allProperties = allProperties.concat(propBatch);
+        from += PAGE_SIZE;
+        hasMore = propBatch.length === PAGE_SIZE && !property_id; // Stop if filtering by specific property
+      } else {
+        hasMore = false;
+      }
     }
 
-    const { data: properties, error: propError } = await query;
-
-    if (propError) throw propError;
+    const properties = allProperties;
+    console.log(`Fetched ${properties.length} active properties for matching`);
 
     if (!properties || properties.length === 0) {
       return new Response(JSON.stringify({
@@ -124,14 +162,32 @@ serve(async (req) => {
       });
     }
 
-    // Get active leads
-    const { data: leads, error: leadsError } = await supabase
-      .from('contact_leads')
-      .select('*')
-      .neq('status', 'closed')
-      .eq('is_hidden', false);
+    // Get active leads (with pagination)
+    let allLeads: any[] = [];
+    from = 0;
+    hasMore = true;
 
-    if (leadsError) throw leadsError;
+    while (hasMore) {
+      const { data: leadBatch, error: leadsError } = await supabase
+        .from('contact_leads')
+        .select('*')
+        .neq('status', 'closed')
+        .eq('is_hidden', false)
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (leadsError) throw leadsError;
+      
+      if (leadBatch && leadBatch.length > 0) {
+        allLeads = allLeads.concat(leadBatch);
+        from += PAGE_SIZE;
+        hasMore = leadBatch.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const leads = allLeads;
+    console.log(`Fetched ${leads.length} active leads for matching`);
 
     if (!leads || leads.length === 0) {
       return new Response(JSON.stringify({
