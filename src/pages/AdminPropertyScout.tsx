@@ -7,7 +7,6 @@ import { ScoutConfigManager } from '@/components/scout/ScoutConfigManager';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
 import { ScoutStats } from '@/components/scout/ScoutStats';
 import { ManualScoutForm } from '@/components/scout/ManualScoutForm';
-import { LiveScanStatus } from '@/components/scout/LiveScanStatus';
 import { DuplicateAlertsPanel } from '@/components/scout/DuplicateAlertsPanel';
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
@@ -23,8 +22,6 @@ const AdminPropertyScout: React.FC = () => {
             </p>
           </div>
         </div>
-
-        <LiveScanStatus />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5">
