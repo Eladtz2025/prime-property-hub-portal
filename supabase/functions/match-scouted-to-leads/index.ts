@@ -28,6 +28,26 @@ serve(async (req) => {
 
   try {
     const { property_id, lead_id, send_whatsapp = true, run_id } = await req.json();
+    
+    // Create a tracking run for progress
+    let trackingRunId = run_id;
+    if (!trackingRunId && !lead_id) {
+      const { data: newRun, error: runError } = await supabase
+        .from('scout_runs')
+        .insert({
+          source: 'matching',
+          status: 'running',
+          properties_found: 0,
+          new_properties: 0
+        })
+        .select('id')
+        .single();
+      
+      if (!runError && newRun) {
+        trackingRunId = newRun.id;
+        console.log(`Created tracking run: ${trackingRunId}`);
+      }
+    }
 
     // If lead_id is provided, re-match this specific lead against all relevant properties
     if (lead_id) {
@@ -203,6 +223,9 @@ serve(async (req) => {
     let totalMatched = 0;
     let totalWhatsAppSent = 0;
 
+    let processedCount = 0;
+    const totalToProcess = properties.length;
+    
     for (const property of properties) {
       const matches: MatchResult[] = [];
 
@@ -219,6 +242,20 @@ serve(async (req) => {
         if (matchResult.matchScore >= 60) { // At least 60% match
           matches.push(matchResult);
         }
+      }
+      
+      processedCount++;
+      
+      // Update progress every 100 properties
+      if (trackingRunId && processedCount % 100 === 0) {
+        await supabase
+          .from('scout_runs')
+          .update({
+            properties_found: processedCount,
+            new_properties: totalToProcess
+          })
+          .eq('id', trackingRunId);
+        console.log(`Progress: ${processedCount}/${totalToProcess}`);
       }
 
       // Sort by match score
@@ -312,15 +349,19 @@ serve(async (req) => {
       }
     }
 
-    // Update run stats if run_id provided
-    if (run_id) {
+    // Update run stats and mark as completed
+    if (trackingRunId) {
       await supabase
         .from('scout_runs')
         .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          properties_found: processedCount,
+          new_properties: totalToProcess,
           leads_matched: totalMatched,
           whatsapp_sent: totalWhatsAppSent
         })
-        .eq('id', run_id);
+        .eq('id', trackingRunId);
     }
 
     return new Response(JSON.stringify({
