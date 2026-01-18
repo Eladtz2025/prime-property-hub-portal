@@ -750,6 +750,12 @@ export const ExpandableCustomerRow = ({
             <span className="text-muted-foreground text-sm">-</span>
           )}
         </TableCell>
+        <TableCell className="text-right">
+          <div className="flex items-center gap-1 text-sm">
+            <Wallet className="h-3 w-3 text-muted-foreground" />
+            <span>{formatBudget(customer.budget_min, customer.budget_max)}</span>
+          </div>
+        </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
           <Select 
             value={customer.priority} 
