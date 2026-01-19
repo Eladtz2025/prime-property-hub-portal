@@ -4,6 +4,14 @@ import { Building } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyQuickCard } from './PropertyQuickCard';
 import { PropertyDetailModal } from './PropertyDetailModal';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 interface ActivePropertiesCardProps {
   properties: Property[];
@@ -38,36 +46,48 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Building className="h-5 w-5 text-primary" />
-        <h3 className="font-semibold text-base">הדירות האקטואליות שלנו ({activeProperties.length})</h3>
-      </div>
-      
-      {/* Properties List */}
-      {activeProperties.length === 0 ? (
-        <p className="text-muted-foreground text-center py-4">אין דירות פנויות כרגע</p>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-          {activeProperties.map((property) => (
-            <PropertyQuickCard 
-              key={property.id} 
-              property={property} 
-              onClick={handlePropertyClick}
-            />
-          ))}
-        </div>
-      )}
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Building className="h-5 w-5 text-primary" />
+          הדירות האקטואליות שלנו ({activeProperties.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {activeProperties.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">אין דירות פנויות כרגע</p>
+        ) : (
+          <Carousel
+            opts={{
+              align: "start",
+              direction: "rtl",
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-mr-2">
+              {activeProperties.map((property) => (
+                <CarouselItem key={property.id} className="pr-2 basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
+                  <PropertyQuickCard 
+                    property={property} 
+                    onClick={handlePropertyClick}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-4" />
+            <CarouselNext className="-right-4" />
+          </Carousel>
+        )}
 
-      {selectedProperty && (
-        <PropertyDetailModal
-          property={selectedProperty}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onEdit={handleEditProperty}
-        />
-      )}
-    </div>
+        {selectedProperty && (
+          <PropertyDetailModal
+            property={selectedProperty}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            onEdit={handleEditProperty}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 };

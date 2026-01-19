@@ -195,18 +195,14 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </div>
       </div>
 
-      {/* משימות בעדיפות + הדירות שלנו */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <PriorityTasksCard />
-        </div>
-        <div className="lg:col-span-2">
-          <ActivePropertiesCard properties={properties} />
-        </div>
-      </div>
+      {/* הדירות שלנו - קרוסלה */}
+      <ActivePropertiesCard properties={properties} />
 
-      {/* שורה 2: פגישות קרובות, פניות ורעיונות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* שורה 2: משימות, פגישות, פניות ורעיונות */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* משימות בעדיפות */}
+        <PriorityTasksCard />
+
         {/* פגישות קרובות */}
         <UpcomingAppointmentsCard 
           limit={3} 
