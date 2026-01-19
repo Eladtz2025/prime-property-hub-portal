@@ -13,6 +13,7 @@ import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { PriorityTasksCard } from './PriorityTasksCard';
+import { SiteIssuesCard } from './SiteIssuesCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -198,9 +199,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* הדירות שלנו - קרוסלה */}
       <ActivePropertiesCard properties={properties} />
 
-      {/* שורה 2: משימות, פגישות, פניות ורעיונות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* משימות בעדיפות */}
+      {/* שורה 2: משימות, פגישות, פניות, באגים ורעיונות */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {/* פריוריטי */}
         <PriorityTasksCard />
 
         {/* פגישות קרובות */}
@@ -227,6 +228,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
             <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
+
+        {/* באגים ובעיות */}
+        <SiteIssuesCard />
 
         {/* רעיונות לפיתוח */}
         <DevelopmentIdeasCard />
