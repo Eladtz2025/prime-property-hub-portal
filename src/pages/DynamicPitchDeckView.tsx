@@ -26,8 +26,9 @@ const DynamicPitchDeckView = () => {
   const [language, setLanguage] = useState<'en' | 'he'>('en');
 
   // Get visible slides sorted by order (with validation)
+  // Filter out step1_pricing as it's a separate page, not a carousel slide
   const slides = deck?.slides
-    ?.filter(s => s && s.is_visible && s.slide_data)
+    ?.filter(s => s && s.is_visible && s.slide_data && s.slide_type !== 'step1_pricing')
     ?.sort((a, b) => a.slide_order - b.slide_order) || [];
 
   const goToSlide = useCallback((index: number) => {
