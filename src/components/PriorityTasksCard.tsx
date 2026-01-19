@@ -136,7 +136,7 @@ export const PriorityTasksCard = memo(() => {
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
           <ListTodo className="h-5 w-5" />
           פריוריטי
           {activeTasks.length > 0 && (

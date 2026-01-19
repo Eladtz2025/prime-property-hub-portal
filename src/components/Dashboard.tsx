@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Users, CheckCircle, Clock, Phone, TrendingUp, Edit2, ArrowLeft } from 'lucide-react';
+import { Building, Users, CheckCircle, Clock, Phone, TrendingUp, Edit2, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { MobileDashboard } from './MobileDashboard';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
@@ -213,18 +213,21 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         {/* פניות מהאתר */}
         <Card className="h-full">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <span>פניות מהאתר</span>
+            <div className="flex items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                פניות מהאתר
+              </CardTitle>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => navigate('/admin/leads')}
-                className="gap-1"
+                className="gap-1 shrink-0"
               >
-                <span className="text-sm">ראה הכל</span>
+                <span className="text-sm hidden sm:inline">ראה הכל</span>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <ContactLeadsListCompact limit={3} />
