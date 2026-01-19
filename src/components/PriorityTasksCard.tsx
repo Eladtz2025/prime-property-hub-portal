@@ -61,7 +61,7 @@ const TaskItem = memo(({
       
       <div className="flex-1 min-w-0">
         <p className={cn(
-          "text-sm font-medium truncate",
+          "text-sm font-medium break-words",
           task.is_completed && "line-through text-muted-foreground"
         )}>
           {task.title}
