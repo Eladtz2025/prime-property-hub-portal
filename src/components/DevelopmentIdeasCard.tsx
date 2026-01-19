@@ -121,44 +121,51 @@ export const DevelopmentIdeasCard: React.FC = () => {
             {pendingIdeas.map((idea) => (
               <div
                 key={idea.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50 group hover:bg-muted transition-colors"
+                className="p-3 rounded-lg bg-muted/50 border border-border/50 group hover:bg-muted transition-colors space-y-2"
               >
-                <span className={cn(
-                  "w-2 h-2 rounded-full mt-2 shrink-0",
-                  getPriorityIndicator(idea.priority).color
-                )} />
-                <Checkbox
-                  checked={idea.is_completed}
-                  onCheckedChange={() => toggleComplete(idea.id, idea.is_completed)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{idea.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(idea.created_at), 'dd/MM/yyyy', { locale: he })}
-                  </p>
+                {/* Row 1: checkbox + title */}
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    checked={idea.is_completed}
+                    onCheckedChange={() => toggleComplete(idea.id, idea.is_completed)}
+                    className="mt-0.5"
+                  />
+                  <p className="text-sm font-medium flex-1">{idea.title}</p>
                 </div>
-                <Select 
-                  value={idea.priority || 'medium'} 
-                  onValueChange={(value) => updatePriority(idea.id, value)}
-                >
-                  <SelectTrigger className="w-16 h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="high">גבוה</SelectItem>
-                    <SelectItem value="medium">בינוני</SelectItem>
-                    <SelectItem value="low">נמוך</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteIdea(idea.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                
+                {/* Row 2: priority + date + delete */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={idea.priority || 'medium'} 
+                      onValueChange={(value) => updatePriority(idea.id, value)}
+                    >
+                      <SelectTrigger className="h-6 text-xs w-auto gap-1 px-2">
+                        <span className={cn(
+                          "w-2 h-2 rounded-full shrink-0",
+                          getPriorityIndicator(idea.priority).color
+                        )} />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">גבוה</SelectItem>
+                        <SelectItem value="medium">בינוני</SelectItem>
+                        <SelectItem value="low">נמוך</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(idea.created_at), 'dd/MM/yyyy', { locale: he })}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteIdea(idea.id)}
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
 
@@ -173,31 +180,32 @@ export const DevelopmentIdeasCard: React.FC = () => {
                 {completedIdeas.slice(0, 3).map((idea) => (
                   <div
                     key={idea.id}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/30 group"
+                    className="p-3 rounded-lg bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/30 group space-y-2"
                   >
-                    <span className={cn(
-                      "w-2 h-2 rounded-full mt-2 shrink-0",
-                      getPriorityIndicator(idea.priority).color
-                    )} />
-                    <Checkbox
-                      checked={idea.is_completed}
-                      onCheckedChange={() => toggleComplete(idea.id, idea.is_completed)}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium line-through text-muted-foreground">{idea.title}</p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    {/* Row 1: checkbox + title */}
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        checked={idea.is_completed}
+                        onCheckedChange={() => toggleComplete(idea.id, idea.is_completed)}
+                        className="mt-0.5"
+                      />
+                      <p className="text-sm font-medium line-through text-muted-foreground flex-1">{idea.title}</p>
+                    </div>
+                    
+                    {/* Row 2: completion date + delete */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-green-600 dark:text-green-400">
                         ✓ הושלם {idea.completed_at && format(new Date(idea.completed_at), 'dd/MM/yyyy', { locale: he })}
                       </p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteIdea(idea.id)}
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteIdea(idea.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
                 {completedIdeas.length > 3 && (
