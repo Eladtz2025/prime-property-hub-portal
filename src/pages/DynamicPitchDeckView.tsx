@@ -185,7 +185,7 @@ const DynamicPitchDeckView = () => {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#d4c5b5]">
+    <div className="relative w-full bg-[#d4c5b5] flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
       {/* Language Toggle - Fixed Top Left */}
       <div className="absolute top-4 left-4 z-40 flex gap-2">
         <button
@@ -210,8 +210,8 @@ const DynamicPitchDeckView = () => {
         </button>
       </div>
 
-      {/* Slides Container */}
-      <div className="relative h-full w-full">
+      {/* Slides Area - Takes remaining space */}
+      <div className="flex-1 relative overflow-hidden">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
@@ -228,10 +228,10 @@ const DynamicPitchDeckView = () => {
         ))}
       </div>
 
-      {/* Navigation - Mobile: stacked layout, Desktop: single row */}
-      <div dir="ltr" className="absolute bottom-4 md:bottom-6 left-0 right-0 z-30 px-3 md:px-4">
+      {/* Navigation - Fixed height, part of flex layout */}
+      <div dir="ltr" className="h-16 md:h-20 flex-shrink-0 relative z-30 px-3 md:px-4 flex items-center bg-gradient-to-t from-black/20 to-transparent">
         {/* Mobile Layout - Two rows */}
-        <div className="flex md:hidden flex-col gap-2">
+        <div className="flex md:hidden w-full flex-col gap-1.5 justify-center">
           {/* Top row: Counter + Logo */}
           <div className="flex items-center justify-between">
             <div className="bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1">
@@ -243,28 +243,28 @@ const DynamicPitchDeckView = () => {
                 {currentSlide + 1} of {slides.length}
               </span>
             </div>
-            <img src={cityMarketLogo} alt="City Market Properties" className="h-8 w-auto" />
+            <img src={cityMarketLogo} alt="City Market Properties" className="h-6 w-auto" />
           </div>
           
           {/* Bottom row: Arrows + Dots */}
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={prevSlide}
               disabled={currentSlide === 0}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             
             {/* Slide Indicators - Compact for mobile */}
-            <div className="flex flex-row-reverse items-center gap-1.5">
+            <div className="flex flex-row-reverse items-center gap-1">
               {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
                   className={`h-1.5 rounded-full transition-all ${
                     index === currentSlide
-                      ? "w-4 bg-white"
+                      ? "w-3 bg-white"
                       : "w-1.5 bg-white/40 hover:bg-white/60"
                   }`}
                 />
@@ -274,15 +274,15 @@ const DynamicPitchDeckView = () => {
             <button
               onClick={nextSlide}
               disabled={currentSlide === slides.length - 1}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
         
         {/* Desktop Layout - Single row */}
-        <div className="hidden md:flex items-center justify-between">
+        <div className="hidden md:flex w-full items-center justify-between">
           {/* Page Counter - Left side */}
           <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
             <span 
