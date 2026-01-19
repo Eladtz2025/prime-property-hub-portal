@@ -489,7 +489,7 @@ const PitchDeckBuilder = () => {
                     selectedSlideId={selectedSlide?.id}
                     onSelectSlide={setSelectedSlide}
                     onToggleVisibility={handleToggleSlideVisibility}
-                    onReorderSlides={(updates) => updateSlideOrderMutation.mutate(updates)}
+                    onReorderSlides={(updates) => updateSlideOrderMutation.mutate({ deckId: id!, slides: updates })}
                   />
                 )}
                 {isNew && (
