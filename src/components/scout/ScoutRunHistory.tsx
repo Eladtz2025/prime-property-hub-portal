@@ -304,7 +304,7 @@ export const ScoutRunHistory: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm">
                     <span className="hidden sm:inline">נמצאו: <strong>{day.totalFound}</strong></span>
-                    <span className="text-green-600">חדשות: <strong>{day.totalNew}</strong></span>
+                    <span className="text-green-600">חדשות: <strong>{day.totalNew !== null ? day.totalNew : '—'}</strong></span>
                     <span className="hidden sm:inline">התאמות: <strong>{day.totalMatched}</strong></span>
                     {!isTodaySection && (
                       <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -347,7 +347,9 @@ export const ScoutRunHistory: React.FC = () => {
                               </div>
                             </TableCell>
                             <TableCell className="font-medium">{hourSummary.totalFound}</TableCell>
-                            <TableCell className="text-green-600 font-medium">{hourSummary.totalNew}</TableCell>
+                            <TableCell className="text-green-600 font-medium">
+                              {hourSummary.totalNew !== null ? hourSummary.totalNew : '—'}
+                            </TableCell>
                             <TableCell>{hourSummary.totalMatched}</TableCell>
                             <TableCell>{getHourStatus(hourSummary)}</TableCell>
                             <TableCell>
@@ -395,7 +397,7 @@ export const ScoutRunHistory: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3 text-xs">
                           <span>נמצאו: <strong>{hourSummary.totalFound}</strong></span>
-                          <span className="text-green-600">חדשות: <strong>{hourSummary.totalNew}</strong></span>
+                          <span className="text-green-600">חדשות: <strong>{hourSummary.totalNew !== null ? hourSummary.totalNew : '—'}</strong></span>
                           <span>התאמות: <strong>{hourSummary.totalMatched}</strong></span>
                         </div>
                       </div>
