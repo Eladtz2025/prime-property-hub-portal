@@ -71,13 +71,16 @@ const DynamicContactSlide = ({
           {/* Step 1 */}
           <Link 
             to={step1Link}
-            className="flex items-center gap-2 bg-[#f5c242] hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all"
+            className="flex flex-col items-center gap-1 group"
           >
-            <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 1</span>
+            <div className="flex items-center gap-2 bg-[#f5c242] group-hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all">
+              <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 1</span>
+            </div>
+            <span className="text-white/70 text-[10px] md:text-xs">Pricing Strategies</span>
           </Link>
           
           {/* Arrow */}
-          <div className="flex items-center">
+          <div className="flex items-center mt-[-18px] md:mt-[-20px]">
             <div className="w-6 md:w-12 h-px bg-[#f5c242]" />
             <ArrowRight className="w-4 h-4 text-[#f5c242] -ml-1" />
           </div>
@@ -85,9 +88,12 @@ const DynamicContactSlide = ({
           {/* Step 2 */}
           <Link 
             to={step2Link}
-            className="flex items-center gap-2 bg-[#f5c242] hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all"
+            className="flex flex-col items-center gap-1 group"
           >
-            <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 2</span>
+            <div className="flex items-center gap-2 bg-[#f5c242] group-hover:bg-[#f5c242]/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition-all">
+              <span className="text-[#2d3b3a] text-xs md:text-sm font-medium">Step 2</span>
+            </div>
+            <span className="text-white/70 text-[10px] md:text-xs">Exclusivity Agreement</span>
           </Link>
         </div>
 
