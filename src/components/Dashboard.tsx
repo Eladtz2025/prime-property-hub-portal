@@ -200,7 +200,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       <ActivePropertiesCard properties={properties} />
 
       {/* שורה 2: משימות, פגישות, פניות, באגים ורעיונות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-stretch">
         {/* פריוריטי */}
         <PriorityTasksCard />
 
@@ -211,18 +211,20 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         />
 
         {/* פניות מהאתר */}
-        <Card className="h-fit">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>פניות מהאתר</CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/admin/leads')}
-              className="gap-1"
-            >
-              <span className="text-sm">ראה הכל</span>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+        <Card className="h-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <span>פניות מהאתר</span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/admin/leads')}
+                className="gap-1"
+              >
+                <span className="text-sm">ראה הכל</span>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ContactLeadsListCompact limit={3} />

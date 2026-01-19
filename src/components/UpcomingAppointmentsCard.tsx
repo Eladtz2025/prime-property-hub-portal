@@ -146,7 +146,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
