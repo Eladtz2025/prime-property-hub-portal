@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw, Calculator } from 'lucide-react';
 
 interface ScoutRun {
   id: string;
@@ -210,6 +210,13 @@ export const ScoutRunHistory: React.FC = () => {
         return (
           <Badge className="bg-blue-500 text-white text-[10px] gap-1">
             Madlan {count !== null && <span className="font-bold">{count}</span>}
+          </Badge>
+        );
+      case 'matching':
+        return (
+          <Badge className="bg-green-600 text-white text-[10px] gap-1">
+            <Calculator className="h-2.5 w-2.5" />
+            התאמות {count !== null && <span className="font-bold">{count}</span>}
           </Badge>
         );
       default:

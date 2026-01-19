@@ -336,9 +336,39 @@ export const ScoutedPropertiesTable: React.FC = () => {
     total: matchingRun.new_properties || 0
   } : null;
   
-  // Detect stuck matching runs (over 30 minutes)
-  const isMatchingStuck = matchingRun && matchingRun.started_at && 
-    new Date(matchingRun.started_at).getTime() < Date.now() - 30 * 60 * 1000;
+  // Detect stuck scans (over 10 minutes for regular scans, 30 minutes for matching)
+  const stuckScans = runningScans?.filter(r => {
+    if (!r.started_at) return false;
+    const runningTime = Date.now() - new Date(r.started_at).getTime();
+    const timeout = r.source === 'matching' ? 30 * 60 * 1000 : 10 * 60 * 1000;
+    return runningTime > timeout;
+  }) || [];
+  
+  // Auto-cleanup stuck scans
+  useEffect(() => {
+    if (stuckScans.length > 0) {
+      const cleanupStuckScans = async () => {
+        console.log(`Auto-cleaning ${stuckScans.length} stuck scans:`, stuckScans.map(s => s.id));
+        
+        const { error } = await supabase
+          .from('scout_runs')
+          .update({
+            status: 'failed',
+            error_message: 'Auto-cleanup: scan timeout',
+            completed_at: new Date().toISOString()
+          })
+          .in('id', stuckScans.map(s => s.id));
+        
+        if (error) {
+          console.error('Failed to cleanup stuck scans:', error);
+        } else {
+          toast.info(`נוקו ${stuckScans.length} סריקות תקועות`);
+          queryClient.invalidateQueries({ queryKey: ['running-scans'] });
+        }
+      };
+      cleanupStuckScans();
+    }
+  }, [stuckScans.length, queryClient]);
   
   // Track when matching completes to refresh data
   const wasMatchingRef = useRef(false);
@@ -359,6 +389,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const nonMatchingScans = runningScans?.filter(r => r.source !== 'matching') || [];
   const hasActiveScans = nonMatchingScans.length > 0;
   const scanTotalFound = nonMatchingScans.reduce((sum, r) => sum + (r.properties_found || 0), 0);
+  
+  // Check if matching run is stuck (for UI display - actual cleanup handled by useEffect above)
+  const isMatchingStuck = matchingRun && stuckScans.some(s => s.id === matchingRun.id);
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ['scouted-properties', appliedFilters, currentPage],
