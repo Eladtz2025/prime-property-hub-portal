@@ -25,6 +25,7 @@ export const useDevelopmentIdeas = () => {
         .from('development_ideas')
         .select('*')
         .order('is_completed', { ascending: true })
+        .order('priority', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -41,7 +42,7 @@ export const useDevelopmentIdeas = () => {
     fetchIdeas();
   }, [fetchIdeas]);
 
-  const addIdea = useCallback(async (title: string) => {
+  const addIdea = useCallback(async (title: string, priority: string = 'medium') => {
     if (!user) {
       toast.error('יש להתחבר כדי להוסיף רעיון');
       return;
@@ -52,6 +53,7 @@ export const useDevelopmentIdeas = () => {
         .from('development_ideas')
         .insert({
           title,
+          priority,
           created_by: user.id,
         });
 
@@ -63,6 +65,26 @@ export const useDevelopmentIdeas = () => {
       toast.error('שגיאה בהוספת רעיון');
     }
   }, [user, fetchIdeas]);
+
+  const updatePriority = useCallback(async (id: string, priority: string) => {
+    try {
+      const { error } = await supabase
+        .from('development_ideas')
+        .update({ priority })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Optimistic update
+      setIdeas(prev => prev.map(idea => 
+        idea.id === id ? { ...idea, priority } : idea
+      ));
+    } catch (error) {
+      console.error('Error updating priority:', error);
+      toast.error('שגיאה בעדכון חשיבות');
+      fetchIdeas();
+    }
+  }, [fetchIdeas]);
 
   const toggleComplete = useCallback(async (id: string, currentState: boolean) => {
     try {
@@ -118,6 +140,7 @@ export const useDevelopmentIdeas = () => {
     addIdea,
     toggleComplete,
     deleteIdea,
+    updatePriority,
     refetch: fetchIdeas,
   };
 };
