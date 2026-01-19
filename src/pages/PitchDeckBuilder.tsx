@@ -325,21 +325,6 @@ const PitchDeckBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {isNew && (
-              <Button
-                variant="outline"
-                onClick={handleMigrateBenYehuda}
-                disabled={isMigrating}
-                className="text-amber-600 border-amber-600 hover:bg-amber-50"
-              >
-                {isMigrating ? (
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4 ml-2" />
-                )}
-                צור Ben Yehuda 110
-              </Button>
-            )}
             <Button
               variant="outline"
               onClick={() => {
