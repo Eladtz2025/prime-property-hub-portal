@@ -119,7 +119,7 @@ export const PriorityTasksCard = memo(() => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ListTodo className="h-5 w-5" />
-            משימות בעדיפות
+            פריוריטי
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -138,7 +138,7 @@ export const PriorityTasksCard = memo(() => {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <ListTodo className="h-5 w-5" />
-          משימות בעדיפות
+          פריוריטי
           {activeTasks.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
               ({activeTasks.length})

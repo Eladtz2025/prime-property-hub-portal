@@ -2586,6 +2586,45 @@ export type Database = {
           },
         ]
       }
+      site_issues: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          priority: string | null
+          reported_by: string | null
+          resolved_at: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          priority?: string | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          priority?: string | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       tenant_communications: {
         Row: {
           communication_type: string
