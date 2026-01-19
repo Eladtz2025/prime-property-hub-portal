@@ -32,6 +32,7 @@ export const AutoEnhanceTab: React.FC = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isProcessingRef = useRef(false);
   
   // Store previous URL for cleanup
   const prevPreviewUrlRef = useRef<string>('');
@@ -101,11 +102,18 @@ export const AutoEnhanceTab: React.FC = () => {
   }, []);
 
   const handleEnhance = async () => {
+    // Prevent double submission
+    if (isProcessingRef.current) {
+      console.log('Already processing, ignoring duplicate request');
+      return;
+    }
+    
     if (!selectedFile) {
       toast.error('יש להעלות תמונה קודם');
       return;
     }
 
+    isProcessingRef.current = true;
     setIsEnhancing(true);
     try {
       // Convert file to base64
@@ -144,6 +152,7 @@ export const AutoEnhanceTab: React.FC = () => {
       toast.error(error.message || 'שגיאה בשיפור התמונה');
     } finally {
       setIsEnhancing(false);
+      isProcessingRef.current = false;
     }
   };
 
