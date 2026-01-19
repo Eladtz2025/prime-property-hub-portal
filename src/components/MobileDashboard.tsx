@@ -16,6 +16,7 @@ import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
+import { PriorityTasksCard } from './PriorityTasksCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -192,6 +193,9 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Priority Tasks Card */}
+        <PriorityTasksCard />
 
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />

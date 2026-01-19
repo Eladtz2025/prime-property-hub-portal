@@ -12,6 +12,7 @@ import { ActivePropertiesCard } from './ActivePropertiesCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
+import { PriorityTasksCard } from './PriorityTasksCard';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -194,8 +195,15 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         </div>
       </div>
 
-      {/* הדירות שלנו */}
-      <ActivePropertiesCard properties={properties} />
+      {/* משימות בעדיפות + הדירות שלנו */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <PriorityTasksCard />
+        </div>
+        <div className="lg:col-span-2">
+          <ActivePropertiesCard properties={properties} />
+        </div>
+      </div>
 
       {/* שורה 2: פגישות קרובות, פניות ורעיונות */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
