@@ -103,7 +103,7 @@ const DynamicMarketingIISlide = ({
             }}
           >
             <p 
-              className="text-white text-2xl md:text-4xl lg:text-5xl font-semibold"
+              className="text-white text-2xl md:text-4xl lg:text-5xl font-serif font-light italic"
               style={{ textShadow: softShadow }}
             >
               {data.bottom_statement}
