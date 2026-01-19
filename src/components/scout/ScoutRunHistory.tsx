@@ -145,8 +145,16 @@ export const ScoutRunHistory: React.FC = () => {
 
       const hourGroup = dayGroups[dayKey].hours[hourKey];
       hourGroup.runs.push(run);
-      hourGroup.totalFound += run.properties_found || 0;
+      
+      // Only count properties_found from actual scraping sources, NOT from matching runs
+      if (run.source !== 'matching') {
+        hourGroup.totalFound += run.properties_found || 0;
+        dayGroups[dayKey].totalFound += run.properties_found || 0;
+      }
+      
       hourGroup.totalNew += run.new_properties || 0;
+      dayGroups[dayKey].totalNew += run.new_properties || 0;
+      
       // Don't sum leads_matched from runs - we'll use matchCounts instead
       if (!hourGroup.sources.includes(run.source)) {
         hourGroup.sources.push(run.source);
@@ -154,10 +162,6 @@ export const ScoutRunHistory: React.FC = () => {
       if (run.status === 'failed') hourGroup.hasErrors = true;
       if (run.status === 'partial') hourGroup.hasPartial = true;
       if (run.status === 'running') hourGroup.isRunning = true;
-
-      dayGroups[dayKey].totalFound += run.properties_found || 0;
-      dayGroups[dayKey].totalNew += run.new_properties || 0;
-      // Don't sum leads_matched from runs - we'll calculate from matchCounts
     });
 
     // Apply actual match counts from scouted_properties
@@ -185,6 +189,10 @@ export const ScoutRunHistory: React.FC = () => {
   };
 
   const getSourceCount = (source: string, hourSummary: HourSummary) => {
+    // For matching source, show the actual matches count from matchCounts, not properties_found
+    if (source.toLowerCase() === 'matching') {
+      return hourSummary.totalMatched;
+    }
     return hourSummary.runs
       .filter(run => run.source.toLowerCase() === source.toLowerCase())
       .reduce((sum, run) => sum + (run.properties_found || 0), 0);
