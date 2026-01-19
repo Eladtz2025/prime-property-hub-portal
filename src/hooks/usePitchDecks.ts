@@ -230,7 +230,7 @@ export const useUpdateSlideOrder = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (slides: { id: string; slide_order: number }[]) => {
+    mutationFn: async ({ deckId, slides }: { deckId: string; slides: { id: string; slide_order: number }[] }) => {
       const updates = slides.map(slide => 
         supabase
           .from('pitch_deck_slides')
@@ -239,9 +239,11 @@ export const useUpdateSlideOrder = () => {
       );
       
       await Promise.all(updates);
+      return deckId;
     },
-    onSuccess: () => {
+    onSuccess: (deckId) => {
       queryClient.invalidateQueries({ queryKey: ['pitch-decks'] });
+      queryClient.invalidateQueries({ queryKey: ['pitch-deck', deckId] });
     },
     onError: (error) => {
       console.error('Error updating slide order:', error);
