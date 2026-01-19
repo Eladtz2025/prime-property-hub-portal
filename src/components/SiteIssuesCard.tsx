@@ -58,7 +58,7 @@ const IssueItem = memo(({
 }) => {
   return (
     <div className={cn(
-      "p-3 rounded-lg border transition-all space-y-2",
+      "p-3 rounded-lg border transition-all",
       issue.status === 'resolved' ? "bg-muted/50 opacity-60" : "bg-background hover:bg-muted/30"
     )}>
       <div className="flex items-start gap-2">
@@ -100,6 +100,27 @@ const IssueItem = memo(({
             דיווח: {issue.reported_by || 'לא ידוע'}
           </p>
         </div>
+
+        {issue.image_url && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="shrink-0">
+                <img 
+                  src={issue.image_url} 
+                  alt={issue.title}
+                  className="w-10 h-10 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <img 
+                src={issue.image_url} 
+                alt={issue.title}
+                className="w-full h-auto"
+              />
+            </DialogContent>
+          </Dialog>
+        )}
         
         <Button
           variant="ghost"
@@ -110,27 +131,6 @@ const IssueItem = memo(({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-      
-      {issue.image_url && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <button className="w-full">
-              <img 
-                src={issue.image_url} 
-                alt={issue.title}
-                className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-              />
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl">
-            <img 
-              src={issue.image_url} 
-              alt={issue.title}
-              className="w-full h-auto"
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 });
