@@ -1,0 +1,289 @@
+// Shared URL building utilities for Edge Functions
+// Extracted from scout-properties for better maintainability
+
+export interface ScoutConfig {
+  id: string;
+  name: string;
+  source: 'yad2' | 'yad2_private' | 'madlan' | 'homeless' | 'both' | 'all';
+  property_type: 'rent' | 'sale' | 'both';
+  cities: string[];
+  neighborhoods: string[];
+  min_price?: number;
+  max_price?: number;
+  min_rooms?: number;
+  max_rooms?: number;
+  search_url?: string;
+}
+
+// City mappings for each source
+export const yad2CityMap: Record<string, { topArea: string; area: string; city: string }> = {
+  'תל אביב': { topArea: '2', area: '1', city: '5000' },
+  'תל אביב יפו': { topArea: '2', area: '1', city: '5000' },
+  'ירושלים': { topArea: '1', area: '1', city: '3000' },
+  'חיפה': { topArea: '3', area: '1', city: '4000' },
+  'ראשון לציון': { topArea: '2', area: '2', city: '8300' },
+  'פתח תקווה': { topArea: '2', area: '3', city: '7900' },
+  'אשדוד': { topArea: '2', area: '12', city: '70' },
+  'נתניה': { topArea: '4', area: '1', city: '7400' },
+  'באר שבע': { topArea: '5', area: '1', city: '9000' },
+  'חולון': { topArea: '2', area: '1', city: '6600' },
+  'בת ים': { topArea: '2', area: '1', city: '6200' },
+  'רמת גן': { topArea: '2', area: '1', city: '8600' },
+  'הרצליה': { topArea: '2', area: '4', city: '6400' },
+  'רעננה': { topArea: '4', area: '2', city: '8700' },
+  'גבעתיים': { topArea: '2', area: '1', city: '2650' },
+  'כפר סבא': { topArea: '4', area: '2', city: '6900' },
+  'הוד השרון': { topArea: '4', area: '2', city: '6500' },
+  'רמת השרון': { topArea: '2', area: '4', city: '8800' },
+};
+
+export const madlanCityMap: Record<string, string> = {
+  'תל אביב': 'תל-אביב-יפו-ישראל',
+  'תל אביב יפו': 'תל-אביב-יפו-ישראל',
+  'ירושלים': 'ירושלים-ישראל',
+  'חיפה': 'חיפה-ישראל',
+  'ראשון לציון': 'ראשון-לציון-ישראל',
+  'פתח תקווה': 'פתח-תקווה-ישראל',
+  'אשדוד': 'אשדוד-ישראל',
+  'נתניה': 'נתניה-ישראל',
+  'באר שבע': 'באר-שבע-ישראל',
+  'חולון': 'חולון-ישראל',
+  'בת ים': 'בת-ים-ישראל',
+  'רמת גן': 'רמת-גן-ישראל',
+  'הרצליה': 'הרצליה-ישראל',
+  'רעננה': 'רעננה-ישראל',
+  'גבעתיים': 'גבעתיים-ישראל',
+  'כפר סבא': 'כפר-סבא-ישראל',
+  'הוד השרון': 'הוד-השרון-ישראל',
+  'רמת השרון': 'רמת-השרון-ישראל',
+};
+
+export const homelessCityMap: Record<string, { code: string }> = {
+  'תל אביב': { code: '17,1,150' },
+  'תל אביב יפו': { code: '17,1,150' },
+  'ירושלים': { code: '1,1,3000' },
+  'חיפה': { code: '4,1,4000' },
+  'ראשון לציון': { code: '17,2,8300' },
+  'פתח תקווה': { code: '17,3,7900' },
+  'אשדוד': { code: '17,12,70' },
+  'נתניה': { code: '11,1,7400' },
+  'באר שבע': { code: '6,1,9000' },
+  'חולון': { code: '17,1,6600' },
+  'בת ים': { code: '17,1,6200' },
+  'רמת גן': { code: '17,1,8600' },
+  'הרצליה': { code: '17,4,6400' },
+  'רעננה': { code: '11,2,8700' },
+};
+
+export interface ScrapingSettings {
+  yad2_pages: number;
+  madlan_pages: number;
+  homeless_pages: number;
+  delay_between_requests_ms: number;
+  madlan_delay_ms: number;
+  max_properties_per_config: number;
+}
+
+export const defaultScrapingSettings: ScrapingSettings = {
+  yad2_pages: 7,
+  madlan_pages: 4,
+  homeless_pages: 0,
+  delay_between_requests_ms: 1500,
+  madlan_delay_ms: 5000,
+  max_properties_per_config: 500,
+};
+
+/**
+ * Build URL for a single specific page (used in distributed scanning)
+ */
+export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
+  const urls: string[] = [];
+  
+  const source = config.source === 'yad2_private' ? 'yad2' : config.source;
+  const types = config.property_type === 'both' ? ['rent', 'sale'] : [config.property_type];
+  
+  for (const type of types) {
+    if (source === 'yad2' || source === 'yad2_private') {
+      let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
+      const params = new URLSearchParams();
+      
+      if (config.cities?.length) {
+        const cityData = yad2CityMap[config.cities[0]];
+        if (cityData) {
+          params.set('topArea', cityData.topArea);
+          params.set('area', cityData.area);
+          params.set('city', cityData.city);
+        }
+      }
+      
+      params.set('propertyGroup', 'apartments');
+      
+      if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
+      if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+      
+      if (page > 1) {
+        params.set('page', page.toString());
+      }
+      
+      const pageUrl = url + '?' + params.toString();
+      console.log(`Built Yad2 single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
+      
+    } else if (source === 'madlan' || source === 'madlan_projects') {
+      let pathType: string;
+      if (source === 'madlan_projects') {
+        pathType = 'projects-for-sale';
+      } else {
+        pathType = type === 'rent' ? 'for-rent' : 'for-sale';
+      }
+      
+      let baseUrl = `https://www.madlan.co.il/${pathType}`;
+      
+      if (config.cities?.length) {
+        const hebrewCity = config.cities[0];
+        const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+        baseUrl += `/${citySlug}`;
+      }
+      
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+      console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
+      
+    } else if (source === 'homeless') {
+      let baseUrl: string;
+      
+      if (type === 'rent') {
+        baseUrl = 'https://www.homeless.co.il/rent/';
+        if (config.cities?.length) {
+          const cityData = homelessCityMap[config.cities[0]];
+          if (cityData) {
+            baseUrl += `inumber1=${cityData.code}`;
+          }
+        }
+      } else {
+        baseUrl = 'https://www.homeless.co.il/sale/';
+        if (config.cities?.length) {
+          baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
+        }
+      }
+      
+      const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+      console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
+      urls.push(pageUrl);
+    }
+  }
+  
+  return urls;
+}
+
+/**
+ * Build all search URLs for a config with pagination
+ */
+export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings): string[] {
+  const urls: string[] = [];
+  const s = settings || defaultScrapingSettings;
+
+  // If custom URL provided, use it (no pagination for manual URLs)
+  if (config.search_url) {
+    return [config.search_url];
+  }
+
+  // Determine which sources to scan
+  let sources: string[] = [];
+  if (config.source === 'yad2' || config.source === 'yad2_private') {
+    sources = ['yad2'];
+  } else if (config.source === 'both') {
+    sources = ['madlan', 'yad2'];
+  } else if (config.source === 'all') {
+    sources = ['madlan', 'yad2', 'homeless'];
+  } else if (config.source === 'homeless') {
+    sources = ['homeless'];
+  } else {
+    sources = [config.source];
+  }
+
+  const types = config.property_type === 'both' ? ['rent', 'sale'] : [config.property_type];
+
+  for (const source of sources) {
+    for (const type of types) {
+      if (source === 'yad2' || source === 'yad2_private') {
+        let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
+        const params = new URLSearchParams();
+        
+        if (config.cities?.length) {
+          const cityData = yad2CityMap[config.cities[0]];
+          if (cityData) {
+            params.set('topArea', cityData.topArea);
+            params.set('area', cityData.area);
+            params.set('city', cityData.city);
+          }
+        }
+        
+        params.set('propertyGroup', 'apartments');
+        
+        if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
+        if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+        
+        for (let page = 1; page <= s.yad2_pages; page++) {
+          const pageParams = new URLSearchParams(params);
+          if (page > 1) {
+            pageParams.set('page', page.toString());
+          }
+          const pageUrl = url + '?' + pageParams.toString();
+          console.log(`Built Yad2 URL (page ${page}): ${pageUrl}`);
+          urls.push(pageUrl);
+        }
+        
+      } else if (source === 'madlan' || source === 'madlan_projects') {
+        let pathType: string;
+        if (source === 'madlan_projects') {
+          pathType = 'projects-for-sale';
+        } else {
+          pathType = type === 'rent' ? 'for-rent' : 'for-sale';
+        }
+        
+        let baseUrl = `https://www.madlan.co.il/${pathType}`;
+        
+        if (config.cities?.length) {
+          const hebrewCity = config.cities[0];
+          const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+          baseUrl += `/${citySlug}`;
+        }
+        
+        for (let page = 1; page <= s.madlan_pages; page++) {
+          const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+          console.log(`Built Madlan URL (page ${page}/${s.madlan_pages} - reduced for anti-blocking): ${url}`);
+          urls.push(url);
+        }
+        
+      } else if (source === 'homeless' && s.homeless_pages > 0) {
+        let baseUrl: string;
+        
+        if (type === 'rent') {
+          baseUrl = 'https://www.homeless.co.il/rent/';
+          if (config.cities?.length) {
+            const cityData = homelessCityMap[config.cities[0]];
+            if (cityData) {
+              baseUrl += `inumber1=${cityData.code}`;
+            }
+          }
+        } else {
+          baseUrl = 'https://www.homeless.co.il/sale/';
+          if (config.cities?.length) {
+            baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
+          }
+        }
+        
+        for (let page = 1; page <= s.homeless_pages; page++) {
+          const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
+          const url = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+          console.log(`Built Homeless URL (page ${page}): ${url}`);
+          urls.push(url);
+        }
+      }
+    }
+  }
+
+  return urls;
+}
