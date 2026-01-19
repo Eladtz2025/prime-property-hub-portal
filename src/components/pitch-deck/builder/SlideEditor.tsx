@@ -1159,13 +1159,13 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAddArrayItem('recently_sold', { address: '', price: '', size: '' })}
+                  onClick={() => handleAddArrayItem('recently_sold', { address: '', price: '', builtSize: '', balconySize: '', pricePerSqm: '', link: '' })}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   הוסף
                 </Button>
               </div>
-              {(slideData.recently_sold as Array<{ address: string; price: string; size: string }> || []).map((item, index) => (
+              {(slideData.recently_sold as Array<{ address: string; price: string; builtSize?: string; balconySize?: string; pricePerSqm?: string; link?: string; size?: string }> || []).map((item, index) => (
                 <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/20">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">נכס {index + 1}</span>
@@ -1178,7 +1178,8 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Row 1: Address + Link */}
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
                       value={item.address}
                       onChange={(e) => handleArrayItemChange('recently_sold', index, 'address', e.target.value)}
@@ -1186,15 +1187,39 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                       dir="auto"
                     />
                     <Input
+                      value={item.link || ''}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'link', e.target.value)}
+                      placeholder="לינק לנכס (URL)"
+                      dir="ltr"
+                    />
+                  </div>
+                  {/* Row 2: Price + Price per sqm */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
                       value={item.price}
                       onChange={(e) => handleArrayItemChange('recently_sold', index, 'price', e.target.value)}
-                      placeholder="מחיר"
+                      placeholder="מחיר (₪4.1M)"
                       dir="ltr"
                     />
                     <Input
-                      value={item.size}
-                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'size', e.target.value)}
-                      placeholder="גודל"
+                      value={item.pricePerSqm || ''}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'pricePerSqm', e.target.value)}
+                      placeholder="מחיר למ״ר (₪68,000)"
+                      dir="ltr"
+                    />
+                  </div>
+                  {/* Row 3: Built size + Balcony size */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={item.builtSize || item.size || ''}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'builtSize', e.target.value)}
+                      placeholder="גודל בנוי (מ״ר)"
+                      dir="ltr"
+                    />
+                    <Input
+                      value={item.balconySize || ''}
+                      onChange={(e) => handleArrayItemChange('recently_sold', index, 'balconySize', e.target.value)}
+                      placeholder="גודל מרפסות (מ״ר)"
                       dir="ltr"
                     />
                   </div>
@@ -1210,13 +1235,13 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAddArrayItem('currently_for_sale', { address: '', price: '', size: '' })}
+                  onClick={() => handleAddArrayItem('currently_for_sale', { address: '', price: '', builtSize: '', balconySize: '', pricePerSqm: '', link: '' })}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   הוסף
                 </Button>
               </div>
-              {(slideData.currently_for_sale as Array<{ address: string; price: string; size: string }> || []).map((item, index) => (
+              {(slideData.currently_for_sale as Array<{ address: string; price: string; builtSize?: string; balconySize?: string; pricePerSqm?: string; link?: string; size?: string }> || []).map((item, index) => (
                 <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/20">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">נכס {index + 1}</span>
@@ -1229,7 +1254,8 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Row 1: Address + Link */}
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
                       value={item.address}
                       onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'address', e.target.value)}
@@ -1237,15 +1263,39 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
                       dir="auto"
                     />
                     <Input
+                      value={item.link || ''}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'link', e.target.value)}
+                      placeholder="לינק לנכס (URL)"
+                      dir="ltr"
+                    />
+                  </div>
+                  {/* Row 2: Price + Price per sqm */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
                       value={item.price}
                       onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'price', e.target.value)}
-                      placeholder="מחיר"
+                      placeholder="מחיר (₪4.1M)"
                       dir="ltr"
                     />
                     <Input
-                      value={item.size}
-                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'size', e.target.value)}
-                      placeholder="גודל"
+                      value={item.pricePerSqm || ''}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'pricePerSqm', e.target.value)}
+                      placeholder="מחיר למ״ר (₪68,000)"
+                      dir="ltr"
+                    />
+                  </div>
+                  {/* Row 3: Built size + Balcony size */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={item.builtSize || item.size || ''}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'builtSize', e.target.value)}
+                      placeholder="גודל בנוי (מ״ר)"
+                      dir="ltr"
+                    />
+                    <Input
+                      value={item.balconySize || ''}
+                      onChange={(e) => handleArrayItemChange('currently_for_sale', index, 'balconySize', e.target.value)}
+                      placeholder="גודל מרפסות (מ״ר)"
                       dir="ltr"
                     />
                   </div>
