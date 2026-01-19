@@ -394,8 +394,8 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          send_whatsapp: false,
-          run_id: runId 
+          send_whatsapp: false
+          // Don't pass run_id - matching creates its own separate run with source='matching'
         }),
       }).catch(err => {
         console.error('Failed to trigger lead matching:', err);
