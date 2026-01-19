@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Clock, ExternalLink, Loader2 } from "lucide-react";
 import cityMarketLogo from "@/assets/city-market-icon.png";
 import { usePitchDeckBySlug } from "@/hooks/usePitchDecks";
-import { Step1PricingSlideData } from "@/types/pitch-deck";
+import { Step1PricingSlideData, Step1PropertyItem } from "@/types/pitch-deck";
 
 const DynamicPresentationPricingPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -54,16 +54,26 @@ const DynamicPresentationPricingPage = () => {
   const pricingData = step1Slide?.slide_data as Step1PricingSlideData | undefined;
 
   // Fallback values if slide data doesn't exist
-  const recentlySoldProperties = pricingData?.recently_sold || [
-    { address: "Ben Yehuda 98", price: "₪4.1M", size: "60 sqm" },
-    { address: "Dizengoff 145", price: "₪3.8M", size: "55 sqm" },
-    { address: "Ben Yehuda 122", price: "₪4.3M", size: "65 sqm" },
+  const recentlySoldProperties: Step1PropertyItem[] = pricingData?.recently_sold || [
+    { address: "Ben Yehuda 98", price: "₪4.1M", builtSize: "60", balconySize: "8", pricePerSqm: "₪68,000" },
+    { address: "Dizengoff 145", price: "₪3.8M", builtSize: "55", balconySize: "5", pricePerSqm: "₪69,000" },
+    { address: "Ben Yehuda 122", price: "₪4.3M", builtSize: "65", balconySize: "10", pricePerSqm: "₪66,000" },
   ];
 
-  const currentlyForSaleProperties = pricingData?.currently_for_sale || [
-    { address: "Ben Yehuda 95", price: "₪4.4M", size: "62 sqm" },
-    { address: "Dizengoff 130", price: "₪4.0M", size: "58 sqm" },
+  const currentlyForSaleProperties: Step1PropertyItem[] = pricingData?.currently_for_sale || [
+    { address: "Ben Yehuda 95", price: "₪4.4M", builtSize: "62", balconySize: "7", pricePerSqm: "₪71,000" },
+    { address: "Dizengoff 130", price: "₪4.0M", builtSize: "58", balconySize: "6", pricePerSqm: "₪69,000" },
   ];
+
+  // Helper to format size display
+  const formatSize = (prop: Step1PropertyItem) => {
+    const built = prop.builtSize || prop.size || '';
+    const balcony = prop.balconySize;
+    if (built && balcony) {
+      return `${built} + ${balcony} ${isRTL ? 'מרפסת' : 'balcony'}`;
+    }
+    return built || prop.size || '';
+  };
 
   if (isLoading) {
     return (
@@ -245,22 +255,35 @@ const DynamicPresentationPricingPage = () => {
                 {t.recentlySold}
               </h3>
               <div className="space-y-2">
-                {recentlySoldProperties.map((prop, index) => (
-                  <a
-                    key={index}
-                    href="#"
-                    className="flex items-center justify-between bg-white/10 hover:bg-white/20 transition-colors rounded-md px-3 py-2 group"
-                  >
-                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-white text-xs md:text-sm">{prop.address}</span>
-                      <span className="text-white/60 text-xs">({prop.size})</span>
-                    </div>
-                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
-                      <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
-                    </div>
-                  </a>
-                ))}
+                {recentlySoldProperties.map((prop, index) => {
+                  const hasLink = prop.link && prop.link.trim() !== '';
+                  const Wrapper = hasLink ? 'a' : 'div';
+                  const wrapperProps = hasLink ? { 
+                    href: prop.link, 
+                    target: '_blank', 
+                    rel: 'noopener noreferrer' 
+                  } : {};
+                  
+                  return (
+                    <Wrapper
+                      key={index}
+                      {...wrapperProps}
+                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-3 py-2 group`}
+                    >
+                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-white text-xs md:text-sm">{prop.address}</span>
+                        <span className="text-white/60 text-xs">({formatSize(prop)})</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        {prop.pricePerSqm && (
+                          <span className="text-white/50 text-xs">{prop.pricePerSqm}/מ״ר</span>
+                        )}
+                        <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
+                        {hasLink && <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
+                      </div>
+                    </Wrapper>
+                  );
+                })}
               </div>
             </div>
 
@@ -273,22 +296,35 @@ const DynamicPresentationPricingPage = () => {
                 {t.currentlyForSale}
               </h3>
               <div className="space-y-2">
-                {currentlyForSaleProperties.map((prop, index) => (
-                  <a
-                    key={index}
-                    href="#"
-                    className="flex items-center justify-between bg-white/10 hover:bg-white/20 transition-colors rounded-md px-3 py-2 group"
-                  >
-                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-white text-xs md:text-sm">{prop.address}</span>
-                      <span className="text-white/60 text-xs">({prop.size})</span>
-                    </div>
-                    <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
-                      <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
-                    </div>
-                  </a>
-                ))}
+                {currentlyForSaleProperties.map((prop, index) => {
+                  const hasLink = prop.link && prop.link.trim() !== '';
+                  const Wrapper = hasLink ? 'a' : 'div';
+                  const wrapperProps = hasLink ? { 
+                    href: prop.link, 
+                    target: '_blank', 
+                    rel: 'noopener noreferrer' 
+                  } : {};
+                  
+                  return (
+                    <Wrapper
+                      key={index}
+                      {...wrapperProps}
+                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-3 py-2 group`}
+                    >
+                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-white text-xs md:text-sm">{prop.address}</span>
+                        <span className="text-white/60 text-xs">({formatSize(prop)})</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        {prop.pricePerSqm && (
+                          <span className="text-white/50 text-xs">{prop.pricePerSqm}/מ״ר</span>
+                        )}
+                        <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
+                        {hasLink && <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
+                      </div>
+                    </Wrapper>
+                  );
+                })}
               </div>
             </div>
           </div>

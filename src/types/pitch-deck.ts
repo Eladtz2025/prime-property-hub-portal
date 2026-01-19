@@ -152,6 +152,17 @@ export interface ContactSlideData {
   step2_link: string;
 }
 
+export interface Step1PropertyItem {
+  address: string;
+  price: string;
+  builtSize: string;
+  balconySize?: string;
+  pricePerSqm?: string;
+  link?: string;
+  // Legacy field for backward compatibility
+  size?: string;
+}
+
 export interface Step1PricingSlideData {
   title: string;
   subtitle: string;
@@ -163,8 +174,8 @@ export interface Step1PricingSlideData {
   option_b_description: string;
   option_b_months_min: number;
   option_b_months_max: number;
-  recently_sold: Array<{ address: string; price: string; size: string }>;
-  currently_for_sale: Array<{ address: string; price: string; size: string }>;
+  recently_sold: Array<Step1PropertyItem>;
+  currently_for_sale: Array<Step1PropertyItem>;
 }
 
 export type SlideData = 
@@ -344,13 +355,13 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
       option_b_months_min: 3,
       option_b_months_max: 5,
       recently_sold: [
-        { address: 'Ben Yehuda 98', price: '₪4.1M', size: '60 sqm' },
-        { address: 'Dizengoff 145', price: '₪3.8M', size: '55 sqm' },
-        { address: 'Ben Yehuda 122', price: '₪4.3M', size: '65 sqm' },
+        { address: 'Ben Yehuda 98', price: '₪4.1M', builtSize: '60', balconySize: '8', pricePerSqm: '₪68,000', link: '' },
+        { address: 'Dizengoff 145', price: '₪3.8M', builtSize: '55', balconySize: '5', pricePerSqm: '₪69,000', link: '' },
+        { address: 'Ben Yehuda 122', price: '₪4.3M', builtSize: '65', balconySize: '10', pricePerSqm: '₪66,000', link: '' },
       ],
       currently_for_sale: [
-        { address: 'Ben Yehuda 95', price: '₪4.4M', size: '62 sqm' },
-        { address: 'Dizengoff 130', price: '₪4.0M', size: '58 sqm' },
+        { address: 'Ben Yehuda 95', price: '₪4.4M', builtSize: '62', balconySize: '7', pricePerSqm: '₪71,000', link: '' },
+        { address: 'Dizengoff 130', price: '₪4.0M', builtSize: '58', balconySize: '6', pricePerSqm: '₪69,000', link: '' },
       ],
     } as Step1PricingSlideData,
   },
