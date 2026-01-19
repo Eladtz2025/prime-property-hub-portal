@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePitchDeck, useCreatePitchDeck, useUpdatePitchDeck, useUpdateSlide } from '@/hooks/usePitchDecks';
+import { usePitchDeck, useCreatePitchDeck, useUpdatePitchDeck, useUpdateSlide, useUpdateSlideOrder } from '@/hooks/usePitchDecks';
 import { PitchDeckSlide } from '@/types/pitch-deck';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ const PitchDeckBuilder = () => {
   const createMutation = useCreatePitchDeck();
   const updateMutation = useUpdatePitchDeck();
   const updateSlideMutation = useUpdateSlide();
+  const updateSlideOrderMutation = useUpdateSlideOrder();
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -503,6 +504,7 @@ const PitchDeckBuilder = () => {
                     selectedSlideId={selectedSlide?.id}
                     onSelectSlide={setSelectedSlide}
                     onToggleVisibility={handleToggleSlideVisibility}
+                    onReorderSlides={(updates) => updateSlideOrderMutation.mutate(updates)}
                   />
                 )}
                 {isNew && (
