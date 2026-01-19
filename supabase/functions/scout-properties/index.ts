@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchScoutSettings, defaultSettings } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -184,17 +185,23 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Clean up stuck runs older than 30 minutes at the start of each execution
-  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  // Fetch scout settings from database
+  const settings = await fetchScoutSettings(supabase);
+  const scrapingSettings = settings.scraping;
+  console.log('Loaded scraping settings:', scrapingSettings);
+
+  // Clean up stuck runs based on configured timeout
+  const stuckTimeoutMs = scrapingSettings.stuck_timeout_minutes * 60 * 1000;
+  const stuckTimeAgo = new Date(Date.now() - stuckTimeoutMs).toISOString();
   const { data: stuckRuns } = await supabase
     .from('scout_runs')
     .update({
       status: 'failed',
-      error_message: 'Timeout - scan took longer than 30 minutes and was automatically stopped',
+      error_message: `Timeout - scan took longer than ${scrapingSettings.stuck_timeout_minutes} minutes and was automatically stopped`,
       completed_at: new Date().toISOString()
     })
     .eq('status', 'running')
-    .lt('started_at', thirtyMinutesAgo)
+    .lt('started_at', stuckTimeAgo)
     .select('id, properties_found, source');
   
   if (stuckRuns?.length) {
@@ -296,11 +303,12 @@ serve(async (req) => {
       console.log(`Created run record: ${runId} for source: ${currentRunSource}`);
 
       // Build search URLs - if specific page provided, build URL for that page only
+      // Pass scraping settings to use configured page limits
       const urls = page !== undefined 
         ? buildSinglePageUrl(config, page)
-        : buildSearchUrls(config);
+        : buildSearchUrls(config, scrapingSettings);
 
-      const maxPropertiesPerConfig = 500; // Increased from 100 to handle more pages
+      const maxPropertiesPerConfig = scrapingSettings.max_properties_per_config;
       let configPropertiesFound = 0;
       let configNewProperties = 0;
       
@@ -315,12 +323,12 @@ serve(async (req) => {
         }
 
         // Add delay between requests to avoid rate limiting (skip first request)
-        // Madlan needs longer delays to avoid blocking
+        // Use configured delays - Madlan needs longer delays to avoid blocking
         if (urlIndex > 0) {
           const isMadlan = url.includes('madlan');
           const delay = isMadlan 
-            ? 5000 + Math.random() * 3000  // 5-8 seconds for Madlan
-            : 1000 + Math.random() * 500;  // 1-1.5 seconds for others
+            ? scrapingSettings.madlan_delay_ms + Math.random() * 3000  // Configured + 0-3 seconds for Madlan
+            : scrapingSettings.delay_between_requests_ms + Math.random() * 500;  // Configured + 0-0.5 seconds for others
           console.log(`Waiting ${Math.round(delay)}ms before next request (${isMadlan ? 'Madlan - slower' : 'standard'})...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -814,11 +822,12 @@ function buildSinglePageUrl(config: ScoutConfig, page: number): string[] {
   return urls;
 }
 
-function buildSearchUrls(config: ScoutConfig): string[] {
+function buildSearchUrls(config: ScoutConfig, scrapingSettings?: { yad2_pages: number; madlan_pages: number; homeless_pages: number }): string[] {
   const urls: string[] = [];
-  // Madlan gets fewer pages to reduce blocking risk
-  const defaultPagesToScan = 7; // ~140 properties per source+type (7 pages x ~20 per page)
-  const madlanPagesToScan = 4;  // ~80 properties for Madlan (4 pages - reduced to avoid blocking)
+  // Use settings from database, or defaults if not provided
+  const yad2PagesToScan = scrapingSettings?.yad2_pages ?? 7;
+  const madlanPagesToScan = scrapingSettings?.madlan_pages ?? 4;
+  const homelessPagesToScan = scrapingSettings?.homeless_pages ?? 0;
 
   // If custom URL provided, use it (no pagination for manual URLs)
   if (config.search_url) {
@@ -888,13 +897,13 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
         // Add pagination for Yad2 - uses page parameter
-        for (let page = 1; page <= defaultPagesToScan; page++) {
+        for (let page = 1; page <= yad2PagesToScan; page++) {
           const pageParams = new URLSearchParams(params);
           if (page > 1) {
             pageParams.set('page', page.toString());
           }
           const pageUrl = url + '?' + pageParams.toString();
-          console.log(`Built Yad2 URL (page ${page}): ${pageUrl}`);
+          console.log(`Built Yad2 URL (page ${page}/${yad2PagesToScan}): ${pageUrl}`);
           urls.push(pageUrl);
         }
         
@@ -985,10 +994,11 @@ function buildSearchUrls(config: ScoutConfig): string[] {
         }
         
         // Add pagination - Homeless uses /page/X or ?page=X
-        for (let page = 1; page <= defaultPagesToScan; page++) {
+        // Only scan if homeless_pages > 0 (disabled by default)
+        for (let page = 1; page <= homelessPagesToScan; page++) {
           const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
           const url = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
-          console.log(`Built Homeless URL (page ${page}): ${url}`);
+          console.log(`Built Homeless URL (page ${page}/${homelessPagesToScan}): ${url}`);
           urls.push(url);
         }
       }
