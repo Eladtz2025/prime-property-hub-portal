@@ -1051,6 +1051,69 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
           </>
         );
 
+      case 'differentiators':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={(slideData.title as string) || ''}
+                onChange={(e) => handleDataChange('title', e.target.value)}
+                dir="auto"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>נקודות בידול</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddArrayItem('differentiators', { heading: '', description: '', icon: 'Globe' })}
+                >
+                  <Plus className="h-3 w-3 ml-1" />
+                  הוסף נקודה
+                </Button>
+              </div>
+              {(slideData.differentiators as Array<{ heading: string; description: string; icon: string }> || []).map((item, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">נקודה {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem('differentiators', index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <Input
+                    value={item.heading}
+                    onChange={(e) => handleArrayItemChange('differentiators', index, 'heading', e.target.value)}
+                    placeholder="כותרת"
+                    dir="auto"
+                  />
+                  <Textarea
+                    value={item.description}
+                    onChange={(e) => handleArrayItemChange('differentiators', index, 'description', e.target.value)}
+                    placeholder="תיאור"
+                    dir="auto"
+                    rows={2}
+                  />
+                  <Input
+                    value={item.icon}
+                    onChange={(e) => handleArrayItemChange('differentiators', index, 'icon', e.target.value)}
+                    placeholder="אייקון (Globe, MessageCircle, Handshake, Network)"
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        );
+
       case 'step1_pricing':
         return (
           <>
