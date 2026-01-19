@@ -385,135 +385,116 @@ serve(async (req) => {
           
           // SAVE IMMEDIATELY after each page - prevent data loss on timeout
           for (const property of extractedProperties) {
-            const { data: existing } = await supabase
-              .from('scouted_properties')
-              .select('id')
-              .eq('source', property.source)
-              .eq('source_id', property.source_id)
-              .maybeSingle();
-
-            if (existing) {
-              // Update last_seen_at for existing property
-              await supabase
-                .from('scouted_properties')
-                .update({ last_seen_at: new Date().toISOString() })
-                .eq('id', existing.id);
-            } else {
-              // Normalize city name before saving
-              const normalizedCity = normalizeCityName(property.city);
+            // Normalize city name before saving
+            const normalizedCity = normalizeCityName(property.city);
+            
+            // Check for duplicates before inserting
+            // Only check if address contains a building number
+            let duplicateGroupId: string | null = null;
+            let isPrimaryListing = true;
+            const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
+            const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
+            
+            if (duplicateCheckPossible) {
+              const { data: duplicates } = await supabase
+                .rpc('find_duplicate_property', {
+                  p_address: property.address,
+                  p_rooms: property.rooms,
+                  p_floor: property.floor || 0,
+                  p_property_type: property.property_type || 'rental',
+                  p_city: normalizedCity,
+                  p_exclude_id: null
+                });
               
-              // Check for duplicates before inserting
-              // Only check if address contains a building number
-              let duplicateGroupId: string | null = null;
-              let isPrimaryListing = true;
-              const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
-              const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
-              
-              if (duplicateCheckPossible) {
-                const { data: duplicates } = await supabase
-                  .rpc('find_duplicate_property', {
-                    p_address: property.address,
-                    p_rooms: property.rooms,
-                    p_floor: property.floor || 0,
-                    p_property_type: property.property_type || 'rental',
-                    p_city: normalizedCity,
-                    p_exclude_id: null
-                  });
+              if (duplicates && duplicates.length > 0) {
+                const primaryDuplicate = duplicates[0];
+                duplicateGroupId = primaryDuplicate.duplicate_group_id || primaryDuplicate.id;
+                isPrimaryListing = false;
                 
-                if (duplicates && duplicates.length > 0) {
-                  const primaryDuplicate = duplicates[0];
-                  duplicateGroupId = primaryDuplicate.duplicate_group_id || primaryDuplicate.id;
-                  isPrimaryListing = false;
-                  
-                  console.log(`🔄 Found duplicate: ${property.address} (${property.source}) matches ${primaryDuplicate.source}`);
-                  
-                  // Check price difference
-                  if (property.price && primaryDuplicate.price && primaryDuplicate.price > 0) {
-                    const priceDiff = Math.abs(property.price - primaryDuplicate.price);
-                    const priceDiffPercent = (priceDiff / Math.min(property.price, primaryDuplicate.price)) * 100;
-                    
-                    // If price difference > 5%, we'll create an alert after insert
-                    if (priceDiffPercent > 5) {
-                      console.log(`⚠️ Price difference: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
-                    }
-                  }
-                  
-                  // Update the primary duplicate with duplicate_group_id if it doesn't have one
-                  if (!primaryDuplicate.duplicate_group_id) {
-                    await supabase
-                      .from('scouted_properties')
-                      .update({ 
-                        duplicate_group_id: duplicateGroupId,
-                        duplicate_detected_at: new Date().toISOString()
-                      })
-                      .eq('id', primaryDuplicate.id);
-                  }
-                }
-              }
-              
-              // Insert new property with duplicate tracking
-              const { data: insertedProperty, error: insertError } = await supabase
-                .from('scouted_properties')
-                .insert({
-                  source: property.source,
-                  source_url: property.source_url,
-                  source_id: property.source_id,
-                  title: property.title,
-                  city: normalizedCity,
-                  neighborhood: property.neighborhood,
-                  address: property.address,
-                  price: property.price,
-                  rooms: property.rooms,
-                  size: property.size,
-                  floor: property.floor,
-                  duplicate_check_possible: duplicateCheckPossible,
-                  property_type: property.property_type,
-                  description: property.description,
-                  images: property.images || [],
-                  features: property.features || {},
-                  raw_data: property.raw_data,
-                  status: 'new',
-                  is_private: property.is_private,
-                  duplicate_group_id: duplicateGroupId,
-                  is_primary_listing: isPrimaryListing,
-                  duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null
-                })
-                .select('id, price')
-                .single();
-
-              if (!insertError && insertedProperty) {
-                totalNewProperties++;
-                configNewProperties++;
+                console.log(`🔄 Found duplicate: ${property.address} (${property.source}) matches ${primaryDuplicate.source}`);
                 
-                // Create duplicate alert if price difference > 5%
-                if (duplicateGroupId && property.price) {
-                  const { data: primaryProperty } = await supabase
+                // Update the primary duplicate with duplicate_group_id if it doesn't have one
+                if (!primaryDuplicate.duplicate_group_id) {
+                  await supabase
                     .from('scouted_properties')
-                    .select('id, price')
-                    .eq('duplicate_group_id', duplicateGroupId)
-                    .eq('is_primary_listing', true)
-                    .single();
+                    .update({ 
+                      duplicate_group_id: duplicateGroupId,
+                      duplicate_detected_at: new Date().toISOString()
+                    })
+                    .eq('id', primaryDuplicate.id);
+                }
+              }
+            }
+            
+            // Use upsert with ON CONFLICT to handle race conditions atomically
+            // If property exists (same source + source_id), just update last_seen_at
+            const { data: upsertResult, error: upsertError } = await supabase
+              .from('scouted_properties')
+              .upsert({
+                source: property.source,
+                source_url: property.source_url,
+                source_id: property.source_id,
+                title: property.title,
+                city: normalizedCity,
+                neighborhood: property.neighborhood,
+                address: property.address,
+                price: property.price,
+                rooms: property.rooms,
+                size: property.size,
+                floor: property.floor,
+                duplicate_check_possible: duplicateCheckPossible,
+                property_type: property.property_type,
+                description: property.description,
+                images: property.images || [],
+                features: property.features || {},
+                raw_data: property.raw_data,
+                status: 'new',
+                is_private: property.is_private,
+                duplicate_group_id: duplicateGroupId,
+                is_primary_listing: isPrimaryListing,
+                duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
+                last_seen_at: new Date().toISOString()
+              }, {
+                onConflict: 'source,source_id',
+                ignoreDuplicates: true  // Skip if exists - don't count as new
+              })
+              .select('id, price')
+              .single();
+
+            // Only count as new if we actually inserted (not updated due to conflict)
+            if (!upsertError && upsertResult) {
+              totalNewProperties++;
+              configNewProperties++;
+              
+              // Create duplicate alert if price difference > 5%
+              if (duplicateGroupId && property.price) {
+                const { data: primaryProperty } = await supabase
+                  .from('scouted_properties')
+                  .select('id, price')
+                  .eq('duplicate_group_id', duplicateGroupId)
+                  .eq('is_primary_listing', true)
+                  .single();
+                
+                if (primaryProperty?.price && primaryProperty.price > 0) {
+                  const priceDiff = Math.abs(property.price - primaryProperty.price);
+                  const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
                   
-                  if (primaryProperty?.price && primaryProperty.price > 0) {
-                    const priceDiff = Math.abs(property.price - primaryProperty.price);
-                    const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
-                    
-                    if (priceDiffPercent > 5) {
-                      await supabase
-                        .from('duplicate_alerts')
-                        .insert({
-                          primary_property_id: primaryProperty.id,
-                          duplicate_property_id: insertedProperty.id,
-                          price_difference: priceDiff,
-                          price_difference_percent: priceDiffPercent
-                        });
-                      console.log(`📢 Created price alert: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
-                    }
+                  if (priceDiffPercent > 5) {
+                    await supabase
+                      .from('duplicate_alerts')
+                      .insert({
+                        primary_property_id: primaryProperty.id,
+                        duplicate_property_id: upsertResult.id,
+                        price_difference: priceDiff,
+                        price_difference_percent: priceDiffPercent
+                      });
+                    console.log(`📢 Created price alert: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
                   }
                 }
-              } else if (insertError) {
-                console.error('Insert error:', insertError);
               }
+            } else if (upsertError && !upsertError.message?.includes('duplicate')) {
+              // Only log errors that aren't duplicate-related
+              console.error('Upsert error:', upsertError);
             }
           }
           
