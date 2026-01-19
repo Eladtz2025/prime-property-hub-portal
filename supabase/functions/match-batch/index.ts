@@ -92,7 +92,12 @@ serve(async (req) => {
     }
 
     const leads = allLeads;
-    console.log(`Fetched ${leads.length} active leads for matching`);
+    
+    // Enhanced logging for debugging
+    const leadsWithCities = leads.filter(l => l.preferred_cities?.length > 0).length;
+    const leadsWithNeighborhoods = leads.filter(l => l.preferred_neighborhoods?.length > 0).length;
+    console.log(`📊 Batch stats: ${properties.length} properties × ${leads.length} leads`);
+    console.log(`   Leads with cities: ${leadsWithCities}, with neighborhoods: ${leadsWithNeighborhoods}`);
 
     if (leads.length === 0) {
       console.log('No active leads to match');
