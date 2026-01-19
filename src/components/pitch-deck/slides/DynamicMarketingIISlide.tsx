@@ -45,7 +45,7 @@ const DynamicMarketingIISlide = ({
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-6 md:py-8" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 pt-4 pb-20 md:pt-6 md:pb-24 lg:pb-28" dir="ltr">
         {/* Large Logo */}
         <img 
           src={cityMarketLogo} 
