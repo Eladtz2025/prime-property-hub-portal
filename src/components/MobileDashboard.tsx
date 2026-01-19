@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AdminPWAInstallPrompt } from './AdminPWAInstallPrompt';
@@ -8,7 +8,8 @@ import {
   TrendingUp,
   Edit3,
   Check,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
@@ -17,9 +18,10 @@ import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { PriorityTasksCard } from './PriorityTasksCard';
+import { SiteIssuesCard } from './SiteIssuesCard';
+import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
-
 interface MobileDashboardProps {
   properties: Property[];
   stats: PropertyStats;
@@ -211,6 +213,22 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 
         {/* Development Ideas */}
         <DevelopmentIdeasCard />
+
+        {/* Site Issues */}
+        <SiteIssuesCard />
+
+        {/* Website Inquiries */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              פניות מהאתר
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContactLeadsListCompact limit={3} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Add Appointment Modal */}
