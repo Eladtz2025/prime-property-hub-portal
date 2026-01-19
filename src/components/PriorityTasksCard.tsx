@@ -42,49 +42,53 @@ const TaskItem = memo(({
   
   return (
     <div className={cn(
-      "flex items-center gap-3 p-3 rounded-lg border transition-all",
+      "p-3 rounded-lg border transition-all space-y-2",
       task.is_completed ? "bg-muted/50 opacity-60" : "bg-background hover:bg-muted/30",
       isOverdue && !task.is_completed && "border-red-500/50"
     )}>
-      <span className={cn(
-        "flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold shrink-0",
-        getPriorityColor(task.priority)
-      )}>
-        {task.priority}
-      </span>
-      
-      <Checkbox 
-        checked={task.is_completed}
-        onCheckedChange={onToggle}
-        className="shrink-0"
-      />
-      
-      <div className="flex-1 min-w-0">
-        <p className={cn(
-          "text-sm font-medium break-words",
-          task.is_completed && "line-through text-muted-foreground"
+      {/* Row 1: priority number + delete */}
+      <div className="flex items-center justify-between">
+        <span className={cn(
+          "flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold",
+          getPriorityColor(task.priority)
         )}>
-          {task.title}
-        </p>
-        {task.due_date && (
-          <p className={cn(
-            "text-xs flex items-center gap-1 mt-0.5",
-            isOverdue ? "text-red-500" : "text-muted-foreground"
-          )}>
-            <Calendar className="w-3 h-3" />
-            {formatDueDate(task.due_date)}
-          </p>
-        )}
+          {task.priority}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
       
-      <Button
-        variant="ghost"
-        size="icon"
-        className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {/* Row 2: checkbox + text */}
+      <div className="flex items-start gap-2">
+        <Checkbox 
+          checked={task.is_completed}
+          onCheckedChange={onToggle}
+          className="mt-0.5"
+        />
+        <div className="flex-1">
+          <p className={cn(
+            "text-sm font-medium",
+            task.is_completed && "line-through text-muted-foreground"
+          )}>
+            {task.title}
+          </p>
+          {task.due_date && (
+            <p className={cn(
+              "text-xs flex items-center gap-1 mt-1",
+              isOverdue ? "text-red-500" : "text-muted-foreground"
+            )}>
+              <Calendar className="w-3 h-3" />
+              {formatDueDate(task.due_date)}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 });
