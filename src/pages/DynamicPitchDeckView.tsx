@@ -228,55 +228,109 @@ const DynamicPitchDeckView = () => {
         ))}
       </div>
 
-      {/* Navigation Buttons with Page Counter */}
-      <div dir="ltr" className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-between px-4">
-        {/* Page Counter - Left side */}
-        <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
-          <span 
-            dir="ltr"
-            className="text-white text-xs md:text-sm font-light tracking-wide"
-            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
-          >
-            {currentSlide + 1} of {slides.length}
-          </span>
-        </div>
-
-        {/* Center Navigation: Arrows + Dots */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={prevSlide}
-            disabled={currentSlide === 0}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          
-          {/* Slide Indicators */}
-          <div className="flex flex-row-reverse items-center gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentSlide
-                    ? "w-6 bg-white"
-                    : "w-2 bg-white/40 hover:bg-white/60"
-                }`}
-              />
-            ))}
+      {/* Navigation - Mobile: stacked layout, Desktop: single row */}
+      <div dir="ltr" className="absolute bottom-4 md:bottom-6 left-0 right-0 z-30 px-3 md:px-4">
+        {/* Mobile Layout - Two rows */}
+        <div className="flex md:hidden flex-col gap-2">
+          {/* Top row: Counter + Logo */}
+          <div className="flex items-center justify-between">
+            <div className="bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1">
+              <span 
+                dir="ltr"
+                className="text-white text-xs font-light tracking-wide"
+                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+              >
+                {currentSlide + 1} of {slides.length}
+              </span>
+            </div>
+            <img src={cityMarketLogo} alt="City Market Properties" className="h-8 w-auto" />
           </div>
           
-          <button
-            onClick={nextSlide}
-            disabled={currentSlide === slides.length - 1}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
+          {/* Bottom row: Arrows + Dots */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={prevSlide}
+              disabled={currentSlide === 0}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            
+            {/* Slide Indicators - Compact for mobile */}
+            <div className="flex flex-row-reverse items-center gap-1.5">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    index === currentSlide
+                      ? "w-4 bg-white"
+                      : "w-1.5 bg-white/40 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+            
+            <button
+              onClick={nextSlide}
+              disabled={currentSlide === slides.length - 1}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+        
+        {/* Desktop Layout - Single row */}
+        <div className="hidden md:flex items-center justify-between">
+          {/* Page Counter - Left side */}
+          <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
+            <span 
+              dir="ltr"
+              className="text-white text-sm font-light tracking-wide"
+              style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+            >
+              {currentSlide + 1} of {slides.length}
+            </span>
+          </div>
 
-        {/* Logo - Right side */}
-        <img src={cityMarketLogo} alt="City Market Properties" className="h-10 md:h-14 w-auto" />
+          {/* Center Navigation: Arrows + Dots */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={prevSlide}
+              disabled={currentSlide === 0}
+              className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-5 w-5 lg:h-6 lg:w-6" />
+            </button>
+            
+            {/* Slide Indicators */}
+            <div className="flex flex-row-reverse items-center gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentSlide
+                      ? "w-6 bg-white"
+                      : "w-2 bg-white/40 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+            
+            <button
+              onClick={nextSlide}
+              disabled={currentSlide === slides.length - 1}
+              className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-5 w-5 lg:h-6 lg:w-6" />
+            </button>
+          </div>
+
+          {/* Logo - Right side */}
+          <img src={cityMarketLogo} alt="City Market Properties" className="h-10 lg:h-12 w-auto" />
+        </div>
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ const DynamicAboutUsSlide = ({
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-8 md:pt-10 lg:pt-12 pb-16 md:pb-20 lg:pb-24" dir="ltr">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-start text-center px-4 md:px-8 pt-6 md:pt-8 lg:pt-10 pb-20 md:pb-24 lg:pb-28" dir="ltr">
         {/* Title */}
         <h2 
           className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"

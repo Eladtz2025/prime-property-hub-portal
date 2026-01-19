@@ -31,7 +31,7 @@ const DynamicTitleSlide = ({
       />
       
       {/* Content - centered */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8 pb-16 md:pb-20 lg:pb-24">
         {/* Decorative Line */}
         <div className="w-16 md:w-24 h-px bg-white mb-4 md:mb-6" />
 
