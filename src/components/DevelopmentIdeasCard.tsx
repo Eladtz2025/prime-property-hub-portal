@@ -32,7 +32,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
   const completedIdeas = ideas.filter(i => i.is_completed);
 
   return (
-    <Card className="shadow-card animate-fade-in border border-border/50 bg-card">
+    <Card className="h-full shadow-card animate-fade-in border border-border/50 bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-5 w-5 text-yellow-500" />
