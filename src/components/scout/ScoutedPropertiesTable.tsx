@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -328,14 +329,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
     refetchInterval: 3000,
   });
   
-  const isScanning = runningScans && runningScans.length > 0;
-  
   // Get matching progress (separate from scanning)
   const matchingRun = runningScans?.find(r => r.source === 'matching');
   const matchingProgress = matchingRun ? {
     processed: matchingRun.properties_found || 0,
     total: matchingRun.new_properties || 0
   } : null;
+  
+  // Detect stuck matching runs (over 30 minutes)
+  const isMatchingStuck = matchingRun && matchingRun.started_at && 
+    new Date(matchingRun.started_at).getTime() < Date.now() - 30 * 60 * 1000;
   
   // Track when matching completes to refresh data
   const wasMatchingRef = useRef(false);
@@ -352,8 +355,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   }, [matchingProgress, queryClient]);
   
-  // Calculate scan progress (non-matching scans)
+  // Calculate scan progress (non-matching scans only - for scan status card)
   const nonMatchingScans = runningScans?.filter(r => r.source !== 'matching') || [];
+  const hasActiveScans = nonMatchingScans.length > 0;
   const scanTotalFound = nonMatchingScans.reduce((sum, r) => sum + (r.properties_found || 0), 0);
 
   const { data: properties, isLoading } = useQuery({
@@ -652,22 +656,49 @@ export const ScoutedPropertiesTable: React.FC = () => {
         </Card>
 
         {/* Matches Card - replaces Week card */}
-        <Card className={matchAllMutation.isPending || matchingProgress ? 'border-primary/30 bg-primary/5' : ''}>
+        <Card className={matchAllMutation.isPending || matchingProgress ? (isMatchingStuck ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/30 bg-primary/5') : ''}>
           <CardContent className="p-4">
             {matchAllMutation.isPending || matchingProgress ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">מחשב התאמות...</p>
-                    {matchingProgress && matchingProgress.total > 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        {matchingProgress.processed} / {matchingProgress.total} נכסים
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">אנא המתן</p>
-                    )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className={cn("h-5 w-5 animate-spin", isMatchingStuck ? "text-amber-500" : "text-primary")} />
+                    <div>
+                      <p className="text-sm font-medium">מחשב התאמות...</p>
+                      {matchingProgress && matchingProgress.total > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {matchingProgress.processed} / {matchingProgress.total} נכסים
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">אנא המתן</p>
+                      )}
+                    </div>
                   </div>
+                  {isMatchingStuck && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={async () => {
+                        const { error } = await supabase
+                          .from('scout_runs')
+                          .update({
+                            status: 'failed',
+                            error_message: 'Manually stopped - stuck matching',
+                            completed_at: new Date().toISOString()
+                          })
+                          .eq('source', 'matching')
+                          .eq('status', 'running');
+                        
+                        if (!error) {
+                          queryClient.invalidateQueries({ queryKey: ['running-scans'] });
+                          toast.success('ריצת התאמות תקועה נוקתה');
+                        }
+                      }}
+                      className="text-amber-600 hover:text-amber-700 h-7 px-2"
+                    >
+                      נקה
+                    </Button>
+                  )}
                 </div>
                 {matchingProgress && matchingProgress.total > 0 && (
                   <div className="space-y-1">
@@ -679,6 +710,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       {Math.round((matchingProgress.processed / matchingProgress.total) * 100)}%
                     </p>
                   </div>
+                )}
+                {isMatchingStuck && (
+                  <p className="text-xs text-amber-600">⚠️ נראה תקוע - מעל 30 דקות</p>
                 )}
               </div>
             ) : (
@@ -700,10 +734,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Scan Status Card */}
-        <Card className={isScanning ? 'border-red-500/30 bg-red-500/5' : ''}>
+        {/* Scan Status Card - only for real estate site scans, not matching */}
+        <Card className={hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}>
           <CardContent className="p-4">
-            {isScanning ? (
+            {hasActiveScans ? (
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
