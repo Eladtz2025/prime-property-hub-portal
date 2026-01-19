@@ -34,7 +34,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
   return (
     <Card className="h-full shadow-card animate-fade-in border border-border/50 bg-card">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
           <Lightbulb className="h-5 w-5 text-yellow-500" />
           רעיונות לפיתוח
         </CardTitle>
