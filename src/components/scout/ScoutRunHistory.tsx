@@ -159,8 +159,11 @@ export const ScoutRunHistory: React.FC = () => {
       if (!hourGroup.sources.includes(run.source)) {
         hourGroup.sources.push(run.source);
       }
-      if (run.status === 'failed') hourGroup.hasErrors = true;
-      if (run.status === 'partial') hourGroup.hasPartial = true;
+      // Only count errors/partial from actual scraping sources, NOT from matching runs
+      if (run.source !== 'matching') {
+        if (run.status === 'failed') hourGroup.hasErrors = true;
+        if (run.status === 'partial') hourGroup.hasPartial = true;
+      }
       if (run.status === 'running') hourGroup.isRunning = true;
     });
 
