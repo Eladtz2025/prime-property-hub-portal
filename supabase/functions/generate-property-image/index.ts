@@ -17,7 +17,36 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { type, prompt, image, mask, enhancementType, removalDescription, stagingMode, roomType, style, customDescription } = await req.json();
+    // Validate request body exists
+    const contentLength = req.headers.get('content-length');
+    if (!contentLength || contentLength === '0') {
+      console.error('Empty request body received');
+      return new Response(
+        JSON.stringify({ error: 'Request body is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { type, prompt, image, mask, enhancementType, removalDescription, stagingMode, roomType, style, customDescription } = body;
+
+    if (!type) {
+      console.error('Missing required field: type');
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: type' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log(`Processing ${type} request`);
 
