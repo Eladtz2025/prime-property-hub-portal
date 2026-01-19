@@ -94,18 +94,9 @@ serve(async (req) => {
       });
     }
 
-    // Update tracking run with total count (for matching, new_properties = total to process)
-    // Note: For matching runs, properties_found is incremented by match-batch workers
-    // and new_properties represents the total number of properties to be matched
-    if (trackingRunId) {
-      await supabase
-        .from('scout_runs')
-        .update({
-          new_properties: allPropertyIds.length,  // Total properties to match
-          properties_found: 0  // Will be incremented by batch workers
-        })
-        .eq('id', trackingRunId);
-    }
+    // Note: For matching runs, new_properties should be 0 (matching doesn't create new properties)
+    // properties_found will be incremented by match-batch workers as they process batches
+    console.log(`📊 Found ${allPropertyIds.length} properties to match`);
 
     console.log(`📊 Found ${allPropertyIds.length} properties to match`);
 
