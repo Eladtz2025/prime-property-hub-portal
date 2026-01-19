@@ -252,7 +252,7 @@ serve(async (req) => {
           .from('scout_runs')
           .update({
             properties_found: processedCount,
-            new_properties: totalToProcess
+            new_properties: 0  // Matching doesn't create new properties
           })
           .eq('id', trackingRunId);
         console.log(`Progress: ${processedCount}/${totalToProcess}`);
@@ -357,7 +357,7 @@ serve(async (req) => {
           status: 'completed',
           completed_at: new Date().toISOString(),
           properties_found: processedCount,
-          new_properties: totalToProcess,
+          new_properties: 0,  // Matching doesn't create new properties
           leads_matched: totalMatched,
           whatsapp_sent: totalWhatsAppSent
         })
