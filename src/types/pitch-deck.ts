@@ -45,6 +45,7 @@ export type SlideType =
   | 'marketing2'
   | 'marketing_ii'
   | 'about'
+  | 'differentiators'
   | 'contact'
   | 'step1_pricing';
 
@@ -142,6 +143,15 @@ export interface AboutUsSlideData {
   closing_quote?: string;
 }
 
+export interface DifferentiatorsSlideData {
+  title: string;
+  differentiators: Array<{
+    heading: string;
+    description: string;
+    icon: string;
+  }>;
+}
+
 export interface ContactSlideData {
   title: string;
   checklist: string[];
@@ -188,6 +198,7 @@ export type SlideData =
   | TimelineSlideData
   | MarketingIISlideData
   | AboutUsSlideData
+  | DifferentiatorsSlideData
   | ContactSlideData
   | Step1PricingSlideData
   | Record<string, unknown>;
@@ -203,6 +214,7 @@ export const SLIDE_TYPE_LABELS: Record<SlideType, { he: string; en: string }> = 
   marketing2: { he: 'למה אנחנו', en: 'Why Us' },
   marketing_ii: { he: 'נוכחות דיגיטלית', en: 'Digital Presence' },
   about: { he: 'אודותינו', en: 'About Us' },
+  differentiators: { he: 'מה מבדיל אותנו', en: 'What Differentiates Us' },
   contact: { he: 'יצירת קשר', en: 'Contact' },
   step1_pricing: { he: 'Step 1 - תמחור', en: 'Step 1 - Pricing' },
 };
@@ -321,8 +333,22 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
     } as AboutUsSlideData,
   },
   {
-    slide_type: 'contact',
+    slide_type: 'differentiators',
     slide_order: 9,
+    is_visible: true,
+    slide_data: {
+      title: 'What Differentiates City Market',
+      differentiators: [
+        { heading: 'Designed for an international audience', description: 'Specialized expertise catering to foreign buyers, relocation clients, and international investors', icon: 'Globe' },
+        { heading: 'Native English-speaking representation', description: 'Clear, confident communication that builds trust and removes friction at every stage of the process', icon: 'MessageCircle' },
+        { heading: 'End-to-end guidance', description: 'Comprehensive support through a trusted network of legal, tax, and transaction specialists—from initial interest through closing', icon: 'Handshake' },
+        { heading: 'Global reach with local depth', description: 'Direct access to personal and professional networks both locally and internationally, connecting properties with a diverse, qualified client base—investors, end users, and relocating families', icon: 'Network' },
+      ],
+    } as DifferentiatorsSlideData,
+  },
+  {
+    slide_type: 'contact',
+    slide_order: 10,
     is_visible: true,
     slide_data: {
       title: 'Next Steps',
@@ -341,7 +367,7 @@ export const DEFAULT_SLIDES: Omit<PitchDeckSlide, 'id' | 'deck_id' | 'created_at
   },
   {
     slide_type: 'step1_pricing',
-    slide_order: 10,
+    slide_order: 11,
     is_visible: true,
     slide_data: {
       title: 'אסטרטגיית תמחור',

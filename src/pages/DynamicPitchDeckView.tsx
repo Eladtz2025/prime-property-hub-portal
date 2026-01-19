@@ -14,6 +14,7 @@ import {
   DynamicTimelineSlide,
   DynamicMarketingIISlide,
   DynamicAboutUsSlide,
+  DynamicDifferentiatorsSlide,
   DynamicContactSlide,
 } from "@/components/pitch-deck/slides";
 
@@ -128,6 +129,8 @@ const DynamicPitchDeckView = () => {
           return <DynamicMarketingIISlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'about':
           return <DynamicAboutUsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+        case 'differentiators':
+          return <DynamicDifferentiatorsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'contact':
           return (
             <DynamicContactSlide 

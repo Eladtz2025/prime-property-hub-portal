@@ -7,4 +7,5 @@ export { default as DynamicMarketingSlide } from './DynamicMarketingSlide';
 export { default as DynamicTimelineSlide } from './DynamicTimelineSlide';
 export { default as DynamicMarketingIISlide } from './DynamicMarketingIISlide';
 export { default as DynamicAboutUsSlide } from './DynamicAboutUsSlide';
+export { default as DynamicDifferentiatorsSlide } from './DynamicDifferentiatorsSlide';
 export { default as DynamicContactSlide } from './DynamicContactSlide';
