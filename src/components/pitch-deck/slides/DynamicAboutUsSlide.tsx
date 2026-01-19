@@ -55,39 +55,46 @@ const DynamicAboutUsSlide = ({
         {/* Decorative Line */}
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
-        {/* Boutique Approach Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 text-left mb-1.5 md:mb-2 lg:mb-3 border-2 border-[#f5c242]/50">
-          {/* Quote inside the box - Hidden on mobile */}
-          {data.boutique_quote && (
-            <p 
-              className="hidden md:block text-white text-sm font-light leading-relaxed mb-3 pb-3 border-b border-white/20"
-              style={{ textShadow: softShadow }}
-            >
-              {data.boutique_quote}
-            </p>
-          )}
-          
-          <div className="flex items-center gap-2 mb-2 md:mb-3">
-            <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
-            <h3 
-              className="text-sm md:text-lg font-serif text-white"
-              style={{ textShadow: softShadow }}
-            >
-              Boutique Approach
-            </h3>
+        {/* Boutique Approach Box - Two Column Layout */}
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 lg:p-5 mb-1.5 md:mb-2 lg:mb-3 border-2 border-[#f5c242]/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left Column - Boutique Approach */}
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-2 md:mb-3">
+                <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
+                <h3 
+                  className="text-sm md:text-lg font-serif text-white"
+                  style={{ textShadow: softShadow }}
+                >
+                  Boutique Approach
+                </h3>
+              </div>
+              <ul className="space-y-1 md:space-y-2">
+                {(data.boutique_approach || ["Boutique, limited-client approach", "Tailored strategy for each property", "Discretion, clarity, and control"]).map((item, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-[#f5c242] mt-0.5">•</span>
+                    <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* Right Column - Quote */}
+            {data.closing_quote && (
+              <div className="flex items-center justify-center md:border-l border-white/20 md:pl-4 pt-3 md:pt-0 border-t md:border-t-0">
+                <p 
+                  className="text-white text-xs md:text-sm font-serif font-light italic leading-relaxed text-center md:text-left"
+                  style={{ textShadow: softShadow }}
+                >
+                  "{data.closing_quote}"
+                </p>
+              </div>
+            )}
           </div>
-          <ul className="space-y-1 md:space-y-2">
-            {(data.boutique_approach || ["Boutique, limited-client approach", "Tailored strategy for each property", "Discretion, clarity, and control"]).map((item, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-[#f5c242] mt-0.5">•</span>
-                <span className="text-white/90 text-xs md:text-sm font-light">{item}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* Team Profile Cards */}
-        <div className={`w-full max-w-4xl grid gap-2 md:gap-3 lg:gap-4 mb-1.5 md:mb-2`} style={{ gridTemplateColumns: `repeat(${Math.min(teamMembers.length, 2)}, 1fr)` }}>
+        <div className={`w-full max-w-4xl grid gap-2 md:gap-3 lg:gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(teamMembers.length, 2)}, 1fr)` }}>
           {teamMembers.map((member, index) => {
             const IconComponent = iconMap[member.icon] || Award;
             return (
@@ -117,18 +124,6 @@ const DynamicAboutUsSlide = ({
             );
           })}
         </div>
-
-        {/* Closing Quote */}
-        {data.closing_quote && (
-          <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 border border-[#f5c242]/30">
-            <p 
-              className="text-white text-[10px] md:text-sm lg:text-base font-light italic leading-relaxed"
-              style={{ textShadow: softShadow }}
-            >
-              "{data.closing_quote}"
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
