@@ -148,26 +148,26 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
-            <Calendar className="h-5 w-5 text-primary" />
-            פגישות קרובות
-          </CardTitle>
-          <div className="flex items-center gap-1 shrink-0">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Calendar className="h-5 w-5 text-primary" />
+          פגישות קרובות
+        </CardTitle>
+        {(onAddAppointment || showViewAll) && (
+          <div className="flex items-center gap-2 mt-2">
             {onAddAppointment && (
-              <Button variant="ghost" size="sm" onClick={onAddAppointment} className="gap-1">
+              <Button variant="outline" size="sm" onClick={onAddAppointment} className="gap-1">
                 <Plus className="h-4 w-4" />
-                <span className="text-sm hidden sm:inline">הוסף</span>
+                הוסף
               </Button>
             )}
             {showViewAll && (
               <Button variant="ghost" size="sm" className="gap-1">
-                <span className="text-sm hidden sm:inline">ראה הכל</span>
+                ראה הכל
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
           </div>
-        </div>
+        )}
       </CardHeader>
       <CardContent>
         {!appointments || appointments.length === 0 ? (

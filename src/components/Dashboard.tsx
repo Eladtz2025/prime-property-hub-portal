@@ -213,18 +213,18 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
         {/* פניות מהאתר */}
         <Card className="h-full">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                פניות מהאתר
-              </CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              פניות מהאתר
+            </CardTitle>
+            <div className="flex items-center gap-2 mt-2">
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => navigate('/admin/leads')}
-                className="gap-1 shrink-0"
+                className="gap-1"
               >
-                <span className="text-sm hidden sm:inline">ראה הכל</span>
+                ראה הכל
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </div>
