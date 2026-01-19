@@ -98,10 +98,8 @@ serve(async (req) => {
     // properties_found will be incremented by match-batch workers as they process batches
     console.log(`📊 Found ${allPropertyIds.length} properties to match`);
 
-    console.log(`📊 Found ${allPropertyIds.length} properties to match`);
-
-    // Split into batches of 100 properties
-    const batchSize = 100;
+    // Split into batches of 50 properties (reduced from 100 to prevent timeouts)
+    const batchSize = 50;
     const batches: string[][] = [];
     for (let i = 0; i < allPropertyIds.length; i += batchSize) {
       batches.push(allPropertyIds.slice(i, i + batchSize));
@@ -143,9 +141,9 @@ serve(async (req) => {
 
       triggeredCount++;
 
-      // Small delay between triggering batches to spread the load
+      // Delay between triggering batches to spread the load (increased to prevent overload)
       if (i < batches.length - 1) {
-        await sleep(500); // 0.5 seconds between triggers
+        await sleep(1000); // 1 second between triggers
       }
     }
 
