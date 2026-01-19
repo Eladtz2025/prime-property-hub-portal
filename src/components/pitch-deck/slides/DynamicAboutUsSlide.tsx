@@ -56,7 +56,7 @@ const DynamicAboutUsSlide = ({
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Boutique Approach Box */}
-        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 text-left mb-1.5 md:mb-2 lg:mb-3">
+        <div className="w-full max-w-3xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 text-left mb-1.5 md:mb-2 lg:mb-3 border-2 border-[#f5c242]/50">
           {/* Quote inside the box - Hidden on mobile */}
           {data.boutique_quote && (
             <p 
