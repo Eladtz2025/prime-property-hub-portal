@@ -79,10 +79,10 @@ const DynamicNeighborhoodSlide = ({
               {data.left_distance || '3 min'}
             </text>
             
-            {/* Center - Property */}
+            {/* Center - Property (short name only, not full title) */}
             <circle cx="210" cy="50" r="8" fill="#f5c242" />
             <text x="210" y="75" textAnchor="middle" fill="#f5c242" fontSize="11" fontWeight="500" style={{ textShadow: softShadow }}>
-              {data.property_name || data.title || 'Property'}
+              {data.property_name || 'Here'}
             </text>
             
             {/* Right landmark */}
@@ -96,24 +96,49 @@ const DynamicNeighborhoodSlide = ({
           </svg>
         </div>
 
-        {/* Mobile: Beach Badge only */}
-        {data.beach_distance && (
-          <div className="md:hidden w-full max-w-3xl mb-3">
-            <div className="bg-[#f5c242]/20 backdrop-blur-sm border border-[#f5c242]/40 rounded-xl px-4 py-2 flex items-center gap-3 justify-center">
-              <div className="w-10 h-10 rounded-full bg-[#f5c242] flex items-center justify-center">
-                <Waves className="w-5 h-5 text-white" />
+        {/* Mobile: Compact Map with Beach Badge */}
+        <div className="md:hidden w-full max-w-sm mb-3">
+          <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-3">
+            {/* Compact SVG Map for Mobile */}
+            <svg className="w-full" viewBox="0 0 300 60" preserveAspectRatio="xMidYMid meet">
+              {/* Horizontal line */}
+              <line x1="30" y1="20" x2="270" y2="20" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4,4" />
+              
+              {/* Left - Beach */}
+              <circle cx="50" cy="20" r="5" fill="rgba(255,255,255,0.5)" />
+              <text x="50" y="38" textAnchor="middle" fill="white" fontSize="9" fontWeight="300">
+                {data.left_landmark || 'Beach'}
+              </text>
+              <text x="50" y="50" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="8">
+                {data.left_distance || '3 min'}
+              </text>
+              
+              {/* Center - Property */}
+              <circle cx="150" cy="20" r="7" fill="#f5c242" />
+              <text x="150" y="38" textAnchor="middle" fill="#f5c242" fontSize="10" fontWeight="500">
+                {data.property_name || 'Here'}
+              </text>
+              
+              {/* Right - Landmark */}
+              <circle cx="250" cy="20" r="5" fill="rgba(255,255,255,0.5)" />
+              <text x="250" y="38" textAnchor="middle" fill="white" fontSize="9" fontWeight="300">
+                {data.right_landmark || 'Dizengoff'}
+              </text>
+              <text x="250" y="50" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="8">
+                {data.right_distance || '5 min'}
+              </text>
+            </svg>
+            
+            {/* Beach distance badge below map */}
+            {data.beach_distance && (
+              <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-white/10">
+                <Waves className="w-4 h-4 text-[#f5c242]" />
+                <span className="text-sm font-bold text-[#f5c242]">{data.beach_distance} min</span>
+                <span className="text-xs text-white/80">to the beach</span>
               </div>
-              <div className="text-left">
-                <span className="text-2xl font-bold text-[#f5c242]" style={{ textShadow: softShadow }}>
-                  {data.beach_distance}
-                </span>
-                <span className="text-base font-light text-white ml-2" style={{ textShadow: softShadow }}>
-                  min to the beach
-                </span>
-              </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Bottom Row: Location Highlights + Appeals To */}
         <div className="w-full max-w-3xl flex flex-col md:flex-row gap-3 md:gap-4">
