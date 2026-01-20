@@ -370,6 +370,12 @@ serve(async (req) => {
           console.error(`Error processing ${url}:`, scrapeError);
           continue;
         }
+        
+        // Extra delay after Madlan pages to reduce CAPTCHA blocking
+        if (url.includes('madlan')) {
+          console.log('Adding extra 3s delay after Madlan page to reduce CAPTCHA...');
+          await new Promise(r => setTimeout(r, 3000));
+        }
       }
 
       // Complete this config's run record
