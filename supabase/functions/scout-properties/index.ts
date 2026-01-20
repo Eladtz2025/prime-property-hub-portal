@@ -441,6 +441,37 @@ serve(async (req) => {
   }
 });
 
+// Helper function to parse Hebrew dates
+function parseHebrewDate(dateStr: string): string | null {
+  if (!dateStr) return null;
+  
+  const hebrewMonths: Record<string, number> = {
+    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4,
+    'מאי': 5, 'יוני': 6, 'יולי': 7, 'אוגוסט': 8,
+    'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
+  };
+  
+  // Try DD/MM/YYYY or DD.MM.YYYY format
+  const slashMatch = dateStr.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})/);
+  if (slashMatch) {
+    const [_, day, month, year] = slashMatch;
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Try Hebrew month format "מרץ 2026" or "2026 מרץ"
+  for (const [heb, num] of Object.entries(hebrewMonths)) {
+    if (dateStr.includes(heb)) {
+      const yearMatch = dateStr.match(/\d{4}/);
+      if (yearMatch) {
+        return `${yearMatch[0]}-${String(num).padStart(2, '0')}-01`;
+      }
+    }
+  }
+  
+  return null;
+}
+
 // AI extraction function - kept here as it's specific to scout-properties
 async function extractPropertiesWithAI(
   markdown: string,
@@ -469,7 +500,8 @@ MADLAN SPECIFIC INSTRUCTIONS:
 - Extract source_id from URL patterns like: https://www.madlan.co.il/listings/[ID]
 - Ignore navigation, filters, and "דירות נוספות" recommendation sections
 - Focus on the main property list, not featured or sponsored listings
-- Extract at least 10-15 properties if available on the page`
+- Extract at least 10-15 properties if available on the page
+- Look for entry/availability date (תאריך כניסה) in property details`
     : source === 'homeless'
     ? `
 
@@ -477,13 +509,15 @@ HOMELESS SPECIFIC INSTRUCTIONS:
 - Each property shows: rooms (חד׳), floor, size in sqm (מ"ר), and price
 - Look for property links and extract IDs from URLs
 - Address typically includes street and city
-- Extract source_id from the URL or listing identifier`
+- Extract source_id from the URL or listing identifier
+- Look for entry/availability date in property details`
     : `
 
 YAD2 SPECIFIC INSTRUCTIONS:
 - Each property card has: price, rooms, size, floor, and address
 - Look for item IDs in the listings (usually numeric)
-- Extract source_id from data attributes or URL patterns`;
+- Extract source_id from data attributes or URL patterns
+- Look for "תאריך כניסה" field - can be "כניסה מידית" (immediate) or a specific date like "01/03/2026"`;
 
   const systemPrompt = `You are a real estate data extraction expert. Extract RESIDENTIAL property listings ONLY.
 
@@ -504,6 +538,7 @@ Return a JSON array of properties with these fields:
 - rooms: number of rooms (can be decimal like 3.5)
 - size: size in sqm as number
 - floor: floor number
+- entry_date: entry/availability date - can be "מיידי", "כניסה מידית", "01/03/2026", "מרץ 2026", etc. Look for "תאריך כניסה" field
 - description: short description
 - images: array of image URLs if found
 - features: object with boolean keys like {parking: true, elevator: true, balcony: true, mamad: true}
@@ -615,6 +650,19 @@ ${cleanedMarkdown.substring(0, 30000)}`;
     return filteredProperties.map((p: any) => {
       const isBroker = detectBroker(p.title || '', p.description || '', p);
       
+      // Parse entry date
+      let entryDate: string | null = null;
+      let immediateEntry = false;
+      
+      if (p.entry_date) {
+        const rawDate = (p.entry_date || '').toLowerCase();
+        if (rawDate.includes('מיידי') || rawDate.includes('מידית') || rawDate.includes('immediate')) {
+          immediateEntry = true;
+        } else {
+          entryDate = parseHebrewDate(p.entry_date);
+        }
+      }
+      
       return {
         source,
         source_url: p.source_url || sourceUrl,
@@ -630,7 +678,11 @@ ${cleanedMarkdown.substring(0, 30000)}`;
         property_type: propertyType,
         description: p.description,
         images: p.images || [],
-        features: p.features || {},
+        features: {
+          ...(p.features || {}),
+          entry_date: entryDate,
+          immediate_entry: immediateEntry
+        },
         raw_data: p,
         is_private: !isBroker
       };
