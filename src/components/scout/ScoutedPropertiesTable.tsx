@@ -12,8 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -231,6 +233,121 @@ export const ScoutedPropertiesTable: React.FC = () => {
       };
     }
   });
+
+  // Duplicate stats query
+  const { data: duplicateStats } = useQuery({
+    queryKey: ['duplicate-stats'],
+    queryFn: async () => {
+      const { count: totalAlerts } = await supabase
+        .from('duplicate_alerts')
+        .select('id', { count: 'exact', head: true });
+
+      const { count: unresolvedAlerts } = await supabase
+        .from('duplicate_alerts')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_resolved', false);
+
+      const { data: duplicateGroups } = await supabase
+        .from('scouted_properties')
+        .select('duplicate_group_id')
+        .not('duplicate_group_id', 'is', null);
+
+      const uniqueGroups = new Set(duplicateGroups?.map(d => d.duplicate_group_id)).size;
+
+      return {
+        total: totalAlerts || 0,
+        unresolved: unresolvedAlerts || 0,
+        groups: uniqueGroups
+      };
+    }
+  });
+
+  // Duplicate alerts query for Sheet
+  const { data: duplicateAlerts, isLoading: duplicatesLoading, refetch: refetchDuplicates } = useQuery({
+    queryKey: ['duplicate-alerts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('duplicate_alerts')
+        .select(`
+          *,
+          primary_property:scouted_properties!duplicate_alerts_primary_property_id_fkey(title, address, city, price, source, source_url, rooms),
+          duplicate_property:scouted_properties!duplicate_alerts_duplicate_property_id_fkey(title, address, city, price, source, source_url, rooms)
+        `)
+        .eq('is_resolved', false)
+        .order('price_difference_percent', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Resolve duplicate alert mutation
+  const resolveAlertMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const { error } = await supabase
+        .from('duplicate_alerts')
+        .update({ 
+          is_resolved: true, 
+          resolved_at: new Date().toISOString() 
+        })
+        .eq('id', alertId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['duplicate-alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-stats'] });
+      toast.success('ההתראה סומנה כטופלה');
+    },
+    onError: () => {
+      toast.error('שגיאה בעדכון ההתראה');
+    }
+  });
+
+  // Run duplicate detection mutation
+  const runDuplicateDetectionMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('detect_existing_duplicates');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['duplicate-alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['duplicate-stats'] });
+      if (data && data[0]) {
+        toast.success(`נמצאו ${data[0].duplicates_found} כפילויות, ${data[0].groups_created} קבוצות חדשות`);
+      } else {
+        toast.success('סריקת כפילויות הושלמה');
+      }
+    },
+    onError: (error) => {
+      console.error('Duplicate detection error:', error);
+      toast.error('שגיאה בסריקת כפילויות');
+    }
+  });
+
+  // State for duplicates sheet
+  const [duplicatesSheetOpen, setDuplicatesSheetOpen] = useState(false);
+
+  // Format price helper
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'ILS',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  // Get source color helper
+  const getSourceColorClass = (source: string) => {
+    switch (source) {
+      case 'yad2': return 'bg-orange-500';
+      case 'madlan': return 'bg-blue-500';
+      case 'homeless': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
 
   // Fetch neighborhoods - only Tel Aviv
   const { data: neighborhoods } = useQuery({
@@ -641,7 +758,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   return (
     <>
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -688,7 +805,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Matches Card - replaces Week card */}
+        {/* Matches Card */}
         <Card className={matchAllMutation.isPending || matchingProgress ? (isMatchingStuck ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/30 bg-primary/5') : ''}>
           <CardContent className="p-4">
             {matchAllMutation.isPending || matchingProgress ? (
@@ -767,7 +884,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Scan Status Card - only for real estate site scans, not matching */}
+        {/* Scan Status Card */}
         <Card className={hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}>
           <CardContent className="p-4">
             {hasActiveScans ? (
@@ -801,6 +918,171 @@ export const ScoutedPropertiesTable: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Duplicates Card */}
+        <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
+          <SheetTrigger asChild>
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                    <Copy className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">כפילויות</p>
+                      {(duplicateStats?.unresolved || 0) > 0 && (
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 h-5 px-1.5">
+                          {duplicateStats?.unresolved}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-2xl font-bold">{duplicateStats?.groups || 0}</p>
+                    <p className="text-xs text-muted-foreground">קבוצות</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetHeader className="pb-4">
+              <SheetTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                התראות כפילויות
+              </SheetTitle>
+            </SheetHeader>
+            
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{duplicateStats?.groups || 0}</p>
+                <p className="text-xs text-muted-foreground">קבוצות</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{duplicateStats?.unresolved || 0}</p>
+                <p className="text-xs text-muted-foreground">פתוחות</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{(duplicateStats?.total || 0) - (duplicateStats?.unresolved || 0)}</p>
+                <p className="text-xs text-muted-foreground">טופלו</p>
+              </div>
+            </div>
+
+            {/* Scan Button */}
+            <Button 
+              onClick={() => runDuplicateDetectionMutation.mutate()}
+              disabled={runDuplicateDetectionMutation.isPending}
+              variant="outline"
+              className="w-full mb-4"
+            >
+              {runDuplicateDetectionMutation.isPending ? (
+                <RefreshCw className="h-4 w-4 animate-spin ml-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 ml-2" />
+              )}
+              סרוק כפילויות
+            </Button>
+
+            {/* Alerts List */}
+            {duplicatesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !duplicateAlerts || duplicateAlerts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Copy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>לא נמצאו התראות כפילויות</p>
+                <p className="text-sm mt-2">לחץ על "סרוק כפילויות" לזיהוי</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {duplicateAlerts.map((alert: any) => (
+                  <div 
+                    key={alert.id} 
+                    className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="space-y-2">
+                      {/* Address */}
+                      <div>
+                        <h4 className="font-medium text-sm">
+                          {alert.primary_property?.address || 'כתובת לא ידועה'}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {alert.primary_property?.city} • {alert.primary_property?.rooms} חדרים
+                        </p>
+                      </div>
+
+                      {/* Price Comparison */}
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <Badge className={getSourceColorClass(alert.primary_property?.source || '')}>
+                          {alert.primary_property?.source}
+                        </Badge>
+                        <span className="font-medium">
+                          {formatPrice(alert.primary_property?.price || 0)}
+                        </span>
+                        <a 
+                          href={alert.primary_property?.source_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+
+                        {alert.price_difference === 0 ? (
+                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">
+                            מחיר זהה
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            {(alert.primary_property?.price || 0) > (alert.duplicate_property?.price || 0) ? (
+                              <TrendingDown className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <TrendingUp className="h-3 w-3 text-red-500" />
+                            )}
+                            {alert.price_difference_percent.toFixed(1)}%
+                          </span>
+                        )}
+
+                        <Badge className={getSourceColorClass(alert.duplicate_property?.source || '')}>
+                          {alert.duplicate_property?.source}
+                        </Badge>
+                        <span className="font-medium">
+                          {formatPrice(alert.duplicate_property?.price || 0)}
+                        </span>
+                        <a 
+                          href={alert.duplicate_property?.source_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(alert.detected_at), 'dd/MM HH:mm', { locale: he })}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resolveAlertMutation.mutate(alert.id)}
+                          disabled={resolveAlertMutation.isPending}
+                          className="h-7 text-xs"
+                        >
+                          <Check className="h-3 w-3 ml-1" />
+                          טופל
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
 
       <Card>
