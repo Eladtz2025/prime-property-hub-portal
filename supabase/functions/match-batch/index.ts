@@ -127,8 +127,8 @@ serve(async (req) => {
       
       processedCount++;
 
-      // Sort by match score
-      matches.sort((a, b) => b.matchScore - a.matchScore);
+      // Sort by priority (higher = better quality match)
+      matches.sort((a, b) => b.priority - a.priority);
 
       if (matches.length > 0) {
         totalMatched += matches.length;
@@ -138,6 +138,7 @@ serve(async (req) => {
           name: m.lead.name,
           phone: m.lead.phone,
           score: m.matchScore,
+          priority: m.priority, // Store priority for client-side sorting
           reasons: m.matchReasons
         }));
 

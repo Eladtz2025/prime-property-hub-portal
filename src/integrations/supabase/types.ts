@@ -3051,6 +3051,7 @@ export type Database = {
           duplicate_group_id: string
           id: string
           is_private: boolean
+          match_priority: number
           match_reasons: string[]
           match_score: number
           price: number
