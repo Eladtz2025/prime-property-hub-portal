@@ -51,41 +51,41 @@ const DynamicDifferentiatorsSlide = ({
         <img 
           src={cityMarketLogo} 
           alt="City Market Properties" 
-          className="h-10 md:h-16 w-auto opacity-90 mb-3 md:mb-4"
+          className="h-10 md:h-16 lg:h-12 2xl:h-16 w-auto opacity-90 mb-3 md:mb-4 lg:mb-2 2xl:mb-4"
         />
 
         {/* Title */}
         <h2 
-          className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-3 md:mb-6"
+          className="text-xl md:text-3xl lg:text-2xl 2xl:text-4xl font-serif font-light text-white mb-3 md:mb-6 lg:mb-3 2xl:mb-6"
           style={{ textShadow: softShadow }}
         >
           {data.title || 'What Differentiates City Market'}
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-4 md:mb-6" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-4 md:mb-6 lg:mb-3 2xl:mb-6" />
 
         {/* Differentiators Grid - 2x2 */}
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 lg:gap-2 2xl:gap-4 mb-4">
           {differentiators.map((item, index) => {
             const IconComponent = iconMap[item.icon] || Globe;
             return (
               <div 
                 key={index}
-                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 text-left border-2 border-[#f5c242]/30 hover:border-[#f5c242]/50 transition-all"
+                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-5 lg:p-3 2xl:p-5 text-left border-2 border-[#f5c242]/30 hover:border-[#f5c242]/50 transition-all"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
+                <div className="flex items-start gap-3 lg:gap-2 2xl:gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 lg:w-8 lg:h-8 2xl:w-12 2xl:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center flex-shrink-0">
+                    <IconComponent className="w-5 h-5 md:w-6 md:h-6 lg:w-4 lg:h-4 2xl:w-6 2xl:h-6 text-[#f5c242]" />
                   </div>
                   <div className="flex-1">
                     <h3 
-                      className="text-white font-semibold text-sm md:text-base lg:text-lg mb-1 md:mb-2"
+                      className="text-white font-semibold text-sm md:text-base lg:text-sm 2xl:text-lg mb-1 md:mb-2 lg:mb-1 2xl:mb-2"
                       style={{ textShadow: softShadow }}
                     >
                       {item.heading}
                     </h3>
-                    <p className="text-white/80 text-xs md:text-sm font-light leading-relaxed">
+                    <p className="text-white/80 text-xs md:text-sm lg:text-xs 2xl:text-sm font-light leading-relaxed">
                       {item.description}
                     </p>
                   </div>
