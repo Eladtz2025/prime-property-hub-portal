@@ -370,6 +370,7 @@ export type Database = {
           furnished_flexible: boolean | null
           furnished_required: string | null
           id: string
+          immediate_entry: boolean | null
           is_hidden: boolean | null
           last_contact_date: string | null
           lawyer_details: string | null
@@ -429,6 +430,7 @@ export type Database = {
           furnished_flexible?: boolean | null
           furnished_required?: string | null
           id?: string
+          immediate_entry?: boolean | null
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
@@ -488,6 +490,7 @@ export type Database = {
           furnished_flexible?: boolean | null
           furnished_required?: string | null
           id?: string
+          immediate_entry?: boolean | null
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null

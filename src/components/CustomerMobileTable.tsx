@@ -166,6 +166,7 @@ export const CustomerMobileTable = ({
           preferred_neighborhoods: formData.preferred_neighborhoods,
           property_type: formData.property_type,
           move_in_date: formData.move_in_date,
+          immediate_entry: formData.immediate_entry ?? false,
           notes: formData.notes,
           pets: isRental ? formData.pets : null,
           tenant_type: isRental ? formData.tenant_type : null,
@@ -497,19 +498,33 @@ export const CustomerMobileTable = ({
             <div>
               <Label className="text-xs">תאריך כניסה</Label>
               <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Checkbox 
+                    id={`immediate-entry-mobile`}
+                    checked={formData.immediate_entry === true}
+                    onCheckedChange={(c) => setFormData({ 
+                      ...formData, 
+                      immediate_entry: !!c,
+                      move_in_date: c ? null : formData.move_in_date
+                    })}
+                  />
+                  <Label htmlFor={`immediate-entry-mobile`} className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">מיידי</Label>
+                </div>
                 <Input
                   type="date"
                   value={formData.move_in_date || ''}
                   onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
                   className="h-9 flex-1"
+                  disabled={formData.immediate_entry === true}
                 />
                 <div className="flex items-center gap-1">
                   <Checkbox 
                     id={`move-date-flex-mobile`}
-                    checked={formData.flexible_move_date !== false}
+                    checked={formData.flexible_move_date === true}
                     onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                    disabled={formData.immediate_entry === true}
                   />
-                  <Label htmlFor={`move-date-flex-mobile`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
+                  <Label htmlFor={`move-date-flex-mobile`} className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">גמיש (+חודש)</Label>
                 </div>
               </div>
             </div>

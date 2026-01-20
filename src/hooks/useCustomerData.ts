@@ -21,7 +21,7 @@ export interface Customer {
   preferred_neighborhoods: string[] | null;
   property_type: string | null;
   move_in_date: string | null;
-  move_out_date: string | null;
+  immediate_entry: boolean | null;
   status: string;
   priority: string;
   assigned_agent_id: string | null;
