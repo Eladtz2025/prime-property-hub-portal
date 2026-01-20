@@ -77,7 +77,7 @@ const DynamicPresentationPricingPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b7765 0%, #6d5a4a 100%)' }}>
+      <div className="h-dvh flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b7765 0%, #6d5a4a 100%)' }}>
         <Loader2 className="h-8 w-8 animate-spin text-[#f5c242]" />
       </div>
     );
@@ -85,7 +85,7 @@ const DynamicPresentationPricingPage = () => {
 
   if (!deck) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b7765 0%, #6d5a4a 100%)' }}>
+      <div className="h-dvh flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b7765 0%, #6d5a4a 100%)' }}>
         <div className="text-center text-white">
           <h1 className="text-2xl font-bold mb-2">Presentation Not Found</h1>
           <p className="text-white/70">The requested presentation could not be found.</p>
@@ -100,7 +100,7 @@ const DynamicPresentationPricingPage = () => {
   const propertyCity = property?.city || "Tel Aviv";
 
   return (
-    <div className="min-h-screen w-full relative overflow-auto" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="h-dvh w-full relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Background Image */}
       <div 
         className="fixed inset-0 bg-cover bg-center"
@@ -122,18 +122,18 @@ const DynamicPresentationPricingPage = () => {
       <img 
         src={cityMarketLogo} 
         alt="City Market Properties" 
-        className="fixed bottom-4 right-4 h-10 md:h-14 w-auto z-50"
+        className="fixed bottom-2 right-2 lg:bottom-3 lg:right-3 2xl:bottom-4 2xl:right-4 h-8 md:h-10 lg:h-8 2xl:h-14 w-auto z-50"
       />
 
       {/* All content above background */}
-      <div className="relative z-10">
+      <div className="relative z-10 h-full">
         {/* Language Toggle - Fixed Top Left */}
-        <div className={`fixed top-4 ${isRTL ? 'right-4' : 'left-4'} z-50 flex gap-2`}>
+        <div className={`fixed top-3 lg:top-4 ${isRTL ? 'right-3 lg:right-4' : 'left-3 lg:left-4'} z-50 flex gap-1.5 lg:gap-2`}>
           <Button
             size="sm"
             variant={language === 'en' ? 'default' : 'outline'}
             onClick={() => setLanguage('en')}
-            className={`text-xs ${language === 'en' ? 'bg-[#f5c242] text-[#2d3b3a] hover:bg-[#f5c242]/80' : 'bg-white/20 text-white border-white/30 hover:bg-white/30'}`}
+            className={`text-xs px-2 py-1 h-7 lg:h-8 ${language === 'en' ? 'bg-[#f5c242] text-[#2d3b3a] hover:bg-[#f5c242]/80' : 'bg-white/20 text-white border-white/30 hover:bg-white/30'}`}
           >
             EN
           </Button>
@@ -141,7 +141,7 @@ const DynamicPresentationPricingPage = () => {
             size="sm"
             variant={language === 'he' ? 'default' : 'outline'}
             onClick={() => setLanguage('he')}
-            className={`text-xs ${language === 'he' ? 'bg-[#f5c242] text-[#2d3b3a] hover:bg-[#f5c242]/80' : 'bg-white/20 text-white border-white/30 hover:bg-white/30'}`}
+            className={`text-xs px-2 py-1 h-7 lg:h-8 ${language === 'he' ? 'bg-[#f5c242] text-[#2d3b3a] hover:bg-[#f5c242]/80' : 'bg-white/20 text-white border-white/30 hover:bg-white/30'}`}
           >
             עב
           </Button>
@@ -150,111 +150,111 @@ const DynamicPresentationPricingPage = () => {
         {/* Back Button - Fixed Top Right */}
         <Link 
           to={`/offer/${slug}`}
-          className={`fixed top-4 ${isRTL ? 'left-4' : 'right-4'} z-50 flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-4 py-2 rounded-full text-white text-sm`}
+          className={`fixed top-3 lg:top-4 ${isRTL ? 'left-3 lg:left-4' : 'right-3 lg:right-4'} z-50 flex items-center gap-1.5 lg:gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-white text-xs lg:text-sm`}
         >
-          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          {isRTL ? <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4" /> : <ArrowLeft className="w-3 h-3 lg:w-4 lg:h-4" />}
           {t.backToPresentation}
         </Link>
 
         {/* Main Content */}
-        <div className="min-h-screen flex flex-col items-center justify-start px-4 md:px-8 lg:px-6 2xl:px-8 pt-14 lg:pt-12 2xl:pt-14 pb-20 lg:pb-16 2xl:pb-20">
+        <div className="h-full flex flex-col items-center justify-center lg:justify-start lg:pt-[5vh] 2xl:justify-center px-3 md:px-6 lg:px-4 2xl:px-8">
           {/* Title */}
           <h1 
-            className="text-3xl md:text-5xl lg:text-4xl 2xl:text-5xl font-serif font-light text-white mb-2 lg:mb-1 2xl:mb-2 text-center"
+            className="text-2xl md:text-4xl lg:text-2xl xl:text-3xl 2xl:text-5xl font-serif font-light text-white mb-1 lg:mb-0.5 2xl:mb-2 text-center"
             style={{ textShadow: softShadow }}
           >
             {pricingData?.title || t.title}
           </h1>
           <p 
-            className="text-white/80 text-sm md:text-lg lg:text-base 2xl:text-lg mb-1 text-center"
+            className="text-white/80 text-xs md:text-base lg:text-xs xl:text-sm 2xl:text-lg mb-0.5 lg:mb-0.5 2xl:mb-1 text-center"
             style={{ textShadow: softShadow }}
           >
             {pricingData?.subtitle || t.subtitle}
           </p>
           <p 
-            className="text-[#f5c242] text-sm md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4 text-center"
+            className="text-[#f5c242] text-xs md:text-sm lg:text-xs 2xl:text-base mb-2 lg:mb-1 2xl:mb-4 text-center"
             style={{ textShadow: softShadow }}
           >
             {propertyAddress}, {propertyCity}
           </p>
 
           {/* Decorative Line */}
-          <div className="w-16 h-px bg-[#f5c242] mb-4 lg:mb-3 2xl:mb-6" />
+          <div className="w-12 lg:w-10 2xl:w-16 h-px bg-[#f5c242] mb-2 lg:mb-1 2xl:mb-6" />
 
           {/* Two Pricing Options */}
-          <div className="w-full max-w-4xl lg:max-w-3xl 2xl:max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-4 2xl:gap-6 mb-6 lg:mb-4 2xl:mb-8">
+          <div className="w-full max-w-3xl lg:max-w-2xl 2xl:max-w-4xl grid grid-cols-2 gap-3 lg:gap-2 2xl:gap-6 mb-3 lg:mb-2 2xl:mb-8">
             {/* Option A - Premium */}
-            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 lg:p-4 2xl:p-6 text-center border border-[#f5c242]/30">
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 lg:p-2 xl:p-3 2xl:p-6 text-center border border-[#f5c242]/30">
               <span 
-                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium tracking-widest uppercase"
+                className="text-[#f5c242] text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base font-medium tracking-widest uppercase"
                 style={{ textShadow: softShadow }}
               >
                 {t.optionA}
               </span>
               <p 
-                className="text-white text-3xl md:text-4xl lg:text-3xl 2xl:text-4xl font-bold mt-2 lg:mt-1 2xl:mt-3 mb-2 lg:mb-1 2xl:mb-3"
+                className="text-white text-xl md:text-3xl lg:text-xl xl:text-2xl 2xl:text-4xl font-bold mt-1 lg:mt-0.5 2xl:mt-3 mb-1 lg:mb-0.5 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_a_price || '₪4,250,000'}
               </p>
-              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-2 lg:mb-1 2xl:mb-3" />
+              <div className="w-8 lg:w-6 2xl:w-12 h-px bg-[#f5c242]/50 mx-auto mb-1 lg:mb-0.5 2xl:mb-3" />
               <p 
-                className="text-white/80 text-xs md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4"
+                className="text-white/80 text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base mb-2 lg:mb-1 2xl:mb-4"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_a_description || t.premiumDesc}
               </p>
-              <div className="flex items-center justify-center gap-2 text-[#f5c242]">
-                <Clock className="w-4 h-4 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4" />
-                <span className="text-xs md:text-base lg:text-sm 2xl:text-base">
+              <div className="flex items-center justify-center gap-1.5 lg:gap-1 2xl:gap-2 text-[#f5c242]">
+                <Clock className="w-3 h-3 lg:w-2.5 lg:h-2.5 2xl:w-4 2xl:h-4" />
+                <span className="text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base">
                   {pricingData?.option_a_months_min || 7}-{pricingData?.option_a_months_max || 11} {t.months}
                 </span>
               </div>
-              <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>
+              <p className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs mt-0.5 lg:mt-0.5 2xl:mt-1">{t.estimatedTime}</p>
             </div>
 
             {/* Option B - Competitive */}
-            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 lg:p-4 2xl:p-6 text-center border border-[#f5c242]/30">
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 lg:p-2 xl:p-3 2xl:p-6 text-center border border-[#f5c242]/30">
               <span 
-                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium tracking-widest uppercase"
+                className="text-[#f5c242] text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base font-medium tracking-widest uppercase"
                 style={{ textShadow: softShadow }}
               >
                 {t.optionB}
               </span>
               <p 
-                className="text-white text-3xl md:text-4xl lg:text-3xl 2xl:text-4xl font-bold mt-2 lg:mt-1 2xl:mt-3 mb-2 lg:mb-1 2xl:mb-3"
+                className="text-white text-xl md:text-3xl lg:text-xl xl:text-2xl 2xl:text-4xl font-bold mt-1 lg:mt-0.5 2xl:mt-3 mb-1 lg:mb-0.5 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_b_price || '₪3,950,000'}
               </p>
-              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-2 lg:mb-1 2xl:mb-3" />
+              <div className="w-8 lg:w-6 2xl:w-12 h-px bg-[#f5c242]/50 mx-auto mb-1 lg:mb-0.5 2xl:mb-3" />
               <p 
-                className="text-white/80 text-xs md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4"
+                className="text-white/80 text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base mb-2 lg:mb-1 2xl:mb-4"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_b_description || t.competitiveDesc}
               </p>
-              <div className="flex items-center justify-center gap-2 text-[#f5c242]">
-                <Clock className="w-4 h-4 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4" />
-                <span className="text-xs md:text-base lg:text-sm 2xl:text-base">
+              <div className="flex items-center justify-center gap-1.5 lg:gap-1 2xl:gap-2 text-[#f5c242]">
+                <Clock className="w-3 h-3 lg:w-2.5 lg:h-2.5 2xl:w-4 2xl:h-4" />
+                <span className="text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base">
                   {pricingData?.option_b_months_min || 3}-{pricingData?.option_b_months_max || 5} {t.months}
                 </span>
               </div>
-              <p className="text-white/60 text-xs mt-1">{t.estimatedTime}</p>
+              <p className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs mt-0.5 lg:mt-0.5 2xl:mt-1">{t.estimatedTime}</p>
             </div>
           </div>
 
           {/* Property Links Section */}
-          <div className="w-full max-w-4xl lg:max-w-3xl 2xl:max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 lg:gap-4 2xl:gap-6 mb-6 lg:mb-4 2xl:mb-8">
+          <div className="w-full max-w-3xl lg:max-w-2xl 2xl:max-w-4xl grid grid-cols-2 gap-2 lg:gap-1.5 2xl:gap-6 mb-3 lg:mb-2 2xl:mb-8">
             {/* Recently Sold */}
-            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5 lg:p-3 2xl:p-5">
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-2 2xl:p-5">
               <h3 
-                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium mb-2 lg:mb-1 2xl:mb-3"
+                className="text-[#f5c242] text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base font-medium mb-1 lg:mb-0.5 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {t.recentlySold}
               </h3>
-              <div className="space-y-1 lg:space-y-1 2xl:space-y-2">
+              <div className="space-y-0.5 lg:space-y-0.5 2xl:space-y-2">
                 {recentlySoldProperties.map((prop, index) => {
                   const hasLink = prop.link && prop.link.trim() !== '';
                   const Wrapper = hasLink ? 'a' : 'div';
@@ -268,18 +268,18 @@ const DynamicPresentationPricingPage = () => {
                     <Wrapper
                       key={index}
                       {...wrapperProps}
-                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-3 py-2 group`}
+                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-2 py-1 lg:px-1.5 lg:py-0.5 2xl:px-3 2xl:py-2 group`}
                     >
-                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-white text-xs md:text-sm">{prop.address}</span>
-                        <span className="text-white/60 text-xs">({formatSize(prop)})</span>
+                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-white text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm">{prop.address}</span>
+                        <span className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs">({formatSize(prop)})</span>
                       </div>
-                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         {prop.pricePerSqm && (
-                          <span className="text-white/50 text-xs">{prop.pricePerSqm}/מ״ר</span>
+                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs hidden md:inline">{prop.pricePerSqm}/מ״ר</span>
                         )}
-                        <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
-                        {hasLink && <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
+                        <span className="text-[#f5c242] text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm font-medium">{prop.price}</span>
+                        {hasLink && <ExternalLink className="w-2.5 h-2.5 lg:w-2 lg:h-2 2xl:w-3 2xl:h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
                       </div>
                     </Wrapper>
                   );
@@ -288,14 +288,14 @@ const DynamicPresentationPricingPage = () => {
             </div>
 
             {/* Currently For Sale */}
-            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5 lg:p-3 2xl:p-5">
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-2 2xl:p-5">
               <h3 
-                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium mb-2 lg:mb-1 2xl:mb-3"
+                className="text-[#f5c242] text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base font-medium mb-1 lg:mb-0.5 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {t.currentlyForSale}
               </h3>
-              <div className="space-y-1 lg:space-y-1 2xl:space-y-2">
+              <div className="space-y-0.5 lg:space-y-0.5 2xl:space-y-2">
                 {currentlyForSaleProperties.map((prop, index) => {
                   const hasLink = prop.link && prop.link.trim() !== '';
                   const Wrapper = hasLink ? 'a' : 'div';
@@ -309,18 +309,18 @@ const DynamicPresentationPricingPage = () => {
                     <Wrapper
                       key={index}
                       {...wrapperProps}
-                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-3 py-2 group`}
+                      className={`flex items-center justify-between bg-white/10 ${hasLink ? 'hover:bg-white/20 cursor-pointer' : ''} transition-colors rounded-md px-2 py-1 lg:px-1.5 lg:py-0.5 2xl:px-3 2xl:py-2 group`}
                     >
-                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-white text-xs md:text-sm">{prop.address}</span>
-                        <span className="text-white/60 text-xs">({formatSize(prop)})</span>
+                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-white text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm">{prop.address}</span>
+                        <span className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs">({formatSize(prop)})</span>
                       </div>
-                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         {prop.pricePerSqm && (
-                          <span className="text-white/50 text-xs">{prop.pricePerSqm}/מ״ר</span>
+                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs hidden md:inline">{prop.pricePerSqm}/מ״ר</span>
                         )}
-                        <span className="text-[#f5c242] text-xs md:text-sm font-medium">{prop.price}</span>
-                        {hasLink && <ExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
+                        <span className="text-[#f5c242] text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm font-medium">{prop.price}</span>
+                        {hasLink && <ExternalLink className="w-2.5 h-2.5 lg:w-2 lg:h-2 2xl:w-3 2xl:h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
                       </div>
                     </Wrapper>
                   );
@@ -332,12 +332,12 @@ const DynamicPresentationPricingPage = () => {
           {/* Continue to Step 2 */}
           <Link 
             to={`/offer/${slug}/exclusivity`}
-            className="flex items-center gap-3 bg-[#f5c242] hover:bg-[#f5c242]/80 px-6 md:px-8 lg:px-6 2xl:px-8 py-3 md:py-4 lg:py-2.5 2xl:py-4 rounded-full transition-all group"
+            className="flex items-center gap-2 lg:gap-1.5 2xl:gap-3 bg-[#f5c242] hover:bg-[#f5c242]/80 px-4 md:px-6 lg:px-4 2xl:px-8 py-2 md:py-3 lg:py-1.5 2xl:py-4 rounded-full transition-all group"
           >
-            <span className="text-[#2d3b3a] text-xs md:text-base lg:text-sm 2xl:text-base font-medium">
+            <span className="text-[#2d3b3a] text-[10px] md:text-sm lg:text-[10px] xl:text-xs 2xl:text-base font-medium">
               {t.continueToStep2}: {t.exclusiveAgreement}
             </span>
-            <ArrowRight className={`w-5 h-5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-[#2d3b3a] group-hover:translate-x-1 transition-transform ${isRTL ? 'rotate-180' : ''}`} />
+            <ArrowRight className={`w-4 h-4 lg:w-3 lg:h-3 2xl:w-5 2xl:h-5 text-[#2d3b3a] group-hover:translate-x-1 transition-transform ${isRTL ? 'rotate-180' : ''}`} />
           </Link>
         </div>
       </div>
