@@ -33,7 +33,7 @@ interface Agent {
 }
 
 export default function AdminCustomers() {
-  const [activeTab, setActiveTab] = useState<"customers" | "brokers">("customers");
+  const [activeTab, setActiveTab] = useState<"customers" | "brokers" | "not_relevant">("customers");
   const [searchTerm, setSearchTerm] = useState("");
   const [addCustomerModalOpen, setAddCustomerModalOpen] = useState(false);
   const [addBrokerModalOpen, setAddBrokerModalOpen] = useState(false);
@@ -56,6 +56,18 @@ export default function AdminCustomers() {
     unhideCustomer,
   } = useCustomerData({
     search: searchTerm || undefined,
+  });
+
+  // Hook for hidden (not relevant) customers
+  const {
+    customers: hiddenCustomers,
+    loading: hiddenLoading,
+    fetchCustomers: fetchHiddenCustomers,
+    deleteCustomer: deleteHiddenCustomer,
+    unhideCustomer: unhideHiddenCustomer,
+  } = useCustomerData({
+    search: searchTerm || undefined,
+    onlyHidden: true,
   });
 
   const {
@@ -247,12 +259,13 @@ export default function AdminCustomers() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers")} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers" | "not_relevant")} className="space-y-4">
         {/* Tabs + Buttons row */}
         <div className="flex flex-col gap-3">
           {/* Tabs row */}
           <div className="flex justify-end">
             <TabsList>
+              <TabsTrigger value="not_relevant">לא רלוונטי ({hiddenCustomers.length})</TabsTrigger>
               <TabsTrigger value="brokers">מתווכים ({brokers.length})</TabsTrigger>
               <TabsTrigger value="customers">לקוחות ({customers.length})</TabsTrigger>
             </TabsList>
@@ -332,6 +345,50 @@ export default function AdminCustomers() {
           <div className="hidden md:block">
             {renderBrokers()}
           </div>
+        </TabsContent>
+
+        {/* Not Relevant Tab */}
+        <TabsContent value="not_relevant" className="space-y-4">
+          {hiddenLoading ? (
+            <div className="text-center py-12">טוען לקוחות...</div>
+          ) : hiddenCustomers.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">אין לקוחות לא רלוונטיים</div>
+          ) : (
+            <>
+              {/* Mobile view */}
+              <div className="md:hidden">
+                <CustomerMobileTable
+                  customers={hiddenCustomers}
+                  onSave={() => { fetchHiddenCustomers(); fetchCustomers(); }}
+                  onUpdateStatus={() => {}}
+                  onUpdatePriority={() => {}}
+                  onAssignAgent={() => {}}
+                  onDeleteCustomer={deleteHiddenCustomer}
+                  onHideCustomer={() => {}}
+                  onUnhideCustomer={(id) => { unhideHiddenCustomer(id); fetchCustomers(); }}
+                  agents={agents}
+                  isHiddenView
+                />
+              </div>
+              {/* Desktop view */}
+              <div className="hidden md:block">
+                <CustomerTableView
+                  customers={hiddenCustomers}
+                  onSave={() => { fetchHiddenCustomers(); fetchCustomers(); }}
+                  onUpdateStatus={() => {}}
+                  onUpdatePriority={() => {}}
+                  onAssignAgent={() => {}}
+                  onDeleteCustomer={deleteHiddenCustomer}
+                  onHideCustomer={() => {}}
+                  onUnhideCustomer={(id) => { unhideHiddenCustomer(id); fetchCustomers(); }}
+                  agents={agents}
+                  sortBy="created_at_desc"
+                  onSortChange={() => {}}
+                  isHiddenView
+                />
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
 

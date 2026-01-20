@@ -23,6 +23,7 @@ interface CustomerTableViewProps {
   agents?: Agent[];
   sortBy: string;
   onSortChange: (sort: string) => void;
+  isHiddenView?: boolean;
 }
 
 export const CustomerTableView = ({
@@ -37,6 +38,7 @@ export const CustomerTableView = ({
   agents = [],
   sortBy,
   onSortChange,
+  isHiddenView = false,
 }: CustomerTableViewProps) => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
