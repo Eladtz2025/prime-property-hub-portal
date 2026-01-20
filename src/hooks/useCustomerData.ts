@@ -51,6 +51,11 @@ export interface Customer {
   outdoor_space_any: boolean | null;
   // Pets flexibility
   pets_flexible: boolean | null;
+  // New fields: mamad and furnished
+  mamad_required: boolean | null;
+  mamad_flexible: boolean | null;
+  furnished_required: string | null;
+  furnished_flexible: boolean | null;
   // Purchase-specific fields
   purchase_purpose: string | null;
   cash_available: number | null;

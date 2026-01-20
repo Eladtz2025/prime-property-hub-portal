@@ -577,10 +577,10 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                       <SelectValue placeholder="בחר סוג דייר" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="student">סטודנט</SelectItem>
-                      <SelectItem value="employee">שכיר</SelectItem>
-                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="single">יחיד/ה</SelectItem>
                       <SelectItem value="couple">זוג</SelectItem>
+                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="roommates">שותפים</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

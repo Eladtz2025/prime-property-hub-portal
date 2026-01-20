@@ -367,10 +367,14 @@ export type Database = {
           email: string | null
           flexible_move_date: boolean | null
           floor_preference: string | null
+          furnished_flexible: boolean | null
+          furnished_required: string | null
           id: string
           is_hidden: boolean | null
           last_contact_date: string | null
           lawyer_details: string | null
+          mamad_flexible: boolean | null
+          mamad_required: boolean | null
           matching_status: string | null
           message: string
           move_in_date: string | null
@@ -422,10 +426,14 @@ export type Database = {
           email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
+          furnished_flexible?: boolean | null
+          furnished_required?: string | null
           id?: string
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
+          mamad_flexible?: boolean | null
+          mamad_required?: boolean | null
           matching_status?: string | null
           message: string
           move_in_date?: string | null
@@ -477,10 +485,14 @@ export type Database = {
           email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
+          furnished_flexible?: boolean | null
+          furnished_required?: string | null
           id?: string
           is_hidden?: boolean | null
           last_contact_date?: string | null
           lawyer_details?: string | null
+          mamad_flexible?: boolean | null
+          mamad_required?: boolean | null
           matching_status?: string | null
           message?: string
           move_in_date?: string | null
