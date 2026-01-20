@@ -83,7 +83,7 @@ serve(async (req) => {
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true)
-        .eq('property_type', 'rental')
+        .eq('property_type', 'rent')
         .or('features->entry_date.is.null,features->immediate_entry.is.null');
 
       const { data: newProgress, error: progressError } = await supabase
@@ -110,7 +110,7 @@ serve(async (req) => {
       .from('scouted_properties')
       .select('id, source_url, source, features, title, address')
       .eq('is_active', true)
-      .eq('property_type', 'rental')
+      .eq('property_type', 'rent')
       .or('features->entry_date.is.null,features->immediate_entry.is.null')
       .not('source_url', 'is', null)
       .order('created_at', { ascending: true })
@@ -350,7 +350,7 @@ Return ONLY a JSON object with no additional text.`
       .from('scouted_properties')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
-      .eq('property_type', 'rental')
+      .eq('property_type', 'rent')
       .or('features->entry_date.is.null,features->immediate_entry.is.null')
       .not('source_url', 'is', null)
       .gt('id', lastProcessedId);
