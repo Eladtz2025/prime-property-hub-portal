@@ -71,8 +71,9 @@ const SOURCES = [
 ];
 
 const PROPERTY_TYPES = [
-  { value: 'rental', label: 'להשכרה' },
+  { value: 'rent', label: 'להשכרה' },
   { value: 'sale', label: 'למכירה' },
+  { value: 'both', label: 'הכל' },
 ];
 
 const CITIES = [
@@ -106,7 +107,7 @@ export const UnifiedScoutSettings: React.FC = () => {
     name: '',
     source: 'yad2',
     cities: [] as string[],
-    property_type: 'rental',
+    property_type: 'rent',
     min_price: '',
     max_price: '',
     min_rooms: '',
