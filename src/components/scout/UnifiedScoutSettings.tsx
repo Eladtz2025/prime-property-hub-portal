@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,8 @@ import {
   Loader2,
   Clock,
   AlertTriangle,
+  Database,
+  RefreshCw,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 
@@ -103,6 +106,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ScoutConfig | null>(null);
+  const [isBackfilling, setIsBackfilling] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -114,6 +118,33 @@ export const UnifiedScoutSettings: React.FC = () => {
     max_rooms: '',
     search_url: '',
   });
+
+  // Fetch backfill progress
+  const { data: backfillProgress, refetch: refetchProgress } = useQuery({
+    queryKey: ['backfill-progress'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('backfill_progress')
+        .select('*')
+        .eq('task_name', 'backfill_entry_dates')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    refetchInterval: isBackfilling ? 3000 : false,
+  });
+
+  // Update isBackfilling state based on progress
+  useEffect(() => {
+    if (backfillProgress?.status === 'running') {
+      setIsBackfilling(true);
+    } else if (backfillProgress?.status === 'completed' || backfillProgress?.status === 'failed') {
+      setIsBackfilling(false);
+    }
+  }, [backfillProgress?.status]);
 
   // Fetch scout configs
   const { data: configs, isLoading: configsLoading } = useQuery({
@@ -266,6 +297,41 @@ export const UnifiedScoutSettings: React.FC = () => {
     updateSetting.mutate({ category, setting_key, setting_value: value });
   };
 
+  // Backfill entry dates handler
+  const handleBackfillEntryDates = async () => {
+    try {
+      setIsBackfilling(true);
+      toast.info('מתחיל עדכון תאריכי כניסה...');
+      
+      const { error } = await supabase.functions.invoke('backfill-entry-dates', {
+        body: { batchSize: 10 },
+      });
+      
+      if (error) throw error;
+      
+      refetchProgress();
+    } catch (error) {
+      console.error('Backfill error:', error);
+      toast.error('שגיאה בהפעלת העדכון');
+      setIsBackfilling(false);
+    }
+  };
+
+  // Continue backfill if more items
+  const continueBackfill = async (continueFrom: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('backfill-entry-dates', {
+        body: { batchSize: 10, continueFrom },
+      });
+      
+      if (error) throw error;
+      refetchProgress();
+    } catch (error) {
+      console.error('Continue backfill error:', error);
+      setIsBackfilling(false);
+    }
+  };
+
   // Count changes from defaults
   const countChangesFromDefault = () => {
     if (!settings) return 0;
@@ -292,6 +358,9 @@ export const UnifiedScoutSettings: React.FC = () => {
   }
 
   const changesCount = countChangesFromDefault();
+  const progressPercent = backfillProgress?.total_items 
+    ? Math.round(((backfillProgress.processed_items || 0) / backfillProgress.total_items) * 100)
+    : 0;
 
   return (
     <div className="space-y-4">
@@ -791,6 +860,78 @@ export const UnifiedScoutSettings: React.FC = () => {
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 <span>לשינוי לוח הזמנים נדרשת עריכת מסד הנתונים (cron jobs)</span>
               </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Database Tools */}
+        <AccordionItem value="database" className="border rounded-lg bg-card">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              <span className="font-semibold">כלי מסד נתונים</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">עדכון תאריכי כניסה לנכסים קיימים</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    סריקה מחדש של כל נכסי השכירות הפעילים שחסר להם תאריך כניסה, חילוץ התאריך מהמודעה המקורית ועדכון בבסיס הנתונים.
+                  </p>
+                  
+                  {backfillProgress && backfillProgress.status === 'running' && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>התקדמות:</span>
+                        <span>{backfillProgress.processed_items || 0} / {backfillProgress.total_items || 0}</span>
+                      </div>
+                      <Progress value={progressPercent} className="h-2" />
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        <span className="text-green-600">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
+                        <span className="text-red-600">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {backfillProgress && backfillProgress.status === 'completed' && (
+                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg text-sm">
+                      <span className="text-green-700 dark:text-green-400">
+                        ✓ הושלם! עודכנו {backfillProgress.successful_items || 0} נכסים, נכשלו {backfillProgress.failed_items || 0}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {backfillProgress && backfillProgress.status === 'failed' && (
+                    <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg text-sm">
+                      <span className="text-red-700 dark:text-red-400">
+                        ✗ נכשל: {backfillProgress.error_message}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={handleBackfillEntryDates}
+                    disabled={isBackfilling}
+                    className="w-full sm:w-auto"
+                  >
+                    {isBackfilling ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 ml-2 animate-spin" />
+                        מעדכן...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 ml-2" />
+                        עדכן תאריכי כניסה
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </AccordionContent>
         </AccordionItem>
