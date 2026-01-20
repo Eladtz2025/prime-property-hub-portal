@@ -102,8 +102,13 @@ export async function scrapeWithRetry(
           formats: ['markdown', 'html'],
           onlyMainContent: true,
           waitFor: waitForMs,
-          // Use stealth proxy for Madlan to bypass anti-bot measures (costs 5 credits)
-          proxy: source === 'madlan' ? 'stealth' : 'auto',
+          // Use auto proxy (1 credit) - stealth was too expensive and didn't improve results
+          proxy: 'auto',
+          // Request Israeli proxy for better results on Hebrew sites
+          location: {
+            country: 'IL',
+            languages: ['he']
+          },
           headers: {
             'User-Agent': userAgents[attempt % userAgents.length],
             'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
