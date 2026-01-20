@@ -49,6 +49,7 @@ export interface ContactLead {
   roof_flexible: boolean;
   outdoor_space_any: boolean;
   move_in_date: string | null;
+  immediate_entry: boolean;
   flexible_move_date: boolean;
   // New fields
   mamad_required: boolean;
@@ -355,6 +356,50 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   } else if (lead.furnished_required && property.features?.furnished) {
     const furnishedLabel = property.features.furnished === 'fully_furnished' ? 'מרוהטת מלא' : 'מרוהטת חלקית';
     reasons.push(`${furnishedLabel} ✓`);
+  }
+  
+  // ===== ENTRY DATE MATCHING =====
+  // Check if lead requires immediate entry
+  if (lead.immediate_entry === true) {
+    // For immediate entry, check if property has an entry_date
+    // If property has entry_date > 7 days from now, it's not a match
+    if (property.features?.entry_date) {
+      const entryDate = new Date(property.features.entry_date);
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      
+      if (entryDate > sevenDaysFromNow) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת כניסה מיידית - הנכס פנוי רק בתאריך מאוחר יותר'], priority: 0 };
+      }
+    }
+    reasons.push('כניסה מיידית ✓');
+  }
+  // Check specific move-in date with flexibility
+  else if (lead.move_in_date && lead.flexible_move_date === false) {
+    // Strict date - property must be available by the requested date
+    if (property.features?.entry_date) {
+      const requestedDate = new Date(lead.move_in_date);
+      const propertyEntryDate = new Date(property.features.entry_date);
+      
+      if (propertyEntryDate > requestedDate) {
+        return { lead, matchScore: 0, matchReasons: ['הנכס לא פנוי בתאריך המבוקש'], priority: 0 };
+      }
+    }
+    reasons.push('תאריך כניסה תואם ✓');
+  }
+  // Flexible date - allow +1 month
+  else if (lead.move_in_date && lead.flexible_move_date === true) {
+    if (property.features?.entry_date) {
+      const requestedDate = new Date(lead.move_in_date);
+      const flexibleDate = new Date(requestedDate);
+      flexibleDate.setMonth(flexibleDate.getMonth() + 1);
+      const propertyEntryDate = new Date(property.features.entry_date);
+      
+      if (propertyEntryDate > flexibleDate) {
+        return { lead, matchScore: 0, matchReasons: ['הנכס לא פנוי בטווח התאריכים הגמיש (+חודש)'], priority: 0 };
+      }
+    }
+    reasons.push('תאריך כניסה גמיש ✓');
   }
   
   // ===== ALL CHECKS PASSED - MATCH! =====

@@ -135,6 +135,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           preferred_neighborhoods: formData.preferred_neighborhoods,
           property_type: formData.property_type,
           move_in_date: formData.move_in_date,
+          immediate_entry: formData.immediate_entry ?? false,
           notes: formData.notes,
           // Rental-specific
           pets: isRental ? formData.pets : null,
@@ -393,19 +394,33 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           <div>
             <Label>תאריך כניסה מבוקש</Label>
             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <Checkbox 
+                  id="immediate-entry-edit"
+                  checked={formData.immediate_entry === true}
+                  onCheckedChange={(c) => setFormData({ 
+                    ...formData, 
+                    immediate_entry: !!c,
+                    move_in_date: c ? null : formData.move_in_date
+                  })}
+                />
+                <Label htmlFor="immediate-entry-edit" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">מיידי</Label>
+              </div>
               <Input
                 type="date"
                 value={formData.move_in_date || ''}
                 onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
                 className="flex-1"
+                disabled={formData.immediate_entry === true}
               />
               <div className="flex items-center gap-1.5">
                 <Checkbox 
                   id="move-date-flex-edit"
-                  checked={formData.flexible_move_date !== false}
+                  checked={formData.flexible_move_date === true}
                   onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                  disabled={formData.immediate_entry === true}
                 />
-                <Label htmlFor="move-date-flex-edit" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                <Label htmlFor="move-date-flex-edit" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">גמיש (+חודש)</Label>
               </div>
             </div>
           </div>
@@ -453,14 +468,6 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                         <SelectItem value="no">אין חיות מחמד</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="flex items-center gap-2 pt-6">
-                    <Checkbox
-                      id="edit-flexible"
-                      checked={!!formData.flexible_move_date}
-                      onCheckedChange={(checked) => setFormData({ ...formData, flexible_move_date: !!checked })}
-                    />
-                    <Label htmlFor="edit-flexible" className="cursor-pointer">גמישות בתאריך כניסה</Label>
                   </div>
                 </div>
 

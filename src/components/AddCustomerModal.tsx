@@ -55,6 +55,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     preferred_cities: [] as string[],
     preferred_neighborhoods: [] as string[],
     move_in_date: '',
+    immediate_entry: false,
     notes: '',
     // Rental-specific
     pets: null as boolean | null,
@@ -207,6 +208,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           preferred_cities: formData.preferred_cities.length > 0 ? formData.preferred_cities : null,
           preferred_neighborhoods: formData.preferred_neighborhoods.length > 0 ? formData.preferred_neighborhoods : null,
           move_in_date: formData.move_in_date || null,
+          immediate_entry: formData.immediate_entry || false,
           notes: formData.notes || null,
           // Rental-specific
           pets: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.pets : null,
@@ -265,6 +267,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         preferred_cities: [],
         preferred_neighborhoods: [],
         move_in_date: '',
+        immediate_entry: false,
         notes: '',
         pets: null,
         tenant_type: '',
@@ -457,19 +460,33 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             <div>
               <Label>תאריך כניסה/רכישה משוער</Label>
               <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Checkbox 
+                    id="immediate-entry-add"
+                    checked={formData.immediate_entry === true}
+                    onCheckedChange={(c) => setFormData({ 
+                      ...formData, 
+                      immediate_entry: !!c,
+                      move_in_date: c ? '' : formData.move_in_date
+                    })}
+                  />
+                  <Label htmlFor="immediate-entry-add" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">מיידי</Label>
+                </div>
                 <Input
                   type="date"
                   value={formData.move_in_date}
                   onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
                   className="flex-1"
+                  disabled={formData.immediate_entry === true}
                 />
                 <div className="flex items-center gap-1.5">
                   <Checkbox 
                     id="move-date-flex-add"
-                    checked={formData.flexible_move_date !== false}
+                    checked={formData.flexible_move_date === true}
                     onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
+                    disabled={formData.immediate_entry === true}
                   />
-                  <Label htmlFor="move-date-flex-add" className="text-xs text-muted-foreground cursor-pointer">גמיש</Label>
+                  <Label htmlFor="move-date-flex-add" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">גמיש (+חודש)</Label>
                 </div>
               </div>
             </div>
