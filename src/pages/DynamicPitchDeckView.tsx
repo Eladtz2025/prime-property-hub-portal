@@ -253,7 +253,7 @@ const DynamicPitchDeckView = () => {
       </div>
 
       {/* Navigation - Fixed height footer */}
-      <div dir="ltr" className="h-14 md:h-16 flex-shrink-0 relative z-30 px-3 md:px-6 flex items-center bg-gradient-to-t from-black/30 to-transparent">
+      <div dir="ltr" className="h-14 md:h-16 lg:h-14 2xl:h-16 flex-shrink-0 relative z-30 px-3 md:px-6 flex items-center bg-gradient-to-t from-black/30 to-transparent">
         {/* Mobile Layout */}
         <div className="flex md:hidden w-full items-center justify-between">
           {/* Counter */}
