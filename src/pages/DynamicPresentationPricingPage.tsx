@@ -52,6 +52,7 @@ const DynamicPresentationPricingPage = () => {
   // Get pricing data from the step1_pricing slide
   const step1Slide = deck?.slides?.find(s => s.slide_type === 'step1_pricing');
   const pricingData = step1Slide?.slide_data as Step1PricingSlideData | undefined;
+  const backgroundImage = step1Slide?.background_image;
 
   // Fallback values if slide data doesn't exist
   const recentlySoldProperties: Step1PropertyItem[] = pricingData?.recently_sold || [
@@ -105,7 +106,7 @@ const DynamicPresentationPricingPage = () => {
       <div 
         className="fixed inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/images/ben-yehuda-110/image-1 (1).png')`,
+          backgroundImage: backgroundImage ? `url('${backgroundImage}')` : `url('/images/ben-yehuda-110/image-1 (1).png')`,
         }}
       />
       
