@@ -61,6 +61,7 @@ export interface MatchResult {
   lead: ContactLead;
   matchScore: number;
   matchReasons: string[];
+  priority: number; // 0-100, higher = better match quality
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -347,11 +348,118 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   }
   
   // ===== ALL CHECKS PASSED - MATCH! =====
+  // Calculate priority score for sorting
+  const priority = calculatePriorityScore(property, lead);
+  
   return {
     lead,
     matchScore: 100,
-    matchReasons: reasons
+    matchReasons: reasons,
+    priority
   };
+}
+
+// ===== PRIORITY SCORING =====
+
+/**
+ * Calculate priority score (0-100) for sorting matched properties
+ * Higher score = better match quality within the same binary match
+ * 
+ * Scoring breakdown:
+ * - Price closeness to budget center: 0-30 pts
+ * - Rooms closeness to ideal: 0-20 pts
+ * - Flexible features that property has: up to 50 pts
+ */
+export function calculatePriorityScore(property: ScoutedProperty, lead: ContactLead): number {
+  let priority = 0;
+  
+  // ===== PRICE PRIORITY (0-30 points) =====
+  if (property.price && lead.budget_max) {
+    const budgetMin = lead.budget_min || 0;
+    const budgetMid = (budgetMin + lead.budget_max) / 2;
+    const priceRatio = property.price / lead.budget_max;
+    
+    if (property.price <= budgetMid) {
+      // Under mid-budget = best priority
+      priority += 30;
+    } else if (priceRatio <= 0.85) {
+      priority += 25;
+    } else if (priceRatio <= 1.0) {
+      priority += 20;
+    } else if (priceRatio <= 1.05) {
+      priority += 10;
+    } else {
+      priority += 5;
+    }
+  }
+  
+  // ===== ROOMS PRIORITY (0-20 points) =====
+  if (property.rooms && lead.rooms_min && lead.rooms_max) {
+    const idealRooms = (lead.rooms_min + lead.rooms_max) / 2;
+    const diff = Math.abs(property.rooms - idealRooms);
+    
+    if (diff === 0) {
+      priority += 20;
+    } else if (diff <= 0.5) {
+      priority += 15;
+    } else if (diff <= 1) {
+      priority += 10;
+    } else {
+      priority += 5;
+    }
+  }
+  
+  // ===== FLEXIBLE FEATURES BONUS (up to 50 points) =====
+  // If lead marked "flexible" but property HAS the feature - bonus!
+  
+  // Elevator: +8 pts
+  if (lead.elevator_required && lead.elevator_flexible && 
+      property.features?.elevator === true) {
+    priority += 8;
+  }
+  
+  // Parking: +8 pts
+  if (lead.parking_required && lead.parking_flexible && 
+      property.features?.parking === true) {
+    priority += 8;
+  }
+  
+  // Mamad: +8 pts
+  if (lead.mamad_required && lead.mamad_flexible && 
+      property.features?.mamad === true) {
+    priority += 8;
+  }
+  
+  // Balcony: +6 pts
+  if (lead.balcony_required && lead.balcony_flexible && 
+      property.features?.balcony === true) {
+    priority += 6;
+  }
+  
+  // Yard: +6 pts
+  if (lead.yard_required && lead.yard_flexible && 
+      property.features?.yard === true) {
+    priority += 6;
+  }
+  
+  // Roof: +6 pts
+  if (lead.roof_required && lead.roof_flexible && 
+      property.features?.roof === true) {
+    priority += 6;
+  }
+  
+  // Pets: +4 pts
+  if (lead.pets && lead.pets_flexible && 
+      (property.features?.pets === true || property.features?.allows_pets === true)) {
+    priority += 4;
+  }
+  
+  // Furnished: +4 pts
+  if (lead.furnished_required && lead.furnished_flexible && property.features?.furnished) {
+    priority += 4;
+  }
+  
+  return priority;
 }
 
 // ===== WHATSAPP HELPERS =====
