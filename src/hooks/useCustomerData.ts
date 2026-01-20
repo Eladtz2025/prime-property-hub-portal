@@ -85,6 +85,7 @@ interface CustomerFilters {
   assigned_agent_id?: string;
   search?: string;
   showHidden?: boolean;
+  onlyHidden?: boolean;
 }
 
 export const useCustomerData = (filters?: CustomerFilters) => {
@@ -100,8 +101,10 @@ export const useCustomerData = (filters?: CustomerFilters) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter hidden customers unless showHidden is true
-      if (!filters?.showHidden) {
+      // Filter hidden customers
+      if (filters?.onlyHidden) {
+        query = query.eq('is_hidden', true);
+      } else if (!filters?.showHidden) {
         query = query.or('is_hidden.is.null,is_hidden.eq.false');
       }
 
@@ -136,7 +139,7 @@ export const useCustomerData = (filters?: CustomerFilters) => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [filters?.status, filters?.priority, filters?.assigned_agent_id, filters?.search, filters?.showHidden]);
+  }, [filters?.status, filters?.priority, filters?.assigned_agent_id, filters?.search, filters?.showHidden, filters?.onlyHidden]);
 
   const updateCustomerStatus = async (id: string, status: string) => {
     try {

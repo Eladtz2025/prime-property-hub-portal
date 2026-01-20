@@ -24,7 +24,7 @@ interface Agent {
   email: string;
 }
 
-interface CustomerMobileTableProps {
+export interface CustomerMobileTableProps {
   customers: Customer[];
   onSave: () => void;
   onUpdateStatus: (id: string, status: string) => void;
@@ -34,6 +34,7 @@ interface CustomerMobileTableProps {
   onHideCustomer?: (id: string) => void;
   onUnhideCustomer?: (id: string) => void;
   agents?: Agent[];
+  isHiddenView?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -107,6 +108,7 @@ export const CustomerMobileTable = ({
   onHideCustomer,
   onUnhideCustomer,
   agents = [],
+  isHiddenView = false,
 }: CustomerMobileTableProps) => {
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
