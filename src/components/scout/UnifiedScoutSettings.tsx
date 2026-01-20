@@ -295,7 +295,7 @@ export const UnifiedScoutSettings: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Accordion type="multiple" defaultValue={['configs']} className="space-y-4">
+      <Accordion type="multiple" defaultValue={[]} className="space-y-4">
         {/* Scout Configurations */}
         <AccordionItem value="configs" className="border rounded-lg bg-card">
           <AccordionTrigger className="px-4 hover:no-underline">
