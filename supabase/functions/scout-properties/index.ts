@@ -226,6 +226,21 @@ serve(async (req) => {
 
           console.log(`Extracted ${extractedProperties.length} properties from ${url}`);
           
+          // Enhanced logging for Madlan debugging when no properties found
+          if (extractedProperties.length === 0) {
+            const sourceFromUrl = url.includes('madlan') ? 'Madlan' : url.includes('homeless') ? 'Homeless' : 'Unknown';
+            console.warn(`⚠️ ${sourceFromUrl}: 0 properties extracted from ${url}`);
+            console.warn(`   Markdown length: ${markdown?.length || 0} chars`);
+            console.warn(`   HTML length: ${html?.length || 0} chars`);
+            console.warn(`   Markdown preview (first 800 chars): ${(markdown || '').substring(0, 800)}`);
+            
+            // Check for common blocking indicators
+            const lowerMarkdown = (markdown || '').toLowerCase();
+            if (lowerMarkdown.includes('captcha') || lowerMarkdown.includes('access denied') || lowerMarkdown.includes('blocked')) {
+              console.error(`🚫 ${sourceFromUrl}: Possible anti-bot blocking detected!`);
+            }
+          }
+
           // Save properties immediately after each page
           for (const property of extractedProperties) {
             const normalizedCity = normalizeCityName(property.city);

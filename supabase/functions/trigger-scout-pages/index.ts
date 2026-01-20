@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { fetchScoutSettings } from '../_shared/settings.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,11 +43,28 @@ Deno.serve(async (req) => {
 
     console.log(`🚀 Trigger Scout Pages - Config: ${config.name} (${config.source})`);
 
-    // All sources now use distributed scanning - 12 pages each in separate calls
-    const pagesToScan = 12;
+    // Fetch settings to get pages per source
+    const settings = await fetchScoutSettings(supabase);
+    
+    // Determine pages to scan based on source from settings
+    let pagesToScan: number;
+    switch (config.source) {
+      case 'yad2':
+        pagesToScan = settings.scraping.yad2_pages;
+        break;
+      case 'madlan':
+        pagesToScan = settings.scraping.madlan_pages;
+        break;
+      case 'homeless':
+        pagesToScan = settings.scraping.homeless_pages || 5;
+        break;
+      default:
+        pagesToScan = 7;
+    }
+    
     const triggeredPages: number[] = [];
 
-    console.log(`📄 Triggering ${pagesToScan} separate page scans for: ${config.name} (${config.source})`);
+    console.log(`📄 Triggering ${pagesToScan} page scans for: ${config.name} (${config.source}) [from settings]`);
 
     for (let page = 1; page <= pagesToScan; page++) {
       try {
