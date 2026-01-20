@@ -32,7 +32,7 @@ const DynamicPricingSlide = ({
       />
       
         {/* Content */}
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-start overflow-y-auto text-center px-4 md:px-8 lg:px-6 xl:px-8 2xl:px-12 pt-3 md:pt-4 lg:pt-3 xl:pt-4 2xl:pt-6 pb-2" dir="ltr">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center lg:justify-start 2xl:justify-center overflow-y-auto text-center px-4 md:px-8 lg:px-6 xl:px-8 2xl:px-12 pt-3 md:pt-4 lg:pt-3 xl:pt-4 2xl:pt-6 pb-2" dir="ltr">
           {/* Title */}
           <h2 
             className="text-2xl md:text-4xl lg:text-2xl xl:text-3xl 2xl:text-5xl font-serif font-light text-white mb-2 md:mb-4 lg:mb-1 xl:mb-2 2xl:mb-6"
