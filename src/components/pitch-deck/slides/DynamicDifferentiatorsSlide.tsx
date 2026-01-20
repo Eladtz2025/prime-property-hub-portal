@@ -1,9 +1,11 @@
 import type { DifferentiatorsSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 import cityMarketLogo from "@/assets/city-market-icon.png";
 import { Globe, MessageCircle, Handshake, Network, LucideIcon } from 'lucide-react';
 
 interface DynamicDifferentiatorsSlideProps {
   data: DifferentiatorsSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -14,10 +16,12 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicDifferentiatorsSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/WhatsApp Image 2026-01-12 at 18.21.59.jpeg',
   overlayOpacity = 0.85 
 }: DynamicDifferentiatorsSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const isRTL = language === 'he';
 
   const defaultDifferentiators = [
     { heading: 'Designed for an international audience', description: 'Specialized expertise catering to foreign buyers, relocation clients, and international investors', icon: 'Globe' },

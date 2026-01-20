@@ -1,8 +1,10 @@
 import { MarketingSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 import { Camera, Users, Target, LucideIcon } from 'lucide-react';
 
 interface DynamicMarketingSlideProps {
   data: MarketingSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -13,10 +15,12 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicMarketingSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/IMG_5766.JPG',
   overlayOpacity = 0.85 
 }: DynamicMarketingSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const isRTL = language === 'he';
 
   const columns = [
     { 

@@ -1,18 +1,22 @@
 import { PricingSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 import { TrendingUp, Home, BarChart3 } from 'lucide-react';
 
 interface DynamicPricingSlideProps {
   data: PricingSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
 
 const DynamicPricingSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/IMG_5765.JPG',
   overlayOpacity = 0.85 
 }: DynamicPricingSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const isRTL = language === 'he';
 
   return (
     <div className="relative flex h-full w-full flex-col">

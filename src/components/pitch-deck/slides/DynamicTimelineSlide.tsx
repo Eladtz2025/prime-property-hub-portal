@@ -1,8 +1,10 @@
 import { TimelineSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 import { FileSearch, Users, MessageSquare, CheckCircle, LucideIcon } from 'lucide-react';
 
 interface DynamicTimelineSlideProps {
   data: TimelineSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -13,10 +15,12 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicTimelineSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/IMG_5305.jpeg',
   overlayOpacity = 0.85 
 }: DynamicTimelineSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const isRTL = language === 'he';
 
   const defaultTimelineItems = [
     { number: 1, period: "Week 1", description: "Pricing validation, positioning", icon: "FileSearch" },

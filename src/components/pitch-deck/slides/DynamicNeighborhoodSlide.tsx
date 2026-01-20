@@ -1,8 +1,10 @@
 import { NeighborhoodSlideData } from '@/types/pitch-deck';
+import { Language, t as getT } from '@/lib/pitch-deck-translations';
 import { Waves, MapPin, Coffee, ShoppingBag, TreePalm, LucideIcon } from 'lucide-react';
 
 interface DynamicNeighborhoodSlideProps {
   data: NeighborhoodSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -13,11 +15,14 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicNeighborhoodSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/IMG_5763.JPG',
   overlayOpacity = 0.85 
 }: DynamicNeighborhoodSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
   const defaultIcons = [Coffee, ShoppingBag, TreePalm];
+  const t = getT(language);
+  const isRTL = language === 'he';
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">

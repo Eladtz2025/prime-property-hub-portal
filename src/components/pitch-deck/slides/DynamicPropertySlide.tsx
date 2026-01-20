@@ -1,4 +1,5 @@
 import { PropertySlideData } from '@/types/pitch-deck';
+import { Language, t as getT } from '@/lib/pitch-deck-translations';
 import {
   LucideIcon,
   Square,
@@ -28,6 +29,7 @@ interface DynamicPropertySlideProps {
     price?: string;
     description?: string;
   };
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -58,10 +60,13 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicPropertySlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/cleaned-property-image (2).png',
   overlayOpacity = 0.85 
 }: DynamicPropertySlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const t = getT(language);
+  const isRTL = language === 'he';
 
   // Build apartment details from new or old format
   const apartmentDetails = data.apartment_details?.length 
@@ -94,7 +99,7 @@ const DynamicPropertySlide = ({
       />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-4 md:py-6" dir="ltr">
+      <div className={`relative z-10 flex flex-1 flex-col items-center justify-center text-center px-4 md:px-8 py-4 md:py-6 ${isRTL ? 'font-hebrew' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Title */}
         <h2 
           className="text-xl md:text-3xl lg:text-4xl font-serif font-light text-white mb-2 md:mb-4"
@@ -110,12 +115,12 @@ const DynamicPropertySlide = ({
         {/* Two Column Layout */}
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
           {/* The Apartment */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+          <div className={`bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 ${isRTL ? 'text-right' : 'text-left'}`}>
             <h3 
               className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
               style={{ textShadow: softShadow }}
             >
-              The Apartment
+              {t('theApartment')}
             </h3>
             <ul className="space-y-2 md:space-y-3">
               {apartmentDetails.map((item, index) => {
@@ -132,12 +137,12 @@ const DynamicPropertySlide = ({
 
           {/* The Building */}
           {buildingDetails.length > 0 && (
-            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 text-left">
+            <div className={`bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4 md:p-6 ${isRTL ? 'text-right' : 'text-left'}`}>
               <h3 
                 className="text-base md:text-lg font-medium text-white mb-3 md:mb-4"
                 style={{ textShadow: softShadow }}
               >
-                The Building
+                {t('theBuilding')}
               </h3>
               <ul className="space-y-2 md:space-y-3">
                 {buildingDetails.map((item, index) => {
