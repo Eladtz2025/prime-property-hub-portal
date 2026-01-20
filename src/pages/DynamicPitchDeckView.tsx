@@ -228,36 +228,31 @@ const DynamicPitchDeckView = () => {
         ))}
       </div>
 
-      {/* Navigation - Fixed height, part of flex layout */}
-      <div dir="ltr" className="h-16 md:h-20 flex-shrink-0 relative z-30 px-3 md:px-4 flex items-center bg-gradient-to-t from-black/20 to-transparent">
-        {/* Mobile Layout - Two rows */}
-        <div className="flex md:hidden w-full flex-col gap-1.5 justify-center">
-          {/* Top row: Counter + Logo */}
-          <div className="flex items-center justify-between">
-            <div className="bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1">
-              <span 
-                dir="ltr"
-                className="text-white text-xs font-light tracking-wide"
-                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
-              >
-                {currentSlide + 1} of {slides.length}
-              </span>
-            </div>
-            <img src={cityMarketLogo} alt="City Market Properties" className="h-6 w-auto" />
+      {/* Navigation - Fixed height footer */}
+      <div dir="ltr" className="h-14 md:h-16 flex-shrink-0 relative z-30 px-3 md:px-6 flex items-center bg-gradient-to-t from-black/30 to-transparent">
+        {/* Mobile Layout */}
+        <div className="flex md:hidden w-full items-center justify-between">
+          {/* Counter */}
+          <div className="bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <span 
+              dir="ltr"
+              className="text-white text-xs font-light"
+            >
+              {currentSlide + 1}/{slides.length}
+            </span>
           </div>
           
-          {/* Bottom row: Arrows + Dots */}
-          <div className="flex items-center justify-center gap-2">
+          {/* Arrows + Dots */}
+          <div className="flex items-center gap-1.5">
             <button
               onClick={prevSlide}
               disabled={currentSlide === 0}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/40 disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             
-            {/* Slide Indicators - Compact for mobile */}
-            <div className="flex flex-row-reverse items-center gap-1">
+            <div className="flex flex-row-reverse items-center gap-1 px-1">
               {slides.map((_, index) => (
                 <button
                   key={index}
@@ -265,7 +260,7 @@ const DynamicPitchDeckView = () => {
                   className={`h-1.5 rounded-full transition-all ${
                     index === currentSlide
                       ? "w-3 bg-white"
-                      : "w-1.5 bg-white/40 hover:bg-white/60"
+                      : "w-1.5 bg-white/40"
                   }`}
                 />
               ))}
@@ -274,45 +269,46 @@ const DynamicPitchDeckView = () => {
             <button
               onClick={nextSlide}
               disabled={currentSlide === slides.length - 1}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/40 disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
+          
+          {/* Logo */}
+          <img src={cityMarketLogo} alt="City Market" className="h-6 w-auto" />
         </div>
         
         {/* Desktop Layout - Single row */}
         <div className="hidden md:flex w-full items-center justify-between">
-          {/* Page Counter - Left side */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
+          {/* Counter */}
+          <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
             <span 
               dir="ltr"
-              className="text-white text-sm font-light tracking-wide"
-              style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+              className="text-white text-sm font-light"
             >
               {currentSlide + 1} of {slides.length}
             </span>
           </div>
 
-          {/* Center Navigation: Arrows + Dots */}
-          <div className="flex items-center gap-4">
+          {/* Arrows + Dots */}
+          <div className="flex items-center gap-3">
             <button
               onClick={prevSlide}
               disabled={currentSlide === 0}
-              className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/40 disabled:opacity-30"
             >
-              <ChevronLeft className="h-5 w-5 lg:h-6 lg:w-6" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
             
-            {/* Slide Indicators */}
-            <div className="flex flex-row-reverse items-center gap-2">
+            <div className="flex flex-row-reverse items-center gap-1.5">
               {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
                   className={`h-2 rounded-full transition-all ${
                     index === currentSlide
-                      ? "w-6 bg-white"
+                      ? "w-5 bg-white"
                       : "w-2 bg-white/40 hover:bg-white/60"
                   }`}
                 />
@@ -322,14 +318,14 @@ const DynamicPitchDeckView = () => {
             <button
               onClick={nextSlide}
               disabled={currentSlide === slides.length - 1}
-              className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/50 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/40 disabled:opacity-30"
             >
-              <ChevronRight className="h-5 w-5 lg:h-6 lg:w-6" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Logo - Right side */}
-          <img src={cityMarketLogo} alt="City Market Properties" className="h-10 lg:h-12 w-auto" />
+          {/* Logo */}
+          <img src={cityMarketLogo} alt="City Market" className="h-8 w-auto" />
         </div>
       </div>
     </div>
