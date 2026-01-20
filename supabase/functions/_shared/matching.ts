@@ -124,12 +124,22 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   
   // ===== MANDATORY: Lead must have preferred cities =====
   if (!lead.preferred_cities?.length) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדרה עיר מועדפת - לא ניתן להתאים'] };
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדרה עיר מועדפת - לא ניתן להתאים'], priority: 0 };
   }
   
   // ===== MANDATORY: Lead must have preferred neighborhoods =====
   if (!lead.preferred_neighborhoods?.length) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדרו שכונות מועדפות - לא ניתן להתאים'] };
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדרו שכונות מועדפות - לא ניתן להתאים'], priority: 0 };
+  }
+  
+  // ===== MANDATORY: Lead must have budget =====
+  if (!lead.budget_max) {
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדר תקציב - לא ניתן להתאים'], priority: 0 };
+  }
+  
+  // ===== MANDATORY: Lead must have rooms range =====
+  if (!lead.rooms_min && !lead.rooms_max) {
+    return { lead, matchScore: 0, matchReasons: ['לא הוגדר טווח חדרים - לא ניתן להתאים'], priority: 0 };
   }
   
   // ===== PROPERTY TYPE MUST MATCH =====
@@ -141,7 +151,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     const isSale = propertyType === 'sale' && leadPropertyType === 'sale';
     
     if (!isRental && !isSale) {
-      return { lead, matchScore: 0, matchReasons: ['סוג עסקה לא מתאים'] };
+      return { lead, matchScore: 0, matchReasons: ['סוג עסקה לא מתאים'], priority: 0 };
     }
   }
   
@@ -162,20 +172,20 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
              normalizedLeadCity.includes(normalizedPropertyCity);
     });
     if (!cityMatch) {
-      return { lead, matchScore: 0, matchReasons: [`עיר לא מתאימה: ${property.city}`] };
+      return { lead, matchScore: 0, matchReasons: [`עיר לא מתאימה: ${property.city}`], priority: 0 };
     }
     reasons.push('עיר מועדפת ✓');
   }
   
   // ===== NEIGHBORHOOD MUST MATCH =====
   if (!property.neighborhood) {
-    return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'] };
+    return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'], priority: 0 };
   }
   
   const city = property.city || 'תל אביב יפו';
   const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
   if (!isNeighborhoodMatch) {
-    return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`] };
+    return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`], priority: 0 };
   }
   reasons.push(`שכונה מועדפת: ${property.neighborhood} ✓`);
   
@@ -189,12 +199,12 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     const maxAllowed = lead.budget_max * (1 + flexibility);
     
     if (property.price < minBudget) {
-      return { lead, matchScore: 0, matchReasons: [`מחיר נמוך מהתקציב המינימלי: ₪${property.price.toLocaleString()}`] };
+      return { lead, matchScore: 0, matchReasons: [`מחיר נמוך מהתקציב המינימלי: ₪${property.price.toLocaleString()}`], priority: 0 };
     }
     
     if (property.price > maxAllowed) {
       const percentAbove = Math.round(((property.price - lead.budget_max) / lead.budget_max) * 100);
-      return { lead, matchScore: 0, matchReasons: [`מחיר גבוה מהתקציב ב-${percentAbove}%: ₪${property.price.toLocaleString()}`] };
+      return { lead, matchScore: 0, matchReasons: [`מחיר גבוה מהתקציב ב-${percentAbove}%: ₪${property.price.toLocaleString()}`], priority: 0 };
     }
     
     // Determine price position for reason text
@@ -213,10 +223,10 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   // ===== ROOMS MUST BE IN RANGE =====
   if (property.rooms) {
     if (lead.rooms_min && property.rooms < lead.rooms_min) {
-      return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.rooms_min} חדרים, בנכס יש ${property.rooms}`] };
+      return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.rooms_min} חדרים, בנכס יש ${property.rooms}`], priority: 0 };
     }
     if (lead.rooms_max && property.rooms > lead.rooms_max) {
-      return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.rooms_max} חדרים, בנכס יש ${property.rooms}`] };
+      return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.rooms_max} חדרים, בנכס יש ${property.rooms}`], priority: 0 };
     }
     reasons.push(`${property.rooms} חדרים ✓`);
   }
@@ -226,7 +236,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   // Elevator
   if (lead.elevator_required && lead.elevator_flexible === false) {
     if (property.features?.elevator !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - לא צוין שיש בנכס'] };
+      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - לא צוין שיש בנכס'], priority: 0 };
     }
     reasons.push('יש מעלית ✓');
   } else if (lead.elevator_required && property.features?.elevator === true) {
@@ -236,7 +246,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   // Parking
   if (lead.parking_required && lead.parking_flexible === false) {
     if (property.features?.parking !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - לא צוין שיש בנכס'] };
+      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - לא צוין שיש בנכס'], priority: 0 };
     }
     reasons.push('יש חניה ✓');
   } else if (lead.parking_required && property.features?.parking === true) {
@@ -263,7 +273,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
           if (opt === 'roof') return 'גג';
           return opt;
         }).join(' או ');
-        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - לא צוין שיש בנכס`] };
+        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - לא צוין שיש בנכס`], priority: 0 };
       }
       
       // Add what was found
@@ -280,7 +290,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     // AND mode: each feature is checked individually
     if (lead.balcony_required && lead.balcony_flexible === false) {
       if (property.features?.balcony !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - לא צוין שיש בנכס'] };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - לא צוין שיש בנכס'], priority: 0 };
       }
       reasons.push('יש מרפסת ✓');
     } else if (lead.balcony_required && property.features?.balcony === true) {
@@ -289,7 +299,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     
     if (lead.yard_required && lead.yard_flexible === false) {
       if (property.features?.yard !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - לא צוין שיש בנכס'] };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - לא צוין שיש בנכס'], priority: 0 };
       }
       reasons.push('יש חצר ✓');
     } else if (lead.yard_required && property.features?.yard === true) {
@@ -298,7 +308,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     
     if (lead.roof_required && lead.roof_flexible === false) {
       if (property.features?.roof !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרש גג - לא צוין שיש בנכס'] };
+        return { lead, matchScore: 0, matchReasons: ['נדרש גג - לא צוין שיש בנכס'], priority: 0 };
       }
       reasons.push('יש גג ✓');
     } else if (lead.roof_required && property.features?.roof === true) {
@@ -309,7 +319,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   // Pets
   if (lead.pets === true && lead.pets_flexible === false) {
     if (property.features?.pets !== true && property.features?.allows_pets !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'] };
+      return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'], priority: 0 };
     }
     reasons.push('מאפשר חיות מחמד ✓');
   } else if (lead.pets === true && (property.features?.pets === true || property.features?.allows_pets === true)) {
@@ -319,7 +329,7 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
   // ===== NEW: Mamad (Safe Room) =====
   if (lead.mamad_required && lead.mamad_flexible === false) {
     if (property.features?.mamad !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - לא צוין שיש בנכס'] };
+      return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - לא צוין שיש בנכס'], priority: 0 };
     }
     reasons.push('יש ממ"ד ✓');
   } else if (lead.mamad_required && property.features?.mamad === true) {
@@ -332,13 +342,13 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     
     if (lead.furnished_required === 'fully_furnished') {
       if (propertyFurnished !== 'fully_furnished') {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'] };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
       }
       reasons.push('מרוהטת מלא ✓');
     } else if (lead.furnished_required === 'partially_furnished') {
       // Accept fully or partially furnished
       if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished') {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'] };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'], priority: 0 };
       }
       reasons.push('מרוהטת ✓');
     }
