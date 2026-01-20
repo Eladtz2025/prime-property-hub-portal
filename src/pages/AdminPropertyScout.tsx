@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History, Wand2, Copy, Sliders } from 'lucide-react';
+import { Search, Settings, History, Sliders } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ScoutConfigManager } from '@/components/scout/ScoutConfigManager';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
-import { ScoutStats } from '@/components/scout/ScoutStats';
-import { ManualScoutForm } from '@/components/scout/ManualScoutForm';
-import { DuplicateAlertsPanel } from '@/components/scout/DuplicateAlertsPanel';
 import { ScoutSettingsPanel } from '@/components/admin/scout/ScoutSettingsPanel';
+
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
 
@@ -23,14 +21,10 @@ const AdminPropertyScout: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Search className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">דירות שנמצאו</span>
-            </TabsTrigger>
-            <TabsTrigger value="duplicates" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Copy className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">כפילויות</span>
             </TabsTrigger>
             <TabsTrigger value="configs" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Settings className="h-4 w-4 shrink-0" />
@@ -39,10 +33,6 @@ const AdminPropertyScout: React.FC = () => {
             <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <History className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">היסטוריית ריצות</span>
-            </TabsTrigger>
-            <TabsTrigger value="manual" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Wand2 className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">סריקה ידנית</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Sliders className="h-4 w-4 shrink-0" />
@@ -54,20 +44,12 @@ const AdminPropertyScout: React.FC = () => {
             <ScoutedPropertiesTable />
           </TabsContent>
 
-          <TabsContent value="duplicates" className="mt-6">
-            <DuplicateAlertsPanel />
-          </TabsContent>
-
           <TabsContent value="configs" className="mt-6">
             <ScoutConfigManager />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
             <ScoutRunHistory />
-          </TabsContent>
-
-          <TabsContent value="manual" className="mt-6">
-            <ManualScoutForm />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
