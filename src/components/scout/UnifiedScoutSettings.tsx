@@ -146,6 +146,23 @@ export const UnifiedScoutSettings: React.FC = () => {
     }
   }, [backfillProgress?.status]);
 
+  // Auto-continue backfill when there are more items to process
+  useEffect(() => {
+    if (
+      isBackfilling &&
+      backfillProgress?.status === 'running' &&
+      backfillProgress?.last_processed_id &&
+      (backfillProgress?.processed_items || 0) < (backfillProgress?.total_items || 0)
+    ) {
+      // Wait before continuing to allow UI to update and avoid rate limiting
+      const timer = setTimeout(() => {
+        continueBackfill(backfillProgress.last_processed_id!);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.last_processed_id]);
+
   // Fetch scout configs
   const { data: configs, isLoading: configsLoading } = useQuery({
     queryKey: ['scout-configs'],
@@ -303,8 +320,15 @@ export const UnifiedScoutSettings: React.FC = () => {
       setIsBackfilling(true);
       toast.info('מתחיל עדכון תאריכי כניסה...');
       
+      // Reset any existing 'running' progress to start fresh
+      await supabase
+        .from('backfill_progress')
+        .update({ status: 'cancelled' })
+        .eq('task_name', 'backfill_entry_dates')
+        .eq('status', 'running');
+      
       const { error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batchSize: 10 },
+        body: { batch_size: 10 },
       });
       
       if (error) throw error;
@@ -320,14 +344,24 @@ export const UnifiedScoutSettings: React.FC = () => {
   // Continue backfill if more items
   const continueBackfill = async (continueFrom: string) => {
     try {
-      const { error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batchSize: 10, continueFrom },
+      console.log('Continuing backfill from:', continueFrom);
+      
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
+        body: { batch_size: 10, continue_from: continueFrom },
       });
       
       if (error) throw error;
+      
+      // Check if completed
+      if (data?.completed) {
+        toast.success('עדכון תאריכי כניסה הושלם בהצלחה!');
+        setIsBackfilling(false);
+      }
+      
       refetchProgress();
     } catch (error) {
       console.error('Continue backfill error:', error);
+      toast.error('שגיאה בהמשך העדכון');
       setIsBackfilling(false);
     }
   };
