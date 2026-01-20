@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Loader2, CheckCircle2, Clock, Building2, Sparkles, Users, XCircle, Aler
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface RunningRun {
   id: string;
@@ -45,7 +46,26 @@ export const LiveScanStatus: React.FC = () => {
   const [showCompletionSummary, setShowCompletionSummary] = useState(false);
   const [completionData, setCompletionData] = useState<{ total: number; new: number; matched: number } | null>(null);
   
-  // Query for running scans - refresh every 3 seconds
+  // Query for page settings per source
+  const { data: pageSettings } = useQuery({
+    queryKey: ['scout-settings-pages'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('scout_settings')
+        .select('setting_key, setting_value')
+        .eq('category', 'scraping')
+        .in('setting_key', ['yad2_pages', 'madlan_pages', 'homeless_pages']);
+      
+      return {
+        yad2: parseInt(String(data?.find(s => s.setting_key === 'yad2_pages')?.setting_value || '12')),
+        madlan: parseInt(String(data?.find(s => s.setting_key === 'madlan_pages')?.setting_value || '15')),
+        homeless: parseInt(String(data?.find(s => s.setting_key === 'homeless_pages')?.setting_value || '5')),
+      };
+    },
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  // Query for running scans - refresh every 3 seconds (exclude matching runs)
   const { data: runningScans } = useQuery({
     queryKey: ['running-scans'],
     queryFn: async () => {
@@ -53,6 +73,7 @@ export const LiveScanStatus: React.FC = () => {
         .from('scout_runs')
         .select('id, source, status, properties_found, new_properties, started_at, config_id, scout_configs(name)')
         .eq('status', 'running')
+        .neq('source', 'matching') // Exclude matching runs - they show in separate card
         .order('started_at', { ascending: true });
       
       if (error) throw error;
@@ -70,6 +91,7 @@ export const LiveScanStatus: React.FC = () => {
         .from('scout_runs')
         .select('id, source, status, properties_found, new_properties, leads_matched, completed_at, config_id, scout_configs(name)')
         .eq('status', 'completed')
+        .neq('source', 'matching') // Exclude matching runs
         .gte('completed_at', fiveMinutesAgo)
         .order('completed_at', { ascending: false });
       
@@ -183,6 +205,27 @@ export const LiveScanStatus: React.FC = () => {
     wasScanning.current = isScanning;
   }, [isScanning, recentCompleted]);
 
+  // Get page count per source from settings
+  const getSourcePageCount = (source: string): number => {
+    if (!pageSettings) return 12; // Default fallback
+    switch (source) {
+      case 'yad2': return pageSettings.yad2;
+      case 'madlan': return pageSettings.madlan;
+      case 'homeless': return pageSettings.homeless;
+      default: return 12;
+    }
+  };
+
+  // Get progress bar color class per source
+  const getSourceProgressColor = (source: string): string => {
+    switch (source) {
+      case 'yad2': return 'bg-orange-500';
+      case 'madlan': return 'bg-blue-500';
+      case 'homeless': return 'bg-purple-500';
+      default: return 'bg-primary';
+    }
+  };
+
   // Group by config_id to show progress per configuration
   const configProgress = React.useMemo(() => {
     const progress: Record<string, ConfigProgress> = {};
@@ -191,13 +234,14 @@ export const LiveScanStatus: React.FC = () => {
     runningScans?.forEach(run => {
       const configId = run.config_id || 'manual';
       const configName = run.scout_configs?.name || run.source;
+      const sourcePages = getSourcePageCount(run.source);
       if (!progress[configId]) {
         progress[configId] = { 
           name: configName, 
           source: run.source, 
           running: 0, 
           completed: 0, 
-          total: 12, 
+          total: sourcePages, 
           found: 0, 
           new: 0 
         };
@@ -211,13 +255,14 @@ export const LiveScanStatus: React.FC = () => {
     recentCompleted?.forEach((run: any) => {
       const configId = run.config_id || 'manual';
       const configName = run.scout_configs?.name || run.source;
+      const sourcePages = getSourcePageCount(run.source);
       if (!progress[configId]) {
         progress[configId] = { 
           name: configName, 
           source: run.source, 
           running: 0, 
           completed: 0, 
-          total: 12, 
+          total: sourcePages, 
           found: 0, 
           new: 0 
         };
@@ -228,7 +273,7 @@ export const LiveScanStatus: React.FC = () => {
     });
     
     return progress;
-  }, [runningScans, recentCompleted]);
+  }, [runningScans, recentCompleted, pageSettings]);
 
   // Also group by source for summary
   const sourceProgress = React.useMemo(() => {
@@ -441,21 +486,27 @@ export const LiveScanStatus: React.FC = () => {
           <Progress value={getOverallProgress()} className="h-2" />
         </div>
 
-        {/* Progress per source with individual progress bars */}
+        {/* Progress per source with individual colored progress bars */}
         <div className="space-y-3 mb-4">
           {Object.entries(sourceProgress).map(([source, stats]) => {
             const sourceConfigs = Object.values(configProgress).filter(c => c.source === source);
-            const totalPages = sourceConfigs.length * 12;
+            const pagesPerConfig = getSourcePageCount(source);
+            const totalPages = sourceConfigs.length * pagesPerConfig;
             const completedPages = sourceConfigs.reduce((sum, c) => sum + c.completed, 0);
-            const progressPercent = totalPages > 0 ? (completedPages / totalPages) * 100 : 0;
+            const runningPages = sourceConfigs.reduce((sum, c) => sum + c.running, 0);
+            const progressPercent = totalPages > 0 ? ((completedPages + runningPages * 0.5) / totalPages) * 100 : 0;
+            const progressColor = getSourceProgressColor(source);
             
             return (
-              <div key={source} className="space-y-1">
+              <div key={source} className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getSourceBadge(source)}
                     <span className="text-sm font-medium">
                       {completedPages}/{totalPages} דפים
+                      {runningPages > 0 && (
+                        <span className="text-muted-foreground mr-1">({runningPages} רץ)</span>
+                      )}
                     </span>
                   </div>
                   <span className="text-sm">
@@ -465,7 +516,12 @@ export const LiveScanStatus: React.FC = () => {
                     )}
                   </span>
                 </div>
-                <Progress value={progressPercent} className="h-1.5" />
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn("h-full transition-all duration-500 rounded-full", progressColor)}
+                    style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                  />
+                </div>
               </div>
             );
           })}
