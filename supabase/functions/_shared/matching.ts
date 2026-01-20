@@ -103,6 +103,21 @@ export function getPriceFlexibility(price: number, propertyType: string): number
   return 0.08;                           // 8%
 }
 
+// ===== MATCHING SETTINGS INTERFACE =====
+
+export interface MatchingSettings {
+  entry_date_range_strict: number;
+  entry_date_range_flexible: number;
+  immediate_max_days: number;
+}
+
+// Default matching settings (used when not provided)
+export const defaultMatchingSettings: MatchingSettings = {
+  entry_date_range_strict: 10,
+  entry_date_range_flexible: 14,
+  immediate_max_days: 30,
+};
+
 // ===== MAIN MATCHING FUNCTION =====
 
 /**
@@ -120,7 +135,11 @@ export function getPriceFlexibility(price: number, propertyType: string): number
  * 
  * @returns MatchResult with score (0 or 100) and reasons
  */
-export function calculateMatch(property: ScoutedProperty, lead: ContactLead): MatchResult {
+export function calculateMatch(
+  property: ScoutedProperty, 
+  lead: ContactLead,
+  settings: MatchingSettings = defaultMatchingSettings
+): MatchResult {
   const reasons: string[] = [];
   
   // ===== MANDATORY: Lead must have preferred cities =====
@@ -365,21 +384,21 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
       : null;
     const propertyIsImmediate = !propertyEntryDate;
     const today = new Date();
-    const oneMonthFromNow = new Date();
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    const maxDaysForImmediate = new Date();
+    maxDaysForImmediate.setDate(maxDaysForImmediate.getDate() + settings.immediate_max_days);
 
     // Case 1: Lead requires IMMEDIATE entry
     if (lead.immediate_entry === true) {
       if (propertyIsImmediate) {
         reasons.push('כניסה מיידית ✓');
-      } else if (propertyEntryDate <= oneMonthFromNow) {
-        reasons.push('כניסה תוך חודש ✓');
+      } else if (propertyEntryDate <= maxDaysForImmediate) {
+        reasons.push(`כניסה תוך ${settings.immediate_max_days} יום ✓`);
       } else {
         return { lead, matchScore: 0, matchReasons: ['הנכס לא פנוי מיידית'], priority: 0 };
       }
     }
     
-    // Case 2: Lead has specific date (±10 days)
+    // Case 2: Lead has specific date (±strict range days)
     else if (lead.move_in_date && lead.flexible_move_date !== true) {
       // Immediate properties don't match specific dates!
       if (propertyIsImmediate) {
@@ -387,18 +406,18 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
       }
       
       const requestedDate = new Date(lead.move_in_date);
-      const tenDaysBefore = new Date(requestedDate);
-      tenDaysBefore.setDate(tenDaysBefore.getDate() - 10);
-      const tenDaysAfter = new Date(requestedDate);
-      tenDaysAfter.setDate(tenDaysAfter.getDate() + 10);
+      const daysBefore = new Date(requestedDate);
+      daysBefore.setDate(daysBefore.getDate() - settings.entry_date_range_strict);
+      const daysAfter = new Date(requestedDate);
+      daysAfter.setDate(daysAfter.getDate() + settings.entry_date_range_strict);
       
-      if (propertyEntryDate < tenDaysBefore || propertyEntryDate > tenDaysAfter) {
-        return { lead, matchScore: 0, matchReasons: ['תאריך כניסה לא בטווח (±10 ימים)'], priority: 0 };
+      if (propertyEntryDate < daysBefore || propertyEntryDate > daysAfter) {
+        return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח (±${settings.entry_date_range_strict} ימים)`], priority: 0 };
       }
       reasons.push('תאריך כניסה תואם ✓');
     }
     
-    // Case 3: Lead has specific date + FLEXIBLE (±14 days / 2 weeks)
+    // Case 3: Lead has specific date + FLEXIBLE (±flexible range days)
     else if (lead.move_in_date && lead.flexible_move_date === true) {
       // Immediate properties don't match specific dates!
       if (propertyIsImmediate) {
@@ -406,13 +425,13 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
       }
       
       const requestedDate = new Date(lead.move_in_date);
-      const twoWeeksBefore = new Date(requestedDate);
-      twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
-      const twoWeeksAfter = new Date(requestedDate);
-      twoWeeksAfter.setDate(twoWeeksAfter.getDate() + 14);
+      const flexDaysBefore = new Date(requestedDate);
+      flexDaysBefore.setDate(flexDaysBefore.getDate() - settings.entry_date_range_flexible);
+      const flexDaysAfter = new Date(requestedDate);
+      flexDaysAfter.setDate(flexDaysAfter.getDate() + settings.entry_date_range_flexible);
       
-      if (propertyEntryDate < twoWeeksBefore || propertyEntryDate > twoWeeksAfter) {
-        return { lead, matchScore: 0, matchReasons: ['תאריך כניסה לא בטווח הגמיש (±שבועיים)'], priority: 0 };
+      if (propertyEntryDate < flexDaysBefore || propertyEntryDate > flexDaysAfter) {
+        return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח הגמיש (±${settings.entry_date_range_flexible} ימים)`], priority: 0 };
       }
       reasons.push('תאריך כניסה בטווח גמיש ✓');
     }

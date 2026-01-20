@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from "@/hooks/useScoutSettings";
-import { Loader2, Settings, Search, Copy, Calculator } from "lucide-react";
+import { Loader2, Settings, Search, Copy, Calculator, Calendar } from "lucide-react";
 
 export function ScoutSettingsPanel() {
   const { data: settings, isLoading } = useScoutSettings();
@@ -201,6 +201,60 @@ export function ScoutSettingsPanel() {
             <p className="text-xs text-muted-foreground">
               מספר הלקוחות המקסימלי שניתן להתאים לנכס אחד (ברירת מחדל: 20)
             </p>
+          </div>
+          
+          <Separator />
+          
+          {/* Entry Date Matching Settings */}
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+            <h5 className="font-medium text-sm flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              הגדרות תאריכי כניסה (שכירות)
+            </h5>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>טווח לתאריך ספציפי (±ימים)</Label>
+                <Input
+                  type="number"
+                  min={5}
+                  max={30}
+                  defaultValue={s.matching.entry_date_range_strict}
+                  onBlur={(e) => handleNumberChange('matching', 'entry_date_range_strict', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ברירת מחדל: 10 ימים
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>טווח לתאריך גמיש (±ימים)</Label>
+                <Input
+                  type="number"
+                  min={7}
+                  max={45}
+                  defaultValue={s.matching.entry_date_range_flexible}
+                  onBlur={(e) => handleNumberChange('matching', 'entry_date_range_flexible', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ברירת מחדל: 14 ימים
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>מקסימום ימים ל"מיידי"</Label>
+                <Input
+                  type="number"
+                  min={14}
+                  max={60}
+                  defaultValue={s.matching.immediate_max_days}
+                  onBlur={(e) => handleNumberChange('matching', 'immediate_max_days', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ברירת מחדל: 30 ימים
+                </p>
+              </div>
+            </div>
           </div>
           
           <Separator />

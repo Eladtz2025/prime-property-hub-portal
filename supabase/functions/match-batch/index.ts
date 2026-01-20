@@ -6,8 +6,11 @@ import {
   MatchResult, 
   calculateMatch, 
   buildWhatsAppMessage, 
-  cleanPhoneNumber 
+  cleanPhoneNumber,
+  MatchingSettings,
+  defaultMatchingSettings
 } from "../_shared/matching.ts";
+import { fetchCategorySettings } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,6 +69,16 @@ serve(async (req) => {
       });
     }
 
+    // Fetch matching settings from database
+    const matchingDbSettings = await fetchCategorySettings(supabase, 'matching');
+    const matchingSettings: MatchingSettings = {
+      entry_date_range_strict: matchingDbSettings.entry_date_range_strict ?? defaultMatchingSettings.entry_date_range_strict,
+      entry_date_range_flexible: matchingDbSettings.entry_date_range_flexible ?? defaultMatchingSettings.entry_date_range_flexible,
+      immediate_max_days: matchingDbSettings.immediate_max_days ?? defaultMatchingSettings.immediate_max_days,
+    };
+    
+    console.log(`⚙️ Entry date settings: strict=±${matchingSettings.entry_date_range_strict}d, flex=±${matchingSettings.entry_date_range_flexible}d, immediate=${matchingSettings.immediate_max_days}d`);
+
     // Fetch all active leads once for this batch
     const PAGE_SIZE = 1000;
     let allLeads: any[] = [];
@@ -118,7 +131,7 @@ serve(async (req) => {
       const matches: MatchResult[] = [];
 
       for (const lead of leads) {
-        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead);
+        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
         
         if (matchResult.matchScore >= 60) {
           matches.push(matchResult);
