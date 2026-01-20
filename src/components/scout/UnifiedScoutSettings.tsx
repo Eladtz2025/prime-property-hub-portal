@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -146,22 +146,61 @@ export const UnifiedScoutSettings: React.FC = () => {
     }
   }, [backfillProgress?.status]);
 
+  // Ref to prevent duplicate concurrent calls
+  const isProcessingRef = useRef(false);
+
   // Auto-continue backfill when there are more items to process
   useEffect(() => {
-    if (
-      isBackfilling &&
-      backfillProgress?.status === 'running' &&
-      backfillProgress?.last_processed_id &&
-      (backfillProgress?.processed_items || 0) < (backfillProgress?.total_items || 0)
-    ) {
-      // Wait before continuing to allow UI to update and avoid rate limiting
-      const timer = setTimeout(() => {
-        continueBackfill(backfillProgress.last_processed_id!);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    // Skip if not backfilling or already processing
+    if (!isBackfilling || isProcessingRef.current) return;
+    if (backfillProgress?.status !== 'running') return;
+    if (!backfillProgress?.last_processed_id) return;
+    
+    const processedItems = backfillProgress?.processed_items || 0;
+    const totalItems = backfillProgress?.total_items || 0;
+    
+    // Check if completed
+    if (processedItems >= totalItems && totalItems > 0) {
+      toast.success('עדכון תאריכי כניסה הושלם!');
+      setIsBackfilling(false);
+      return;
     }
-  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.last_processed_id]);
+
+    // Schedule next batch
+    const timer = setTimeout(async () => {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      
+      try {
+        console.log(`Auto-continuing backfill from ${backfillProgress.last_processed_id}, progress: ${processedItems}/${totalItems}`);
+        
+        const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
+          body: { batch_size: 10, continue_from: backfillProgress.last_processed_id },
+        });
+        
+        if (error) {
+          console.error('Continue error:', error);
+          toast.error('שגיאה בהמשך העדכון');
+          setIsBackfilling(false);
+          return;
+        }
+        
+        if (data?.completed) {
+          toast.success('עדכון תאריכי כניסה הושלם בהצלחה!');
+          setIsBackfilling(false);
+        }
+        
+        refetchProgress();
+      } catch (err) {
+        console.error('Continue error:', err);
+        setIsBackfilling(false);
+      } finally {
+        isProcessingRef.current = false;
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.last_processed_id, backfillProgress?.status]);
 
   // Fetch scout configs
   const { data: configs, isLoading: configsLoading } = useQuery({
