@@ -1,14 +1,95 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from "@/hooks/useScoutSettings";
-import { Loader2, Settings, Search, Copy, Calculator, Calendar } from "lucide-react";
-
+import { Loader2, Settings, Search, Copy, Calculator, Calendar, RefreshCw, Database } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 export function ScoutSettingsPanel() {
   const { data: settings, isLoading } = useScoutSettings();
   const updateSetting = useUpdateScoutSetting();
+  const queryClient = useQueryClient();
+  const [isBackfilling, setIsBackfilling] = useState(false);
+
+  // Query backfill progress
+  const { data: backfillProgress, refetch: refetchProgress } = useQuery({
+    queryKey: ['backfill-progress'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('backfill_progress')
+        .select('*')
+        .eq('task_name', 'backfill_entry_dates')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    refetchInterval: isBackfilling ? 3000 : false
+  });
+
+  const handleBackfillEntryDates = async () => {
+    try {
+      setIsBackfilling(true);
+      toast.info('מתחיל עדכון תאריכי כניסה...');
+
+      // Start the backfill process
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
+        body: { batch_size: 10 }
+      });
+
+      if (error) throw error;
+
+      if (data.completed) {
+        toast.success('עדכון תאריכי כניסה הושלם!');
+        setIsBackfilling(false);
+      } else if (data.hasMore) {
+        toast.success(`עובד ${data.processed} נכסים. ממשיך...`);
+        // Continue with next batch after a delay
+        setTimeout(() => continueBackfill(data.lastProcessedId), 1000);
+      } else {
+        toast.success(`עדכון הושלם: ${data.successful} הצליחו, ${data.failed} נכשלו`);
+        setIsBackfilling(false);
+      }
+
+      refetchProgress();
+    } catch (err: any) {
+      console.error('Backfill error:', err);
+      toast.error(`שגיאה בעדכון: ${err.message}`);
+      setIsBackfilling(false);
+    }
+  };
+
+  const continueBackfill = async (continueFrom: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
+        body: { batch_size: 10, continue_from: continueFrom }
+      });
+
+      if (error) throw error;
+
+      refetchProgress();
+
+      if (data.completed || !data.hasMore) {
+        toast.success(`עדכון הושלם: ${backfillProgress?.successful_items || 0} הצליחו`);
+        setIsBackfilling(false);
+      } else {
+        // Continue with next batch
+        setTimeout(() => continueBackfill(data.lastProcessedId), 1000);
+      }
+    } catch (err: any) {
+      console.error('Backfill continue error:', err);
+      toast.error(`שגיאה בהמשך העדכון: ${err.message}`);
+      setIsBackfilling(false);
+    }
+  };
 
   const handleNumberChange = (category: string, key: string, value: string) => {
     const numValue = parseFloat(value);
@@ -30,9 +111,75 @@ export function ScoutSettingsPanel() {
   }
 
   const s = settings || defaultSettings;
+  const progressPercent = backfillProgress?.total_items 
+    ? Math.round((backfillProgress.processed_items / backfillProgress.total_items) * 100)
+    : 0;
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Backfill Entry Dates Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            עדכון תאריכי כניסה לנכסים קיימים
+          </CardTitle>
+          <CardDescription>
+            סריקה מחדש של נכסי שכירות קיימים לחילוץ תאריכי כניסה מהמקור
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {backfillProgress && backfillProgress.status === 'running' && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>התקדמות</span>
+                <span>{backfillProgress.processed_items} / {backfillProgress.total_items}</span>
+              </div>
+              <Progress value={progressPercent} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className="text-primary">הצליחו: {backfillProgress.successful_items || 0}</span>
+                <span className="text-destructive">נכשלו: {backfillProgress.failed_items || 0}</span>
+              </div>
+            </div>
+          )}
+          
+          {backfillProgress && backfillProgress.status === 'completed' && (
+            <div className="bg-primary/10 text-primary p-3 rounded-lg text-sm">
+              העדכון האחרון הושלם: {backfillProgress.successful_items} הצליחו, {backfillProgress.failed_items} נכשלו
+            </div>
+          )}
+
+          {backfillProgress && backfillProgress.status === 'failed' && (
+            <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+              העדכון נכשל: {backfillProgress.error_message}
+            </div>
+          )}
+
+          <Button 
+            onClick={handleBackfillEntryDates}
+            disabled={isBackfilling}
+            className="w-full"
+          >
+            {isBackfilling ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                מעדכן תאריכי כניסה...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                עדכן תאריכי כניסה לנכסים קיימים
+              </>
+            )}
+          </Button>
+          
+          <p className="text-xs text-muted-foreground">
+            פעולה זו תסרוק מחדש את כל נכסי השכירות שאין להם תאריך כניסה ותחלץ את המידע מהמקור.
+            הפעולה עשויה לקחת מספר דקות.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Scraping Settings */}
       <Card>
         <CardHeader>
