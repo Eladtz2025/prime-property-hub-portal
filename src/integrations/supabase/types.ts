@@ -137,6 +137,54 @@ export type Database = {
           },
         ]
       }
+      backfill_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          failed_items: number | null
+          id: string
+          last_processed_id: string | null
+          processed_items: number | null
+          started_at: string | null
+          status: string | null
+          successful_items: number | null
+          task_name: string
+          total_items: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          failed_items?: number | null
+          id?: string
+          last_processed_id?: string | null
+          processed_items?: number | null
+          started_at?: string | null
+          status?: string | null
+          successful_items?: number | null
+          task_name: string
+          total_items?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          failed_items?: number | null
+          id?: string
+          last_processed_id?: string | null
+          processed_items?: number | null
+          started_at?: string | null
+          status?: string | null
+          successful_items?: number | null
+          task_name?: string
+          total_items?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       backup_history: {
         Row: {
           backup_date: string

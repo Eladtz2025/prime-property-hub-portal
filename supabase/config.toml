@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.translate-slide-data]
 verify_jwt = false
+
+[functions.backfill-entry-dates]
+verify_jwt = false
