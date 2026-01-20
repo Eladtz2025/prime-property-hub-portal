@@ -136,76 +136,22 @@ export function ScoutSettingsPanel() {
             הגדרות זיהוי כפילויות
           </CardTitle>
           <CardDescription>
-            פרמטרים לזיהוי נכסים כפולים
+            נכסים נחשבים כפולים אם יש להם: כתובת עם מספר + חדרים + עיר + קומה + מחיר (עד סף ההפרש)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>סף הפרש מחיר (%)</Label>
-              <Input
-                type="number"
-                min={5}
-                max={50}
-                defaultValue={s.duplicates.price_diff_threshold * 100}
-                onBlur={(e) => handleNumberChange('duplicates', 'price_diff_threshold', String(parseFloat(e.target.value) / 100))}
-              />
-              <p className="text-xs text-muted-foreground">
-                נכסים עם הפרש מחיר גבוה יותר לא יחשבו כפילויות
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>סף הפרש גודל (%)</Label>
-              <Input
-                type="number"
-                min={5}
-                max={30}
-                defaultValue={s.duplicates.size_diff_threshold * 100}
-                onBlur={(e) => handleNumberChange('duplicates', 'size_diff_threshold', String(parseFloat(e.target.value) / 100))}
-              />
-              <p className="text-xs text-muted-foreground">
-                נכסים עם הפרש גודל גבוה יותר לא יחשבו כפילויות
-              </p>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>דרוש קומה זהה</Label>
-              <p className="text-xs text-muted-foreground">
-                האם לדרוש קומה זהה לזיהוי כפילות
-              </p>
-            </div>
-            <Switch
-              checked={s.duplicates.require_same_floor}
-              onCheckedChange={(v) => handleBooleanChange('duplicates', 'require_same_floor', v)}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>יצירת התראות אוטומטית</Label>
-              <p className="text-xs text-muted-foreground">
-                יצירת התראה כאשר מזוהות כפילויות עם הפרש מחיר
-              </p>
-            </div>
-            <Switch
-              checked={s.duplicates.auto_create_alerts}
-              onCheckedChange={(v) => handleBooleanChange('duplicates', 'auto_create_alerts', v)}
-            />
-          </div>
-          
           <div className="space-y-2">
-            <Label>הפרש מחיר מינימלי להתראה (%)</Label>
+            <Label>סף הפרש מחיר (%)</Label>
             <Input
               type="number"
-              min={0}
+              min={5}
               max={50}
-              defaultValue={s.duplicates.min_price_diff_for_alert}
-              onBlur={(e) => handleNumberChange('duplicates', 'min_price_diff_for_alert', e.target.value)}
+              defaultValue={s.duplicates.price_diff_threshold * 100}
+              onBlur={(e) => handleNumberChange('duplicates', 'price_diff_threshold', String(parseFloat(e.target.value) / 100))}
             />
+            <p className="text-xs text-muted-foreground">
+              נכסים עם מחיר זהה או הפרש עד הסף יחשבו ככפילויות (ברירת מחדל: 20%)
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -218,42 +164,43 @@ export function ScoutSettingsPanel() {
             הגדרות התאמה
           </CardTitle>
           <CardDescription>
-            פרמטרים להתאמת נכסים ללקוחות
+            לוגיקת התאמה בינארית: עיר + שכונה (חובה) → מחיר עם זליגה דינמית → חדרים → תוספות
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>ציון מינימלי להתאמה</Label>
-              <Input
-                type="number"
-                min={30}
-                max={90}
-                defaultValue={s.matching.min_score}
-                onBlur={(e) => handleNumberChange('matching', 'min_score', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>מקסימום התאמות לנכס</Label>
-              <Input
-                type="number"
-                min={5}
-                max={50}
-                defaultValue={s.matching.max_matches_per_property}
-                onBlur={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
-              />
+          {/* Dynamic Price Flexibility Info */}
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+            <h5 className="font-medium text-sm">זליגת מחיר דינמית (להשכרה)</h5>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="bg-background rounded p-2 text-center">
+                <div className="font-medium text-primary">15%</div>
+                <div className="text-xs text-muted-foreground">עד ₪7,000</div>
+              </div>
+              <div className="bg-background rounded p-2 text-center">
+                <div className="font-medium text-primary">10%</div>
+                <div className="text-xs text-muted-foreground">₪7,001 - ₪15,000</div>
+              </div>
+              <div className="bg-background rounded p-2 text-center">
+                <div className="font-medium text-primary">8%</div>
+                <div className="text-xs text-muted-foreground">מעל ₪15,000</div>
+              </div>
             </div>
           </div>
           
+          <Separator />
+          
           <div className="space-y-2">
-            <Label>אחוז גמישות מחיר מעל תקציב (%)</Label>
+            <Label>מקסימום התאמות לנכס</Label>
             <Input
               type="number"
               min={5}
-              max={30}
-              defaultValue={s.matching.flexible_price_threshold * 100}
-              onBlur={(e) => handleNumberChange('matching', 'flexible_price_threshold', String(parseFloat(e.target.value) / 100))}
+              max={50}
+              defaultValue={s.matching.max_matches_per_property}
+              onBlur={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              מספר הלקוחות המקסימלי שניתן להתאים לנכס אחד (ברירת מחדל: 20)
+            </p>
           </div>
           
           <Separator />

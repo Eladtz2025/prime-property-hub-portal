@@ -1,22 +1,14 @@
 // Shared duplicate detection utilities for Edge Functions
-// Extracted from scout-properties for better maintainability
+// Simplified logic: address+number + rooms + city + floor + price (up to 20% diff)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export interface DuplicateSettings {
   price_diff_threshold: number;  // e.g., 0.20 = 20%
-  size_diff_threshold: number;   // e.g., 0.10 = 10%
-  require_same_floor: boolean;
-  auto_create_alerts: boolean;
-  min_price_diff_for_alert: number;  // percentage
 }
 
 export const defaultDuplicateSettings: DuplicateSettings = {
   price_diff_threshold: 0.20,
-  size_diff_threshold: 0.10,
-  require_same_floor: false,
-  auto_create_alerts: true,
-  min_price_diff_for_alert: 5,
 };
 
 export interface ScoutedPropertyForDuplicate {
@@ -31,6 +23,7 @@ export interface ScoutedPropertyForDuplicate {
 
 /**
  * Find duplicate properties in the database
+ * Logic: Same address (with building number) + rooms + city + floor + price (within 20%)
  */
 export async function findDuplicateGroup(
   supabase: ReturnType<typeof createClient>,
@@ -55,6 +48,7 @@ export async function findDuplicateGroup(
       p_floor: property.floor || 0,
       p_property_type: property.property_type || 'rental',
       p_city: property.city,
+      p_price: property.price || null,
       p_exclude_id: excludeId || null
     });
   
@@ -63,48 +57,6 @@ export async function findDuplicateGroup(
   }
   
   return duplicates[0];
-}
-
-/**
- * Create a duplicate alert if price difference exceeds threshold
- */
-export async function createDuplicateAlert(
-  supabase: ReturnType<typeof createClient>,
-  primaryPropertyId: string,
-  duplicatePropertyId: string,
-  primaryPrice: number,
-  duplicatePrice: number,
-  settings?: DuplicateSettings
-): Promise<boolean> {
-  const s = settings || defaultDuplicateSettings;
-  
-  if (!s.auto_create_alerts) {
-    return false;
-  }
-  
-  const priceDiff = Math.abs(duplicatePrice - primaryPrice);
-  const priceDiffPercent = (priceDiff / Math.min(duplicatePrice, primaryPrice)) * 100;
-  
-  if (priceDiffPercent >= s.min_price_diff_for_alert) {
-    const { error } = await supabase
-      .from('duplicate_alerts')
-      .insert({
-        primary_property_id: primaryPropertyId,
-        duplicate_property_id: duplicatePropertyId,
-        price_difference: priceDiff,
-        price_difference_percent: priceDiffPercent
-      });
-    
-    if (error) {
-      console.error('Failed to create duplicate alert:', error);
-      return false;
-    }
-    
-    console.log(`📢 Created price alert: ${priceDiff} (${priceDiffPercent.toFixed(1)}%)`);
-    return true;
-  }
-  
-  return false;
 }
 
 /**

@@ -15,15 +15,9 @@ export interface ScoutSettingRow {
 export interface ScoutSettings {
   duplicates: {
     price_diff_threshold: number;
-    size_diff_threshold: number;
-    require_same_floor: boolean;
-    auto_create_alerts: boolean;
-    min_price_diff_for_alert: number;
   };
   matching: {
-    min_score: number;
     max_matches_per_property: number;
-    flexible_price_threshold: number;
     auto_send_whatsapp: boolean;
   };
   scraping: {
@@ -37,19 +31,13 @@ export interface ScoutSettings {
   };
 }
 
-// Default values
+// Default values - simplified
 export const defaultSettings: ScoutSettings = {
   duplicates: {
     price_diff_threshold: 0.20,
-    size_diff_threshold: 0.10,
-    require_same_floor: false,
-    auto_create_alerts: true,
-    min_price_diff_for_alert: 5,
   },
   matching: {
-    min_score: 60,
     max_matches_per_property: 20,
-    flexible_price_threshold: 0.15,
     auto_send_whatsapp: false,
   },
   scraping: {
