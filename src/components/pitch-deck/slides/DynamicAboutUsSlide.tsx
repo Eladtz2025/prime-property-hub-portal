@@ -94,30 +94,30 @@ const DynamicAboutUsSlide = ({
         </div>
 
         {/* Team Profile Cards */}
-        <div className={`w-full max-w-4xl grid gap-2 md:gap-3 lg:gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(teamMembers.length, 2)}, 1fr)` }}>
+        <div className={`w-full max-w-4xl grid gap-2 md:gap-3 lg:gap-2 2xl:gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(teamMembers.length, 2)}, 1fr)` }}>
           {teamMembers.map((member, index) => {
             const IconComponent = iconMap[member.icon] || Award;
             return (
-              <div key={index} className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
-                  <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
+              <div key={index} className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 lg:p-2 xl:p-3 2xl:p-4 text-center">
+                <div className="w-8 h-8 md:w-10 md:h-10 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
+                  <IconComponent className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-[#f5c242]" />
                 </div>
                 <h4 
-                  className="text-xs md:text-sm font-serif text-white mb-1"
+                  className="text-xs md:text-sm lg:text-xs 2xl:text-sm font-serif text-white mb-1"
                   style={{ textShadow: softShadow }}
                 >
                   {member.name}
                 </h4>
                 <div className="mb-1">
                   <span 
-                    className="text-xl md:text-3xl font-bold text-[#f5c242]"
+                    className="text-xl md:text-3xl lg:text-xl xl:text-2xl 2xl:text-3xl font-bold text-[#f5c242]"
                     style={{ textShadow: softShadow }}
                   >
                     {member.years}
                   </span>
                   <span className="text-white/80 text-[10px] ml-1">Years</span>
                 </div>
-                <p className="text-white/90 text-[10px] md:text-xs font-light">
+                <p className="text-white/90 text-[10px] md:text-xs lg:text-[10px] 2xl:text-xs font-light">
                   {member.expertise}
                 </p>
               </div>
