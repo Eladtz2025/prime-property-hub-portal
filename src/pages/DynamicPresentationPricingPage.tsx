@@ -157,56 +157,56 @@ const DynamicPresentationPricingPage = () => {
         </Link>
 
         {/* Main Content */}
-        <div className="min-h-screen flex flex-col items-center justify-start px-4 md:px-8 pt-14 pb-20">
+        <div className="min-h-screen flex flex-col items-center justify-start px-4 md:px-8 lg:px-6 2xl:px-8 pt-14 lg:pt-12 2xl:pt-14 pb-20 lg:pb-16 2xl:pb-20">
           {/* Title */}
           <h1 
-            className="text-3xl md:text-5xl font-serif font-light text-white mb-2 text-center"
+            className="text-3xl md:text-5xl lg:text-4xl 2xl:text-5xl font-serif font-light text-white mb-2 lg:mb-1 2xl:mb-2 text-center"
             style={{ textShadow: softShadow }}
           >
             {pricingData?.title || t.title}
           </h1>
           <p 
-            className="text-white/80 text-sm md:text-lg mb-1 text-center"
+            className="text-white/80 text-sm md:text-lg lg:text-base 2xl:text-lg mb-1 text-center"
             style={{ textShadow: softShadow }}
           >
             {pricingData?.subtitle || t.subtitle}
           </p>
           <p 
-            className="text-[#f5c242] text-sm md:text-base mb-4 text-center"
+            className="text-[#f5c242] text-sm md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4 text-center"
             style={{ textShadow: softShadow }}
           >
             {propertyAddress}, {propertyCity}
           </p>
 
           {/* Decorative Line */}
-          <div className="w-16 h-px bg-[#f5c242] mb-6" />
+          <div className="w-16 h-px bg-[#f5c242] mb-4 lg:mb-3 2xl:mb-6" />
 
           {/* Two Pricing Options */}
-          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+          <div className="w-full max-w-4xl lg:max-w-3xl 2xl:max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-4 2xl:gap-6 mb-6 lg:mb-4 2xl:mb-8">
             {/* Option A - Premium */}
-            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-center border border-[#f5c242]/30">
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 lg:p-4 2xl:p-6 text-center border border-[#f5c242]/30">
               <span 
-                className="text-[#f5c242] text-sm md:text-base font-medium tracking-widest uppercase"
+                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium tracking-widest uppercase"
                 style={{ textShadow: softShadow }}
               >
                 {t.optionA}
               </span>
               <p 
-                className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
+                className="text-white text-3xl md:text-4xl lg:text-3xl 2xl:text-4xl font-bold mt-2 lg:mt-1 2xl:mt-3 mb-2 lg:mb-1 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_a_price || '₪4,250,000'}
               </p>
-              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
+              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-2 lg:mb-1 2xl:mb-3" />
               <p 
-                className="text-white/80 text-sm md:text-base mb-4"
+                className="text-white/80 text-xs md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_a_description || t.premiumDesc}
               </p>
               <div className="flex items-center justify-center gap-2 text-[#f5c242]">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm md:text-base">
+                <Clock className="w-4 h-4 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4" />
+                <span className="text-xs md:text-base lg:text-sm 2xl:text-base">
                   {pricingData?.option_a_months_min || 7}-{pricingData?.option_a_months_max || 11} {t.months}
                 </span>
               </div>
@@ -214,29 +214,29 @@ const DynamicPresentationPricingPage = () => {
             </div>
 
             {/* Option B - Competitive */}
-            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 text-center border border-[#f5c242]/30">
+            <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-5 md:p-6 lg:p-4 2xl:p-6 text-center border border-[#f5c242]/30">
               <span 
-                className="text-[#f5c242] text-sm md:text-base font-medium tracking-widest uppercase"
+                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium tracking-widest uppercase"
                 style={{ textShadow: softShadow }}
               >
                 {t.optionB}
               </span>
               <p 
-                className="text-white text-3xl md:text-4xl font-bold mt-3 mb-3"
+                className="text-white text-3xl md:text-4xl lg:text-3xl 2xl:text-4xl font-bold mt-2 lg:mt-1 2xl:mt-3 mb-2 lg:mb-1 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_b_price || '₪3,950,000'}
               </p>
-              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-3" />
+              <div className="w-12 h-px bg-[#f5c242]/50 mx-auto mb-2 lg:mb-1 2xl:mb-3" />
               <p 
-                className="text-white/80 text-sm md:text-base mb-4"
+                className="text-white/80 text-xs md:text-base lg:text-sm 2xl:text-base mb-3 lg:mb-2 2xl:mb-4"
                 style={{ textShadow: softShadow }}
               >
                 {pricingData?.option_b_description || t.competitiveDesc}
               </p>
               <div className="flex items-center justify-center gap-2 text-[#f5c242]">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm md:text-base">
+                <Clock className="w-4 h-4 lg:w-3 lg:h-3 2xl:w-4 2xl:h-4" />
+                <span className="text-xs md:text-base lg:text-sm 2xl:text-base">
                   {pricingData?.option_b_months_min || 3}-{pricingData?.option_b_months_max || 5} {t.months}
                 </span>
               </div>
@@ -245,16 +245,16 @@ const DynamicPresentationPricingPage = () => {
           </div>
 
           {/* Property Links Section */}
-          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+          <div className="w-full max-w-4xl lg:max-w-3xl 2xl:max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 lg:gap-4 2xl:gap-6 mb-6 lg:mb-4 2xl:mb-8">
             {/* Recently Sold */}
-            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5">
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5 lg:p-3 2xl:p-5">
               <h3 
-                className="text-[#f5c242] text-sm md:text-base font-medium mb-3"
+                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium mb-2 lg:mb-1 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {t.recentlySold}
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1 lg:space-y-1 2xl:space-y-2">
                 {recentlySoldProperties.map((prop, index) => {
                   const hasLink = prop.link && prop.link.trim() !== '';
                   const Wrapper = hasLink ? 'a' : 'div';
@@ -288,14 +288,14 @@ const DynamicPresentationPricingPage = () => {
             </div>
 
             {/* Currently For Sale */}
-            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5">
+            <div className="bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-4 md:p-5 lg:p-3 2xl:p-5">
               <h3 
-                className="text-[#f5c242] text-sm md:text-base font-medium mb-3"
+                className="text-[#f5c242] text-xs md:text-base lg:text-sm 2xl:text-base font-medium mb-2 lg:mb-1 2xl:mb-3"
                 style={{ textShadow: softShadow }}
               >
                 {t.currentlyForSale}
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1 lg:space-y-1 2xl:space-y-2">
                 {currentlyForSaleProperties.map((prop, index) => {
                   const hasLink = prop.link && prop.link.trim() !== '';
                   const Wrapper = hasLink ? 'a' : 'div';
@@ -332,12 +332,12 @@ const DynamicPresentationPricingPage = () => {
           {/* Continue to Step 2 */}
           <Link 
             to={`/offer/${slug}/exclusivity`}
-            className="flex items-center gap-3 bg-[#f5c242] hover:bg-[#f5c242]/80 px-6 md:px-8 py-3 md:py-4 rounded-full transition-all group"
+            className="flex items-center gap-3 bg-[#f5c242] hover:bg-[#f5c242]/80 px-6 md:px-8 lg:px-6 2xl:px-8 py-3 md:py-4 lg:py-2.5 2xl:py-4 rounded-full transition-all group"
           >
-            <span className="text-[#2d3b3a] text-sm md:text-base font-medium">
+            <span className="text-[#2d3b3a] text-xs md:text-base lg:text-sm 2xl:text-base font-medium">
               {t.continueToStep2}: {t.exclusiveAgreement}
             </span>
-            <ArrowRight className={`w-5 h-5 text-[#2d3b3a] group-hover:translate-x-1 transition-transform ${isRTL ? 'rotate-180' : ''}`} />
+            <ArrowRight className={`w-5 h-5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-[#2d3b3a] group-hover:translate-x-1 transition-transform ${isRTL ? 'rotate-180' : ''}`} />
           </Link>
         </div>
       </div>
