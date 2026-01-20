@@ -18,10 +18,22 @@ import {
   DynamicContactSlide,
 } from "@/components/pitch-deck/slides";
 
+// Helper to get initial slide from URL hash
+const getInitialSlideFromHash = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const hash = window.location.hash;
+  const match = hash.match(/slide=(\d+)/);
+  if (match) {
+    const slideNum = parseInt(match[1], 10);
+    return Math.max(0, slideNum - 1); // Convert from 1-based to 0-based
+  }
+  return 0;
+};
+
 const DynamicPitchDeckView = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: deck, isLoading, error } = usePitchDeckBySlug(slug);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(getInitialSlideFromHash);
   const [isAnimating, setIsAnimating] = useState(false);
   const [language, setLanguage] = useState<'en' | 'he'>('en');
 
@@ -31,12 +43,24 @@ const DynamicPitchDeckView = () => {
     ?.filter(s => s && s.is_visible && s.slide_data && s.slide_type !== 'step1_pricing')
     ?.sort((a, b) => a.slide_order - b.slide_order) || [];
 
+  // Validate initial slide index once slides are loaded
+  useEffect(() => {
+    if (slides.length > 0 && currentSlide >= slides.length) {
+      const validIndex = slides.length - 1;
+      setCurrentSlide(validIndex);
+      window.history.replaceState(null, '', `#slide=${validIndex + 1}`);
+    }
+  }, [slides.length, currentSlide]);
+
   const goToSlide = useCallback((index: number) => {
     if (isAnimating || index === currentSlide) return;
     if (index < 0 || index >= slides.length) return;
     
     setIsAnimating(true);
     setCurrentSlide(index);
+    
+    // Update URL hash (1-based for users)
+    window.history.replaceState(null, '', `#slide=${index + 1}`);
     
     setTimeout(() => {
       setIsAnimating(false);
