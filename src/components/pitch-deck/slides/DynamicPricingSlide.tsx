@@ -15,7 +15,7 @@ const DynamicPricingSlide = ({
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden">
+    <div className="relative flex h-full w-full flex-col">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
@@ -45,7 +45,7 @@ const DynamicPricingSlide = ({
         <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
 
         {/* Statistics Cards */}
-        <div className="w-full max-w-[280px] md:max-w-xl lg:max-w-2xl grid grid-cols-3 gap-1 md:gap-2 lg:gap-3 mb-3 md:mb-4">
+        <div className="w-[90%] max-w-2xl grid grid-cols-3 gap-2 md:gap-3 lg:gap-4 mb-3 md:mb-4">
           {/* Price per sqm */}
           <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 lg:p-5 text-center">
             <div className="w-6 h-6 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2 lg:mb-3">
@@ -91,7 +91,7 @@ const DynamicPricingSlide = ({
 
         {/* Visual Price Range Bar */}
         {data.min_price && data.max_price && (
-          <div className="w-full max-w-[280px] md:max-w-xl lg:max-w-2xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 mb-3 md:mb-4">
+          <div className="w-[90%] max-w-2xl bg-[#8b7765]/60 backdrop-blur-sm rounded-lg p-2 md:p-3 lg:p-4 mb-3 md:mb-4">
             <p className="text-white/80 text-[10px] md:text-xs mb-2 font-light">Market Price Range</p>
             <div className="relative h-5 md:h-6 lg:h-8 bg-white/10 rounded-full overflow-hidden">
               <div 
@@ -111,7 +111,7 @@ const DynamicPricingSlide = ({
 
         {/* Strategic Positioning */}
         {data.strategic_points && data.strategic_points.length > 0 && (
-          <div className="w-full max-w-[280px] md:max-w-xl lg:max-w-2xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 text-left mb-6 md:mb-8">
+          <div className="w-[90%] max-w-2xl bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-3 text-left mb-6 md:mb-8">
             <h3 
               className="text-sm md:text-lg font-serif text-white mb-2"
               style={{ textShadow: softShadow }}
