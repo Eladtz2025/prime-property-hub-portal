@@ -632,7 +632,10 @@ export const UnifiedScoutSettings: React.FC = () => {
                 <h4 className="font-medium flex items-center gap-2">
                   🔄 הגדרות זיהוי כפילויות
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p className="text-sm text-muted-foreground">
+                  נכסים נחשבים כפולים אם יש להם: כתובת עם מספר + חדרים + עיר + קומה + מחיר (עד סף ההפרש)
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>סף הפרש מחיר (%)</Label>
                     <Input
@@ -642,43 +645,7 @@ export const UnifiedScoutSettings: React.FC = () => {
                       value={Math.round((settings?.duplicates?.price_diff_threshold ?? 0.2) * 100)}
                       onChange={(e) => handleNumberChange('duplicates', 'price_diff_threshold', (parseFloat(e.target.value) / 100).toString())}
                     />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20%</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>סף הפרש גודל (%)</Label>
-                    <Input
-                      type="number"
-                      min={5}
-                      max={30}
-                      value={Math.round((settings?.duplicates?.size_diff_threshold ?? 0.1) * 100)}
-                      onChange={(e) => handleNumberChange('duplicates', 'size_diff_threshold', (parseFloat(e.target.value) / 100).toString())}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 10%</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>הפרש מינימלי להתראה (%)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={50}
-                      value={settings?.duplicates?.min_price_diff_for_alert ?? 5}
-                      onChange={(e) => handleNumberChange('duplicates', 'min_price_diff_for_alert', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 5%</p>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <Label className="cursor-pointer">דרוש קומה זהה</Label>
-                    <Switch
-                      checked={settings?.duplicates?.require_same_floor ?? false}
-                      onCheckedChange={(checked) => handleBooleanChange('duplicates', 'require_same_floor', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <Label className="cursor-pointer">יצירת התראות אוטומטית</Label>
-                    <Switch
-                      checked={settings?.duplicates?.auto_create_alerts ?? true}
-                      onCheckedChange={(checked) => handleBooleanChange('duplicates', 'auto_create_alerts', checked)}
-                    />
+                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20% - נכסים עם מחיר זהה או הפרש עד 20% ייחשבו ככפילויות</p>
                   </div>
                 </div>
               </div>
@@ -690,18 +657,30 @@ export const UnifiedScoutSettings: React.FC = () => {
                 <h4 className="font-medium flex items-center gap-2">
                   🎯 הגדרות התאמה ללקוחות
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>ציון התאמה מינימלי</Label>
-                    <Input
-                      type="number"
-                      min={30}
-                      max={90}
-                      value={settings?.matching?.min_score ?? 60}
-                      onChange={(e) => handleNumberChange('matching', 'min_score', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 60</p>
+                <p className="text-sm text-muted-foreground">
+                  לוגיקת התאמה בינארית: עיר + שכונה (חובה) → מחיר עם זליגה דינמית → חדרים → תוספות (לפי גמישות)
+                </p>
+                
+                {/* Dynamic Price Flexibility Table */}
+                <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                  <h5 className="font-medium text-sm">זליגת מחיר דינמית (להשכרה)</h5>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="bg-background rounded p-2 text-center">
+                      <div className="font-medium text-primary">15%</div>
+                      <div className="text-xs text-muted-foreground">עד ₪7,000</div>
+                    </div>
+                    <div className="bg-background rounded p-2 text-center">
+                      <div className="font-medium text-primary">10%</div>
+                      <div className="text-xs text-muted-foreground">₪7,001 - ₪15,000</div>
+                    </div>
+                    <div className="bg-background rounded p-2 text-center">
+                      <div className="font-medium text-primary">8%</div>
+                      <div className="text-xs text-muted-foreground">מעל ₪15,000</div>
+                    </div>
                   </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>מקסימום התאמות לנכס</Label>
                     <Input
@@ -711,18 +690,7 @@ export const UnifiedScoutSettings: React.FC = () => {
                       value={settings?.matching?.max_matches_per_property ?? 20}
                       onChange={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>גמישות מחיר (%)</Label>
-                    <Input
-                      type="number"
-                      min={5}
-                      max={30}
-                      value={Math.round((settings?.matching?.flexible_price_threshold ?? 0.15) * 100)}
-                      onChange={(e) => handleNumberChange('matching', 'flexible_price_threshold', (parseFloat(e.target.value) / 100).toString())}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 15%</p>
+                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20 לקוחות לנכס</p>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div>

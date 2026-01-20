@@ -2998,6 +2998,25 @@ export type Database = {
               p_price?: number
               p_property_type: string
               p_rooms: number
+            }
+            Returns: {
+              duplicate_detected_at: string
+              duplicate_group_id: string
+              id: string
+              price: number
+              size: number
+              source: string
+            }[]
+          }
+        | {
+            Args: {
+              p_address: string
+              p_city: string
+              p_exclude_id?: string
+              p_floor: number
+              p_price?: number
+              p_property_type: string
+              p_rooms: number
               p_size?: number
             }
             Returns: {
