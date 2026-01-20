@@ -153,22 +153,23 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
       let baseUrl: string;
       
       if (type === 'rent') {
-        baseUrl = 'https://www.homeless.co.il/rent/';
+        // FIXED: Use query string format with ? for proper pagination
         if (config.cities?.length) {
           const cityData = homelessCityMap[config.cities[0]];
           if (cityData) {
-            baseUrl += `inumber1=${cityData.code}`;
+            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${cityData.code}`;
+          } else {
+            baseUrl = 'https://www.homeless.co.il/rent/';
           }
+        } else {
+          baseUrl = 'https://www.homeless.co.il/rent/';
         }
       } else {
-        baseUrl = 'https://www.homeless.co.il/sale/';
-        if (config.cities?.length) {
-          baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
-        }
+        baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
       }
       
-      // Homeless uses comma-separated params like: inumber1=17,1,150,page=2
-      const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+      // FIXED: Use & for pagination, not comma - tested and working format
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
       console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
     }
@@ -261,23 +262,24 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         let baseUrl: string;
         
         if (type === 'rent') {
-          baseUrl = 'https://www.homeless.co.il/rent/';
+          // FIXED: Use query string format with ? for proper pagination
           if (config.cities?.length) {
             const cityData = homelessCityMap[config.cities[0]];
             if (cityData) {
-              baseUrl += `inumber1=${cityData.code}`;
+              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${cityData.code}`;
+            } else {
+              baseUrl = 'https://www.homeless.co.il/rent/';
             }
+          } else {
+            baseUrl = 'https://www.homeless.co.il/rent/';
           }
         } else {
-          baseUrl = 'https://www.homeless.co.il/sale/';
-          if (config.cities?.length) {
-            baseUrl += `city=${encodeURIComponent(config.cities[0])}`;
-          }
+          baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
         }
         
         for (let page = 1; page <= s.homeless_pages; page++) {
-          // Homeless uses comma-separated params like: inumber1=17,1,150,page=2
-          const url = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+          // FIXED: Use & for pagination - tested and working format
+          const url = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
           console.log(`Built Homeless URL (page ${page}): ${url}`);
           urls.push(url);
         }
