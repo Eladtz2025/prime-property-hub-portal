@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { ContactSlideData } from '@/types/pitch-deck';
+import { Language, t as getT } from '@/lib/pitch-deck-translations';
 import cityMarketLogo from "@/assets/city-market-icon.png";
 import { Phone, CheckCircle2, MessageCircle, ArrowRight } from "lucide-react";
 
 interface DynamicContactSlideProps {
   data: ContactSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
   slug?: string;
@@ -15,6 +17,7 @@ interface DynamicContactSlideProps {
 
 const DynamicContactSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/image-1 (1).png',
   overlayOpacity = 0.85,
   slug = '',
@@ -23,6 +26,8 @@ const DynamicContactSlide = ({
   agentNames = 'Tali Silberberg · Elad Tzabari'
 }: DynamicContactSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const t = getT(language);
+  const isRTL = language === 'he';
 
   const defaultChecklist = [
     "Exclusive sales representation",

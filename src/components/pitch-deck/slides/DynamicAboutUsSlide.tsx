@@ -1,8 +1,10 @@
 import { AboutUsSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 import { Globe, Award, Briefcase, LucideIcon } from 'lucide-react';
 
 interface DynamicAboutUsSlideProps {
   data: AboutUsSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
@@ -13,10 +15,12 @@ const iconMap: Record<string, LucideIcon> = {
 
 const DynamicAboutUsSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/WhatsApp Image 2026-01-12 at 18.45.28.jpeg',
   overlayOpacity = 0.85 
 }: DynamicAboutUsSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const isRTL = language === 'he';
 
   const defaultTeamMembers = [
     { name: "Elad Tzabari", years: "15+", expertise: "Tel Aviv market expertise", icon: "Award" },

@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.match-batch]
 verify_jwt = false
+
+[functions.translate-slide-data]
+verify_jwt = false

@@ -1355,6 +1355,7 @@ export type Database = {
           id: string
           is_visible: boolean
           slide_data: Json
+          slide_data_he: Json | null
           slide_order: number
           slide_type: string
           updated_at: string
@@ -1366,6 +1367,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           slide_data?: Json
+          slide_data_he?: Json | null
           slide_order?: number
           slide_type: string
           updated_at?: string
@@ -1377,6 +1379,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           slide_data?: Json
+          slide_data_he?: Json | null
           slide_order?: number
           slide_type?: string
           updated_at?: string

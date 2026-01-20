@@ -131,35 +131,41 @@ const DynamicPitchDeckView = () => {
     try {
       const overlayOpacity = deck?.overlay_opacity || 0.85;
       const bgImage = slide.background_image;
+      
+      // Use Hebrew data if available and language is Hebrew
+      const slideData = language === 'he' && (slide as any).slide_data_he 
+        ? (slide as any).slide_data_he 
+        : slide.slide_data;
 
-      console.log('Rendering slide:', slide.slide_type, slide.id, slide.slide_data);
+      console.log('Rendering slide:', slide.slide_type, slide.id, 'language:', language);
 
       switch (slide.slide_type as SlideType) {
         case 'title':
-          return <DynamicTitleSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicTitleSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'property':
-          return <DynamicPropertySlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicPropertySlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'features':
-          return <DynamicFeaturesSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicFeaturesSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'neighborhood':
-          return <DynamicNeighborhoodSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicNeighborhoodSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'pricing':
-          return <DynamicPricingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicPricingSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'marketing':
-          return <DynamicMarketingSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicMarketingSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'timeline':
-          return <DynamicTimelineSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicTimelineSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'marketing2':
         case 'marketing_ii':
-          return <DynamicMarketingIISlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicMarketingIISlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'about':
-          return <DynamicAboutUsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicAboutUsSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'differentiators':
-          return <DynamicDifferentiatorsSlide data={slide.slide_data as any} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
+          return <DynamicDifferentiatorsSlide data={slideData as any} language={language} backgroundImage={bgImage} overlayOpacity={overlayOpacity} />;
         case 'contact':
           return (
             <DynamicContactSlide 
-              data={slide.slide_data as any} 
+              data={slideData as any} 
+              language={language}
               backgroundImage={bgImage} 
               overlayOpacity={overlayOpacity}
               slug={slug}

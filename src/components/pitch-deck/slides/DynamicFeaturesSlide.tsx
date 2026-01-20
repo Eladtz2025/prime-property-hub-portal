@@ -1,4 +1,5 @@
 import { FeaturesSlideData } from '@/types/pitch-deck';
+import { Language, t as getT } from '@/lib/pitch-deck-translations';
 
 interface OldFeature {
   title?: string;
@@ -8,19 +9,22 @@ interface OldFeature {
 
 interface DynamicFeaturesSlideProps {
   data: FeaturesSlideData & {
-    // Old format fields
     features?: OldFeature[];
   };
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
 
 const DynamicFeaturesSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/cleaned-property-image (4).png',
   overlayOpacity = 0.85 
 }: DynamicFeaturesSlideProps) => {
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
+  const t = getT(language);
+  const isRTL = language === 'he';
 
   // Build key_features from new or old format
   const keyFeatures = data.key_features?.length 

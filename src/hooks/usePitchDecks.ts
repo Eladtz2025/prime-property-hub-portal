@@ -214,6 +214,20 @@ export const useUpdateSlide = () => {
         .single();
       
       if (error) throw error;
+      
+      // Automatically translate to Hebrew in background if slide_data changed
+      if (updates.slide_data && data) {
+        supabase.functions.invoke('translate-slide-data', {
+          body: { 
+            slideId: id,
+            slideData: updates.slide_data,
+            slideType: data.slide_type
+          }
+        }).catch(err => {
+          console.warn('Background translation failed:', err);
+        });
+      }
+      
       return data;
     },
     onSuccess: (data) => {

@@ -1,16 +1,20 @@
 import { TitleSlideData } from '@/types/pitch-deck';
+import { Language } from '@/lib/pitch-deck-translations';
 
 interface DynamicTitleSlideProps {
   data: TitleSlideData;
+  language?: Language;
   backgroundImage?: string;
   overlayOpacity?: number;
 }
 
 const DynamicTitleSlide = ({ 
   data, 
+  language = 'en',
   backgroundImage = '/images/ben-yehuda-110/cleaned-property-image (2).png',
   overlayOpacity = 0.85 
 }: DynamicTitleSlideProps) => {
+  const isRTL = language === 'he';
   const softShadow = '0 4px 20px rgba(0,0,0,0.7), 0 8px 40px rgba(0,0,0,0.5), 0 16px 60px rgba(0,0,0,0.4)';
   
   return (
@@ -31,7 +35,7 @@ const DynamicTitleSlide = ({
       />
       
       {/* Content - centered */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8 py-4 md:py-6">
+      <div className={`relative z-10 flex flex-1 flex-col items-center justify-center text-center px-6 md:px-8 py-4 md:py-6 ${isRTL ? 'font-hebrew' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Decorative Line */}
         <div className="w-16 md:w-24 h-px bg-white mb-4 md:mb-6" />
 
