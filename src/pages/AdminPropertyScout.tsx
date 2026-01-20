@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History, Sliders } from 'lucide-react';
+import { Search, Settings, History } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
-import { ScoutConfigManager } from '@/components/scout/ScoutConfigManager';
+import { UnifiedScoutSettings } from '@/components/scout/UnifiedScoutSettings';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
-import { ScoutSettingsPanel } from '@/components/admin/scout/ScoutSettingsPanel';
 
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
@@ -21,22 +20,18 @@ const AdminPropertyScout: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Search className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">דירות שנמצאו</span>
             </TabsTrigger>
-            <TabsTrigger value="configs" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Settings className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">הגדרות סריקה</span>
+              <span className="hidden sm:inline text-xs sm:text-sm">הגדרות</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <History className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">היסטוריית ריצות</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Sliders className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">הגדרות מערכת</span>
             </TabsTrigger>
           </TabsList>
 
@@ -44,16 +39,12 @@ const AdminPropertyScout: React.FC = () => {
             <ScoutedPropertiesTable />
           </TabsContent>
 
-          <TabsContent value="configs" className="mt-6">
-            <ScoutConfigManager />
+          <TabsContent value="settings" className="mt-6">
+            <UnifiedScoutSettings />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
             <ScoutRunHistory />
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-6">
-            <ScoutSettingsPanel />
           </TabsContent>
         </Tabs>
       </div>
