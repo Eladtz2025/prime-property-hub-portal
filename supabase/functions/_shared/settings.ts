@@ -16,6 +16,9 @@ export interface ScoutSettings {
     max_matches_per_property: number;
     flexible_price_threshold: number;
     auto_send_whatsapp: boolean;
+    entry_date_range_strict: number;
+    entry_date_range_flexible: number;
+    immediate_max_days: number;
   };
   scraping: {
     yad2_pages: number;
@@ -42,6 +45,9 @@ export const defaultSettings: ScoutSettings = {
     max_matches_per_property: 20,
     flexible_price_threshold: 0.15,
     auto_send_whatsapp: false,
+    entry_date_range_strict: 10,
+    entry_date_range_flexible: 14,
+    immediate_max_days: 30,
   },
   scraping: {
     yad2_pages: 7,
