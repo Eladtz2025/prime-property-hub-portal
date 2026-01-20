@@ -274,9 +274,9 @@ const DynamicPresentationPricingPage = () => {
                         <span className="text-white text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm">{prop.address}</span>
                         <span className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs">({formatSize(prop)})</span>
                       </div>
-                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-1.5 lg:gap-2 2xl:gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         {prop.pricePerSqm && (
-                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs hidden md:inline">{prop.pricePerSqm}/מ״ר</span>
+                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs">{prop.pricePerSqm}/מ״ר</span>
                         )}
                         <span className="text-[#f5c242] text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm font-medium">{prop.price}</span>
                         {hasLink && <ExternalLink className="w-2.5 h-2.5 lg:w-2 lg:h-2 2xl:w-3 2xl:h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
@@ -315,9 +315,9 @@ const DynamicPresentationPricingPage = () => {
                         <span className="text-white text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm">{prop.address}</span>
                         <span className="text-white/60 text-[8px] lg:text-[8px] 2xl:text-xs">({formatSize(prop)})</span>
                       </div>
-                      <div className={`flex items-center gap-1 lg:gap-0.5 2xl:gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-1.5 lg:gap-2 2xl:gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         {prop.pricePerSqm && (
-                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs hidden md:inline">{prop.pricePerSqm}/מ״ר</span>
+                          <span className="text-white/50 text-[8px] lg:text-[8px] 2xl:text-xs">{prop.pricePerSqm}/מ״ר</span>
                         )}
                         <span className="text-[#f5c242] text-[10px] md:text-xs lg:text-[10px] 2xl:text-sm font-medium">{prop.price}</span>
                         {hasLink && <ExternalLink className="w-2.5 h-2.5 lg:w-2 lg:h-2 2xl:w-3 2xl:h-3 text-white/50 group-hover:text-white/80 transition-colors" />}
