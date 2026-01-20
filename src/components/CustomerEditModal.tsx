@@ -148,6 +148,11 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           balcony_flexible: isRental ? formData.balcony_flexible : null,
           elevator_flexible: isRental ? formData.elevator_flexible : null,
           yard_flexible: isRental ? formData.yard_flexible : null,
+          // New fields
+          mamad_required: isRental ? formData.mamad_required : null,
+          mamad_flexible: isRental ? formData.mamad_flexible : null,
+          furnished_required: isRental ? formData.furnished_required : null,
+          furnished_flexible: isRental ? formData.furnished_flexible : null,
           // Purchase-specific
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
@@ -422,10 +427,10 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                       <SelectValue placeholder="בחר סוג דייר" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="student">סטודנט</SelectItem>
-                      <SelectItem value="employee">שכיר</SelectItem>
-                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="single">יחיד/ה</SelectItem>
                       <SelectItem value="couple">זוג</SelectItem>
+                      <SelectItem value="family">משפחה</SelectItem>
+                      <SelectItem value="roommates">שותפים</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -474,6 +479,10 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                       roof_required: formData.roof_required,
                       roof_flexible: formData.roof_flexible,
                       outdoor_space_any: formData.outdoor_space_any,
+                      mamad_required: formData.mamad_required,
+                      mamad_flexible: formData.mamad_flexible,
+                      furnished_required: formData.furnished_required,
+                      furnished_flexible: formData.furnished_flexible,
                     }}
                     onChange={(vals) => setFormData({
                       ...formData,
@@ -488,6 +497,10 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                       roof_required: vals.roof_required,
                       roof_flexible: vals.roof_flexible,
                       outdoor_space_any: vals.outdoor_space_any,
+                      mamad_required: vals.mamad_required,
+                      mamad_flexible: vals.mamad_flexible,
+                      furnished_required: vals.furnished_required,
+                      furnished_flexible: vals.furnished_flexible,
                     })}
                     className="w-full"
                   />

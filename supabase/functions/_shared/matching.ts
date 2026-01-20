@@ -50,6 +50,11 @@ export interface ContactLead {
   outdoor_space_any: boolean;
   move_in_date: string | null;
   flexible_move_date: boolean;
+  // New fields
+  mamad_required: boolean;
+  mamad_flexible: boolean;
+  furnished_required: string | null; // 'fully_furnished' | 'partially_furnished'
+  furnished_flexible: boolean;
 }
 
 export interface MatchResult {
@@ -308,6 +313,37 @@ export function calculateMatch(property: ScoutedProperty, lead: ContactLead): Ma
     reasons.push('מאפשר חיות מחמד ✓');
   } else if (lead.pets === true && (property.features?.pets === true || property.features?.allows_pets === true)) {
     reasons.push('מאפשר חיות מחמד ✓');
+  }
+  
+  // ===== NEW: Mamad (Safe Room) =====
+  if (lead.mamad_required && lead.mamad_flexible === false) {
+    if (property.features?.mamad !== true) {
+      return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - לא צוין שיש בנכס'] };
+    }
+    reasons.push('יש ממ"ד ✓');
+  } else if (lead.mamad_required && property.features?.mamad === true) {
+    reasons.push('יש ממ"ד ✓');
+  }
+  
+  // ===== NEW: Furnished =====
+  if (lead.furnished_required && lead.furnished_flexible === false) {
+    const propertyFurnished = property.features?.furnished;
+    
+    if (lead.furnished_required === 'fully_furnished') {
+      if (propertyFurnished !== 'fully_furnished') {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'] };
+      }
+      reasons.push('מרוהטת מלא ✓');
+    } else if (lead.furnished_required === 'partially_furnished') {
+      // Accept fully or partially furnished
+      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished') {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'] };
+      }
+      reasons.push('מרוהטת ✓');
+    }
+  } else if (lead.furnished_required && property.features?.furnished) {
+    const furnishedLabel = property.features.furnished === 'fully_furnished' ? 'מרוהטת מלא' : 'מרוהטת חלקית';
+    reasons.push(`${furnishedLabel} ✓`);
   }
   
   // ===== ALL CHECKS PASSED - MATCH! =====

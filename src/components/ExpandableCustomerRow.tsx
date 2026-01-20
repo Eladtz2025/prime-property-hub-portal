@@ -1030,8 +1030,6 @@ export const ExpandableCustomerRow = ({
                             <SelectItem value="couple">זוג</SelectItem>
                             <SelectItem value="family">משפחה</SelectItem>
                             <SelectItem value="roommates">שותפים</SelectItem>
-                            <SelectItem value="student">סטודנט/ית</SelectItem>
-                            <SelectItem value="employee">שכיר/ה</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1065,6 +1063,10 @@ export const ExpandableCustomerRow = ({
                             roof_required: formData.roof_required,
                             roof_flexible: formData.roof_flexible,
                             outdoor_space_any: formData.outdoor_space_any,
+                            mamad_required: formData.mamad_required,
+                            mamad_flexible: formData.mamad_flexible,
+                            furnished_required: formData.furnished_required,
+                            furnished_flexible: formData.furnished_flexible,
                           }}
                           onChange={(vals) => setFormData({
                             ...formData,
@@ -1079,6 +1081,10 @@ export const ExpandableCustomerRow = ({
                             roof_required: vals.roof_required,
                             roof_flexible: vals.roof_flexible,
                             outdoor_space_any: vals.outdoor_space_any,
+                            mamad_required: vals.mamad_required,
+                            mamad_flexible: vals.mamad_flexible,
+                            furnished_required: vals.furnished_required,
+                            furnished_flexible: vals.furnished_flexible,
                           })}
                           compact
                           className="w-full"

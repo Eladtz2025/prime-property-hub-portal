@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Car, Building2, ChevronDown, Home, Trees, Sun } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Car, Building2, ChevronDown, Home, Trees, Sun, Shield, Sofa } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PropertyRequirements {
@@ -18,6 +19,10 @@ interface PropertyRequirements {
   roof_required?: boolean | null;
   roof_flexible?: boolean | null;
   outdoor_space_any?: boolean | null;
+  mamad_required?: boolean | null;
+  mamad_flexible?: boolean | null;
+  furnished_required?: string | null;
+  furnished_flexible?: boolean | null;
 }
 
 interface PropertyRequirementsDropdownProps {
@@ -31,6 +36,13 @@ interface PropertyRequirementsDropdownProps {
 const REGULAR_FEATURES = [
   { key: 'parking', label: 'חניה', icon: Car, requiredKey: 'parking_required', flexibleKey: 'parking_flexible' },
   { key: 'elevator', label: 'מעלית', icon: Building2, requiredKey: 'elevator_required', flexibleKey: 'elevator_flexible' },
+  { key: 'mamad', label: 'ממ"ד', icon: Shield, requiredKey: 'mamad_required', flexibleKey: 'mamad_flexible' },
+] as const;
+
+// Furnished options
+const FURNISHED_OPTIONS = [
+  { value: 'fully_furnished', label: 'מרוהטת מלא' },
+  { value: 'partially_furnished', label: 'מרוהטת חלקית' },
 ] as const;
 
 // Outdoor space features
@@ -40,8 +52,8 @@ const OUTDOOR_FEATURES = [
   { key: 'roof', label: 'גג', icon: Home, requiredKey: 'roof_required', flexibleKey: 'roof_flexible' },
 ] as const;
 
-type FeatureKey = 'parking_required' | 'balcony_required' | 'elevator_required' | 'yard_required' | 'roof_required';
-type FlexibleKey = 'parking_flexible' | 'balcony_flexible' | 'elevator_flexible' | 'yard_flexible' | 'roof_flexible';
+type FeatureKey = 'parking_required' | 'balcony_required' | 'elevator_required' | 'yard_required' | 'roof_required' | 'mamad_required';
+type FlexibleKey = 'parking_flexible' | 'balcony_flexible' | 'elevator_flexible' | 'yard_flexible' | 'roof_flexible' | 'mamad_flexible';
 
 export const PropertyRequirementsDropdown = ({
   values,
@@ -65,6 +77,11 @@ export const PropertyRequirementsDropdown = ({
     } else {
       selectedOutdoorFeatures.forEach(f => displayParts.push(f.label));
     }
+  }
+  // Add furnished if selected
+  if (values.furnished_required) {
+    const furnishedLabel = FURNISHED_OPTIONS.find(o => o.value === values.furnished_required)?.label;
+    if (furnishedLabel) displayParts.push(furnishedLabel);
   }
   const displayText = displayParts.length > 0 ? displayParts.join(', ') : 'לא נבחרו דרישות';
 
@@ -234,6 +251,54 @@ export const PropertyRequirementsDropdown = ({
                 </div>
               );
             })}
+          </div>
+          
+          {/* Furnished Section */}
+          <div className="pt-2 mt-2 border-t">
+            <p className="text-sm font-medium text-muted-foreground mb-2">ריהוט:</p>
+            <div className={cn(
+              "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+              values.furnished_required ? "bg-primary/5 border-primary/20" : "bg-muted/30"
+            )}>
+              <Sofa className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={values.furnished_required || 'none'}
+                onValueChange={(val) => onChange({
+                  ...values,
+                  furnished_required: val === 'none' ? null : val,
+                  furnished_flexible: val === 'none' ? null : true,
+                })}
+              >
+                <SelectTrigger className="flex-1 h-8 text-sm">
+                  <SelectValue placeholder="לא נדרש ריהוט" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">לא נדרש</SelectItem>
+                  {FURNISHED_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {values.furnished_required && (
+                <div className="flex items-center gap-1.5 border-r pr-2">
+                  <Checkbox
+                    id="flex-furnished"
+                    checked={values.furnished_flexible !== false}
+                    onCheckedChange={(checked) => onChange({
+                      ...values,
+                      furnished_flexible: !!checked,
+                    })}
+                  />
+                  <Label 
+                    htmlFor="flex-furnished" 
+                    className="text-xs text-muted-foreground cursor-pointer"
+                  >
+                    גמיש
+                  </Label>
+                </div>
+              )}
+            </div>
           </div>
           
           <p className="text-xs text-muted-foreground mt-3 pt-2 border-t">

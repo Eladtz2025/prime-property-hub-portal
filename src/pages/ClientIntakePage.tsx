@@ -62,8 +62,6 @@ const TENANT_TYPES = [
   { value: 'couple', label: 'זוג' },
   { value: 'family', label: 'משפחה' },
   { value: 'roommates', label: 'שותפים' },
-  { value: 'student', label: 'סטודנט/ית' },
-  { value: 'employee', label: 'שכיר/ה' },
 ];
 
 const NEW_OR_SECOND_HAND_OPTIONS = [
