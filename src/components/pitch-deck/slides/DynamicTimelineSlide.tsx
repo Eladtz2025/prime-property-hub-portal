@@ -107,30 +107,42 @@ const DynamicTimelineSlide = ({
           </div>
         </div>
 
-        {/* Grid Timeline - Mobile */}
-        <div className="md:hidden w-full max-w-sm">
-          <div className="grid grid-cols-2 gap-2">
-            {timelineItems.map((item, index) => {
-              const IconComponent = iconMap[item.icon] || FileSearch;
-              return (
-                <div key={index} className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-[#f5c242] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+        {/* Vertical Timeline - Mobile */}
+        <div className="md:hidden w-full max-w-xs px-4">
+          <div className="relative">
+            {/* Vertical Line */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#f5c242] via-[#f5c242]/50 to-transparent" />
+            
+            {/* Timeline Items */}
+            <div className="space-y-4">
+              {timelineItems.map((item, index) => {
+                const IconComponent = iconMap[item.icon] || FileSearch;
+                return (
+                  <div key={index} className="relative flex gap-4">
+                    {/* Numbered Circle on Line */}
+                    <div className="w-8 h-8 rounded-full bg-[#f5c242] flex items-center justify-center text-white font-bold text-sm flex-shrink-0 z-10 shadow-lg">
                       {item.number}
                     </div>
-                    <span 
-                      className="text-[#f5c242] font-medium text-xs"
-                      style={{ textShadow: softShadow }}
-                    >
-                      {item.period}
-                    </span>
+                    
+                    {/* Card Content */}
+                    <div className="flex-1 bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconComponent className="w-5 h-5 text-[#f5c242]" strokeWidth={1.5} />
+                        <span 
+                          className="text-[#f5c242] font-medium text-sm"
+                          style={{ textShadow: softShadow }}
+                        >
+                          {item.period}
+                        </span>
+                      </div>
+                      <p className="text-white/90 text-sm font-light">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-white/90 text-xs font-light">
-                    {item.description}
-                  </p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
