@@ -167,8 +167,8 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         }
       }
       
-      const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
-      const pageUrl = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+      // Homeless uses comma-separated params like: inumber1=17,1,150,page=2
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
       console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
     }
@@ -276,8 +276,8 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         }
         
         for (let page = 1; page <= s.homeless_pages; page++) {
-          const separator = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '' : '/');
-          const url = page === 1 ? baseUrl : `${baseUrl}${separator}page/${page}`;
+          // Homeless uses comma-separated params like: inumber1=17,1,150,page=2
+          const url = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
           console.log(`Built Homeless URL (page ${page}): ${url}`);
           urls.push(url);
         }
