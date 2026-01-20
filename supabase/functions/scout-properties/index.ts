@@ -405,23 +405,8 @@ serve(async (req) => {
       }
     }
 
-    // Trigger lead matching if new properties were found
-    if (totalNewProperties > 0) {
-      console.log(`Triggering lead matching for ${totalNewProperties} new properties with run_id: ${runId}...`);
-      fetch(`${supabaseUrl}/functions/v1/match-scouted-to-leads`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          send_whatsapp: false
-          // Don't pass run_id - matching creates its own separate run with source='matching'
-        }),
-      }).catch(err => {
-        console.error('Failed to trigger lead matching:', err);
-      });
-    }
+    // Note: Lead matching is now handled separately via cron job (15 minutes after scans)
+    // or manually via the "Calculate Matches" button in the dashboard
 
     return new Response(JSON.stringify({
       success: true,
