@@ -50,25 +50,25 @@ const DynamicMarketingIISlide = ({
         <img 
           src={cityMarketLogo} 
           alt="City Market Properties" 
-          className="h-10 md:h-16 w-auto opacity-90 mb-3 md:mb-4"
+          className="h-10 md:h-16 lg:h-12 2xl:h-16 w-auto opacity-90 mb-3 md:mb-4"
         />
 
         {/* Title */}
         <h2 
-          className="text-2xl md:text-4xl lg:text-5xl font-serif font-light text-white mb-3 md:mb-6"
+          className="text-2xl md:text-4xl lg:text-3xl 2xl:text-5xl font-serif font-light text-white mb-3 md:mb-6 lg:mb-4 2xl:mb-6"
           style={{ textShadow: softShadow }}
         >
           {data.title || 'Why City Market'}
         </h2>
 
         {/* Decorative Line */}
-        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6" />
+        <div className="w-12 md:w-16 h-px bg-[#f5c242] mb-3 md:mb-6 lg:mb-4 2xl:mb-6" />
 
         {/* Opening Statement */}
         {data.opening_statement && (
-          <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 mb-4 md:mb-6">
+          <div className="w-full max-w-3xl bg-[#8b7765]/80 backdrop-blur-sm rounded-lg p-3 md:p-5 lg:p-3 2xl:p-5 mb-4 md:mb-6 lg:mb-3 2xl:mb-6">
             <p 
-              className="text-white text-sm md:text-lg font-semibold"
+              className="text-white text-sm md:text-lg lg:text-sm 2xl:text-lg font-semibold"
               style={{ textShadow: softShadow }}
             >
               {data.opening_statement}
@@ -77,18 +77,18 @@ const DynamicMarketingIISlide = ({
         )}
 
         {/* Our Approach - Cards Grid */}
-        <div className="w-full max-w-3xl grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div className="w-full max-w-3xl grid grid-cols-3 gap-2 md:gap-4 lg:gap-2 2xl:gap-4 mb-4 md:mb-6 lg:mb-3 2xl:mb-6">
           {ourApproach.map((item, index) => {
             const IconComponent = iconMap[item.icon] || UserCheck;
             return (
               <div 
                 key={index}
-                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 text-center"
+                className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-3 md:p-4 lg:p-2 2xl:p-4 text-center"
               >
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2">
-                  <IconComponent className="w-5 h-5 md:w-6 md:h-6 text-[#f5c242]" />
+                <div className="w-10 h-10 md:w-12 md:h-12 lg:w-8 lg:h-8 2xl:w-12 2xl:h-12 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-2 lg:mb-1 2xl:mb-2">
+                  <IconComponent className="w-5 h-5 md:w-6 md:h-6 lg:w-4 lg:h-4 2xl:w-6 2xl:h-6 text-[#f5c242]" />
                 </div>
-                <p className="text-white/90 text-xs md:text-sm font-light">{item.text}</p>
+                <p className="text-white/90 text-xs md:text-sm lg:text-xs 2xl:text-sm font-light">{item.text}</p>
               </div>
             );
           })}
@@ -97,13 +97,13 @@ const DynamicMarketingIISlide = ({
         {/* Bottom Statement Box */}
         {data.bottom_statement && (
           <div 
-            className="w-full max-w-3xl rounded-xl p-3 md:p-5 mb-8 md:mb-12 border-2 border-[#f5c242]/50"
+            className="w-full max-w-3xl rounded-xl p-3 md:p-5 lg:p-3 2xl:p-5 mb-8 md:mb-12 lg:mb-4 2xl:mb-12 border-2 border-[#f5c242]/50"
             style={{
               background: 'radial-gradient(ellipse at center, rgba(139,119,101,0.9) 0%, rgba(139,119,101,0.7) 100%)'
             }}
           >
             <p 
-              className="text-white text-sm md:text-lg font-semibold"
+              className="text-white text-sm md:text-lg lg:text-sm 2xl:text-lg font-semibold"
               style={{ textShadow: softShadow }}
             >
               {data.bottom_statement}
