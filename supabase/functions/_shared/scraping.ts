@@ -102,8 +102,8 @@ export async function scrapeWithRetry(
           formats: ['markdown', 'html'],
           onlyMainContent: true,
           waitFor: waitForMs,
-          // Use auto proxy (1 credit) - stealth was too expensive and didn't improve results
-          proxy: 'auto',
+          // Use stealth proxy for Yad2 (5 credits) to rotate IP and avoid CAPTCHA, auto for others (1 credit)
+          proxy: source === 'yad2' ? 'stealth' : 'auto',
           // Request Israeli proxy for better results on Hebrew sites
           location: {
             country: 'IL',
