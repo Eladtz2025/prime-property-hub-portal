@@ -2728,10 +2728,11 @@ export type Database = {
           created_at: string | null
           id: string
           is_verified: boolean | null
-          neighborhood: string
+          neighborhood: string | null
           neighborhood_normalized: string | null
           number_from: number | null
           number_to: number | null
+          source: string | null
           street_name: string
           updated_at: string | null
         }
@@ -2741,10 +2742,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_verified?: boolean | null
-          neighborhood: string
+          neighborhood?: string | null
           neighborhood_normalized?: string | null
           number_from?: number | null
           number_to?: number | null
+          source?: string | null
           street_name: string
           updated_at?: string | null
         }
@@ -2754,10 +2756,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_verified?: boolean | null
-          neighborhood?: string
+          neighborhood?: string | null
           neighborhood_normalized?: string | null
           number_from?: number | null
           number_to?: number | null
+          source?: string | null
           street_name?: string
           updated_at?: string | null
         }
