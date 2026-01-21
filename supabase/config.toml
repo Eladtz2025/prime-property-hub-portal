@@ -119,3 +119,6 @@ verify_jwt = false
 
 [functions.refresh-lead-eligibility]
 verify_jwt = false
+
+[functions.cleanup-stuck-runs]
+verify_jwt = false
