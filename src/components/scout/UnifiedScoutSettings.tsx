@@ -43,6 +43,8 @@ import {
   AlertTriangle,
   Database,
   RefreshCw,
+  Timer,
+  FileText,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 
@@ -78,6 +80,33 @@ const PROPERTY_TYPES = [
   { value: 'sale', label: 'למכירה' },
   { value: 'both', label: 'הכל' },
 ];
+
+// Technical parameters per source - matches Edge Function configs
+const SOURCE_TECHNICAL_PARAMS: Record<string, {
+  getPages: (settings: any) => number;
+  delaySeconds: number;
+  waitForMs: number;
+  schedule: string[];
+}> = {
+  yad2: {
+    getPages: (settings) => settings?.scraping?.yad2_pages ?? 4,
+    delaySeconds: 15,
+    waitForMs: 5000,
+    schedule: ['08:30', '16:30', '22:30'],
+  },
+  madlan: {
+    getPages: (settings) => settings?.scraping?.madlan_pages ?? 15,
+    delaySeconds: 5,
+    waitForMs: 8000,
+    schedule: ['08:10', '16:10', '22:10'],
+  },
+  homeless: {
+    getPages: (settings) => settings?.scraping?.homeless_pages ?? 5,
+    delaySeconds: 2,
+    waitForMs: 3000,
+    schedule: ['08:00', '16:00', '22:00'],
+  },
+};
 
 const CITIES = [
   'תל אביב',
@@ -652,6 +681,23 @@ export const UnifiedScoutSettings: React.FC = () => {
                               <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
                             )}
                           </div>
+                          {/* Technical parameters for this source */}
+                          {SOURCE_TECHNICAL_PARAMS[config.source] && (
+                            <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                {SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s delay
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Switch
