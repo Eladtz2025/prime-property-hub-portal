@@ -585,7 +585,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       toast.info('מתחיל עדכון מהיר (Regex + AI)...');
 
       const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
-        body: { batch_size: 10, use_ai_fallback: true }
+        body: { batch_size: 5, use_ai_fallback: true }
       });
 
       if (error) throw error;
@@ -613,7 +613,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const continueFastBackfill = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
-        body: { batch_size: 10, use_ai_fallback: true }
+        body: { batch_size: 5, use_ai_fallback: true }
       });
 
       if (error) throw error;
