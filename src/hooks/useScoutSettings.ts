@@ -104,6 +104,21 @@ function parseSettingValue(value: any, defaultValue: any): any {
     return defaultValue;
   }
   
+  // Handle array conversion (when value is JSON string)
+  if (Array.isArray(defaultValue) && typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+  
+  // Ensure array values stay as arrays
+  if (Array.isArray(defaultValue) && Array.isArray(value)) {
+    return value;
+  }
+  
   if (typeof value === typeof defaultValue) {
     return value;
   }
