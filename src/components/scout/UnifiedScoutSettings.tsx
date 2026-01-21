@@ -51,6 +51,7 @@ import {
   Target,
   Link,
   UserCheck,
+  Zap,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 import { LiveScanProgress } from './LiveScanProgress';
@@ -143,6 +144,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ScoutConfig | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isFastBackfilling, setIsFastBackfilling] = useState(false);
   const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
   const [isDuplicatesDialogOpen, setIsDuplicatesDialogOpen] = useState(false);
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
@@ -168,14 +170,14 @@ export const UnifiedScoutSettings: React.FC = () => {
     schedule_time_3: '',
   });
 
-  // Fetch backfill progress
+  // Fetch backfill progress (supports both regular and fast backfill)
   const { data: backfillProgress, refetch: refetchProgress } = useQuery({
     queryKey: ['backfill-progress'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('backfill_progress')
         .select('*')
-        .eq('task_name', 'backfill_entry_dates')
+        .in('task_name', ['backfill_entry_dates', 'backfill_entry_dates_fast'])
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -183,17 +185,22 @@ export const UnifiedScoutSettings: React.FC = () => {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    refetchInterval: isBackfilling ? 3000 : false,
+    refetchInterval: (isBackfilling || isFastBackfilling) ? 3000 : false,
   });
 
-  // Update isBackfilling state based on progress
+  // Update backfilling states based on progress
   useEffect(() => {
     if (backfillProgress?.status === 'running') {
-      setIsBackfilling(true);
+      if (backfillProgress.task_name === 'backfill_entry_dates_fast') {
+        setIsFastBackfilling(true);
+      } else {
+        setIsBackfilling(true);
+      }
     } else if (backfillProgress?.status === 'completed' || backfillProgress?.status === 'failed') {
       setIsBackfilling(false);
+      setIsFastBackfilling(false);
     }
-  }, [backfillProgress?.status]);
+  }, [backfillProgress?.status, backfillProgress?.task_name]);
 
   // Ref to prevent duplicate concurrent calls
   const isProcessingRef = useRef(false);
@@ -554,17 +561,75 @@ export const UnifiedScoutSettings: React.FC = () => {
     }
   };
 
-  // Cancel backfill
+  // Cancel backfill (supports both regular and fast)
   const handleCancelBackfill = async () => {
     try {
-      await supabase.functions.invoke('backfill-entry-dates', {
-        body: { cancel: true },
-      });
+      // Cancel both types
+      await Promise.all([
+        supabase.functions.invoke('backfill-entry-dates', { body: { cancel: true } }),
+        supabase.functions.invoke('backfill-entry-dates-fast', { body: { cancel: true } }),
+      ]);
       toast.info('בוטל');
       setIsBackfilling(false);
+      setIsFastBackfilling(false);
       refetchProgress();
     } catch (error) {
       console.error('Cancel error:', error);
+    }
+  };
+
+  // Fast backfill with Regex-first approach (much faster)
+  const handleFastBackfill = async () => {
+    try {
+      setIsFastBackfilling(true);
+      toast.info('מתחיל עדכון מהיר (Regex + AI)...');
+
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
+        body: { batch_size: 50, use_ai_fallback: true }
+      });
+
+      if (error) throw error;
+
+      refetchProgress();
+
+      if (data.completed) {
+        toast.success('עדכון מהיר הושלם!');
+        setIsFastBackfilling(false);
+      } else if (data.hasMore) {
+        const regexPct = data.processed > 0 ? Math.round((data.regexHits / data.processed) * 100) : 0;
+        toast.success(`עובד ${data.processed} נכסים (${regexPct}% Regex). ממשיך...`);
+        setTimeout(() => continueFastBackfill(), 500);
+      } else {
+        toast.success(`עדכון הושלם: ${data.successful} הצליחו, Regex: ${data.regexHits}, AI: ${data.aiHits}`);
+        setIsFastBackfilling(false);
+      }
+    } catch (err: any) {
+      console.error('Fast backfill error:', err);
+      toast.error(`שגיאה: ${err.message}`);
+      setIsFastBackfilling(false);
+    }
+  };
+
+  const continueFastBackfill = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
+        body: { batch_size: 50, use_ai_fallback: true }
+      });
+
+      if (error) throw error;
+
+      refetchProgress();
+
+      if (data.completed || !data.hasMore) {
+        toast.success(`עדכון מהיר הושלם! Regex: ${data.regexHits || 0}, AI: ${data.aiHits || 0}`);
+        setIsFastBackfilling(false);
+      } else {
+        setTimeout(() => continueFastBackfill(), 500);
+      }
+    } catch (err: any) {
+      console.error('Fast backfill continue error:', err);
+      toast.error(`שגיאה בהמשך: ${err.message}`);
+      setIsFastBackfilling(false);
     }
   };
 
@@ -1205,33 +1270,57 @@ export const UnifiedScoutSettings: React.FC = () => {
                   )}
                   
                   <div className="flex gap-2">
+                    {/* Primary: Fast backfill button */}
                     <Button 
-                      onClick={handleBackfillEntryDates}
-                      disabled={isBackfilling}
-                      className="flex-1 sm:flex-none"
+                      onClick={handleFastBackfill}
+                      disabled={isBackfilling || isFastBackfilling}
+                      className="flex-1"
                     >
-                      {isBackfilling ? (
+                      {isFastBackfilling ? (
                         <>
-                          <RefreshCw className="h-4 w-4 ml-2 animate-spin" />
-                          מעדכן...
+                          <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                          עדכון מהיר...
                         </>
                       ) : (
                         <>
-                          <RefreshCw className="h-4 w-4 ml-2" />
-                          עדכן תאריכי כניסה
+                          <Zap className="h-4 w-4 ml-2" />
+                          עדכון מהיר (Regex + AI)
                         </>
                       )}
                     </Button>
                     
-                    {isBackfilling && (
+                    {/* Secondary: Slow full backfill */}
+                    <Button 
+                      onClick={handleBackfillEntryDates}
+                      disabled={isBackfilling || isFastBackfilling}
+                      variant="outline"
+                      size="icon"
+                      title="עדכון מלא (איטי יותר - AI לכולם)"
+                    >
+                      {isBackfilling ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                    
+                    {/* Cancel button */}
+                    {(isBackfilling || isFastBackfilling) && (
                       <Button 
-                        variant="outline"
+                        variant="destructive"
+                        size="icon"
                         onClick={handleCancelBackfill}
+                        title="ביטול"
                       >
-                        ביטול
+                        <Square className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    <strong>מהיר:</strong> Regex קודם (~5 שניות/נכס), AI רק אם צריך.
+                    <strong> מלא:</strong> AI לכולם (~2 דק/נכס).
+                  </p>
                 </CardContent>
               </Card>
             </div>
