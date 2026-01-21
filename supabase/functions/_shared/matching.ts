@@ -457,7 +457,11 @@ export async function calculateMatch(
     const propertyEntryDate = property.features?.entry_date 
       ? new Date(property.features.entry_date) 
       : null;
-    const propertyIsImmediate = !propertyEntryDate;
+    // Use explicit immediate_entry flag instead of assuming null date = immediate
+    const propertyIsImmediate = property.features?.immediate_entry === true;
+    // Property has no date info if neither entry_date nor immediate_entry is set
+    const propertyHasNoDateInfo = !propertyEntryDate && !propertyIsImmediate;
+    
     const today = new Date();
     const maxDaysForImmediate = new Date();
     maxDaysForImmediate.setDate(maxDaysForImmediate.getDate() + settings.immediate_max_days);
@@ -466,8 +470,11 @@ export async function calculateMatch(
     if (lead.immediate_entry === true) {
       if (propertyIsImmediate) {
         reasons.push('כניסה מיידית ✓');
-      } else if (propertyEntryDate <= maxDaysForImmediate) {
+      } else if (propertyEntryDate && propertyEntryDate <= maxDaysForImmediate) {
         reasons.push(`כניסה תוך ${settings.immediate_max_days} יום ✓`);
+      } else if (propertyHasNoDateInfo) {
+        // Property has no date info - include with note (don't reject potential matches)
+        reasons.push('תאריך כניסה לא ידוע');
       } else {
         return { lead, matchScore: 0, matchReasons: ['הנכס לא פנוי מיידית'], priority: 0 };
       }
@@ -475,40 +482,46 @@ export async function calculateMatch(
     
     // Case 2: Lead has specific date (±strict range days)
     else if (lead.move_in_date && lead.flexible_move_date !== true) {
-      // Immediate properties don't match specific dates!
-      if (propertyIsImmediate) {
+      if (propertyHasNoDateInfo) {
+        // Property has no date info - include with note (don't reject potential matches)
+        reasons.push('תאריך כניסה לא ידוע');
+      } else if (propertyIsImmediate) {
+        // Immediate properties don't match specific dates
         return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+      } else if (propertyEntryDate) {
+        const requestedDate = new Date(lead.move_in_date);
+        const daysBefore = new Date(requestedDate);
+        daysBefore.setDate(daysBefore.getDate() - settings.entry_date_range_strict);
+        const daysAfter = new Date(requestedDate);
+        daysAfter.setDate(daysAfter.getDate() + settings.entry_date_range_strict);
+        
+        if (propertyEntryDate < daysBefore || propertyEntryDate > daysAfter) {
+          return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח (±${settings.entry_date_range_strict} ימים)`], priority: 0 };
+        }
+        reasons.push('תאריך כניסה תואם ✓');
       }
-      
-      const requestedDate = new Date(lead.move_in_date);
-      const daysBefore = new Date(requestedDate);
-      daysBefore.setDate(daysBefore.getDate() - settings.entry_date_range_strict);
-      const daysAfter = new Date(requestedDate);
-      daysAfter.setDate(daysAfter.getDate() + settings.entry_date_range_strict);
-      
-      if (propertyEntryDate < daysBefore || propertyEntryDate > daysAfter) {
-        return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח (±${settings.entry_date_range_strict} ימים)`], priority: 0 };
-      }
-      reasons.push('תאריך כניסה תואם ✓');
     }
     
     // Case 3: Lead has specific date + FLEXIBLE (±flexible range days)
     else if (lead.move_in_date && lead.flexible_move_date === true) {
-      // Immediate properties don't match specific dates!
-      if (propertyIsImmediate) {
+      if (propertyHasNoDateInfo) {
+        // Property has no date info - include with note (don't reject potential matches)
+        reasons.push('תאריך כניסה לא ידוע');
+      } else if (propertyIsImmediate) {
+        // Immediate properties don't match specific dates
         return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+      } else if (propertyEntryDate) {
+        const requestedDate = new Date(lead.move_in_date);
+        const flexDaysBefore = new Date(requestedDate);
+        flexDaysBefore.setDate(flexDaysBefore.getDate() - settings.entry_date_range_flexible);
+        const flexDaysAfter = new Date(requestedDate);
+        flexDaysAfter.setDate(flexDaysAfter.getDate() + settings.entry_date_range_flexible);
+        
+        if (propertyEntryDate < flexDaysBefore || propertyEntryDate > flexDaysAfter) {
+          return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח הגמיש (±${settings.entry_date_range_flexible} ימים)`], priority: 0 };
+        }
+        reasons.push('תאריך כניסה בטווח גמיש ✓');
       }
-      
-      const requestedDate = new Date(lead.move_in_date);
-      const flexDaysBefore = new Date(requestedDate);
-      flexDaysBefore.setDate(flexDaysBefore.getDate() - settings.entry_date_range_flexible);
-      const flexDaysAfter = new Date(requestedDate);
-      flexDaysAfter.setDate(flexDaysAfter.getDate() + settings.entry_date_range_flexible);
-      
-      if (propertyEntryDate < flexDaysBefore || propertyEntryDate > flexDaysAfter) {
-        return { lead, matchScore: 0, matchReasons: [`תאריך כניסה לא בטווח הגמיש (±${settings.entry_date_range_flexible} ימים)`], priority: 0 };
-      }
-      reasons.push('תאריך כניסה בטווח גמיש ✓');
     }
     
     // Case 4: No date preference - skip date validation
