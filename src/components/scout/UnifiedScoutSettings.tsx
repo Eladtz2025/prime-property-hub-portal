@@ -388,7 +388,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const runConfigMutation = useMutation({
     mutationFn: async (configId: string) => {
       const { error } = await supabase.functions.invoke('scout-properties', {
-        body: { configId },
+        body: { config_id: configId },
       });
       if (error) throw error;
     },
