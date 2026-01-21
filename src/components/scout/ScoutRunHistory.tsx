@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw, Calculator } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw, Calculator, Timer } from 'lucide-react';
 
 interface ScoutRun {
   id: string;
@@ -28,6 +28,7 @@ interface ScoutRun {
   max_retries?: number;
   scout_configs?: {
     name: string;
+    property_type?: 'rent' | 'sale' | 'both';
   } | null;
 }
 
@@ -67,7 +68,8 @@ export const ScoutRunHistory: React.FC = () => {
         .select(`
           *,
           scout_configs (
-            name
+            name,
+            property_type
           )
         `)
         .gte('started_at', startDate.toISOString())
@@ -260,6 +262,32 @@ export const ScoutRunHistory: React.FC = () => {
     return `${diffMins} דקות`;
   };
 
+  const getHourTotalDuration = (hourSummary: HourSummary): string => {
+    const completedRuns = hourSummary.runs.filter(r => r.completed_at && r.source !== 'matching');
+    if (completedRuns.length === 0) return '—';
+    
+    const totalMs = completedRuns.reduce((sum, run) => {
+      const start = new Date(run.started_at).getTime();
+      const end = new Date(run.completed_at!).getTime();
+      return sum + (end - start);
+    }, 0);
+    
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    if (minutes > 0) return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${seconds}ש`;
+  };
+
+  const getPropertyTypeLabel = (propertyType?: 'rent' | 'sale' | 'both'): string | null => {
+    if (!propertyType) return null;
+    switch (propertyType) {
+      case 'rent': return 'השכרה';
+      case 'sale': return 'מכירה';
+      case 'both': return 'הכל';
+      default: return null;
+    }
+  };
+
   const toggleDay = (dayKey: string) => {
     setOpenDays(prev => ({ ...prev, [dayKey]: !prev[dayKey] }));
   };
@@ -335,6 +363,7 @@ export const ScoutRunHistory: React.FC = () => {
                         <TableHead className="w-[80px]">נמצאו</TableHead>
                         <TableHead className="w-[80px]">חדשות</TableHead>
                         <TableHead className="w-[80px]">התאמות</TableHead>
+                        <TableHead className="w-[60px]">משך</TableHead>
                         <TableHead className="w-[60px]">סטטוס</TableHead>
                         <TableHead className="w-[40px]"></TableHead>
                       </TableRow>
@@ -362,6 +391,12 @@ export const ScoutRunHistory: React.FC = () => {
                               {hourSummary.totalNew !== null ? hourSummary.totalNew : '—'}
                             </TableCell>
                             <TableCell>{hourSummary.totalMatched}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              <div className="flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {getHourTotalDuration(hourSummary)}
+                              </div>
+                            </TableCell>
                             <TableCell>{getHourStatus(hourSummary)}</TableCell>
                             <TableCell>
                               <button
@@ -410,6 +445,10 @@ export const ScoutRunHistory: React.FC = () => {
                           <span>נמצאו: <strong>{hourSummary.totalFound}</strong></span>
                           <span className="text-green-600">חדשות: <strong>{hourSummary.totalNew !== null ? hourSummary.totalNew : '—'}</strong></span>
                           <span>התאמות: <strong>{hourSummary.totalMatched}</strong></span>
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <Timer className="h-3 w-3" />
+                            {getHourTotalDuration(hourSummary)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -461,8 +500,13 @@ export const ScoutRunHistory: React.FC = () => {
                 </div>
                 
                 {run.scout_configs?.name && (
-                  <p className="text-sm text-muted-foreground">
-                    הגדרה: {run.scout_configs.name}
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <span>הגדרה: {run.scout_configs.name}</span>
+                    {run.scout_configs.property_type && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {getPropertyTypeLabel(run.scout_configs.property_type)}
+                      </Badge>
+                    )}
                   </p>
                 )}
                 
