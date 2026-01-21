@@ -87,16 +87,31 @@ export function normalizeCityName(city: string): string {
 
 /**
  * Get dynamic price flexibility based on price range and property type
- * For rentals:
- * - Up to ₪7,000: 15%
- * - ₪7,001 - ₪15,000: 10%
- * - Above ₪15,000: 8%
+ * Now accepts configurable thresholds
  */
-export function getPriceFlexibility(price: number, propertyType: string): number {
+export function getPriceFlexibility(
+  price: number, 
+  propertyType: string,
+  flexSettings?: {
+    rent_flex_low_threshold?: number;
+    rent_flex_low_percent?: number;
+    rent_flex_mid_threshold?: number;
+    rent_flex_mid_percent?: number;
+    rent_flex_high_percent?: number;
+  }
+): number {
+  const s = {
+    rent_flex_low_threshold: flexSettings?.rent_flex_low_threshold ?? 7000,
+    rent_flex_low_percent: flexSettings?.rent_flex_low_percent ?? 0.15,
+    rent_flex_mid_threshold: flexSettings?.rent_flex_mid_threshold ?? 15000,
+    rent_flex_mid_percent: flexSettings?.rent_flex_mid_percent ?? 0.10,
+    rent_flex_high_percent: flexSettings?.rent_flex_high_percent ?? 0.08,
+  };
+
   if (propertyType === 'rent' || propertyType === 'rental') {
-    if (price <= 7000) return 0.15;      // 15%
-    if (price <= 15000) return 0.10;     // 10%
-    return 0.08;                         // 8%
+    if (price <= s.rent_flex_low_threshold) return s.rent_flex_low_percent;
+    if (price <= s.rent_flex_mid_threshold) return s.rent_flex_mid_percent;
+    return s.rent_flex_high_percent;
   }
   // Sale - tighter flexibility for higher prices
   if (price <= 1500000) return 0.12;     // 12%
@@ -110,6 +125,12 @@ export interface MatchingSettings {
   entry_date_range_strict: number;
   entry_date_range_flexible: number;
   immediate_max_days: number;
+  // Price flexibility settings
+  rent_flex_low_threshold?: number;
+  rent_flex_low_percent?: number;
+  rent_flex_mid_threshold?: number;
+  rent_flex_mid_percent?: number;
+  rent_flex_high_percent?: number;
 }
 
 // Default matching settings (used when not provided)
@@ -117,6 +138,11 @@ export const defaultMatchingSettings: MatchingSettings = {
   entry_date_range_strict: 10,
   entry_date_range_flexible: 14,
   immediate_max_days: 30,
+  rent_flex_low_threshold: 7000,
+  rent_flex_low_percent: 0.15,
+  rent_flex_mid_threshold: 15000,
+  rent_flex_mid_percent: 0.10,
+  rent_flex_high_percent: 0.08,
 };
 
 // ===== MAIN MATCHING FUNCTION =====
@@ -272,7 +298,7 @@ export async function calculateMatch(
   // ===== PRICE MUST BE IN RANGE (with dynamic flexibility) =====
   if (property.price && lead.budget_max) {
     const propType = propertyType || 'rent';
-    const flexibility = getPriceFlexibility(lead.budget_max, propType);
+    const flexibility = getPriceFlexibility(lead.budget_max, propType, settings);
     
     // Calculate allowed range
     const minBudget = lead.budget_min || 0;

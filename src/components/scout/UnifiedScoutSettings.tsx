@@ -1214,58 +1214,137 @@ export const UnifiedScoutSettings: React.FC = () => {
 
       {/* Matching Settings Dialog */}
       <Dialog open={isMatchingDialogOpen} onOpenChange={setIsMatchingDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
+        <DialogContent className="max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary" />
               הגדרות התאמה ללקוחות
             </DialogTitle>
             <DialogDescription>
-              לוגיקת התאמה בינארית: עיר + שכונה (חובה) → מחיר עם זליגה דינמית → חדרים → תוספות (לפי גמישות)
+              לוגיקת התאמה: עיר + שכונה → מחיר עם זליגה → חדרים → תוספות
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-5">
             
-            {/* Dynamic Price Flexibility Table */}
+            {/* Dynamic Price Flexibility - Editable */}
             <div className="bg-muted/30 rounded-lg p-4 space-y-3">
               <h5 className="font-medium text-sm">זליגת מחיר דינמית (להשכרה)</h5>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="bg-background rounded p-2 text-center">
-                  <div className="font-medium text-primary">15%</div>
-                  <div className="text-xs text-muted-foreground">עד ₪7,000</div>
+              <div className="space-y-3">
+                {/* Range 1 */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground min-w-[60px]">טווח 1:</span>
+                  <span>עד ₪</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    value={settings?.matching?.rent_flex_low_threshold ?? 7000}
+                    onChange={(e) => handleNumberChange('matching', 'rent_flex_low_threshold', e.target.value)}
+                  />
+                  <span>→ זליגה</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={1}
+                    max={50}
+                    value={Math.round((settings?.matching?.rent_flex_low_percent ?? 0.15) * 100)}
+                    onChange={(e) => handleNumberChange('matching', 'rent_flex_low_percent', (parseFloat(e.target.value) / 100).toString())}
+                  />
+                  <span>%</span>
                 </div>
-                <div className="bg-background rounded p-2 text-center">
-                  <div className="font-medium text-primary">10%</div>
-                  <div className="text-xs text-muted-foreground">₪7,001 - ₪15,000</div>
+                {/* Range 2 */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground min-w-[60px]">טווח 2:</span>
+                  <span>עד ₪</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    value={settings?.matching?.rent_flex_mid_threshold ?? 15000}
+                    onChange={(e) => handleNumberChange('matching', 'rent_flex_mid_threshold', e.target.value)}
+                  />
+                  <span>→ זליגה</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={1}
+                    max={50}
+                    value={Math.round((settings?.matching?.rent_flex_mid_percent ?? 0.10) * 100)}
+                    onChange={(e) => handleNumberChange('matching', 'rent_flex_mid_percent', (parseFloat(e.target.value) / 100).toString())}
+                  />
+                  <span>%</span>
                 </div>
-                <div className="bg-background rounded p-2 text-center">
-                  <div className="font-medium text-primary">8%</div>
-                  <div className="text-xs text-muted-foreground">מעל ₪15,000</div>
+                {/* Range 3 */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground min-w-[60px]">טווח 3:</span>
+                  <span className="text-muted-foreground">מעל</span>
+                  <div className="w-24" />
+                  <span>→ זליגה</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={1}
+                    max={50}
+                    value={Math.round((settings?.matching?.rent_flex_high_percent ?? 0.08) * 100)}
+                    onChange={(e) => handleNumberChange('matching', 'rent_flex_high_percent', (parseFloat(e.target.value) / 100).toString())}
+                  />
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Entry Date Settings */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">הגדרות תאריך כניסה</h5>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">"מיידי" = זמין תוך</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={7}
+                    max={90}
+                    value={settings?.matching?.immediate_max_days ?? 30}
+                    onChange={(e) => handleNumberChange('matching', 'immediate_max_days', e.target.value)}
+                  />
+                  <span>ימים</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">חיפוש מדויק: ±</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={3}
+                    max={30}
+                    value={settings?.matching?.entry_date_range_strict ?? 10}
+                    onChange={(e) => handleNumberChange('matching', 'entry_date_range_strict', e.target.value)}
+                  />
+                  <span>ימים</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">חיפוש גמיש: ±</span>
+                  <Input
+                    type="number"
+                    className="w-16 h-8"
+                    min={7}
+                    max={60}
+                    value={settings?.matching?.entry_date_range_flexible ?? 14}
+                    onChange={(e) => handleNumberChange('matching', 'entry_date_range_flexible', e.target.value)}
+                  />
+                  <span>ימים</span>
                 </div>
               </div>
             </div>
             
+            {/* Max Matches */}
             <div className="space-y-2">
               <Label>מקסימום התאמות לנכס</Label>
               <Input
                 type="number"
                 min={5}
-                max={50}
+                max={100}
                 value={settings?.matching?.max_matches_per_property ?? 20}
                 onChange={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
               />
               <p className="text-xs text-muted-foreground">ברירת מחדל: 20 לקוחות לנכס</p>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <Label className="cursor-pointer">שליחת וואטסאפ אוטומטית</Label>
-                <p className="text-xs text-muted-foreground">שליחת הודעה אוטומטית ללקוחות מתאימים</p>
-              </div>
-              <Switch
-                checked={settings?.matching?.auto_send_whatsapp ?? false}
-                onCheckedChange={(checked) => handleBooleanChange('matching', 'auto_send_whatsapp', checked)}
-              />
             </div>
           </div>
         </DialogContent>
