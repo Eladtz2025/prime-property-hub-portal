@@ -301,7 +301,8 @@ serve(async (req) => {
 
     // Fetch properties to process
     // CRITICAL: Filter by entry_date_source IS NULL to avoid reprocessing
-    let query = supabase
+    // No need for continueFrom - the filter handles it automatically
+    const { data: properties, error: fetchError } = await supabase
       .from('scouted_properties')
       .select('id, source_url, source, features, title, address, created_at')
       .eq('is_active', true)
@@ -311,12 +312,6 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(batchSize);
 
-    // Use created_at for pagination (more stable than ID)
-    if (continueFrom) {
-      query = query.gt('created_at', continueFrom);
-    }
-
-    const { data: properties, error: fetchError } = await query;
     if (fetchError) throw fetchError;
 
     if (!properties || properties.length === 0) {
