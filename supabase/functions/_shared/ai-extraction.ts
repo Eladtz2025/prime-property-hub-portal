@@ -91,8 +91,9 @@ export async function extractPropertiesWithAI(
 
   const cleanedMarkdown = cleanMarkdownContent(markdown, source);
   
-  // Limit input to 15K chars for faster AI processing (was 30K)
-  const truncatedMarkdown = cleanedMarkdown.substring(0, 15000);
+  // After smart header/footer removal, we can send more content (25K)
+  // The cleaning removes navigation/headers so most of this is actual listings
+  const truncatedMarkdown = cleanedMarkdown.substring(0, 25000);
   
   // Log input stats for debugging
   console.log(`[${source.toUpperCase()} AI] Input: ${markdown.length} chars → cleaned: ${cleanedMarkdown.length} → sent: ${truncatedMarkdown.length}`);
