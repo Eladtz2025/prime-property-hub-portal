@@ -412,6 +412,7 @@ export type Database = {
           created_by: string | null
           elevator_flexible: boolean | null
           elevator_required: boolean | null
+          eligibility_reason: string | null
           email: string | null
           flexible_move_date: boolean | null
           floor_preference: string | null
@@ -472,6 +473,7 @@ export type Database = {
           created_by?: string | null
           elevator_flexible?: boolean | null
           elevator_required?: boolean | null
+          eligibility_reason?: string | null
           email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
@@ -532,6 +534,7 @@ export type Database = {
           created_by?: string | null
           elevator_flexible?: boolean | null
           elevator_required?: boolean | null
+          eligibility_reason?: string | null
           email?: string | null
           flexible_move_date?: boolean | null
           floor_preference?: string | null
