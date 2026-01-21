@@ -53,6 +53,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
+import { LiveScanProgress } from './LiveScanProgress';
 
 // Scout Config types
 interface ScoutConfig {
@@ -387,7 +388,17 @@ export const UnifiedScoutSettings: React.FC = () => {
 
   const runConfigMutation = useMutation({
     mutationFn: async (configId: string) => {
-      const { error } = await supabase.functions.invoke('scout-properties', {
+      // Get the config to determine which function to call
+      const config = configs?.find(c => c.id === configId);
+      const source = config?.source || 'yad2';
+      
+      // Call source-specific function
+      const functionName = source === 'yad2' ? 'scout-yad2' 
+        : source === 'madlan' ? 'scout-madlan' 
+        : source === 'homeless' ? 'scout-homeless' 
+        : 'scout-properties';
+      
+      const { error } = await supabase.functions.invoke(functionName, {
         body: { config_id: configId },
       });
       if (error) throw error;
@@ -396,6 +407,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       toast.success('סריקה הופעלה');
       queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
       queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['live-scan-progress'] });
     },
     onError: () => toast.error('שגיאה בהפעלת הסריקה'),
   });
@@ -620,6 +632,9 @@ export const UnifiedScoutSettings: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Live Scan Progress - shown only when scans are active */}
+      <LiveScanProgress />
+      
       <Accordion type="multiple" defaultValue={[]} className="space-y-4">
         {/* Scout Configurations */}
         <AccordionItem value="configs" className="border rounded-lg bg-card">
