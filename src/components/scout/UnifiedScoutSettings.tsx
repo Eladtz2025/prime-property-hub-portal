@@ -392,12 +392,9 @@ export const UnifiedScoutSettings: React.FC = () => {
       const config = configs?.find(c => c.id === configId);
       const source = config?.source || 'yad2';
       
-      // Use trigger function for page-by-page execution (Yad2)
-      // Other sources still use direct function call
-      const functionName = source === 'yad2' ? 'trigger-yad2-pages' 
-        : source === 'madlan' ? 'scout-madlan' 
-        : source === 'homeless' ? 'scout-homeless' 
-        : 'scout-properties';
+      // Use trigger-scout-pages for all sources - proven stable approach
+      // Each page runs independently, preventing timeouts
+      const functionName = 'trigger-scout-pages';
       
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { config_id: configId },
