@@ -335,6 +335,18 @@ async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{
     }
   }
   
+  // Check if property already exists
+  const { data: existingProperty } = await supabase
+    .from('scouted_properties')
+    .select('id, status')
+    .eq('source', property.source)
+    .eq('source_id', property.source_id)
+    .maybeSingle();
+
+  const isNew = !existingProperty;
+  
+  // If exists, update price and last_seen_at but preserve user-changed status
+  // If new, insert with status 'new'
   const { data: upsertResult, error: upsertError } = await supabase
     .from('scouted_properties')
     .upsert({
@@ -355,49 +367,52 @@ async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{
       images: property.images || [],
       features: property.features || {},
       raw_data: property.raw_data,
-      status: 'new',
+      // Preserve existing status if property exists, otherwise set to 'new'
+      status: existingProperty?.status || 'new',
       is_private: property.is_private,
       duplicate_group_id: duplicateGroupId,
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
       last_seen_at: new Date().toISOString()
     }, {
-      onConflict: 'source,source_id',
-      ignoreDuplicates: true
+      onConflict: 'source,source_id'
+      // No ignoreDuplicates - update existing properties with new price
     })
     .select('id, price')
-    .single();
+    .maybeSingle();
 
-  if (!upsertError && upsertResult) {
-    // Create duplicate alert if needed
-    if (duplicateGroupId && property.price) {
-      const { data: primaryProperty } = await supabase
-        .from('scouted_properties')
-        .select('id, price')
-        .eq('duplicate_group_id', duplicateGroupId)
-        .eq('is_primary_listing', true)
-        .single();
+  if (upsertError) {
+    console.error('Upsert error:', upsertError);
+    return { isNew: false };
+  }
+
+  // Create duplicate alert if needed (only for new properties)
+  if (isNew && duplicateGroupId && property.price && upsertResult) {
+    const { data: primaryProperty } = await supabase
+      .from('scouted_properties')
+      .select('id, price')
+      .eq('duplicate_group_id', duplicateGroupId)
+      .eq('is_primary_listing', true)
+      .maybeSingle();
+    
+    if (primaryProperty?.price && primaryProperty.price > 0) {
+      const priceDiff = Math.abs(property.price - primaryProperty.price);
+      const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
       
-      if (primaryProperty?.price && primaryProperty.price > 0) {
-        const priceDiff = Math.abs(property.price - primaryProperty.price);
-        const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
-        
-        if (priceDiffPercent > 5) {
-          await supabase
-            .from('duplicate_alerts')
-            .insert({
-              primary_property_id: primaryProperty.id,
-              duplicate_property_id: upsertResult.id,
-              price_difference: priceDiff,
-              price_difference_percent: priceDiffPercent
-            });
-        }
+      if (priceDiffPercent > 5) {
+        await supabase
+          .from('duplicate_alerts')
+          .insert({
+            primary_property_id: primaryProperty.id,
+            duplicate_property_id: upsertResult.id,
+            price_difference: priceDiff,
+            price_difference_percent: priceDiffPercent
+          });
       }
     }
-    return { isNew: true };
   }
   
-  return { isNew: false };
+  return { isNew };
 }
 
 function parseHebrewDate(dateStr: string): string | null {
