@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
+import { corsHeaders, validateScrapedContent, scrapeWithRetry } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { fetchScoutSettings } from "../_shared/settings.ts";
 import { ScrapedProperty, saveProperty } from "../_shared/property-helpers.ts";
@@ -21,12 +21,6 @@ const MADLAN_CONFIG = {
   MAX_RETRIES: 3
 };
 
-// User agents for rotation
-const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
-];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -152,8 +146,8 @@ serve(async (req) => {
             break;
           }
 
-          // Madlan-specific scraping with location
-          const scrapeData = await scrapeMadlanWithRetry(url, firecrawlApiKey, MADLAN_CONFIG.MAX_RETRIES);
+          // Use shared scrapeWithRetry with stealth proxy
+          const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, 'madlan', MADLAN_CONFIG.MAX_RETRIES, MADLAN_CONFIG.WAIT_FOR_MS);
           
           if (!scrapeData) {
             console.error(`All retry attempts failed for Madlan page ${page}`);
@@ -297,68 +291,3 @@ serve(async (req) => {
   }
 });
 
-// ==================== Madlan-specific scraping ====================
-
-async function scrapeMadlanWithRetry(url: string, apiKey: string, maxRetries: number): Promise<any> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔵 Madlan scrape attempt ${attempt}/${maxRetries}`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      
-      const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url,
-          formats: ['markdown', 'html'],
-          onlyMainContent: true,
-          waitFor: MADLAN_CONFIG.WAIT_FOR_MS,
-          timeout: 55000,
-          headers: {
-            'User-Agent': userAgents[attempt % userAgents.length],
-            'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8'
-          },
-          // Madlan-specific: Use Israeli location
-          location: { country: 'IL' },
-          proxy: 'auto'
-        }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Firecrawl error (attempt ${attempt}):`, errorText);
-        if (attempt < maxRetries) {
-          await new Promise(r => setTimeout(r, 3000 * attempt));
-          continue;
-        }
-        return null;
-      }
-      
-      const data = await response.json();
-      
-      if (data.success !== false) {
-        return data;
-      }
-      
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 3000 * attempt));
-      }
-      
-    } catch (error) {
-      console.error(`Scrape attempt ${attempt} failed:`, error);
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 3000 * attempt));
-      }
-    }
-  }
-  
-  return null;
-}
