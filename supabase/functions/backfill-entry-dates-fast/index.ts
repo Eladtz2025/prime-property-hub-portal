@@ -250,21 +250,6 @@ serve(async (req) => {
       .single();
 
     if (existingProgress) {
-      const lastUpdate = new Date(existingProgress.updated_at || existingProgress.started_at);
-      const secondsSinceUpdate = (Date.now() - lastUpdate.getTime()) / 1000;
-      
-      if (secondsSinceUpdate < 10) {
-        return new Response(JSON.stringify({
-          success: true,
-          skipped: true,
-          message: 'Processing in progress',
-          processed_items: existingProgress.processed_items,
-          total_items: existingProgress.total_items
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      
       progressId = existingProgress.id;
       await supabase
         .from('backfill_progress')
