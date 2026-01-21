@@ -48,6 +48,7 @@ import {
   Timer,
   FileText,
   Target,
+  Link,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 
@@ -142,6 +143,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
   const [isDuplicatesDialogOpen, setIsDuplicatesDialogOpen] = useState(false);
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
+  const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -941,8 +943,8 @@ export const UnifiedScoutSettings: React.FC = () => {
                 </div>
               )}
 
-              {/* Duplicates & Matching Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+              {/* Duplicates, Matching & Availability Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
                 {/* Duplicates Card */}
                 <Card 
                   className="cursor-pointer hover:shadow-md transition-shadow" 
@@ -986,6 +988,36 @@ export const UnifiedScoutSettings: React.FC = () => {
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                               <Clock className="h-3 w-3" />
                               <span>08:15, 16:15, 22:15</span>
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">אוטומטי</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Availability Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow" 
+                  onClick={() => setIsAvailabilityDialogOpen(true)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                          <Link className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">בדיקת זמינות</h4>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              אחרי {settings?.availability?.min_days_before_check ?? 3} ימים
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3" />
+                              <span>05:00</span>
                               <Badge variant="outline" className="text-[10px] px-1 py-0">אוטומטי</Badge>
                             </div>
                           </div>
@@ -1263,6 +1295,127 @@ export const UnifiedScoutSettings: React.FC = () => {
                 onChange={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
               />
               <p className="text-xs text-muted-foreground">ברירת מחדל: 20 לקוחות לנכס</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Availability Settings Dialog */}
+      <Dialog open={isAvailabilityDialogOpen} onOpenChange={setIsAvailabilityDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link className="h-5 w-5 text-blue-600" />
+              הגדרות בדיקת זמינות
+            </DialogTitle>
+            <DialogDescription>
+              בודק אם נכסים עדיין פעילים ומסמן כלא פעילים נכסים שהוסרו
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Check Timing Settings */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">הגדרות בדיקה</h5>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">מינימום ימים לפני בדיקה</span>
+                  <Input
+                    type="number"
+                    className="w-20 h-8"
+                    min={1}
+                    max={30}
+                    value={settings?.availability?.min_days_before_check ?? 3}
+                    onChange={(e) => handleNumberChange('availability', 'min_days_before_check', e.target.value)}
+                  />
+                  <span>ימים</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">נכסים באצווה</span>
+                  <Input
+                    type="number"
+                    className="w-20 h-8"
+                    min={10}
+                    max={200}
+                    value={settings?.availability?.batch_size ?? 50}
+                    onChange={(e) => handleNumberChange('availability', 'batch_size', e.target.value)}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                נכסים חדשים מ-{settings?.availability?.min_days_before_check ?? 3} ימים לא ייבדקו
+              </p>
+            </div>
+
+            {/* Delay Settings */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">השהיות</h5>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">השהייה בין אצוות</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    min={500}
+                    max={10000}
+                    step={100}
+                    value={settings?.availability?.delay_between_batches_ms ?? 1500}
+                    onChange={(e) => handleNumberChange('availability', 'delay_between_batches_ms', e.target.value)}
+                  />
+                  <span className="text-xs">ms</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">השהייה בין בקשות</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    min={50}
+                    max={2000}
+                    step={50}
+                    value={settings?.availability?.delay_between_requests_ms ?? 150}
+                    onChange={(e) => handleNumberChange('availability', 'delay_between_requests_ms', e.target.value)}
+                  />
+                  <span className="text-xs">ms</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeout Settings */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">זמני המתנה (Timeout)</h5>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">בקשת HEAD</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    min={3000}
+                    max={30000}
+                    step={1000}
+                    value={settings?.availability?.head_timeout_ms ?? 10000}
+                    onChange={(e) => handleNumberChange('availability', 'head_timeout_ms', e.target.value)}
+                  />
+                  <span className="text-xs">ms</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground flex-1">בקשת GET</span>
+                  <Input
+                    type="number"
+                    className="w-24 h-8"
+                    min={3000}
+                    max={30000}
+                    step={1000}
+                    value={settings?.availability?.get_timeout_ms ?? 8000}
+                    onChange={(e) => handleNumberChange('availability', 'get_timeout_ms', e.target.value)}
+                  />
+                  <span className="text-xs">ms</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Schedule Info */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+              <Clock className="h-3.5 w-3.5" />
+              <span>הבדיקה רצה אוטומטית כל יום ב-05:00</span>
             </div>
           </div>
         </DialogContent>
