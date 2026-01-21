@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchCategorySettings } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +21,13 @@ serve(async (req) => {
 
   try {
     console.log('🔍 Starting availability check orchestration...');
+
+    // Fetch availability settings from database
+    const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
+    const batchSize = availabilitySettings.batch_size;
+    const delayBetweenBatches = availabilitySettings.delay_between_batches_ms;
+
+    console.log(`⚙️ Settings: batchSize=${batchSize}, delayBetweenBatches=${delayBetweenBatches}ms`);
 
     // Fetch ALL active property IDs using pagination (Supabase limits to 1000 by default)
     const PAGE_SIZE = 1000;
@@ -63,14 +71,13 @@ serve(async (req) => {
 
     console.log(`📊 Found ${properties.length} properties to check`);
 
-    // Split into batches of 50
-    const batchSize = 50;
+    // Split into batches using configurable batch size
     const batches: string[][] = [];
     for (let i = 0; i < properties.length; i += batchSize) {
       batches.push(properties.slice(i, i + batchSize).map(p => p.id));
     }
 
-    console.log(`📦 Split into ${batches.length} batches`);
+    console.log(`📦 Split into ${batches.length} batches of up to ${batchSize} properties`);
 
     let triggeredCount = 0;
     const errors: string[] = [];
@@ -101,9 +108,9 @@ serve(async (req) => {
 
       triggeredCount++;
 
-      // Small delay between triggering batches to spread the load
+      // Configurable delay between triggering batches to spread the load
       if (i < batches.length - 1) {
-        await sleep(1500); // 1.5 seconds between triggers
+        await sleep(delayBetweenBatches);
       }
     }
 

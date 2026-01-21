@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchCategorySettings } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +31,9 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  // Fetch availability settings from database
+  const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
+
   try {
     let propertyIds: string[] = [];
     
@@ -59,16 +63,16 @@ serve(async (req) => {
       // Fallback: Fetch own batch (backward compatible for cron job)
       console.log('📋 No property IDs provided, fetching own batch...');
       
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const daysAgo = new Date();
+      daysAgo.setDate(daysAgo.getDate() - availabilitySettings.min_days_before_check);
 
       const { data, error } = await supabase
         .from('scouted_properties')
         .select('id, source_url, source, title')
         .eq('status', 'matched')
         .or('is_active.is.null,is_active.eq.true')
-        .lt('first_seen_at', threeDaysAgo.toISOString())
-        .limit(50);
+        .lt('first_seen_at', daysAgo.toISOString())
+        .limit(availabilitySettings.batch_size);
 
       if (error) throw error;
       properties = data;
@@ -94,7 +98,7 @@ serve(async (req) => {
     for (const property of properties) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), availabilitySettings.head_timeout_ms);
 
         // First, try HEAD request
         const headResponse = await fetch(property.source_url, {
@@ -132,7 +136,7 @@ serve(async (req) => {
         else if (headResponse.status === 200) {
           try {
             const getController = new AbortController();
-            const getTimeoutId = setTimeout(() => getController.abort(), 8000);
+            const getTimeoutId = setTimeout(() => getController.abort(), availabilitySettings.get_timeout_ms);
 
             const getResponse = await fetch(property.source_url, {
               method: 'GET',
@@ -181,8 +185,8 @@ serve(async (req) => {
         checkedCount++;
       }
 
-      // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Configurable delay between requests
+      await new Promise(resolve => setTimeout(resolve, availabilitySettings.delay_between_requests_ms));
     }
 
     // Update inactive properties

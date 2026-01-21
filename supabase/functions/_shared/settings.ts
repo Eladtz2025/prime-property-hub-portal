@@ -35,6 +35,14 @@ export interface ScoutSettings {
     stuck_timeout_minutes: number;
     max_properties_per_config: number;
   };
+  availability: {
+    min_days_before_check: number;
+    batch_size: number;
+    delay_between_batches_ms: number;
+    delay_between_requests_ms: number;
+    head_timeout_ms: number;
+    get_timeout_ms: number;
+  };
 }
 
 // Default values matching the database defaults
@@ -68,6 +76,14 @@ export const defaultSettings: ScoutSettings = {
     madlan_delay_ms: 5000,
     stuck_timeout_minutes: 30,
     max_properties_per_config: 500,
+  },
+  availability: {
+    min_days_before_check: 3,
+    batch_size: 50,
+    delay_between_batches_ms: 1500,
+    delay_between_requests_ms: 150,
+    head_timeout_ms: 10000,
+    get_timeout_ms: 8000,
   },
 };
 
@@ -129,6 +145,9 @@ export async function fetchScoutSettings(
     } else if (category === 'scraping' && setting_key in settings.scraping) {
       const key = setting_key as keyof typeof settings.scraping;
       (settings.scraping as any)[key] = parseSettingValue(setting_value, defaultSettings.scraping[key]);
+    } else if (category === 'availability' && setting_key in settings.availability) {
+      const key = setting_key as keyof typeof settings.availability;
+      (settings.availability as any)[key] = parseSettingValue(setting_value, defaultSettings.availability[key]);
     }
   }
   
