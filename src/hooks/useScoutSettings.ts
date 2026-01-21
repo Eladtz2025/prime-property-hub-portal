@@ -22,6 +22,12 @@ export interface ScoutSettings {
     entry_date_range_strict: number;
     entry_date_range_flexible: number;
     immediate_max_days: number;
+    // Price flexibility settings
+    rent_flex_low_threshold: number;
+    rent_flex_low_percent: number;
+    rent_flex_mid_threshold: number;
+    rent_flex_mid_percent: number;
+    rent_flex_high_percent: number;
   };
   scraping: {
     yad2_pages: number;
@@ -45,6 +51,11 @@ export const defaultSettings: ScoutSettings = {
     entry_date_range_strict: 10,
     entry_date_range_flexible: 14,
     immediate_max_days: 30,
+    rent_flex_low_threshold: 7000,
+    rent_flex_low_percent: 0.15,
+    rent_flex_mid_threshold: 15000,
+    rent_flex_mid_percent: 0.10,
+    rent_flex_high_percent: 0.08,
   },
   scraping: {
     yad2_pages: 7,
