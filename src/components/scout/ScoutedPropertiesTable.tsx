@@ -554,7 +554,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const matchAllMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('trigger-matching', {
-        body: { send_whatsapp: false }
+        body: { send_whatsapp: false, force: true }
       });
       if (error) throw error;
       return data;
