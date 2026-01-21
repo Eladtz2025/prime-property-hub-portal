@@ -124,12 +124,26 @@ serve(async (req) => {
 
       let configPropertiesFound = 0;
       let configNewProperties = 0;
+      const pageStats: Array<{ page: number; url: string; found: number; new: number; duration_ms: number }> = [];
 
       for (let page = 1; page <= configMaxPages; page++) {
+        // Check if run was stopped
+        const { data: runCheck } = await supabase
+          .from('scout_runs')
+          .select('status')
+          .eq('id', runId)
+          .single();
+        
+        if (runCheck?.status === 'stopped') {
+          console.log(`🛑 Homeless run ${runId} was stopped, exiting loop`);
+          break;
+        }
+
         const urls = buildSinglePageUrl(config, page);
         if (!urls.length) continue;
 
         const url = urls[0];
+        const pageStartTime = Date.now();
         console.log(`🟣 Homeless: Scraping page ${page}/${configMaxPages}: ${url}`);
 
         // Add delay between pages (not for first page)
@@ -138,6 +152,9 @@ serve(async (req) => {
           console.log(`Waiting ${Math.round(delay)}ms before next Homeless page...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
+
+        let pageFound = 0;
+        let pageNew = 0;
 
         try {
           if (!firecrawlApiKey) {
@@ -149,6 +166,7 @@ serve(async (req) => {
           
           if (!scrapeData) {
             console.error(`All retry attempts failed for Homeless page ${page}`);
+            pageStats.push({ page, url, found: 0, new: 0, duration_ms: Date.now() - pageStartTime });
             continue;
           }
 
@@ -162,6 +180,7 @@ serve(async (req) => {
               .from('scout_runs')
               .update({ status: 'partial', error_message: validation.reason })
               .eq('id', runId);
+            pageStats.push({ page, url, found: 0, new: 0, duration_ms: Date.now() - pageStartTime });
             continue;
           }
 
@@ -177,11 +196,13 @@ serve(async (req) => {
           );
 
           console.log(`🟣 Homeless page ${page}: Extracted ${extractedProperties.length} properties`);
+          pageFound = extractedProperties.length;
 
           // Save properties
           for (const property of extractedProperties) {
             const result = await saveProperty(supabase, property);
             if (result.isNew) {
+              pageNew++;
               configNewProperties++;
               totalNewProperties++;
             }
@@ -190,31 +211,43 @@ serve(async (req) => {
           configPropertiesFound += extractedProperties.length;
           totalPropertiesFound += extractedProperties.length;
 
-          // Update progress
-          await supabase
-            .from('scout_runs')
-            .update({
-              properties_found: configPropertiesFound,
-              new_properties: configNewProperties
-            })
-            .eq('id', runId);
-
         } catch (error) {
           console.error(`Error on Homeless page ${page}:`, error);
-          continue;
         }
+
+        // Record page stats
+        pageStats.push({ page, url, found: pageFound, new: pageNew, duration_ms: Date.now() - pageStartTime });
+
+        // Update progress with page stats
+        await supabase
+          .from('scout_runs')
+          .update({
+            properties_found: configPropertiesFound,
+            new_properties: configNewProperties,
+            page_stats: pageStats
+          })
+          .eq('id', runId);
       }
 
-      // Complete run
-      await supabase
+      // Complete run (only if not stopped)
+      const { data: finalRunCheck } = await supabase
         .from('scout_runs')
-        .update({
-          status: 'completed',
-          properties_found: configPropertiesFound,
-          new_properties: configNewProperties,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', runId);
+        .select('status')
+        .eq('id', runId)
+        .single();
+      
+      if (finalRunCheck?.status !== 'stopped') {
+        await supabase
+          .from('scout_runs')
+          .update({
+            status: 'completed',
+            properties_found: configPropertiesFound,
+            new_properties: configNewProperties,
+            page_stats: pageStats,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', runId);
+      }
 
       // Update config last run
       await supabase
