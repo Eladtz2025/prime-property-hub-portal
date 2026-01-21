@@ -196,5 +196,24 @@ export function cleanMarkdownContent(markdown: string, source: string): string {
     }
   }
   
+  if (source === 'yad2') {
+    // For Yad2, skip headers/filters and start from listing area
+    // This saves ~5,000 chars of irrelevant content, making room for more private listings
+    const listingPatterns = [
+      /נדל"ן לה(שכרה|מכירה) ב/,     // "נדל"ן להשכרה בתל אביב"
+      /\d+[\s,]*תוצאות/,              // "1,315 תוצאות"
+      /מיון לפי/,                      // Sort header
+      /מודעות פרטיות/,                 // Private listings section
+    ];
+    
+    for (const pattern of listingPatterns) {
+      const match = markdown.search(pattern);
+      if (match > 0) {
+        console.log(`[Yad2 Clean] Found pattern at position ${match}, skipping ${match} chars of headers`);
+        return markdown.substring(match);
+      }
+    }
+  }
+  
   return markdown;
 }
