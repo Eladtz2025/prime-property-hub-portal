@@ -706,7 +706,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       {/* Live Scan Progress - shown only when scans are active */}
       <LiveScanProgress />
       
-      <Accordion type="multiple" defaultValue={[]} className="space-y-4">
+      <Accordion type="multiple" defaultValue={["configs", "database"]} className="space-y-4">
         {/* Scout Configurations */}
         <AccordionItem value="configs" className="border rounded-lg bg-card">
           <AccordionTrigger className="px-4 hover:no-underline">
