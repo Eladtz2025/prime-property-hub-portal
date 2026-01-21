@@ -49,6 +49,7 @@ import {
   FileText,
   Target,
   Link,
+  UserCheck,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 
@@ -144,6 +145,8 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isDuplicatesDialogOpen, setIsDuplicatesDialogOpen] = useState(false);
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
+  const [isEligibilityDialogOpen, setIsEligibilityDialogOpen] = useState(false);
+  const [isRefreshingEligibility, setIsRefreshingEligibility] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -1027,6 +1030,41 @@ export const UnifiedScoutSettings: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Lead Eligibility Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow" 
+                  onClick={() => setIsEligibilityDialogOpen(true)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                          <UserCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">כשירות לקוח</h4>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              {[
+                                settings?.eligibility?.require_cities && 'ערים',
+                                settings?.eligibility?.require_neighborhoods && 'שכונות',
+                                settings?.eligibility?.require_budget && 'תקציב',
+                                settings?.eligibility?.require_rooms && 'חדרים',
+                              ].filter(Boolean).join(', ') || 'ללא דרישות'}
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Database className="h-3 w-3" />
+                              <span>DB Trigger</span>
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">אוטומטי</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </AccordionContent>
@@ -1444,6 +1482,114 @@ export const UnifiedScoutSettings: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
               <Clock className="h-3.5 w-3.5" />
               <span>הבדיקה רצה אוטומטית כל יום ב-05:00</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lead Eligibility Settings Dialog */}
+      <Dialog open={isEligibilityDialogOpen} onOpenChange={setIsEligibilityDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              הגדרות כשירות לקוח
+            </DialogTitle>
+            <DialogDescription>
+              לקוח נחשב כשיר להתאמה רק אם יש לו את כל השדות המסומנים כחובה
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <Label className="text-sm font-medium">ערים מועדפות</Label>
+                  <p className="text-xs text-muted-foreground">לקוח חייב לבחור לפחות עיר אחת</p>
+                </div>
+                <Switch
+                  checked={settings?.eligibility?.require_cities ?? true}
+                  onCheckedChange={(checked) => handleBooleanChange('eligibility', 'require_cities', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <Label className="text-sm font-medium">שכונות מועדפות</Label>
+                  <p className="text-xs text-muted-foreground">לקוח חייב לבחור לפחות שכונה אחת</p>
+                </div>
+                <Switch
+                  checked={settings?.eligibility?.require_neighborhoods ?? true}
+                  onCheckedChange={(checked) => handleBooleanChange('eligibility', 'require_neighborhoods', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <Label className="text-sm font-medium">תקציב מקסימלי</Label>
+                  <p className="text-xs text-muted-foreground">לקוח חייב להזין תקציב</p>
+                </div>
+                <Switch
+                  checked={settings?.eligibility?.require_budget ?? true}
+                  onCheckedChange={(checked) => handleBooleanChange('eligibility', 'require_budget', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <Label className="text-sm font-medium">טווח חדרים</Label>
+                  <p className="text-xs text-muted-foreground">לקוח חייב להזין מינימום או מקסימום חדרים</p>
+                </div>
+                <Switch
+                  checked={settings?.eligibility?.require_rooms ?? true}
+                  onCheckedChange={(checked) => handleBooleanChange('eligibility', 'require_rooms', checked)}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-2">
+                💡 שינויים משפיעים על לקוחות חדשים מיד. לעדכון לקוחות קיימים:
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setIsRefreshingEligibility(true);
+                    toast.info('מעדכן כשירות לקוחות...');
+                    const { data, error } = await supabase.functions.invoke('refresh-lead-eligibility');
+                    if (error) throw error;
+                    toast.success(`עודכנו ${data?.updated || 0} לקוחות`);
+                    queryClient.invalidateQueries({ queryKey: ['contact-leads'] });
+                  } catch (err) {
+                    console.error('Refresh error:', err);
+                    toast.error('שגיאה בעדכון');
+                  } finally {
+                    setIsRefreshingEligibility(false);
+                  }
+                }}
+                disabled={isRefreshingEligibility}
+                className="w-full"
+              >
+                {isRefreshingEligibility ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    מעדכן...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 ml-2" />
+                    עדכן כל הלקוחות הקיימים
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+              <Database className="h-3.5 w-3.5" />
+              <span>הכשירות מתעדכנת אוטומטית בכל שינוי בפרטי הלקוח (DB Trigger)</span>
             </div>
           </div>
         </DialogContent>

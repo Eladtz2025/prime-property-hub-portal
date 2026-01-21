@@ -46,6 +46,12 @@ export interface ScoutSettings {
     head_timeout_ms: number;
     get_timeout_ms: number;
   };
+  eligibility: {
+    require_cities: boolean;
+    require_neighborhoods: boolean;
+    require_budget: boolean;
+    require_rooms: boolean;
+  };
 }
 
 // Default values - simplified
@@ -81,6 +87,12 @@ export const defaultSettings: ScoutSettings = {
     delay_between_requests_ms: 150,
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
+  },
+  eligibility: {
+    require_cities: true,
+    require_neighborhoods: true,
+    require_budget: true,
+    require_rooms: true,
   },
 };
 
@@ -141,6 +153,9 @@ export function useScoutSettings(category?: keyof ScoutSettings) {
         } else if (cat === 'availability' && setting_key in settings.availability) {
           const key = setting_key as keyof typeof settings.availability;
           (settings.availability as any)[key] = parseSettingValue(setting_value, defaultSettings.availability[key]);
+        } else if (cat === 'eligibility' && setting_key in settings.eligibility) {
+          const key = setting_key as keyof typeof settings.eligibility;
+          (settings.eligibility as any)[key] = parseSettingValue(setting_value, defaultSettings.eligibility[key]);
         }
       }
       
