@@ -366,7 +366,7 @@ export const UnifiedScoutSettings: React.FC = () => {
         .eq('task_name', 'backfill_entry_dates');
       
       const { error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batch_size: 10 },
+        body: { batch_size: 30 },
       });
       
       if (error) throw error;
@@ -379,13 +379,27 @@ export const UnifiedScoutSettings: React.FC = () => {
     }
   };
 
+  // Cancel backfill
+  const handleCancelBackfill = async () => {
+    try {
+      await supabase.functions.invoke('backfill-entry-dates', {
+        body: { cancel: true },
+      });
+      toast.info('בוטל');
+      setIsBackfilling(false);
+      refetchProgress();
+    } catch (error) {
+      console.error('Cancel error:', error);
+    }
+  };
+
   // Continue backfill if more items
   const continueBackfill = async (continueFrom: string) => {
     try {
       console.log('Continuing backfill from:', continueFrom);
       
       const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batch_size: 10, continue_from: continueFrom },
+        body: { batch_size: 30, continue_from: continueFrom },
       });
       
       if (error) throw error;
@@ -402,6 +416,18 @@ export const UnifiedScoutSettings: React.FC = () => {
       toast.error('שגיאה בהמשך העדכון');
       setIsBackfilling(false);
     }
+  };
+  
+  // Calculate estimated time remaining
+  const getEstimatedTime = () => {
+    if (!backfillProgress?.started_at || !backfillProgress?.processed_items || backfillProgress.processed_items === 0) {
+      return null;
+    }
+    const elapsed = Date.now() - new Date(backfillProgress.started_at).getTime();
+    const rate = backfillProgress.processed_items / (elapsed / 60000); // per minute
+    const remaining = (backfillProgress.total_items || 0) - backfillProgress.processed_items;
+    const minutesLeft = Math.ceil(remaining / rate);
+    return { rate: Math.round(rate), minutesLeft };
   };
 
   // Count changes from defaults
@@ -963,45 +989,72 @@ export const UnifiedScoutSettings: React.FC = () => {
                       </div>
                       <Progress value={progressPercent} className="h-2" />
                       <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span className="text-green-600">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
-                        <span className="text-red-600">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
+                        <span className="text-success">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
+                        <span className="text-destructive">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
                       </div>
+                      {(() => {
+                        const estimate = getEstimatedTime();
+                        return estimate ? (
+                          <div className="text-xs text-muted-foreground">
+                            קצב: ~{estimate.rate} נכסים/דקה | זמן משוער: ~{estimate.minutesLeft} דקות
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   
                   {backfillProgress && backfillProgress.status === 'completed' && (
-                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg text-sm">
-                      <span className="text-green-700 dark:text-green-400">
+                    <div className="p-3 bg-success/10 rounded-lg text-sm">
+                      <span className="text-success">
                         ✓ הושלם! עודכנו {backfillProgress.successful_items || 0} נכסים, נכשלו {backfillProgress.failed_items || 0}
                       </span>
                     </div>
                   )}
                   
                   {backfillProgress && backfillProgress.status === 'failed' && (
-                    <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg text-sm">
-                      <span className="text-red-700 dark:text-red-400">
+                    <div className="p-3 bg-destructive/10 rounded-lg text-sm">
+                      <span className="text-destructive">
                         ✗ נכשל: {backfillProgress.error_message}
                       </span>
                     </div>
                   )}
+
+                  {backfillProgress && backfillProgress.status === 'cancelled' && (
+                    <div className="p-3 bg-muted rounded-lg text-sm">
+                      <span className="text-muted-foreground">
+                        בוטל. עובדו {backfillProgress.processed_items || 0} נכסים.
+                      </span>
+                    </div>
+                  )}
                   
-                  <Button 
-                    onClick={handleBackfillEntryDates}
-                    disabled={isBackfilling}
-                    className="w-full sm:w-auto"
-                  >
-                    {isBackfilling ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 ml-2 animate-spin" />
-                        מעדכן...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 ml-2" />
-                        עדכן תאריכי כניסה
-                      </>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleBackfillEntryDates}
+                      disabled={isBackfilling}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {isBackfilling ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 ml-2 animate-spin" />
+                          מעדכן...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 ml-2" />
+                          עדכן תאריכי כניסה
+                        </>
+                      )}
+                    </Button>
+                    
+                    {isBackfilling && (
+                      <Button 
+                        variant="outline"
+                        onClick={handleCancelBackfill}
+                      >
+                        ביטול
+                      </Button>
                     )}
-                  </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
