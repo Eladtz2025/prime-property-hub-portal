@@ -150,6 +150,7 @@ export const UnifiedScoutSettings: React.FC = () => {
     max_pages: '',
     page_delay_seconds: '',
     wait_for_ms: '',
+    schedule_times: '',
   });
 
   // Fetch backfill progress
@@ -339,6 +340,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       max_pages: '',
       page_delay_seconds: '',
       wait_for_ms: '',
+      schedule_times: '',
     });
     setEditingConfig(null);
   };
@@ -359,11 +361,17 @@ export const UnifiedScoutSettings: React.FC = () => {
       max_pages: (config as any).max_pages?.toString() || '',
       page_delay_seconds: (config as any).page_delay_seconds?.toString() || '',
       wait_for_ms: (config as any).wait_for_ms?.toString() || '',
+      schedule_times: (config as any).schedule_times?.join(', ') || '',
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
+    // Parse schedule_times from comma-separated string to array
+    const parsedScheduleTimes = formData.schedule_times
+      ? formData.schedule_times.split(',').map(t => t.trim()).filter(Boolean)
+      : null;
+    
     const configData = {
       name: formData.name,
       source: formData.source,
@@ -378,6 +386,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       max_pages: formData.max_pages ? parseInt(formData.max_pages) : null,
       page_delay_seconds: formData.page_delay_seconds ? parseInt(formData.page_delay_seconds) : null,
       wait_for_ms: formData.wait_for_ms ? parseInt(formData.wait_for_ms) : null,
+      schedule_times: parsedScheduleTimes && parsedScheduleTimes.length > 0 ? parsedScheduleTimes : null,
     };
 
     if (editingConfig) {
@@ -693,6 +702,22 @@ export const UnifiedScoutSettings: React.FC = () => {
                           />
                         </div>
                       </div>
+                      
+                      {/* Schedule Times */}
+                      <div className="mt-3">
+                        <Label className="text-xs">שעות ריצה (מופרד בפסיקים)</Label>
+                        <Input
+                          type="text"
+                          value={formData.schedule_times}
+                          onChange={(e) => setFormData({ ...formData, schedule_times: e.target.value })}
+                          placeholder={SOURCE_TECHNICAL_PARAMS[formData.source]?.schedule?.join(', ') || '08:30, 16:30, 22:30'}
+                          dir="ltr"
+                          className="text-left"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          לדוגמה: 08:30, 14:00, 20:00 (שעון ישראל)
+                        </p>
+                      </div>
                     </div>
                     <Button
                       onClick={handleSubmit}
@@ -755,7 +780,8 @@ export const UnifiedScoutSettings: React.FC = () => {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
+                                {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
+                                {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
                               </span>
                             </div>
                           )}
