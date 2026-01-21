@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     // Get the config to determine source
     const { data: config, error: configError } = await supabase
       .from('scout_configs')
-      .select('id, name, source, max_pages')
+      .select('id, name, source, max_pages, page_delay_seconds')
       .eq('id', config_id)
       .single();
 
@@ -122,7 +122,10 @@ Deno.serve(async (req) => {
 
     const runId = runData.id;
     const targetFunction = `scout-${source}`;
-    const delayMs = SOURCE_DELAYS[source] || 5000;
+    // Use config delay if set, otherwise fall back to source defaults
+    const delayMs = config.page_delay_seconds 
+      ? config.page_delay_seconds * 1000 
+      : SOURCE_DELAYS[source] || 5000;
 
     console.log(`📄 Created run ${runId} for ${pagesToScan} ${source} pages (delay: ${delayMs}ms)`);
 
