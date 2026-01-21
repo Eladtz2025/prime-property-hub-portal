@@ -174,7 +174,7 @@ export const UnifiedScoutSettings: React.FC = () => {
         console.log(`Triggering backfill batch, progress: ${processedItems}/${totalItems}`);
         
         const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-          body: { batch_size: 30 },
+          body: { batch_size: 15 },
         });
         
         if (error) {
