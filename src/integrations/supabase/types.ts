@@ -2324,6 +2324,7 @@ export type Database = {
           last_run_at: string | null
           last_run_results: Json | null
           last_run_status: string | null
+          max_pages: number | null
           max_price: number | null
           max_rooms: number | null
           max_size: number | null
@@ -2332,10 +2333,13 @@ export type Database = {
           min_size: number | null
           name: string
           neighborhoods: string[] | null
+          page_delay_seconds: number | null
           property_type: string
+          schedule_times: string[] | null
           search_url: string | null
           source: string
           updated_at: string
+          wait_for_ms: number | null
         }
         Insert: {
           cities?: string[] | null
@@ -2346,6 +2350,7 @@ export type Database = {
           last_run_at?: string | null
           last_run_results?: Json | null
           last_run_status?: string | null
+          max_pages?: number | null
           max_price?: number | null
           max_rooms?: number | null
           max_size?: number | null
@@ -2354,10 +2359,13 @@ export type Database = {
           min_size?: number | null
           name: string
           neighborhoods?: string[] | null
+          page_delay_seconds?: number | null
           property_type: string
+          schedule_times?: string[] | null
           search_url?: string | null
           source: string
           updated_at?: string
+          wait_for_ms?: number | null
         }
         Update: {
           cities?: string[] | null
@@ -2368,6 +2376,7 @@ export type Database = {
           last_run_at?: string | null
           last_run_results?: Json | null
           last_run_status?: string | null
+          max_pages?: number | null
           max_price?: number | null
           max_rooms?: number | null
           max_size?: number | null
@@ -2376,10 +2385,13 @@ export type Database = {
           min_size?: number | null
           name?: string
           neighborhoods?: string[] | null
+          page_delay_seconds?: number | null
           property_type?: string
+          schedule_times?: string[] | null
           search_url?: string | null
           source?: string
           updated_at?: string
+          wait_for_ms?: number | null
         }
         Relationships: []
       }

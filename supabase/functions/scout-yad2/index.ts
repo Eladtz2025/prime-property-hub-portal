@@ -51,11 +51,10 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Fetch settings for override values
+  // Fetch global settings (used as fallback)
   const settings = await fetchScoutSettings(supabase);
-  const maxPages = settings.scraping.yad2_pages || YAD2_CONFIG.MAX_PAGES;
   
-  console.log(`🟠 scout-yad2: Starting with ${maxPages} pages max`);
+  console.log(`🟠 scout-yad2: Starting`);
 
   let runId: string | undefined;
 
@@ -85,7 +84,12 @@ serve(async (req) => {
     let totalNewProperties = 0;
 
     for (const config of configs) {
-      console.log(`Processing Yad2 config: ${config.name}`);
+      // Get config-specific parameters with fallback chain: config -> settings -> default
+      const configMaxPages = config.max_pages ?? settings.scraping.yad2_pages ?? YAD2_CONFIG.MAX_PAGES;
+      const configPageDelay = (config.page_delay_seconds ?? YAD2_CONFIG.PAGE_DELAY_MS / 1000) * 1000;
+      const configWaitFor = config.wait_for_ms ?? YAD2_CONFIG.WAIT_FOR_MS;
+      
+      console.log(`Processing Yad2 config: ${config.name} (pages: ${configMaxPages}, delay: ${configPageDelay}ms, wait: ${configWaitFor}ms)`);
 
       // Check for existing running job
       const { data: existingRun } = await supabase
@@ -121,16 +125,16 @@ serve(async (req) => {
       let configPropertiesFound = 0;
       let configNewProperties = 0;
 
-      for (let page = 1; page <= maxPages; page++) {
+      for (let page = 1; page <= configMaxPages; page++) {
         const urls = buildSinglePageUrl(config, page);
         if (!urls.length) continue;
 
         const url = urls[0];
-        console.log(`🟠 Yad2: Scraping page ${page}/${maxPages}: ${url}`);
+        console.log(`🟠 Yad2: Scraping page ${page}/${configMaxPages}: ${url}`);
 
         // Add delay between pages (not for first page)
         if (page > 1) {
-          const delay = YAD2_CONFIG.PAGE_DELAY_MS + Math.random() * 2000;
+          const delay = configPageDelay + Math.random() * 2000;
           console.log(`Waiting ${Math.round(delay)}ms before next Yad2 page...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }

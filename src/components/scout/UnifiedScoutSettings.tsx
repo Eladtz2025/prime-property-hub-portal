@@ -146,6 +146,10 @@ export const UnifiedScoutSettings: React.FC = () => {
     min_rooms: '',
     max_rooms: '',
     search_url: '',
+    // Technical parameters
+    max_pages: '',
+    page_delay_seconds: '',
+    wait_for_ms: '',
   });
 
   // Fetch backfill progress
@@ -332,6 +336,9 @@ export const UnifiedScoutSettings: React.FC = () => {
       min_rooms: '',
       max_rooms: '',
       search_url: '',
+      max_pages: '',
+      page_delay_seconds: '',
+      wait_for_ms: '',
     });
     setEditingConfig(null);
   };
@@ -348,6 +355,10 @@ export const UnifiedScoutSettings: React.FC = () => {
       min_rooms: config.min_rooms?.toString() || '',
       max_rooms: config.max_rooms?.toString() || '',
       search_url: config.search_url || '',
+      // Technical parameters - use existing values or empty
+      max_pages: (config as any).max_pages?.toString() || '',
+      page_delay_seconds: (config as any).page_delay_seconds?.toString() || '',
+      wait_for_ms: (config as any).wait_for_ms?.toString() || '',
     });
     setIsDialogOpen(true);
   };
@@ -363,6 +374,10 @@ export const UnifiedScoutSettings: React.FC = () => {
       min_rooms: formData.min_rooms ? parseFloat(formData.min_rooms) : null,
       max_rooms: formData.max_rooms ? parseFloat(formData.max_rooms) : null,
       search_url: formData.search_url || null,
+      // Technical parameters
+      max_pages: formData.max_pages ? parseInt(formData.max_pages) : null,
+      page_delay_seconds: formData.page_delay_seconds ? parseInt(formData.page_delay_seconds) : null,
+      wait_for_ms: formData.wait_for_ms ? parseInt(formData.wait_for_ms) : null,
     };
 
     if (editingConfig) {
@@ -635,6 +650,50 @@ export const UnifiedScoutSettings: React.FC = () => {
                         dir="ltr"
                       />
                     </div>
+                    
+                    {/* Technical Parameters Section */}
+                    <div className="border-t pt-4 mt-2">
+                      <Label className="text-sm font-medium text-muted-foreground mb-3 block">
+                        פרמטרים טכניים (השאר ריק לברירת מחדל)
+                      </Label>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-xs">דפים לסריקה</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={formData.max_pages}
+                            onChange={(e) => setFormData({ ...formData, max_pages: e.target.value })}
+                            placeholder={SOURCE_TECHNICAL_PARAMS[formData.source]?.getPages(settings)?.toString() || '4'}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">delay (שניות)</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={formData.page_delay_seconds}
+                            onChange={(e) => setFormData({ ...formData, page_delay_seconds: e.target.value })}
+                            placeholder={SOURCE_TECHNICAL_PARAMS[formData.source]?.delaySeconds?.toString() || '10'}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">waitFor (ms)</Label>
+                          <Input
+                            type="number"
+                            min={1000}
+                            max={15000}
+                            step={500}
+                            value={formData.wait_for_ms}
+                            onChange={(e) => setFormData({ ...formData, wait_for_ms: e.target.value })}
+                            placeholder={SOURCE_TECHNICAL_PARAMS[formData.source]?.waitForMs?.toString() || '5000'}
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <Button
                       onClick={handleSubmit}
                       disabled={!formData.name || createConfigMutation.isPending || updateConfigMutation.isPending}
@@ -686,11 +745,13 @@ export const UnifiedScoutSettings: React.FC = () => {
                             <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
                               <span className="flex items-center gap-1">
                                 <FileText className="h-3 w-3" />
-                                {SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
+                                {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
+                                {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Timer className="h-3 w-3" />
-                                {SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s delay
+                                {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s delay
+                                {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
