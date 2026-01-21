@@ -79,7 +79,9 @@ serve(async (req) => {
     
     console.log(`⚙️ Entry date settings: strict=±${matchingSettings.entry_date_range_strict}d, flex=±${matchingSettings.entry_date_range_flexible}d, immediate=${matchingSettings.immediate_max_days}d`);
 
-    // Fetch all active leads once for this batch
+    // Fetch all ELIGIBLE leads once for this batch
+    // Lead eligibility is determined by database trigger (update_lead_eligibility)
+    // which sets matching_status = 'eligible' when lead has: cities, neighborhoods, budget, rooms
     const PAGE_SIZE = 1000;
     let allLeads: any[] = [];
     let from = 0;
@@ -91,6 +93,7 @@ serve(async (req) => {
         .select('*')
         .neq('status', 'closed')
         .eq('is_hidden', false)
+        .eq('matching_status', 'eligible')  // Only eligible leads!
         .range(from, from + PAGE_SIZE - 1);
 
       if (leadsError) throw leadsError;
@@ -106,11 +109,8 @@ serve(async (req) => {
 
     const leads = allLeads;
     
-    // Enhanced logging for debugging
-    const leadsWithCities = leads.filter(l => l.preferred_cities?.length > 0).length;
-    const leadsWithNeighborhoods = leads.filter(l => l.preferred_neighborhoods?.length > 0).length;
-    console.log(`📊 Batch stats: ${properties.length} properties × ${leads.length} leads`);
-    console.log(`   Leads with cities: ${leadsWithCities}, with neighborhoods: ${leadsWithNeighborhoods}`);
+    // Log eligible leads count (all have required fields thanks to trigger filter)
+    console.log(`📊 Batch stats: ${properties.length} properties × ${leads.length} eligible leads`);
 
     if (leads.length === 0) {
       console.log('No active leads to match');

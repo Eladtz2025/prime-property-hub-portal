@@ -150,12 +150,17 @@ export const defaultMatchingSettings: MatchingSettings = {
 /**
  * Calculate match between a scouted property and a contact lead
  * 
- * SIMPLIFIED BINARY LOGIC:
+ * NOTE: Lead eligibility (cities, neighborhoods, budget, rooms) is now checked
+ * by a database trigger. This function assumes the lead is already eligible.
+ * 
+ * BINARY MATCHING LOGIC:
+ * - Property Type: MUST match (rent/sale)
  * - City: MUST match (mandatory)
  * - Neighborhood: MUST match (mandatory) - will lookup by street if missing
  * - Price: MUST be within range (with dynamic flexibility)
  * - Rooms: MUST be within min/max (including halves)
  * - Features: MUST match if required AND not flexible
+ * - Entry Date: MUST match if specified (rentals only)
  * 
  * If all conditions pass: matchScore = 100
  * If any condition fails: matchScore = 0
@@ -169,25 +174,9 @@ export async function calculateMatch(
 ): Promise<MatchResult> {
   const reasons: string[] = [];
   
-  // ===== MANDATORY: Lead must have preferred cities =====
-  if (!lead.preferred_cities?.length) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדרה עיר מועדפת - לא ניתן להתאים'], priority: 0 };
-  }
-  
-  // ===== MANDATORY: Lead must have preferred neighborhoods =====
-  if (!lead.preferred_neighborhoods?.length) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדרו שכונות מועדפות - לא ניתן להתאים'], priority: 0 };
-  }
-  
-  // ===== MANDATORY: Lead must have budget =====
-  if (!lead.budget_max) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדר תקציב - לא ניתן להתאים'], priority: 0 };
-  }
-  
-  // ===== MANDATORY: Lead must have rooms range =====
-  if (!lead.rooms_min && !lead.rooms_max) {
-    return { lead, matchScore: 0, matchReasons: ['לא הוגדר טווח חדרים - לא ניתן להתאים'], priority: 0 };
-  }
+  // NOTE: Lead eligibility checks (cities, neighborhoods, budget, rooms) have been 
+  // moved to a database trigger (update_lead_eligibility). match-batch now filters
+  // by matching_status = 'eligible' before calling this function.
   
   // ===== PROPERTY TYPE MUST MATCH =====
   const leadPropertyType = lead.property_type;

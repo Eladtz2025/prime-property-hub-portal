@@ -1170,11 +1170,39 @@ export const UnifiedScoutSettings: React.FC = () => {
               <Target className="h-5 w-5 text-primary" />
               הגדרות התאמה ללקוחות
             </DialogTitle>
-            <DialogDescription>
-              לוגיקת התאמה: עיר + שכונה → מחיר עם זליגה → חדרים → תוספות
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
+            
+            {/* Two-stage matching explanation */}
+            <div className="space-y-3">
+              {/* Stage 1: Lead Eligibility */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                <h5 className="font-medium text-sm flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
+                  כשירות לקוח (אוטומטי)
+                </h5>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1.5">
+                  מתעדכן אוטומטית בכל שינוי בפרטי הלקוח
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  דרישות: ערים + שכונות + תקציב + טווח חדרים
+                </p>
+              </div>
+              
+              {/* Stage 2: Property Matching */}
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                <h5 className="font-medium text-sm flex items-center gap-2 text-green-800 dark:text-green-200">
+                  <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
+                  התאמת נכס (08:15, 16:15, 22:15)
+                </h5>
+                <p className="text-xs text-green-700 dark:text-green-300 mt-1.5">
+                  רץ רק על לקוחות כשירים
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  סוג עסקה → עיר → שכונה → מחיר → חדרים → תכונות → תאריך כניסה
+                </p>
+              </div>
+            </div>
             
             {/* Dynamic Price Flexibility - Editable */}
             <div className="bg-muted/30 rounded-lg p-4 space-y-3">
