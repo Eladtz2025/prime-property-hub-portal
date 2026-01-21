@@ -149,7 +149,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   // Ref to prevent duplicate concurrent calls
   const isProcessingRef = useRef(false);
 
-  // Auto-continue backfill when there are more items to process
+  // Auto-continue backfill with proper mutex handling
   useEffect(() => {
     // Skip if not backfilling or already processing
     if (!isBackfilling || isProcessingRef.current) return;
@@ -165,18 +165,16 @@ export const UnifiedScoutSettings: React.FC = () => {
       return;
     }
 
-    // Schedule next batch - works for BOTH first batch AND continuation
+    // Schedule next batch with longer delay to prevent overlap
     const timer = setTimeout(async () => {
       if (isProcessingRef.current) return;
       isProcessingRef.current = true;
       
       try {
-        // Use last_processed_id if available, otherwise start from beginning (null)
-        const continueFrom = backfillProgress?.last_processed_id || null;
-        console.log(`Processing backfill batch, continueFrom: ${continueFrom}, progress: ${processedItems}/${totalItems}`);
+        console.log(`Triggering backfill batch, progress: ${processedItems}/${totalItems}`);
         
         const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-          body: { batch_size: 30, continue_from: continueFrom },
+          body: { batch_size: 30 },
         });
         
         if (error) {
@@ -186,7 +184,10 @@ export const UnifiedScoutSettings: React.FC = () => {
           return;
         }
         
-        if (data?.completed) {
+        // If skipped due to mutex, just refetch and wait
+        if (data?.skipped) {
+          console.log('Batch skipped - another instance processing');
+        } else if (data?.completed) {
           toast.success('עדכון תאריכי כניסה הושלם בהצלחה!');
           setIsBackfilling(false);
         }
@@ -198,10 +199,10 @@ export const UnifiedScoutSettings: React.FC = () => {
       } finally {
         isProcessingRef.current = false;
       }
-    }, 3000);
+    }, 5000); // Increased to 5 seconds to prevent overlap
     
     return () => clearTimeout(timer);
-  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.last_processed_id, backfillProgress?.status]);
+  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.status]);
 
   // Fetch scout configs
   const { data: configs, isLoading: configsLoading } = useQuery({
