@@ -335,10 +335,10 @@ serve(async (req) => {
                 ignoreDuplicates: true
               })
               .select('id, price')
-              .single();
+              .maybeSingle();
 
-            // Only count as new if we actually inserted
-            if (!upsertError && upsertResult) {
+            // Only count as new if we actually inserted (maybeSingle returns null for duplicates)
+            if (upsertResult) {
               totalNewProperties++;
               configNewProperties++;
               
@@ -349,7 +349,7 @@ serve(async (req) => {
                   .select('id, price')
                   .eq('duplicate_group_id', duplicateGroupId)
                   .eq('is_primary_listing', true)
-                  .single();
+                  .maybeSingle();
                 
                 if (primaryProperty?.price && primaryProperty.price > 0) {
                   const priceDiff = Math.abs(property.price - primaryProperty.price);
@@ -368,7 +368,7 @@ serve(async (req) => {
                   }
                 }
               }
-            } else if (upsertError && !upsertError.message?.includes('duplicate')) {
+            } else if (upsertError) {
               console.error('Upsert error:', upsertError);
             }
           }
