@@ -210,11 +210,10 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const batchSize = body.batch_size || 30;
-    const continueFrom = body.continue_from || null;
+    const batchSize = body.batch_size || 15; // Reduced from 30 to prevent timeout
     const cancelRequested = body.cancel === true;
 
-    console.log(`Backfill-entry-dates: batch=${batchSize}, continueFrom=${continueFrom}, cancel=${cancelRequested}`);
+    console.log(`Backfill-entry-dates: batch=${batchSize}, cancel=${cancelRequested}`);
 
     if (!FIRECRAWL_API_KEY) throw new Error('FIRECRAWL_API_KEY not configured');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
@@ -344,12 +343,26 @@ serve(async (req) => {
     let failCount = 0;
     let lastCreatedAt = '';
 
+    // Get current progress for incremental updates
+    const { data: currentProgress } = await supabase
+      .from('backfill_progress')
+      .select('processed_items, successful_items, failed_items')
+      .eq('id', progressId)
+      .single();
+
+    let runningProcessed = currentProgress?.processed_items || 0;
+    let runningSuccess = currentProgress?.successful_items || 0;
+    let runningFailed = currentProgress?.failed_items || 0;
+
     for (let i = 0; i < properties.length; i += PARALLEL_LIMIT) {
       const batch = properties.slice(i, i + PARALLEL_LIMIT);
       
       const results = await Promise.allSettled(
         batch.map(prop => processProperty(prop, FIRECRAWL_API_KEY, LOVABLE_API_KEY))
       );
+
+      let batchSuccess = 0;
+      let batchFail = 0;
 
       // Process results
       for (let j = 0; j < results.length; j++) {
@@ -373,6 +386,7 @@ serve(async (req) => {
             .eq('id', property.id);
 
           successCount++;
+          batchSuccess++;
           console.log(`✓ ${property.id}: date=${entryDate}, immediate=${immediateEntry}`);
         } else {
           // Mark as processed even if failed (to avoid retrying forever)
@@ -387,6 +401,7 @@ serve(async (req) => {
             .eq('id', property.id);
           
           failCount++;
+          batchFail++;
           const error = result.status === 'rejected' ? result.reason : result.value.error;
           console.log(`✗ ${property.id}: ${error}`);
         }
@@ -394,29 +409,29 @@ serve(async (req) => {
         lastCreatedAt = property.created_at;
       }
 
+      // HEARTBEAT: Update progress after each sub-batch to maintain mutex lock
+      runningProcessed += batch.length;
+      runningSuccess += batchSuccess;
+      runningFailed += batchFail;
+      
+      await supabase
+        .from('backfill_progress')
+        .update({
+          processed_items: runningProcessed,
+          successful_items: runningSuccess,
+          failed_items: runningFailed,
+          last_processed_id: lastCreatedAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', progressId);
+      
+      console.log(`Heartbeat: ${runningProcessed} processed, ${runningSuccess} success, ${runningFailed} failed`);
+
       // Small delay between parallel batches
       if (i + PARALLEL_LIMIT < properties.length) {
         await new Promise(r => setTimeout(r, 500));
       }
     }
-
-    // Update progress
-    const { data: currentProgress } = await supabase
-      .from('backfill_progress')
-      .select('processed_items, successful_items, failed_items')
-      .eq('id', progressId)
-      .single();
-
-    await supabase
-      .from('backfill_progress')
-      .update({
-        processed_items: (currentProgress?.processed_items || 0) + properties.length,
-        successful_items: (currentProgress?.successful_items || 0) + successCount,
-        failed_items: (currentProgress?.failed_items || 0) + failCount,
-        last_processed_id: lastCreatedAt, // Store created_at for pagination
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', progressId);
 
     // Check remaining
     const { count: remainingCount } = await supabase
@@ -425,8 +440,7 @@ serve(async (req) => {
       .eq('is_active', true)
       .eq('property_type', 'rent')
       .not('source_url', 'is', null)
-      .is('features->entry_date_source', null)
-      .gt('created_at', lastCreatedAt);
+      .is('features->entry_date_source', null);
 
     const hasMore = (remainingCount || 0) > 0;
 
@@ -435,7 +449,6 @@ serve(async (req) => {
       processed: properties.length,
       successful: successCount,
       failed: failCount,
-      lastProcessedAt: lastCreatedAt,
       hasMore,
       remainingCount
     }), {
