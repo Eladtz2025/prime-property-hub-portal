@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchCategorySettings } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,11 +20,36 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    console.log('🎯 Starting matching orchestration...');
-
     // Parse request body for optional parameters
     const body = await req.json().catch(() => ({}));
     const sendWhatsapp = body.send_whatsapp ?? false;
+    const isForced = body.force === true;
+
+    // Fetch matching settings to check schedule
+    const matchingSettings = await fetchCategorySettings(supabase, 'matching');
+    const scheduleTimes: string[] = (matchingSettings as any).schedule_times || ['09:15', '18:15'];
+
+    // Get current Israel time (HH:MM format)
+    const now = new Date();
+    const israelTime = now.toLocaleTimeString('en-GB', { 
+      timeZone: 'Asia/Jerusalem', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    // Check if current time is in the schedule (unless forced)
+    if (!isForced && !scheduleTimes.includes(israelTime)) {
+      console.log(`⏭️ Skipping matching - ${israelTime} not in schedule [${scheduleTimes.join(', ')}]`);
+      return new Response(JSON.stringify({
+        success: true,
+        skipped: true,
+        message: `Not scheduled for ${israelTime}`,
+        current_time: israelTime,
+        scheduled_times: scheduleTimes
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    console.log(`🎯 Starting matching orchestration at ${israelTime} (scheduled: [${scheduleTimes.join(', ')}])...`);
 
     // Create a tracking run for progress
     const { data: trackingRun, error: runError } = await supabase

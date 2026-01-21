@@ -1296,12 +1296,29 @@ export const UnifiedScoutSettings: React.FC = () => {
                 </p>
               </div>
               
-              {/* Stage 2: Property Matching */}
+              {/* Stage 2: Property Matching - with editable schedule */}
               <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
                 <h5 className="font-medium text-sm flex items-center gap-2 text-green-800 dark:text-green-200">
                   <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
-                  התאמת נכס (08:15, 16:15, 22:15)
+                  התאמת נכס
+                  <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">אוטומטי</span>
                 </h5>
+                <div className="mt-2 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <Input
+                    type="text"
+                    className="w-36 h-7 text-sm"
+                    placeholder="09:15, 18:15"
+                    defaultValue={(settings?.matching?.schedule_times || ['09:15', '18:15']).join(', ')}
+                    onBlur={(e) => {
+                      const times = e.target.value.split(',').map(t => t.trim()).filter(t => /^\d{2}:\d{2}$/.test(t));
+                      if (times.length > 0) {
+                        updateSetting.mutate({ category: 'matching', setting_key: 'schedule_times', setting_value: JSON.stringify(times) });
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">(שעון ישראל)</span>
+                </div>
                 <p className="text-xs text-green-700 dark:text-green-300 mt-1.5">
                   רץ רק על לקוחות כשירים
                 </p>
