@@ -150,7 +150,9 @@ export const UnifiedScoutSettings: React.FC = () => {
     max_pages: '',
     page_delay_seconds: '',
     wait_for_ms: '',
-    schedule_times: '',
+    schedule_time_1: '',
+    schedule_time_2: '',
+    schedule_time_3: '',
   });
 
   // Fetch backfill progress
@@ -340,13 +342,19 @@ export const UnifiedScoutSettings: React.FC = () => {
       max_pages: '',
       page_delay_seconds: '',
       wait_for_ms: '',
-      schedule_times: '',
+      schedule_time_1: '',
+      schedule_time_2: '',
+      schedule_time_3: '',
     });
     setEditingConfig(null);
   };
 
   const openEditDialog = (config: ScoutConfig) => {
     setEditingConfig(config);
+    const sourceDefaults = SOURCE_TECHNICAL_PARAMS[config.source];
+    const defaultSchedule = sourceDefaults?.schedule || ['08:30', '16:30', '22:30'];
+    const configSchedule = (config as any).schedule_times;
+    
     setFormData({
       name: config.name,
       source: config.source,
@@ -357,20 +365,25 @@ export const UnifiedScoutSettings: React.FC = () => {
       min_rooms: config.min_rooms?.toString() || '',
       max_rooms: config.max_rooms?.toString() || '',
       search_url: config.search_url || '',
-      // Technical parameters - use existing values or empty
-      max_pages: (config as any).max_pages?.toString() || '',
-      page_delay_seconds: (config as any).page_delay_seconds?.toString() || '',
-      wait_for_ms: (config as any).wait_for_ms?.toString() || '',
-      schedule_times: (config as any).schedule_times?.join(', ') || '',
+      // Technical parameters - use existing values OR source defaults
+      max_pages: ((config as any).max_pages ?? sourceDefaults?.getPages(settings) ?? 3).toString(),
+      page_delay_seconds: ((config as any).page_delay_seconds ?? sourceDefaults?.delaySeconds ?? 15).toString(),
+      wait_for_ms: ((config as any).wait_for_ms ?? sourceDefaults?.waitForMs ?? 5000).toString(),
+      // Schedule times - use existing values OR source defaults
+      schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
+      schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1],
+      schedule_time_3: configSchedule?.[2] ?? defaultSchedule[2],
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
-    // Parse schedule_times from comma-separated string to array
-    const parsedScheduleTimes = formData.schedule_times
-      ? formData.schedule_times.split(',').map(t => t.trim()).filter(Boolean)
-      : null;
+    // Combine 3 schedule time fields into array
+    const scheduleArray = [
+      formData.schedule_time_1,
+      formData.schedule_time_2,
+      formData.schedule_time_3,
+    ].filter(Boolean);
     
     const configData = {
       name: formData.name,
@@ -382,11 +395,11 @@ export const UnifiedScoutSettings: React.FC = () => {
       min_rooms: formData.min_rooms ? parseFloat(formData.min_rooms) : null,
       max_rooms: formData.max_rooms ? parseFloat(formData.max_rooms) : null,
       search_url: formData.search_url || null,
-      // Technical parameters
+      // Technical parameters - always save as numbers
       max_pages: formData.max_pages ? parseInt(formData.max_pages) : null,
       page_delay_seconds: formData.page_delay_seconds ? parseInt(formData.page_delay_seconds) : null,
       wait_for_ms: formData.wait_for_ms ? parseInt(formData.wait_for_ms) : null,
-      schedule_times: parsedScheduleTimes && parsedScheduleTimes.length > 0 ? parsedScheduleTimes : null,
+      schedule_times: scheduleArray.length > 0 ? scheduleArray : null,
     };
 
     if (editingConfig) {
@@ -703,20 +716,38 @@ export const UnifiedScoutSettings: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Schedule Times */}
+                      {/* Schedule Times - 3 separate fields */}
                       <div className="mt-3">
-                        <Label className="text-xs">שעות ריצה (מופרד בפסיקים)</Label>
-                        <Input
-                          type="text"
-                          value={formData.schedule_times}
-                          onChange={(e) => setFormData({ ...formData, schedule_times: e.target.value })}
-                          placeholder={SOURCE_TECHNICAL_PARAMS[formData.source]?.schedule?.join(', ') || '08:30, 16:30, 22:30'}
-                          dir="ltr"
-                          className="text-left"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          לדוגמה: 08:30, 14:00, 20:00 (שעון ישראל)
-                        </p>
+                        <Label className="text-xs">שעות ריצה</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-1">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">שעה 1</Label>
+                            <Input
+                              type="time"
+                              value={formData.schedule_time_1}
+                              onChange={(e) => setFormData({ ...formData, schedule_time_1: e.target.value })}
+                              dir="ltr"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">שעה 2</Label>
+                            <Input
+                              type="time"
+                              value={formData.schedule_time_2}
+                              onChange={(e) => setFormData({ ...formData, schedule_time_2: e.target.value })}
+                              dir="ltr"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">שעה 3</Label>
+                            <Input
+                              type="time"
+                              value={formData.schedule_time_3}
+                              onChange={(e) => setFormData({ ...formData, schedule_time_3: e.target.value })}
+                              dir="ltr"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <Button
