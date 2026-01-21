@@ -100,7 +100,7 @@ serve(async (req) => {
       let updatedCount = 0;
 
       for (const property of properties || []) {
-        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead);
+        const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead);
         const currentMatches = property.matched_leads || [];
         
         // Remove this lead from current matches
@@ -230,7 +230,7 @@ serve(async (req) => {
       const matches: MatchResult[] = [];
 
       for (const lead of leads) {
-        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead);
+        const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead);
         
         // Debug logging for specific leads that should match
         if (lead.name && lead.name.includes('רוני') && matchResult.matchScore < 60) {

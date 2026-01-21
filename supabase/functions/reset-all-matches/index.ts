@@ -85,7 +85,7 @@ serve(async (req) => {
       );
 
       for (const lead of eligibleLeads) {
-        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead);
+        const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead);
         if (matchResult.matchScore >= 60) { // At least 60% match
           matches.push(matchResult);
         }

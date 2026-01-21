@@ -1,7 +1,8 @@
 // Shared matching logic for Edge Functions
 // SIMPLIFIED: Binary match/no-match with dynamic price flexibility
 
-import { matchNeighborhood } from "./locations.ts";
+import { matchNeighborhood, extractStreetName } from "./locations.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ===== INTERFACES =====
 
@@ -125,7 +126,7 @@ export const defaultMatchingSettings: MatchingSettings = {
  * 
  * SIMPLIFIED BINARY LOGIC:
  * - City: MUST match (mandatory)
- * - Neighborhood: MUST match (mandatory)
+ * - Neighborhood: MUST match (mandatory) - will lookup by street if missing
  * - Price: MUST be within range (with dynamic flexibility)
  * - Rooms: MUST be within min/max (including halves)
  * - Features: MUST match if required AND not flexible
@@ -135,11 +136,11 @@ export const defaultMatchingSettings: MatchingSettings = {
  * 
  * @returns MatchResult with score (0 or 100) and reasons
  */
-export function calculateMatch(
+export async function calculateMatch(
   property: ScoutedProperty, 
   lead: ContactLead,
   settings: MatchingSettings = defaultMatchingSettings
-): MatchResult {
+): Promise<MatchResult> {
   const reasons: string[] = [];
   
   // ===== MANDATORY: Lead must have preferred cities =====
@@ -197,17 +198,48 @@ export function calculateMatch(
     reasons.push('עיר מועדפת ✓');
   }
   
-  // ===== NEIGHBORHOOD MUST MATCH =====
-  if (!property.neighborhood) {
+  // ===== NEIGHBORHOOD MUST MATCH (with street lookup fallback) =====
+  const city = property.city || 'תל אביב יפו';
+  let neighborhoodToMatch = property.neighborhood;
+  let neighborhoodSource = 'property';
+  
+  // If property has no neighborhood but has address, try to find it from street_neighborhoods table
+  if (!neighborhoodToMatch && property.address) {
+    const streetName = extractStreetName(property.address);
+    if (streetName) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { data: streetData } = await supabase
+          .from('street_neighborhoods')
+          .select('neighborhood')
+          .eq('street_name', streetName)
+          .eq('city', city)
+          .single();
+        
+        if (streetData?.neighborhood) {
+          neighborhoodToMatch = streetData.neighborhood;
+          neighborhoodSource = 'street_lookup';
+        }
+      } catch (error) {
+        console.log(`Street lookup failed for ${streetName}: ${error}`);
+      }
+    }
+  }
+  
+  if (!neighborhoodToMatch) {
     return { lead, matchScore: 0, matchReasons: ['לנכס אין שכונה מוגדרת - לא ניתן להתאים'], priority: 0 };
   }
   
-  const city = property.city || 'תל אביב יפו';
-  const isNeighborhoodMatch = matchNeighborhood(property.neighborhood, lead.preferred_neighborhoods, city);
+  const isNeighborhoodMatch = matchNeighborhood(neighborhoodToMatch, lead.preferred_neighborhoods, city);
   if (!isNeighborhoodMatch) {
-    return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${property.neighborhood}`], priority: 0 };
+    const source = neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
+    return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${neighborhoodToMatch}${source}`], priority: 0 };
   }
-  reasons.push(`שכונה מועדפת: ${property.neighborhood} ✓`);
+  const neighborhoodNote = neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
+  reasons.push(`שכונה מועדפת: ${neighborhoodToMatch}${neighborhoodNote} ✓`);
   
   // ===== PRICE MUST BE IN RANGE (with dynamic flexibility) =====
   if (property.price && lead.budget_max) {
