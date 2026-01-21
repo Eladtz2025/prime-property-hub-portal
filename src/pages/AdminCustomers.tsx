@@ -103,10 +103,11 @@ export default function AdminCustomers() {
   const handleMatchAllLeads = async () => {
     setIsMatchingAll(true);
     try {
-      await supabase.functions.invoke('match-scouted-to-leads', {
+      // Use the unified trigger-matching orchestrator
+      await supabase.functions.invoke('trigger-matching', {
         body: { send_whatsapp: false }
       });
-      toast.success('כל הלקוחות הותאמו בהצלחה');
+      toast.success('ההתאמות הופעלו - ניתן לעקוב בהיסטוריית הסריקות');
       fetchCustomers();
     } catch (error) {
       console.error('Match all error:', error);
