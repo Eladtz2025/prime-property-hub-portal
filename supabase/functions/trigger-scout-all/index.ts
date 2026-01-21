@@ -16,16 +16,24 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get current time in Israel (HH:MM format)
+    const israelTime = new Date().toLocaleTimeString('he-IL', { 
+      timeZone: 'Asia/Jerusalem',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
     console.log('='.repeat(60));
-    console.log('🚀 TRIGGER SCOUT ALL - CRON/MANUAL EXECUTION');
-    console.log(`📅 Triggered at: ${new Date().toISOString()}`);
-    console.log(`🌍 Israel time: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`);
+    console.log('🚀 TRIGGER SCOUT ALL - SCHEDULE CHECK');
+    console.log(`📅 UTC: ${new Date().toISOString()}`);
+    console.log(`🕐 Israel time: ${israelTime}`);
     console.log('='.repeat(60));
 
-    // Get all active scout configs
-    const { data: configs, error: configError } = await supabase
+    // Get all active scout configs WITH schedule_times
+    const { data: allConfigs, error: configError } = await supabase
       .from('scout_configs')
-      .select('id, name, source')
+      .select('id, name, source, schedule_times')
       .eq('is_active', true);
 
     if (configError) {
@@ -33,15 +41,41 @@ Deno.serve(async (req) => {
       throw configError;
     }
 
-    if (!configs || configs.length === 0) {
+    if (!allConfigs || allConfigs.length === 0) {
       console.log('⚠️ No active scout configs found');
       return new Response(
-        JSON.stringify({ success: true, message: 'No active configs', triggered: 0 }),
+        JSON.stringify({ success: true, message: 'No active configs', triggered: 0, currentTime: israelTime }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📋 Found ${configs.length} active configs:`, configs.map(c => c.name));
+    // Filter: only run configs scheduled for the current time
+    const configs = allConfigs.filter(config => {
+      if (!config.schedule_times || config.schedule_times.length === 0) {
+        console.log(`⏭️ ${config.name}: no schedule_times defined - skipping`);
+        return false;
+      }
+      
+      const shouldRun = config.schedule_times.includes(israelTime);
+      console.log(`${shouldRun ? '✅' : '⏭️'} ${config.name}: scheduled for [${config.schedule_times.join(', ')}] | now: ${israelTime}`);
+      return shouldRun;
+    });
+
+    if (configs.length === 0) {
+      console.log(`📭 No configs scheduled for ${israelTime}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `No configs scheduled for ${israelTime}`, 
+          triggered: 0,
+          currentTime: israelTime,
+          checkedConfigs: allConfigs.map(c => ({ name: c.name, schedule_times: c.schedule_times }))
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`📋 Running ${configs.length} configs scheduled for ${israelTime}:`, configs.map(c => c.name));
 
     const triggered: string[] = [];
     const errors: string[] = [];
