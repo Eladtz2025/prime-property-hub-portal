@@ -25,6 +25,8 @@ export interface ScoutSettings {
     rent_flex_mid_threshold: number;
     rent_flex_mid_percent: number;
     rent_flex_high_percent: number;
+    // Schedule settings
+    schedule_times: string[];
   };
   scraping: {
     yad2_pages: number;
@@ -67,6 +69,7 @@ export const defaultSettings: ScoutSettings = {
     rent_flex_mid_threshold: 15000,
     rent_flex_mid_percent: 0.10,
     rent_flex_high_percent: 0.08,
+    schedule_times: ['09:15', '18:15'],
   },
   scraping: {
     yad2_pages: 7,
