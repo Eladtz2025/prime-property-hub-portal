@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from "@/hooks/useScoutSettings";
-import { Loader2, Settings, Search, Copy, Calculator, Calendar, RefreshCw, Database } from "lucide-react";
+import { Loader2, Settings, Search, Copy, Calculator, Calendar, RefreshCw, Database, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,15 +16,16 @@ export function ScoutSettingsPanel() {
   const updateSetting = useUpdateScoutSetting();
   const queryClient = useQueryClient();
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isFastBackfilling, setIsFastBackfilling] = useState(false);
 
-  // Query backfill progress
+  // Query backfill progress (both regular and fast)
   const { data: backfillProgress, refetch: refetchProgress } = useQuery({
     queryKey: ['backfill-progress'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('backfill_progress')
         .select('*')
-        .eq('task_name', 'backfill_entry_dates')
+        .in('task_name', ['backfill_entry_dates', 'backfill_entry_dates_fast'])
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -32,7 +33,7 @@ export function ScoutSettingsPanel() {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    refetchInterval: isBackfilling ? 3000 : false
+    refetchInterval: (isBackfilling || isFastBackfilling) ? 2000 : false
   });
 
   const handleBackfillEntryDates = async () => {
@@ -88,6 +89,61 @@ export function ScoutSettingsPanel() {
       console.error('Backfill continue error:', err);
       toast.error(`שגיאה בהמשך העדכון: ${err.message}`);
       setIsBackfilling(false);
+    }
+  };
+
+  // Fast backfill with Regex-first approach
+  const handleFastBackfill = async () => {
+    try {
+      setIsFastBackfilling(true);
+      toast.info('מתחיל עדכון מהיר (Regex + AI)...');
+
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
+        body: { batch_size: 50, use_ai_fallback: true }
+      });
+
+      if (error) throw error;
+
+      refetchProgress();
+
+      if (data.completed) {
+        toast.success('עדכון מהיר הושלם!');
+        setIsFastBackfilling(false);
+      } else if (data.hasMore) {
+        const regexPct = data.processed > 0 ? Math.round((data.regexHits / data.processed) * 100) : 0;
+        toast.success(`עובד ${data.processed} נכסים (${regexPct}% Regex). ממשיך...`);
+        setTimeout(() => continueFastBackfill(), 500);
+      } else {
+        toast.success(`עדכון הושלם: ${data.successful} הצליחו, Regex: ${data.regexHits}, AI: ${data.aiHits}`);
+        setIsFastBackfilling(false);
+      }
+    } catch (err: any) {
+      console.error('Fast backfill error:', err);
+      toast.error(`שגיאה: ${err.message}`);
+      setIsFastBackfilling(false);
+    }
+  };
+
+  const continueFastBackfill = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
+        body: { batch_size: 50, use_ai_fallback: true }
+      });
+
+      if (error) throw error;
+
+      refetchProgress();
+
+      if (data.completed || !data.hasMore) {
+        toast.success(`עדכון מהיר הושלם! Regex: ${data.regexHits || 0}, AI: ${data.aiHits || 0}`);
+        setIsFastBackfilling(false);
+      } else {
+        setTimeout(() => continueFastBackfill(), 500);
+      }
+    } catch (err: any) {
+      console.error('Fast backfill continue error:', err);
+      toast.error(`שגיאה בהמשך: ${err.message}`);
+      setIsFastBackfilling(false);
     }
   };
 
@@ -155,27 +211,44 @@ export function ScoutSettingsPanel() {
             </div>
           )}
 
-          <Button 
-            onClick={handleBackfillEntryDates}
-            disabled={isBackfilling}
-            className="w-full"
-          >
-            {isBackfilling ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                מעדכן תאריכי כניסה...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                עדכן תאריכי כניסה לנכסים קיימים
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleFastBackfill}
+              disabled={isBackfilling || isFastBackfilling}
+              className="flex-1"
+              variant="default"
+            >
+              {isFastBackfilling ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  עדכון מהיר...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  עדכון מהיר (Regex + AI)
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={handleBackfillEntryDates}
+              disabled={isBackfilling || isFastBackfilling}
+              variant="outline"
+              size="icon"
+              title="עדכון מלא (איטי יותר)"
+            >
+              {isBackfilling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
           
           <p className="text-xs text-muted-foreground">
-            פעולה זו תסרוק מחדש את כל נכסי השכירות שאין להם תאריך כניסה ותחלץ את המידע מהמקור.
-            הפעולה עשויה לקחת מספר דקות.
+            <strong>מהיר:</strong> Regex קודם (~5 שניות/נכס), AI רק אם צריך. 
+            <strong> מלא:</strong> AI לכולם (~2 דק/נכס).
           </p>
         </CardContent>
       </Card>

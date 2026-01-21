@@ -1,5 +1,8 @@
 project_id = "jswumsdymlooeobrxict"
 
+[functions.backfill-entry-dates-fast]
+verify_jwt = false
+
 [functions.generate-team-images]
 verify_jwt = false
 
