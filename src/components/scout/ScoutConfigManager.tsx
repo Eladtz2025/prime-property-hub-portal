@@ -468,37 +468,37 @@ export const ScoutConfigManager: React.FC = () => {
                     }
                   />
                   
-                  {getActiveRunForConfig(config.id) ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 border-red-300 text-red-600 hover:bg-red-50"
-                      onClick={() => stopMutation.mutate(config.id)}
-                      disabled={stopMutation.isPending}
-                      title="עצור סריקה"
-                    >
-                      {stopMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Square className="h-4 w-4" />
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => runMutation.mutate(config)}
-                      disabled={runMutation.isPending}
-                      title="הרץ עכשיו"
-                    >
-                      {runMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
+                  {/* Play Button - always visible */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => runMutation.mutate(config)}
+                    disabled={runMutation.isPending || !!getActiveRunForConfig(config.id)}
+                    title="הרץ עכשיו"
+                  >
+                    {runMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+
+                  {/* Stop Button - always visible */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-30"
+                    onClick={() => stopMutation.mutate(config.id)}
+                    disabled={stopMutation.isPending || !getActiveRunForConfig(config.id)}
+                    title="עצור סריקה"
+                  >
+                    {stopMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                  </Button>
 
                   <Button
                     variant="outline"
