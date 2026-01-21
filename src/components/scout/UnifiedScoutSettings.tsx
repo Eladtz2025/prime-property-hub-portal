@@ -154,7 +154,6 @@ export const UnifiedScoutSettings: React.FC = () => {
     // Skip if not backfilling or already processing
     if (!isBackfilling || isProcessingRef.current) return;
     if (backfillProgress?.status !== 'running') return;
-    if (!backfillProgress?.last_processed_id) return;
     
     const processedItems = backfillProgress?.processed_items || 0;
     const totalItems = backfillProgress?.total_items || 0;
@@ -166,16 +165,18 @@ export const UnifiedScoutSettings: React.FC = () => {
       return;
     }
 
-    // Schedule next batch
+    // Schedule next batch - works for BOTH first batch AND continuation
     const timer = setTimeout(async () => {
       if (isProcessingRef.current) return;
       isProcessingRef.current = true;
       
       try {
-        console.log(`Auto-continuing backfill from ${backfillProgress.last_processed_id}, progress: ${processedItems}/${totalItems}`);
+        // Use last_processed_id if available, otherwise start from beginning (null)
+        const continueFrom = backfillProgress?.last_processed_id || null;
+        console.log(`Processing backfill batch, continueFrom: ${continueFrom}, progress: ${processedItems}/${totalItems}`);
         
         const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-          body: { batch_size: 10, continue_from: backfillProgress.last_processed_id },
+          body: { batch_size: 30, continue_from: continueFrom },
         });
         
         if (error) {
