@@ -532,17 +532,37 @@ export const ExpandableCustomerRow = ({
   const getCustomerMissingFields = (): string[] => {
     const missing: string[] = [];
     
-    if (!customer.property_type) missing.push('סוג עסקה');
-    if (!customer.budget_min) missing.push('תקציב מינימום');
-    if (!customer.rooms_min) missing.push('חדרים מינימום');
-    if (!customer.preferred_cities?.length) missing.push('ערים');
-    if (!customer.preferred_neighborhoods?.length) missing.push('שכונות');
-    if (!customer.move_in_date) missing.push('תאריך כניסה');
+    // 1. עיר - חובה
+    if (!customer.preferred_cities?.length) {
+      missing.push('עיר');
+    }
     
-    const isRental = customer.property_type === 'rental' || customer.property_type === 'rent';
-    if (isRental) {
-      if (!customer.tenant_type) missing.push('סוג דייר');
-      if (customer.pets === undefined || customer.pets === null) missing.push('חיות');
+    // 2. שכונה - חובה
+    if (!customer.preferred_neighborhoods?.length) {
+      missing.push('שכונה');
+    }
+    
+    // 3. תקציב - לפחות אחד (מינימום או מקסימום)
+    if (!customer.budget_min && !customer.budget_max) {
+      missing.push('תקציב');
+    }
+    
+    // 4. חדרים - לפחות אחד (מינימום או מקסימום)
+    if (!customer.rooms_min && !customer.rooms_max) {
+      missing.push('חדרים');
+    }
+    
+    // 5. סוג נכס - חובה
+    if (!customer.property_type) {
+      missing.push('סוג נכס');
+    }
+    
+    // 6. תאריך כניסה - לפחות אחד (מיידי, גמיש, או תאריך)
+    const hasEntryInfo = customer.immediate_entry || 
+                         customer.flexible_move_date || 
+                         customer.move_in_date;
+    if (!hasEntryInfo) {
+      missing.push('תאריך כניסה');
     }
     
     return missing;
