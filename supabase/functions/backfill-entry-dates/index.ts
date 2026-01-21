@@ -337,6 +337,7 @@ serve(async (req) => {
     let successCount = 0;
     let failCount = 0;
     let lastCreatedAt = '';
+    let lastPropertyId = '';
 
     // Get current progress for incremental updates
     const { data: currentProgress } = await supabase
@@ -402,6 +403,7 @@ serve(async (req) => {
         }
         
         lastCreatedAt = property.created_at;
+        lastPropertyId = property.id;
       }
 
       // HEARTBEAT: Update progress after each sub-batch to maintain mutex lock
@@ -409,16 +411,20 @@ serve(async (req) => {
       runningSuccess += batchSuccess;
       runningFailed += batchFail;
       
-      await supabase
+      const { error: heartbeatError } = await supabase
         .from('backfill_progress')
         .update({
           processed_items: runningProcessed,
           successful_items: runningSuccess,
           failed_items: runningFailed,
-          last_processed_id: lastCreatedAt,
+          last_processed_id: lastPropertyId || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', progressId);
+      
+      if (heartbeatError) {
+        console.error('Heartbeat update failed:', heartbeatError);
+      }
       
       console.log(`Heartbeat: ${runningProcessed} processed, ${runningSuccess} success, ${runningFailed} failed`);
 
