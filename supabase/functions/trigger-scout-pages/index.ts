@@ -1,14 +1,23 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { fetchScoutSettings } from '../_shared/settings.ts';
+import { createInitialPageStats } from '../_shared/run-helpers.ts';
 
 /**
  * Unified Trigger for all Scout sources
- * Routes to the appropriate source-specific function (scout-yad2, scout-madlan, scout-homeless)
+ * Creates a run record and triggers individual page scrapes with delays.
+ * All sources (yad2, madlan, homeless) use the same single-page architecture.
  */
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Source-specific delays between page triggers (in milliseconds)
+const SOURCE_DELAYS: Record<string, number> = {
+  yad2: 5000,      // 5 seconds - slower to avoid CAPTCHA
+  madlan: 8000,    // 8 seconds - even slower for Madlan
+  homeless: 3000,  // 3 seconds - fastest
 };
 
 Deno.serve(async (req) => {
@@ -46,14 +55,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🚀 Trigger Scout Pages - Config: ${config.name} (${config.source})`);
+    const source = config.source as string;
+    console.log(`🚀 Trigger Scout Pages - Config: ${config.name} (${source})`);
 
     // Fetch settings to get pages per source
     const settings = await fetchScoutSettings(supabase);
     
     // Determine pages to scan based on source from settings or config
     let pagesToScan: number;
-    switch (config.source) {
+    switch (source) {
       case 'yad2':
         pagesToScan = config.max_pages ?? settings.scraping.yad2_pages ?? 4;
         break;
@@ -67,147 +77,115 @@ Deno.serve(async (req) => {
         pagesToScan = 5;
     }
 
-    // Determine target function based on source
-    const targetFunction = `scout-${config.source}`;
+    // Check for existing running job
+    const { data: existingRun } = await supabase
+      .from('scout_runs')
+      .select('id')
+      .eq('config_id', config_id)
+      .eq('status', 'running')
+      .single();
 
-    // For Yad2, use trigger-yad2-pages style (page-by-page with run record)
-    if (config.source === 'yad2') {
-      // Check for existing running job
-      const { data: existingRun } = await supabase
-        .from('scout_runs')
-        .select('id')
-        .eq('config_id', config_id)
-        .eq('status', 'running')
-        .single();
-
-      if (existingRun) {
-        return new Response(JSON.stringify({ 
-          error: 'Config already has a running job',
-          run_id: existingRun.id 
-        }), {
-          status: 409,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      // Create a single run record for all pages
-      const initialPageStats = Array.from({ length: pagesToScan }, (_, i) => ({
-        page: i + 1,
-        url: '',
-        status: 'pending',
-        found: 0,
-        new: 0,
-        duration_ms: 0
-      }));
-
-      const { data: runData, error: runError } = await supabase
-        .from('scout_runs')
-        .insert({
-          config_id: config_id,
-          source: 'yad2',
-          status: 'running',
-          properties_found: 0,
-          new_properties: 0,
-          page_stats: initialPageStats
-        })
-        .select()
-        .single();
-
-      if (runError) {
-        console.error('Failed to create run record:', runError);
-        return new Response(JSON.stringify({ error: 'Failed to create run' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      console.log(`🟠 Created run ${runData.id} for ${pagesToScan} Yad2 pages`);
-
-      // Trigger each page as a separate function call with delays
-      const triggerPromises: Promise<void>[] = [];
-      
-      for (let page = 1; page <= pagesToScan; page++) {
-        const delayMs = (page - 1) * 3000; // 3 second delay between page starts
-        
-        const triggerPage = async () => {
-          // Wait for the delay
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          
-          // Check if run was stopped before triggering
-          const { data: runCheck } = await supabase
-            .from('scout_runs')
-            .select('status')
-            .eq('id', runData.id)
-            .single();
-          
-          if (runCheck?.status === 'stopped') {
-            console.log(`🛑 Run ${runData.id} was stopped, skipping page ${page}`);
-            return;
-          }
-
-          console.log(`🟠 Triggering page ${page}/${pagesToScan} for run ${runData.id}`);
-          
-          try {
-            await fetch(`${supabaseUrl}/functions/v1/scout-yad2`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`
-              },
-              body: JSON.stringify({
-                config_id: config_id,
-                page: page,
-                run_id: runData.id,
-                max_pages: pagesToScan
-              })
-            });
-          } catch (error) {
-            console.error(`Error triggering page ${page}:`, error);
-          }
-        };
-
-        triggerPromises.push(triggerPage());
-      }
-
-      // Start all page triggers (they will execute with their own delays)
-      Promise.all(triggerPromises).catch(err => {
-        console.error('Error in page triggers:', err);
-      });
-
-      return new Response(JSON.stringify({
-        success: true,
-        run_id: runData.id,
-        pages_triggered: pagesToScan,
-        message: `Started scraping ${pagesToScan} pages for ${config.name}`
+    if (existingRun) {
+      return new Response(JSON.stringify({ 
+        error: 'Config already has a running job',
+        run_id: existingRun.id 
       }), {
+        status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // For Madlan and Homeless - call directly (they handle their own pagination)
-    console.log(`📄 Triggering ${targetFunction} for: ${config.name}`);
+    // Create a run record with initial page_stats
+    const initialPageStats = createInitialPageStats(pagesToScan);
 
-    fetch(`${supabaseUrl}/functions/v1/${targetFunction}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ config_id: config.id }),
-    }).catch(err => {
-      console.error(`❌ Failed to trigger ${targetFunction}:`, err);
+    const { data: runData, error: runError } = await supabase
+      .from('scout_runs')
+      .insert({
+        config_id: config_id,
+        source: source,
+        status: 'running',
+        properties_found: 0,
+        new_properties: 0,
+        page_stats: initialPageStats
+      })
+      .select()
+      .single();
+
+    if (runError) {
+      console.error('Failed to create run record:', runError);
+      return new Response(JSON.stringify({ error: 'Failed to create run' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const runId = runData.id;
+    const targetFunction = `scout-${source}`;
+    const delayMs = SOURCE_DELAYS[source] || 5000;
+
+    console.log(`📄 Created run ${runId} for ${pagesToScan} ${source} pages (delay: ${delayMs}ms)`);
+
+    // Trigger each page as a separate function call with delays
+    const triggerPromises: Promise<void>[] = [];
+    
+    for (let page = 1; page <= pagesToScan; page++) {
+      const pageDelay = (page - 1) * delayMs;
+      
+      const triggerPage = async () => {
+        // Wait for the delay
+        await new Promise(resolve => setTimeout(resolve, pageDelay));
+        
+        // Check if run was stopped before triggering
+        const { data: runCheck } = await supabase
+          .from('scout_runs')
+          .select('status')
+          .eq('id', runId)
+          .single();
+        
+        if (runCheck?.status === 'stopped') {
+          console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
+          return;
+        }
+
+        console.log(`📄 Triggering ${source} page ${page}/${pagesToScan} for run ${runId}`);
+        
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/${targetFunction}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`
+            },
+            body: JSON.stringify({
+              config_id: config_id,
+              page: page,
+              run_id: runId,
+              max_pages: pagesToScan
+            })
+          });
+        } catch (error) {
+          console.error(`Error triggering ${source} page ${page}:`, error);
+        }
+      };
+
+      triggerPromises.push(triggerPage());
+    }
+
+    // Start all page triggers (they will execute with their own delays)
+    Promise.all(triggerPromises).catch(err => {
+      console.error('Error in page triggers:', err);
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        config: config.name,
-        source: config.source,
-        target_function: targetFunction,
-        pages_to_scan: pagesToScan,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      run_id: runId,
+      source: source,
+      pages_triggered: pagesToScan,
+      delay_ms: delayMs,
+      message: `Started scraping ${pagesToScan} pages for ${config.name}`
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('❌ Trigger Scout Pages failed:', error);
