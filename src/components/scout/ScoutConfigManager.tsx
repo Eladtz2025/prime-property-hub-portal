@@ -378,53 +378,41 @@ export const ScoutConfigManager: React.FC = () => {
       <div className="grid gap-4">
         {configs?.map((config) => (
           <Card key={config.id}>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-sm sm:text-base">{config.name}</h4>
-                    <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
-                      {config.is_active ? 'פעיל' : 'מושבת'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+            <CardContent className="p-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                {/* Row 1: Badges only */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
+                    {config.is_active ? 'פעיל' : 'מושבת'}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {config.source === 'madlan' ? 'מדל"ן' :
+                     config.source === 'yad2_private' ? 'יד2 פרטיים' :
+                     config.source === 'yad2' ? 'יד2' :
+                     config.source === 'homeless' ? 'הומלס' :
+                     config.source === 'both' ? 'מדל"ן + יד2' :
+                     config.source === 'all' ? 'כל המקורות' : config.source}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {config.property_type === 'rent' ? 'השכרה' : config.property_type === 'sale' ? 'מכירה' : 'השכרה + מכירה'}
+                  </Badge>
+                  {config.cities?.map(city => (
+                    <Badge key={city} variant="outline" className="text-xs">{city}</Badge>
+                  ))}
+                  {config.min_price && (
                     <Badge variant="outline" className="text-xs">
-                      {config.source === 'madlan' ? 'מדל"ן' :
-                       config.source === 'yad2_private' ? 'יד2 פרטיים' :
-                       config.source === 'yad2' ? 'יד2' :
-                       config.source === 'homeless' ? 'הומלס' :
-                       config.source === 'both' ? 'מדל"ן + יד2' :
-                       config.source === 'all' ? 'כל המקורות' : config.source}
+                      ₪{config.min_price.toLocaleString()} - ₪{config.max_price?.toLocaleString() || '∞'}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">{config.property_type === 'rent' ? 'השכרה' : config.property_type === 'sale' ? 'מכירה' : 'השכרה + מכירה'}</Badge>
-                    {config.cities?.map(city => (
-                      <Badge key={city} variant="outline" className="text-xs">{city}</Badge>
-                    ))}
-                    {config.min_price && (
-                      <Badge variant="outline" className="text-xs">
-                        ₪{config.min_price.toLocaleString()} - ₪{config.max_price?.toLocaleString() || '∞'}
-                      </Badge>
-                    )}
-                    {config.min_rooms && (
-                      <Badge variant="outline" className="text-xs">
-                        {config.min_rooms}-{config.max_rooms || '∞'} חדרים
-                      </Badge>
-                    )}
-                  </div>
-
-                  {config.last_run_at && (
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                      ריצה אחרונה: {formatDistanceToNow(new Date(config.last_run_at), { 
-                        addSuffix: true, 
-                        locale: he 
-                      })}
-                      {config.last_run_status && ` (${config.last_run_status})`}
-                    </p>
+                  )}
+                  {config.min_rooms && (
+                    <Badge variant="outline" className="text-xs">
+                      {config.min_rooms}-{config.max_rooms || '∞'} חדרים
+                    </Badge>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-center">
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Switch
                     checked={config.is_active}
                     onCheckedChange={(checked) => 
@@ -435,7 +423,7 @@ export const ScoutConfigManager: React.FC = () => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 sm:h-9 sm:w-9"
+                    className="h-8 w-8"
                     onClick={() => runMutation.mutate(config.id)}
                     disabled={runMutation.isPending}
                     title="הרץ עכשיו"
@@ -450,7 +438,7 @@ export const ScoutConfigManager: React.FC = () => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 sm:h-9 sm:w-9"
+                    className="h-8 w-8"
                     onClick={() => openEditDialog(config)}
                     title="ערוך"
                   >
@@ -460,7 +448,7 @@ export const ScoutConfigManager: React.FC = () => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 sm:h-9 sm:w-9"
+                    className="h-8 w-8"
                     onClick={() => deleteMutation.mutate(config.id)}
                     title="מחק"
                   >
@@ -468,6 +456,17 @@ export const ScoutConfigManager: React.FC = () => {
                   </Button>
                 </div>
               </div>
+              
+              {/* Row 2: Metadata */}
+              {config.last_run_at && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  ריצה אחרונה: {formatDistanceToNow(new Date(config.last_run_at), { 
+                    addSuffix: true, 
+                    locale: he 
+                  })}
+                  {config.last_run_status && ` (${config.last_run_status})`}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
