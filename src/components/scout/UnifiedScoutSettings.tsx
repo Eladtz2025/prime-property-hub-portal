@@ -20,6 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -46,6 +47,7 @@ import {
   RefreshCw,
   Timer,
   FileText,
+  Target,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 
@@ -138,6 +140,8 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [editingConfig, setEditingConfig] = useState<ScoutConfig | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
+  const [isDuplicatesDialogOpen, setIsDuplicatesDialogOpen] = useState(false);
+  const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -834,217 +838,162 @@ export const UnifiedScoutSettings: React.FC = () => {
                 </div>
               )}
 
-              {/* Config list grouped by source */}
-              <div className="space-y-6">
-                {Object.entries(configsBySource).map(([source, sourceConfigs]) => (
-                  <div key={source} className="space-y-3">
-                    <h4 className="font-medium text-sm flex items-center gap-2">
-                      {SOURCES.find(s => s.value === source)?.label || source}
-                      <Badge variant="outline" className="text-xs">
-                        {sourceConfigs.length}
-                      </Badge>
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {sourceConfigs.map((config) => (
-                        <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              {/* Checkbox */}
-                              <Checkbox
-                                checked={selectedConfigs.has(config.id)}
-                                onCheckedChange={() => toggleConfigSelection(config.id)}
-                                className="mt-1"
-                              />
-                              
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium truncate">{config.name}</span>
-                                  <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
-                                    {config.is_active ? 'פעיל' : 'מושבת'}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">
-                                    {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
-                                  </Badge>
-                                </div>
-                                <div className="text-sm text-muted-foreground flex flex-wrap gap-2 mt-1">
-                                  {config.cities?.length > 0 && (
-                                    <span>{config.cities.join(', ')}</span>
-                                  )}
-                                  {config.min_price && config.max_price && (
-                                    <span>
-                                      ₪{config.min_price.toLocaleString()} - ₪{config.max_price.toLocaleString()}
-                                    </span>
-                                  )}
-                                  {config.min_rooms && config.max_rooms && (
-                                    <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
-                                  )}
-                                </div>
-                                {/* Technical parameters */}
-                                {SOURCE_TECHNICAL_PARAMS[config.source] && (
-                                  <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
-                                    <span className="flex items-center gap-1">
-                                      <FileText className="h-3 w-3" />
-                                      {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
-                                      {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Timer className="h-3 w-3" />
-                                      {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s
-                                      {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
-                                      {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Actions */}
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Switch
-                                  checked={config.is_active}
-                                  onCheckedChange={(checked) =>
-                                    toggleActiveMutation.mutate({ id: config.id, is_active: checked })
-                                  }
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => runConfigMutation.mutate(config.id)}
-                                  disabled={runConfigMutation.isPending}
-                                >
-                                  <Play className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditDialog(config)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteConfigMutation.mutate(config.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+              {/* Config list - flat grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {configs?.map((config) => (
+                  <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        {/* Checkbox */}
+                        <Checkbox
+                          checked={selectedConfigs.has(config.id)}
+                          onCheckedChange={() => toggleConfigSelection(config.id)}
+                          className="mt-1"
+                        />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium truncate">{config.name}</span>
+                            <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
+                              {config.is_active ? 'פעיל' : 'מושבת'}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {SOURCES.find(s => s.value === config.source)?.label}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground flex flex-wrap gap-2 mt-1">
+                            {config.cities?.length > 0 && (
+                              <span>{config.cities.join(', ')}</span>
+                            )}
+                            {config.min_price && config.max_price && (
+                              <span>
+                                ₪{config.min_price.toLocaleString()} - ₪{config.max_price.toLocaleString()}
+                              </span>
+                            )}
+                            {config.min_rooms && config.max_rooms && (
+                              <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
+                            )}
+                          </div>
+                          {/* Technical parameters */}
+                          {SOURCE_TECHNICAL_PARAMS[config.source] && (
+                            <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
+                                {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s
+                                {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
+                                {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
+                              </span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
+                          )}
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Switch
+                            checked={config.is_active}
+                            onCheckedChange={(checked) =>
+                              toggleActiveMutation.mutate({ id: config.id, is_active: checked })
+                            }
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => runConfigMutation.mutate(config.id)}
+                            disabled={runConfigMutation.isPending}
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(config)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteConfigMutation.mutate(config.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-                {(!configs || configs.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    אין הגדרות סריקה. לחץ על "הוסף הגדרה חדשה" להתחיל.
-                  </div>
-                )}
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* Technical Parameters */}
-        <AccordionItem value="parameters" className="border rounded-lg bg-card">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-primary" />
-              <span className="font-semibold">פרמטרים טכניים</span>
-              {changesCount > 0 && (
-                <Badge variant="outline" className="mr-2">
-                  {changesCount} שינויים מברירת מחדל
-                </Badge>
+              {(!configs || configs.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  אין הגדרות סריקה. לחץ על "הוסף הגדרה חדשה" להתחיל.
+                </div>
               )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-6">
 
-              {/* Duplicate Settings */}
-              <div className="space-y-4">
-                <h4 className="font-medium flex items-center gap-2">
-                  🔄 הגדרות זיהוי כפילויות
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  נכסים נחשבים כפולים אם יש להם: כתובת עם מספר + חדרים + עיר + קומה + מחיר (עד סף ההפרש)
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>סף הפרש מחיר (%)</Label>
-                    <Input
-                      type="number"
-                      min={5}
-                      max={50}
-                      value={Math.round((settings?.duplicates?.price_diff_threshold ?? 0.2) * 100)}
-                      onChange={(e) => handleNumberChange('duplicates', 'price_diff_threshold', (parseFloat(e.target.value) / 100).toString())}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20% - נכסים עם מחיר זהה או הפרש עד 20% ייחשבו ככפילויות</p>
-                  </div>
-                </div>
-              </div>
+              {/* Duplicates & Matching Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+                {/* Duplicates Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow" 
+                  onClick={() => setIsDuplicatesDialogOpen(true)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                          <RefreshCw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">זיהוי כפילויות</h4>
+                          <p className="text-sm text-muted-foreground">
+                            סף הפרש מחיר: {Math.round((settings?.duplicates?.price_diff_threshold ?? 0.2) * 100)}%
+                          </p>
+                        </div>
+                      </div>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-              <Separator />
-
-              {/* Matching Settings */}
-              <div className="space-y-4">
-                <h4 className="font-medium flex items-center gap-2">
-                  🎯 הגדרות התאמה ללקוחות
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  לוגיקת התאמה בינארית: עיר + שכונה (חובה) → מחיר עם זליגה דינמית → חדרים → תוספות (לפי גמישות)
-                </p>
-                
-                {/* Dynamic Price Flexibility Table */}
-                <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                  <h5 className="font-medium text-sm">זליגת מחיר דינמית (להשכרה)</h5>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className="bg-background rounded p-2 text-center">
-                      <div className="font-medium text-primary">15%</div>
-                      <div className="text-xs text-muted-foreground">עד ₪7,000</div>
+                {/* Matching Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow" 
+                  onClick={() => setIsMatchingDialogOpen(true)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+                          <Target className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">התאמה ללקוחות</h4>
+                          <p className="text-sm text-muted-foreground">
+                            מקס׳ {settings?.matching?.max_matches_per_property ?? 20} התאמות • 
+                            וואטסאפ: {settings?.matching?.auto_send_whatsapp ? 'פעיל' : 'כבוי'}
+                          </p>
+                        </div>
+                      </div>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="bg-background rounded p-2 text-center">
-                      <div className="font-medium text-primary">10%</div>
-                      <div className="text-xs text-muted-foreground">₪7,001 - ₪15,000</div>
-                    </div>
-                    <div className="bg-background rounded p-2 text-center">
-                      <div className="font-medium text-primary">8%</div>
-                      <div className="text-xs text-muted-foreground">מעל ₪15,000</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>מקסימום התאמות לנכס</Label>
-                    <Input
-                      type="number"
-                      min={5}
-                      max={50}
-                      value={settings?.matching?.max_matches_per_property ?? 20}
-                      onChange={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 20 לקוחות לנכס</p>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <Label className="cursor-pointer">שליחת וואטסאפ אוטומטית</Label>
-                      <p className="text-xs text-muted-foreground">שליחת הודעה אוטומטית ללקוחות מתאימים</p>
-                    </div>
-                    <Switch
-                      checked={settings?.matching?.auto_send_whatsapp ?? false}
-                      onCheckedChange={(checked) => handleBooleanChange('matching', 'auto_send_whatsapp', checked)}
-                    />
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
+
 
         {/* Schedule Info */}
         <AccordionItem value="schedule" className="border rounded-lg bg-card">
@@ -1232,6 +1181,95 @@ export const UnifiedScoutSettings: React.FC = () => {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Duplicates Settings Dialog */}
+      <Dialog open={isDuplicatesDialogOpen} onOpenChange={setIsDuplicatesDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              הגדרות זיהוי כפילויות
+            </DialogTitle>
+            <DialogDescription>
+              נכסים נחשבים כפולים אם יש להם: כתובת עם מספר + חדרים + עיר + קומה + מחיר (עד סף ההפרש)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>סף הפרש מחיר (%)</Label>
+              <Input
+                type="number"
+                min={5}
+                max={50}
+                value={Math.round((settings?.duplicates?.price_diff_threshold ?? 0.2) * 100)}
+                onChange={(e) => handleNumberChange('duplicates', 'price_diff_threshold', (parseFloat(e.target.value) / 100).toString())}
+              />
+              <p className="text-xs text-muted-foreground">
+                ברירת מחדל: 20% - נכסים עם מחיר זהה או הפרש עד 20% ייחשבו ככפילויות
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Matching Settings Dialog */}
+      <Dialog open={isMatchingDialogOpen} onOpenChange={setIsMatchingDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              הגדרות התאמה ללקוחות
+            </DialogTitle>
+            <DialogDescription>
+              לוגיקת התאמה בינארית: עיר + שכונה (חובה) → מחיר עם זליגה דינמית → חדרים → תוספות (לפי גמישות)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            
+            {/* Dynamic Price Flexibility Table */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">זליגת מחיר דינמית (להשכרה)</h5>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="bg-background rounded p-2 text-center">
+                  <div className="font-medium text-primary">15%</div>
+                  <div className="text-xs text-muted-foreground">עד ₪7,000</div>
+                </div>
+                <div className="bg-background rounded p-2 text-center">
+                  <div className="font-medium text-primary">10%</div>
+                  <div className="text-xs text-muted-foreground">₪7,001 - ₪15,000</div>
+                </div>
+                <div className="bg-background rounded p-2 text-center">
+                  <div className="font-medium text-primary">8%</div>
+                  <div className="text-xs text-muted-foreground">מעל ₪15,000</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>מקסימום התאמות לנכס</Label>
+              <Input
+                type="number"
+                min={5}
+                max={50}
+                value={settings?.matching?.max_matches_per_property ?? 20}
+                onChange={(e) => handleNumberChange('matching', 'max_matches_per_property', e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">ברירת מחדל: 20 לקוחות לנכס</p>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <Label className="cursor-pointer">שליחת וואטסאפ אוטומטית</Label>
+                <p className="text-xs text-muted-foreground">שליחת הודעה אוטומטית ללקוחות מתאימים</p>
+              </div>
+              <Switch
+                checked={settings?.matching?.auto_send_whatsapp ?? false}
+                onCheckedChange={(checked) => handleBooleanChange('matching', 'auto_send_whatsapp', checked)}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
