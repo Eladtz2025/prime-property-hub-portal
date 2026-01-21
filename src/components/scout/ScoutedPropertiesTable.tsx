@@ -453,39 +453,22 @@ export const ScoutedPropertiesTable: React.FC = () => {
     total: matchingRun.new_properties || 0
   } : null;
   
-  // Detect stuck scans (over 10 minutes for regular scans, 30 minutes for matching)
+  // Detect stuck scans - 30 minutes for all scans (single-page mode: 8 pages × 90 sec = ~12 min max)
+  // Note: Backend handles actual cleanup via checkAndFinalizeRun - this is just for UI warning
   const stuckScans = runningScans?.filter(r => {
     if (!r.started_at) return false;
     const runningTime = Date.now() - new Date(r.started_at).getTime();
-    const timeout = r.source === 'matching' ? 30 * 60 * 1000 : 10 * 60 * 1000;
+    const timeout = 30 * 60 * 1000; // 30 minutes for all scan types
     return runningTime > timeout;
   }) || [];
   
-  // Auto-cleanup stuck scans
+  // Show warning for stuck scans but don't auto-cleanup from frontend
+  // Backend handles cleanup via checkAndFinalizeRun in run-helpers.ts
   useEffect(() => {
     if (stuckScans.length > 0) {
-      const cleanupStuckScans = async () => {
-        console.log(`Auto-cleaning ${stuckScans.length} stuck scans:`, stuckScans.map(s => s.id));
-        
-        const { error } = await supabase
-          .from('scout_runs')
-          .update({
-            status: 'failed',
-            error_message: 'Auto-cleanup: scan timeout',
-            completed_at: new Date().toISOString()
-          })
-          .in('id', stuckScans.map(s => s.id));
-        
-        if (error) {
-          console.error('Failed to cleanup stuck scans:', error);
-        } else {
-          toast.info(`נוקו ${stuckScans.length} סריקות תקועות`);
-          queryClient.invalidateQueries({ queryKey: ['running-scans'] });
-        }
-      };
-      cleanupStuckScans();
+      console.warn(`Detected ${stuckScans.length} potentially stuck scans:`, stuckScans.map(s => ({ id: s.id, source: s.source })));
     }
-  }, [stuckScans.length, queryClient]);
+  }, [stuckScans.length]);
   
   // Track when matching completes to refresh data
   const wasMatchingRef = useRef(false);
