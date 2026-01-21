@@ -335,6 +335,13 @@ function normalizeText(text: string): string {
     .trim();
 }
 
+// Extract street name from address (remove house number and everything after)
+export function extractStreetName(address: string): string {
+  if (!address) return '';
+  // Remove numbers and everything after them
+  return address.replace(/[0-9].*$/, '').trim();
+}
+
 // Match a property neighborhood string against lead's selected neighborhoods
 export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhoods: string[], city: string): boolean {
   if (!propertyNeighborhood || !leadNeighborhoods?.length) return false;

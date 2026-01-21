@@ -2721,6 +2721,42 @@ export type Database = {
         }
         Relationships: []
       }
+      street_neighborhoods: {
+        Row: {
+          city: string
+          confidence: number | null
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          neighborhood: string
+          neighborhood_normalized: string | null
+          street_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          neighborhood: string
+          neighborhood_normalized?: string | null
+          street_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          neighborhood?: string
+          neighborhood_normalized?: string | null
+          street_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tenant_communications: {
         Row: {
           communication_type: string

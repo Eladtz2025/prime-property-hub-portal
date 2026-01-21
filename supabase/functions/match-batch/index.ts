@@ -131,7 +131,7 @@ serve(async (req) => {
       const matches: MatchResult[] = [];
 
       for (const lead of leads) {
-        const matchResult = calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
+        const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
         
         if (matchResult.matchScore >= 60) {
           matches.push(matchResult);
