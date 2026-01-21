@@ -87,9 +87,12 @@ Deno.serve(async (req) => {
 
         triggeredPages.push(page);
         
-        // 2 second delay between page triggers to prevent overload
+        // Dynamic delay between page triggers based on source (longer for Yad2 to avoid CAPTCHA)
         if (page < pagesToScan) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          const delayMs = config.source === 'yad2' ? 5000 
+                        : config.source === 'madlan' ? 6000 
+                        : 3000;
+          await new Promise(resolve => setTimeout(resolve, delayMs));
         }
         
       } catch (err) {
