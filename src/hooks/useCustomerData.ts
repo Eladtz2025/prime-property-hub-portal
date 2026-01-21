@@ -66,6 +66,9 @@ export interface Customer {
   new_or_second_hand: string | null;
   floor_preference: string | null;
   view_preference: string | null;
+  // Eligibility fields from DB trigger
+  matching_status: string | null;
+  eligibility_reason: string | null;
 }
 
 export interface PropertyInterest {
