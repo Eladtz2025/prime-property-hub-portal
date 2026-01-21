@@ -153,18 +153,16 @@ serve(async (req) => {
         .update({ retry_count: (run.retry_count || 0) + 1 })
         .eq('id', run.id);
 
-      // Trigger new scout-properties run with retry_of reference
+      // Trigger new run via trigger-scout-pages (unified architecture)
       try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/scout-properties`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/trigger-scout-pages`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${supabaseServiceKey}`
           },
           body: JSON.stringify({
-            config_id: run.config_id,
-            retry_of: run.id,
-            retry_strategy: strategy // Pass strategy to scout-properties
+            config_id: run.config_id
           })
         });
 
