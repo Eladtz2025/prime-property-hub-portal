@@ -81,8 +81,8 @@ export async function scrapeWithRetry(
   maxRetries = 3,
   delayMs?: number
 ): Promise<any> {
-  // Determine wait time based on source - Madlan needs longer waits to avoid CAPTCHA
-  const waitForMs = delayMs || (source === 'madlan' ? 8000 : 3000);
+  // Determine wait time based on source - Madlan/Yad2 need longer waits to avoid CAPTCHA
+  const waitForMs = delayMs || (source === 'madlan' ? 8000 : source === 'yad2' ? 5000 : 3000);
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
