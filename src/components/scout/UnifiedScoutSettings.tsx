@@ -628,8 +628,9 @@ export const UnifiedScoutSettings: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Fast backfill continue error:', err);
-      toast.error(`שגיאה בהמשך: ${err.message}`);
-      setIsFastBackfilling(false);
+      // Don't stop on error - continue with next batch after a delay
+      toast.warning(`שגיאה חלקית: ${err.message}. ממשיך...`);
+      setTimeout(() => continueFastBackfill(), 1000);
     }
   };
 
