@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -136,6 +137,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ScoutConfig | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -252,6 +254,47 @@ export const UnifiedScoutSettings: React.FC = () => {
       return data as ScoutConfig[];
     },
   });
+
+  // Group configs by source
+  const configsBySource = React.useMemo(() => {
+    if (!configs) return {};
+    return configs.reduce((acc, config) => {
+      const source = config.source;
+      if (!acc[source]) acc[source] = [];
+      acc[source].push(config);
+      return acc;
+    }, {} as Record<string, ScoutConfig[]>);
+  }, [configs]);
+
+  // Toggle config selection
+  const toggleConfigSelection = (configId: string) => {
+    setSelectedConfigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(configId)) {
+        newSet.delete(configId);
+      } else {
+        newSet.add(configId);
+      }
+      return newSet;
+    });
+  };
+
+  // Run selected configs
+  const runSelectedConfigs = async () => {
+    const ids = Array.from(selectedConfigs);
+    toast.info(`מפעיל ${ids.length} סריקות...`);
+    
+    for (const configId of ids) {
+      try {
+        await runConfigMutation.mutateAsync(configId);
+      } catch (error) {
+        console.error(`Failed to run config ${configId}:`, error);
+      }
+    }
+    
+    setSelectedConfigs(new Set());
+    toast.success(`הופעלו ${ids.length} סריקות`);
+  };
 
   // Config mutations
   const createConfigMutation = useMutation({
@@ -767,89 +810,134 @@ export const UnifiedScoutSettings: React.FC = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* Config list */}
-              <div className="space-y-3">
-                {configs?.map((config) => (
-                  <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium">{config.name}</span>
-                            <Badge variant={config.is_active ? 'default' : 'secondary'}>
-                              {config.is_active ? 'פעיל' : 'מושבת'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {SOURCES.find((s) => s.value === config.source)?.label}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground flex flex-wrap gap-2">
-                            {config.cities?.length && (
-                              <span>{config.cities.join(', ')}</span>
-                            )}
-                            {config.min_price && config.max_price && (
-                              <span>
-                                ₪{config.min_price.toLocaleString()} - ₪{config.max_price.toLocaleString()}
-                              </span>
-                            )}
-                            {config.min_rooms && config.max_rooms && (
-                              <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
-                            )}
-                          </div>
-                          {/* Technical parameters for this source */}
-                          {SOURCE_TECHNICAL_PARAMS[config.source] && (
-                            <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
-                              <span className="flex items-center gap-1">
-                                <FileText className="h-3 w-3" />
-                                {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
-                                {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Timer className="h-3 w-3" />
-                                {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s delay
-                                {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
-                                {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
-                              </span>
+              {/* Selection bar */}
+              {selectedConfigs.size > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                  <span className="text-sm font-medium">
+                    {selectedConfigs.size} קונפיגורציות נבחרו
+                  </span>
+                  <Button 
+                    size="sm" 
+                    onClick={runSelectedConfigs}
+                    disabled={runConfigMutation.isPending}
+                  >
+                    <Play className="h-4 w-4 ml-2" />
+                    הרץ נבחרות
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSelectedConfigs(new Set())}
+                  >
+                    בטל בחירה
+                  </Button>
+                </div>
+              )}
+
+              {/* Config list grouped by source */}
+              <div className="space-y-6">
+                {Object.entries(configsBySource).map(([source, sourceConfigs]) => (
+                  <div key={source} className="space-y-3">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      {SOURCES.find(s => s.value === source)?.label || source}
+                      <Badge variant="outline" className="text-xs">
+                        {sourceConfigs.length}
+                      </Badge>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {sourceConfigs.map((config) => (
+                        <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              {/* Checkbox */}
+                              <Checkbox
+                                checked={selectedConfigs.has(config.id)}
+                                onCheckedChange={() => toggleConfigSelection(config.id)}
+                                className="mt-1"
+                              />
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium truncate">{config.name}</span>
+                                  <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
+                                    {config.is_active ? 'פעיל' : 'מושבת'}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground flex flex-wrap gap-2 mt-1">
+                                  {config.cities?.length > 0 && (
+                                    <span>{config.cities.join(', ')}</span>
+                                  )}
+                                  {config.min_price && config.max_price && (
+                                    <span>
+                                      ₪{config.min_price.toLocaleString()} - ₪{config.max_price.toLocaleString()}
+                                    </span>
+                                  )}
+                                  {config.min_rooms && config.max_rooms && (
+                                    <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
+                                  )}
+                                </div>
+                                {/* Technical parameters */}
+                                {SOURCE_TECHNICAL_PARAMS[config.source] && (
+                                  <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
+                                    <span className="flex items-center gap-1">
+                                      <FileText className="h-3 w-3" />
+                                      {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
+                                      {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Timer className="h-3 w-3" />
+                                      {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s
+                                      {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
+                                      {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Actions */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Switch
+                                  checked={config.is_active}
+                                  onCheckedChange={(checked) =>
+                                    toggleActiveMutation.mutate({ id: config.id, is_active: checked })
+                                  }
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => runConfigMutation.mutate(config.id)}
+                                  disabled={runConfigMutation.isPending}
+                                >
+                                  <Play className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditDialog(config)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteConfigMutation.mutate(config.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={config.is_active}
-                            onCheckedChange={(checked) =>
-                              toggleActiveMutation.mutate({ id: config.id, is_active: checked })
-                            }
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => runConfigMutation.mutate(config.id)}
-                            disabled={runConfigMutation.isPending}
-                          >
-                            <Play className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditDialog(config)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteConfigMutation.mutate(config.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
                 ))}
                 {(!configs || configs.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -876,89 +964,6 @@ export const UnifiedScoutSettings: React.FC = () => {
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-6">
-              {/* Scraping Settings */}
-              <div className="space-y-4">
-                <h4 className="font-medium flex items-center gap-2">
-                  🔍 הגדרות סריקה
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>דפים לסריקה - יד2</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={settings?.scraping?.yad2_pages ?? 7}
-                      onChange={(e) => handleNumberChange('scraping', 'yad2_pages', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 7 | מומלץ: 5-10</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1">
-                      דפים לסריקה - מדלן
-                      {(settings?.scraping?.madlan_pages ?? 4) > 10 && (
-                        <AlertTriangle className="h-3 w-3 text-destructive" />
-                      )}
-                    </Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={15}
-                      value={settings?.scraping?.madlan_pages ?? 4}
-                      onChange={(e) => handleNumberChange('scraping', 'madlan_pages', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 4 | זהירות: עלול להיחסם מעל 10</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>דפים לסריקה - הומלס</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={10}
-                      value={settings?.scraping?.homeless_pages ?? 0}
-                      onChange={(e) => handleNumberChange('scraping', 'homeless_pages', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 0 (מושבת)</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>השהיה בין בקשות (ms)</Label>
-                    <Input
-                      type="number"
-                      min={500}
-                      max={10000}
-                      step={100}
-                      value={settings?.scraping?.delay_between_requests_ms ?? 1500}
-                      onChange={(e) => handleNumberChange('scraping', 'delay_between_requests_ms', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 1500ms</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>השהיה מדלן (ms)</Label>
-                    <Input
-                      type="number"
-                      min={1000}
-                      max={15000}
-                      step={500}
-                      value={settings?.scraping?.madlan_delay_ms ?? 5000}
-                      onChange={(e) => handleNumberChange('scraping', 'madlan_delay_ms', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 5000ms</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Timeout סריקה תקועה (דקות)</Label>
-                    <Input
-                      type="number"
-                      min={10}
-                      max={120}
-                      value={settings?.scraping?.stuck_timeout_minutes ?? 30}
-                      onChange={(e) => handleNumberChange('scraping', 'stuck_timeout_minutes', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">ברירת מחדל: 30 דקות</p>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
 
               {/* Duplicate Settings */}
               <div className="space-y-4">
