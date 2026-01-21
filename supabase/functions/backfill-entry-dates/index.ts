@@ -37,6 +37,165 @@ function parseHebrewDate(dateStr: string): string | null {
   return null;
 }
 
+interface PropertyToProcess {
+  id: string;
+  source_url: string;
+  source: string;
+  features: Record<string, unknown> | null;
+  title: string | null;
+  address: string | null;
+  created_at: string;
+}
+
+interface ProcessResult {
+  id: string;
+  success: boolean;
+  entryDate?: string | null;
+  immediateEntry?: boolean;
+  error?: string;
+}
+
+// Process a single property with retry logic
+async function processProperty(
+  property: PropertyToProcess,
+  firecrawlKey: string,
+  lovableKey: string,
+  maxRetries: number = 2
+): Promise<ProcessResult> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      // Skip invalid URLs
+      if (!property.source_url || !property.source_url.startsWith('http')) {
+        return { id: property.id, success: false, error: 'Invalid URL' };
+      }
+
+      // Scrape with Firecrawl
+      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: property.source_url,
+          formats: ['markdown'],
+          onlyMainContent: true,
+          timeout: 20000
+        })
+      });
+
+      if (!scrapeResponse.ok) {
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+        return { id: property.id, success: false, error: `Firecrawl ${scrapeResponse.status}` };
+      }
+
+      const scrapeData = await scrapeResponse.json();
+      const markdown = scrapeData.data?.markdown || '';
+
+      if (!markdown || markdown.length < 100) {
+        return { id: property.id, success: false, error: 'No content' };
+      }
+
+      // Extract entry date using AI
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'system',
+              content: `You extract entry/availability dates from Hebrew property listings.
+
+Look for:
+- "תאריך כניסה" followed by a date or "מיידי"/"גמיש"
+- "כניסה מידית" or "כניסה מיידית"
+- "כניסה:" followed by date info
+- Dates like "01/03/2026", "1.3.26", "מרץ 2026"
+- "זמין מ-" or "פנוי מ-"
+
+Return JSON only, no extra text.`
+            },
+            {
+              role: 'user',
+              content: `Extract entry date:\n\n${markdown.substring(0, 2500)}`
+            }
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'set_entry_date',
+              description: 'Set entry date for property',
+              parameters: {
+                type: 'object',
+                properties: {
+                  entry_date: { type: 'string', description: 'YYYY-MM-DD or null' },
+                  immediate: { type: 'boolean', description: 'True if immediate entry' },
+                  raw_date_text: { type: 'string', description: 'Original text found' }
+                },
+                required: ['immediate']
+              }
+            }
+          }],
+          tool_choice: { type: 'function', function: { name: 'set_entry_date' } }
+        })
+      });
+
+      if (!aiResponse.ok) {
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+        return { id: property.id, success: false, error: `AI ${aiResponse.status}` };
+      }
+
+      const aiData = await aiResponse.json();
+      let entryDate: string | null = null;
+      let immediateEntry = false;
+      let rawDateText: string | null = null;
+
+      try {
+        const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+        if (toolCall?.function?.arguments) {
+          const args = JSON.parse(toolCall.function.arguments);
+          entryDate = args.entry_date || null;
+          immediateEntry = args.immediate || false;
+          rawDateText = args.raw_date_text || null;
+
+          // Parse if non-standard format
+          if (entryDate && !entryDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            entryDate = parseHebrewDate(entryDate) || entryDate;
+          }
+        }
+      } catch {
+        // Parse error - treat as no data found
+      }
+
+      return {
+        id: property.id,
+        success: true,
+        entryDate,
+        immediateEntry
+      };
+
+    } catch (error) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      return { id: property.id, success: false, error: error.message };
+    }
+  }
+  
+  return { id: property.id, success: false, error: 'Max retries exceeded' };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -51,21 +210,31 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const batchSize = body.batch_size || 10;
+    const batchSize = body.batch_size || 30;
     const continueFrom = body.continue_from || null;
+    const cancelRequested = body.cancel === true;
 
-    console.log(`Starting backfill-entry-dates. Batch size: ${batchSize}, Continue from: ${continueFrom}`);
+    console.log(`Backfill-entry-dates: batch=${batchSize}, continueFrom=${continueFrom}, cancel=${cancelRequested}`);
 
-    if (!FIRECRAWL_API_KEY) {
-      throw new Error('FIRECRAWL_API_KEY not configured');
+    if (!FIRECRAWL_API_KEY) throw new Error('FIRECRAWL_API_KEY not configured');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+
+    // Handle cancel request
+    if (cancelRequested) {
+      await supabase
+        .from('backfill_progress')
+        .update({ status: 'cancelled', completed_at: new Date().toISOString() })
+        .eq('task_name', 'backfill_entry_dates')
+        .eq('status', 'running');
+      
+      return new Response(JSON.stringify({ success: true, cancelled: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
 
-    // Create or get progress record
-    let progressId: string;
+    // Get or create progress record
     const taskName = 'backfill_entry_dates';
+    let progressId: string;
     
     const { data: existingProgress } = await supabase
       .from('backfill_progress')
@@ -76,15 +245,17 @@ serve(async (req) => {
 
     if (existingProgress) {
       progressId = existingProgress.id;
-      console.log(`Resuming existing progress: ${progressId}`);
+      console.log(`Resuming progress: ${progressId}`);
     } else {
-      // Count total properties to process
+      // Count properties that need processing
+      // CRITICAL: Only select properties where entry_date_source IS NULL
       const { count: totalCount } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true)
         .eq('property_type', 'rent')
-        .or('features->entry_date.is.null,features->immediate_entry.is.null');
+        .not('source_url', 'is', null)
+        .is('features->entry_date_source', null);
 
       const { data: newProgress, error: progressError } = await supabase
         .from('backfill_progress')
@@ -102,36 +273,34 @@ serve(async (req) => {
 
       if (progressError) throw progressError;
       progressId = newProgress.id;
-      console.log(`Created new progress record: ${progressId}, total items: ${totalCount}`);
+      console.log(`Created progress: ${progressId}, total: ${totalCount}`);
     }
 
-    // Get properties to process - rental properties without entry_date
+    // Fetch properties to process
+    // CRITICAL: Filter by entry_date_source IS NULL to avoid reprocessing
     let query = supabase
       .from('scouted_properties')
-      .select('id, source_url, source, features, title, address')
+      .select('id, source_url, source, features, title, address, created_at')
       .eq('is_active', true)
       .eq('property_type', 'rent')
-      .or('features->entry_date.is.null,features->immediate_entry.is.null')
       .not('source_url', 'is', null)
-      .order('id', { ascending: true })
+      .is('features->entry_date_source', null)
+      .order('created_at', { ascending: true })
       .limit(batchSize);
 
+    // Use created_at for pagination (more stable than ID)
     if (continueFrom) {
-      query = query.gt('id', continueFrom);
+      query = query.gt('created_at', continueFrom);
     }
 
     const { data: properties, error: fetchError } = await query;
-
     if (fetchError) throw fetchError;
 
     if (!properties || properties.length === 0) {
       // Mark as completed
       await supabase
         .from('backfill_progress')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', progressId);
 
       return new Response(JSON.stringify({
@@ -143,187 +312,67 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${properties.length} properties`);
+    console.log(`Processing ${properties.length} properties in parallel batches`);
 
+    // Process in parallel batches of 5
+    const PARALLEL_LIMIT = 5;
     let successCount = 0;
     let failCount = 0;
-    let lastProcessedId = '';
+    let lastCreatedAt = '';
 
-    for (const property of properties) {
-      try {
-        console.log(`Processing property ${property.id}: ${property.source_url}`);
+    for (let i = 0; i < properties.length; i += PARALLEL_LIMIT) {
+      const batch = properties.slice(i, i + PARALLEL_LIMIT);
+      
+      const results = await Promise.allSettled(
+        batch.map(prop => processProperty(prop, FIRECRAWL_API_KEY, LOVABLE_API_KEY))
+      );
+
+      // Process results
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
+        const property = batch[j];
         
-        // Skip if URL is invalid
-        if (!property.source_url || !property.source_url.startsWith('http')) {
-          console.log(`Skipping invalid URL: ${property.source_url}`);
-          failCount++;
-          continue;
-        }
-
-        // Scrape with Firecrawl
-        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: property.source_url,
-            formats: ['markdown'],
-            onlyMainContent: true,
-            timeout: 30000
-          })
-        });
-
-        if (!scrapeResponse.ok) {
-          console.error(`Firecrawl error for ${property.id}: ${scrapeResponse.status}`);
-          failCount++;
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
-
-        const scrapeData = await scrapeResponse.json();
-        const markdown = scrapeData.data?.markdown || '';
-
-        if (!markdown || markdown.length < 100) {
-          console.log(`No content for ${property.id}, skipping`);
-          failCount++;
-          continue;
-        }
-
-        // Extract entry date using AI
-        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [
-              {
-                role: 'system',
-                content: `You are a real estate data extraction expert. Extract the entry/availability date from the Hebrew property listing.
-
-Look for these patterns:
-- "תאריך כניסה" (entry date) followed by a date
-- "כניסה מידית" or "מיידי" (immediate entry)
-- Dates like "01/03/2026", "1.3.26", "מרץ 2026"
-- "זמין מ-" or "פנוי מ-" followed by a date
-
-Return ONLY a JSON object with no additional text.`
-              },
-              {
-                role: 'user',
-                content: `Extract the entry/availability date from this property listing:\n\n${markdown.substring(0, 3000)}`
-              }
-            ],
-            tools: [{
-              type: 'function',
-              function: {
-                name: 'set_entry_date',
-                description: 'Set the entry date for a property',
-                parameters: {
-                  type: 'object',
-                  properties: {
-                    entry_date: { 
-                      type: 'string', 
-                      description: 'Entry date in format YYYY-MM-DD, or null if not found' 
-                    },
-                    immediate: { 
-                      type: 'boolean',
-                      description: 'True if immediate entry (כניסה מידית/מיידי)' 
-                    },
-                    raw_date_text: {
-                      type: 'string',
-                      description: 'The original date text found in the listing'
-                    }
-                  },
-                  required: ['immediate']
-                }
-              }
-            }],
-            tool_choice: { type: 'function', function: { name: 'set_entry_date' } }
-          })
-        });
-
-        if (!aiResponse.ok) {
-          console.error(`AI error for ${property.id}: ${aiResponse.status}`);
-          failCount++;
-          continue;
-        }
-
-        const aiData = await aiResponse.json();
-        let entryDate: string | null = null;
-        let immediateEntry = false;
-        let rawDateText: string | null = null;
-
-        try {
-          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall?.function?.arguments) {
-            const args = JSON.parse(toolCall.function.arguments);
-            entryDate = args.entry_date || null;
-            immediateEntry = args.immediate || false;
-            rawDateText = args.raw_date_text || null;
-
-            // Try to parse if AI gave us a different format
-            if (entryDate && !entryDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              entryDate = parseHebrewDate(entryDate) || entryDate;
-            }
-          }
-        } catch (parseErr) {
-          console.error(`Error parsing AI response for ${property.id}:`, parseErr);
-        }
-
-        // Only update if we found something
-        if (entryDate || immediateEntry) {
+        if (result.status === 'fulfilled' && result.value.success) {
+          const { entryDate, immediateEntry } = result.value;
+          
+          // Update the property with extracted data
           const updatedFeatures = {
             ...(property.features || {}),
             entry_date: entryDate,
             immediate_entry: immediateEntry,
-            entry_date_source: 'backfill',
-            entry_date_raw: rawDateText
-          };
-
-          const { error: updateError } = await supabase
-            .from('scouted_properties')
-            .update({ features: updatedFeatures })
-            .eq('id', property.id);
-
-          if (updateError) {
-            console.error(`Update error for ${property.id}:`, updateError);
-            failCount++;
-          } else {
-            console.log(`Updated ${property.id}: entry_date=${entryDate}, immediate=${immediateEntry}`);
-            successCount++;
-          }
-        } else {
-          console.log(`No entry date found for ${property.id}`);
-          // Mark as processed even if no date found
-          const updatedFeatures = {
-            ...(property.features || {}),
-            entry_date: null,
-            immediate_entry: false,
-            entry_date_source: 'backfill_not_found'
+            entry_date_source: (entryDate || immediateEntry) ? 'backfill' : 'backfill_not_found'
           };
 
           await supabase
             .from('scouted_properties')
             .update({ features: updatedFeatures })
             .eq('id', property.id);
-          
+
           successCount++;
+          console.log(`✓ ${property.id}: date=${entryDate}, immediate=${immediateEntry}`);
+        } else {
+          // Mark as processed even if failed (to avoid retrying forever)
+          const updatedFeatures = {
+            ...(property.features || {}),
+            entry_date_source: 'backfill_failed'
+          };
+          
+          await supabase
+            .from('scouted_properties')
+            .update({ features: updatedFeatures })
+            .eq('id', property.id);
+          
+          failCount++;
+          const error = result.status === 'rejected' ? result.reason : result.value.error;
+          console.log(`✗ ${property.id}: ${error}`);
         }
+        
+        lastCreatedAt = property.created_at;
+      }
 
-        lastProcessedId = property.id;
-
-        // Delay between requests
-        await new Promise(r => setTimeout(r, 2000));
-
-      } catch (propError) {
-        console.error(`Error processing property ${property.id}:`, propError);
-        failCount++;
-        lastProcessedId = property.id;
+      // Small delay between parallel batches
+      if (i + PARALLEL_LIMIT < properties.length) {
+        await new Promise(r => setTimeout(r, 500));
       }
     }
 
@@ -340,20 +389,20 @@ Return ONLY a JSON object with no additional text.`
         processed_items: (currentProgress?.processed_items || 0) + properties.length,
         successful_items: (currentProgress?.successful_items || 0) + successCount,
         failed_items: (currentProgress?.failed_items || 0) + failCount,
-        last_processed_id: lastProcessedId,
+        last_processed_id: lastCreatedAt, // Store created_at for pagination
         updated_at: new Date().toISOString()
       })
       .eq('id', progressId);
 
-    // Check if there are more to process
+    // Check remaining
     const { count: remainingCount } = await supabase
       .from('scouted_properties')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
       .eq('property_type', 'rent')
-      .or('features->entry_date.is.null,features->immediate_entry.is.null')
       .not('source_url', 'is', null)
-      .gt('id', lastProcessedId);
+      .is('features->entry_date_source', null)
+      .gt('created_at', lastCreatedAt);
 
     const hasMore = (remainingCount || 0) > 0;
 
@@ -362,7 +411,7 @@ Return ONLY a JSON object with no additional text.`
       processed: properties.length,
       successful: successCount,
       failed: failCount,
-      lastProcessedId,
+      lastProcessedAt: lastCreatedAt,
       hasMore,
       remainingCount
     }), {
@@ -372,7 +421,6 @@ Return ONLY a JSON object with no additional text.`
   } catch (error) {
     console.error('Backfill error:', error);
     
-    // Update progress as failed
     await supabase
       .from('backfill_progress')
       .update({
