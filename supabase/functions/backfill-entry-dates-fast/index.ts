@@ -86,8 +86,11 @@ function extractEntryDateFast(markdown: string): { date: string | null; immediat
   return { date: null, immediate: false };
 }
 
-// Fast scrape with minimal settings
+// Fast scrape with timeout protection
 async function fastScrape(url: string, apiKey: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per scrape
+  
   try {
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
@@ -99,18 +102,25 @@ async function fastScrape(url: string, apiKey: string): Promise<string | null> {
         url,
         formats: ['markdown'],
         onlyMainContent: true,
-        timeout: 10000,    // 10s instead of 20s
-        waitFor: 2000,     // 2s instead of 8s
-        // Use 'auto' proxy (1 credit) instead of 'stealth' (5 credits)
-      })
+        timeout: 8000,     // 8s instead of 10s
+        waitFor: 1500,     // 1.5s instead of 2s
+      }),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+    
     if (!response.ok) return null;
     
     const data = await response.json();
     return data.data?.markdown || data.markdown || null;
   } catch (error) {
-    console.error('Scrape error:', error);
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.log('Scrape timeout for:', url);
+    } else {
+      console.error('Scrape error:', error);
+    }
     return null;
   }
 }
@@ -207,7 +217,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const batchSize = body.batch_size || 50;  // Larger batches
+    const batchSize = body.batch_size || 10;  // Smaller batches to avoid timeout
     const useAiFallback = body.use_ai_fallback !== false; // Default: use AI fallback
     const cancelRequested = body.cancel === true;
 
@@ -319,8 +329,8 @@ serve(async (req) => {
 
     console.log(`Processing ${properties.length} properties with fast method`);
 
-    // Process in parallel - higher concurrency for speed
-    const PARALLEL_LIMIT = 15;
+    // Process in parallel - reduced concurrency to prevent timeout
+    const PARALLEL_LIMIT = 5;
     let totalSuccessCount = 0;
     let totalFailCount = 0;
     let totalRegexCount = 0;
