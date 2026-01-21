@@ -86,7 +86,12 @@ serve(async (req) => {
     let totalNewProperties = 0;
 
     for (const config of configs) {
-      console.log(`Processing Madlan config: ${config.name}`);
+      // Get config-specific parameters with fallback chain: config -> settings -> default
+      const configMaxPages = config.max_pages ?? settings.scraping.madlan_pages ?? MADLAN_CONFIG.MAX_PAGES;
+      const configPageDelay = (config.page_delay_seconds ?? MADLAN_CONFIG.PAGE_DELAY_MS / 1000) * 1000;
+      const configWaitFor = config.wait_for_ms ?? MADLAN_CONFIG.WAIT_FOR_MS;
+      
+      console.log(`Processing Madlan config: ${config.name} (pages: ${configMaxPages}, delay: ${configPageDelay}ms, wait: ${configWaitFor}ms)`);
 
       // Check for existing running job
       const { data: existingRun } = await supabase
@@ -122,16 +127,16 @@ serve(async (req) => {
       let configPropertiesFound = 0;
       let configNewProperties = 0;
 
-      for (let page = 1; page <= maxPages; page++) {
+      for (let page = 1; page <= configMaxPages; page++) {
         const urls = buildSinglePageUrl(config, page);
         if (!urls.length) continue;
 
         const url = urls[0];
-        console.log(`🔵 Madlan: Scraping page ${page}/${maxPages}: ${url}`);
+        console.log(`🔵 Madlan: Scraping page ${page}/${configMaxPages}: ${url}`);
 
         // Add delay between pages (not for first page)
         if (page > 1) {
-          const delay = MADLAN_CONFIG.PAGE_DELAY_MS + Math.random() * 3000;
+          const delay = configPageDelay + Math.random() * 3000;
           console.log(`Waiting ${Math.round(delay)}ms before next Madlan page...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
