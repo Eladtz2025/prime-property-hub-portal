@@ -11,6 +11,14 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw, Calculator, Timer } from 'lucide-react';
 
+interface PageStat {
+  page: number;
+  url: string;
+  found: number;
+  new: number;
+  duration_ms: number;
+}
+
 interface ScoutRun {
   id: string;
   config_id: string | null;
@@ -26,6 +34,7 @@ interface ScoutRun {
   retry_count?: number;
   retry_of?: string | null;
   max_retries?: number;
+  page_stats?: PageStat[];
   scout_configs?: {
     name: string;
     property_type?: 'rent' | 'sale' | 'both';
@@ -76,7 +85,14 @@ export const ScoutRunHistory: React.FC = () => {
         .order('started_at', { ascending: false });
       
       if (error) throw error;
-      return data as ScoutRun[];
+      
+      // Parse page_stats from JSON if needed
+      return (data || []).map(run => ({
+        ...run,
+        page_stats: Array.isArray(run.page_stats) 
+          ? (run.page_stats as unknown as PageStat[]) 
+          : undefined
+      })) as ScoutRun[];
     },
     refetchInterval: 10000
   });
@@ -531,6 +547,39 @@ export const ScoutRunHistory: React.FC = () => {
                     <span>WhatsApp: {run.whatsapp_sent}</span>
                   )}
                 </div>
+
+                {/* Page Stats Table */}
+                {run.page_stats && run.page_stats.length > 0 && (
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs font-medium mb-2 text-muted-foreground">פירוט לפי דף:</p>
+                    <div className="rounded border overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="px-2 py-1 text-right">דף</th>
+                            <th className="px-2 py-1 text-center">נמצאו</th>
+                            <th className="px-2 py-1 text-center">חדשות</th>
+                            <th className="px-2 py-1 text-left">משך</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {run.page_stats.map((stat) => (
+                            <tr key={stat.page} className="border-t border-muted/50">
+                              <td className="px-2 py-1 text-right font-medium">{stat.page}</td>
+                              <td className="px-2 py-1 text-center">{stat.found}</td>
+                              <td className="px-2 py-1 text-center text-green-600">{stat.new}</td>
+                              <td className="px-2 py-1 text-left text-muted-foreground">
+                                {stat.duration_ms < 1000 
+                                  ? `${stat.duration_ms}ms` 
+                                  : `${(stat.duration_ms / 1000).toFixed(1)}ש`}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
                 
                 {run.error_message && (
                   <div className={`p-2 rounded text-xs ${

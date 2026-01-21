@@ -2407,6 +2407,7 @@ export type Database = {
           leads_matched: number | null
           max_retries: number | null
           new_properties: number | null
+          page_stats: Json | null
           properties_found: number | null
           retry_count: number | null
           retry_of: string | null
@@ -2423,6 +2424,7 @@ export type Database = {
           leads_matched?: number | null
           max_retries?: number | null
           new_properties?: number | null
+          page_stats?: Json | null
           properties_found?: number | null
           retry_count?: number | null
           retry_of?: string | null
@@ -2439,6 +2441,7 @@ export type Database = {
           leads_matched?: number | null
           max_retries?: number | null
           new_properties?: number | null
+          page_stats?: Json | null
           properties_found?: number | null
           retry_count?: number | null
           retry_of?: string | null

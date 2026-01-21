@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Play, Trash2, Edit, Loader2 } from 'lucide-react';
+import { Plus, Play, Trash2, Edit, Loader2, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -59,10 +59,24 @@ export const ScoutConfigManager: React.FC = () => {
       const { data, error } = await supabase
         .from('scout_configs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name', { ascending: true });
       if (error) throw error;
       return data as ScoutConfig[];
     }
+  });
+
+  // Fetch active runs to show stop button
+  const { data: activeRuns } = useQuery({
+    queryKey: ['active-scout-runs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scout_runs')
+        .select('id, config_id')
+        .eq('status', 'running');
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 5000
   });
 
   const createMutation = useMutation({
@@ -146,6 +160,30 @@ export const ScoutConfigManager: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
     }
   });
+
+  const stopMutation = useMutation({
+    mutationFn: async (configId: string) => {
+      const { data, error } = await supabase.functions.invoke('stop-scout-run', {
+        body: { config_id: configId }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
+      queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['scout-runs'] });
+      toast.success(`הסריקה הופסקה (${data.stopped_count} ריצות)`);
+    },
+    onError: (error) => {
+      toast.error('שגיאה בעצירת הסריקה');
+      console.error(error);
+    }
+  });
+
+  const getActiveRunForConfig = (configId: string) => {
+    return activeRuns?.find(run => run.config_id === configId);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -420,20 +458,37 @@ export const ScoutConfigManager: React.FC = () => {
                     }
                   />
                   
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => runMutation.mutate(config.id)}
-                    disabled={runMutation.isPending}
-                    title="הרץ עכשיו"
-                  >
-                    {runMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {getActiveRunForConfig(config.id) ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => stopMutation.mutate(config.id)}
+                      disabled={stopMutation.isPending}
+                      title="עצור סריקה"
+                    >
+                      {stopMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => runMutation.mutate(config.id)}
+                      disabled={runMutation.isPending}
+                      title="הרץ עכשיו"
+                    >
+                      {runMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
 
                   <Button
                     variant="outline"
