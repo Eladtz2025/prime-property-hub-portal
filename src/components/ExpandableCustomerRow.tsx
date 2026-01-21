@@ -528,47 +528,9 @@ export const ExpandableCustomerRow = ({
     return missing;
   };
 
-  // Check if customer has missing fields (for row display)
-  const getCustomerMissingFields = (): string[] => {
-    const missing: string[] = [];
-    
-    // 1. עיר - חובה
-    if (!customer.preferred_cities?.length) {
-      missing.push('עיר');
-    }
-    
-    // 2. שכונה - חובה
-    if (!customer.preferred_neighborhoods?.length) {
-      missing.push('שכונה');
-    }
-    
-    // 3. תקציב - לפחות אחד (מינימום או מקסימום)
-    if (!customer.budget_min && !customer.budget_max) {
-      missing.push('תקציב');
-    }
-    
-    // 4. חדרים - לפחות אחד (מינימום או מקסימום)
-    if (!customer.rooms_min && !customer.rooms_max) {
-      missing.push('חדרים');
-    }
-    
-    // 5. סוג נכס - חובה
-    if (!customer.property_type) {
-      missing.push('סוג נכס');
-    }
-    
-    // 6. תאריך כניסה - לפחות אחד (מיידי, גמיש, או תאריך)
-    const hasEntryInfo = customer.immediate_entry || 
-                         customer.flexible_move_date || 
-                         customer.move_in_date;
-    if (!hasEntryInfo) {
-      missing.push('תאריך כניסה');
-    }
-    
-    return missing;
-  };
-  
-  const customerMissingFields = getCustomerMissingFields();
+  // Use eligibility status from DB trigger instead of hardcoded logic
+  const isEligibleForMatching = customer.matching_status === 'eligible';
+  const eligibilityReason = customer.eligibility_reason;
 
   const handleSaveForm = async () => {
     // Validate basic fields
@@ -752,14 +714,14 @@ export const ExpandableCustomerRow = ({
                 ) : (
                   <span className="font-medium text-sm">{customer.name}</span>
                 )}
-                {customerMissingFields.length > 0 && (
+                {!isEligibleForMatching && eligibilityReason && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <AlertCircle className="h-4 w-4 text-amber-500 cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-[200px]">
-                        <p className="text-sm">שדות חסרים: {customerMissingFields.join(', ')}</p>
+                        <p className="text-sm">{eligibilityReason}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
