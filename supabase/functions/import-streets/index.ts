@@ -149,15 +149,17 @@ serve(async (req) => {
     }
 
     if (mode === 'import') {
-      // Import streets from Wikibooks
+      // Import streets from Wikisource (correct source with full data)
       const letters = letter ? [letter] : ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ', 'ק', 'ר', 'ש', 'ת'];
       
       const allStreets: string[] = [];
       const errors: string[] = [];
+      const letterStats: Record<string, number> = {};
 
       for (const l of letters) {
         try {
-          const url = `https://he.wikibooks.org/wiki/מדריך_רחובות_תל_אביב-יפו/${l}`;
+          // Use Wikisource instead of Wikibooks - this has the complete data
+          const url = `https://he.wikisource.org/wiki/מדריך_רחובות_תל_אביב_יפו/${l}`;
           console.log(`Scraping: ${url}`);
 
           if (!firecrawlApiKey) {
@@ -184,32 +186,41 @@ serve(async (req) => {
 
           const data = await response.json();
           const markdown = data.data?.markdown || '';
+          let letterCount = 0;
           
-          // Extract street names from markdown
-          // Wikibooks format: typically "* **רחוב שם** - תיאור"
-          const streetMatches = markdown.matchAll(/\*\*([א-ת\s\-\'\"]+)\*\*/g);
-          for (const match of streetMatches) {
-            const streetName = match[1].trim();
-            if (streetName.length > 2 && streetName.length < 50) {
-              allStreets.push(streetName);
-            }
-          }
-
-          // Also try simpler patterns
-          const lines = markdown.split('\n');
-          for (const line of lines) {
-            // Pattern: "* רחוב שם" or "- רחוב שם"
-            const lineMatch = line.match(/^[\*\-]\s*([א-ת\s\-\'\"]{3,40})/);
-            if (lineMatch) {
-              const streetName = lineMatch[1].trim();
+          // Wikisource format: ## רחוב שם (תיאור)
+          // Extract H2 headers which contain street names
+          const h2Matches = markdown.matchAll(/^##\s+([א-ת][א-ת\s\-\'\"׳״]+?)(?:\s*[\(\[]|$)/gm);
+          for (const match of h2Matches) {
+            let streetName = match[1].trim();
+            // Clean up common prefixes
+            streetName = streetName.replace(/^רחוב\s+/, '').replace(/^שדרות\s+/, 'שדרות ');
+            if (streetName.length > 1 && streetName.length < 50) {
               if (!allStreets.includes(streetName)) {
                 allStreets.push(streetName);
+                letterCount++;
               }
             }
           }
 
-          // Add delay between requests
-          await new Promise(r => setTimeout(r, 1000));
+          // Also try bold patterns as backup
+          const boldMatches = markdown.matchAll(/\*\*([א-ת][א-ת\s\-\'\"׳״]{2,40})\*\*/g);
+          for (const match of boldMatches) {
+            let streetName = match[1].trim();
+            streetName = streetName.replace(/^רחוב\s+/, '').replace(/^שדרות\s+/, 'שדרות ');
+            if (streetName.length > 1 && streetName.length < 50) {
+              if (!allStreets.includes(streetName)) {
+                allStreets.push(streetName);
+                letterCount++;
+              }
+            }
+          }
+
+          letterStats[l] = letterCount;
+          console.log(`Letter ${l}: found ${letterCount} streets`);
+
+          // Add delay between requests to avoid rate limiting
+          await new Promise(r => setTimeout(r, 2000));
 
         } catch (err) {
           errors.push(`Error processing ${l}: ${err instanceof Error ? err.message : 'Unknown'}`);
@@ -232,6 +243,7 @@ serve(async (req) => {
         total_scraped: allStreets.length,
         new_streets: newStreets.length,
         streets: newStreets.slice(0, 200),
+        letter_stats: letterStats,
         errors
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
