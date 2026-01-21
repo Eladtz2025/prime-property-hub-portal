@@ -979,104 +979,22 @@ export const UnifiedScoutSettings: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="font-medium">התאמה ללקוחות</h4>
-                          <p className="text-sm text-muted-foreground">
-                            מקס׳ {settings?.matching?.max_matches_per_property ?? 20} התאמות • 
-                            וואטסאפ: {settings?.matching?.auto_send_whatsapp ? 'פעיל' : 'כבוי'}
-                          </p>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              מקס׳ {settings?.matching?.max_matches_per_property ?? 20} התאמות
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3" />
+                              <span>08:15, 16:15, 22:15</span>
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">אוטומטי</Badge>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <Pencil className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-
-        {/* Schedule Info */}
-        <AccordionItem value="schedule" className="border rounded-lg bg-card">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <span className="font-semibold">לוח זמנים</span>
-              <Badge variant="outline" className="mr-2">
-                אוטומטי
-              </Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      סריקות נכסים
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">08:00</Badge>
-                      <span className="text-muted-foreground">בוקר</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">16:00</Badge>
-                      <span className="text-muted-foreground">צהריים</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">22:00</Badge>
-                      <span className="text-muted-foreground">ערב</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      התאמה ללקוחות
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">08:15</Badge>
-                      <span className="text-muted-foreground">+15 דקות</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">16:15</Badge>
-                      <span className="text-muted-foreground">+15 דקות</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">22:15</Badge>
-                      <span className="text-muted-foreground">+15 דקות</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      בדיקת זמינות
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">05:00</Badge>
-                      <span className="text-muted-foreground">יומי</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      בדיקת לינקים מתים וסימון נכסים לא פעילים
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm">
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                <span>לשינוי לוח הזמנים נדרשת עריכת מסד הנתונים (cron jobs)</span>
               </div>
             </div>
           </AccordionContent>
