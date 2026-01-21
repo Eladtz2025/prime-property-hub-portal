@@ -342,6 +342,13 @@ export function extractStreetName(address: string): string {
   return address.replace(/[0-9].*$/, '').trim();
 }
 
+// Extract house number from address
+export function extractHouseNumber(address: string): number | null {
+  if (!address) return null;
+  const match = address.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 // Match a property neighborhood string against lead's selected neighborhoods
 export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhoods: string[], city: string): boolean {
   if (!propertyNeighborhood || !leadNeighborhoods?.length) return false;

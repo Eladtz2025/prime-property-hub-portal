@@ -1,7 +1,7 @@
 // Shared matching logic for Edge Functions
 // SIMPLIFIED: Binary match/no-match with dynamic price flexibility
 
-import { matchNeighborhood, extractStreetName } from "./locations.ts";
+import { matchNeighborhood, extractStreetName, extractHouseNumber } from "./locations.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ===== INTERFACES =====
@@ -206,22 +206,48 @@ export async function calculateMatch(
   // If property has no neighborhood but has address, try to find it from street_neighborhoods table
   if (!neighborhoodToMatch && property.address) {
     const streetName = extractStreetName(property.address);
+    const houseNumber = extractHouseNumber(property.address);
+    
     if (streetName) {
       try {
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
         const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        const { data: streetData } = await supabase
-          .from('street_neighborhoods')
-          .select('neighborhood')
-          .eq('street_name', streetName)
-          .eq('city', city)
-          .single();
+        // First try to find by street name AND house number in range
+        if (houseNumber) {
+          const { data: rangeData } = await supabase
+            .from('street_neighborhoods')
+            .select('neighborhood, confidence')
+            .eq('street_name', streetName)
+            .eq('city', city)
+            .lte('number_from', houseNumber)
+            .gte('number_to', houseNumber)
+            .order('confidence', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (rangeData?.neighborhood) {
+            neighborhoodToMatch = rangeData.neighborhood;
+            neighborhoodSource = 'street_range';
+          }
+        }
         
-        if (streetData?.neighborhood) {
-          neighborhoodToMatch = streetData.neighborhood;
-          neighborhoodSource = 'street_lookup';
+        // Fallback: find by street name only (most common neighborhood)
+        if (!neighborhoodToMatch) {
+          const { data: streetData } = await supabase
+            .from('street_neighborhoods')
+            .select('neighborhood')
+            .eq('street_name', streetName)
+            .eq('city', city)
+            .order('confidence', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (streetData?.neighborhood) {
+            neighborhoodToMatch = streetData.neighborhood;
+            neighborhoodSource = 'street_lookup';
+          }
         }
       } catch (error) {
         console.log(`Street lookup failed for ${streetName}: ${error}`);
@@ -235,10 +261,12 @@ export async function calculateMatch(
   
   const isNeighborhoodMatch = matchNeighborhood(neighborhoodToMatch, lead.preferred_neighborhoods, city);
   if (!isNeighborhoodMatch) {
-    const source = neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
+    const source = neighborhoodSource === 'street_range' ? ' (לפי כתובת)' : 
+                   neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
     return { lead, matchScore: 0, matchReasons: [`שכונה לא מתאימה: ${neighborhoodToMatch}${source}`], priority: 0 };
   }
-  const neighborhoodNote = neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
+  const neighborhoodNote = neighborhoodSource === 'street_range' ? ' (לפי כתובת)' : 
+                            neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
   reasons.push(`שכונה מועדפת: ${neighborhoodToMatch}${neighborhoodNote} ✓`);
   
   // ===== PRICE MUST BE IN RANGE (with dynamic flexibility) =====

@@ -2730,6 +2730,8 @@ export type Database = {
           is_verified: boolean | null
           neighborhood: string
           neighborhood_normalized: string | null
+          number_from: number | null
+          number_to: number | null
           street_name: string
           updated_at: string | null
         }
@@ -2741,6 +2743,8 @@ export type Database = {
           is_verified?: boolean | null
           neighborhood: string
           neighborhood_normalized?: string | null
+          number_from?: number | null
+          number_to?: number | null
           street_name: string
           updated_at?: string | null
         }
@@ -2752,6 +2756,8 @@ export type Database = {
           is_verified?: boolean | null
           neighborhood?: string
           neighborhood_normalized?: string | null
+          number_from?: number | null
+          number_to?: number | null
           street_name?: string
           updated_at?: string | null
         }
