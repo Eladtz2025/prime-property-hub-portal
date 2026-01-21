@@ -1,34 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, validateScrapedContent, cleanMarkdownContent } from "../_shared/scraping.ts";
+import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
-import { detectBroker, normalizeCityName } from "../_shared/broker-detection.ts";
 import { fetchScoutSettings } from "../_shared/settings.ts";
+import { ScrapedProperty, saveProperty } from "../_shared/property-helpers.ts";
+import { extractPropertiesWithAI } from "../_shared/ai-extraction.ts";
 
 /**
  * Standalone Edge Function for scraping Madlan ONLY
  * Runs independently with Madlan-specific configuration
  */
-
-interface ScrapedProperty {
-  source: string;
-  source_url: string;
-  source_id: string;
-  title?: string;
-  city?: string;
-  neighborhood?: string;
-  address?: string;
-  price?: number;
-  rooms?: number;
-  size?: number;
-  floor?: number;
-  property_type: 'rent' | 'sale';
-  description?: string;
-  images?: string[];
-  features?: Record<string, boolean>;
-  raw_data?: any;
-  is_private?: boolean | null;
-}
 
 // Madlan-specific configuration
 const MADLAN_CONFIG = {
@@ -39,6 +20,13 @@ const MADLAN_CONFIG = {
   WAIT_FOR_MS: 8000,
   MAX_RETRIES: 3
 };
+
+// User agents for rotation
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -193,7 +181,7 @@ serve(async (req) => {
           }
 
           const extractedProperties = await extractPropertiesWithAI(
-            markdown, html, url,
+            markdown, html, url, 'madlan',
             config.property_type === 'both' ? 'rent' : config.property_type,
             lovableApiKey, config.cities
           );
@@ -311,12 +299,6 @@ serve(async (req) => {
 
 // ==================== Madlan-specific scraping ====================
 
-const userAgents = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
-];
-
 async function scrapeMadlanWithRetry(url: string, apiKey: string, maxRetries: number): Promise<any> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -379,250 +361,4 @@ async function scrapeMadlanWithRetry(url: string, apiKey: string, maxRetries: nu
   }
   
   return null;
-}
-
-// ==================== Helper Functions ====================
-
-async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{ isNew: boolean }> {
-  const normalizedCity = normalizeCityName(property.city);
-  
-  let duplicateGroupId: string | null = null;
-  let isPrimaryListing = true;
-  const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
-  const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
-  
-  if (duplicateCheckPossible) {
-    const { data: duplicates } = await supabase
-      .rpc('find_duplicate_property', {
-        p_address: property.address,
-        p_rooms: property.rooms,
-        p_floor: property.floor || 0,
-        p_property_type: property.property_type || 'rental',
-        p_city: normalizedCity,
-        p_exclude_id: null
-      });
-    
-    if (duplicates && duplicates.length > 0) {
-      const primaryDuplicate = duplicates[0];
-      duplicateGroupId = primaryDuplicate.duplicate_group_id || primaryDuplicate.id;
-      isPrimaryListing = false;
-      
-      if (!primaryDuplicate.duplicate_group_id) {
-        await supabase
-          .from('scouted_properties')
-          .update({ 
-            duplicate_group_id: duplicateGroupId,
-            duplicate_detected_at: new Date().toISOString()
-          })
-          .eq('id', primaryDuplicate.id);
-      }
-    }
-  }
-  
-  const { data: upsertResult, error: upsertError } = await supabase
-    .from('scouted_properties')
-    .upsert({
-      source: property.source,
-      source_url: property.source_url,
-      source_id: property.source_id,
-      title: property.title,
-      city: normalizedCity,
-      neighborhood: property.neighborhood,
-      address: property.address,
-      price: property.price,
-      rooms: property.rooms,
-      size: property.size,
-      floor: property.floor,
-      duplicate_check_possible: duplicateCheckPossible,
-      property_type: property.property_type,
-      description: property.description,
-      images: property.images || [],
-      features: property.features || {},
-      raw_data: property.raw_data,
-      status: 'new',
-      is_private: property.is_private,
-      duplicate_group_id: duplicateGroupId,
-      is_primary_listing: isPrimaryListing,
-      duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
-      last_seen_at: new Date().toISOString()
-    }, {
-      onConflict: 'source,source_id',
-      ignoreDuplicates: true
-    })
-    .select('id, price')
-    .single();
-
-  if (!upsertError && upsertResult) {
-    if (duplicateGroupId && property.price) {
-      const { data: primaryProperty } = await supabase
-        .from('scouted_properties')
-        .select('id, price')
-        .eq('duplicate_group_id', duplicateGroupId)
-        .eq('is_primary_listing', true)
-        .single();
-      
-      if (primaryProperty?.price && primaryProperty.price > 0) {
-        const priceDiff = Math.abs(property.price - primaryProperty.price);
-        const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
-        
-        if (priceDiffPercent > 5) {
-          await supabase
-            .from('duplicate_alerts')
-            .insert({
-              primary_property_id: primaryProperty.id,
-              duplicate_property_id: upsertResult.id,
-              price_difference: priceDiff,
-              price_difference_percent: priceDiffPercent
-            });
-        }
-      }
-    }
-    return { isNew: true };
-  }
-  
-  return { isNew: false };
-}
-
-function parseHebrewDate(dateStr: string): string | null {
-  if (!dateStr) return null;
-  
-  const hebrewMonths: Record<string, number> = {
-    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4,
-    'מאי': 5, 'יוני': 6, 'יולי': 7, 'אוגוסט': 8,
-    'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
-  };
-  
-  const slashMatch = dateStr.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})/);
-  if (slashMatch) {
-    const [_, day, month, year] = slashMatch;
-    const fullYear = year.length === 2 ? `20${year}` : year;
-    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-  
-  for (const [heb, num] of Object.entries(hebrewMonths)) {
-    if (dateStr.includes(heb)) {
-      const yearMatch = dateStr.match(/\d{4}/);
-      if (yearMatch) {
-        return `${yearMatch[0]}-${String(num).padStart(2, '0')}-01`;
-      }
-    }
-  }
-  
-  return null;
-}
-
-async function extractPropertiesWithAI(
-  markdown: string,
-  html: string,
-  sourceUrl: string,
-  propertyType: 'rent' | 'sale',
-  apiKey: string,
-  targetCities?: string[]
-): Promise<ScrapedProperty[]> {
-  const cityFilter = targetCities?.length 
-    ? `\n\nIMPORTANT: Extract ONLY properties located in these cities: ${targetCities.join(', ')}.`
-    : '';
-
-  const systemPrompt = `You are a real estate data extraction expert. Extract RESIDENTIAL property listings ONLY from Madlan.
-
-MADLAN SPECIFIC INSTRUCTIONS:
-- Each property card contains: price in ₪ format (e.g., ‏5,300 ‏₪), rooms (חד׳), floor (קומה), size in sqm (מ"ר)
-- Address format: "דירה, [street], [neighborhood]" or "פנטהאוז, [street], [neighborhood]"
-- Look for property links containing: /listings/ followed by the listing ID
-- Extract source_id from URL patterns like: https://www.madlan.co.il/listings/[ID]
-- Ignore navigation, filters, and "דירות נוספות" recommendation sections
-- Focus on the main property list
-- Look for entry/availability date (תאריך כניסה) in property details
-
-CRITICAL FILTERING:
-- Extract ONLY residential: apartments, penthouses, houses, garden apartments, studios
-- IGNORE: offices, stores, commercial, parking, storage, pets, vehicles
-${cityFilter}
-
-Return a JSON array with: source_id, source_url, title, city, neighborhood, address, price (number), rooms (number), size (number), floor (number), entry_date, description, images, features.
-Return ONLY valid JSON array. If no properties found, return [].`;
-
-  const cleanedMarkdown = cleanMarkdownContent(markdown, 'madlan');
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Extract all property listings:\n\n${cleanedMarkdown.substring(0, 30000)}` }
-        ],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('AI extraction error:', await response.text());
-      return [];
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
-    
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-
-    const properties = JSON.parse(jsonMatch[0]);
-    
-    return properties
-      .filter((p: any) => {
-        if (targetCities?.length && p.city) {
-          const normalizedPropCity = p.city.replace(/[-–—\s]/g, '');
-          return targetCities.some(tc => normalizedPropCity.includes(tc.replace(/[-–—\s]/g, '')));
-        }
-        return true;
-      })
-      .map((p: any) => {
-        const isBroker = detectBroker(p.title || '', p.description || '', p);
-        let entryDate: string | null = null;
-        let immediateEntry = false;
-        
-        if (p.entry_date) {
-          const rawDate = (p.entry_date || '').toLowerCase();
-          if (rawDate.includes('מיידי') || rawDate.includes('מידית')) {
-            immediateEntry = true;
-          } else {
-            entryDate = parseHebrewDate(p.entry_date);
-          }
-        }
-        
-        return {
-          source: 'madlan',
-          source_url: p.source_url || sourceUrl,
-          source_id: p.source_id || `madlan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: p.title,
-          city: p.city,
-          neighborhood: p.neighborhood,
-          address: p.address,
-          price: p.price ? parseInt(p.price) : undefined,
-          rooms: p.rooms ? parseFloat(p.rooms) : undefined,
-          size: p.size ? parseInt(p.size) : undefined,
-          floor: p.floor !== undefined ? parseInt(p.floor) : undefined,
-          property_type: propertyType,
-          description: p.description,
-          images: p.images || [],
-          features: {
-            ...(p.features || {}),
-            entry_date: entryDate,
-            immediate_entry: immediateEntry
-          },
-          raw_data: p,
-          is_private: !isBroker
-        };
-      });
-
-  } catch (error) {
-    console.error('AI extraction failed:', error);
-    return [];
-  }
 }

@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, scrapeWithRetry, validateScrapedContent, cleanMarkdownContent } from "../_shared/scraping.ts";
+import { corsHeaders, scrapeWithRetry, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
-import { detectBroker, normalizeCityName } from "../_shared/broker-detection.ts";
 import { fetchScoutSettings } from "../_shared/settings.ts";
+import { ScrapedProperty, saveProperty } from "../_shared/property-helpers.ts";
+import { extractPropertiesWithAI } from "../_shared/ai-extraction.ts";
 
 /**
  * Edge Function for scraping Yad2
@@ -11,26 +12,6 @@ import { fetchScoutSettings } from "../_shared/settings.ts";
  * 1. Single page mode: when `page` and `run_id` are provided
  * 2. Full scan mode: scrapes all pages in sequence (legacy)
  */
-
-interface ScrapedProperty {
-  source: string;
-  source_url: string;
-  source_id: string;
-  title?: string;
-  city?: string;
-  neighborhood?: string;
-  address?: string;
-  price?: number;
-  rooms?: number;
-  size?: number;
-  floor?: number;
-  property_type: 'rent' | 'sale';
-  description?: string;
-  images?: string[];
-  features?: Record<string, boolean>;
-  raw_data?: any;
-  is_private?: boolean | null;
-}
 
 // Yad2-specific configuration
 const YAD2_CONFIG = {
@@ -199,9 +180,9 @@ async function handleSinglePageScrape(
       });
     }
 
-    // Extract properties with AI
+    // Extract properties with AI (using shared function)
     const extractedProperties = await extractPropertiesWithAI(
-      markdown, html, url,
+      markdown, html, url, 'yad2',
       config.property_type === 'both' ? 'rent' : config.property_type,
       lovableApiKey, config.cities
     );
@@ -525,7 +506,7 @@ async function handleFullScan(
           }
 
           const extractedProperties = await extractPropertiesWithAI(
-            markdown, html, url,
+            markdown, html, url, 'yad2',
             config.property_type === 'both' ? 'rent' : config.property_type,
             lovableApiKey, config.cities
           );
@@ -635,209 +616,5 @@ async function handleFullScan(
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-  }
-}
-
-// ==================== Helper Functions ====================
-
-async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{ isNew: boolean }> {
-  const normalizedCity = normalizeCityName(property.city);
-  
-  // Check if property already exists
-  const { data: existingProperty } = await supabase
-    .from('scouted_properties')
-    .select('id, status')
-    .eq('source', property.source)
-    .eq('source_id', property.source_id)
-    .maybeSingle();
-
-  const isNew = !existingProperty;
-  
-  // Upsert - update price and last_seen_at for existing, insert new ones
-  const { error: upsertError } = await supabase
-    .from('scouted_properties')
-    .upsert({
-      source: property.source,
-      source_url: property.source_url,
-      source_id: property.source_id,
-      title: property.title,
-      city: normalizedCity,
-      neighborhood: property.neighborhood,
-      address: property.address,
-      price: property.price,
-      rooms: property.rooms,
-      size: property.size,
-      floor: property.floor,
-      property_type: property.property_type,
-      description: property.description,
-      images: property.images || [],
-      features: property.features || {},
-      // Preserve existing status if property exists, otherwise set to 'new'
-      status: existingProperty?.status || 'new',
-      is_private: property.is_private,
-      last_seen_at: new Date().toISOString()
-    }, {
-      onConflict: 'source,source_id'
-    });
-
-  if (upsertError) {
-    console.error('Upsert error:', upsertError);
-    return { isNew: false };
-  }
-  
-  return { isNew };
-}
-
-function parseHebrewDate(dateStr: string): string | null {
-  if (!dateStr) return null;
-  
-  const hebrewMonths: Record<string, number> = {
-    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4,
-    'מאי': 5, 'יוני': 6, 'יולי': 7, 'אוגוסט': 8,
-    'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
-  };
-  
-  const slashMatch = dateStr.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})/);
-  if (slashMatch) {
-    const [_, day, month, year] = slashMatch;
-    const fullYear = year.length === 2 ? `20${year}` : year;
-    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-  
-  for (const [heb, num] of Object.entries(hebrewMonths)) {
-    if (dateStr.includes(heb)) {
-      const yearMatch = dateStr.match(/\d{4}/);
-      if (yearMatch) {
-        return `${yearMatch[0]}-${String(num).padStart(2, '0')}-01`;
-      }
-    }
-  }
-  
-  return null;
-}
-
-async function extractPropertiesWithAI(
-  markdown: string,
-  html: string,
-  sourceUrl: string,
-  propertyType: 'rent' | 'sale',
-  apiKey: string,
-  targetCities?: string[]
-): Promise<ScrapedProperty[]> {
-  const cityFilter = targetCities?.length 
-    ? `\n\nIMPORTANT: Extract ONLY properties located in these cities: ${targetCities.join(', ')}.`
-    : '';
-
-  const systemPrompt = `You are a real estate data extraction expert. Extract RESIDENTIAL property listings ONLY from Yad2.
-
-PRIORITY: Focus on PRIVATE listings (פרטי) first - these are more valuable than brokerage.
-- Private listings typically appear at the top of results
-- Mark is_broker=true for listings from: תיווך, מתווך, משרד נדל"ן, רימקס, אנגלו סכסון, agency names
-
-YAD2 SPECIFIC INSTRUCTIONS:
-- Each property card has: price, rooms, size, floor, and address
-- Look for item IDs in the listings (usually numeric)
-- Extract source_id from data attributes or URL patterns
-- Look for "תאריך כניסה" field - can be "כניסה מידית" (immediate) or a specific date like "01/03/2026"
-
-CRITICAL FILTERING:
-- Extract ONLY residential: apartments, penthouses, houses, garden apartments, studios
-- IGNORE: offices, stores, commercial, parking, storage, pets, vehicles
-${cityFilter}
-
-Return a JSON array with: source_id, source_url, title, city, neighborhood, address, price (number), rooms (number), size (number), floor (number), entry_date, description, images, features, is_broker (boolean).
-Return ONLY valid JSON array. If no properties found, return [].`;
-
-  const cleanedMarkdown = cleanMarkdownContent(markdown, 'yad2');
-  
-  // Log input stats for debugging
-  console.log(`[Yad2 AI] Input markdown: ${markdown.length} chars, after cleaning: ${cleanedMarkdown.length}, sending: ${Math.min(cleanedMarkdown.length, 30000)}`);
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Extract all property listings:\n\n${cleanedMarkdown.substring(0, 30000)}` }
-        ],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('AI extraction error:', await response.text());
-      return [];
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
-    
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-
-    const properties = JSON.parse(jsonMatch[0]);
-    
-    // Filter by city if specified
-    const filtered = properties.filter((p: any) => {
-      if (targetCities?.length && p.city) {
-        const normalizedPropCity = p.city.replace(/[-–—\s]/g, '');
-        return targetCities.some(tc => normalizedPropCity.includes(tc.replace(/[-–—\s]/g, '')));
-      }
-      return true;
-    });
-    
-    // Log extraction stats
-    const privateCount = properties.filter((p: any) => !p.is_broker).length;
-    const brokerCount = properties.filter((p: any) => p.is_broker).length;
-    console.log(`[Yad2 AI] Extracted: ${properties.length} total (${privateCount} private, ${brokerCount} broker), after city filter: ${filtered.length}`);
-    
-    return filtered.map((p: any) => {
-        const isBroker = detectBroker(p.title || '', p.description || '', p);
-        let entryDate: string | null = null;
-        let immediateEntry = false;
-        
-        if (p.entry_date) {
-          const rawDate = (p.entry_date || '').toLowerCase();
-          if (rawDate.includes('מיידי') || rawDate.includes('מידית')) {
-            immediateEntry = true;
-          } else {
-            entryDate = parseHebrewDate(p.entry_date);
-          }
-        }
-        
-        return {
-          source: 'yad2',
-          source_url: p.source_url || sourceUrl,
-          source_id: p.source_id || `yad2-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: p.title,
-          city: p.city,
-          neighborhood: p.neighborhood,
-          address: p.address,
-          price: p.price ? parseInt(p.price) : undefined,
-          rooms: p.rooms ? parseFloat(p.rooms) : undefined,
-          size: p.size ? parseInt(p.size) : undefined,
-          floor: p.floor !== undefined ? parseInt(p.floor) : undefined,
-          property_type: propertyType,
-          description: p.description,
-          images: p.images || [],
-          features: {
-            ...(p.features || {}),
-            entry_date: entryDate,
-            immediate_entry: immediateEntry
-          },
-          raw_data: p,
-          is_private: !isBroker
-        };
-      });
-
-  } catch (error) {
-    console.error('AI extraction failed:', error);
-    return [];
   }
 }
