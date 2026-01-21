@@ -183,10 +183,16 @@ serve(async (req) => {
         // Add delay between requests
         if (urlIndex > 0) {
           const isMadlan = url.includes('madlan');
+          // Use config-specific delay if set (convert seconds to ms), otherwise use global setting
+          const configDelayMs = config.page_delay_seconds 
+            ? config.page_delay_seconds * 1000 
+            : null;
+          
           const delay = isMadlan 
             ? scrapingSettings.madlan_delay_ms + Math.random() * 3000
-            : scrapingSettings.delay_between_requests_ms + Math.random() * 500;
-          console.log(`Waiting ${Math.round(delay)}ms before next request (${isMadlan ? 'Madlan - slower' : 'standard'})...`);
+            : (configDelayMs ?? scrapingSettings.delay_between_requests_ms) + Math.random() * 500;
+          
+          console.log(`Waiting ${Math.round(delay)}ms before next request (config override: ${configDelayMs ? 'yes - ' + config.page_delay_seconds + 's' : 'no'}, ${isMadlan ? 'Madlan - slower' : 'standard'})...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
 

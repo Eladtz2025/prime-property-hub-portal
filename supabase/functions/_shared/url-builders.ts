@@ -13,6 +13,10 @@ export interface ScoutConfig {
   min_rooms?: number;
   max_rooms?: number;
   search_url?: string;
+  // Config-specific overrides (take priority over global settings)
+  max_pages?: number;
+  page_delay_seconds?: number;
+  wait_for_ms?: number;
 }
 
 // City mappings for each source
@@ -226,13 +230,17 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
-        for (let page = 1; page <= s.yad2_pages; page++) {
+        // Use config-specific max_pages if set, otherwise use global setting
+        const pagesToScrape = config.max_pages ?? s.yad2_pages;
+        console.log(`Yad2 pages to scrape: ${pagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
+        
+        for (let page = 1; page <= pagesToScrape; page++) {
           const pageParams = new URLSearchParams(params);
           if (page > 1) {
             pageParams.set('page', page.toString());
           }
           const pageUrl = url + '?' + pageParams.toString();
-          console.log(`Built Yad2 URL (page ${page}): ${pageUrl}`);
+          console.log(`Built Yad2 URL (page ${page}/${pagesToScrape}): ${pageUrl}`);
           urls.push(pageUrl);
         }
         
@@ -252,9 +260,13 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
           baseUrl += `/${citySlug}`;
         }
         
-        for (let page = 1; page <= s.madlan_pages; page++) {
+        // Use config-specific max_pages if set, otherwise use global setting
+        const madlanPagesToScrape = config.max_pages ?? s.madlan_pages;
+        console.log(`Madlan pages to scrape: ${madlanPagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
+        
+        for (let page = 1; page <= madlanPagesToScrape; page++) {
           const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
-          console.log(`Built Madlan URL (page ${page}/${s.madlan_pages} - reduced for anti-blocking): ${url}`);
+          console.log(`Built Madlan URL (page ${page}/${madlanPagesToScrape}): ${url}`);
           urls.push(url);
         }
         
@@ -277,10 +289,14 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
           baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
         }
         
-        for (let page = 1; page <= s.homeless_pages; page++) {
+        // Use config-specific max_pages if set, otherwise use global setting
+        const homelessPagesToScrape = config.max_pages ?? s.homeless_pages;
+        console.log(`Homeless pages to scrape: ${homelessPagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
+        
+        for (let page = 1; page <= homelessPagesToScrape; page++) {
           // FIXED: Use & for pagination - tested and working format
           const url = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
-          console.log(`Built Homeless URL (page ${page}): ${url}`);
+          console.log(`Built Homeless URL (page ${page}/${homelessPagesToScrape}): ${url}`);
           urls.push(url);
         }
       }
