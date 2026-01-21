@@ -113,7 +113,7 @@ serve(async (req) => {
       .eq('property_type', 'rent')
       .or('features->entry_date.is.null,features->immediate_entry.is.null')
       .not('source_url', 'is', null)
-      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
       .limit(batchSize);
 
     if (continueFrom) {
