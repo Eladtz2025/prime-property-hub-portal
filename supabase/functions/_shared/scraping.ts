@@ -103,7 +103,8 @@ export async function scrapeWithRetry(
           onlyMainContent: true,
           waitFor: waitForMs,
           // Use stealth proxy for Yad2 (5 credits) to rotate IP and avoid CAPTCHA, auto for others (1 credit)
-          proxy: source === 'yad2' ? 'stealth' : 'auto',
+          // Use stealth proxy for Yad2 and Madlan (5 credits) to rotate IP and avoid CAPTCHA
+          proxy: (source === 'yad2' || source === 'madlan') ? 'stealth' : 'auto',
           // Request Israeli proxy for better results on Hebrew sites
           location: {
             country: 'IL',
