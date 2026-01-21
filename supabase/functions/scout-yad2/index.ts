@@ -730,6 +730,10 @@ async function extractPropertiesWithAI(
 
   const systemPrompt = `You are a real estate data extraction expert. Extract RESIDENTIAL property listings ONLY from Yad2.
 
+PRIORITY: Focus on PRIVATE listings (פרטי) first - these are more valuable than brokerage.
+- Private listings typically appear at the top of results
+- Mark is_broker=true for listings from: תיווך, מתווך, משרד נדל"ן, רימקס, אנגלו סכסון, agency names
+
 YAD2 SPECIFIC INSTRUCTIONS:
 - Each property card has: price, rooms, size, floor, and address
 - Look for item IDs in the listings (usually numeric)
@@ -741,10 +745,13 @@ CRITICAL FILTERING:
 - IGNORE: offices, stores, commercial, parking, storage, pets, vehicles
 ${cityFilter}
 
-Return a JSON array with: source_id, source_url, title, city, neighborhood, address, price (number), rooms (number), size (number), floor (number), entry_date, description, images, features.
+Return a JSON array with: source_id, source_url, title, city, neighborhood, address, price (number), rooms (number), size (number), floor (number), entry_date, description, images, features, is_broker (boolean).
 Return ONLY valid JSON array. If no properties found, return [].`;
 
   const cleanedMarkdown = cleanMarkdownContent(markdown, 'yad2');
+  
+  // Log input stats for debugging
+  console.log(`[Yad2 AI] Input markdown: ${markdown.length} chars, after cleaning: ${cleanedMarkdown.length}, sending: ${Math.min(cleanedMarkdown.length, 30000)}`);
 
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -776,15 +783,21 @@ Return ONLY valid JSON array. If no properties found, return [].`;
 
     const properties = JSON.parse(jsonMatch[0]);
     
-    return properties
-      .filter((p: any) => {
-        if (targetCities?.length && p.city) {
-          const normalizedPropCity = p.city.replace(/[-–—\s]/g, '');
-          return targetCities.some(tc => normalizedPropCity.includes(tc.replace(/[-–—\s]/g, '')));
-        }
-        return true;
-      })
-      .map((p: any) => {
+    // Filter by city if specified
+    const filtered = properties.filter((p: any) => {
+      if (targetCities?.length && p.city) {
+        const normalizedPropCity = p.city.replace(/[-–—\s]/g, '');
+        return targetCities.some(tc => normalizedPropCity.includes(tc.replace(/[-–—\s]/g, '')));
+      }
+      return true;
+    });
+    
+    // Log extraction stats
+    const privateCount = properties.filter((p: any) => !p.is_broker).length;
+    const brokerCount = properties.filter((p: any) => p.is_broker).length;
+    console.log(`[Yad2 AI] Extracted: ${properties.length} total (${privateCount} private, ${brokerCount} broker), after city filter: ${filtered.length}`);
+    
+    return filtered.map((p: any) => {
         const isBroker = detectBroker(p.title || '', p.description || '', p);
         let entryDate: string | null = null;
         let immediateEntry = false;
