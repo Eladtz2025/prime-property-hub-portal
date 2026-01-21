@@ -359,12 +359,11 @@ export const UnifiedScoutSettings: React.FC = () => {
       setIsBackfilling(true);
       toast.info('מתחיל עדכון תאריכי כניסה...');
       
-      // Reset any existing 'running' progress to start fresh
+      // Delete any existing progress to start completely fresh
       await supabase
         .from('backfill_progress')
-        .update({ status: 'cancelled' })
-        .eq('task_name', 'backfill_entry_dates')
-        .eq('status', 'running');
+        .delete()
+        .eq('task_name', 'backfill_entry_dates');
       
       const { error } = await supabase.functions.invoke('backfill-entry-dates', {
         body: { batch_size: 10 },
