@@ -130,7 +130,8 @@ serve(async (req) => {
       currentRunSource = config.source || 'manual';
       
       // Check if there's already a running job for this config to prevent duplicates
-      if (config.id !== 'manual') {
+      // IMPORTANT: Skip this check when 'page' is specified - allows parallel page execution from trigger-scout-pages
+      if (config.id !== 'manual' && page === undefined) {
         const { data: existingRun } = await supabase
           .from('scout_runs')
           .select('id, started_at')
