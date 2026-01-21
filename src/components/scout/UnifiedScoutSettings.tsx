@@ -38,6 +38,7 @@ import {
   Calendar,
   Plus,
   Play,
+  Square,
   Pencil,
   Trash2,
   Loader2,
@@ -264,6 +265,24 @@ export const UnifiedScoutSettings: React.FC = () => {
     },
   });
 
+  // Query for active runs
+  const { data: activeRuns } = useQuery({
+    queryKey: ['active-scout-runs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scout_runs')
+        .select('*')
+        .eq('status', 'running');
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 3000,
+  });
+
+  const getActiveRunForConfig = (configId: string) => {
+    return activeRuns?.find(run => run.config_id === configId);
+  };
+
   // Group configs by source
   const configsBySource = React.useMemo(() => {
     if (!configs) return {};
@@ -376,8 +395,27 @@ export const UnifiedScoutSettings: React.FC = () => {
     onSuccess: () => {
       toast.success('סריקה הופעלה');
       queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
+      queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
     },
     onError: () => toast.error('שגיאה בהפעלת הסריקה'),
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: async (configId: string) => {
+      const activeRun = getActiveRunForConfig(configId);
+      if (!activeRun) throw new Error('No active run found');
+      
+      const { error } = await supabase.functions.invoke('stop-scout-run', {
+        body: { run_id: activeRun.id },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
+      toast.success('הסריקה נעצרה');
+    },
+    onError: () => toast.error('שגיאה בעצירת הסריקה'),
   });
 
   const resetForm = () => {
@@ -912,13 +950,24 @@ export const UnifiedScoutSettings: React.FC = () => {
                               toggleActiveMutation.mutate({ id: config.id, is_active: checked })
                             }
                           />
+                          {/* Play Button */}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => runConfigMutation.mutate(config.id)}
-                            disabled={runConfigMutation.isPending}
+                            disabled={runConfigMutation.isPending || !!getActiveRunForConfig(config.id)}
                           >
                             <Play className="h-4 w-4" />
+                          </Button>
+                          {/* Stop Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                            onClick={() => stopMutation.mutate(config.id)}
+                            disabled={stopMutation.isPending || !getActiveRunForConfig(config.id)}
+                          >
+                            <Square className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
