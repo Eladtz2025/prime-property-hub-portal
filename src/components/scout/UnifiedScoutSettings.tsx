@@ -392,24 +392,32 @@ export const UnifiedScoutSettings: React.FC = () => {
       const config = configs?.find(c => c.id === configId);
       const source = config?.source || 'yad2';
       
-      // Call source-specific function
-      const functionName = source === 'yad2' ? 'scout-yad2' 
+      // Use trigger function for page-by-page execution (Yad2)
+      // Other sources still use direct function call
+      const functionName = source === 'yad2' ? 'trigger-yad2-pages' 
         : source === 'madlan' ? 'scout-madlan' 
         : source === 'homeless' ? 'scout-homeless' 
         : 'scout-properties';
       
-      const { error } = await supabase.functions.invoke(functionName, {
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { config_id: configId },
       });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success('סריקה הופעלה');
+    onSuccess: (data) => {
+      const message = data?.pages_triggered 
+        ? `סריקה הופעלה - ${data.pages_triggered} דפים` 
+        : 'סריקה הופעלה';
+      toast.success(message);
       queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
       queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
       queryClient.invalidateQueries({ queryKey: ['live-scan-progress'] });
     },
-    onError: () => toast.error('שגיאה בהפעלת הסריקה'),
+    onError: (error: any) => {
+      const message = error?.message || 'שגיאה בהפעלת הסריקה';
+      toast.error(message);
+    },
   });
 
   const stopMutation = useMutation({

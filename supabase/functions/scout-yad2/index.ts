@@ -6,8 +6,10 @@ import { detectBroker, normalizeCityName } from "../_shared/broker-detection.ts"
 import { fetchScoutSettings } from "../_shared/settings.ts";
 
 /**
- * Standalone Edge Function for scraping Yad2 ONLY
- * Runs independently with Yad2-specific configuration
+ * Edge Function for scraping Yad2
+ * Supports two modes:
+ * 1. Single page mode: when `page` and `run_id` are provided
+ * 2. Full scan mode: scrapes all pages in sequence (legacy)
  */
 
 interface ScrapedProperty {
@@ -51,15 +53,340 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Fetch global settings (used as fallback)
+  // Parse request body for single-page mode
+  const body = await req.json().catch(() => ({}));
+  const singlePage = body.page as number | undefined;
+  const existingRunId = body.run_id as string | undefined;
+  const requestedConfigId = body.config_id as string | undefined;
+  const maxPagesFromTrigger = body.max_pages as number | undefined;
+
+  // Single page mode
+  if (singlePage && existingRunId && requestedConfigId) {
+    return await handleSinglePageScrape(
+      supabase, 
+      requestedConfigId, 
+      singlePage, 
+      existingRunId, 
+      maxPagesFromTrigger || YAD2_CONFIG.MAX_PAGES,
+      firecrawlApiKey, 
+      lovableApiKey
+    );
+  }
+
+  // Full scan mode (legacy - loops through all pages)
+  return await handleFullScan(supabase, firecrawlApiKey, lovableApiKey);
+});
+
+/**
+ * Handle single page scraping - called by trigger-yad2-pages
+ */
+async function handleSinglePageScrape(
+  supabase: any,
+  configId: string,
+  page: number,
+  runId: string,
+  maxPages: number,
+  firecrawlApiKey?: string,
+  lovableApiKey?: string
+): Promise<Response> {
+  const pageStartTime = Date.now();
+  
+  console.log(`🟠 scout-yad2: Single page mode - Page ${page} for run ${runId}`);
+
+  try {
+    // Check if run was stopped
+    const { data: runCheck } = await supabase
+      .from('scout_runs')
+      .select('status')
+      .eq('id', runId)
+      .single();
+    
+    if (runCheck?.status === 'stopped') {
+      console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
+      return new Response(JSON.stringify({ success: false, reason: 'stopped' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get config
+    const { data: config, error: configError } = await supabase
+      .from('scout_configs')
+      .select('*')
+      .eq('id', configId)
+      .single();
+
+    if (configError || !config) {
+      throw new Error('Config not found');
+    }
+
+    // Update page status to 'scraping'
+    await updatePageStatus(supabase, runId, page, { status: 'scraping' });
+
+    // Build URL for this page
+    const urls = buildSinglePageUrl(config, page);
+    if (!urls.length) {
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'failed', 
+        error: 'Failed to build URL',
+        duration_ms: Date.now() - pageStartTime
+      });
+      return new Response(JSON.stringify({ success: false, error: 'No URL' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const url = urls[0];
+    console.log(`🟠 Yad2 page ${page}: Scraping ${url}`);
+
+    await updatePageStatus(supabase, runId, page, { url });
+
+    if (!firecrawlApiKey) {
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'failed', 
+        error: 'FIRECRAWL_API_KEY not configured',
+        duration_ms: Date.now() - pageStartTime
+      });
+      return new Response(JSON.stringify({ success: false, error: 'No API key' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Scrape the page
+    const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, 'yad2', YAD2_CONFIG.MAX_RETRIES);
+    
+    if (!scrapeData) {
+      console.error(`All retry attempts failed for Yad2 page ${page}`);
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'blocked', 
+        error: 'Scrape failed - possible CAPTCHA',
+        duration_ms: Date.now() - pageStartTime
+      });
+      
+      await checkAndFinalizeRun(supabase, runId, maxPages);
+      
+      return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
+    const html = scrapeData.data?.html || scrapeData.html || '';
+
+    const validation = validateScrapedContent(markdown, html, 'yad2');
+    if (!validation.valid) {
+      console.error(`Yad2 content validation failed: ${validation.reason}`);
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'blocked', 
+        error: validation.reason || 'Content validation failed',
+        duration_ms: Date.now() - pageStartTime
+      });
+      
+      await checkAndFinalizeRun(supabase, runId, maxPages);
+      
+      return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!lovableApiKey) {
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'failed', 
+        error: 'LOVABLE_API_KEY not configured',
+        duration_ms: Date.now() - pageStartTime
+      });
+      return new Response(JSON.stringify({ success: false, error: 'No AI key' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Extract properties with AI
+    const extractedProperties = await extractPropertiesWithAI(
+      markdown, html, url,
+      config.property_type === 'both' ? 'rent' : config.property_type,
+      lovableApiKey, config.cities
+    );
+
+    console.log(`🟠 Yad2 page ${page}: Extracted ${extractedProperties.length} properties`);
+
+    // Save properties and count new ones
+    let pageNew = 0;
+    for (const property of extractedProperties) {
+      const result = await saveProperty(supabase, property);
+      if (result.isNew) {
+        pageNew++;
+      }
+    }
+
+    const duration = Date.now() - pageStartTime;
+
+    // Update page stats with results
+    await updatePageStatus(supabase, runId, page, { 
+      status: 'completed',
+      found: extractedProperties.length,
+      new: pageNew,
+      duration_ms: duration
+    });
+
+    // Update run totals
+    await supabase.rpc('increment_scout_run_stats', {
+      p_run_id: runId,
+      p_found: extractedProperties.length,
+      p_new: pageNew
+    }).catch(async () => {
+      // Fallback if RPC doesn't exist - direct update
+      const { data: currentRun } = await supabase
+        .from('scout_runs')
+        .select('properties_found, new_properties')
+        .eq('id', runId)
+        .single();
+      
+      if (currentRun) {
+        await supabase
+          .from('scout_runs')
+          .update({
+            properties_found: (currentRun.properties_found || 0) + extractedProperties.length,
+            new_properties: (currentRun.new_properties || 0) + pageNew
+          })
+          .eq('id', runId);
+      }
+    });
+
+    // Check if all pages are done
+    await checkAndFinalizeRun(supabase, runId, maxPages);
+
+    return new Response(JSON.stringify({
+      success: true,
+      page,
+      found: extractedProperties.length,
+      new: pageNew,
+      duration_ms: duration
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error(`scout-yad2 page ${page} error:`, error);
+    
+    await updatePageStatus(supabase, runId, page, { 
+      status: 'failed', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration_ms: Date.now() - pageStartTime
+    });
+
+    await checkAndFinalizeRun(supabase, runId, maxPages);
+
+    return new Response(JSON.stringify({
+      success: false,
+      page,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Update the status of a specific page in page_stats
+ */
+async function updatePageStatus(
+  supabase: any, 
+  runId: string, 
+  page: number, 
+  updates: { 
+    status?: string; 
+    url?: string;
+    found?: number; 
+    new?: number; 
+    duration_ms?: number;
+    error?: string;
+  }
+) {
+  const { data: run } = await supabase
+    .from('scout_runs')
+    .select('page_stats')
+    .eq('id', runId)
+    .single();
+
+  if (!run?.page_stats) return;
+
+  const pageStats = [...run.page_stats];
+  const pageIndex = page - 1;
+  
+  if (pageIndex >= 0 && pageIndex < pageStats.length) {
+    pageStats[pageIndex] = {
+      ...pageStats[pageIndex],
+      ...updates
+    };
+
+    await supabase
+      .from('scout_runs')
+      .update({ page_stats: pageStats })
+      .eq('id', runId);
+  }
+}
+
+/**
+ * Check if all pages are done and finalize the run
+ */
+async function checkAndFinalizeRun(supabase: any, runId: string, maxPages: number) {
+  const { data: run } = await supabase
+    .from('scout_runs')
+    .select('page_stats, status, config_id, properties_found')
+    .eq('id', runId)
+    .single();
+
+  if (!run || run.status !== 'running') return;
+
+  const pageStats = run.page_stats || [];
+  const completedPages = pageStats.filter((p: any) => 
+    p.status === 'completed' || p.status === 'failed' || p.status === 'blocked'
+  ).length;
+
+  // Check if all pages are done
+  if (completedPages >= maxPages) {
+    const hasErrors = pageStats.some((p: any) => p.status === 'failed' || p.status === 'blocked');
+    const finalStatus = hasErrors ? 'partial' : 'completed';
+
+    await supabase
+      .from('scout_runs')
+      .update({
+        status: finalStatus,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', runId);
+
+    // Update config last run
+    if (run.config_id) {
+      await supabase
+        .from('scout_configs')
+        .update({
+          last_run_at: new Date().toISOString(),
+          last_run_status: finalStatus,
+          last_run_results: { properties_found: run.properties_found || 0 }
+        })
+        .eq('id', run.config_id);
+    }
+
+    console.log(`✅ Run ${runId} finalized with status: ${finalStatus}`);
+  }
+}
+
+/**
+ * Handle full scan mode (legacy - all pages in sequence)
+ */
+async function handleFullScan(
+  supabase: any,
+  firecrawlApiKey?: string,
+  lovableApiKey?: string
+): Promise<Response> {
   const settings = await fetchScoutSettings(supabase);
   
-  console.log(`🟠 scout-yad2: Starting`);
+  console.log(`🟠 scout-yad2: Starting full scan mode`);
 
   let runId: string | undefined;
 
   try {
-    // Get only Yad2 configs
     const { data: configs, error: configError } = await supabase
       .from('scout_configs')
       .select('*')
@@ -84,14 +411,11 @@ serve(async (req) => {
     let totalNewProperties = 0;
 
     for (const config of configs) {
-      // Get config-specific parameters with fallback chain: config -> settings -> default
       const configMaxPages = config.max_pages ?? settings.scraping.yad2_pages ?? YAD2_CONFIG.MAX_PAGES;
       const configPageDelay = (config.page_delay_seconds ?? YAD2_CONFIG.PAGE_DELAY_MS / 1000) * 1000;
-      const configWaitFor = config.wait_for_ms ?? YAD2_CONFIG.WAIT_FOR_MS;
-      
-      console.log(`Processing Yad2 config: ${config.name} (pages: ${configMaxPages}, delay: ${configPageDelay}ms, wait: ${configWaitFor}ms)`);
 
-      // Check for existing running job
+      console.log(`Processing Yad2 config: ${config.name} (pages: ${configMaxPages})`);
+
       const { data: existingRun } = await supabase
         .from('scout_runs')
         .select('id')
@@ -104,13 +428,22 @@ serve(async (req) => {
         continue;
       }
 
-      // Create run record
+      const initialPageStats = Array.from({ length: configMaxPages }, (_, i) => ({
+        page: i + 1,
+        url: '',
+        status: 'pending',
+        found: 0,
+        new: 0,
+        duration_ms: 0
+      }));
+
       const { data: runData, error: runError } = await supabase
         .from('scout_runs')
         .insert({
           config_id: config.id,
           source: 'yad2',
-          status: 'running'
+          status: 'running',
+          page_stats: initialPageStats
         })
         .select()
         .single();
@@ -120,14 +453,11 @@ serve(async (req) => {
         continue;
       }
       runId = runData.id;
-      console.log(`Created run ${runId} for Yad2`);
 
       let configPropertiesFound = 0;
       let configNewProperties = 0;
-      const pageStats: Array<{ page: number; url: string; found: number; new: number; duration_ms: number }> = [];
 
       for (let page = 1; page <= configMaxPages; page++) {
-        // Check if run was stopped
         const { data: runCheck } = await supabase
           .from('scout_runs')
           .select('status')
@@ -146,7 +476,8 @@ serve(async (req) => {
         const pageStartTime = Date.now();
         console.log(`🟠 Yad2: Scraping page ${page}/${configMaxPages}: ${url}`);
 
-        // Add delay between pages (not for first page)
+        await updatePageStatus(supabase, runId, page, { status: 'scraping', url });
+
         if (page > 1) {
           const delay = configPageDelay + Math.random() * 2000;
           console.log(`Waiting ${Math.round(delay)}ms before next Yad2 page...`);
@@ -166,7 +497,11 @@ serve(async (req) => {
           
           if (!scrapeData) {
             console.error(`All retry attempts failed for Yad2 page ${page}`);
-            pageStats.push({ page, url, found: 0, new: 0, duration_ms: Date.now() - pageStartTime });
+            await updatePageStatus(supabase, runId, page, { 
+              status: 'blocked', 
+              error: 'Scrape failed',
+              duration_ms: Date.now() - pageStartTime
+            });
             continue;
           }
 
@@ -176,11 +511,11 @@ serve(async (req) => {
           const validation = validateScrapedContent(markdown, html, 'yad2');
           if (!validation.valid) {
             console.error(`Yad2 content validation failed: ${validation.reason}`);
-            await supabase
-              .from('scout_runs')
-              .update({ status: 'partial', error_message: validation.reason })
-              .eq('id', runId);
-            pageStats.push({ page, url, found: 0, new: 0, duration_ms: Date.now() - pageStartTime });
+            await updatePageStatus(supabase, runId, page, { 
+              status: 'blocked', 
+              error: validation.reason || 'Validation failed',
+              duration_ms: Date.now() - pageStartTime
+            });
             continue;
           }
 
@@ -198,7 +533,6 @@ serve(async (req) => {
           console.log(`🟠 Yad2 page ${page}: Extracted ${extractedProperties.length} properties`);
           pageFound = extractedProperties.length;
 
-          // Save properties
           for (const property of extractedProperties) {
             const result = await saveProperty(supabase, property);
             if (result.isNew) {
@@ -211,45 +545,53 @@ serve(async (req) => {
           configPropertiesFound += extractedProperties.length;
           totalPropertiesFound += extractedProperties.length;
 
+          await updatePageStatus(supabase, runId, page, { 
+            status: 'completed',
+            found: pageFound,
+            new: pageNew,
+            duration_ms: Date.now() - pageStartTime
+          });
+
         } catch (error) {
           console.error(`Error on Yad2 page ${page}:`, error);
+          await updatePageStatus(supabase, runId, page, { 
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            duration_ms: Date.now() - pageStartTime
+          });
         }
 
-        // Record page stats
-        pageStats.push({ page, url, found: pageFound, new: pageNew, duration_ms: Date.now() - pageStartTime });
-
-        // Update progress with page stats
         await supabase
           .from('scout_runs')
           .update({
             properties_found: configPropertiesFound,
-            new_properties: configNewProperties,
-            page_stats: pageStats
+            new_properties: configNewProperties
           })
           .eq('id', runId);
       }
 
-      // Complete run (only if not stopped)
       const { data: finalRunCheck } = await supabase
         .from('scout_runs')
-        .select('status')
+        .select('status, page_stats')
         .eq('id', runId)
         .single();
       
-      if (finalRunCheck?.status !== 'stopped') {
+      if (finalRunCheck?.status === 'running') {
+        const hasErrors = finalRunCheck.page_stats?.some((p: any) => 
+          p.status === 'failed' || p.status === 'blocked'
+        );
+        
         await supabase
           .from('scout_runs')
           .update({
-            status: 'completed',
+            status: hasErrors ? 'partial' : 'completed',
             properties_found: configPropertiesFound,
             new_properties: configNewProperties,
-            page_stats: pageStats,
             completed_at: new Date().toISOString()
           })
           .eq('id', runId);
       }
 
-      // Update config last run
       await supabase
         .from('scout_configs')
         .update({
@@ -294,46 +636,12 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
-});
+}
 
 // ==================== Helper Functions ====================
 
 async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{ isNew: boolean }> {
   const normalizedCity = normalizeCityName(property.city);
-  
-  // Check for duplicates
-  let duplicateGroupId: string | null = null;
-  let isPrimaryListing = true;
-  const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
-  const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
-  
-  if (duplicateCheckPossible) {
-    const { data: duplicates } = await supabase
-      .rpc('find_duplicate_property', {
-        p_address: property.address,
-        p_rooms: property.rooms,
-        p_floor: property.floor || 0,
-        p_property_type: property.property_type || 'rental',
-        p_city: normalizedCity,
-        p_exclude_id: null
-      });
-    
-    if (duplicates && duplicates.length > 0) {
-      const primaryDuplicate = duplicates[0];
-      duplicateGroupId = primaryDuplicate.duplicate_group_id || primaryDuplicate.id;
-      isPrimaryListing = false;
-      
-      if (!primaryDuplicate.duplicate_group_id) {
-        await supabase
-          .from('scouted_properties')
-          .update({ 
-            duplicate_group_id: duplicateGroupId,
-            duplicate_detected_at: new Date().toISOString()
-          })
-          .eq('id', primaryDuplicate.id);
-      }
-    }
-  }
   
   // Check if property already exists
   const { data: existingProperty } = await supabase
@@ -345,9 +653,8 @@ async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{
 
   const isNew = !existingProperty;
   
-  // If exists, update price and last_seen_at but preserve user-changed status
-  // If new, insert with status 'new'
-  const { data: upsertResult, error: upsertError } = await supabase
+  // Upsert - update price and last_seen_at for existing, insert new ones
+  const { error: upsertError } = await supabase
     .from('scouted_properties')
     .upsert({
       source: property.source,
@@ -361,55 +668,21 @@ async function saveProperty(supabase: any, property: ScrapedProperty): Promise<{
       rooms: property.rooms,
       size: property.size,
       floor: property.floor,
-      duplicate_check_possible: duplicateCheckPossible,
       property_type: property.property_type,
       description: property.description,
       images: property.images || [],
       features: property.features || {},
-      raw_data: property.raw_data,
       // Preserve existing status if property exists, otherwise set to 'new'
       status: existingProperty?.status || 'new',
       is_private: property.is_private,
-      duplicate_group_id: duplicateGroupId,
-      is_primary_listing: isPrimaryListing,
-      duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
       last_seen_at: new Date().toISOString()
     }, {
       onConflict: 'source,source_id'
-      // No ignoreDuplicates - update existing properties with new price
-    })
-    .select('id, price')
-    .maybeSingle();
+    });
 
   if (upsertError) {
     console.error('Upsert error:', upsertError);
     return { isNew: false };
-  }
-
-  // Create duplicate alert if needed (only for new properties)
-  if (isNew && duplicateGroupId && property.price && upsertResult) {
-    const { data: primaryProperty } = await supabase
-      .from('scouted_properties')
-      .select('id, price')
-      .eq('duplicate_group_id', duplicateGroupId)
-      .eq('is_primary_listing', true)
-      .maybeSingle();
-    
-    if (primaryProperty?.price && primaryProperty.price > 0) {
-      const priceDiff = Math.abs(property.price - primaryProperty.price);
-      const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
-      
-      if (priceDiffPercent > 5) {
-        await supabase
-          .from('duplicate_alerts')
-          .insert({
-            primary_property_id: primaryProperty.id,
-            duplicate_property_id: upsertResult.id,
-            price_difference: priceDiff,
-            price_difference_percent: priceDiffPercent
-          });
-      }
-    }
   }
   
   return { isNew };
@@ -503,7 +776,6 @@ Return ONLY valid JSON array. If no properties found, return [].`;
 
     const properties = JSON.parse(jsonMatch[0]);
     
-    // Filter and transform
     return properties
       .filter((p: any) => {
         if (targetCities?.length && p.city) {
