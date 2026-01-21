@@ -244,8 +244,31 @@ serve(async (req) => {
       .single();
 
     if (existingProgress) {
+      // MUTEX CHECK: If recently updated, skip to prevent duplicate processing
+      const lastUpdate = new Date(existingProgress.updated_at || existingProgress.started_at);
+      const secondsSinceUpdate = (Date.now() - lastUpdate.getTime()) / 1000;
+      
+      if (secondsSinceUpdate < 15) {
+        console.log(`Skipping - another instance is processing (last update ${secondsSinceUpdate.toFixed(1)}s ago)`);
+        return new Response(JSON.stringify({
+          success: true,
+          skipped: true,
+          message: 'Processing in progress by another instance',
+          processed_items: existingProgress.processed_items,
+          total_items: existingProgress.total_items
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
       progressId = existingProgress.id;
-      console.log(`Resuming progress: ${progressId}`);
+      console.log(`Resuming progress: ${progressId} (last update ${secondsSinceUpdate.toFixed(1)}s ago)`);
+      
+      // Mark as currently processing immediately
+      await supabase
+        .from('backfill_progress')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', progressId);
     } else {
       // Count properties that need processing
       // CRITICAL: Only select properties where entry_date_source IS NULL
@@ -266,7 +289,8 @@ serve(async (req) => {
           processed_items: 0,
           successful_items: 0,
           failed_items: 0,
-          started_at: new Date().toISOString()
+          started_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
