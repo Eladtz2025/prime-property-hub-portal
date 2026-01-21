@@ -370,37 +370,8 @@ export function findNeighborhoodByAlias(cityValue: string, searchTerm: string): 
   return null;
 }
 
-// Helper function to match a property neighborhood to lead's preferred neighborhoods
-export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhoods: string[], city: string): boolean {
-  if (!propertyNeighborhood || !leadNeighborhoods?.length) return false;
-  
-  const normalizedPropertyNeighborhood = propertyNeighborhood.trim().toLowerCase();
-  
-  for (const leadNeighborhood of leadNeighborhoods) {
-    // First try to find the neighborhood config by the lead's selection
-    const cityNeighborhoods = NEIGHBORHOODS[city] || NEIGHBORHOODS['תל אביב יפו'];
-    
-    if (cityNeighborhoods) {
-      const config = cityNeighborhoods.find(n => n.value === leadNeighborhood);
-      
-      if (config) {
-        // Check if property neighborhood matches the label
-        if (normalizedPropertyNeighborhood.includes(config.label.toLowerCase())) {
-          return true;
-        }
-        
-        // Check if property neighborhood matches any alias
-        for (const alias of config.aliases) {
-          if (normalizedPropertyNeighborhood.includes(alias.toLowerCase()) ||
-              alias.toLowerCase().includes(normalizedPropertyNeighborhood)) {
-            return true;
-          }
-        }
-      }
-    }
-    
-    // No fallback - only match via configured neighborhoods
-  }
-  
-  return false;
-}
+// NOTE: The matchNeighborhood function has been removed from this file.
+// All property-to-lead matching is now done in the Edge Functions:
+// - supabase/functions/_shared/matching.ts - main matching logic
+// - supabase/functions/_shared/locations.ts - neighborhood matching with street lookups
+// The street_neighborhoods database table is used for address-based neighborhood resolution.
