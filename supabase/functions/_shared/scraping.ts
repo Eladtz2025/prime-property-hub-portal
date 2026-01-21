@@ -160,6 +160,36 @@ export async function scrapeWithRetry(
  * Clean markdown content to remove navigation and focus on property listings
  */
 export function cleanMarkdownContent(markdown: string, source: string): string {
+  let cleaned = markdown;
+  
+  // ==================== Homeless Smart Extraction ====================
+  if (source === 'homeless') {
+    // Properties start after "כרגע בלוח דירות להשכרה" or "כרגע בלוח דירות למכירה"
+    const rentStart = cleaned.indexOf('כרגע בלוח דירות להשכרה');
+    const saleStart = cleaned.indexOf('כרגע בלוח דירות למכירה');
+    const contentStart = Math.max(rentStart, saleStart);
+    
+    if (contentStart > 0) {
+      const skipped = contentStart;
+      cleaned = cleaned.substring(contentStart);
+      console.log(`[Homeless Clean] Skipped ${skipped} chars of header/navigation`);
+    }
+    
+    // Properties end before pagination "< הקודם" or "הבא >"
+    const prevPattern = cleaned.indexOf('< הקודם');
+    const nextPattern = cleaned.indexOf('הבא >');
+    const contentEnd = prevPattern > 0 ? prevPattern : (nextPattern > 0 ? nextPattern : -1);
+    
+    if (contentEnd > 0) {
+      const trimmed = cleaned.length - contentEnd;
+      cleaned = cleaned.substring(0, contentEnd);
+      console.log(`[Homeless Clean] Trimmed ${trimmed} chars of footer/pagination`);
+    }
+    
+    return cleaned;
+  }
+  
+  // ==================== Madlan Smart Extraction ====================
   if (source === 'madlan') {
     // Look for patterns that indicate property listings start
     const listingPatterns = [
@@ -173,30 +203,21 @@ export function cleanMarkdownContent(markdown: string, source: string): string {
     ];
     
     for (const pattern of listingPatterns) {
-      const match = markdown.search(pattern);
+      const match = cleaned.search(pattern);
       if (match > 0) {
-        // Start from a bit before the match to include context
-        return markdown.substring(Math.max(0, match - 100));
+        console.log(`[Madlan Clean] Found listing pattern at ${match}, skipping header`);
+        cleaned = cleaned.substring(Math.max(0, match - 100));
+        break;
       }
     }
-  }
-  
-  if (source === 'homeless') {
-    // For homeless, look for property listing indicators
-    const listingPatterns = [
-      /דירות להשכרה/,
-      /דירות למכירה/,
-      /\d+ ח[׳'].*\d+ מ"ר/,  // Rooms and size pattern
-    ];
     
-    for (const pattern of listingPatterns) {
-      const match = markdown.search(pattern);
-      if (match > 0) {
-        return markdown.substring(Math.max(0, match - 100));
-      }
-    }
+    return cleaned;
   }
   
+  // ==================== Homeless Legacy (kept for reference) ====================
+  // Note: Homeless now uses smart extraction above
+  
+  // ==================== Yad2 Smart Extraction ====================
   if (source === 'yad2') {
     // For Yad2, skip headers/filters and start from listing area
     // This saves ~5,000 chars of irrelevant content, making room for more private listings
@@ -208,13 +229,16 @@ export function cleanMarkdownContent(markdown: string, source: string): string {
     ];
     
     for (const pattern of listingPatterns) {
-      const match = markdown.search(pattern);
+      const match = cleaned.search(pattern);
       if (match > 0) {
         console.log(`[Yad2 Clean] Found pattern at position ${match}, skipping ${match} chars of headers`);
-        return markdown.substring(match);
+        cleaned = cleaned.substring(match);
+        break;
       }
     }
+    
+    return cleaned;
   }
   
-  return markdown;
+  return cleaned;
 }
