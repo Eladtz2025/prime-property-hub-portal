@@ -128,6 +128,22 @@ serve(async (req) => {
       console.log(`Processing config: ${config.name}${page !== undefined ? ` (page ${page} only)` : ''}`);
 
       currentRunSource = config.source || 'manual';
+      
+      // Check if there's already a running job for this config to prevent duplicates
+      if (config.id !== 'manual') {
+        const { data: existingRun } = await supabase
+          .from('scout_runs')
+          .select('id, started_at')
+          .eq('config_id', config.id)
+          .eq('status', 'running')
+          .single();
+
+        if (existingRun) {
+          console.log(`⏭️ Config ${config.name} (${config.id}) already has a running job (${existingRun.id}), skipping to prevent duplicate`);
+          continue;
+        }
+      }
+      
       const { data: runData, error: runError } = await supabase
         .from('scout_runs')
         .insert({
