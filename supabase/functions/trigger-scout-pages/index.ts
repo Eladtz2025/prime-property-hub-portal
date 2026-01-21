@@ -14,10 +14,11 @@ const corsHeaders = {
 };
 
 // Source-specific delays between page triggers (in milliseconds)
+// With single-page mode, each page runs independently so minimal delay needed
 const SOURCE_DELAYS: Record<string, number> = {
-  yad2: 5000,      // 5 seconds - slower to avoid CAPTCHA
-  madlan: 8000,    // 8 seconds - even slower for Madlan
-  homeless: 3000,  // 3 seconds - fastest
+  yad2: 3000,      // 3 seconds between Yad2 pages
+  madlan: 5000,    // 5 seconds for Madlan
+  homeless: 2000,  // 2 seconds for Homeless
 };
 
 Deno.serve(async (req) => {

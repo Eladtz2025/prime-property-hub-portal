@@ -91,8 +91,11 @@ export async function extractPropertiesWithAI(
 
   const cleanedMarkdown = cleanMarkdownContent(markdown, source);
   
+  // Limit input to 15K chars for faster AI processing (was 30K)
+  const truncatedMarkdown = cleanedMarkdown.substring(0, 15000);
+  
   // Log input stats for debugging
-  console.log(`[${source.toUpperCase()} AI] Input markdown: ${markdown.length} chars, after cleaning: ${cleanedMarkdown.length}, sending: ${Math.min(cleanedMarkdown.length, 30000)}`);
+  console.log(`[${source.toUpperCase()} AI] Input: ${markdown.length} chars → cleaned: ${cleanedMarkdown.length} → sent: ${truncatedMarkdown.length}`);
 
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -105,7 +108,7 @@ export async function extractPropertiesWithAI(
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Extract all property listings:\n\n${cleanedMarkdown.substring(0, 30000)}` }
+          { role: 'user', content: `Extract all property listings:\n\n${truncatedMarkdown}` }
         ],
         temperature: 0.1,
       }),
