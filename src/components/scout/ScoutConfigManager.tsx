@@ -76,7 +76,7 @@ export const ScoutConfigManager: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 5000
+    refetchInterval: 3000
   });
 
   const createMutation = useMutation({
@@ -130,17 +130,27 @@ export const ScoutConfigManager: React.FC = () => {
   });
 
   const runMutation = useMutation({
-    mutationFn: async (configId: string) => {
-      const { data, error } = await supabase.functions.invoke('scout-properties', {
-        body: { config_id: configId }
+    mutationFn: async (config: ScoutConfig) => {
+      // Select correct Edge Function based on source
+      const functionName = 
+        config.source === 'yad2' || config.source === 'yad2_private' ? 'scout-yad2' :
+        config.source === 'madlan' ? 'scout-madlan' :
+        config.source === 'homeless' ? 'scout-homeless' :
+        config.source === 'both' ? 'scout-madlan' : // both = madlan + yad2, start with madlan
+        config.source === 'all' ? 'scout-madlan' : // all sources, start with madlan
+        'scout-yad2'; // fallback
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: { config_id: config.id }
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scout-configs'] });
+      queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-      toast.success(`סריקה הושלמה: נמצאו ${data.properties_found} דירות, ${data.new_properties} חדשות`);
+      toast.success(`סריקה הושלמה: נמצאו ${data.properties_found || 0} דירות, ${data.new_properties || 0} חדשות`);
     },
     onError: (error) => {
       toast.error('שגיאה בהרצת סריקה');
@@ -478,7 +488,7 @@ export const ScoutConfigManager: React.FC = () => {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => runMutation.mutate(config.id)}
+                      onClick={() => runMutation.mutate(config)}
                       disabled={runMutation.isPending}
                       title="הרץ עכשיו"
                     >
