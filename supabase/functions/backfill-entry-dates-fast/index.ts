@@ -154,9 +154,26 @@ async function extractWithAI(markdown: string, apiKey: string): Promise<{ date: 
       })
     });
 
-    if (!response.ok) return { date: null, immediate: false };
+    if (!response.ok) {
+      console.log('AI response not ok:', response.status);
+      return { date: null, immediate: false };
+    }
 
-    const data = await response.json();
+    // Safe JSON parsing - handle empty or invalid responses
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('AI returned empty response');
+      return { date: null, immediate: false };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('AI JSON parse error:', parseError, 'Response preview:', responseText.substring(0, 200));
+      return { date: null, immediate: false };
+    }
+
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const args = JSON.parse(toolCall.function.arguments);
@@ -304,10 +321,10 @@ serve(async (req) => {
 
     // Process in parallel - higher concurrency for speed
     const PARALLEL_LIMIT = 15;
-    let successCount = 0;
-    let failCount = 0;
-    let regexCount = 0;
-    let aiCount = 0;
+    let totalSuccessCount = 0;
+    let totalFailCount = 0;
+    let totalRegexCount = 0;
+    let totalAiCount = 0;
 
     const { data: currentProgress } = await supabase
       .from('backfill_progress')
@@ -320,6 +337,11 @@ serve(async (req) => {
     let runningFailed = currentProgress?.failed_items || 0;
 
     for (let i = 0; i < properties.length; i += PARALLEL_LIMIT) {
+      // Reset batch counters for each batch
+      let batchSuccessCount = 0;
+      let batchFailCount = 0;
+      let batchRegexCount = 0;
+      let batchAiCount = 0;
       const batch = properties.slice(i, i + PARALLEL_LIMIT);
       
       const results = await Promise.allSettled(
@@ -394,9 +416,9 @@ serve(async (req) => {
             .update({ features: updatedFeatures })
             .eq('id', property.id);
 
-          successCount++;
-          if (source === 'regex') regexCount++;
-          if (source === 'ai') aiCount++;
+          batchSuccessCount++;
+          if (source === 'regex') batchRegexCount++;
+          if (source === 'ai') batchAiCount++;
           
           console.log(`✓ ${property.id}: date=${entryDate}, immediate=${immediate}, source=${source}`);
         } else {
@@ -410,16 +432,24 @@ serve(async (req) => {
             .update({ features: updatedFeatures })
             .eq('id', property.id);
           
-          failCount++;
+          batchFailCount++;
           const error = result.status === 'rejected' ? result.reason : result.value.error;
           console.log(`✗ ${property.id}: ${error}`);
         }
       }
 
-      // Heartbeat update
+      // Update totals from this batch
+      totalSuccessCount += batchSuccessCount;
+      totalFailCount += batchFailCount;
+      totalRegexCount += batchRegexCount;
+      totalAiCount += batchAiCount;
+
+      // Heartbeat update with correct incremental values
       runningProcessed += batch.length;
-      runningSuccess += successCount;
-      runningFailed += failCount;
+      runningSuccess += batchSuccessCount;
+      runningFailed += batchFailCount;
+      
+      console.log(`Batch ${Math.floor(i / PARALLEL_LIMIT) + 1} done: +${batchSuccessCount} success, +${batchFailCount} fail, regex=${batchRegexCount}, ai=${batchAiCount}`);
       
       await supabase
         .from('backfill_progress')
@@ -451,10 +481,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       processed: properties.length,
-      successful: successCount,
-      failed: failCount,
-      regexHits: regexCount,
-      aiHits: aiCount,
+      successful: totalSuccessCount,
+      failed: totalFailCount,
+      regexHits: totalRegexCount,
+      aiHits: totalAiCount,
       hasMore,
       remainingCount
     }), {
