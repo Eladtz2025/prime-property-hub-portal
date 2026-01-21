@@ -69,7 +69,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('scouted_properties')
         .select('id, source_url, source, title')
-        .eq('status', 'matched')
+        .in('status', ['matched', 'new'])
         .or('is_active.is.null,is_active.eq.true')
         .lt('first_seen_at', daysAgo.toISOString())
         .limit(availabilitySettings.batch_size);
