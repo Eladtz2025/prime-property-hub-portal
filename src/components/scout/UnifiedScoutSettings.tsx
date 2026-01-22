@@ -55,6 +55,7 @@ import {
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 import { LiveScanProgress } from './LiveScanProgress';
+import { ScheduleSummaryCard } from './ScheduleSummaryCard';
 
 // Scout Config types
 interface ScoutConfig {
@@ -1234,6 +1235,9 @@ export const UnifiedScoutSettings: React.FC = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Schedule Summary Card */}
+              <ScheduleSummaryCard />
             </div>
           </AccordionContent>
         </AccordionItem>
