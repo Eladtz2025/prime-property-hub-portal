@@ -993,22 +993,14 @@ export const UnifiedScoutSettings: React.FC = () => {
                     <CardContent className="p-3 md:p-4">
                       {/* Mobile View - 2 compact rows */}
                       <div className="md:hidden">
-                        {/* Row 1: Checkbox, Switch, Name, Badges */}
+                        {/* Row 1: Checkbox + Badges only */}
                         <div className="flex items-center gap-1.5">
                           <Checkbox
                             checked={selectedConfigs.has(config.id)}
                             onCheckedChange={() => toggleConfigSelection(config.id)}
                             className="shrink-0"
                           />
-                          <Switch
-                            checked={config.is_active}
-                            onCheckedChange={(checked) =>
-                              toggleActiveMutation.mutate({ id: config.id, is_active: checked })
-                            }
-                            className="shrink-0"
-                          />
-                          <span className="font-medium truncate flex-1 min-w-0 text-sm">{config.name}</span>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1 flex-1">
                             <Badge variant={config.is_active ? "default" : "secondary"} className="text-xs px-1.5 py-0">
                               {config.is_active ? 'פעיל' : 'מושבת'}
                             </Badge>
@@ -1021,11 +1013,15 @@ export const UnifiedScoutSettings: React.FC = () => {
                           </div>
                         </div>
                         
-                        {/* Row 2: City + Actions */}
+                        {/* Row 2: Technical details + Actions */}
                         <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                          <span className="text-sm text-muted-foreground truncate">
-                            {config.cities?.join(', ') || 'לא הוגדר'}
-                          </span>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.getPages(settings) || 5} דפים</span>
+                            <span>|</span>
+                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.delaySeconds || 3}s</span>
+                            <span>|</span>
+                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.schedule?.join(', ') || 'לא מתוזמן'}</span>
+                          </div>
                           <div className="flex items-center gap-0.5 shrink-0">
                             <Button
                               variant="ghost"
