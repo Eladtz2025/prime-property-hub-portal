@@ -11,42 +11,37 @@ import {
   Calendar as CalendarIcon,
   Search,
   Trash2,
-  UserCheck
+  Home,
+  Tag
 } from 'lucide-react';
 import { useScoutSettings } from '@/hooks/useScoutSettings';
-
-// Technical parameters per source - for default schedules
-const SOURCE_DEFAULT_SCHEDULES: Record<string, string[]> = {
-  yad2: ['08:30', '16:30', '22:30'],
-  madlan: ['08:10', '16:10', '22:10'],
-  homeless: ['08:00', '16:00', '22:00'],
-};
 
 interface ScheduleItem {
   time: string;
   label: string;
-  type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup' | 'eligibility';
+  type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup';
   isInterval?: boolean;
   source?: string;
+  propertyType?: string;
 }
 
 export const ScheduleSummaryCard: React.FC = () => {
   const { data: settings } = useScoutSettings();
 
-  // Fetch active scout configs with their schedule_times
+  // Fetch active scout configs with their schedule_times and property_type
   const { data: scoutConfigs } = useQuery({
     queryKey: ['scout-configs-schedules'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('scout_configs')
-        .select('id, name, source, is_active, schedule_times')
+        .select('id, name, source, is_active, schedule_times, property_type')
         .eq('is_active', true);
       if (error) throw error;
       return data;
     },
   });
 
-  // Build schedule items
+  // Build schedule items from real data only
   const scheduleItems = React.useMemo(() => {
     const items: ScheduleItem[] = [];
 
@@ -78,7 +73,7 @@ export const ScheduleSummaryCard: React.FC = () => {
       type: 'availability' 
     });
 
-    // Backfill - 03:00 and 12:00 Israel
+    // Backfill - from settings
     const backfillTimes = settings?.backfill?.schedule_times || ['03:00', '12:00'];
     backfillTimes.forEach(time => {
       items.push({ 
@@ -98,33 +93,23 @@ export const ScheduleSummaryCard: React.FC = () => {
       });
     });
 
-    // 4. Add scan times from configs or defaults
-    const scanTimesBySource: Record<string, Set<string>> = {
-      yad2: new Set<string>(),
-      madlan: new Set<string>(),
-      homeless: new Set<string>(),
-    };
-
+    // 4. Add scan times from active configs - with property_type
     scoutConfigs?.forEach(config => {
-      const times = (config as any).schedule_times || SOURCE_DEFAULT_SCHEDULES[config.source];
-      if (times && scanTimesBySource[config.source]) {
-        times.forEach((t: string) => scanTimesBySource[config.source].add(t));
-      }
-    });
+      const times = (config as any).schedule_times as string[] | null;
+      if (!times || times.length === 0) return;
 
-    // Add scan times grouped by source
-    Object.entries(scanTimesBySource).forEach(([source, times]) => {
-      if (times.size === 0) {
-        // Use defaults if no active configs
-        SOURCE_DEFAULT_SCHEDULES[source]?.forEach(t => times.add(t));
-      }
+      const sourceLabel = config.source === 'yad2' ? 'יד2' : 
+                          config.source === 'madlan' ? 'מדלן' : 'הומלס';
+      const propertyType = (config as any).property_type as string | null;
+      const typeLabel = propertyType === 'rent' ? 'השכרה' : 'מכירה';
+
       times.forEach(time => {
-        const sourceLabel = source === 'yad2' ? 'יד2' : source === 'madlan' ? 'מדלן' : 'הומלס';
         items.push({ 
           time, 
-          label: `סריקת ${sourceLabel}`, 
+          label: `${sourceLabel} ${typeLabel}`, 
           type: 'scan',
-          source
+          source: config.source,
+          propertyType: propertyType || undefined
         });
       });
     });
@@ -150,14 +135,15 @@ export const ScheduleSummaryCard: React.FC = () => {
     return acc;
   }, {} as Record<string, ScheduleItem[]>);
 
-  const getTypeColor = (type: ScheduleItem['type']) => {
+  const getTypeColor = (type: ScheduleItem['type'], propertyType?: string) => {
+    if (type === 'scan') {
+      return propertyType === 'rent' ? 'bg-orange-400' : 'bg-orange-600';
+    }
     switch (type) {
-      case 'scan': return 'bg-orange-500';
       case 'matching': return 'bg-green-500';
       case 'availability': return 'bg-blue-500';
       case 'backfill': return 'bg-yellow-500';
       case 'cleanup': return 'bg-gray-400';
-      case 'eligibility': return 'bg-purple-500';
       default: return 'bg-gray-400';
     }
   };
@@ -169,9 +155,15 @@ export const ScheduleSummaryCard: React.FC = () => {
       case 'availability': return <Link className="h-3 w-3" />;
       case 'backfill': return <CalendarIcon className="h-3 w-3" />;
       case 'cleanup': return <Trash2 className="h-3 w-3" />;
-      case 'eligibility': return <UserCheck className="h-3 w-3" />;
       default: return <Clock className="h-3 w-3" />;
     }
+  };
+
+  const getPropertyTypeIcon = (propertyType?: string) => {
+    if (propertyType === 'rent') {
+      return <Home className="h-3 w-3" />;
+    }
+    return <Tag className="h-3 w-3" />;
   };
 
   return (
@@ -187,10 +179,10 @@ export const ScheduleSummaryCard: React.FC = () => {
           {/* Fixed times column */}
           <div>
             <h4 className="text-sm font-medium mb-3 text-muted-foreground">ריצות קבועות (שעון ישראל)</h4>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
               {Object.entries(groupedByTime).map(([time, items]) => (
                 <div key={time} className="flex items-start gap-3 py-1.5 border-b border-border/50 last:border-0">
-                  <span className="font-mono text-sm w-12 font-medium">{time}</span>
+                  <span className="font-mono text-sm w-12 font-medium shrink-0">{time}</span>
                   <div className="flex flex-wrap gap-1.5">
                     {items.map((item, idx) => (
                       <Badge 
@@ -198,7 +190,10 @@ export const ScheduleSummaryCard: React.FC = () => {
                         variant="outline" 
                         className="text-xs flex items-center gap-1"
                       >
-                        <span className={`w-2 h-2 rounded-full ${getTypeColor(item.type)}`} />
+                        <span className={`w-2 h-2 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
+                        {item.type === 'scan' && item.propertyType && (
+                          <span className="opacity-70">{getPropertyTypeIcon(item.propertyType)}</span>
+                        )}
                         {item.label}
                       </Badge>
                     ))}
@@ -234,7 +229,14 @@ export const ScheduleSummaryCard: React.FC = () => {
               <h5 className="text-xs text-muted-foreground mb-2">מקרא צבעים</h5>
               <div className="flex flex-wrap gap-2">
                 <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-orange-500" /> סריקות
+                  <span className="w-2 h-2 rounded-full bg-orange-400" /> 
+                  <Home className="h-3 w-3 opacity-70" />
+                  השכרה
+                </span>
+                <span className="flex items-center gap-1 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-orange-600" /> 
+                  <Tag className="h-3 w-3 opacity-70" />
+                  מכירה
                 </span>
                 <span className="flex items-center gap-1 text-xs">
                   <span className="w-2 h-2 rounded-full bg-green-500" /> התאמות
