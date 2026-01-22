@@ -83,8 +83,6 @@ export interface ScrapingSettings {
   yad2_pages: number;
   madlan_pages: number;
   homeless_pages: number;
-  delay_between_requests_ms: number;
-  madlan_delay_ms: number;
   max_properties_per_config: number;
 }
 
@@ -92,8 +90,6 @@ export const defaultScrapingSettings: ScrapingSettings = {
   yad2_pages: 7,
   madlan_pages: 4,
   homeless_pages: 0,
-  delay_between_requests_ms: 1500,
-  madlan_delay_ms: 5000,
   max_properties_per_config: 500,
 };
 

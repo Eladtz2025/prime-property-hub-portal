@@ -32,8 +32,6 @@ export interface ScoutSettings {
     yad2_pages: number;
     madlan_pages: number;
     homeless_pages: number;
-    delay_between_requests_ms: number;
-    madlan_delay_ms: number;
     stuck_timeout_minutes: number;
     max_properties_per_config: number;
   };
@@ -75,8 +73,6 @@ export const defaultSettings: ScoutSettings = {
     yad2_pages: 7,
     madlan_pages: 4,
     homeless_pages: 0,
-    delay_between_requests_ms: 1500,
-    madlan_delay_ms: 5000,
     stuck_timeout_minutes: 30,
     max_properties_per_config: 500,
   },
