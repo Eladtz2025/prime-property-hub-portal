@@ -1536,7 +1536,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                   className={`border border-gray-200 rounded-lg p-2.5 shadow-sm bg-white ${property.is_active === false ? 'opacity-60' : ''}`}
               >
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
-                <div className="flex flex-row-reverse items-center gap-1.5 text-sm">
+                <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
                     {property.address || property.title || 'ללא כתובת'}
                   </span>
@@ -1553,7 +1553,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 </div>
 
                 {/* Row 2: Actions | Price | Time */}
-                <div className="flex flex-row-reverse items-center justify-between gap-2 mt-1.5 pt-1.5 border-t">
+                <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t">
                   <div className="flex items-center gap-0.5">
                     <Button
                       variant="ghost"
