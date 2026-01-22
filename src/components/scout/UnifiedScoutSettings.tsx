@@ -991,15 +991,16 @@ export const UnifiedScoutSettings: React.FC = () => {
                 {configs?.map((config) => (
                   <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`} dir="rtl">
                     <CardContent className="p-3 md:p-4">
-                      {/* Mobile View - 2 compact rows */}
-                      <div className="md:hidden">
-                        {/* Row 1: Checkbox + Badges only */}
-                        <div className="flex items-center gap-1.5">
+                      {/* Unified compact view - same for mobile and desktop */}
+                      <div>
+                        {/* Row 1: Checkbox + Name + Badges */}
+                        <div className="flex items-center gap-2">
                           <Checkbox
                             checked={selectedConfigs.has(config.id)}
                             onCheckedChange={() => toggleConfigSelection(config.id)}
                             className="shrink-0"
                           />
+                          <span className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-[200px]">{config.name}</span>
                           <div className="flex items-center gap-1 flex-1">
                             <Badge variant={config.is_active ? "default" : "secondary"} className="text-xs px-1.5 py-0">
                               {config.is_active ? 'פעיל' : 'מושבת'}
@@ -1011,18 +1012,26 @@ export const UnifiedScoutSettings: React.FC = () => {
                               {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
                             </Badge>
                           </div>
+                          <Switch
+                            checked={config.is_active}
+                            onCheckedChange={(checked) =>
+                              toggleActiveMutation.mutate({ id: config.id, is_active: checked })
+                            }
+                            className="shrink-0"
+                          />
                         </div>
                         
                         {/* Row 2: Technical details + Actions */}
                         <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.getPages(settings) || 5} דפים</span>
+                          <div className="flex items-center gap-1.5 md:gap-2 text-xs text-muted-foreground">
+                            <span>{(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source]?.getPages(settings) ?? 5} דפים</span>
                             <span>|</span>
-                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.delaySeconds || 3}s</span>
+                            <span>{(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source]?.delaySeconds ?? 3}s</span>
                             <span>|</span>
-                            <span>{SOURCE_TECHNICAL_PARAMS[config.source]?.schedule?.join(', ') || 'לא מתוזמן'}</span>
+                            <span className="hidden sm:inline">{(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source]?.schedule?.join(', ') || 'לא מתוזמן'}</span>
+                            <span className="sm:hidden">{((config as any).schedule_times || SOURCE_TECHNICAL_PARAMS[config.source]?.schedule || []).length} זמנים</span>
                           </div>
-                          <div className="flex items-center gap-0.5 shrink-0">
+                          <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1056,105 +1065,6 @@ export const UnifiedScoutSettings: React.FC = () => {
                               onClick={() => deleteConfigMutation.mutate(config.id)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Desktop View - full layout */}
-                      <div className="hidden md:block">
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={selectedConfigs.has(config.id)}
-                            onCheckedChange={() => toggleConfigSelection(config.id)}
-                            className="mt-1"
-                          />
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium truncate">{config.name}</span>
-                              <Badge variant={config.is_active ? 'default' : 'secondary'} className="text-xs">
-                                {config.is_active ? 'פעיל' : 'מושבת'}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {SOURCES.find(s => s.value === config.source)?.label}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-muted-foreground flex flex-wrap gap-2 mt-1">
-                              {config.cities?.length > 0 && (
-                                <span>{config.cities.join(', ')}</span>
-                              )}
-                              {config.min_price && config.max_price && (
-                                <span>
-                                  ₪{config.min_price.toLocaleString()} - ₪{config.max_price.toLocaleString()}
-                                </span>
-                              )}
-                              {config.min_rooms && config.max_rooms && (
-                                <span>{config.min_rooms}-{config.max_rooms} חדרים</span>
-                              )}
-                            </div>
-                            {SOURCE_TECHNICAL_PARAMS[config.source] && (
-                              <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground flex flex-wrap gap-3">
-                                <span className="flex items-center gap-1">
-                                  <FileText className="h-3 w-3" />
-                                  {(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source].getPages(settings)} דפים
-                                  {(config as any).max_pages && <span className="text-primary font-bold">*</span>}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Timer className="h-3 w-3" />
-                                  {(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source].delaySeconds}s
-                                  {(config as any).page_delay_seconds && <span className="text-primary font-bold">*</span>}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source].schedule.join(', ')}
-                                  {(config as any).schedule_times && <span className="text-primary font-bold">*</span>}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Actions */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Switch
-                              checked={config.is_active}
-                              onCheckedChange={(checked) =>
-                                toggleActiveMutation.mutate({ id: config.id, is_active: checked })
-                              }
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => runConfigMutation.mutate(config.id)}
-                              disabled={runConfigMutation.isPending || !!getActiveRunForConfig(config.id)}
-                            >
-                              <Play className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive/90 disabled:opacity-30"
-                              onClick={() => stopMutation.mutate(config.id)}
-                              disabled={stopMutation.isPending || !getActiveRunForConfig(config.id)}
-                            >
-                              <Square className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(config)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteConfigMutation.mutate(config.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
