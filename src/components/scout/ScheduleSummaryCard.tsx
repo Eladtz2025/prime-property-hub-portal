@@ -161,33 +161,47 @@ export const ScheduleSummaryCard: React.FC = () => {
   };
 
   return (
-    <Card className="mt-6">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
-          לוח זמנים יומי
+    <Card className="mt-4">
+      <CardHeader className="py-2.5 px-4">
+        <CardTitle className="text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            לוח זמנים יומי
+          </div>
+          {/* Compact Legend as inline badges */}
+          <div className="flex flex-wrap gap-1.5">
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />השכרה
+            </span>
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-600" />מכירה
+            </span>
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />התאמות
+            </span>
+            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />זמינות
+            </span>
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Fixed times column */}
+      <CardContent className="py-2 px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Fixed times - Compact */}
           <div>
-            <h4 className="text-sm font-medium mb-3 text-muted-foreground">ריצות קבועות (שעון ישראל)</h4>
-            <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+            <h4 className="text-xs font-medium mb-2 text-muted-foreground">ריצות קבועות</h4>
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
               {Object.entries(groupedByTime).map(([time, items]) => (
-                <div key={time} className="flex items-start gap-3 py-1.5 border-b border-border/50 last:border-0">
-                  <span className="font-mono text-sm w-12 font-medium shrink-0">{time}</span>
-                  <div className="flex flex-wrap gap-1.5">
+                <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
+                  <span className="font-mono text-xs w-10 font-medium shrink-0">{time}</span>
+                  <div className="flex flex-wrap gap-1">
                     {items.map((item, idx) => (
                       <Badge 
                         key={idx} 
                         variant="outline" 
-                        className="text-xs flex items-center gap-1"
+                        className="text-[10px] h-5 px-1.5 flex items-center gap-0.5"
                       >
-                        <span className={`w-2 h-2 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
-                        {item.type === 'scan' && item.propertyType && (
-                          <span className="opacity-70">{getPropertyTypeIcon(item.propertyType)}</span>
-                        )}
+                        <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
                         {item.label}
                       </Badge>
                     ))}
@@ -197,54 +211,23 @@ export const ScheduleSummaryCard: React.FC = () => {
             </div>
           </div>
 
-          {/* Interval column */}
+          {/* Interval - Compact */}
           <div>
-            <h4 className="text-sm font-medium mb-3 text-muted-foreground">ריצות מחזוריות</h4>
-            <div className="space-y-2">
+            <h4 className="text-xs font-medium mb-2 text-muted-foreground">ריצות מחזוריות</h4>
+            <div className="space-y-1">
               {intervalItems.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 py-1.5">
-                  <div className={`p-1.5 rounded ${getTypeColor(item.type)} text-white`}>
+                <div key={idx} className="flex items-center gap-2 py-1">
+                  <div className={`p-1 rounded ${getTypeColor(item.type)} text-white`}>
                     {getTypeIcon(item.type)}
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm">{item.label}</span>
-                  </div>
-                  <Badge variant="secondary" className="font-mono text-xs">
+                  <span className="text-xs flex-1">{item.label}</span>
+                  <Badge variant="secondary" className="font-mono text-[10px] h-5">
                     {item.time === '*/5' && 'כל 5 דק׳'}
                     {item.time === '*/10' && 'כל 10 דק׳'}
                     {item.time === '*/15' && 'כל 15 דק׳'}
                   </Badge>
                 </div>
               ))}
-            </div>
-
-            {/* Legend */}
-            <div className="mt-4 pt-4 border-t">
-              <h5 className="text-xs text-muted-foreground mb-2">מקרא צבעים</h5>
-              <div className="flex flex-wrap gap-2">
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-orange-400" /> 
-                  <Home className="h-3 w-3 opacity-70" />
-                  השכרה
-                </span>
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-orange-600" /> 
-                  <Tag className="h-3 w-3 opacity-70" />
-                  מכירה
-                </span>
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-green-500" /> התאמות
-                </span>
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" /> זמינות
-                </span>
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" /> תאריכים
-                </span>
-                <span className="flex items-center gap-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-gray-400" /> ניקוי
-                </span>
-              </div>
             </div>
           </div>
         </div>
