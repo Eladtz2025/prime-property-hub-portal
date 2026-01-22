@@ -1531,18 +1531,18 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 לא נמצאו דירות התואמות את החיפוש
               </div>
             ) : filteredProperties?.map((property) => (
-              <div 
-                key={property.id} 
-                className={`border rounded-lg p-2.5 ${property.is_active === false ? 'opacity-60' : ''}`}
+                <div
+                  key={property.id}
+                  className={`border border-gray-200 rounded-lg p-2.5 shadow-sm bg-white ${property.is_active === false ? 'opacity-60' : ''}`}
               >
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
                     {property.address || property.title || 'ללא כתובת'}
                   </span>
-                  <span className="text-muted-foreground text-xs shrink-0">
-                    {property.city}{property.neighborhood ? ` - ${shortenNeighborhood(property.neighborhood)}` : ''}
-                  </span>
+                      <span className="text-muted-foreground text-xs shrink-0">
+                        {property.city}
+                      </span>
                   {property.is_private === true && (
                     <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
                   )}
