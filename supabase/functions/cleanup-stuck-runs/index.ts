@@ -22,7 +22,7 @@ interface ScoutRun {
   config_id: string;
   source: string;
   status: string;
-  created_at: string;
+  started_at: string;
   page_stats: PageStat[] | null;
   properties_found: number | null;
   new_properties: number | null;
@@ -83,7 +83,7 @@ serve(async (req) => {
     const cleanupDetails: any[] = [];
 
     for (const run of runningRuns as ScoutRun[]) {
-      const runAgeMinutes = (now - new Date(run.created_at).getTime()) / 60000;
+      const runAgeMinutes = (now - new Date(run.started_at).getTime()) / 60000;
       const pageStats = run.page_stats || [];
       
       console.log(`\n🔍 Checking run ${run.id} (${run.source})`);
@@ -157,7 +157,7 @@ serve(async (req) => {
         
         if (page.status === 'scraping') {
           // For scraping pages, check if started_at exists and is too old
-          const pageStarted = page.started_at ? new Date(page.started_at).getTime() : new Date(run.created_at).getTime();
+          const pageStarted = page.started_at ? new Date(page.started_at).getTime() : new Date(run.started_at).getTime();
           const pageAgeMinutes = (now - pageStarted) / 60000;
           
           if (pageAgeMinutes > pageTimeoutMinutes) {
