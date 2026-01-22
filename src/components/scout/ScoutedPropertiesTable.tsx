@@ -1186,10 +1186,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                placeholder="חדרים"
+                placeholder="חדרים מ-"
                 value={roomsMin}
                 onChange={(e) => setRoomsMin(e.target.value)}
-                className="w-[70px] h-8 text-sm"
+                className="w-[85px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
@@ -1197,10 +1197,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <span className="text-xs text-muted-foreground">-</span>
               <Input
                 type="number"
-                placeholder="עד"
+                placeholder="חדרים עד"
                 value={roomsMax}
                 onChange={(e) => setRoomsMax(e.target.value)}
-                className="w-[60px] h-8 text-sm"
+                className="w-[80px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
@@ -1211,18 +1211,18 @@ export const ScoutedPropertiesTable: React.FC = () => {
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                placeholder="₪ מ-"
+                placeholder="תקציב מ-"
                 value={minBudget}
                 onChange={(e) => setMinBudget(e.target.value)}
-                className="w-[80px] h-8 text-sm"
+                className="w-[90px] h-8 text-sm"
               />
               <span className="text-xs text-muted-foreground">-</span>
               <Input
                 type="number"
-                placeholder="עד"
+                placeholder="תקציב עד"
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-[70px] h-8 text-sm"
+                className="w-[85px] h-8 text-sm"
               />
             </div>
 
@@ -1245,7 +1245,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <SelectValue placeholder="סוג" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="all">כל הסוגים</SelectItem>
                 <SelectItem value="rent">השכרה</SelectItem>
                 <SelectItem value="sale">מכירה</SelectItem>
               </SelectContent>
