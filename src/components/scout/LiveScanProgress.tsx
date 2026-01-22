@@ -24,7 +24,7 @@ interface ActiveRun {
   properties_found: number | null;
   new_properties: number | null;
   page_stats: PageStat[] | null;
-  created_at: string;
+  started_at: string;
   config?: {
     name: string;
     max_pages?: number;
@@ -46,11 +46,11 @@ export const LiveScanProgress: React.FC = () => {
           properties_found,
           new_properties,
           page_stats,
-          created_at,
+          started_at,
           scout_configs(name, max_pages)
         `)
         .eq('status', 'running')
-        .order('created_at', { ascending: false });
+        .order('started_at', { ascending: false });
       
       if (error) throw error;
       
@@ -78,8 +78,8 @@ export const LiveScanProgress: React.FC = () => {
     return `${minutes}ד ${remainingSeconds}ש`;
   };
 
-  const getElapsedTime = (createdAt: string) => {
-    const elapsed = Date.now() - new Date(createdAt).getTime();
+  const getElapsedTime = (startedAt: string) => {
+    const elapsed = Date.now() - new Date(startedAt).getTime();
     const minutes = Math.floor(elapsed / 60000);
     const seconds = Math.floor((elapsed % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -135,7 +135,7 @@ export const LiveScanProgress: React.FC = () => {
                   </Badge>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {getElapsedTime(run.created_at)}
+                  {getElapsedTime(run.started_at)}
                 </span>
               </div>
               
