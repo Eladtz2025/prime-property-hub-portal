@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Phone, User, MapPin, ExternalLink, ArrowLeft, Plus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Calendar, Clock, Phone, User, MapPin, ExternalLink, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, isToday, isTomorrow, parseISO, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Appointment {
   id: string;
@@ -60,6 +71,9 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   onAddAppointment,
   showViewAll = true
 }) => {
+  const queryClient = useQueryClient();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const { data: appointments, isLoading } = useQuery({
     queryKey: ['upcoming-appointments', limit],
     queryFn: async () => {
@@ -121,6 +135,36 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
     window.open(googleCalendarUrl, '_blank');
   };
 
+  // Delete mutation
+  const deleteAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-appointments'] });
+      toast.success('הפגישה נמחקה');
+      setDeleteId(null);
+    },
+    onError: () => {
+      toast.error('שגיאה במחיקת הפגישה');
+    }
+  });
+
+  // Filter out appointments where time has passed
+  const filteredAppointments = useMemo(() => {
+    if (!appointments) return [];
+    const now = new Date();
+    return appointments.filter(appointment => {
+      const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+      return appointmentDateTime > now;
+    });
+  }, [appointments]);
+
   if (isLoading) {
     return (
       <Card>
@@ -170,7 +214,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
         )}
       </CardHeader>
       <CardContent>
-        {!appointments || appointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>אין פגישות קרובות</p>
@@ -182,7 +226,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
           </div>
         ) : (
           <div className="space-y-3">
-            {appointments.map((appointment) => (
+            {filteredAppointments.map((appointment) => (
               <div 
                 key={appointment.id} 
                 className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
@@ -236,22 +280,54 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                     ) : (
                       <span></span>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openGoogleCalendar(appointment)}
-                      title="הוסף ליומן גוגל"
-                      className="gap-1 h-8 px-2"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline text-xs">יומן גוגל</span>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openGoogleCalendar(appointment)}
+                        title="הוסף ליומן גוגל"
+                        className="gap-1 h-8 px-2"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline text-xs">יומן גוגל</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(appointment.id)}
+                        title="מחק פגישה"
+                        className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>מחיקת פגישה</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את הפגישה? פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId && deleteAppointment.mutate(deleteId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

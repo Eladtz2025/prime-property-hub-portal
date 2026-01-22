@@ -116,12 +116,33 @@ export const useAppointments = (propertyId?: string) => {
     }
   });
 
+  const deleteAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-appointments'] });
+      toast.success('הפגישה נמחקה');
+    },
+    onError: (error) => {
+      console.error('Error deleting appointment:', error);
+      toast.error('שגיאה במחיקת הפגישה');
+    }
+  });
+
   return {
     appointments,
     isLoading,
     error,
     addAppointment,
     updateAppointment,
-    cancelAppointment
+    cancelAppointment,
+    deleteAppointment
   };
 };
