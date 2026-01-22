@@ -785,104 +785,86 @@ export const ScoutedPropertiesTable: React.FC = () => {
         </Card>
       </div>
 
-      {/* Desktop View - 4 Separate Cards */}
-      <div className="hidden md:grid md:grid-cols-4 gap-3 mb-4">
-        <Card className="overflow-hidden">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded bg-primary/10 shrink-0">
-                <Building2 className="h-4 w-4 text-primary" />
+      {/* Desktop View - 3 Improved Cards */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 mb-4">
+        {/* Card 1: Total + By Source */}
+        <Card className="border border-border/50 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground truncate">סה"כ</p>
-                <p className="text-lg font-bold">{stats?.total || 0}</p>
+              <div>
+                <p className="text-xs text-muted-foreground">סה"כ דירות</p>
+                <p className="text-2xl font-bold">{stats?.total || 0}</p>
               </div>
             </div>
-            <div className="flex gap-1.5 flex-wrap text-[10px] mt-1.5 text-muted-foreground">
-              <span className="text-orange-600">יד2:{stats?.bySources?.yad2 || 0}</span>
-              <span className="text-purple-600">הומלס:{stats?.bySources?.homeless || 0}</span>
-              <span className="text-blue-600">מדלן:{stats?.bySources?.madlan || 0}</span>
+            <div className="flex gap-3 mt-3 text-sm">
+              <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
+              <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
+              <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded bg-green-500/10 shrink-0">
-                <TrendingUp className="h-4 w-4 text-green-500" />
+        {/* Card 2: Today + Week */}
+        <Card className="border border-border/50 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <TrendingUp className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">היום</p>
+                  <p className="text-2xl font-bold">{stats?.today || 0}</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground truncate">היום</p>
-                <p className="text-lg font-bold">{stats?.today || 0}</p>
+              <div className="text-left border-r pr-4">
+                <p className="text-xs text-muted-foreground">השבוע</p>
+                <p className="text-xl font-semibold text-muted-foreground">{stats?.week || 0}</p>
               </div>
             </div>
             {stats?.today > 0 && (
-              <div className="flex gap-1.5 flex-wrap text-[10px] mt-1.5 text-muted-foreground">
-                {stats?.todayBySources?.yad2 > 0 && <span className="text-orange-600">יד2:{stats.todayBySources.yad2}</span>}
-                {stats?.todayBySources?.homeless > 0 && <span className="text-purple-600">הומלס:{stats.todayBySources.homeless}</span>}
-                {stats?.todayBySources?.madlan > 0 && <span className="text-blue-600">מדלן:{stats.todayBySources.madlan}</span>}
+              <div className="flex gap-2 mt-3 text-xs text-muted-foreground">
+                {stats?.todayBySources?.yad2 > 0 && <span className="text-orange-600">יד2: {stats.todayBySources.yad2}</span>}
+                {stats?.todayBySources?.homeless > 0 && <span className="text-purple-600">הומלס: {stats.todayBySources.homeless}</span>}
+                {stats?.todayBySources?.madlan > 0 && <span className="text-blue-600">מדלן: {stats.todayBySources.madlan}</span>}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Scan Status Card - Desktop */}
-        <Card className={`overflow-hidden ${hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}`}>
-          <CardContent className="p-3">
-            {hasActiveScans ? (
-              <div className="flex items-center gap-2">
-                <div className="relative shrink-0">
-                  <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
-                  <div className="relative w-2.5 h-2.5 bg-red-500 rounded-full" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium">סריקות פעילות</p>
-                  <p className="text-lg font-bold">{scanTotalFound}</p>
-                  <Progress value={50} className="h-1 mt-1" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-green-500/10 shrink-0">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">סריקה אחרונה</p>
-                  {stats?.lastScanBySources && (
-                    <div className="flex gap-1.5 flex-wrap text-[10px] text-muted-foreground">
-                      <span className="text-orange-600">יד2:{stats.lastScanBySources.yad2 || 0}</span>
-                      <span className="text-purple-600">הומלס:{stats.lastScanBySources.homeless || 0}</span>
-                      <span className="text-blue-600">מדלן:{stats.lastScanBySources.madlan || 0}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Duplicates Card - Desktop */}
+        {/* Card 3: Duplicates - Clickable */}
         <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
           <SheetTrigger asChild>
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-yellow-500/10 shrink-0">
-                    <Copy className="h-4 w-4 text-yellow-600" />
+            <Card className="border border-border/50 shadow-sm cursor-pointer hover:border-yellow-500/50 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                    <Copy className="h-5 w-5 text-yellow-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
                       <p className="text-xs text-muted-foreground">כפילויות</p>
                       {(duplicateStats?.unresolved || 0) > 0 && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 h-4 px-1 text-[9px]">
-                          {duplicateStats?.unresolved}
+                        <Badge className="bg-yellow-100 text-yellow-700 text-xs">
+                          {duplicateStats?.unresolved} פתוחות
                         </Badge>
                       )}
                     </div>
-                    <p className="text-lg font-bold">{duplicateStats?.groups || 0}</p>
+                    <p className="text-2xl font-bold">{duplicateStats?.groups || 0}</p>
                   </div>
                 </div>
+                {hasActiveScans && (
+                  <div className="flex items-center gap-2 mt-3 text-xs">
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
+                      <div className="relative w-2 h-2 bg-red-500 rounded-full" />
+                    </div>
+                    <span className="text-muted-foreground">סריקה פעילה - נמצאו: {scanTotalFound}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </SheetTrigger>
