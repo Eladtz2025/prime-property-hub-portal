@@ -99,6 +99,16 @@ function parseSettingValue(value: any, defaultValue: any): any {
     return value;
   }
   
+  // Handle string to array conversion (JSON parsing)
+  if (Array.isArray(defaultValue) && typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+  
   // Handle string to number conversion
   if (typeof defaultValue === 'number' && typeof value === 'string') {
     const parsed = parseFloat(value);
