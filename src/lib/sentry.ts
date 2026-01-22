@@ -20,9 +20,9 @@ export const initSentry = () => {
       /^https:\/\/.*\.lovable\.app/,
     ],
     
-    // Session Replay for debugging
-    replaysSessionSampleRate: import.meta.env.PROD ? 0.1 : 0.5,
-    replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+    // Session Replay for debugging - reduced to prevent 429 rate limiting
+    replaysSessionSampleRate: import.meta.env.PROD ? 0.05 : 0.5, // 5% in prod
+    replaysOnErrorSampleRate: 0.5, // 50% of sessions with errors (reduced from 100%)
     
     // Environment
     environment: import.meta.env.MODE,
@@ -106,6 +106,9 @@ export const initSentry = () => {
       'ResizeObserver loop completed with undelivered notifications',
       // User interactions
       'Non-Error promise rejection captured',
+      // Preload and meta tag warnings (browser-specific, not actionable)
+      'preloaded using link preload',
+      'apple-mobile-web-app-capable',
     ],
     
     // Integrations
@@ -128,9 +131,9 @@ export const initSentry = () => {
       // HTTP client integration for better fetch tracking
       Sentry.httpClientIntegration(),
       
-      // Capture console errors
+      // Capture console errors - only errors, not warnings (reduces noise)
       Sentry.captureConsoleIntegration({
-        levels: ['error', 'warn'],
+        levels: ['error'],
       }),
     ],
   });
