@@ -1012,13 +1012,6 @@ export const UnifiedScoutSettings: React.FC = () => {
                               {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
                             </Badge>
                           </div>
-                          <Switch
-                            checked={config.is_active}
-                            onCheckedChange={(checked) =>
-                              toggleActiveMutation.mutate({ id: config.id, is_active: checked })
-                            }
-                            className="shrink-0"
-                          />
                         </div>
                         
                         {/* Row 2: Technical details + Actions */}
