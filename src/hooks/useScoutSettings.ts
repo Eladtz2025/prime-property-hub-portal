@@ -54,6 +54,12 @@ export interface ScoutSettings {
     require_budget: boolean;
     require_rooms: boolean;
   };
+  backfill: {
+    enabled: boolean;
+    schedule_times: string[];
+    batch_size: number;
+    timeout_minutes: number;
+  };
 }
 
 // Default values - simplified
@@ -96,6 +102,12 @@ export const defaultSettings: ScoutSettings = {
     require_neighborhoods: true,
     require_budget: true,
     require_rooms: true,
+  },
+  backfill: {
+    enabled: true,
+    schedule_times: ['03:00', '12:00'],
+    batch_size: 30,
+    timeout_minutes: 5,
   },
 };
 
@@ -174,6 +186,9 @@ export function useScoutSettings(category?: keyof ScoutSettings) {
         } else if (cat === 'eligibility' && setting_key in settings.eligibility) {
           const key = setting_key as keyof typeof settings.eligibility;
           (settings.eligibility as any)[key] = parseSettingValue(setting_value, defaultSettings.eligibility[key]);
+        } else if (cat === 'backfill' && setting_key in settings.backfill) {
+          const key = setting_key as keyof typeof settings.backfill;
+          (settings.backfill as any)[key] = parseSettingValue(setting_value, defaultSettings.backfill[key]);
         }
       }
       
