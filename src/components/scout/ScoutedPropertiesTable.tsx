@@ -740,8 +740,53 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
   return (
     <>
-      {/* Statistics Cards - Compact Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
+      {/* Statistics Cards - Mobile: 2 combined cards, Desktop: 4 separate */}
+      {/* Mobile View - 2 Combined Cards */}
+      <div className="grid grid-cols-2 gap-2 mb-4 md:hidden">
+        <Card className="overflow-hidden">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-1.5 rounded bg-primary/10 shrink-0">
+                <Building2 className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">סה"כ</p>
+                <p className="text-lg font-bold leading-none">{stats?.total || 0}</p>
+              </div>
+            </div>
+            <div className="flex gap-1 flex-wrap text-[10px] text-muted-foreground">
+              <span className="text-orange-600">יד2:{stats?.bySources?.yad2 || 0}</span>
+              <span className="text-purple-600">הומלס:{stats?.bySources?.homeless || 0}</span>
+              <span className="text-blue-600">מדלן:{stats?.bySources?.madlan || 0}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-1.5 rounded bg-green-500/10 shrink-0">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">היום</p>
+                <p className="text-lg font-bold leading-none">{stats?.today || 0}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span>כפילויות: {duplicateStats?.groups || 0}</span>
+              {(duplicateStats?.unresolved || 0) > 0 && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 h-4 px-1 text-[9px]">
+                  {duplicateStats?.unresolved} פתוחות
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Desktop View - 4 Separate Cards */}
+      <div className="hidden md:grid md:grid-cols-4 gap-3 mb-4">
         <Card className="overflow-hidden">
           <CardContent className="p-3">
             <div className="flex items-center gap-2">
@@ -782,74 +827,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Matches Card - Compact */}
-        <Card className={`overflow-hidden ${matchAllMutation.isPending || matchingProgress ? (isMatchingStuck ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/30 bg-primary/5') : ''}`}>
-          <CardContent className="p-3">
-            {matchAllMutation.isPending || matchingProgress ? (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className={cn("h-4 w-4 animate-spin", isMatchingStuck ? "text-amber-500" : "text-primary")} />
-                    <div>
-                      <p className="text-xs font-medium">מחשב...</p>
-                      {matchingProgress && matchingProgress.total > 0 && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {matchingProgress.processed}/{matchingProgress.total}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {isMatchingStuck && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={async () => {
-                        const { error } = await supabase
-                          .from('scout_runs')
-                          .update({
-                            status: 'failed',
-                            error_message: 'Manually stopped - stuck matching',
-                            completed_at: new Date().toISOString()
-                          })
-                          .eq('source', 'matching')
-                          .eq('status', 'running');
-                        
-                        if (!error) {
-                          queryClient.invalidateQueries({ queryKey: ['running-scans'] });
-                          toast.success('ריצת התאמות תקועה נוקתה');
-                        }
-                      }}
-                      className="text-amber-600 hover:text-amber-700 h-6 px-1.5 text-[10px]"
-                    >
-                      נקה
-                    </Button>
-                  )}
-                </div>
-                {matchingProgress && matchingProgress.total > 0 && (
-                  <Progress value={(matchingProgress.processed / matchingProgress.total) * 100} className="h-1.5" />
-                )}
-                {isMatchingStuck && (
-                  <p className="text-[10px] text-amber-600">⚠️ תקוע</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <Button 
-                  onClick={() => matchAllMutation.mutate()}
-                  disabled={matchAllMutation.isPending || !!matchingProgress}
-                  className="w-full gap-1.5 h-8 text-xs"
-                  size="sm"
-                >
-                  <Calculator className="h-3.5 w-3.5" />
-                  חשב התאמות
-                </Button>
-                <p className="text-[10px] text-muted-foreground text-center">התאמה ללקוחות</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Scan Status Card - Compact */}
+        {/* Scan Status Card - Desktop */}
         <Card className={`overflow-hidden ${hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}`}>
           <CardContent className="p-3">
             {hasActiveScans ? (
@@ -884,26 +862,25 @@ export const ScoutedPropertiesTable: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Duplicates Card */}
+        {/* Duplicates Card - Desktop */}
         <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
           <SheetTrigger asChild>
             <Card className="cursor-pointer hover:border-primary/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-500/10">
-                    <Copy className="h-5 w-5 text-yellow-600" />
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-yellow-500/10 shrink-0">
+                    <Copy className="h-4 w-4 text-yellow-600" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-muted-foreground">כפילויות</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground">כפילויות</p>
                       {(duplicateStats?.unresolved || 0) > 0 && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 h-5 px-1.5">
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 h-4 px-1 text-[9px]">
                           {duplicateStats?.unresolved}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-2xl font-bold">{duplicateStats?.groups || 0}</p>
-                    <p className="text-xs text-muted-foreground">קבוצות</p>
+                    <p className="text-lg font-bold">{duplicateStats?.groups || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1556,107 +1533,75 @@ export const ScoutedPropertiesTable: React.FC = () => {
             ) : filteredProperties?.map((property) => (
               <div 
                 key={property.id} 
-                className={`border rounded-lg p-3 space-y-2 ${property.is_active === false ? 'opacity-60' : ''}`}
+                className={`border rounded-lg p-2.5 ${property.is_active === false ? 'opacity-60' : ''}`}
               >
-                {/* Header: Source + Status + Time */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    {getSourceBadge(property.source)}
-                    {property.is_private === true && (
-                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">פרטי</Badge>
+                {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="font-medium truncate flex-1 min-w-0">
+                    {property.address || property.title || 'ללא כתובת'}
+                  </span>
+                  <span className="text-muted-foreground text-xs shrink-0">
+                    {property.city}{property.neighborhood ? ` - ${shortenNeighborhood(property.neighborhood)}` : ''}
+                  </span>
+                  {property.is_private === true && (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
+                  )}
+                  {property.is_private === false && (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-orange-50 text-orange-700 border-orange-300 shrink-0">תיווך</Badge>
+                  )}
+                  {getSourceBadge(property.source)}
+                </div>
+
+                {/* Row 2: Actions | Price | Time */}
+                <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t">
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => {
+                        setSelectedPropertyDetails(property);
+                        setDetailsDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => window.open(property.source_url, '_blank')}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                    {property.status !== 'imported' && property.status !== 'archived' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => handleImportProperty(property)}
+                        disabled={importMutation.isPending}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                     )}
-                    {property.is_private === false && (
-                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300">תיווך</Badge>
+                    {property.status !== 'archived' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => archiveMutation.mutate(property.id)}
+                      >
+                        <Archive className="h-3.5 w-3.5" />
+                      </Button>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
-                  </span>
-                </div>
-
-                {/* Title + Location */}
-                <div>
-                  <p className="font-medium text-sm truncate">{property.title || 'ללא כותרת'}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {property.city}{property.neighborhood ? ` - ${property.neighborhood}` : ''}
-                  </p>
-                </div>
-
-                {/* Stats Row */}
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="font-medium">
+                  <span className="font-semibold text-sm">
                     {property.price ? `₪${property.price.toLocaleString()}` : '-'}
                   </span>
-                  <span>{property.rooms || '-'} חד׳</span>
-                  <span>{property.size ? `${property.size} מ"ר` : '-'}</span>
-                  {getStatusBadge(property.status, property.is_active)}
-                </div>
-
-                {/* Matched Leads */}
-                {property.matched_leads?.length > 0 && (
-                  <div className="flex items-center gap-1 text-xs text-purple-600">
-                    <Users className="h-3 w-3" />
-                    <span>{property.matched_leads.length} התאמות</span>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 pt-1 border-t">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={() => {
-                      setSelectedPropertyDetails(property);
-                      setDetailsDialogOpen(true);
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={() => window.open(property.source_url, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  
-                  {property.status !== 'imported' && property.status !== 'archived' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2"
-                      onClick={() => handleImportProperty(property)}
-                      disabled={importMutation.isPending}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {property.status === 'new' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2"
-                      onClick={() => matchLeadsMutation.mutate(property.id)}
-                      disabled={matchLeadsMutation.isPending}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {property.status !== 'archived' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2"
-                      onClick={() => archiveMutation.mutate(property.id)}
-                    >
-                      <Archive className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
+                  </span>
                 </div>
               </div>
             ))}

@@ -444,6 +444,28 @@ export const UnifiedScoutSettings: React.FC = () => {
     onError: () => toast.error('שגיאה בעצירת הסריקה'),
   });
 
+  // Check if matching is currently running
+  const isMatchingRunning = activeRuns?.some(run => run.source === 'matching') || false;
+
+  // Run matching mutation
+  const runMatchingMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('trigger-matching', {
+        body: { send_whatsapp: false, force: true }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`הופעל חישוב התאמות ל-${data.total_properties || 0} נכסים`);
+      queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
+    },
+    onError: (error) => {
+      console.error('Match error:', error);
+      toast.error('שגיאה בהפעלת חישוב התאמות');
+    }
+  });
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -1108,14 +1130,14 @@ export const UnifiedScoutSettings: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Matching Card */}
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-shadow" 
-                  onClick={() => setIsMatchingDialogOpen(true)}
-                >
+                {/* Matching Card - with Play button */}
+                <Card className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 flex-1 cursor-pointer"
+                        onClick={() => setIsMatchingDialogOpen(true)}
+                      >
                         <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
                           <Target className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
@@ -1133,7 +1155,29 @@ export const UnifiedScoutSettings: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            runMatchingMutation.mutate();
+                          }}
+                          disabled={runMatchingMutation.isPending || isMatchingRunning}
+                          className="h-8 w-8 p-0"
+                          title="הרץ התאמות עכשיו"
+                        >
+                          {runMatchingMutation.isPending || isMatchingRunning ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Pencil 
+                          className="h-4 w-4 text-muted-foreground cursor-pointer" 
+                          onClick={() => setIsMatchingDialogOpen(true)}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
