@@ -785,88 +785,65 @@ export const ScoutedPropertiesTable: React.FC = () => {
         </Card>
       </div>
 
-      {/* Desktop View - 3 Improved Cards */}
-      <div className="hidden md:grid md:grid-cols-3 gap-4 mb-4">
-        {/* Card 1: Total + By Source */}
-        <Card className="border border-border/50 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">סה"כ דירות</p>
-                <p className="text-2xl font-bold">{stats?.total || 0}</p>
-              </div>
+      {/* Desktop View - Compact Horizontal Stats Bar */}
+      <div className="hidden md:flex items-center justify-between bg-muted/30 rounded-lg px-4 py-2.5 mb-4 border border-border/50">
+        <div className="flex items-center gap-6">
+          {/* Total */}
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">סה"כ:</span>
+            <span className="font-bold text-lg">{stats?.total || 0}</span>
+          </div>
+          
+          <div className="h-5 w-px bg-border" />
+          
+          {/* By Source - Color coded */}
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-orange-600 font-medium">יד2: {stats?.bySources?.yad2 || 0}</span>
+            <span className="text-purple-600 font-medium">הומלס: {stats?.bySources?.homeless || 0}</span>
+            <span className="text-blue-600 font-medium">מדלן: {stats?.bySources?.madlan || 0}</span>
+          </div>
+          
+          <div className="h-5 w-px bg-border" />
+          
+          {/* Today + Week */}
+          <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-muted-foreground">היום:</span>
+              <span className="font-bold text-green-600">{stats?.today || 0}</span>
             </div>
-            <div className="flex gap-3 mt-3 text-sm">
-              <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
-              <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
-              <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Today + Week */}
-        <Card className="border border-border/50 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">השבוע: <span className="font-semibold">{stats?.week || 0}</span></span>
+          </div>
+          
+          {/* Active Scan Indicator */}
+          {hasActiveScans && (
+            <>
+              <div className="h-5 w-px bg-border" />
+              <div className="flex items-center gap-2 text-sm">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
+                  <div className="relative w-2 h-2 bg-red-500 rounded-full" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">היום</p>
-                  <p className="text-2xl font-bold">{stats?.today || 0}</p>
-                </div>
+                <span className="text-muted-foreground">סריקה: {scanTotalFound}</span>
               </div>
-              <div className="text-left border-r pr-4">
-                <p className="text-xs text-muted-foreground">השבוע</p>
-                <p className="text-xl font-semibold text-muted-foreground">{stats?.week || 0}</p>
-              </div>
-            </div>
-            {stats?.today > 0 && (
-              <div className="flex gap-2 mt-3 text-xs text-muted-foreground">
-                {stats?.todayBySources?.yad2 > 0 && <span className="text-orange-600">יד2: {stats.todayBySources.yad2}</span>}
-                {stats?.todayBySources?.homeless > 0 && <span className="text-purple-600">הומלס: {stats.todayBySources.homeless}</span>}
-                {stats?.todayBySources?.madlan > 0 && <span className="text-blue-600">מדלן: {stats.todayBySources.madlan}</span>}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Duplicates - Clickable */}
+            </>
+          )}
+        </div>
+        
+        {/* Duplicates - Clickable */}
         <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
           <SheetTrigger asChild>
-            <Card className="border border-border/50 shadow-sm cursor-pointer hover:border-yellow-500/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-500/10">
-                    <Copy className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-muted-foreground">כפילויות</p>
-                      {(duplicateStats?.unresolved || 0) > 0 && (
-                        <Badge className="bg-yellow-100 text-yellow-700 text-xs">
-                          {duplicateStats?.unresolved} פתוחות
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-2xl font-bold">{duplicateStats?.groups || 0}</p>
-                  </div>
-                </div>
-                {hasActiveScans && (
-                  <div className="flex items-center gap-2 mt-3 text-xs">
-                    <div className="relative">
-                      <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
-                      <div className="relative w-2 h-2 bg-red-500 rounded-full" />
-                    </div>
-                    <span className="text-muted-foreground">סריקה פעילה - נמצאו: {scanTotalFound}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-yellow-500/10 border border-transparent hover:border-yellow-500/30 transition-colors cursor-pointer">
+              <Copy className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm">כפילויות: <strong>{duplicateStats?.groups || 0}</strong></span>
+              {(duplicateStats?.unresolved || 0) > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-700 text-xs h-5 px-1.5">
+                  {duplicateStats?.unresolved}
+                </Badge>
+              )}
+            </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:max-w-xl overflow-y-auto">
             <SheetHeader className="pb-4">
@@ -1187,69 +1164,71 @@ export const ScoutedPropertiesTable: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop: Original inline filters */}
-          <div className="hidden md:flex flex-wrap items-center gap-2 w-full" dir="rtl">
-            {/* Title */}
-            <CardTitle className="whitespace-nowrap ml-4">
-              דירות שנסרקו ({totalCount || 0})
-            </CardTitle>
+          {/* Desktop: Dense Filter Bar */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap" dir="rtl">
+            {/* Title integrated */}
+            <span className="font-semibold text-sm whitespace-nowrap">
+              דירות ({totalCount || 0})
+            </span>
             
-            {/* Free text search */}
+            <div className="h-5 w-px bg-border mx-1" />
+            
+            {/* Search */}
             <Input
               type="text"
-              placeholder="חיפוש לפי כתובת, שכונה..."
+              placeholder="🔍 חיפוש..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[180px] h-9"
+              className="w-[130px] h-8 text-sm"
             />
             
-            {/* Rooms Range */}
+            {/* Rooms - Compact */}
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                placeholder="מחדרים"
+                placeholder="חדרים"
                 value={roomsMin}
                 onChange={(e) => setRoomsMin(e.target.value)}
-                className="w-[70px] h-9"
+                className="w-[55px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
               />
-              <span className="text-muted-foreground text-sm">-</span>
+              <span className="text-xs text-muted-foreground">-</span>
               <Input
                 type="number"
                 placeholder="עד"
                 value={roomsMax}
                 onChange={(e) => setRoomsMax(e.target.value)}
-                className="w-[55px] h-9"
+                className="w-[45px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
               />
             </div>
 
-            {/* Budget Range */}
+            {/* Budget - Compact */}
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                placeholder="ממחיר"
+                placeholder="₪ מ-"
                 value={minBudget}
                 onChange={(e) => setMinBudget(e.target.value)}
-                className="w-[80px] h-9"
+                className="w-[60px] h-8 text-sm"
               />
-              <span className="text-muted-foreground text-sm">-</span>
+              <span className="text-xs text-muted-foreground">-</span>
               <Input
                 type="number"
                 placeholder="עד"
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-[80px] h-9"
+                className="w-[60px] h-8 text-sm"
               />
             </div>
 
-            {/* Neighborhood - Consolidated groups */}
+            {/* Neighborhood */}
             <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-              <SelectTrigger className="w-[130px] h-9">
+              <SelectTrigger className="w-[100px] h-8 text-sm">
                 <SelectValue placeholder="שכונה" />
               </SelectTrigger>
               <SelectContent>
@@ -1260,16 +1239,42 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* Features */}
+            {/* Status */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[85px] h-8 text-sm">
+                <SelectValue placeholder="סטטוס" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="new">חדש</SelectItem>
+                <SelectItem value="matched">התאמה</SelectItem>
+                <SelectItem value="imported">יובא</SelectItem>
+                <SelectItem value="archived">ארכיון</SelectItem>
+                <SelectItem value="inactive">לא פעיל</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Property Type */}
+            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+              <SelectTrigger className="w-[80px] h-8 text-sm">
+                <SelectValue placeholder="סוג" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="rent">השכרה</SelectItem>
+                <SelectItem value="sale">מכירה</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Features - Icon only */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-1 px-2">
-                  <Filter className="h-3 w-3" />
-                  תוספות
+                <Button variant="outline" size="icon" className="h-8 w-8 relative">
+                  <Filter className="h-3.5 w-3.5" />
                   {featuresFilter.length > 0 && (
-                    <Badge variant="secondary" className="h-4 w-4 p-0 flex items-center justify-center text-xs">
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
                       {featuresFilter.length}
-                    </Badge>
+                    </span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -1291,43 +1296,15 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </PopoverContent>
             </Popover>
 
-            {/* Status */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[100px] h-9">
-                <SelectValue placeholder="סטטוס" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסטטוסים</SelectItem>
-                <SelectItem value="new">חדש</SelectItem>
-                <SelectItem value="matched">עבר התאמה</SelectItem>
-                <SelectItem value="imported">יובא</SelectItem>
-                <SelectItem value="archived">ארכיון</SelectItem>
-                <SelectItem value="inactive">לא פעיל</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Property Type (Rent/Sale) */}
-            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-              <SelectTrigger className="w-[95px] h-9">
-                <SelectValue placeholder="סוג" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הנכסים</SelectItem>
-                <SelectItem value="rent">השכרה</SelectItem>
-                <SelectItem value="sale">מכירה</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Search Button */}
-            <Button onClick={handleSearch} size="sm" className="h-9 gap-1">
-              <Search className="h-3 w-3" />
-              חפש
+            {/* Search Button - Icon only */}
+            <Button onClick={handleSearch} size="icon" className="h-8 w-8">
+              <Search className="h-3.5 w-3.5" />
             </Button>
 
             {/* Clear Filters */}
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 text-muted-foreground px-2">
-                <X className="h-3 w-3" />
+              <Button variant="ghost" size="icon" onClick={clearAllFilters} className="h-8 w-8 text-muted-foreground">
+                <X className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>
