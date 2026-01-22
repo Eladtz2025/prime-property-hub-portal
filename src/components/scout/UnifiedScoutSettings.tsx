@@ -150,6 +150,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [isEligibilityDialogOpen, setIsEligibilityDialogOpen] = useState(false);
+  const [isBackfillDialogOpen, setIsBackfillDialogOpen] = useState(false);
   const [isRefreshingEligibility, setIsRefreshingEligibility] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -1200,134 +1201,44 @@ export const UnifiedScoutSettings: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Entry Date Backfill Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow" 
+                  onClick={() => setIsBackfillDialogOpen(true)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                          <Calendar className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">עדכון תאריכי כניסה</h4>
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Batch: {settings?.backfill?.batch_size ?? 30} נכסים
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{(settings?.backfill?.schedule_times ?? ['03:00', '12:00']).join(', ')}</span>
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                {settings?.backfill?.enabled !== false ? 'אוטומטי' : 'כבוי'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
-
-        {/* Database Tools */}
-        <AccordionItem value="database" className="border rounded-lg bg-card">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
-              <span className="font-semibold">כלי מסד נתונים</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="space-y-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">עדכון תאריכי כניסה לנכסים קיימים</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    סריקה מחדש של כל נכסי השכירות הפעילים שחסר להם תאריך כניסה, חילוץ התאריך מהמודעה המקורית ועדכון בבסיס הנתונים.
-                  </p>
-                  
-                  {backfillProgress && backfillProgress.status === 'running' && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>התקדמות:</span>
-                        <span>{backfillProgress.processed_items || 0} / {backfillProgress.total_items || 0}</span>
-                      </div>
-                      <Progress value={progressPercent} className="h-2" />
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span className="text-success">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
-                        <span className="text-destructive">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
-                      </div>
-                      {(() => {
-                        const estimate = getEstimatedTime();
-                        return estimate ? (
-                          <div className="text-xs text-muted-foreground">
-                            קצב: ~{estimate.rate} נכסים/דקה | זמן משוער: ~{estimate.minutesLeft} דקות
-                          </div>
-                        ) : null;
-                      })()}
-                    </div>
-                  )}
-                  
-                  {backfillProgress && backfillProgress.status === 'completed' && (
-                    <div className="p-3 bg-success/10 rounded-lg text-sm">
-                      <span className="text-success">
-                        ✓ הושלם! עודכנו {backfillProgress.successful_items || 0} נכסים, נכשלו {backfillProgress.failed_items || 0}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {backfillProgress && backfillProgress.status === 'failed' && (
-                    <div className="p-3 bg-destructive/10 rounded-lg text-sm">
-                      <span className="text-destructive">
-                        ✗ נכשל: {backfillProgress.error_message}
-                      </span>
-                    </div>
-                  )}
-
-                  {backfillProgress && backfillProgress.status === 'cancelled' && (
-                    <div className="p-3 bg-muted rounded-lg text-sm">
-                      <span className="text-muted-foreground">
-                        בוטל. עובדו {backfillProgress.processed_items || 0} נכסים.
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    {/* Primary: Fast backfill button */}
-                    <Button 
-                      onClick={handleFastBackfill}
-                      disabled={isBackfilling || isFastBackfilling}
-                      className="flex-1"
-                    >
-                      {isFastBackfilling ? (
-                        <>
-                          <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                          עדכון מהיר...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="h-4 w-4 ml-2" />
-                          עדכון מהיר (Regex + AI)
-                        </>
-                      )}
-                    </Button>
-                    
-                    {/* Secondary: Slow full backfill */}
-                    <Button 
-                      onClick={handleBackfillEntryDates}
-                      disabled={isBackfilling || isFastBackfilling}
-                      variant="outline"
-                      size="icon"
-                      title="עדכון מלא (איטי יותר - AI לכולם)"
-                    >
-                      {isBackfilling ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                    </Button>
-                    
-                    {/* Cancel button */}
-                    {(isBackfilling || isFastBackfilling) && (
-                      <Button 
-                        variant="destructive"
-                        size="icon"
-                        onClick={handleCancelBackfill}
-                        title="ביטול"
-                      >
-                        <Square className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    <strong>מהיר:</strong> Regex קודם (~5 שניות/נכס), AI רק אם צריך.
-                    <strong> מלא:</strong> AI לכולם (~2 דק/נכס).
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
+
 
       {/* Duplicates Settings Dialog */}
       <Dialog open={isDuplicatesDialogOpen} onOpenChange={setIsDuplicatesDialogOpen}>
@@ -1766,6 +1677,136 @@ export const UnifiedScoutSettings: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
               <Database className="h-3.5 w-3.5" />
               <span>הכשירות מתעדכנת אוטומטית בכל שינוי בפרטי הלקוח (DB Trigger)</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backfill Entry Dates Dialog */}
+      <Dialog open={isBackfillDialogOpen} onOpenChange={setIsBackfillDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-yellow-600" />
+              עדכון תאריכי כניסה
+            </DialogTitle>
+            <DialogDescription>
+              סריקה מחדש של נכסי השכירות לחילוץ תאריך הכניסה
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Automation Toggle */}
+            <div className="flex items-center justify-between py-2 border-b">
+              <div>
+                <Label className="text-sm font-medium">ריצה אוטומטית</Label>
+                <p className="text-xs text-muted-foreground">פעמיים ביום ב-03:00 ו-12:00</p>
+              </div>
+              <Switch
+                checked={settings?.backfill?.enabled !== false}
+                onCheckedChange={(checked) => handleBooleanChange('backfill', 'enabled', checked)}
+              />
+            </div>
+
+            {/* Batch Size */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-medium text-sm">הגדרות</h5>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-muted-foreground flex-1">גודל אצווה</span>
+                <Input
+                  type="number"
+                  className="w-20 h-8"
+                  min={5}
+                  max={100}
+                  value={settings?.backfill?.batch_size ?? 30}
+                  onChange={(e) => handleNumberChange('backfill', 'batch_size', e.target.value)}
+                />
+                <span>נכסים</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-muted-foreground flex-1">זמן מקסימלי</span>
+                <Input
+                  type="number"
+                  className="w-20 h-8"
+                  min={1}
+                  max={30}
+                  value={settings?.backfill?.timeout_minutes ?? 5}
+                  onChange={(e) => handleNumberChange('backfill', 'timeout_minutes', e.target.value)}
+                />
+                <span>דקות</span>
+              </div>
+            </div>
+
+            {/* Progress */}
+            {backfillProgress && backfillProgress.status === 'running' && (
+              <div className="space-y-2 bg-muted/30 rounded-lg p-4">
+                <div className="flex justify-between text-sm">
+                  <span>התקדמות:</span>
+                  <span>{backfillProgress.processed_items || 0} / {backfillProgress.total_items || 0}</span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <span className="text-green-600">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
+                  <span className="text-red-600">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
+                </div>
+              </div>
+            )}
+
+            {backfillProgress && backfillProgress.status === 'completed' && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm">
+                <span className="text-green-600 dark:text-green-400">
+                  ✓ הושלם! עודכנו {backfillProgress.successful_items || 0} נכסים
+                </span>
+              </div>
+            )}
+
+            {backfillProgress && backfillProgress.status === 'failed' && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm">
+                <span className="text-red-600 dark:text-red-400">
+                  ✗ נכשל: {backfillProgress.error_message}
+                </span>
+              </div>
+            )}
+
+            {/* Manual Run Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleFastBackfill}
+                disabled={isBackfilling || isFastBackfilling}
+                className="flex-1"
+              >
+                {isFastBackfilling ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                    רץ...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 ml-2" />
+                    הרץ עכשיו
+                  </>
+                )}
+              </Button>
+              
+              {(isBackfilling || isFastBackfilling) && (
+                <Button 
+                  variant="destructive"
+                  size="icon"
+                  onClick={handleCancelBackfill}
+                  title="ביטול"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              משתמש ב-Regex לזיהוי מהיר, עם AI כ-fallback למקרים מורכבים
+            </p>
+
+            {/* Schedule Info */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+              <Clock className="h-3.5 w-3.5" />
+              <span>הריצה האוטומטית פעילה ב-03:00 ו-12:00 (שעון ישראל)</span>
             </div>
           </div>
         </DialogContent>
