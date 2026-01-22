@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import cityMarketLogo from "@/assets/city-market-icon.png";
 import { usePitchDeckBySlug } from "@/hooks/usePitchDecks";
 import { PitchDeckSlide, SlideType } from "@/types/pitch-deck";
+import { ViewErrorBoundary } from "@/components/pitch-deck/ViewErrorBoundary";
 import {
   DynamicTitleSlide,
   DynamicPropertySlide,
@@ -362,4 +363,11 @@ const DynamicPitchDeckView = () => {
   );
 };
 
-export default DynamicPitchDeckView;
+// Wrap with Error Boundary for crash protection
+const DynamicPitchDeckViewWithErrorBoundary = () => (
+  <ViewErrorBoundary>
+    <DynamicPitchDeckView />
+  </ViewErrorBoundary>
+);
+
+export default DynamicPitchDeckViewWithErrorBoundary;
