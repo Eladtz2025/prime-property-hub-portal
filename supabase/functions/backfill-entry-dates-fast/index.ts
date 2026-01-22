@@ -86,10 +86,13 @@ function extractEntryDateFast(markdown: string): { date: string | null; immediat
   return { date: null, immediate: false };
 }
 
-// Fast scrape with timeout protection
-async function fastScrape(url: string, apiKey: string): Promise<string | null> {
+// Fast scrape with timeout protection - aligned with main scrapers
+async function fastScrape(url: string, apiKey: string, source: string): Promise<string | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per scrape
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for stealth proxy
+  
+  // waitFor based on source - same as main scrapers
+  const waitForMs = source === 'madlan' ? 8000 : source === 'yad2' ? 5000 : 3000;
   
   try {
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
@@ -102,15 +105,29 @@ async function fastScrape(url: string, apiKey: string): Promise<string | null> {
         url,
         formats: ['markdown'],
         onlyMainContent: true,
-        timeout: 8000,     // 8s instead of 10s
-        waitFor: 1500,     // 1.5s instead of 2s
+        waitFor: waitForMs,
+        // Stealth proxy for Yad2/Madlan - same as main scrapers
+        proxy: (source === 'yad2' || source === 'madlan') ? 'stealth' : 'auto',
+        // Israeli location - same as main scrapers
+        location: {
+          country: 'IL',
+          languages: ['he']
+        },
+        // Custom headers - same as main scrapers
+        headers: {
+          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        }
       }),
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
     
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log(`Scrape failed for ${url}: ${response.status}`);
+      return null;
+    }
     
     const data = await response.json();
     return data.data?.markdown || data.markdown || null;
@@ -314,8 +331,8 @@ serve(async (req) => {
 
     console.log(`Processing ${properties.length} properties with fast method`);
 
-    // Process in parallel - reduced concurrency to prevent timeout
-    const PARALLEL_LIMIT = 5;
+    // Process in parallel - reduced for stealth proxy (slower but more reliable)
+    const PARALLEL_LIMIT = 3;
     let totalSuccessCount = 0;
     let totalFailCount = 0;
     let totalRegexCount = 0;
@@ -345,8 +362,8 @@ serve(async (req) => {
             return { id: property.id, success: false, error: 'Invalid URL' };
           }
 
-          // Step 1: Fast scrape
-          const markdown = await fastScrape(property.source_url, FIRECRAWL_API_KEY);
+          // Step 1: Fast scrape with source for stealth proxy selection
+          const markdown = await fastScrape(property.source_url, FIRECRAWL_API_KEY, property.source);
           if (!markdown) {
             return { id: property.id, success: false, error: 'Scrape failed' };
           }
