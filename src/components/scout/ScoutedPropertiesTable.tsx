@@ -1179,7 +1179,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
               placeholder="🔍 חיפוש..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[130px] h-8 text-sm"
+              className="w-[150px] h-8 text-sm"
             />
             
             {/* Rooms - Compact */}
@@ -1189,7 +1189,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 placeholder="חדרים"
                 value={roomsMin}
                 onChange={(e) => setRoomsMin(e.target.value)}
-                className="w-[55px] h-8 text-sm"
+                className="w-[70px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
@@ -1200,7 +1200,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 placeholder="עד"
                 value={roomsMax}
                 onChange={(e) => setRoomsMax(e.target.value)}
-                className="w-[45px] h-8 text-sm"
+                className="w-[60px] h-8 text-sm"
                 step="0.5"
                 min="1"
                 max="10"
@@ -1214,7 +1214,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 placeholder="₪ מ-"
                 value={minBudget}
                 onChange={(e) => setMinBudget(e.target.value)}
-                className="w-[60px] h-8 text-sm"
+                className="w-[80px] h-8 text-sm"
               />
               <span className="text-xs text-muted-foreground">-</span>
               <Input
@@ -1222,13 +1222,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 placeholder="עד"
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-[60px] h-8 text-sm"
+                className="w-[70px] h-8 text-sm"
               />
             </div>
 
             {/* Neighborhood */}
             <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-              <SelectTrigger className="w-[100px] h-8 text-sm">
+              <SelectTrigger className="w-[110px] h-8 text-sm">
                 <SelectValue placeholder="שכונה" />
               </SelectTrigger>
               <SelectContent>
@@ -1239,24 +1239,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* Status */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[85px] h-8 text-sm">
-                <SelectValue placeholder="סטטוס" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="new">חדש</SelectItem>
-                <SelectItem value="matched">התאמה</SelectItem>
-                <SelectItem value="imported">יובא</SelectItem>
-                <SelectItem value="archived">ארכיון</SelectItem>
-                <SelectItem value="inactive">לא פעיל</SelectItem>
-              </SelectContent>
-            </Select>
-
             {/* Property Type */}
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-              <SelectTrigger className="w-[80px] h-8 text-sm">
+              <SelectTrigger className="w-[90px] h-8 text-sm">
                 <SelectValue placeholder="סוג" />
               </SelectTrigger>
               <SelectContent>
