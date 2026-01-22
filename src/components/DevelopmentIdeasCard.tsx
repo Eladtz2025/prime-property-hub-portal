@@ -14,14 +14,15 @@ const getPriorityIndicator = (priority: string) => {
   switch (priority) {
     case 'high': return { color: 'bg-red-500', label: 'גבוה' };
     case 'low': return { color: 'bg-gray-400', label: 'נמוך' };
-    default: return { color: 'bg-yellow-500', label: 'בינוני' };
+    case 'normal': return { color: 'bg-yellow-500', label: 'רגיל' };
+    default: return { color: 'bg-yellow-500', label: 'רגיל' };
   }
 };
 
 export const DevelopmentIdeasCard: React.FC = () => {
   const { ideas, isLoading, addIdea, toggleComplete, deleteIdea, updatePriority } = useDevelopmentIdeas();
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
-  const [newPriority, setNewPriority] = useState('medium');
+  const [newPriority, setNewPriority] = useState('normal');
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAddIdea = async () => {
@@ -65,10 +66,10 @@ export const DevelopmentIdeasCard: React.FC = () => {
                   גבוה
                 </span>
               </SelectItem>
-              <SelectItem value="medium">
+              <SelectItem value="normal">
                 <span className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                  בינוני
+                  רגיל
                 </span>
               </SelectItem>
               <SelectItem value="low">
@@ -149,7 +150,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="high">גבוה</SelectItem>
-                        <SelectItem value="medium">בינוני</SelectItem>
+                        <SelectItem value="normal">רגיל</SelectItem>
                         <SelectItem value="low">נמוך</SelectItem>
                       </SelectContent>
                     </Select>

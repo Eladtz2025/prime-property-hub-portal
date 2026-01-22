@@ -42,7 +42,7 @@ export const useDevelopmentIdeas = () => {
     fetchIdeas();
   }, [fetchIdeas]);
 
-  const addIdea = useCallback(async (title: string, priority: string = 'medium') => {
+  const addIdea = useCallback(async (title: string, priority: string = 'normal') => {
     if (!user) {
       toast.error('יש להתחבר כדי להוסיף רעיון');
       return;
