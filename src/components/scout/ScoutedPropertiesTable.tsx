@@ -740,70 +740,62 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
   return (
     <>
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Building2 className="h-5 w-5 text-primary" />
+      {/* Statistics Cards - Compact Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
+        <Card className="overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-primary/10 shrink-0">
+                <Building2 className="h-4 w-4 text-primary" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">סה"כ דירות</p>
-                <p className="text-2xl font-bold">{stats?.total || 0}</p>
-                <div className="flex gap-2 flex-wrap text-xs mt-1">
-                  <span className="text-orange-600">יד2: {stats?.bySources?.yad2 || 0}</span>
-                  <span className="text-purple-600">הומלס: {stats?.bySources?.homeless || 0}</span>
-                  <span className="text-blue-600">מדלן: {stats?.bySources?.madlan || 0}</span>
-                </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">סה"כ</p>
+                <p className="text-lg font-bold">{stats?.total || 0}</p>
               </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap text-[10px] mt-1.5 text-muted-foreground">
+              <span className="text-orange-600">יד2:{stats?.bySources?.yad2 || 0}</span>
+              <span className="text-purple-600">הומלס:{stats?.bySources?.homeless || 0}</span>
+              <span className="text-blue-600">מדלן:{stats?.bySources?.madlan || 0}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <TrendingUp className="h-5 w-5 text-green-500" />
+        <Card className="overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded bg-green-500/10 shrink-0">
+                <TrendingUp className="h-4 w-4 text-green-500" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">נוספו היום</p>
-                <p className="text-2xl font-bold">{stats?.today || 0}</p>
-                {stats?.today > 0 && (
-                  <div className="flex gap-2 flex-wrap text-xs mt-1">
-                    {stats?.todayBySources?.yad2 > 0 && (
-                      <span className="text-orange-600">יד2: {stats.todayBySources.yad2}</span>
-                    )}
-                    {stats?.todayBySources?.homeless > 0 && (
-                      <span className="text-purple-600">הומלס: {stats.todayBySources.homeless}</span>
-                    )}
-                    {stats?.todayBySources?.madlan > 0 && (
-                      <span className="text-blue-600">מדלן: {stats.todayBySources.madlan}</span>
-                    )}
-                  </div>
-                )}
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">היום</p>
+                <p className="text-lg font-bold">{stats?.today || 0}</p>
               </div>
             </div>
+            {stats?.today > 0 && (
+              <div className="flex gap-1.5 flex-wrap text-[10px] mt-1.5 text-muted-foreground">
+                {stats?.todayBySources?.yad2 > 0 && <span className="text-orange-600">יד2:{stats.todayBySources.yad2}</span>}
+                {stats?.todayBySources?.homeless > 0 && <span className="text-purple-600">הומלס:{stats.todayBySources.homeless}</span>}
+                {stats?.todayBySources?.madlan > 0 && <span className="text-blue-600">מדלן:{stats.todayBySources.madlan}</span>}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Matches Card */}
-        <Card className={matchAllMutation.isPending || matchingProgress ? (isMatchingStuck ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/30 bg-primary/5') : ''}>
-          <CardContent className="p-4">
+        {/* Matches Card - Compact */}
+        <Card className={`overflow-hidden ${matchAllMutation.isPending || matchingProgress ? (isMatchingStuck ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/30 bg-primary/5') : ''}`}>
+          <CardContent className="p-3">
             {matchAllMutation.isPending || matchingProgress ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className={cn("h-5 w-5 animate-spin", isMatchingStuck ? "text-amber-500" : "text-primary")} />
+                  <div className="flex items-center gap-2">
+                    <Loader2 className={cn("h-4 w-4 animate-spin", isMatchingStuck ? "text-amber-500" : "text-primary")} />
                     <div>
-                      <p className="text-sm font-medium">מחשב התאמות...</p>
-                      {matchingProgress && matchingProgress.total > 0 ? (
-                        <p className="text-xs text-muted-foreground">
-                          {matchingProgress.processed} / {matchingProgress.total} נכסים
+                      <p className="text-xs font-medium">מחשב...</p>
+                      {matchingProgress && matchingProgress.total > 0 && (
+                        <p className="text-[10px] text-muted-foreground">
+                          {matchingProgress.processed}/{matchingProgress.total}
                         </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">אנא המתן</p>
                       )}
                     </div>
                   </div>
@@ -827,73 +819,63 @@ export const ScoutedPropertiesTable: React.FC = () => {
                           toast.success('ריצת התאמות תקועה נוקתה');
                         }
                       }}
-                      className="text-amber-600 hover:text-amber-700 h-7 px-2"
+                      className="text-amber-600 hover:text-amber-700 h-6 px-1.5 text-[10px]"
                     >
                       נקה
                     </Button>
                   )}
                 </div>
                 {matchingProgress && matchingProgress.total > 0 && (
-                  <div className="space-y-1">
-                    <Progress 
-                      value={(matchingProgress.processed / matchingProgress.total) * 100} 
-                      className="h-2"
-                    />
-                    <p className="text-xs text-muted-foreground text-center">
-                      {Math.round((matchingProgress.processed / matchingProgress.total) * 100)}%
-                    </p>
-                  </div>
+                  <Progress value={(matchingProgress.processed / matchingProgress.total) * 100} className="h-1.5" />
                 )}
                 {isMatchingStuck && (
-                  <p className="text-xs text-amber-600">⚠️ נראה תקוע - מעל 30 דקות</p>
+                  <p className="text-[10px] text-amber-600">⚠️ תקוע</p>
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Button 
                   onClick={() => matchAllMutation.mutate()}
                   disabled={matchAllMutation.isPending || !!matchingProgress}
-                  className="w-full gap-2"
+                  className="w-full gap-1.5 h-8 text-xs"
                   size="sm"
                 >
-                  <Calculator className="h-4 w-4" />
+                  <Calculator className="h-3.5 w-3.5" />
                   חשב התאמות
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  מתאים נכסים ללקוחות
-                </p>
+                <p className="text-[10px] text-muted-foreground text-center">התאמה ללקוחות</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Scan Status Card */}
-        <Card className={hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}>
-          <CardContent className="p-4">
+        {/* Scan Status Card - Compact */}
+        <Card className={`overflow-hidden ${hasActiveScans ? 'border-red-500/30 bg-red-500/5' : ''}`}>
+          <CardContent className="p-3">
             {hasActiveScans ? (
-              <div className="flex items-center gap-3">
-                <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="relative shrink-0">
                   <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75" />
-                  <div className="relative w-3 h-3 bg-red-500 rounded-full" />
+                  <div className="relative w-2.5 h-2.5 bg-red-500 rounded-full" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">סריקות פעילות</p>
-                  <p className="text-lg font-bold">{scanTotalFound} נמצאו</p>
-                  <Progress value={50} className="h-1.5 mt-1" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium">סריקות פעילות</p>
+                  <p className="text-lg font-bold">{scanTotalFound}</p>
+                  <Progress value={50} className="h-1 mt-1" />
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded bg-green-500/10 shrink-0">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">אין סריקות פעילות</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">סריקה אחרונה</p>
                   {stats?.lastScanBySources && (
-                    <div className="flex gap-2 flex-wrap text-xs mt-1">
-                      <span className="text-orange-600">יד2: {stats.lastScanBySources.yad2 || 0}</span>
-                      <span className="text-purple-600">הומלס: {stats.lastScanBySources.homeless || 0}</span>
-                      <span className="text-blue-600">מדלן: {stats.lastScanBySources.madlan || 0}</span>
+                    <div className="flex gap-1.5 flex-wrap text-[10px] text-muted-foreground">
+                      <span className="text-orange-600">יד2:{stats.lastScanBySources.yad2 || 0}</span>
+                      <span className="text-purple-600">הומלס:{stats.lastScanBySources.homeless || 0}</span>
+                      <span className="text-blue-600">מדלן:{stats.lastScanBySources.madlan || 0}</span>
                     </div>
                   )}
                 </div>

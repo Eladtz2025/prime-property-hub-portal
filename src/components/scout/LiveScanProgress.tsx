@@ -111,7 +111,7 @@ export const LiveScanProgress: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-3 mb-4">
       {activeRuns.map((run) => {
         const pageStats = run.page_stats || [];
         const maxPages = run.config?.max_pages || 8;
@@ -119,99 +119,66 @@ export const LiveScanProgress: React.FC = () => {
         const progressPercent = (currentPage / maxPages) * 100;
         const totalFound = pageStats.reduce((sum, p) => sum + (p.found || 0), 0);
         const totalNew = pageStats.reduce((sum, p) => sum + (p.new || 0), 0);
+        const completedPages = pageStats.filter(p => p.found > 0 || p.error);
+        const failedPages = pageStats.filter(p => p.error);
 
         return (
           <Card key={run.id} className="border-primary/50 bg-primary/5">
-            <CardHeader className="py-3">
-              <CardTitle className="flex items-center justify-between text-base">
+            <CardContent className="py-3 px-4">
+              {/* Compact Header + Progress */}
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Wifi className="h-4 w-4 text-primary animate-pulse" />
-                  <span>סריקה פעילה: {run.config?.name || getSourceLabel(run.source)}</span>
-                  <Badge variant="outline" className="text-xs">
+                  <Wifi className="h-3.5 w-3.5 text-primary animate-pulse" />
+                  <span className="text-sm font-medium">{run.config?.name || getSourceLabel(run.source)}</span>
+                  <Badge variant="outline" className="text-[10px] h-5">
                     {getSourceLabel(run.source)}
                   </Badge>
                 </div>
-                <span className="text-sm text-muted-foreground font-normal">
+                <span className="text-xs text-muted-foreground">
                   {getElapsedTime(run.created_at)}
                 </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="py-2">
-              {/* Progress summary */}
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex-1">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>עמוד {currentPage}/{maxPages}</span>
-                    <span className="text-muted-foreground">
-                      נמצאו: <span className="text-foreground font-medium">{totalFound}</span>
-                      {' | '}
-                      חדשים: <span className="text-primary font-medium">{totalNew}</span>
-                    </span>
-                  </div>
-                  <Progress value={progressPercent} className="h-2" />
-                </div>
               </div>
+              
+              {/* Summary Line + Progress */}
+              <div className="flex items-center gap-3 text-xs mb-2">
+                <span className="font-medium">{currentPage}/{maxPages} דפים</span>
+                <span className="text-muted-foreground">
+                  נמצאו: <span className="text-foreground font-medium">{totalFound}</span>
+                </span>
+                <span className="text-primary">
+                  חדשים: <span className="font-medium">{totalNew}</span>
+                </span>
+                {failedPages.length > 0 && (
+                  <span className="text-destructive">
+                    נכשלו: {failedPages.length}
+                  </span>
+                )}
+              </div>
+              <Progress value={progressPercent} className="h-1.5" />
 
-              {/* Page-by-page breakdown */}
-              {pageStats.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-right px-3 py-2 font-medium">עמוד</th>
-                        <th className="text-right px-3 py-2 font-medium">סטטוס</th>
-                        <th className="text-right px-3 py-2 font-medium">נמצאו</th>
-                        <th className="text-right px-3 py-2 font-medium">חדשים</th>
-                        <th className="text-right px-3 py-2 font-medium">משך</th>
-                        <th className="text-right px-3 py-2 font-medium">הערות</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pageStats.map((stat, idx) => (
-                        <tr key={idx} className="border-t">
-                          <td className="px-3 py-2">{stat.page}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1">
-                              {getPageStatusIcon(stat)}
-                              <span className="text-xs">
-                                {stat.found > 0 ? 'הושלם' : stat.error ? 'נכשל' : 'ריק'}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2">{stat.found || 0}</td>
-                          <td className="px-3 py-2 text-primary">{stat.new || 0}</td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {formatDuration(stat.duration_ms)}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-muted-foreground max-w-[150px] truncate">
-                            {stat.error || '—'}
-                          </td>
-                        </tr>
-                      ))}
-                      {/* Show pending pages */}
-                      {Array.from({ length: maxPages - currentPage }, (_, i) => (
-                        <tr key={`pending-${i}`} className="border-t opacity-50">
-                          <td className="px-3 py-2">{currentPage + i + 1}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1">
-                              {i === 0 ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                              )}
-                              <span className="text-xs">
-                                {i === 0 ? 'סורק...' : 'ממתין'}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2">—</td>
-                          <td className="px-3 py-2">—</td>
-                          <td className="px-3 py-2">—</td>
-                          <td className="px-3 py-2">—</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* Compact page status - only show completed/failed pages */}
+              {completedPages.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {pageStats.map((stat, idx) => (
+                    <div 
+                      key={idx}
+                      className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${
+                        stat.error ? 'bg-destructive/10 text-destructive' : 
+                        stat.found > 0 ? 'bg-primary/10 text-primary' : 'bg-muted'
+                      }`}
+                    >
+                      {getPageStatusIcon(stat)}
+                      <span>עמ׳{stat.page}</span>
+                      {stat.found > 0 && <span className="font-medium">({stat.new})</span>}
+                    </div>
+                  ))}
+                  {/* Next pending page indicator */}
+                  {currentPage < maxPages && (
+                    <div className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>עמ׳{currentPage + 1}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

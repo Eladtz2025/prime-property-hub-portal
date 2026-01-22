@@ -315,14 +315,14 @@ export const ScoutRunHistory: React.FC = () => {
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calendar className="h-4 w-4" />
               היסטוריית סריקות
             </CardTitle>
             <Select value={String(daysBack)} onValueChange={(v) => setDaysBack(Number(v))}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[100px] h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -334,7 +334,7 @@ export const ScoutRunHistory: React.FC = () => {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 px-4 pb-4">
           {groupedData.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               אין היסטוריית ריצות
@@ -352,74 +352,69 @@ export const ScoutRunHistory: React.FC = () => {
               onOpenChange={() => !isTodaySection && toggleDay(day.dayKey)}
             >
               <CollapsibleTrigger className={`w-full ${isTodaySection ? 'cursor-default' : ''}`} disabled={isTodaySection}>
-                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                <div className="flex justify-between items-center p-2.5 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{formatDayLabel(day.dayKey)}</span>
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium text-sm">{formatDayLabel(day.dayKey)}</span>
                   </div>
-                  <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 sm:gap-4 text-xs">
                     <span className="hidden sm:inline">נמצאו: <strong>{day.totalFound}</strong></span>
                     <span className="text-green-600">חדשות: <strong>{day.totalNew !== null ? day.totalNew : '—'}</strong></span>
                     <span className="hidden sm:inline">התאמות: <strong>{day.totalMatched}</strong></span>
                     {!isTodaySection && (
-                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                     )}
                   </div>
                 </div>
               </CollapsibleTrigger>
               
-              <CollapsibleContent className="mt-2">
-                {/* Desktop Table */}
+              <CollapsibleContent className="mt-1.5">
+                {/* Desktop Table - Compact */}
                 <div className="hidden md:block rounded-md border overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">שעה</TableHead>
-                        <TableHead>מקורות</TableHead>
-                        <TableHead className="w-[80px]">נמצאו</TableHead>
-                        <TableHead className="w-[80px]">חדשות</TableHead>
-                        <TableHead className="w-[80px]">התאמות</TableHead>
-                        <TableHead className="w-[60px]">משך</TableHead>
-                        <TableHead className="w-[60px]">סטטוס</TableHead>
-                        <TableHead className="w-[40px]"></TableHead>
+                      <TableRow className="h-9">
+                        <TableHead className="w-[60px] py-2 text-xs">שעה</TableHead>
+                        <TableHead className="py-2 text-xs">מקורות</TableHead>
+                        <TableHead className="w-[70px] py-2 text-xs">נמצאו/חדשות</TableHead>
+                        <TableHead className="w-[60px] py-2 text-xs">התאמות</TableHead>
+                        <TableHead className="w-[50px] py-2 text-xs">משך</TableHead>
+                        <TableHead className="w-[40px] py-2 text-xs"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {Object.values(day.hours)
                         .sort((a, b) => b.hour.localeCompare(a.hour))
                         .map((hourSummary) => (
-                          <TableRow key={hourSummary.hour} className="hover:bg-muted/50">
-                            <TableCell className="font-medium">
+                          <TableRow key={hourSummary.hour} className="hover:bg-muted/50 h-9">
+                            <TableCell className="py-1.5 text-xs font-medium">
                               <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                {getHourStatus(hourSummary)}
                                 {hourSummary.hour}
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
+                            <TableCell className="py-1.5">
+                              <div className="flex flex-wrap gap-0.5">
                                 {hourSummary.sources.map(source => (
                                   <span key={source}>{getSourceBadge(source, hourSummary)}</span>
                                 ))}
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium">{hourSummary.totalFound}</TableCell>
-                            <TableCell className="text-green-600 font-medium">
-                              {hourSummary.totalNew !== null ? hourSummary.totalNew : '—'}
+                            <TableCell className="py-1.5 text-xs">
+                              <span className="font-medium">{hourSummary.totalFound}</span>
+                              <span className="text-muted-foreground">/</span>
+                              <span className="text-green-600 font-medium">{hourSummary.totalNew ?? '—'}</span>
                             </TableCell>
-                            <TableCell>{hourSummary.totalMatched}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs">
-                              <div className="flex items-center gap-1">
-                                <Timer className="h-3 w-3" />
-                                {getHourTotalDuration(hourSummary)}
-                              </div>
+                            <TableCell className="py-1.5 text-xs">{hourSummary.totalMatched}</TableCell>
+                            <TableCell className="py-1.5 text-[10px] text-muted-foreground">
+                              {getHourTotalDuration(hourSummary)}
                             </TableCell>
-                            <TableCell>{getHourStatus(hourSummary)}</TableCell>
-                            <TableCell>
+                            <TableCell className="py-1.5">
                               <button
                                 onClick={() => setSelectedHour(hourSummary)}
-                                className="p-1 rounded hover:bg-muted transition-colors"
+                                className="p-0.5 rounded hover:bg-muted transition-colors"
                               >
-                                <ChevronLeft className="h-4 w-4" />
+                                <ChevronLeft className="h-3.5 w-3.5" />
                               </button>
                             </TableCell>
                           </TableRow>
