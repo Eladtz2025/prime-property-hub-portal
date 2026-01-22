@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prime-property-v2';
+const CACHE_NAME = 'prime-property-v3';
 const urlsToCache = [
   '/',
   '/favicon.png',
@@ -9,15 +9,59 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
+      .catch((error) => {
+        console.warn('SW: Cache install failed:', error);
+      })
   );
+  // Activate immediately
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // Clean up old caches
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    })
+  );
+  // Take control immediately
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip cross-origin requests (prevents CORS issues)
+  if (!event.request.url.startsWith(self.location.origin)) return;
+  
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Cache successful responses
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseClone);
+              });
+            }
+            return networkResponse;
+          })
+          .catch((error) => {
+            console.warn('SW: Fetch failed for:', event.request.url, error);
+            // Return cached fallback or offline response
+            return caches.match('/') || new Response('Offline', { status: 503 });
+          });
       })
   );
 });
