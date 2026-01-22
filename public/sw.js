@@ -1,8 +1,6 @@
-const CACHE_NAME = 'prime-property-v1';
+const CACHE_NAME = 'prime-property-v2';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/favicon.png',
   '/manifest.json'
 ];
