@@ -52,13 +52,7 @@ export const ScheduleSummaryCard: React.FC = () => {
       type: 'scan', 
       isInterval: true 
     });
-    items.push({ 
-      time: '*/15', 
-      label: 'התאמה ללקוחות (Cron)', 
-      type: 'matching', 
-      isInterval: true 
-    });
-    items.push({ 
+    items.push({
       time: '*/5', 
       label: 'ניקוי ריצות תקועות', 
       type: 'cleanup', 
