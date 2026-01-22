@@ -242,6 +242,45 @@ serve(async (req) => {
 
     if (!FIRECRAWL_API_KEY) throw new Error('FIRECRAWL_API_KEY not configured');
 
+    // Fetch backfill timeout setting (default 5 minutes)
+    const { data: timeoutSetting } = await supabase
+      .from('scout_settings')
+      .select('setting_value')
+      .eq('category', 'availability')
+      .eq('setting_key', 'backfill_timeout_minutes')
+      .single();
+
+    const backfillTimeoutMinutes = Number(timeoutSetting?.setting_value) || 5;
+
+    // Check for stuck running backfills and clean them up
+    const { data: stuckProgress } = await supabase
+      .from('backfill_progress')
+      .select('*')
+      .eq('task_name', 'backfill_entry_dates_fast')
+      .eq('status', 'running');
+
+    if (stuckProgress && stuckProgress.length > 0) {
+      const now = Date.now();
+      
+      for (const progress of stuckProgress) {
+        const lastUpdate = new Date(progress.updated_at).getTime();
+        const ageMinutes = (now - lastUpdate) / 60000;
+        
+        if (ageMinutes > backfillTimeoutMinutes) {
+          console.log(`🧹 Cleaning stuck backfill: ${progress.id} (${ageMinutes.toFixed(1)} min old)`);
+          
+          await supabase
+            .from('backfill_progress')
+            .update({ 
+              status: 'failed',
+              error_message: `Timeout: no progress for ${backfillTimeoutMinutes} minutes`,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', progress.id);
+        }
+      }
+    }
+
     // Handle cancel
     if (cancelRequested) {
       await supabase
