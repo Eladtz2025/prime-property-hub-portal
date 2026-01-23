@@ -1,5 +1,5 @@
 // Auth context for managing user authentication state
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, Permission } from '@/types/auth';
@@ -19,10 +19,10 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = React.useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
@@ -34,11 +34,11 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [profile, setProfile] = React.useState<UserProfile | null>(null);
+  const [permissions, setPermissions] = React.useState<Permission[]>([]);
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   const refreshProfile = async () => {
     if (!user) return;
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return permissions.some(p => p.resource === resource && p.action === action);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Fetch profile when user changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (user && !profile) {
       refreshProfile();
     }
