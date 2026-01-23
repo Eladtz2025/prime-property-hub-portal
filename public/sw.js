@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prime-property-v3';
+const CACHE_NAME = 'prime-property-v4';
 const urlsToCache = [
   '/',
   '/favicon.png',
