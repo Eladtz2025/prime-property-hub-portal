@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prime-property-v4';
+const CACHE_NAME = 'prime-property-v5';
 const urlsToCache = [
   '/',
   '/favicon.png',
@@ -32,6 +32,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-First strategy - always try network first, fall back to cache
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
@@ -40,26 +41,25 @@ self.addEventListener('fetch', (event) => {
   if (!event.request.url.startsWith(self.location.origin)) return;
   
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Cache successful responses
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
-        
-        return fetch(event.request)
-          .then((networkResponse) => {
-            // Cache successful responses
-            if (networkResponse && networkResponse.status === 200) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseClone);
-              });
+        return networkResponse;
+      })
+      .catch(() => {
+        // Network failed - try cache as fallback
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
             }
-            return networkResponse;
-          })
-          .catch((error) => {
-            console.warn('SW: Fetch failed for:', event.request.url, error);
-            // Return cached fallback or offline response
+            // Return offline fallback
             return caches.match('/') || new Response('Offline', { status: 503 });
           });
       })
