@@ -3,10 +3,6 @@ import * as Sentry from '@sentry/react';
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
 export const initSentry = () => {
-  // Temporarily disabled to resolve React hooks conflict in preview
-  console.log('[Sentry] Initialization temporarily disabled - resolving hooks issue');
-  return;
-
   // Only initialize if DSN is provided
   if (!SENTRY_DSN) {
     console.log('[Sentry] DSN not configured, skipping initialization');
