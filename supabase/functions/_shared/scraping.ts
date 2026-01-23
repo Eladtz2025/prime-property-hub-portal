@@ -191,24 +191,59 @@ export function cleanMarkdownContent(markdown: string, source: string): string {
   
   // ==================== Madlan Smart Extraction ====================
   if (source === 'madlan') {
-    // Look for patterns that indicate property listings start
-    const listingPatterns = [
-      /דירות להשכרה בתל[-\s]?אביב/,
-      /דירות למכירה בתל[-\s]?אביב/,
-      /דירות להשכרה/,
-      /דירות למכירה/,
-      /נמצאו \d+ דירות/,
-      /\d+ דירות נמצאו/,
-      /₪.*חד[׳']/,  // Price followed by rooms indicator
+    // 1. Skip navigation - start from listings header
+    const headerPatterns = [
+      /# דירות להשכרה ב/,
+      /# דירות למכירה ב/,
+      /## \d+ דירות/,
+      /₪.*חד[׳']/,
     ];
     
-    for (const pattern of listingPatterns) {
+    for (const pattern of headerPatterns) {
       const match = cleaned.search(pattern);
       if (match > 0) {
-        console.log(`[Madlan Clean] Found listing pattern at ${match}, skipping header`);
-        cleaned = cleaned.substring(Math.max(0, match - 100));
+        console.log(`[Madlan Clean] Skipped ${match} chars of navigation`);
+        cleaned = cleaned.substring(match);
         break;
       }
+    }
+    
+    // 2. Remove blog section "יעניין אותך לדעת..." that appears mid-page
+    const blogStart = cleaned.indexOf('## יעניין אותך לדעת');
+    if (blogStart > 0) {
+      const afterBlog = cleaned.substring(blogStart);
+      // Find next property listing after blog section (starts with price ₪)
+      const nextPropertyMatch = afterBlog.match(/\[‏[\d,]+\s*‏₪/);
+      if (nextPropertyMatch?.index) {
+        const removedChars = nextPropertyMatch.index;
+        cleaned = cleaned.substring(0, blogStart) + afterBlog.substring(nextPropertyMatch.index);
+        console.log(`[Madlan Clean] Removed ~${removedChars} chars of blog section`);
+      }
+    }
+    
+    // 3. Remove footer - pagination and links
+    const footerPatterns = [
+      /\[דף הבית\]/,
+      /מידע חשוב/,
+      /דירות לפי מספר חדרים/,
+    ];
+    
+    for (const pattern of footerPatterns) {
+      const footerStart = cleaned.search(pattern);
+      if (footerStart > 0) {
+        console.log(`[Madlan Clean] Trimmed ${cleaned.length - footerStart} chars of footer`);
+        cleaned = cleaned.substring(0, footerStart);
+        break;
+      }
+    }
+    
+    // 4. Remove long image URLs (saves ~40% of characters)
+    const beforeUrlClean = cleaned.length;
+    cleaned = cleaned.replace(/https:\/\/images2\.madlan\.co\.il\/[^\s\)\]]+/g, '[IMG]');
+    cleaned = cleaned.replace(/https:\/\/s3-eu-west-1\.amazonaws\.com\/media\.madlan\.co\.il\/[^\s\)\]]+/g, '[IMG]');
+    const urlSaved = beforeUrlClean - cleaned.length;
+    if (urlSaved > 0) {
+      console.log(`[Madlan Clean] Removed ${urlSaved} chars of image URLs`);
     }
     
     return cleaned;
