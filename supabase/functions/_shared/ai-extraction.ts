@@ -91,9 +91,10 @@ export async function extractPropertiesWithAI(
 
   const cleanedMarkdown = cleanMarkdownContent(markdown, source);
   
-  // After smart header/footer removal, we can send more content (25K)
-  // The cleaning removes navigation/headers so most of this is actual listings
-  const truncatedMarkdown = cleanedMarkdown.substring(0, 25000);
+  // After smart header/footer removal, we can send more content
+  // Madlan needs 40K to capture all 50+ properties after blog removal
+  // Gemini 2.5 Flash supports much larger context windows
+  const truncatedMarkdown = cleanedMarkdown.substring(0, 40000);
   
   // Log input stats for debugging
   console.log(`[${source.toUpperCase()} AI] Input: ${markdown.length} chars → cleaned: ${cleanedMarkdown.length} → sent: ${truncatedMarkdown.length}`);
