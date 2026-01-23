@@ -1,14 +1,9 @@
-import { useState } from "react";
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
 import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
-import { Button } from "@/components/ui/button";
-import { MobileMatchesSheet } from "@/components/MobileMatchesSheet";
 import { X } from "lucide-react";
 
 interface MobileMatchesCellProps {
   customerId: string;
-  customerName: string;
-  customerPhone?: string;
   preferredNeighborhoods?: string[] | null;
   preferredCities?: string[] | null;
   budgetMin?: number | null;
@@ -16,12 +11,14 @@ interface MobileMatchesCellProps {
   roomsMin?: number | null;
   roomsMax?: number | null;
   propertyType?: string | null;
+  onMatchesClick?: (data: {
+    ownMatches: any[];
+    scoutedMatchGroups: any[];
+  }) => void;
 }
 
-export const MobileMatchesCell = ({
+export function MobileMatchesCell({
   customerId,
-  customerName,
-  customerPhone,
   preferredNeighborhoods,
   preferredCities,
   budgetMin,
@@ -29,9 +26,8 @@ export const MobileMatchesCell = ({
   roomsMin,
   roomsMax,
   propertyType,
-}: MobileMatchesCellProps) => {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  
+  onMatchesClick,
+}: MobileMatchesCellProps) {
   const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
   const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
     id: customerId,
@@ -62,27 +58,18 @@ export const MobileMatchesCell = ({
     return <span className="text-[10px] text-muted-foreground">0</span>;
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMatchesClick?.({ ownMatches, scoutedMatchGroups });
+  };
+
   return (
-    <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 px-2 text-[10px] font-medium text-primary hover:text-primary hover:bg-primary/10"
-        onClick={(e) => {
-          e.stopPropagation();
-          setSheetOpen(true);
-        }}
-      >
-        {totalMatches}
-      </Button>
-      <MobileMatchesSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        customerName={customerName}
-        customerPhone={customerPhone}
-        ownMatches={ownMatches}
-        scoutedMatchGroups={scoutedMatchGroups}
-      />
-    </>
+    <button
+      type="button"
+      className="text-[10px] font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer bg-transparent border-none p-0"
+      onClick={handleClick}
+    >
+      {totalMatches}
+    </button>
   );
-};
+}

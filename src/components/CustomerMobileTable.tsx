@@ -14,6 +14,7 @@ import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsD
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { MobileMatchesCell } from "@/components/MobileMatchesCell";
+import { MobileMatchesSheet } from "@/components/MobileMatchesSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
@@ -117,6 +118,13 @@ export const CustomerMobileTable = ({
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
+  const [matchesSheetOpen, setMatchesSheetOpen] = useState(false);
+  const [matchesData, setMatchesData] = useState<{
+    customerName: string;
+    customerPhone?: string;
+    ownMatches: any[];
+    scoutedMatchGroups: any[];
+  } | null>(null);
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -311,8 +319,6 @@ export const CustomerMobileTable = ({
                   <TableCell className="py-2.5 px-1 text-center">
                     <MobileMatchesCell
                       customerId={customer.id}
-                      customerName={customer.name}
-                      customerPhone={customer.phone}
                       preferredNeighborhoods={customer.preferred_neighborhoods}
                       preferredCities={customer.preferred_cities}
                       budgetMin={customer.budget_min}
@@ -320,6 +326,15 @@ export const CustomerMobileTable = ({
                       roomsMin={customer.rooms_min}
                       roomsMax={customer.rooms_max}
                       propertyType={customer.property_type}
+                      onMatchesClick={(data) => {
+                        setMatchesData({
+                          customerName: customer.name,
+                          customerPhone: customer.phone,
+                          ownMatches: data.ownMatches,
+                          scoutedMatchGroups: data.scoutedMatchGroups,
+                        });
+                        setMatchesSheetOpen(true);
+                      }}
                     />
                   </TableCell>
                   <TableCell className={`py-2.5 px-1 text-center text-[10px] font-medium ${timeAgo.color}`}>
@@ -720,6 +735,18 @@ export const CustomerMobileTable = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Matches Sheet */}
+      {matchesData && (
+        <MobileMatchesSheet
+          open={matchesSheetOpen}
+          onOpenChange={setMatchesSheetOpen}
+          customerName={matchesData.customerName}
+          customerPhone={matchesData.customerPhone}
+          ownMatches={matchesData.ownMatches}
+          scoutedMatchGroups={matchesData.scoutedMatchGroups}
+        />
+      )}
     </>
   );
 };
