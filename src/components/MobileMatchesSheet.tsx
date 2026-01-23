@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare, ExternalLink, Home, MapPin, Building2 } from "lucide-react";
-import type { GroupedMatch } from "@/hooks/useCustomerMatches";
 
 interface OwnPropertyMatch {
   id: string;
@@ -19,6 +17,21 @@ interface OwnPropertyMatch {
   property_type?: string;
 }
 
+interface CustomerMatch {
+  id: string;
+  title: string | null;
+  city: string | null;
+  price: number | null;
+  rooms: number | null;
+  size: number | null;
+  matchScore: number;
+}
+
+interface GroupedMatch {
+  groupId: string | null;
+  matches: CustomerMatch[];
+}
+
 interface MobileMatchesSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,27 +41,25 @@ interface MobileMatchesSheetProps {
   scoutedMatchGroups: GroupedMatch[];
 }
 
-const formatPrice = (price: number | undefined) => {
+const formatPrice = (price: number | undefined | null) => {
   if (!price) return '-';
   return `₪${price.toLocaleString()}`;
 };
 
-export const MobileMatchesSheet = ({
+export function MobileMatchesSheet({
   open,
   onOpenChange,
   customerName,
   customerPhone,
   ownMatches,
   scoutedMatchGroups,
-}: MobileMatchesSheetProps) => {
-  const [activeTab, setActiveTab] = useState<"own" | "scouted">("own");
-
+}: MobileMatchesSheetProps) {
   const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
 
-  const handleSendWhatsApp = (property: { title?: string | null; address?: string; city?: string; price?: number; rooms?: number }) => {
+  const handleSendWhatsApp = (property: { title?: string | null; city?: string | null; price?: number | null; rooms?: number | null }) => {
     if (!customerPhone) return;
     
-    const propertyTitle = property.title || property.address || 'נכס';
+    const propertyTitle = property.title || 'נכס';
     const city = property.city || '';
     const price = property.price ? `₪${property.price.toLocaleString()}` : '';
     const rooms = property.rooms ? `${property.rooms} חדרים` : '';
@@ -82,7 +93,7 @@ export const MobileMatchesSheet = ({
           </SheetTitle>
         </SheetHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "own" | "scouted")} className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="own" className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid grid-cols-2 mx-4 mt-3 shrink-0">
             <TabsTrigger value="own" className="text-xs gap-1">
               <Home className="h-3 w-3" />
@@ -178,7 +189,7 @@ export const MobileMatchesSheet = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            {match.matchScore && (
+                            {match.matchScore > 0 && (
                               <Badge variant="secondary" className="text-[10px]">
                                 {match.matchScore}%
                               </Badge>
@@ -205,9 +216,9 @@ export const MobileMatchesSheet = ({
                               className="h-8 flex-1 text-xs gap-1 text-green-600 border-green-200 hover:bg-green-50"
                               onClick={() => handleSendWhatsApp({
                                 title: match.title,
-                                city: match.city || undefined,
-                                price: match.price || undefined,
-                                rooms: match.rooms || undefined,
+                                city: match.city,
+                                price: match.price,
+                                rooms: match.rooms,
                               })}
                             >
                               <MessageSquare className="h-3 w-3" />
@@ -235,4 +246,4 @@ export const MobileMatchesSheet = ({
       </SheetContent>
     </Sheet>
   );
-};
+}
