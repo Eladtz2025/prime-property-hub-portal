@@ -45,7 +45,7 @@ export const MobileMatchesSheet = ({
 
   const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
 
-  const handleSendWhatsApp = (property: OwnPropertyMatch | { title?: string; address?: string; city?: string; price?: number; rooms?: number }) => {
+  const handleSendWhatsApp = (property: { title?: string | null; address?: string; city?: string; price?: number; rooms?: number }) => {
     if (!customerPhone) return;
     
     const propertyTitle = property.title || property.address || 'נכס';
