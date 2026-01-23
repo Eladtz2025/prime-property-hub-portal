@@ -1,8 +1,21 @@
 export const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      // First, unregister any existing service workers to ensure fresh start
+      const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of existingRegistrations) {
+        await registration.unregister();
+        console.log('SW unregistered old:', registration);
+      }
+      
+      // Register with cache-busting and force network fetch
+      const registration = await navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`, {
+        updateViaCache: 'none' // Critical: always fetch sw.js from network
+      });
       console.log('SW registered: ', registration);
+      
+      // Force update check immediately
+      registration.update();
       
       // Listen for updates
       registration.addEventListener('updatefound', () => {
@@ -10,10 +23,8 @@ export const registerServiceWorker = async () => {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content is available
-              if (confirm('עדכון חדש זמין! לרענן את הדף?')) {
-                window.location.reload();
-              }
+              // Auto-reload for fresh content
+              window.location.reload();
             }
           });
         }
