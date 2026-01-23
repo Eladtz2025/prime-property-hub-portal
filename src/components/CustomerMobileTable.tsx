@@ -311,6 +311,8 @@ export const CustomerMobileTable = ({
                   <TableCell className="py-2.5 px-1 text-center">
                     <MobileMatchesCell
                       customerId={customer.id}
+                      customerName={customer.name}
+                      customerPhone={customer.phone}
                       preferredNeighborhoods={customer.preferred_neighborhoods}
                       preferredCities={customer.preferred_cities}
                       budgetMin={customer.budget_min}
