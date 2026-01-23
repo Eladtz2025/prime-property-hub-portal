@@ -23,12 +23,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: ['@sentry/react'],
-  },
-  build: {
-    commonjsOptions: {
-      include: [/react/, /react-dom/, /node_modules/],
-    },
+    include: ['react', 'react-dom', '@sentry/react'],
   },
 }));
