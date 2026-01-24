@@ -80,7 +80,7 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -125,7 +125,7 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[15px] tracking-wide uppercase font-semibold transition-all duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -226,9 +226,9 @@ const EnglishHeader = () => {
                     navigate(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`font-montserrat text-base tracking-wide uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 ${
+                  className={`font-montserrat text-sm tracking-[0.15em] uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 ${
                     isActive(item.path)
-                      ? "text-primary bg-primary/10 font-semibold"
+                      ? "text-primary bg-primary/10 font-medium"
                       : "text-foreground hover:text-primary hover:bg-accent"
                   }`}
                 >
