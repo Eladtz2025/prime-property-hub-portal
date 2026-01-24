@@ -45,20 +45,20 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         </picture>
       )}
 
-      {/* Overlay Gradient - Very light for bright daytime */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
+      {/* Overlay - subtle uniform darkening */}
+      <div className="absolute inset-0 bg-black/30" />
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[12.5%]">
         <div className="mb-6 animate-fade-in">
-          <h1 className="reliz-hero-title text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
+          <h1 className="reliz-hero-title text-white">
             {title}
           </h1>
-          <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+          <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest">
             Properties
           </p>
         </div>
-        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
           {subtitle}
         </p>
 
@@ -66,13 +66,13 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400" dir="rtl">
           <button
             onClick={() => navigate("/rentals")}
-            className="px-8 py-3 border-2 border-white text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
+            className="px-10 py-4 border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             השכרה
           </button>
           <button
             onClick={() => navigate("/sales")}
-            className="px-8 py-3 bg-white text-foreground font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white/90"
+            className="px-10 py-4 border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             קנייה
           </button>

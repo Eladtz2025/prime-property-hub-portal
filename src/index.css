@@ -295,7 +295,7 @@ All colors MUST be HSL.
 /* RELIZ-inspired luxury styles */
 .reliz-hero-title {
   @apply font-playfair text-5xl md:text-7xl font-normal tracking-wider uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.25em;
 }
 
 .reliz-subtitle {
