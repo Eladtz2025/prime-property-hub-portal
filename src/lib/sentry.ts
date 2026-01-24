@@ -1,16 +1,32 @@
-// Sentry has been temporarily removed to resolve React hooks conflict
-// The @sentry/react package was causing multiple React instances in the Vite preview
+import * as Sentry from '@sentry/react';
 
 export const initSentry = () => {
-  console.log('[Sentry] Disabled - package removed to fix React hooks conflict');
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  
+  if (!dsn) {
+    console.log('[Sentry] No DSN configured, Sentry disabled');
+    return;
+  }
+
+  Sentry.init({
+    dsn,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+  
+  console.log('[Sentry] Initialized successfully');
 };
 
-// Stub functions to prevent errors in code that references Sentry utilities
 export const captureError = (
   error: Error,
   context?: Record<string, unknown>
 ) => {
-  console.error('[Error]', error.message, context);
+  Sentry.captureException(error, { extra: context });
 };
 
 export const captureMessage = (
@@ -18,11 +34,11 @@ export const captureMessage = (
   level: 'info' | 'warning' | 'error' = 'info',
   context?: Record<string, unknown>
 ) => {
-  console.log(`[${level}]`, message, context);
+  Sentry.captureMessage(message, { level, extra: context });
 };
 
 export const setUser = (user: { id: string; email?: string; name?: string } | null) => {
-  // No-op
+  Sentry.setUser(user);
 };
 
 export const addBreadcrumb = (
@@ -31,19 +47,21 @@ export const addBreadcrumb = (
   data?: Record<string, unknown>,
   level: 'info' | 'warning' | 'error' = 'info'
 ) => {
-  // No-op
+  Sentry.addBreadcrumb({ message, category, data, level });
 };
 
 export const startTransaction = (name: string, op: string) => {
-  return null;
+  return Sentry.startSpan({ name, op }, () => {});
 };
 
 export const measureAsync = async <T>(
   name: string,
   operation: () => Promise<T>,
-  context?: Record<string, unknown>
+  _context?: Record<string, unknown>
 ): Promise<T> => {
-  return await operation();
+  return await Sentry.startSpan({ name, op: 'function' }, async () => {
+    return await operation();
+  });
 };
 
 export const logApiCall = (
@@ -52,11 +70,14 @@ export const logApiCall = (
   status: number,
   duration?: number
 ) => {
-  // No-op
+  Sentry.addBreadcrumb({
+    message: `${method} ${endpoint}`,
+    category: 'api',
+    data: { status, duration },
+    level: status >= 400 ? 'error' : 'info',
+  });
 };
 
-// Stub ErrorBoundary - just render children
-export const SentryErrorBoundary = ({ children }: { children: React.ReactNode }) => children;
+export const SentryErrorBoundary = Sentry.ErrorBoundary;
 
-// Stub routing wrapper - just return the component
-export const withSentryRouting = <P extends object>(Component: React.ComponentType<P>) => Component;
+export const withSentryRouting = Sentry.withSentryRouting;
