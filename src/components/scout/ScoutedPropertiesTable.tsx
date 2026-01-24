@@ -1496,9 +1496,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
                   {getSourceBadge(property.source)}
                 </div>
 
-                {/* Row 2: Actions | Price | Time */}
+                {/* Row 2: Actions | Price+Time */}
                 <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t">
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-0.5 shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1540,12 +1540,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </Button>
                     )}
                   </div>
-                  <span className="font-semibold text-sm">
-                    {property.price ? `₪${property.price.toLocaleString()}` : '-'}
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
-                  </span>
+                  
+                  {/* Price + Time grouped together */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-sm shrink-0">
+                      {property.price ? `₪${property.price.toLocaleString()}` : '-'}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
