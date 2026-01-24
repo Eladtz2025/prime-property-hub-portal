@@ -40,7 +40,6 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             alt="רקע גיבור"
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
-            fetchPriority="high"
             decoding="async"
           />
         </picture>

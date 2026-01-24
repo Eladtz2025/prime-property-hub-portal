@@ -23,8 +23,8 @@ export const registerServiceWorker = async () => {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Auto-reload for fresh content
-              window.location.reload();
+              // New content available - no auto-reload to prevent page jumps
+              console.log('[SW] New content available, refresh when convenient');
             }
           });
         }
