@@ -80,7 +80,7 @@ const HebrewHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300 after:content-[''] after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -88,12 +88,7 @@ const HebrewHeader = () => {
                   textShadow: isScrolled ? 'none' : '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               >
-                <span 
-                  className="after:absolute after:w-full after:h-0.5 after:bottom-0 after:left-0 after:origin-left after:transition-transform after:duration-300"
-                  style={{
-                    position: 'relative',
-                  }}
-                >
+                <span style={{ position: 'relative' }}>
                   {item.label}
                   <span 
                     className="absolute w-full h-0.5 bottom-0 right-0 origin-right transition-transform duration-300"
@@ -130,7 +125,7 @@ const HebrewHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-[20px] tracking-wide uppercase font-semibold transition-all duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -231,10 +226,10 @@ const HebrewHeader = () => {
                     navigate(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`font-montserrat text-lg tracking-wide uppercase text-right py-3 px-2 rounded-md transition-colors duration-200 ${
+                  className={`font-montserrat text-sm tracking-[0.15em] uppercase text-right py-3 px-2 rounded-md transition-colors duration-200 ${
                     isActive(item.path)
-                      ? "text-primary bg-primary/10 font-semibold"
-                      : "text-foreground hover:text-primary hover:bg-accent"
+                      ? "text-primary bg-primary/10 font-medium"
+                      : "text-foreground hover:text-primary hover:bg-accent font-normal"
                   }`}
                 >
                   {item.label}
