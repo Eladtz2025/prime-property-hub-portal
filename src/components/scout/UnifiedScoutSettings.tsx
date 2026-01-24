@@ -169,7 +169,6 @@ export const UnifiedScoutSettings: React.FC = () => {
     wait_for_ms: '',
     schedule_time_1: '',
     schedule_time_2: '',
-    schedule_time_3: '',
   });
 
   // Fetch backfill progress (supports both regular and fast backfill)
@@ -482,7 +481,6 @@ export const UnifiedScoutSettings: React.FC = () => {
       wait_for_ms: '',
       schedule_time_1: '',
       schedule_time_2: '',
-      schedule_time_3: '',
     });
     setEditingConfig(null);
   };
@@ -510,17 +508,15 @@ export const UnifiedScoutSettings: React.FC = () => {
       // Schedule times - use existing values OR source defaults
       schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
       schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1],
-      schedule_time_3: configSchedule?.[2] ?? defaultSchedule[2],
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
-    // Combine 3 schedule time fields into array
+    // Combine 2 schedule time fields into array
     const scheduleArray = [
       formData.schedule_time_1,
       formData.schedule_time_2,
-      formData.schedule_time_3,
     ].filter(Boolean);
     
     const configData = {
@@ -911,10 +907,10 @@ export const UnifiedScoutSettings: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Schedule Times - 3 separate fields */}
+                      {/* Schedule Times - 2 separate fields */}
                       <div className="mt-3">
                         <Label className="text-xs">שעות ריצה</Label>
-                        <div className="grid grid-cols-3 gap-2 mt-1">
+                        <div className="grid grid-cols-2 gap-2 mt-1">
                           <div>
                             <Label className="text-[10px] text-muted-foreground">שעה 1</Label>
                             <Input
@@ -930,15 +926,6 @@ export const UnifiedScoutSettings: React.FC = () => {
                               type="time"
                               value={formData.schedule_time_2}
                               onChange={(e) => setFormData({ ...formData, schedule_time_2: e.target.value })}
-                              dir="ltr"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">שעה 3</Label>
-                            <Input
-                              type="time"
-                              value={formData.schedule_time_3}
-                              onChange={(e) => setFormData({ ...formData, schedule_time_3: e.target.value })}
                               dir="ltr"
                             />
                           </div>
