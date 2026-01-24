@@ -124,7 +124,7 @@ const EnglishIndex = () => {
       <ConsultationModal open={isConsultationOpen} onOpenChange={setIsConsultationOpen} />
 
       {/* About Section */}
-      <ScrollAnimated animation="fade-in" className="py-8 bg-background">
+      <ScrollAnimated animation="slide-in-up" className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-6">
