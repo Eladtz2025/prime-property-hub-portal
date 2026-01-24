@@ -243,10 +243,61 @@ serve(async (req) => {
       }
     }
 
+    // === CLEANUP STUCK BACKFILL TASKS ===
+    console.log('\n🔄 Checking for stuck backfill tasks...');
+    let backfillsCleaned = 0;
+
+    const { data: stuckBackfills, error: backfillError } = await supabase
+      .from('backfill_progress')
+      .select('*')
+      .eq('status', 'running');
+
+    if (backfillError) {
+      console.error('❌ Error fetching backfill progress:', backfillError);
+    } else if (stuckBackfills && stuckBackfills.length > 0) {
+      for (const backfill of stuckBackfills) {
+        const backfillUpdatedAt = backfill.updated_at || backfill.started_at || backfill.created_at;
+        const ageMinutes = (now - new Date(backfillUpdatedAt).getTime()) / 60000;
+        
+        console.log(`   🔍 Backfill ${backfill.id} (${backfill.task_name}): ${ageMinutes.toFixed(1)} min old`);
+        
+        // If backfill is stuck for more than 5 minutes, mark as failed
+        if (ageMinutes > 5) {
+          console.log(`   ⏰ BACKFILL STUCK: ${backfill.id} - marking as failed`);
+          
+          const { error: updateError } = await supabase
+            .from('backfill_progress')
+            .update({
+              status: 'failed',
+              error_message: `Cleanup: stuck for ${ageMinutes.toFixed(0)} minutes`,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', backfill.id);
+          
+          if (!updateError) {
+            backfillsCleaned++;
+            console.log(`   ✅ Backfill marked as failed`);
+            cleanupDetails.push({
+              type: 'backfill',
+              id: backfill.id,
+              taskName: backfill.task_name,
+              action: 'marked_failed',
+              ageMinutes: ageMinutes.toFixed(1)
+            });
+          } else {
+            console.error(`   ❌ Failed to update backfill:`, updateError);
+          }
+        }
+      }
+    } else {
+      console.log('✅ No stuck backfill tasks found');
+    }
+
     console.log('\n' + '='.repeat(60));
     console.log('🧹 CLEANUP COMPLETE');
     console.log(`   Pages timed out: ${pagesTimedOut}`);
     console.log(`   Runs force-completed: ${runsForceCompleted}`);
+    console.log(`   Backfills cleaned: ${backfillsCleaned}`);
     console.log('='.repeat(60));
 
     return new Response(
@@ -254,6 +305,7 @@ serve(async (req) => {
         success: true,
         pagesTimedOut,
         runsForceCompleted,
+        backfillsCleaned,
         details: cleanupDetails,
         settings: { pageTimeoutMinutes, runTimeoutMinutes }
       }),
