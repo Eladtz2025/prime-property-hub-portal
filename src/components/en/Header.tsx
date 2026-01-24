@@ -29,7 +29,7 @@ const EnglishHeader = () => {
   const leftNavItems = [
     { label: "Home", path: "/en" },
     { label: "Management", path: "/en/management" },
-    { label: "New Developments", path: "/en/new-developments" },
+    { label: "New Projects", path: "/en/new-developments" },
   ];
 
   const rightNavItems = [
@@ -80,7 +80,7 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -125,7 +125,7 @@ const EnglishHeader = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
+                className="relative font-montserrat text-sm tracking-[0.15em] font-normal transition-all duration-300"
                 style={{
                   color: isScrolled 
                     ? (isActive(item.path) ? 'hsl(var(--primary))' : 'hsl(var(--foreground) / 0.7)')
@@ -226,7 +226,7 @@ const EnglishHeader = () => {
                     navigate(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`font-montserrat text-sm tracking-[0.15em] uppercase text-left py-3 px-2 rounded-md transition-colors duration-200 ${
+                  className={`font-montserrat text-sm tracking-[0.15em] text-left py-3 px-2 rounded-md transition-colors duration-200 ${
                     isActive(item.path)
                       ? "text-primary bg-primary/10 font-medium"
                       : "text-foreground hover:text-primary hover:bg-accent"
