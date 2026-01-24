@@ -2,12 +2,9 @@ import VideoHero from '@/components/he/VideoHero';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
 import DivisionCard from '@/components/DivisionCard';
-import { RelizPropertyCard } from '@/components/en/RelizPropertyCard';
+import { ScrollAnimated } from '@/components/about/ScrollAnimated';
 import { useNavigate } from 'react-router-dom';
-import { Award, TrendingUp, Users } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { useState } from 'react';
-import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { z } from "zod";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
@@ -134,7 +131,7 @@ const Index = () => {
       <VideoHero title="City Market" subtitle="מומחיות מקומית. שירות אישי. תהליך ברור." imageUrl="/images/en/hero-last-one.png" />
 
       {/* About Section */}
-      <section className="py-4 md:py-8 bg-background">
+      <ScrollAnimated animation="slide-in-up" className="py-4 md:py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-4 md:mb-6">
@@ -154,10 +151,10 @@ const Index = () => {
             </p>
           </div>
         </div>
-      </section>
+      </ScrollAnimated>
 
       {/* Divisions Section */}
-      <section className="py-4 md:py-8 bg-muted/30">
+      <ScrollAnimated animation="fade-in" delay={150} className="py-4 md:py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-3 md:mb-4">החטיבות שלנו</h2>
@@ -172,7 +169,7 @@ const Index = () => {
             {divisions.map(division => <DivisionCard key={division.title} {...division} />)}
           </div>
         </div>
-      </section>
+      </ScrollAnimated>
 
       {/* Neighborhoods Guide */}
       <section className="py-4 md:py-8 bg-muted/30">
