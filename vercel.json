@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/he",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/property/:id",
