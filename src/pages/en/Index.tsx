@@ -3,6 +3,7 @@ import EnglishFooter from "@/components/en/Footer";
 import VideoHero from "@/components/en/VideoHero";
 import DivisionCard from "@/components/en/DivisionCard";
 import { ConsultationModal } from "@/components/en/ConsultationModal";
+import { ScrollAnimated } from "@/components/about/ScrollAnimated";
 import { useNavigate } from "react-router-dom";
 import { Award, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
@@ -123,7 +124,7 @@ const EnglishIndex = () => {
       <ConsultationModal open={isConsultationOpen} onOpenChange={setIsConsultationOpen} />
 
       {/* About Section */}
-      <section className="py-8 bg-background">
+      <ScrollAnimated animation="fade-in" className="py-8 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-6">
@@ -143,10 +144,10 @@ const EnglishIndex = () => {
             </p>
           </div>
         </div>
-      </section>
+      </ScrollAnimated>
 
       {/* Divisions Section */}
-      <section className="py-8 bg-muted/30">
+      <ScrollAnimated animation="fade-in" delay={150} className="py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-4">
@@ -163,7 +164,7 @@ const EnglishIndex = () => {
             {divisions.map(division => <DivisionCard key={division.title} {...division} />)}
           </div>
         </div>
-      </section>
+      </ScrollAnimated>
 
       {/* Neighborhoods Guide */}
       <section className="py-8 bg-background">
