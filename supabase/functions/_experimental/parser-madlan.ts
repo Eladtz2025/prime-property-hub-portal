@@ -43,11 +43,19 @@ export function parseMadlanHtml(
   
   // If no cards found, try alternative selectors
   if (propertyCards.length === 0) {
-    // Try generic approach - look for price patterns
+    // Try generic approach - look for price patterns (including RTL markers)
     const allText = $.text();
-    if (allText.includes('₪') || allText.includes('חדרים') || allText.includes('חד׳')) {
+    // Check for any price/room indicators (with or without RTL marks)
+    const hasContent = allText.includes('₪') || 
+                       allText.includes('חדרים') || 
+                       allText.includes('חד׳') ||
+                       allText.includes('חד\'') ||
+                       /\d+[‏\s]*₪/.test(allText) ||
+                       /₪[‏\s]*\d+/.test(allText);
+    
+    if (hasContent) {
       console.log('[parser-madlan] No cards found, falling back to markdown parsing');
-      return parseMadlanMarkdown(html, propertyType);
+      return parseMadlanMarkdown(allText, propertyType); // Pass extracted TEXT, not HTML
     }
   }
   
@@ -129,8 +137,8 @@ export function parseMadlanHtml(
  * Parse Madlan property listings from Markdown/text content
  * 
  * Madlan markdown patterns:
- * - Price: "X,XXX ₪" or "₪ X,XXX"
- * - Rooms: "X חד׳" or "X חדרים"  
+ * - Price: "X,XXX ₪" or "₪ X,XXX" or RTL "[‏4,500‏₪]"
+ * - Rooms: "X חד׳" or "X חדרים" or "3 חד׳"
  * - Size: "X מ"ר" or "X מ״ר"
  * - Floor: "קומה X"
  * - Address: "רחוב, שכונה, עיר"
@@ -142,12 +150,25 @@ export function parseMadlanMarkdown(
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
+  // Debug: Log input sample
+  console.log(`[parser-madlan] Input length: ${markdown.length} chars`);
+  console.log(`[parser-madlan] Sample (first 300): ${markdown.substring(0, 300).replace(/\n/g, '\\n')}`);
+  
   // Split by lines
   const lines = markdown.split('\n');
   
-  // Patterns to identify listing blocks
-  const pricePattern = /[\d,]+\s*₪|₪\s*[\d,]+/;
-  const roomsPattern = /(\d+(?:\.\d)?)\s*(?:חד׳|חדרים|חד')/;
+  // RTL-aware patterns for Madlan
+  // Handles: "₪4,500", "4,500₪", "[‏4,500‏₪]", "4,500 ₪"
+  const pricePattern = /[\[‏]*([\d,]+)[‏\s]*₪[\]‏]*|₪[‏\s]*([\d,]+)/;
+  // Handles: "3 חד׳", "3.5 חדרים", "3חד'"
+  const roomsPattern = /(\d+(?:[.,]\d)?)\s*(?:חד[׳']|חדרים)/;
+  
+  // Debug: Test patterns on full text
+  const fullText = markdown;
+  const priceMatches = fullText.match(new RegExp(pricePattern.source, 'g'));
+  const roomsMatches = fullText.match(new RegExp(roomsPattern.source, 'g'));
+  console.log(`[parser-madlan] Price patterns found: ${priceMatches?.length || 0}`, priceMatches?.slice(0, 5));
+  console.log(`[parser-madlan] Rooms patterns found: ${roomsMatches?.length || 0}`, roomsMatches?.slice(0, 5));
   
   let currentProperty: Partial<ParsedProperty> | null = null;
   let currentRawText = '';
