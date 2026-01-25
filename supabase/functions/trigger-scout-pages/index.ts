@@ -15,9 +15,10 @@ const corsHeaders = {
 
 // Source-specific delays between page triggers (in milliseconds)
 // Madlan needs longer delays to avoid CAPTCHA blocks (90% block rate with short delays)
+// These are DEFAULT values - config.page_delay_seconds overrides these
 const SOURCE_DELAYS: Record<string, number> = {
   yad2: 3000,      // 3 seconds between Yad2 pages
-  madlan: 20000,   // 20 seconds for Madlan (increased from 5s to avoid CAPTCHA)
+  madlan: 30000,   // 30 seconds for Madlan (increased from 20s to 30s for better CAPTCHA evasion)
   homeless: 2000,  // 2 seconds for Homeless
 };
 
