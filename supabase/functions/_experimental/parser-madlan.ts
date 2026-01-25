@@ -294,7 +294,13 @@ export function parseMadlanMarkdown(
       // Try to extract missing fields
       if (!currentProperty.rooms) currentProperty.rooms = extractRooms(cleanLine);
       if (!currentProperty.size) currentProperty.size = extractSize(cleanLine);
-      if (!currentProperty.floor) currentProperty.floor = extractFloor(cleanLine);
+      if (!currentProperty.floor) {
+        const floorResult = extractFloor(cleanLine);
+        if (floorResult !== null) {
+          console.log(`[parser-madlan] Floor extracted: ${floorResult} from: "${cleanLine.substring(0, 50)}"`);
+        }
+        currentProperty.floor = floorResult;
+      }
       if (!currentProperty.city) currentProperty.city = extractCity(cleanLine);
       
       if (!currentProperty.neighborhood) {
