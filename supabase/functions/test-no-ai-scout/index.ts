@@ -46,6 +46,11 @@ import {
 } from '../_experimental/parser-yad2.ts';
 
 import {
+  parseMadlanHtml,
+  parseMadlanMarkdown
+} from '../_experimental/parser-madlan.ts';
+
+import {
   lookupNeighborhoodByStreet,
   extractStreetFromAddress,
   normalizeStreetName,
@@ -87,7 +92,7 @@ interface TestRequest {
   
   // For compare mode
   compare_url?: string;
-  compare_source?: 'homeless' | 'yad2';
+  compare_source?: 'homeless' | 'yad2' | 'madlan';
 }
 
 serve(async (req) => {
@@ -155,7 +160,7 @@ function handleStats(): Response {
       success: true,
       mode: 'stats',
       dictionary_stats: stats,
-      parsers_available: ['homeless', 'yad2'],
+      parsers_available: ['homeless', 'yad2', 'madlan'],
       translation_directions: ['he-en', 'en-he'],
       features: ['street-lookup', 'compare'],
       message: 'Experimental non-AI system ready for testing'
@@ -175,7 +180,8 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   // Default URLs for testing
   const defaultUrls: Record<string, string> = {
     homeless: 'https://www.homeless.co.il/rent/?area=1',
-    yad2: 'https://www.yad2.co.il/realestate/rent?city=5000&propertyGroup=apartments'
+    yad2: 'https://www.yad2.co.il/realestate/rent?city=5000&propertyGroup=apartments',
+    madlan: 'https://www.madlan.co.il/for-rent/tel-aviv-yafo'
   };
   
   const url = body.compare_url || defaultUrls[source];
@@ -269,6 +275,8 @@ async function handleCompare(body: TestRequest): Promise<Response> {
     noAiResult = parseHomelessHtml(html, propertyType);
   } else if (source === 'yad2') {
     noAiResult = await parseYad2Html(html, propertyType, false); // No street lookup for speed
+  } else if (source === 'madlan') {
+    noAiResult = parseMadlanHtml(html, propertyType);
   } else {
     noAiResult = { success: false, properties: [], stats: { total_found: 0 }, errors: [`Parser for ${source} not implemented`] };
   }

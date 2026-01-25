@@ -151,6 +151,11 @@ export async function parseYad2Html(
 
 /**
  * Parse Yad2 property listings from Markdown/text content
+ * 
+ * Yad2 markdown patterns:
+ * - Price line: "₪ X,XXX" (standalone line)
+ * - Details line: "**[Address][PropertyType], [Neighborhood], [City][Rooms] חדרים • קומה X • XX מ״ר**"
+ * - Separator: "•" between rooms/floor/size
  */
 export function parseYad2Markdown(
   markdown: string,
@@ -159,53 +164,129 @@ export function parseYad2Markdown(
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
-  // Split by common listing separators
   const lines = markdown.split('\n');
   
-  // Pattern to identify price lines (start of new listing)
-  const pricePattern = /[₪$]\s*[\d,]+|[\d,]+\s*(?:₪|ש"ח|שקל)/;
+  // Pattern for price line (standalone)
+  const priceLinePattern = /^₪\s*[\d,]+$/;
+  // Pattern for details in bold
+  const detailsPattern = /\*\*([^*]+)\*\*/;
+  // Pattern for rooms with dot separator
+  const roomsWithDotPattern = /(\d+(?:\.\d)?)\s*חדרים/;
+  const floorPattern = /קומה\s*(?:‎)?(\d+|קרקע)/;
+  const sizePattern = /(\d+)\s*מ[״"']?ר/;
   
   let currentProperty: Partial<ParsedProperty> | null = null;
   let currentRawText = '';
+  let pendingPrice: number | null = null;
   
   for (const line of lines) {
     const cleanLine = cleanText(line);
-    if (!cleanLine) continue;
+    if (!cleanLine || cleanLine.length < 2) continue;
     
-    // Check if this line has a price (potential new listing)
-    if (pricePattern.test(cleanLine)) {
+    // Check if this is a standalone price line
+    if (priceLinePattern.test(cleanLine)) {
       // Save previous property if exists
       if (currentProperty && (currentProperty.price || currentProperty.rooms)) {
         properties.push(finalizeProperty(currentProperty, currentRawText, propertyType, properties.length));
       }
       
-      // Start new property
-      currentProperty = {
-        price: extractPrice(cleanLine),
-        city: extractCity(cleanLine),
-      };
+      pendingPrice = extractPrice(cleanLine);
+      currentProperty = { price: pendingPrice };
       currentRawText = cleanLine;
+      continue;
+    }
+    
+    // Check for bold details line (main property info)
+    const boldMatch = cleanLine.match(detailsPattern);
+    if (boldMatch && pendingPrice) {
+      const details = boldMatch[1];
       
-      // Try to extract more from the same line
-      const neighborhood = extractNeighborhood(cleanLine, currentProperty.city || null);
-      if (neighborhood) {
-        currentProperty.neighborhood = neighborhood.label;
-        currentProperty.neighborhood_value = neighborhood.value;
+      // Parse the details string
+      // Format: "[Address], [Neighborhood], [City][Rooms] חדרים • קומה X • XX מ״ר"
+      
+      // Extract rooms
+      const roomsMatch = details.match(roomsWithDotPattern);
+      if (roomsMatch) {
+        currentProperty!.rooms = parseFloat(roomsMatch[1]);
       }
       
-      currentProperty.rooms = extractRooms(cleanLine);
-      currentProperty.size = extractSize(cleanLine);
-      currentProperty.floor = extractFloor(cleanLine);
-      currentProperty.is_private = !detectBroker(cleanLine);
+      // Extract floor
+      const floorMatch = details.match(floorPattern);
+      if (floorMatch) {
+        currentProperty!.floor = floorMatch[1] === 'קרקע' ? 0 : parseInt(floorMatch[1], 10);
+      }
       
-    } else if (currentProperty) {
-      // Add to current property
+      // Extract size
+      const sizeMatch = details.match(sizePattern);
+      if (sizeMatch) {
+        currentProperty!.size = parseInt(sizeMatch[1], 10);
+      }
+      
+      // Extract city
+      currentProperty!.city = extractCity(details) || 'תל אביב יפו';
+      
+      // Extract neighborhood
+      const neighborhood = extractNeighborhood(details, currentProperty!.city);
+      if (neighborhood) {
+        currentProperty!.neighborhood = neighborhood.label;
+        currentProperty!.neighborhood_value = neighborhood.value;
+      }
+      
+      // Extract address (part before the comma)
+      const addressParts = details.split(',');
+      if (addressParts.length > 0) {
+        // Remove property type suffix (דירה, דירת גן, etc.)
+        let addr = addressParts[0].trim();
+        addr = addr.replace(/דירה|דירת גן|פנטהאוז|סטודיו|מיני פנטהאוז/g, '').trim();
+        if (addr) {
+          currentProperty!.address = addr;
+        }
+      }
+      
       currentRawText += ' ' + cleanLine;
       
-      // Try to extract missing fields
+      // Finalize this property since we have all data
+      if (currentProperty && currentProperty.price) {
+        properties.push(finalizeProperty(currentProperty, currentRawText, propertyType, properties.length));
+        currentProperty = null;
+        pendingPrice = null;
+        currentRawText = '';
+      }
+      
+      continue;
+    }
+    
+    // Handle non-bold lines with property data (separator pattern)
+    if (cleanLine.includes('•') && currentProperty) {
+      // Split by dot separator
+      const parts = cleanLine.split('•').map(p => p.trim());
+      
+      for (const part of parts) {
+        if (!currentProperty.rooms) {
+          const rooms = extractRooms(part);
+          if (rooms) currentProperty.rooms = rooms;
+        }
+        if (currentProperty.floor === undefined) {
+          const floor = extractFloor(part);
+          if (floor !== null) currentProperty.floor = floor;
+        }
+        if (!currentProperty.size) {
+          const size = extractSize(part);
+          if (size) currentProperty.size = size;
+        }
+      }
+      
+      currentRawText += ' ' + cleanLine;
+      continue;
+    }
+    
+    // General line processing for current property
+    if (currentProperty) {
+      currentRawText += ' ' + cleanLine;
+      
       if (!currentProperty.rooms) currentProperty.rooms = extractRooms(cleanLine);
       if (!currentProperty.size) currentProperty.size = extractSize(cleanLine);
-      if (!currentProperty.floor) currentProperty.floor = extractFloor(cleanLine);
+      if (currentProperty.floor === undefined) currentProperty.floor = extractFloor(cleanLine);
       if (!currentProperty.city) currentProperty.city = extractCity(cleanLine);
       
       if (!currentProperty.neighborhood) {
@@ -216,7 +297,6 @@ export function parseYad2Markdown(
         }
       }
       
-      // Update broker detection
       if (currentProperty.is_private !== false && detectBroker(cleanLine)) {
         currentProperty.is_private = false;
       }
