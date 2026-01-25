@@ -3,13 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, scrapeWithRetry, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { extractPropertiesWithAI } from "../_shared/ai-extraction.ts";
+import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
  * Edge Function for scraping Madlan - SINGLE PAGE MODE ONLY
  * Each invocation handles exactly one page.
- * The trigger-scout-pages function manages the orchestration.
+ * Uses NON-AI parser for cost-free extraction.
  */
 
 const MADLAN_CONFIG = {
@@ -26,7 +26,6 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -49,7 +48,7 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🔵 scout-madlan: Page ${page} for run ${runId}`);
+  console.log(`🔵 scout-madlan [NO-AI]: Page ${page} for run ${runId}`);
 
   try {
     // Check if run was stopped
@@ -154,30 +153,12 @@ serve(async (req) => {
       });
     }
 
-    if (!lovableApiKey) {
-      await updatePageStatus(supabase, runId, page, { 
-        status: 'failed', 
-        error: 'LOVABLE_API_KEY not configured',
-        duration_ms: Date.now() - pageStartTime
-      });
-      
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
-      }
-      
-      return new Response(JSON.stringify({ success: false, error: 'No AI key' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // Extract properties with NON-AI parser
+    const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
+    const parseResult = parseMadlanMarkdown(markdown, propertyTypeForParsing);
+    const extractedProperties = parseResult.properties;
 
-    // Extract properties with AI
-    const extractedProperties = await extractPropertiesWithAI(
-      markdown, html, url, 'madlan',
-      config.property_type === 'both' ? 'rent' : config.property_type,
-      lovableApiKey, config.cities
-    );
-
-    console.log(`🔵 Madlan page ${page}: Extracted ${extractedProperties.length} properties`);
+    console.log(`🔵 Madlan page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
 
     if (extractedProperties.length === 0) {
       console.warn(`⚠️ Madlan page ${page}: 0 properties extracted`);
@@ -233,7 +214,8 @@ serve(async (req) => {
       page,
       found: extractedProperties.length,
       new: pageNew,
-      duration_ms: duration
+      duration_ms: duration,
+      parser: 'no-ai'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
