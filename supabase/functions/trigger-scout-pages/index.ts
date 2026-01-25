@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // Get the config to determine source
     const { data: config, error: configError } = await supabase
       .from('scout_configs')
-      .select('id, name, source, max_pages, page_delay_seconds')
+      .select('id, name, source, max_pages, page_delay_seconds, start_page')
       .eq('id', config_id)
       .single();
 
@@ -127,14 +127,18 @@ Deno.serve(async (req) => {
     const delayMs = config.page_delay_seconds 
       ? config.page_delay_seconds * 1000 
       : SOURCE_DELAYS[source] || 5000;
+    
+    // Use start_page from config (default 1, Madlan uses 2 to avoid CAPTCHA on landing page)
+    const startPage = config.start_page || 1;
+    const totalPages = pagesToScan - startPage + 1;
 
-    console.log(`📄 Created run ${runId} for ${pagesToScan} ${source} pages (delay: ${delayMs}ms)`);
+    console.log(`📄 Created run ${runId} for ${source}: pages ${startPage}-${pagesToScan} (${totalPages} pages, delay: ${delayMs}ms)`);
 
     // Trigger each page as a separate function call with delays
     const triggerPromises: Promise<void>[] = [];
     
-    for (let page = 1; page <= pagesToScan; page++) {
-      const pageDelay = (page - 1) * delayMs;
+    for (let page = startPage; page <= pagesToScan; page++) {
+      const pageDelay = (page - startPage) * delayMs;
       
       const triggerPage = async () => {
         // Wait for the delay
