@@ -133,6 +133,74 @@ export function parseMadlanHtml(
 // Madlan Markdown Parser
 // ============================================
 
+// ============================================
+// Content Cleaning (mirrors _shared/scraping.ts)
+// ============================================
+
+/**
+ * Clean Madlan markdown content before parsing
+ * Replicates the production AI preprocessing logic
+ */
+function cleanMadlanContent(markdown: string): string {
+  let cleaned = markdown;
+  const originalLength = cleaned.length;
+  
+  // 1. Skip navigation - start from listings header
+  const headerPatterns = [
+    /# דירות להשכרה ב/,
+    /# דירות למכירה ב/,
+    /## \d+ דירות/,
+    /₪.*חד[׳']/,
+  ];
+  
+  for (const pattern of headerPatterns) {
+    const match = cleaned.search(pattern);
+    if (match > 0) {
+      console.log(`[Madlan Clean] Skipped ${match} chars of navigation`);
+      cleaned = cleaned.substring(match);
+      break;
+    }
+  }
+  
+  // 2. Remove blog section "יעניין אותך לדעת..."
+  const blogStart = cleaned.indexOf('## יעניין אותך לדעת');
+  if (blogStart > 0) {
+    const afterBlog = cleaned.substring(blogStart);
+    const nextPropertyMatch = afterBlog.match(/\[‏[\d,]+\s*‏₪/);
+    if (nextPropertyMatch?.index) {
+      console.log(`[Madlan Clean] Removed blog section at position ${blogStart}`);
+      cleaned = cleaned.substring(0, blogStart) + afterBlog.substring(nextPropertyMatch.index);
+    } else {
+      // No more properties after blog, just cut it
+      cleaned = cleaned.substring(0, blogStart);
+    }
+  }
+  
+  // 3. Remove footer
+  const footerPatterns = [/\[דף הבית\]/, /מידע חשוב/, /דירות לפי מספר חדרים/];
+  for (const pattern of footerPatterns) {
+    const footerStart = cleaned.search(pattern);
+    if (footerStart > 0) {
+      console.log(`[Madlan Clean] Removed footer at position ${footerStart}`);
+      cleaned = cleaned.substring(0, footerStart);
+      break;
+    }
+  }
+  
+  // 4. Remove image URLs (saves ~40% of content)
+  cleaned = cleaned.replace(/https:\/\/images2\.madlan\.co\.il\/[^\s\)\]]+/g, '[IMG]');
+  cleaned = cleaned.replace(/https:\/\/s3-eu-west-1\.amazonaws\.com\/media\.madlan\.co\.il\/[^\s\)\]]+/g, '[IMG]');
+  cleaned = cleaned.replace(/!\[[^\]]*\]\([^\)]*\)/g, '[IMG]'); // Generic markdown images
+  
+  console.log(`[Madlan Clean] ${originalLength} → ${cleaned.length} chars (${Math.round((1 - cleaned.length/originalLength) * 100)}% reduction)`);
+  
+  return cleaned;
+}
+
+// ============================================
+// Madlan Markdown Parser
+// ============================================
+
 /**
  * Parse Madlan property listings from Markdown/text content
  * 
@@ -150,12 +218,15 @@ export function parseMadlanMarkdown(
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
-  // Debug: Log input sample
-  console.log(`[parser-madlan] Input length: ${markdown.length} chars`);
-  console.log(`[parser-madlan] Sample (first 300): ${markdown.substring(0, 300).replace(/\n/g, '\\n')}`);
+  // Clean content before parsing (mirrors production AI preprocessing)
+  const cleanedMarkdown = cleanMadlanContent(markdown);
   
-  // Split by lines
-  const lines = markdown.split('\n');
+  // Debug: Log input sample
+  console.log(`[parser-madlan] Original: ${markdown.length} → Cleaned: ${cleanedMarkdown.length} chars`);
+  console.log(`[parser-madlan] Sample (first 300): ${cleanedMarkdown.substring(0, 300).replace(/\n/g, '\\n')}`);
+  
+  // Split by lines (use cleaned content)
+  const lines = cleanedMarkdown.split('\n');
   
   // RTL-aware patterns for Madlan
   // Handles: "₪4,500", "4,500₪", "[‏4,500‏₪]", "4,500 ₪"
@@ -163,8 +234,8 @@ export function parseMadlanMarkdown(
   // Handles: "3 חד׳", "3.5 חדרים", "3חד'"
   const roomsPattern = /(\d+(?:[.,]\d)?)\s*(?:חד[׳']|חדרים)/;
   
-  // Debug: Test patterns on full text
-  const fullText = markdown;
+  // Debug: Test patterns on cleaned text
+  const fullText = cleanedMarkdown;
   const priceMatches = fullText.match(new RegExp(pricePattern.source, 'g'));
   const roomsMatches = fullText.match(new RegExp(roomsPattern.source, 'g'));
   console.log(`[parser-madlan] Price patterns found: ${priceMatches?.length || 0}`, priceMatches?.slice(0, 5));
