@@ -89,6 +89,52 @@ serve(async (req) => {
       console.log(`\n🔍 Checking run ${run.id} (${run.source})`);
       console.log(`   Age: ${runAgeMinutes.toFixed(1)} min | Pages: ${pageStats.length}`);
 
+      // QUICK CHECK: If all pages are done but run is still "running", close it immediately
+      const allPagesDone = pageStats.length > 0 && pageStats.every(p => 
+        ['completed', 'failed', 'blocked'].includes(p.status)
+      );
+      
+      if (allPagesDone) {
+        console.log(`   ✅ All ${pageStats.length} pages finished - closing run immediately`);
+        const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
+        const finalStatus = hasErrors ? 'partial' : 'completed';
+        
+        const { error: closeError } = await supabase
+          .from('scout_runs')
+          .update({
+            status: finalStatus,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', run.id);
+        
+        if (!closeError) {
+          runsForceCompleted++;
+          console.log(`   ✅ Run closed as '${finalStatus}'`);
+          cleanupDetails.push({
+            runId: run.id,
+            source: run.source,
+            action: 'auto_closed',
+            reason: `All ${pageStats.length} pages completed`
+          });
+          
+          // Update config status
+          if (run.config_id) {
+            await supabase
+              .from('scout_configs')
+              .update({
+                last_run_at: new Date().toISOString(),
+                last_run_status: finalStatus,
+                last_run_results: {
+                  properties_found: run.properties_found || 0,
+                  new_properties: run.new_properties || 0
+                }
+              })
+              .eq('id', run.config_id);
+          }
+        }
+        continue; // Move to next run
+      }
+
       let needsUpdate = false;
       const updatedPageStats = [...pageStats];
 
