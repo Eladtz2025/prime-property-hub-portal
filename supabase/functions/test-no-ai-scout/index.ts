@@ -67,7 +67,7 @@ const corsHeaders = {
 };
 
 interface TestRequest {
-  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup' | 'compare';
+  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup' | 'compare' | 'batch';
   
   // For parse mode
   source?: 'homeless' | 'yad2' | 'madlan';
@@ -97,6 +97,9 @@ interface TestRequest {
   // Direct HTML/markdown input for compare mode (bypasses scraping)
   compare_html?: string;
   compare_markdown?: string;
+  
+  // For batch mode
+  pages?: number; // Number of pages to scan (default: 10)
 }
 
 serve(async (req) => {
@@ -130,11 +133,14 @@ serve(async (req) => {
       case 'compare':
         return await handleCompare(body);
       
+      case 'batch':
+        return await handleBatch(body);
+      
       default:
         return new Response(
           JSON.stringify({ 
             error: 'Invalid mode',
-            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup', 'compare'] 
+            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup', 'compare', 'batch'] 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -472,6 +478,176 @@ function buildComparisonReport(
     
     verdict
   };
+}
+
+// ============================================
+// Batch Mode: Scan Multiple Pages with Non-AI
+// ============================================
+
+async function handleBatch(body: TestRequest): Promise<Response> {
+  const source = body.source || 'madlan';
+  const propertyType = body.property_type || 'rent';
+  const pages = body.pages || 10;
+  const city = body.city || 'תל אביב יפו';
+  
+  console.log(`[Batch] Starting ${pages}-page scan for ${source} (${propertyType}) in ${city}`);
+  
+  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  if (!firecrawlApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // City slug mapping for Madlan
+  const madlanCityMap: Record<string, string> = {
+    'תל אביב': 'תל-אביב-יפו-ישראל',
+    'תל אביב יפו': 'תל-אביב-יפו-ישראל',
+    'ירושלים': 'ירושלים-ישראל',
+    'חיפה': 'חיפה-ישראל',
+    'ראשון לציון': 'ראשון-לציון-ישראל',
+    'רמת גן': 'רמת-גן-ישראל',
+  };
+  
+  const results = {
+    source,
+    property_type: propertyType,
+    city,
+    pages_attempted: pages,
+    pages_success: 0,
+    pages_blocked: 0,
+    total_properties: 0,
+    private_count: 0,
+    broker_count: 0,
+    all_source_ids: [] as string[],
+    page_details: [] as Array<{
+      page: number;
+      status: 'success' | 'blocked' | 'error';
+      url: string;
+      found: number;
+      private: number;
+      broker: number;
+      time_ms: number;
+      error?: string;
+    }>
+  };
+  
+  const startTime = Date.now();
+  
+  for (let page = 1; page <= pages; page++) {
+    const pageStart = Date.now();
+    
+    // Build URL based on source
+    let url: string;
+    if (source === 'madlan') {
+      const pathType = propertyType === 'rent' ? 'for-rent' : 'for-sale';
+      const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-') + '-ישראל';
+      url = page === 1 
+        ? `https://www.madlan.co.il/${pathType}/${citySlug}`
+        : `https://www.madlan.co.il/${pathType}/${citySlug}?page=${page}`;
+    } else {
+      // Default fallback
+      url = `https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל?page=${page}`;
+    }
+    
+    console.log(`[Batch] Page ${page}/${pages}: ${url}`);
+    
+    try {
+      // Scrape with retry
+      const scrapeResult = await scrapeWithRetry(url, firecrawlApiKey, source, 2);
+      
+      if (!scrapeResult?.data?.markdown) {
+        console.log(`[Batch] Page ${page}: BLOCKED/FAILED`);
+        results.pages_blocked++;
+        results.page_details.push({
+          page,
+          status: 'blocked',
+          url,
+          found: 0,
+          private: 0,
+          broker: 0,
+          time_ms: Date.now() - pageStart,
+          error: 'No markdown returned'
+        });
+        continue;
+      }
+      
+      const markdown = scrapeResult.data.markdown;
+      console.log(`[Batch] Page ${page}: Got ${markdown.length} chars markdown`);
+      
+      // Parse with Non-AI parser
+      const parsed = parseMadlanMarkdown(markdown, propertyType);
+      
+      const privateCount = parsed.properties.filter(p => p.is_private).length;
+      const brokerCount = parsed.properties.filter(p => !p.is_private).length;
+      
+      results.pages_success++;
+      results.total_properties += parsed.properties.length;
+      results.private_count += privateCount;
+      results.broker_count += brokerCount;
+      
+      // Collect source IDs to check uniqueness
+      for (const prop of parsed.properties) {
+        if (prop.source_id) {
+          results.all_source_ids.push(prop.source_id);
+        }
+      }
+      
+      results.page_details.push({
+        page,
+        status: 'success',
+        url,
+        found: parsed.properties.length,
+        private: privateCount,
+        broker: brokerCount,
+        time_ms: Date.now() - pageStart
+      });
+      
+      console.log(`[Batch] Page ${page}: ✅ ${parsed.properties.length} properties (${privateCount} private)`);
+      
+      // Delay between pages (5 seconds)
+      if (page < pages) {
+        console.log(`[Batch] Waiting 5s before next page...`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+      
+    } catch (error) {
+      console.error(`[Batch] Page ${page}: ERROR -`, error);
+      results.page_details.push({
+        page,
+        status: 'error',
+        url,
+        found: 0,
+        private: 0,
+        broker: 0,
+        time_ms: Date.now() - pageStart,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  
+  const totalTime = Date.now() - startTime;
+  
+  // Calculate unique properties
+  const uniqueIds = new Set(results.all_source_ids);
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'batch',
+      ...results,
+      unique_properties: uniqueIds.size,
+      duplicate_count: results.all_source_ids.length - uniqueIds.size,
+      total_time_ms: totalTime,
+      summary: {
+        success_rate: `${Math.round(results.pages_success / pages * 100)}%`,
+        avg_per_page: results.pages_success > 0 ? Math.round(results.total_properties / results.pages_success) : 0,
+        private_rate: results.total_properties > 0 ? `${Math.round(results.private_count / results.total_properties * 100)}%` : '0%',
+      }
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
 function handleTranslate(body: TestRequest): Response {
