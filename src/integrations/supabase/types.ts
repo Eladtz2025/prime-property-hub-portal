@@ -1717,6 +1717,7 @@ export type Database = {
           id: string
           is_completed: boolean | null
           priority: number
+          task_type: string
           title: string
         }
         Insert: {
@@ -1728,6 +1729,7 @@ export type Database = {
           id?: string
           is_completed?: boolean | null
           priority?: number
+          task_type?: string
           title: string
         }
         Update: {
@@ -1739,6 +1741,7 @@ export type Database = {
           id?: string
           is_completed?: boolean | null
           priority?: number
+          task_type?: string
           title?: string
         }
         Relationships: []

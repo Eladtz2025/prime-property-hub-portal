@@ -196,8 +196,9 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
         </div>
 
-        {/* Priority Tasks Card */}
-        <PriorityTasksCard />
+        {/* Priority Tasks Cards */}
+        <PriorityTasksCard taskType="daily" title="Daily Priority" />
+        <PriorityTasksCard taskType="weekly" title="Weekly Priority" />
 
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />

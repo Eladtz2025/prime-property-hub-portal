@@ -199,9 +199,10 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* הדירות שלנו - קרוסלה */}
       <ActivePropertiesCard properties={properties} />
 
-      {/* שורה 1: פריוריטי + פגישות קרובות */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <PriorityTasksCard />
+      {/* שורה 1: Daily Priority + Weekly Priority + פגישות קרובות */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <PriorityTasksCard taskType="daily" title="Daily Priority" />
+        <PriorityTasksCard taskType="weekly" title="Weekly Priority" />
         <UpcomingAppointmentsCard 
           limit={3} 
           onAddAppointment={() => setIsAppointmentModalOpen(true)}

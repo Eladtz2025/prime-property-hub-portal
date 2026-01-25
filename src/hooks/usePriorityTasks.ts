@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
+export type TaskType = 'daily' | 'weekly';
+
 export interface PriorityTask {
   id: string;
   title: string;
@@ -13,9 +15,10 @@ export interface PriorityTask {
   created_at: string;
   completed_at: string | null;
   created_by: string | null;
+  task_type: TaskType;
 }
 
-export const usePriorityTasks = () => {
+export const usePriorityTasks = (taskType: TaskType = 'weekly') => {
   const [tasks, setTasks] = useState<PriorityTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -28,17 +31,18 @@ export const usePriorityTasks = () => {
       const { data, error } = await supabase
         .from('priority_tasks')
         .select('*')
+        .eq('task_type', taskType)
         .order('is_completed', { ascending: true })
         .order('priority', { ascending: true });
 
       if (error) throw error;
-      setTasks(data || []);
+      setTasks((data || []) as PriorityTask[]);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, taskType]);
 
   useEffect(() => {
     fetchTasks();
@@ -55,14 +59,15 @@ export const usePriorityTasks = () => {
           priority,
           due_date: dueDate || null,
           description: description || null,
-          created_by: user.id
+          created_by: user.id,
+          task_type: taskType
         })
         .select()
         .single();
 
       if (error) throw error;
       
-      setTasks(prev => [...prev, data].sort((a, b) => {
+      setTasks(prev => [...prev, data as PriorityTask].sort((a, b) => {
         if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
         return a.priority - b.priority;
       }));
