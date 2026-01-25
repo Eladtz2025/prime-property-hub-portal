@@ -179,6 +179,70 @@ export const OTHER_NEIGHBORHOODS_HE_EN: Record<string, string> = {
 };
 
 // ============================================
+// Additional Neighborhoods (from real data)
+// ============================================
+
+export const ADDITIONAL_NEIGHBORHOODS_HE_EN: Record<string, string> = {
+  // תל אביב - שכונות נוספות
+  'המשתלה': 'HaMishtala',
+  'אפקה': 'Afeka',
+  'ביצרון': 'Bitzaron',
+  'ביצרון ורמת ישראל': 'Bitzaron and Ramat Israel',
+  'רמת ישראל': 'Ramat Israel',
+  'גבעת הרמב"ם': 'Givat HaRambam',
+  'גבעת רמב"ם': 'Givat HaRambam',
+  'גבעת הרצל': 'Givat Herzl',
+  'הארגזים': 'HaArgazim',
+  'הבימה': 'HaBima',
+  'המושבה האמריקאית-גרמנית': 'American-German Colony',
+  'המושבה האמריקאית': 'American Colony',
+  'המושבה הגרמנית': 'German Colony',
+  'איזור שדה דב': 'Sde Dov Area',
+  'שדה דב': 'Sde Dov',
+  'צמרות': 'Tzamerot',
+  'צמרות איילון': 'Tzamerot Ayalon',
+  'פארק צמרת': 'Park Tzameret',
+  'שיכון דן': 'Shikun Dan',
+  'נווה דן': 'Neve Dan',
+  'נוה דן': 'Neve Dan',
+  'נווה צה"ל': 'Neve Tzahal',
+  'נוה צה"ל': 'Neve Tzahal',
+  'נווה גולן': 'Neve Golan',
+  'נוה גולן': 'Neve Golan',
+  'נווה ברבור': 'Neve Barbur',
+  'כפר שלם מערב': 'Kfar Shalem West',
+  'גבעת התמרים': 'Givat HaTmarim',
+  'חצרות יפו': 'Hatzrot Yafo',
+  'נמל יפו': 'Jaffa Port',
+  'לנדאו': 'Landau',
+  'מבואות יפו': "Mevo'ot Yafo",
+  'מונסון': 'Monson',
+  'רמת הטייסים': 'Ramat HaTaysim',
+  'קריית שלום': 'Kiryat Shalom',
+  'קריית שאול': 'Kiryat Shaul',
+  'נחלת יצחק': 'Nahalat Yitzhak',
+  'גני צהלה': 'Ganei Tzahala',
+  'עזרא': 'Ezra',
+  'עזרא והבונים': 'Ezra VeHaBonim',
+  'גבעת עליה': 'Givat Aliya',
+  'גבעת עלייה': 'Givat Aliya',
+  
+  // יפו - וריאציות נוספות
+  "יפו ג' - נווה גולן": 'Jaffa C - Neve Golan',
+  "יפו ד'": 'Jaffa D',
+  'יפו ד׳': 'Jaffa D',
+  "יפו ד' - גבעת התמרים": 'Jaffa D - Givat HaTmarim',
+  'יפו העתיקה - נמל יפו': 'Old Jaffa - Port',
+  
+  // אזורים כלליים
+  'מרכז': 'Center',
+  'צפון': 'North',
+  'דרום': 'South',
+  'מזרח': 'East',
+  'מערב': 'West',
+};
+
+// ============================================
 // Property Types
 // ============================================
 
@@ -267,6 +331,29 @@ export const PROPERTY_FEATURES_HE_EN: Record<string, string> = {
   'נוף לים': 'sea view',
   'נוף לעיר': 'city view',
   'נוף פתוח': 'open view',
+  
+  // Additional common terms
+  'עיר': 'city',
+  'תחבורה': 'transportation',
+  'תחבורה ציבורית': 'public transportation',
+  'ציבורי': 'public',
+  'ציבורית': 'public',
+  'קרוב': 'close',
+  'קרובה': 'close',
+  'רחוק': 'far',
+  'רחוקה': 'far',
+  'ישיר': 'direct',
+  'ישירה': 'direct',
+  'אוויר': 'air',
+  'שמש': 'sun',
+  'ים': 'sea',
+  'פארק': 'park',
+  'גן': 'garden',
+  'רחוב': 'street',
+  'שדרה': 'boulevard',
+  'שדרות': 'boulevard',
+  'כביש': 'road',
+  'מעבר': 'passage',
 };
 
 // ============================================
@@ -336,6 +423,148 @@ export const COMMON_PHRASES_HE_EN: Record<string, string> = {
 };
 
 // ============================================
+// Marketing Terms
+// ============================================
+
+export const MARKETING_TERMS_HE_EN: Record<string, string> = {
+  // Promotional phrases
+  'נכס חדש': 'new property',
+  'חבל לפספס': "don't miss out",
+  'בהזדמנות': 'great opportunity',
+  'הזדמנות': 'opportunity',
+  'ייחודי': 'unique',
+  'ייחודית': 'unique',
+  'בבלעדיות': 'exclusively',
+  'ירידת מחיר': 'price drop',
+  'מחיר מציאה': 'bargain price',
+  'חדש!': 'new!',
+  'חם!': 'hot!',
+  'מומלץ': 'recommended',
+  'מומלצת': 'recommended',
+  
+  // Property qualities
+  'נוף פתוח לעיר': 'open city view',
+  'נוף לים': 'sea view',
+  'נוף לפארק': 'park view',
+  'נכס עורפי': 'rear-facing property',
+  'כיווני אוויר': 'air directions',
+  '3 כיווני אוויר': '3 air directions',
+  '2 כיווני אוויר': '2 air directions',
+  '4 כיווני אוויר': '4 air directions',
+  'מטבח גדול': 'large kitchen',
+  'יחידת הורים': 'master suite',
+  'מאסטר': 'master bedroom',
+  'סוויטת הורים': 'master suite',
+  
+  // Renovation terms
+  'שיפוץ': 'renovation',
+  'משופצת אדריכלית': 'architecturally renovated',
+  'שמור': 'well-maintained',
+  'שמורה': 'well-maintained',
+  'במצב מעולה': 'in excellent condition',
+  'מצב מעולה': 'excellent condition',
+  'כמו חדש': 'like new',
+  'כחדש': 'like new',
+  
+  // Floor terms
+  'קומה גבוהה': 'high floor',
+  'קומה נמוכה': 'low floor',
+  
+  // Location phrases
+  'קרוב לתחבורה ציבורית': 'close to public transportation',
+  'ליד': 'next to',
+  'סמוך ל': 'adjacent to',
+  'במרחק הליכה': 'walking distance',
+  'מול הים': 'facing the sea',
+  'על הים': 'on the beach',
+  
+  // Common adjectives (masculine/feminine forms)
+  'גדול': 'large',
+  'גדולה': 'large',
+  'קטן': 'small',
+  'קטנה': 'small',
+  'יפה': 'beautiful',
+  'יפהפה': 'beautiful',
+  'מהמם': 'stunning',
+  'מהממת': 'stunning',
+  'נהדר': 'wonderful',
+  'נהדרת': 'wonderful',
+  'מדהים': 'amazing',
+  'מדהימה': 'amazing',
+  'מושלם': 'perfect',
+  'מושלמת': 'perfect',
+  'מרווח': 'spacious',
+  'מרווחת': 'spacious',
+  'מואר': 'bright',
+  'מוארת': 'bright',
+  'שקט': 'quiet',
+  'שקטה': 'quiet',
+  'חדש': 'new',
+  'חדשה': 'new',
+  'ישן': 'old',
+  'ישנה': 'old',
+  'טוב': 'good',
+  'טובה': 'good',
+  'מעולה': 'excellent',
+  'מעולה': 'excellent',
+  'נוח': 'comfortable',
+  'נוחה': 'comfortable',
+  'פרטי': 'private',
+  'פרטית': 'private',
+  'מרכזי': 'central',
+  'מרכזית': 'central',
+};
+
+// ============================================
+// Connectors and Prepositions
+// ============================================
+
+export const CONNECTORS_HE_EN: Record<string, string> = {
+  // Prepositions
+  'ב': 'in',
+  'ב-': 'in',
+  'ו': 'and',
+  'ו-': 'and',
+  'עם': 'with',
+  'ל': 'to',
+  'ל-': 'to',
+  'של': 'of',
+  'על': 'on',
+  'מ': 'from',
+  'מ-': 'from',
+  'אל': 'to',
+  'בין': 'between',
+  'ליד': 'near',
+  'מול': 'facing',
+  'תחת': 'under',
+  'עד': 'until',
+  'ללא': 'without',
+  'בלי': 'without',
+  'כולל': 'including',
+  'לא כולל': 'not including',
+  'או': 'or',
+  'גם': 'also',
+  'רק': 'only',
+  'כל': 'all',
+  'אחרי': 'after',
+  'לפני': 'before',
+  
+  // Currency symbols
+  '₪': 'NIS',
+  'שח': 'NIS',
+  "ש''ח": 'NIS',
+  
+  // Numbers as words
+  'אחד': 'one',
+  'אחת': 'one',
+  'שתיים': 'two',
+  'שניים': 'two',
+  'שלוש': 'three',
+  'ארבע': 'four',
+  'חמש': 'five',
+};
+
+// ============================================
 // Combined Dictionary
 // ============================================
 
@@ -343,10 +572,13 @@ export const FULL_DICTIONARY_HE_EN: Record<string, string> = {
   ...CITIES_HE_EN,
   ...TEL_AVIV_NEIGHBORHOODS_HE_EN,
   ...OTHER_NEIGHBORHOODS_HE_EN,
+  ...ADDITIONAL_NEIGHBORHOODS_HE_EN,
   ...PROPERTY_TYPES_HE_EN,
   ...PROPERTY_FEATURES_HE_EN,
   ...TRANSACTION_TERMS_HE_EN,
   ...COMMON_PHRASES_HE_EN,
+  ...MARKETING_TERMS_HE_EN,
+  ...CONNECTORS_HE_EN,
 };
 
 // ============================================
@@ -365,9 +597,12 @@ export const DICTIONARY_STATS = {
   cities: Object.keys(CITIES_HE_EN).length,
   tel_aviv_neighborhoods: Object.keys(TEL_AVIV_NEIGHBORHOODS_HE_EN).length,
   other_neighborhoods: Object.keys(OTHER_NEIGHBORHOODS_HE_EN).length,
+  additional_neighborhoods: Object.keys(ADDITIONAL_NEIGHBORHOODS_HE_EN).length,
   property_types: Object.keys(PROPERTY_TYPES_HE_EN).length,
   property_features: Object.keys(PROPERTY_FEATURES_HE_EN).length,
   transaction_terms: Object.keys(TRANSACTION_TERMS_HE_EN).length,
   common_phrases: Object.keys(COMMON_PHRASES_HE_EN).length,
+  marketing_terms: Object.keys(MARKETING_TERMS_HE_EN).length,
+  connectors: Object.keys(CONNECTORS_HE_EN).length,
   total: Object.keys(FULL_DICTIONARY_HE_EN).length,
 };
