@@ -105,22 +105,29 @@ function findPropertyBlocks(markdown: string): string[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for listing URL patterns
-    const hasListingUrl = line.includes('madlan.co.il/listings/');
+    // Look for listing OR project URL patterns
+    const hasListingUrl = line.includes('madlan.co.il/listings/') || line.includes('madlan.co.il/projects/');
     
     if (!hasListingUrl) continue;
     
+    // Skip if this is a duplicate (same URL already captured)
+    const urlMatch = line.match(/https:\/\/www\.madlan\.co\.il\/(listings|projects)\/([^\)\s\]]+)/);
+    if (urlMatch) {
+      const urlId = urlMatch[2];
+      if (blocks.some(b => b.includes(urlId))) continue;
+    }
+    
     // Format B: Compact block with \\ separators - entire listing in one line
     if (line.includes('\\\\') && line.match(/^\[!\[/)) {
-      // Validate it has price (₪) to ensure it's a property listing
-      if (line.includes('₪')) {
+      // Accept blocks with price OR rooms OR size OR project keywords
+      if (line.includes('₪') || /\d+\s*חד[׳'ר]/.test(line) || /\d+\s*מ"ר/.test(line) || /קומות/.test(line)) {
         blocks.push(line);
       }
       continue;
     }
     
     // Format A: Fragmented block - listing URL is at the start, details follow
-    if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/listings\//)) {
+    if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)\//)) {
       // Collect the block - grab next 10-15 lines until we hit termination
       const blockLines: string[] = [line];
       
@@ -128,8 +135,8 @@ function findPropertyBlocks(markdown: string): string[] {
         const nextLine = lines[j];
         const nextLineTrimmed = nextLine.trim();
         
-        // Stop if we hit a new property block
-        if (nextLineTrimmed.startsWith('[![') && nextLineTrimmed.includes('/listings/')) {
+        // Stop if we hit a new property block (listing or project)
+        if (nextLineTrimmed.startsWith('[![') && (nextLineTrimmed.includes('/listings/') || nextLineTrimmed.includes('/projects/'))) {
           break;
         }
         
@@ -147,11 +154,40 @@ function findPropertyBlocks(markdown: string): string[] {
       }
       
       const blockText = blockLines.join('\n');
-      // Validate it has price
-      if (blockText.includes('₪')) {
+      // Accept blocks with price OR rooms OR size OR project indicators (relaxed validation)
+      if (blockText.includes('₪') || /\d+\s*חד[׳'ר]/.test(blockText) || /\d+\s*מ"ר/.test(blockText) || /קומות/.test(blockText) || /פרויקט/.test(blockText)) {
         blocks.push(blockText);
       }
       continue;
+    }
+    
+    // Format C: Simple link without image prefix (sometimes appears for projects)
+    if (line.match(/^\[([^\]]+)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)\//) && !line.startsWith('[![')) {
+      // This is a text link - collect following lines
+      const blockLines: string[] = [line];
+      
+      for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
+        const nextLine = lines[j];
+        const nextLineTrimmed = nextLine.trim();
+        
+        if (nextLineTrimmed.startsWith('[') && (nextLineTrimmed.includes('/listings/') || nextLineTrimmed.includes('/projects/'))) {
+          break;
+        }
+        if (nextLineTrimmed.startsWith('## ') || nextLineTrimmed.startsWith('# ')) {
+          break;
+        }
+        
+        blockLines.push(nextLine);
+        
+        if (nextLineTrimmed === 'תיווך' || nextLineTrimmed === 'בבלעדיות') {
+          break;
+        }
+      }
+      
+      const blockText = blockLines.join('\n');
+      if (blockText.includes('₪') || /\d+\s*חד[׳'ר]/.test(blockText) || /\d+\s*מ"ר/.test(blockText) || /קומות/.test(blockText)) {
+        blocks.push(blockText);
+      }
     }
   }
   
@@ -163,12 +199,13 @@ function findPropertyBlocks(markdown: string): string[] {
 // ============================================
 
 function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): ParsedProperty | null {
-  // Extract listing URL and ID
-  const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s\]]+)/);
+  // Extract listing OR project URL and ID
+  const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/(listings|projects)\/([^\)\s\]]+)/);
   if (!urlMatch) return null;
   
-  const sourceId = urlMatch[1].replace(/\)$/, ''); // Clean trailing )
-  const sourceUrl = `https://www.madlan.co.il/listings/${sourceId}`;
+  const urlType = urlMatch[1]; // 'listings' or 'projects'
+  const sourceId = urlMatch[2].replace(/\)$/, ''); // Clean trailing )
+  const sourceUrl = `https://www.madlan.co.il/${urlType}/${sourceId}`;
   
   // Determine block format and split accordingly
   const isCompactBlock = block.includes('\\\\') && block.startsWith('[![');
@@ -249,13 +286,17 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     }
   }
   
-  // Skip if no useful data extracted
-  if (!price && !rooms && !address) return null;
+  // Skip if no useful data extracted - but be lenient (at least one field)
+  // For projects, rooms might be the only field
+  const isProject = block.includes('/projects/') || block.includes('פרויקט');
+  if (!price && !rooms && !address && !size && !isProject) return null;
   
   // Detect broker - check for explicit markers OR agent image links
-  const hasAgentImage = block.includes('[![](https://') && block.includes('/agents/');
+  // Projects are always considered "broker" (developer)
+  const hasAgentImage = block.includes('[![](https://') && (block.includes('/agents/') || block.includes('/developers/'));
   const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך/.test(block);
-  const isBroker = hasBrokerKeyword || hasAgentImage || detectBroker(block);
+  const isProjectDeveloper = isProject;
+  const isBroker = hasBrokerKeyword || hasAgentImage || isProjectDeveloper || detectBroker(block);
   
   // Build title
   const roomsLabel = rooms ? `${rooms} חדרים` : '';
