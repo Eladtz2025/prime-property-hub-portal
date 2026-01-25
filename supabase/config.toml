@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.cleanup-stuck-runs]
 verify_jwt = false
+
+[functions.test-no-ai-scout]
+verify_jwt = false
