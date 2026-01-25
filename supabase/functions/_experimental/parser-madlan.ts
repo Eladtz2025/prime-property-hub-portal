@@ -3,6 +3,11 @@
  * 
  * EXPERIMENTAL - Completely isolated from production code
  * Parses property listings from Madlan HTML/Markdown content
+ * 
+ * PARSING PRIORITY:
+ * 1. JSON extraction from __SSR_HYDRATED_CONTEXT__ (most reliable - structured data)
+ * 2. HTML DOM parsing with cheerio (fallback)
+ * 3. Markdown/text regex parsing (last resort)
  */
 
 import * as cheerio from 'https://esm.sh/cheerio@1.0.0-rc.12';
@@ -21,16 +26,142 @@ import {
 } from './parser-utils.ts';
 
 // ============================================
-// Madlan HTML Parser
+// Madlan JSON Parser (PREFERRED METHOD)
+// ============================================
+
+/**
+ * Parse Madlan from embedded SSR JSON (MOST RELIABLE)
+ * Madlan embeds all property data as pre-parsed JSON in window.__SSR_HYDRATED_CONTEXT__
+ * This is the gold standard for accuracy.
+ */
+export function parseMadlanJson(
+  html: string, 
+  propertyType: 'rent' | 'sale'
+): ParserResult {
+  const properties: ParsedProperty[] = [];
+  const errors: string[] = [];
+  
+  // Extract JSON from SSR context - handle various script patterns
+  const jsonMatch = html.match(/window\.__SSR_HYDRATED_CONTEXT__\s*=\s*(\{[\s\S]*?\});?\s*<\/script>/);
+  
+  if (!jsonMatch) {
+    console.log('[parser-madlan-json] No __SSR_HYDRATED_CONTEXT__ found in HTML');
+    return { success: false, properties: [], stats: null, errors: ['No SSR context found'] };
+  }
+  
+  try {
+    const ssrContext = JSON.parse(jsonMatch[1]);
+    
+    // Navigate to the POI list
+    const poiList = ssrContext?.reduxInitialState?.domainData?.searchList?.data?.searchPoiV2?.poi;
+    
+    if (!poiList || !Array.isArray(poiList)) {
+      console.log('[parser-madlan-json] No POI list found in SSR context');
+      return { success: false, properties: [], stats: null, errors: ['No POI list in SSR data'] };
+    }
+    
+    console.log(`[parser-madlan-json] ✅ Found ${poiList.length} properties in SSR JSON data`);
+    
+    for (let i = 0; i < poiList.length; i++) {
+      const poi = poiList[i];
+      
+      // Skip non-bulletins (projects, ads, etc.)
+      if (poi.type !== 'bulletin') {
+        console.log(`[parser-madlan-json] Skipping non-bulletin type: ${poi.type}`);
+        continue;
+      }
+      
+      // Extract floor (comes as string like "1", "17", "-1")
+      let floor: number | null = null;
+      if (poi.floor !== undefined && poi.floor !== null) {
+        const floorStr = String(poi.floor);
+        floor = parseInt(floorStr, 10);
+        if (isNaN(floor)) floor = null;
+      }
+      
+      // Determine if private or broker
+      const isPrivate = poi.poc?.type === 'private';
+      
+      // Build source URL
+      const sourceUrl = poi.id ? `https://www.madlan.co.il/listings/${poi.id}` : '';
+      
+      // Get neighborhood (prefer Hebrew display value)
+      const neighborhood = poi.addressDetails?.neighbourhood || null;
+      const neighborhoodDocId = poi.addressDetails?.neighbourhoodDocId || null;
+      
+      // Build property object
+      const property: ParsedProperty = {
+        source: 'madlan',
+        source_id: `madlan_${poi.id}`,
+        source_url: sourceUrl,
+        title: buildTitle(propertyType, poi.beds || null, neighborhood || poi.addressDetails?.city || 'תל אביב יפו'),
+        city: poi.addressDetails?.city || 'תל אביב יפו',
+        neighborhood: neighborhood,
+        neighborhood_value: neighborhoodDocId,
+        address: poi.address || null,
+        price: poi.price || null,
+        rooms: poi.beds || null,
+        size: poi.area || null,
+        floor: floor,
+        property_type: propertyType,
+        is_private: isPrivate,
+        entry_date: poi.firstTimeSeen ? poi.firstTimeSeen.split('T')[0] : null,
+        raw_text: JSON.stringify({
+          id: poi.id,
+          address: poi.address,
+          price: poi.price,
+          beds: poi.beds,
+          area: poi.area,
+          floor: poi.floor,
+          poc: poi.poc?.type,
+          neighbourhood: neighborhood
+        }).substring(0, 500)
+      };
+      
+      properties.push(property);
+    }
+    
+    console.log(`[parser-madlan-json] ✅ Successfully parsed ${properties.length} bulletins from JSON`);
+    
+    return {
+      success: true,
+      properties,
+      stats: calculateStats(properties),
+      errors
+    };
+    
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    console.error(`[parser-madlan-json] JSON parse error: ${errorMsg}`);
+    errors.push(`JSON parse error: ${errorMsg}`);
+    return { success: false, properties: [], stats: null, errors };
+  }
+}
+
+// ============================================
+// Madlan HTML Parser (FALLBACK)
 // ============================================
 
 /**
  * Parse Madlan property listings from HTML content
+ * PRIORITY: Tries JSON first, then DOM, then text
  */
 export function parseMadlanHtml(
   html: string, 
   propertyType: 'rent' | 'sale'
 ): ParserResult {
+  // PRIORITY 1: Try JSON extraction (most reliable)
+  if (html.includes('__SSR_HYDRATED_CONTEXT__')) {
+    console.log('[parser-madlan] Attempting JSON extraction (preferred method)...');
+    const jsonResult = parseMadlanJson(html, propertyType);
+    if (jsonResult.success && jsonResult.properties.length > 0) {
+      console.log(`[parser-madlan] ✅ JSON extraction successful: ${jsonResult.properties.length} properties`);
+      return jsonResult;
+    }
+    console.log('[parser-madlan] JSON extraction failed, falling back to DOM parsing');
+  }
+  
+  // PRIORITY 2: Try DOM parsing with cheerio
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
@@ -39,13 +170,11 @@ export function parseMadlanHtml(
   // Madlan uses various card structures
   const propertyCards = $('[data-auto="property-card"], [class*="PropertyCard"], [class*="property-card"], [class*="listing-card"]');
   
-  console.log(`[parser-madlan] Found ${propertyCards.length} property cards`);
+  console.log(`[parser-madlan] Found ${propertyCards.length} property cards in DOM`);
   
-  // If no cards found, try alternative selectors
+  // If no cards found, try text extraction
   if (propertyCards.length === 0) {
-    // Try generic approach - look for price patterns (including RTL markers)
     const allText = $.text();
-    // Check for any price/room indicators (with or without RTL marks)
     const hasContent = allText.includes('₪') || 
                        allText.includes('חדרים') || 
                        allText.includes('חד׳') ||
@@ -54,8 +183,8 @@ export function parseMadlanHtml(
                        /₪[‏\s]*\d+/.test(allText);
     
     if (hasContent) {
-      console.log('[parser-madlan] No cards found, falling back to markdown parsing');
-      return parseMadlanMarkdown(allText, propertyType); // Pass extracted TEXT, not HTML
+      console.log('[parser-madlan] No DOM cards found, falling back to markdown parsing');
+      return parseMadlanMarkdown(allText, propertyType);
     }
   }
   
@@ -64,34 +193,25 @@ export function parseMadlanHtml(
       const card = $(el);
       const fullText = card.text();
       
-      // Extract price (Madlan format: X,XXX ₪ or ₪X,XXX)
       const priceText = card.find('[class*="price"], [class*="Price"]').first().text();
       const price = extractPrice(priceText) || extractPrice(fullText);
       
-      // Extract address/location
       const addressText = card.find('[class*="address"], [class*="Address"], [class*="location"]').first().text();
       const address = cleanText(addressText);
       
-      // Extract city and neighborhood
       const city = extractCity(address) || extractCity(fullText) || 'תל אביב יפו';
       const neighborhood = extractNeighborhood(address, city) || extractNeighborhood(fullText, city);
       
-      // Extract rooms, size, floor
       const rooms = extractRooms(fullText);
       const size = extractSize(fullText);
       const floor = extractFloor(fullText);
       
-      // Extract URL
       const linkHref = card.find('a[href*="/item/"], a[href*="/nadlan/"]').first().attr('href') || '';
       const sourceUrl = linkHref.startsWith('http') ? linkHref : (linkHref ? `https://www.madlan.co.il${linkHref}` : '');
       
-      // Detect broker
       const isBroker = detectBroker(fullText);
-      
-      // Build title
       const title = buildTitle(propertyType, rooms, neighborhood?.label || city);
       
-      // Skip if no meaningful data
       if (!price && !rooms && !address) {
         errors.push(`Card ${i}: No meaningful data extracted`);
         return;
@@ -117,7 +237,7 @@ export function parseMadlanHtml(
       });
       
     } catch (error) {
-      errors.push(`Card ${i}: ${error.message}`);
+      errors.push(`Card ${i}: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
   
