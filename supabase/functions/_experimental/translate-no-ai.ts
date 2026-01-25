@@ -35,6 +35,58 @@ export interface BatchTranslationResult {
 // ============================================
 
 /**
+ * Hebrew prefixes that can attach to words
+ * These are common prepositions/conjunctions that attach as prefixes
+ */
+const HEBREW_PREFIXES: Record<string, string> = {
+  'ב': 'in ',
+  'ה': 'the ',
+  'ו': 'and ',
+  'ל': 'to ',
+  'מ': 'from ',
+  'כ': 'like ',
+  'ש': 'that ',
+};
+
+/**
+ * Try to translate a word by stripping Hebrew prefixes
+ */
+function translateWithPrefixHandling(word: string): { translated: string; matched: boolean } {
+  // First try direct match
+  if (FULL_DICTIONARY_HE_EN[word]) {
+    return { translated: FULL_DICTIONARY_HE_EN[word], matched: true };
+  }
+  
+  // Try stripping one prefix
+  if (word.length > 2) {
+    const firstChar = word[0];
+    const rest = word.slice(1);
+    
+    if (HEBREW_PREFIXES[firstChar] && FULL_DICTIONARY_HE_EN[rest]) {
+      return { 
+        translated: HEBREW_PREFIXES[firstChar] + FULL_DICTIONARY_HE_EN[rest], 
+        matched: true 
+      };
+    }
+    
+    // Try stripping two prefixes (e.g., "וב" = "and in")
+    if (word.length > 3) {
+      const secondChar = word[1];
+      const restAfterTwo = word.slice(2);
+      
+      if (HEBREW_PREFIXES[firstChar] && HEBREW_PREFIXES[secondChar] && FULL_DICTIONARY_HE_EN[restAfterTwo]) {
+        return {
+          translated: HEBREW_PREFIXES[firstChar] + HEBREW_PREFIXES[secondChar] + FULL_DICTIONARY_HE_EN[restAfterTwo],
+          matched: true
+        };
+      }
+    }
+  }
+  
+  return { translated: word, matched: false };
+}
+
+/**
  * Translate Hebrew text to English using dictionary
  */
 export function translateHebrewToEnglish(text: string): TranslationResult {
@@ -60,11 +112,11 @@ export function translateHebrewToEnglish(text: string): TranslationResult {
   // Track which parts of the text have been translated
   const translatedRanges: Array<{ start: number; end: number }> = [];
   
+  // First pass: replace multi-word phrases (longest first)
   for (const hebrewTerm of sortedKeys) {
     const englishTerm = FULL_DICTIONARY_HE_EN[hebrewTerm];
     
     // Create regex that matches whole words (with Hebrew word boundaries)
-    // Hebrew doesn't have traditional word boundaries, so we use spaces/punctuation
     const regex = new RegExp(
       `(^|[\\s,.:;!?()\\[\\]{}])${escapeRegex(hebrewTerm)}($|[\\s,.:;!?()\\[\\]{}])`,
       'g'
@@ -90,12 +142,33 @@ export function translateHebrewToEnglish(text: string): TranslationResult {
     translated = translated.replace(regex, `$1${englishTerm}$2`);
   }
   
-  // Find untranslated Hebrew words
-  const hebrewWordRegex = /[\u0590-\u05FF]+/g;
-  let hebrewMatch;
-  while ((hebrewMatch = hebrewWordRegex.exec(translated)) !== null) {
-    untranslated.add(hebrewMatch[0]);
+  // Second pass: handle remaining Hebrew words with prefix stripping
+  const words = translated.split(/(\s+|[,.:;!?()[\]{}])/);
+  const processedWords: string[] = [];
+  
+  for (const word of words) {
+    // Skip empty strings and whitespace/punctuation
+    if (!word || /^[\s,.:;!?()[\]{}]+$/.test(word)) {
+      processedWords.push(word);
+      continue;
+    }
+    
+    // Check if word contains Hebrew characters
+    if (/[\u0590-\u05FF]/.test(word)) {
+      const { translated: translatedWord, matched } = translateWithPrefixHandling(word);
+      processedWords.push(translatedWord);
+      
+      if (matched) {
+        matchedLength += word.length;
+      } else {
+        untranslated.add(word);
+      }
+    } else {
+      processedWords.push(word);
+    }
   }
+  
+  translated = processedWords.join('');
   
   // Calculate coverage
   const originalHebrewLength = (text.match(/[\u0590-\u05FF]/g) || []).length;
@@ -104,19 +177,16 @@ export function translateHebrewToEnglish(text: string): TranslationResult {
     : 100;
   
   // Count words
-  const words = text.split(/\s+/).filter(w => w.length > 0);
-  const translatedWords = words.filter(w => {
-    // Check if word or any substring was translated
-    return sortedKeys.some(key => w.includes(key));
-  });
+  const originalWords = text.split(/\s+/).filter(w => w.length > 0);
+  const translatedWordCount = originalWords.length - untranslated.size;
   
   return {
     original: text,
     translated: cleanTranslatedText(translated),
     coverage: Math.min(coverage, 100),
     untranslated_words: Array.from(untranslated),
-    word_count: words.length,
-    translated_word_count: translatedWords.length,
+    word_count: originalWords.length,
+    translated_word_count: translatedWordCount,
   };
 }
 
