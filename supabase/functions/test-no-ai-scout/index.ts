@@ -72,6 +72,7 @@ interface TestRequest {
   // For parse mode
   source?: 'homeless' | 'yad2' | 'madlan';
   html?: string;
+  markdown?: string;
   url?: string;
   property_type?: 'rent' | 'sale';
   use_street_lookup?: boolean;
@@ -93,6 +94,9 @@ interface TestRequest {
   // For compare mode
   compare_url?: string;
   compare_source?: 'homeless' | 'yad2' | 'madlan';
+  // Direct HTML/markdown input for compare mode (bypasses scraping)
+  compare_html?: string;
+  compare_markdown?: string;
 }
 
 serve(async (req) => {
@@ -187,61 +191,76 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   const url = body.compare_url || defaultUrls[source];
   
   console.log(`[Compare] Starting AI vs Non-AI comparison for ${source}`);
-  console.log(`[Compare] URL: ${url}`);
   
-  // Get API keys
-  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  let html: string;
+  let markdown: string;
+  let scrapeTime = 0;
+  let inputMode: 'direct' | 'scrape';
   
-  if (!firecrawlApiKey) {
-    return new Response(
-      JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-  
-  if (!lovableApiKey) {
-    return new Response(
-      JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-  
-  // 1. Scrape the page (single request - same content for both)
-  const scrapeStart = Date.now();
-  console.log(`[Compare] Scraping ${url}...`);
-  
-  const scrapeResult = await scrapeWithRetry(url, firecrawlApiKey, source, 2);
-  const scrapeTime = Date.now() - scrapeStart;
-  
-  if (!scrapeResult?.data) {
-    return new Response(
-      JSON.stringify({ 
-        error: 'Scrape failed',
-        scrape_time_ms: scrapeTime,
-        result: scrapeResult
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-  
-  const html = scrapeResult.data.html || '';
-  const markdown = scrapeResult.data.markdown || '';
-  
-  console.log(`[Compare] Scraped ${html.length} chars HTML, ${markdown.length} chars markdown in ${scrapeTime}ms`);
-  
-  // Validate content
-  const validation = validateScrapedContent(markdown, html, source);
-  if (!validation.valid) {
-    return new Response(
-      JSON.stringify({ 
-        error: 'Invalid content',
-        reason: validation.reason,
-        html_length: html.length,
-        markdown_length: markdown.length
-      }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  // Check if direct HTML/markdown input was provided
+  if (body.compare_html || body.compare_markdown) {
+    inputMode = 'direct';
+    html = body.compare_html || '';
+    markdown = body.compare_markdown || '';
+    console.log(`[Compare] Using direct input: ${html.length} chars HTML, ${markdown.length} chars markdown`);
+  } else {
+    inputMode = 'scrape';
+    console.log(`[Compare] URL: ${url}`);
+    
+    // Get API keys
+    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    
+    if (!firecrawlApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!lovableApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Scrape the page
+    const scrapeStart = Date.now();
+    console.log(`[Compare] Scraping ${url}...`);
+    
+    const scrapeResult = await scrapeWithRetry(url, firecrawlApiKey, source, 2);
+    scrapeTime = Date.now() - scrapeStart;
+    
+    if (!scrapeResult?.data) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Scrape failed',
+          scrape_time_ms: scrapeTime,
+          result: scrapeResult
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    html = scrapeResult.data.html || '';
+    markdown = scrapeResult.data.markdown || '';
+    
+    console.log(`[Compare] Scraped ${html.length} chars HTML, ${markdown.length} chars markdown in ${scrapeTime}ms`);
+    
+    // Validate content
+    const validation = validateScrapedContent(markdown, html, source);
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid content',
+          reason: validation.reason,
+          html_length: html.length,
+          markdown_length: markdown.length
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
   }
   
   // 2. AI Extraction
@@ -291,13 +310,15 @@ async function handleCompare(body: TestRequest): Promise<Response> {
       success: true,
       mode: 'compare',
       source,
-      url,
+      url: inputMode === 'direct' ? '(direct input)' : url,
+      input_mode: inputMode,
       property_type: propertyType,
       
       scrape: {
         time_ms: scrapeTime,
         html_length: html.length,
-        markdown_length: markdown.length
+        markdown_length: markdown.length,
+        skipped: inputMode === 'direct'
       },
       
       ai_extraction: {
