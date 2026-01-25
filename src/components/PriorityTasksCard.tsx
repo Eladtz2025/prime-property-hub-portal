@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Plus, Trash2, ChevronDown, ChevronUp, Calendar, ListTodo } from 'lucide-react';
 import { usePriorityTasks, PriorityTask, TaskType } from '@/hooks/usePriorityTasks';
 import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
@@ -32,11 +34,13 @@ const formatDueDate = (dateStr: string | null): string => {
 const TaskItem = memo(({ 
   task, 
   onToggle, 
-  onDelete 
+  onDelete,
+  onPriorityChange
 }: { 
   task: PriorityTask; 
   onToggle: () => void; 
   onDelete: () => void;
+  onPriorityChange: (newPriority: number) => void;
 }) => {
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !task.is_completed;
   
@@ -48,12 +52,34 @@ const TaskItem = memo(({
     )}>
       {/* Row 1: priority number + delete */}
       <div className="flex items-center justify-between">
-        <span className={cn(
-          "flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold",
-          getPriorityColor(task.priority)
-        )}>
-          {task.priority}
-        </span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-primary/50 transition-all",
+              getPriorityColor(task.priority)
+            )}>
+              {task.priority}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-16 p-1" align="start">
+            <div className="flex flex-col gap-1">
+              {[1, 2, 3, 4, 5].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => onPriorityChange(p)}
+                  className={cn(
+                    "w-full py-1 px-2 text-sm rounded text-center transition-colors",
+                    task.priority === p 
+                      ? "bg-primary text-primary-foreground" 
+                      : "hover:bg-muted"
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
         <Button
           variant="ghost"
           size="icon"
@@ -104,9 +130,10 @@ export const PriorityTasksCard = memo(({
   taskType = 'weekly',
   title = 'Weekly Priority'
 }: PriorityTasksCardProps) => {
-  const { tasks, isLoading, addTask, toggleComplete, deleteTask } = usePriorityTasks(taskType);
+  const { tasks, isLoading, addTask, toggleComplete, deleteTask, updateTask } = usePriorityTasks(taskType);
   const [newTitle, setNewTitle] = useState('');
   const [newPriority, setNewPriority] = useState('1');
+  const [newDueDate, setNewDueDate] = useState<Date | undefined>(taskType === 'daily' ? new Date() : undefined);
   const [showCompleted, setShowCompleted] = useState(false);
 
   const activeTasks = tasks.filter(t => !t.is_completed);
@@ -114,9 +141,17 @@ export const PriorityTasksCard = memo(({
 
   const handleAddTask = async () => {
     if (!newTitle.trim()) return;
-    await addTask(newTitle.trim(), parseInt(newPriority));
+    const dueDate = taskType === 'daily' && newDueDate ? format(newDueDate, 'yyyy-MM-dd') : undefined;
+    await addTask(newTitle.trim(), parseInt(newPriority), dueDate);
     setNewTitle('');
     setNewPriority('1');
+    if (taskType === 'daily') {
+      setNewDueDate(new Date());
+    }
+  };
+
+  const handlePriorityChange = async (taskId: string, newPriority: number) => {
+    await updateTask(taskId, { priority: newPriority });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -162,7 +197,7 @@ export const PriorityTasksCard = memo(({
         {/* Add task form */}
         <div className="flex gap-2">
           <Select value={newPriority} onValueChange={setNewPriority}>
-            <SelectTrigger className="w-20 shrink-0">
+            <SelectTrigger className="w-16 shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -180,6 +215,24 @@ export const PriorityTasksCard = memo(({
             onKeyPress={handleKeyPress}
             className="flex-1"
           />
+          {taskType === 'daily' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0">
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={newDueDate}
+                  onSelect={setNewDueDate}
+                  className="pointer-events-auto"
+                  locale={he}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
           <Button onClick={handleAddTask} size="icon" className="shrink-0">
             <Plus className="h-4 w-4" />
           </Button>
@@ -198,6 +251,7 @@ export const PriorityTasksCard = memo(({
                 task={task}
                 onToggle={() => toggleComplete(task.id)}
                 onDelete={() => deleteTask(task.id)}
+                onPriorityChange={(newPriority) => handlePriorityChange(task.id, newPriority)}
               />
             ))
           )}
@@ -219,6 +273,7 @@ export const PriorityTasksCard = memo(({
                   task={task}
                   onToggle={() => toggleComplete(task.id)}
                   onDelete={() => deleteTask(task.id)}
+                  onPriorityChange={(newPriority) => handlePriorityChange(task.id, newPriority)}
                 />
               ))}
             </CollapsibleContent>
