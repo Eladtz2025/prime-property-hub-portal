@@ -95,6 +95,13 @@ export async function scrapeWithRetry(
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      // Add random delay before Madlan scrapes to avoid pattern detection
+      if (source === 'madlan' && attempt === 0) {
+        const randomDelay = Math.floor(Math.random() * 5000) + 2000; // 2-7 seconds
+        console.log(`[Madlan] Adding ${randomDelay}ms random delay before scrape`);
+        await new Promise(r => setTimeout(r, randomDelay));
+      }
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (edge functions have 60s limit)
 

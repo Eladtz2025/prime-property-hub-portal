@@ -67,7 +67,7 @@ const corsHeaders = {
 };
 
 interface TestRequest {
-  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup' | 'compare' | 'batch';
+  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup' | 'compare' | 'batch' | 'parse-db';
   
   // For parse mode
   source?: 'homeless' | 'yad2' | 'madlan';
@@ -136,11 +136,14 @@ serve(async (req) => {
       case 'batch':
         return await handleBatch(body);
       
+      case 'parse-db':
+        return await handleParseFromDb(body);
+      
       default:
         return new Response(
           JSON.stringify({ 
             error: 'Invalid mode',
-            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup', 'compare', 'batch'] 
+            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup', 'compare', 'batch', 'parse-db'] 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -606,10 +609,11 @@ async function handleBatch(body: TestRequest): Promise<Response> {
       
       console.log(`[Batch] Page ${page}: ✅ ${parsed.properties.length} properties (${privateCount} private)`);
       
-      // Delay between pages (5 seconds)
+      // Delay between pages (15 seconds for Madlan to avoid CAPTCHA)
       if (page < pages) {
-        console.log(`[Batch] Waiting 5s before next page...`);
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        const delay = source === 'madlan' ? 15000 : 5000;
+        console.log(`[Batch] Waiting ${delay/1000}s before next page...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
       
     } catch (error) {
@@ -645,6 +649,72 @@ async function handleBatch(body: TestRequest): Promise<Response> {
         avg_per_page: results.pages_success > 0 ? Math.round(results.total_properties / results.pages_success) : 0,
         private_rate: results.total_properties > 0 ? `${Math.round(results.private_count / results.total_properties * 100)}%` : '0%',
       }
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============================================
+// Parse from DB: Load stored sample and parse
+// ============================================
+
+async function handleParseFromDb(body: TestRequest): Promise<Response> {
+  const source = body.source || 'madlan';
+  const propertyType = body.property_type || 'rent';
+  
+  // Create Supabase client
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  // Load sample from DB
+  const { data, error } = await supabase
+    .from('debug_scrape_samples')
+    .select('markdown, html, properties_found, url')
+    .eq('source', source)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  
+  if (error || !data) {
+    return new Response(
+      JSON.stringify({ error: 'No sample found for source', source }),
+      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  const markdown = data.markdown || '';
+  console.log(`[parse-db] Loaded ${markdown.length} chars from DB (AI found: ${data.properties_found})`);
+  
+  // Parse with Non-AI
+  const startTime = Date.now();
+  const result = parseMadlanMarkdown(markdown, propertyType);
+  const parseTime = Date.now() - startTime;
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'parse-db',
+      source,
+      db_sample: {
+        url: data.url,
+        markdown_length: markdown.length,
+        ai_properties_found: data.properties_found
+      },
+      noai_result: {
+        count: result.properties.length,
+        time_ms: parseTime,
+        stats: result.stats,
+        private_count: result.properties.filter(p => p.is_private).length,
+        broker_count: result.properties.filter(p => !p.is_private).length
+      },
+      comparison: {
+        ai_count: data.properties_found,
+        noai_count: result.properties.length,
+        difference: result.properties.length - data.properties_found
+      },
+      sample_properties: result.properties.slice(0, 5)
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
