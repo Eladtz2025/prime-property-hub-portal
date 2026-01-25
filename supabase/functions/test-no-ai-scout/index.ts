@@ -59,7 +59,7 @@ import {
 
 // Import production modules for comparison
 import { extractPropertiesWithAI } from '../_shared/ai-extraction.ts';
-import { scrapeWithRetry, validateScrapedContent } from '../_shared/scraping.ts';
+import { scrapeWithRetry, validateScrapedContent, cleanMarkdownContent } from '../_shared/scraping.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -263,6 +263,10 @@ async function handleCompare(body: TestRequest): Promise<Response> {
     }
   }
   
+  // Clean markdown content before parsing (mirrors production AI preprocessing)
+  const cleanedMarkdown = cleanMarkdownContent(markdown, source);
+  console.log(`[Compare] Cleaned markdown: ${markdown.length} → ${cleanedMarkdown.length} chars`);
+  
   // 2. AI Extraction
   console.log(`[Compare] Running AI extraction...`);
   const aiStart = Date.now();
@@ -271,7 +275,7 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   
   try {
     aiResults = await extractPropertiesWithAI(
-      markdown, 
+      cleanedMarkdown, 
       html, 
       url, 
       source as 'homeless' | 'yad2' | 'madlan', 
@@ -285,7 +289,7 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   const aiTime = Date.now() - aiStart;
   console.log(`[Compare] AI extracted ${aiResults.length} properties in ${aiTime}ms`);
   
-  // 3. Non-AI Parsing
+  // 3. Non-AI Parsing (uses cleaned content internally for Madlan)
   console.log(`[Compare] Running Non-AI parsing...`);
   const noAiStart = Date.now();
   let noAiResult: ParserResult;
@@ -295,7 +299,11 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   } else if (source === 'yad2') {
     noAiResult = await parseYad2Html(html, propertyType, false, url); // Pass URL for city extraction
   } else if (source === 'madlan') {
-    noAiResult = parseMadlanHtml(html, propertyType);
+    // Madlan parser now cleans internally, but we can also use markdown
+    const isHtml = html.includes('<table') || html.includes('<div') || html.includes('class=');
+    noAiResult = isHtml 
+      ? parseMadlanHtml(html, propertyType)
+      : parseMadlanMarkdown(markdown, propertyType); // Parser cleans internally
   } else {
     noAiResult = { success: false, properties: [], stats: { total_found: 0 }, errors: [`Parser for ${source} not implemented`] };
   }
@@ -569,18 +577,36 @@ async function handleParse(body: TestRequest): Promise<Response> {
     );
   }
   
-  // Madlan not yet implemented
+  if (source === 'madlan') {
+    const isHtml = html.includes('<table') || html.includes('<div') || html.includes('class=');
+    const result = isHtml 
+      ? parseMadlanHtml(html, property_type)
+      : parseMadlanMarkdown(html, property_type); // Parser cleans internally
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        mode: 'parse',
+        source: 'madlan',
+        property_type,
+        format_detected: isHtml ? 'html' : 'markdown',
+        ...result,
+        sample: result.properties.slice(0, 3)
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // Unknown source
   return new Response(
     JSON.stringify({
-      success: true,
+      success: false,
       mode: 'parse',
       source,
-      property_type,
-      message: `Parser for ${source} not yet implemented.`,
-      html_length: html.length,
-      available_parsers: ['homeless', 'yad2', 'madlan (coming soon)']
+      error: `Parser for ${source} not implemented.`,
+      available_parsers: ['homeless', 'yad2', 'madlan']
     }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
 
