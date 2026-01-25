@@ -1,11 +1,6 @@
 import * as Sentry from '@sentry/react';
 
-let sentryInitialized = false;
-
 export const initSentry = () => {
-  // Prevent double initialization
-  if (sentryInitialized) return;
-  
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   
   if (!dsn) {
@@ -13,27 +8,18 @@ export const initSentry = () => {
     return;
   }
 
-  try {
-    Sentry.init({
-      dsn,
-      integrations: [
-        // Use lighter integrations to avoid React hook conflicts
-        Sentry.replayIntegration({
-          maskAllText: false,
-          blockAllMedia: false,
-        }),
-      ],
-      // Lower sample rates to reduce overhead
-      tracesSampleRate: 0.5,
-      replaysSessionSampleRate: 0.1,
-      replaysOnErrorSampleRate: 1.0,
-    });
-    
-    sentryInitialized = true;
-    console.log('[Sentry] Initialized successfully');
-  } catch (error) {
-    console.error('[Sentry] Initialization failed:', error);
-  }
+  Sentry.init({
+    dsn,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+  
+  console.log('[Sentry] Initialized successfully');
 };
 
 export const captureError = (

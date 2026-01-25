@@ -1,23 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, scrapeMadlanDirect, validateScrapedContent } from "../_shared/scraping.ts";
+import { corsHeaders, scrapeWithRetry, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Madlan - DIRECT FETCH MODE
- * Bypasses Firecrawl entirely using direct HTTP requests.
+ * Edge Function for scraping Madlan - SEQUENTIAL MODE
+ * Each invocation handles exactly one page, then triggers the next page.
  * Uses NON-AI parser for cost-free extraction.
- * Cost: 0 Firecrawl credits | Speed: 1-3 seconds per page
  */
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  MAX_RETRIES: 2,           // Fewer retries needed with direct fetch
-  NEXT_PAGE_DELAY: 3000,    // 3 seconds between pages - much faster
-  RECOVERY_DELAY: 10000     // 10 seconds after a failure
+  WAIT_FOR_MS: 3000,        // Simplified: quick scrape works better
+  MAX_RETRIES: 3,
+  NEXT_PAGE_DELAY: 5000,    // 5 seconds between pages - faster
+  RECOVERY_DELAY: 15000     // 15 seconds after a block
 };
 
 /**
@@ -72,7 +72,7 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  // Note: Firecrawl is no longer used for Madlan - direct fetch instead
+  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -140,22 +140,28 @@ serve(async (req) => {
     }
 
     const url = urls[0];
-    console.log(`🔵 Madlan page ${page}: Direct fetch ${url}`);
+    console.log(`🔵 Madlan page ${page}: Scraping ${url}`);
     await updatePageStatus(supabase, runId, page, { url });
 
-    // DIRECT FETCH: Bypass Firecrawl entirely - no API key needed!
-    // This avoids Firecrawl's blocked IP pool and costs 0 credits
-    let scrapeData: { markdown: string; html: string } | null = null;
-    
-    for (let attempt = 0; attempt < MADLAN_CONFIG.MAX_RETRIES; attempt++) {
-      scrapeData = await scrapeMadlanDirect(url);
-      if (scrapeData) break;
+    // Check API keys
+    if (!firecrawlApiKey) {
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'failed', 
+        error: 'FIRECRAWL_API_KEY not configured',
+        duration_ms: Date.now() - pageStartTime
+      });
       
-      if (attempt < MADLAN_CONFIG.MAX_RETRIES - 1) {
-        console.log(`[Madlan] Retry ${attempt + 2}/${MADLAN_CONFIG.MAX_RETRIES} in 2s...`);
-        await new Promise(r => setTimeout(r, 2000));
+      if (maxPages) {
+        await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
       }
+      
+      return new Response(JSON.stringify({ success: false, error: 'No API key' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
+
+    // Scrape the page with stealth proxy (configured in shared scraping.ts)
+    const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, 'madlan', MADLAN_CONFIG.MAX_RETRIES, MADLAN_CONFIG.WAIT_FOR_MS);
     
     if (!scrapeData) {
       console.error(`All retry attempts failed for Madlan page ${page}`);
@@ -183,14 +189,13 @@ serve(async (req) => {
       // ALWAYS check and finalize - use page_stats length for accurate count
       await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
       
-      return new Response(JSON.stringify({ success: false, error: 'Direct fetch failed' }), {
+      return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Direct fetch returns markdown and html directly (not nested in .data)
-    const markdown = scrapeData.markdown || '';
-    const html = scrapeData.html || '';
+    const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
+    const html = scrapeData.data?.html || scrapeData.html || '';
 
     const validation = validateScrapedContent(markdown, html, 'madlan');
     if (!validation.valid) {
