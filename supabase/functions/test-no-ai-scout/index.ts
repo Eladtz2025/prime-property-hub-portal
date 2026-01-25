@@ -35,6 +35,11 @@ import {
   type ParserResult
 } from '../_experimental/parser-utils.ts';
 
+import {
+  parseHomelessHtml,
+  parseHomelessMarkdown
+} from '../_experimental/parser-homeless.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -185,18 +190,39 @@ function handleParse(body: TestRequest): Response {
     );
   }
   
-  // For now, we only have utility functions - the full parser will be added next
-  // This returns a placeholder response showing the system is working
+  // Parse based on source
+  if (source === 'homeless') {
+    // Detect if input is HTML or markdown
+    const isHtml = html.includes('<table') || html.includes('<tr') || html.includes('<td');
+    
+    const result = isHtml 
+      ? parseHomelessHtml(html, property_type)
+      : parseHomelessMarkdown(html, property_type);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        mode: 'parse',
+        source: 'homeless',
+        property_type,
+        format_detected: isHtml ? 'html' : 'markdown',
+        ...result,
+        sample: result.properties.slice(0, 3) // First 3 properties as sample
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
   
+  // Other sources not yet implemented
   return new Response(
     JSON.stringify({
       success: true,
       mode: 'parse',
       source,
       property_type,
-      message: `Parser for ${source} not yet implemented. Use mode: 'test-utils' to test extraction functions.`,
+      message: `Parser for ${source} not yet implemented.`,
       html_length: html.length,
-      available_parsers: ['homeless (coming soon)', 'yad2 (coming soon)', 'madlan (coming soon)']
+      available_parsers: ['homeless', 'yad2 (coming soon)', 'madlan (coming soon)']
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
