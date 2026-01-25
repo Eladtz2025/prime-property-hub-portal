@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Plus, Trash2, ChevronDown, ChevronUp, Calendar, ListTodo } from 'lucide-react';
-import { usePriorityTasks, PriorityTask } from '@/hooks/usePriorityTasks';
+import { usePriorityTasks, PriorityTask, TaskType } from '@/hooks/usePriorityTasks';
 import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -95,8 +95,16 @@ const TaskItem = memo(({
 
 TaskItem.displayName = 'TaskItem';
 
-export const PriorityTasksCard = memo(() => {
-  const { tasks, isLoading, addTask, toggleComplete, deleteTask } = usePriorityTasks();
+interface PriorityTasksCardProps {
+  taskType?: TaskType;
+  title?: string;
+}
+
+export const PriorityTasksCard = memo(({ 
+  taskType = 'weekly',
+  title = 'Weekly Priority'
+}: PriorityTasksCardProps) => {
+  const { tasks, isLoading, addTask, toggleComplete, deleteTask } = usePriorityTasks(taskType);
   const [newTitle, setNewTitle] = useState('');
   const [newPriority, setNewPriority] = useState('1');
   const [showCompleted, setShowCompleted] = useState(false);
@@ -123,7 +131,7 @@ export const PriorityTasksCard = memo(() => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ListTodo className="h-5 w-5" />
-            פריוריטי
+            {title}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -142,7 +150,7 @@ export const PriorityTasksCard = memo(() => {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
           <ListTodo className="h-5 w-5" />
-          פריוריטי
+          {title}
           {activeTasks.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
               ({activeTasks.length})
