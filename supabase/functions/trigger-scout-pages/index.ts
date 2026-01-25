@@ -14,10 +14,10 @@ const corsHeaders = {
 };
 
 // Source-specific delays between page triggers (in milliseconds)
-// With single-page mode, each page runs independently so minimal delay needed
+// Madlan needs longer delays to avoid CAPTCHA blocks (90% block rate with short delays)
 const SOURCE_DELAYS: Record<string, number> = {
   yad2: 3000,      // 3 seconds between Yad2 pages
-  madlan: 5000,    // 5 seconds for Madlan
+  madlan: 20000,   // 20 seconds for Madlan (increased from 5s to avoid CAPTCHA)
   homeless: 2000,  // 2 seconds for Homeless
 };
 
