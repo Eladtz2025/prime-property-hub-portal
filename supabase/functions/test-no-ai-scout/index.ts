@@ -578,10 +578,25 @@ async function handleParse(body: TestRequest): Promise<Response> {
   }
   
   if (source === 'madlan') {
-    const isHtml = html.includes('<table') || html.includes('<div') || html.includes('class=');
-    const result = isHtml 
+    // Check for HTML/JSON - includes SSR context check for embedded JSON data
+    const isHtmlOrJson = html.includes('__SSR_HYDRATED_CONTEXT__') || 
+                         html.includes('<table') || 
+                         html.includes('<div') || 
+                         html.includes('class=') ||
+                         html.includes('<html') ||
+                         html.includes('<script');
+    
+    const result = isHtmlOrJson 
       ? parseMadlanHtml(html, property_type)
-      : parseMadlanMarkdown(html, property_type); // Parser cleans internally
+      : parseMadlanMarkdown(html, property_type);
+    
+    // Determine format for reporting
+    let formatDetected = 'markdown';
+    if (html.includes('__SSR_HYDRATED_CONTEXT__')) {
+      formatDetected = 'json-ssr';
+    } else if (html.includes('<html') || html.includes('<div')) {
+      formatDetected = 'html';
+    }
     
     return new Response(
       JSON.stringify({
@@ -589,7 +604,7 @@ async function handleParse(body: TestRequest): Promise<Response> {
         mode: 'parse',
         source: 'madlan',
         property_type,
-        format_detected: isHtml ? 'html' : 'markdown',
+        format_detected: formatDetected,
         ...result,
         sample: result.properties.slice(0, 3)
       }),
