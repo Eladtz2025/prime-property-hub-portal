@@ -184,8 +184,8 @@ serve(async (req) => {
       console.warn(`   Markdown length: ${markdown?.length || 0} chars`);
     }
 
-    // Save raw HTML/Markdown sample for parser debugging (only on page 1 with successful content)
-    if (page === 1 && markdown.length > 1000) {
+    // Save raw HTML/Markdown sample for parser debugging (any successful page)
+    if (markdown.length > 1000 && extractedProperties.length > 0) {
       try {
         await supabase.from('debug_scrape_samples').upsert({
           source: 'madlan',
