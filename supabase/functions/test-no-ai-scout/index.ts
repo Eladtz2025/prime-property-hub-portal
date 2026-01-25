@@ -1,0 +1,290 @@
+/**
+ * Test Edge Function for Non-AI Scout System
+ * 
+ * This function tests the experimental parsers and translation
+ * WITHOUT affecting production data or code.
+ * 
+ * Endpoints:
+ * - POST /test-no-ai-scout { mode: 'parse', source: 'homeless', html: '...' }
+ * - POST /test-no-ai-scout { mode: 'translate', texts: ['...'], direction: 'he-en' }
+ * - POST /test-no-ai-scout { mode: 'stats' }
+ */
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+
+// Import experimental modules (completely isolated)
+import { 
+  translateHebrewToEnglish, 
+  translateEnglishToHebrew,
+  batchTranslate,
+  getDictionaryStats,
+  findUntranslatedWords,
+  type TranslationResult 
+} from '../_experimental/translate-no-ai.ts';
+
+import {
+  extractPrice,
+  extractRooms,
+  extractSize,
+  extractFloor,
+  extractCity,
+  extractNeighborhood,
+  detectBroker,
+  cleanText,
+  type ParsedProperty,
+  type ParserResult
+} from '../_experimental/parser-utils.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface TestRequest {
+  mode: 'parse' | 'translate' | 'stats' | 'test-utils';
+  
+  // For parse mode
+  source?: 'homeless' | 'yad2' | 'madlan';
+  html?: string;
+  url?: string;
+  property_type?: 'rent' | 'sale';
+  
+  // For translate mode
+  texts?: string[];
+  text?: string;
+  direction?: 'he-en' | 'en-he';
+  
+  // For test-utils mode
+  test_type?: 'price' | 'rooms' | 'city' | 'neighborhood' | 'broker' | 'all';
+  test_input?: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body: TestRequest = await req.json();
+    const { mode } = body;
+
+    console.log(`[test-no-ai-scout] Mode: ${mode}`);
+
+    switch (mode) {
+      case 'stats':
+        return handleStats();
+      
+      case 'translate':
+        return handleTranslate(body);
+      
+      case 'parse':
+        return handleParse(body);
+      
+      case 'test-utils':
+        return handleTestUtils(body);
+      
+      default:
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid mode',
+            valid_modes: ['parse', 'translate', 'stats', 'test-utils'] 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+    }
+
+  } catch (error) {
+    console.error('[test-no-ai-scout] Error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+// ============================================
+// Handler Functions
+// ============================================
+
+function handleStats(): Response {
+  const stats = getDictionaryStats();
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'stats',
+      dictionary_stats: stats,
+      parsers_available: ['homeless'], // Will add yad2, madlan later
+      translation_directions: ['he-en', 'en-he'],
+      message: 'Experimental non-AI system ready for testing'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function handleTranslate(body: TestRequest): Response {
+  const { texts, text, direction = 'he-en' } = body;
+  
+  // Single text translation
+  if (text) {
+    const result = direction === 'he-en' 
+      ? translateHebrewToEnglish(text)
+      : translateEnglishToHebrew(text);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        mode: 'translate',
+        direction,
+        result,
+        untranslated_analysis: findUntranslatedWords(text)
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // Batch translation
+  if (texts && Array.isArray(texts)) {
+    const batchResult = batchTranslate(texts, direction);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        mode: 'translate',
+        direction,
+        batch_result: batchResult
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  return new Response(
+    JSON.stringify({ error: 'Missing text or texts parameter' }),
+    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function handleParse(body: TestRequest): Response {
+  const { source, html, property_type = 'rent' } = body;
+  
+  if (!html) {
+    return new Response(
+      JSON.stringify({ error: 'Missing html parameter' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  if (!source) {
+    return new Response(
+      JSON.stringify({ error: 'Missing source parameter (homeless, yad2, madlan)' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // For now, we only have utility functions - the full parser will be added next
+  // This returns a placeholder response showing the system is working
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'parse',
+      source,
+      property_type,
+      message: `Parser for ${source} not yet implemented. Use mode: 'test-utils' to test extraction functions.`,
+      html_length: html.length,
+      available_parsers: ['homeless (coming soon)', 'yad2 (coming soon)', 'madlan (coming soon)']
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function handleTestUtils(body: TestRequest): Response {
+  const { test_type = 'all', test_input = '' } = body;
+  
+  const results: Record<string, unknown> = {};
+  
+  if (test_type === 'price' || test_type === 'all') {
+    const testPrices = test_input ? [test_input] : [
+      '₪8,500',
+      '8500 ש"ח',
+      '₪12,000 לחודש',
+      '3,500,000',
+      'מחיר: 9000'
+    ];
+    results.price_extraction = testPrices.map(p => ({
+      input: p,
+      extracted: extractPrice(p)
+    }));
+  }
+  
+  if (test_type === 'rooms' || test_type === 'all') {
+    const testRooms = test_input ? [test_input] : [
+      '3 חדרים',
+      '3.5',
+      '4 חד\'',
+      'דירת 2 חדרים'
+    ];
+    results.rooms_extraction = testRooms.map(r => ({
+      input: r,
+      extracted: extractRooms(r)
+    }));
+  }
+  
+  if (test_type === 'city' || test_type === 'all') {
+    const testCities = test_input ? [test_input] : [
+      'דירה בתל אביב',
+      'רמת גן, רחוב ביאליק',
+      'הרצליה פיתוח',
+      'פ"ת מרכז'
+    ];
+    results.city_extraction = testCities.map(c => ({
+      input: c,
+      extracted: extractCity(c)
+    }));
+  }
+  
+  if (test_type === 'neighborhood' || test_type === 'all') {
+    const testNeighborhoods = test_input ? [test_input] : [
+      'פלורנטין, תל אביב',
+      'הצפון הישן',
+      'רמת אביב החדשה',
+      'אזור הבורסה, רמת גן'
+    ];
+    results.neighborhood_extraction = testNeighborhoods.map(n => {
+      const city = extractCity(n);
+      return {
+        input: n,
+        detected_city: city,
+        extracted: extractNeighborhood(n, city)
+      };
+    });
+  }
+  
+  if (test_type === 'broker' || test_type === 'all') {
+    const testBrokers = test_input ? [test_input] : [
+      'תיווך נדל"ן',
+      'רימקס ישראל',
+      'בעלים פרטי',
+      'סוכנות אנגלו סכסון',
+      'דירה למכירה מבעלים'
+    ];
+    results.broker_detection = testBrokers.map(b => ({
+      input: b,
+      is_broker: detectBroker(b)
+    }));
+  }
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'test-utils',
+      test_type,
+      results
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
