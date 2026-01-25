@@ -1,11 +1,28 @@
 /**
- * Yad2 Property Parser
+ * Yad2 Property Parser - V2
  * 
- * EXPERIMENTAL - Completely isolated from production code
- * Parses property listings from Yad2 HTML/Markdown content
+ * Parses property listings from Yad2 Markdown content.
+ * Handles the actual Yad2 format:
+ * 
+ * Format A - Broker listing:
+ * - [![Address](IMG)\\
+ * \\
+ * Agency Name\\
+ * \\
+ * Agency Name₪ Price\\
+ * \\
+ * **Address Type, Neighborhood, CityX חדרים • קומה ‎Y‏ • Z מ״ר**](url)
+ * 
+ * Format B - Private listing:
+ * - [![Address](IMG)\\
+ * \\
+ * ₪ Price\\
+ * \\
+ * **Address Type, Neighborhood, CityX חדרים • קומה ‎Y‏ • Z מ״ר**\\
+ * \\
+ * tags](url)
  */
 
-import * as cheerio from 'https://esm.sh/cheerio@1.0.0-rc.12';
 import { 
   extractPrice, 
   extractRooms, 
@@ -19,150 +36,11 @@ import {
   type ParsedProperty,
   type ParserResult
 } from './parser-utils.ts';
-import { 
-  lookupNeighborhoodByStreet, 
-  extractStreetFromAddress,
-  createSupabaseClient,
-  type StreetLookupResult
-} from './street-lookup.ts';
 
 // ============================================
-// Yad2 HTML Parser
+// Main Entry Point
 // ============================================
 
-/**
- * Parse Yad2 property listings from HTML content
- * @param url - Optional URL to extract city from query params (e.g., city=5000)
- */
-export async function parseYad2Html(
-  html: string, 
-  propertyType: 'rent' | 'sale',
-  useStreetLookup: boolean = true,
-  url?: string
-): Promise<ParserResult> {
-  const properties: ParsedProperty[] = [];
-  const errors: string[] = [];
-  
-  const $ = cheerio.load(html);
-  
-  // Extract city from URL if provided (e.g., city=5000 = תל אביב יפו)
-  const urlCity = url ? extractCityFromUrl(url) : null;
-  console.log(`[parser-yad2] City from URL: ${urlCity || 'none'}`);
-  
-  // Initialize supabase client for street lookup
-  let supabase = null;
-  if (useStreetLookup) {
-    try {
-      supabase = createSupabaseClient();
-    } catch (e) {
-      console.warn('[parser-yad2] Could not create supabase client for street lookup');
-    }
-  }
-  
-  // Yad2 uses various selectors for feed items
-  const feedItems = $('[data-testid="feed-item"], .feeditem, .feed_item, [class*="feedItem"]');
-  
-  console.log(`[parser-yad2] Found ${feedItems.length} feed items`);
-  
-  for (let i = 0; i < feedItems.length; i++) {
-    try {
-      const item = feedItems.eq(i);
-      
-      // Extract price
-      const priceText = item.find('[data-testid="price"], .price, [class*="price"]').first().text();
-      const price = extractPrice(priceText);
-      
-      // Extract address/location
-      const addressText = item.find('[data-testid="address"], .item_data_address, [class*="address"], [class*="location"]').first().text();
-      const address = cleanText(addressText);
-      
-      // Extract city - prefer URL, then address parsing
-      const city = urlCity || extractCity(address) || extractCity(item.text());
-      let neighborhood = extractNeighborhood(address, city) || extractNeighborhood(item.text(), city);
-      let neighborhoodConfidence = neighborhood ? 70 : 0;
-      
-      // Try street lookup if no neighborhood found and city is available
-      if (!neighborhood && city && supabase) {
-        const streetName = extractStreetFromAddress(address);
-        if (streetName) {
-          const streetLookup = await lookupNeighborhoodByStreet(supabase, streetName, city);
-          if (streetLookup) {
-            neighborhood = { 
-              value: streetLookup.neighborhood_value, 
-              label: streetLookup.neighborhood 
-            };
-            neighborhoodConfidence = streetLookup.confidence;
-          }
-        }
-      }
-      
-      // Extract rooms, size, floor from data rows
-      const dataRowText = item.find('.data_row, [class*="dataRow"], [class*="itemInfo"]').text();
-      const rooms = extractRooms(dataRowText) || extractRooms(item.text());
-      const size = extractSize(dataRowText) || extractSize(item.text());
-      const floor = extractFloor(dataRowText) || extractFloor(item.text());
-      
-      // Extract listing URL
-      const linkHref = item.find('a[href*="/item/"], a[href*="/realestate/"]').first().attr('href') || '';
-      const sourceUrl = linkHref.startsWith('http') ? linkHref : `https://www.yad2.co.il${linkHref}`;
-      
-      // Detect if private or broker
-      const fullText = item.text();
-      const isBroker = detectBroker(fullText);
-      
-      // Build title
-      const title = buildTitle(propertyType, rooms, address || city || 'לא ידוע');
-      
-      // Skip if no meaningful data
-      if (!price && !rooms && !address) {
-        errors.push(`Item ${i}: No meaningful data extracted`);
-        continue;
-      }
-      
-      properties.push({
-        source: 'yad2',
-        source_id: generateSourceId('yad2', sourceUrl, i),
-        source_url: sourceUrl,
-        title,
-        city: city || urlCity || 'לא ידוע',
-        neighborhood: neighborhood?.label || null,
-        neighborhood_value: neighborhood?.value || null,
-        address,
-        price,
-        rooms,
-        size,
-        floor,
-        property_type: propertyType,
-        is_private: !isBroker,
-        entry_date: null,
-        raw_text: fullText.substring(0, 500) // For debugging
-      });
-      
-    } catch (error) {
-      errors.push(`Item ${i}: ${error.message}`);
-    }
-  }
-  
-  return {
-    success: true,
-    properties,
-    stats: calculateStats(properties),
-    errors
-  };
-}
-
-// ============================================
-// Yad2 Markdown Parser
-// ============================================
-
-/**
- * Parse Yad2 property listings from Markdown/text content
- * 
- * Yad2 markdown patterns:
- * - Price line: "₪ X,XXX" (standalone line)
- * - Details line: "**[Address][PropertyType], [Neighborhood], [City][Rooms] חדרים • קומה X • XX מ״ר**"
- * - Separator: "•" between rooms/floor/size
- */
 export function parseYad2Markdown(
   markdown: string,
   propertyType: 'rent' | 'sale'
@@ -170,149 +48,29 @@ export function parseYad2Markdown(
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
-  const lines = markdown.split('\n');
+  console.log(`[parser-yad2] Input: ${markdown.length} chars`);
   
-  // Pattern for price line (standalone)
-  const priceLinePattern = /^₪\s*[\d,]+$/;
-  // Pattern for details in bold
-  const detailsPattern = /\*\*([^*]+)\*\*/;
-  // Pattern for rooms with dot separator
-  const roomsWithDotPattern = /(\d+(?:\.\d)?)\s*חדרים/;
-  const floorPattern = /קומה\s*(?:‎)?(\d+|קרקע)/;
-  const sizePattern = /(\d+)\s*מ[״"']?ר/;
+  // 1. Clean markdown (skip navigation)
+  const cleaned = cleanYad2Content(markdown);
+  console.log(`[parser-yad2] After cleaning: ${cleaned.length} chars`);
   
-  let currentProperty: Partial<ParsedProperty> | null = null;
-  let currentRawText = '';
-  let pendingPrice: number | null = null;
+  // 2. Find property blocks
+  const blocks = findYad2Blocks(cleaned);
+  console.log(`[parser-yad2] Found ${blocks.length} property blocks`);
   
-  for (const line of lines) {
-    const cleanLine = cleanText(line);
-    if (!cleanLine || cleanLine.length < 2) continue;
-    
-    // Check if this is a standalone price line
-    if (priceLinePattern.test(cleanLine)) {
-      // Save previous property if exists
-      if (currentProperty && (currentProperty.price || currentProperty.rooms)) {
-        properties.push(finalizeProperty(currentProperty, currentRawText, propertyType, properties.length));
+  // 3. Parse each block
+  for (let i = 0; i < blocks.length; i++) {
+    try {
+      const parsed = parseYad2Block(blocks[i], propertyType, i);
+      if (parsed) {
+        properties.push(parsed);
       }
-      
-      pendingPrice = extractPrice(cleanLine);
-      currentProperty = { price: pendingPrice };
-      currentRawText = cleanLine;
-      continue;
-    }
-    
-    // Check for bold details line (main property info)
-    const boldMatch = cleanLine.match(detailsPattern);
-    if (boldMatch && pendingPrice) {
-      const details = boldMatch[1];
-      
-      // Parse the details string
-      // Format: "[Address], [Neighborhood], [City][Rooms] חדרים • קומה X • XX מ״ר"
-      
-      // Extract rooms
-      const roomsMatch = details.match(roomsWithDotPattern);
-      if (roomsMatch) {
-        currentProperty!.rooms = parseFloat(roomsMatch[1]);
-      }
-      
-      // Extract floor
-      const floorMatch = details.match(floorPattern);
-      if (floorMatch) {
-        currentProperty!.floor = floorMatch[1] === 'קרקע' ? 0 : parseInt(floorMatch[1], 10);
-      }
-      
-      // Extract size
-      const sizeMatch = details.match(sizePattern);
-      if (sizeMatch) {
-        currentProperty!.size = parseInt(sizeMatch[1], 10);
-      }
-      
-      // Extract city
-      currentProperty!.city = extractCity(details) || 'תל אביב יפו';
-      
-      // Extract neighborhood
-      const neighborhood = extractNeighborhood(details, currentProperty!.city);
-      if (neighborhood) {
-        currentProperty!.neighborhood = neighborhood.label;
-        currentProperty!.neighborhood_value = neighborhood.value;
-      }
-      
-      // Extract address (part before the comma)
-      const addressParts = details.split(',');
-      if (addressParts.length > 0) {
-        // Remove property type suffix (דירה, דירת גן, etc.)
-        let addr = addressParts[0].trim();
-        addr = addr.replace(/דירה|דירת גן|פנטהאוז|סטודיו|מיני פנטהאוז/g, '').trim();
-        if (addr) {
-          currentProperty!.address = addr;
-        }
-      }
-      
-      currentRawText += ' ' + cleanLine;
-      
-      // Finalize this property since we have all data
-      if (currentProperty && currentProperty.price) {
-        properties.push(finalizeProperty(currentProperty, currentRawText, propertyType, properties.length));
-        currentProperty = null;
-        pendingPrice = null;
-        currentRawText = '';
-      }
-      
-      continue;
-    }
-    
-    // Handle non-bold lines with property data (separator pattern)
-    if (cleanLine.includes('•') && currentProperty) {
-      // Split by dot separator
-      const parts = cleanLine.split('•').map(p => p.trim());
-      
-      for (const part of parts) {
-        if (!currentProperty.rooms) {
-          const rooms = extractRooms(part);
-          if (rooms) currentProperty.rooms = rooms;
-        }
-        if (currentProperty.floor === undefined) {
-          const floor = extractFloor(part);
-          if (floor !== null) currentProperty.floor = floor;
-        }
-        if (!currentProperty.size) {
-          const size = extractSize(part);
-          if (size) currentProperty.size = size;
-        }
-      }
-      
-      currentRawText += ' ' + cleanLine;
-      continue;
-    }
-    
-    // General line processing for current property
-    if (currentProperty) {
-      currentRawText += ' ' + cleanLine;
-      
-      if (!currentProperty.rooms) currentProperty.rooms = extractRooms(cleanLine);
-      if (!currentProperty.size) currentProperty.size = extractSize(cleanLine);
-      if (currentProperty.floor === undefined) currentProperty.floor = extractFloor(cleanLine);
-      if (!currentProperty.city) currentProperty.city = extractCity(cleanLine);
-      
-      if (!currentProperty.neighborhood) {
-        const neighborhood = extractNeighborhood(cleanLine, currentProperty.city || null);
-        if (neighborhood) {
-          currentProperty.neighborhood = neighborhood.label;
-          currentProperty.neighborhood_value = neighborhood.value;
-        }
-      }
-      
-      if (currentProperty.is_private !== false && detectBroker(cleanLine)) {
-        currentProperty.is_private = false;
-      }
+    } catch (error) {
+      errors.push(`Block ${i}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
-  // Don't forget last property
-  if (currentProperty && (currentProperty.price || currentProperty.rooms)) {
-    properties.push(finalizeProperty(currentProperty, currentRawText, propertyType, properties.length));
-  }
+  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${properties.filter(p => p.is_private).length} private)`);
   
   return {
     success: true,
@@ -322,38 +80,217 @@ export function parseYad2Markdown(
   };
 }
 
+// Keep HTML parser alias for compatibility
+export async function parseYad2Html(
+  html: string, 
+  propertyType: 'rent' | 'sale',
+  useStreetLookup: boolean = true,
+  url?: string
+): Promise<ParserResult> {
+  // Just use the markdown parser - HTML isn't used anymore
+  return parseYad2Markdown(html, propertyType);
+}
+
 // ============================================
-// Helper Functions
+// Block Detection
 // ============================================
 
-function finalizeProperty(
-  partial: Partial<ParsedProperty>,
-  rawText: string,
-  propertyType: 'rent' | 'sale',
-  index: number
-): ParsedProperty {
-  const city = partial.city || 'לא ידוע';
-  const title = buildTitle(propertyType, partial.rooms || null, partial.address || city);
+function findYad2Blocks(markdown: string): string[] {
+  const blocks: string[] = [];
+  
+  // Pattern for Yad2 listing blocks - they start with "- [![" and contain /realestate/item/
+  // Each block is a list item with the full property info
+  const listItemPattern = /- \[!\[[^\]]*\]\([^\)]+\)\\[\s\S]*?\]\(https:\/\/www\.yad2\.co\.il\/realestate\/item\/[^\)]+\)/g;
+  
+  let match;
+  while ((match = listItemPattern.exec(markdown)) !== null) {
+    const block = match[0];
+    
+    // Skip blocks that look like project/yad1 links
+    if (block.includes('/yad1/') || block.includes('/project/')) {
+      continue;
+    }
+    
+    // Must have price indicator
+    if (block.includes('₪') || block.includes('חדרים')) {
+      blocks.push(block);
+    }
+  }
+  
+  return blocks;
+}
+
+// ============================================
+// Block Parsing
+// ============================================
+
+function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: number): ParsedProperty | null {
+  // Extract URL
+  const urlMatch = block.match(/https:\/\/www\.yad2\.co\.il\/realestate\/item\/([^\?\)]+)/);
+  if (!urlMatch) return null;
+  
+  const sourceId = urlMatch[1];
+  const sourceUrl = `https://www.yad2.co.il/realestate/item/${sourceId}`;
+  
+  // Remove RTL markers for easier parsing
+  const cleanedBlock = block
+    .replace(/[\u200F\u200E‎‏]/g, '') // RTL/LTR markers
+    .replace(/\\{2,}/g, '\\'); // Normalize backslashes
+  
+  // Extract price - look for ₪ followed by number
+  const priceMatch = cleanedBlock.match(/₪\s*([\d,]+)/);
+  const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : null;
+  
+  // Extract the bold section which contains main details
+  // Format: **AddressType, Neighborhood, CityX חדרים • קומה Y • Z מ״ר**
+  const boldMatch = cleanedBlock.match(/\*\*([^*]+)\*\*/);
+  
+  let rooms: number | null = null;
+  let floor: number | null = null;
+  let size: number | null = null;
+  let address: string | null = null;
+  let neighborhood: string | null = null;
+  let neighborhoodValue: string | null = null;
+  let city: string = 'תל אביב יפו';
+  
+  if (boldMatch) {
+    const details = boldMatch[1];
+    
+    // Extract rooms: "X חדרים" or "X.5 חדרים"
+    const roomsMatch = details.match(/(\d+(?:\.\d)?)\s*חדרים/);
+    if (roomsMatch) {
+      rooms = parseFloat(roomsMatch[1]);
+    }
+    
+    // Extract floor: "קומה Y" (Y can include ‎ markers)
+    const floorMatch = details.match(/קומה\s*(\d+|קרקע)/);
+    if (floorMatch) {
+      floor = floorMatch[1] === 'קרקע' ? 0 : parseInt(floorMatch[1], 10);
+    }
+    
+    // Extract size: "Z מ״ר" or "Z מ"ר"
+    const sizeMatch = details.match(/(\d+)\s*מ[״"']?ר/);
+    if (sizeMatch) {
+      size = parseInt(sizeMatch[1], 10);
+    }
+    
+    // Extract city from details
+    const extractedCity = extractCity(details);
+    if (extractedCity) {
+      city = extractedCity;
+    }
+    
+    // Extract neighborhood
+    const neighborhoodInfo = extractNeighborhood(details, city);
+    if (neighborhoodInfo) {
+      neighborhood = neighborhoodInfo.label;
+      neighborhoodValue = neighborhoodInfo.value;
+    }
+    
+    // Extract address - first part before "דירה" or "דירת גן" etc.
+    // Details format: "Address + Type, Neighborhood, CityX חדרים..."
+    const addressPattern = /^([^,]+?)(?:דירה|דירת גן|גג\/פנטהאוז|סטודיו|פנטהאוז)/;
+    const addressMatch = details.match(addressPattern);
+    if (addressMatch) {
+      address = cleanText(addressMatch[1]);
+    } else {
+      // Fallback: try to get address from image alt text
+      const altMatch = block.match(/\[!\[([^\]]+)\]/);
+      if (altMatch && !altMatch[1].includes('פרויקט')) {
+        address = cleanText(altMatch[1]);
+      }
+    }
+  }
+  
+  // Detect broker - check for agency name pattern
+  // Broker listings have agency name repeated before price, e.g.:
+  // "Agency Name\\Agency Name₪ 12,000"
+  const hasAgencyPattern = /[א-ת\s]+\\[א-ת\s]+₪/.test(cleanedBlock);
+  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים/.test(block);
+  const isBroker = hasAgencyPattern || hasBrokerKeywords || detectBroker(block);
+  
+  // Skip if no meaningful data
+  if (!price && !rooms && !address) {
+    return null;
+  }
+  
+  // Build title
+  const title = buildTitle(propertyType, rooms, neighborhood || city);
   
   return {
     source: 'yad2',
-    source_id: generateSourceId('yad2', rawText, index),
-    source_url: '',
+    source_id: `yad2_${sourceId}`,
+    source_url: sourceUrl,
     title,
     city,
-    neighborhood: partial.neighborhood || null,
-    neighborhood_value: partial.neighborhood_value || null,
-    address: partial.address || null,
-    price: partial.price || null,
-    rooms: partial.rooms || null,
-    size: partial.size || null,
-    floor: partial.floor || null,
+    neighborhood,
+    neighborhood_value: neighborhoodValue,
+    address,
+    price,
+    rooms,
+    size,
+    floor,
     property_type: propertyType,
-    is_private: partial.is_private ?? true,
+    is_private: !isBroker,
     entry_date: null,
-    raw_text: rawText.substring(0, 500)
+    raw_text: block.substring(0, 500)
   };
 }
+
+// ============================================
+// Content Cleaning
+// ============================================
+
+function cleanYad2Content(markdown: string): string {
+  let cleaned = markdown;
+  
+  // 1. Skip navigation - find the results header
+  const headerPatterns = [
+    /# דירות להשכרה/,
+    /# דירות למכירה/,
+    /\d+,?\d*\s*תוצאות/,
+    /מיון לפי תאריך/
+  ];
+  
+  for (const pattern of headerPatterns) {
+    const match = cleaned.search(pattern);
+    if (match > 100) {
+      cleaned = cleaned.substring(match);
+      console.log(`[Yad2 Clean] Skipped ${match} chars of navigation`);
+      break;
+    }
+  }
+  
+  // 2. Remove yad1/project sections
+  const yad1Patterns = [
+    /## פרויקטים חדשים באזור[\s\S]*?למה כדאי לקנות נכסים יד1/,
+    /## פרויקטים חדשים\n[\s\S]*?\[לכל הפרויקטים\]/
+  ];
+  
+  for (const pattern of yad1Patterns) {
+    cleaned = cleaned.replace(pattern, '\n');
+  }
+  
+  // 3. Remove footer
+  const footerPatterns = [
+    /## כתבות שיעניינו/,
+    /## שאלות נפוצות/,
+    /## חיפושים פופולריים/
+  ];
+  
+  for (const pattern of footerPatterns) {
+    const match = cleaned.search(pattern);
+    if (match > 0) {
+      cleaned = cleaned.substring(0, match);
+    }
+  }
+  
+  return cleaned;
+}
+
+// ============================================
+// Helper Functions
+// ============================================
 
 function buildTitle(propertyType: string, rooms: number | null, location: string): string {
   const typeLabel = propertyType === 'rent' ? 'להשכרה' : 'למכירה';
@@ -384,16 +321,10 @@ function calculateStats(properties: ParsedProperty[]): ParserResult['stats'] {
 }
 
 // ============================================
-// URL City Extraction
+// URL City Extraction (for HTML parser compatibility)
 // ============================================
 
-/**
- * Extract city from Yad2 URL query parameters
- * city=5000 = תל אביב יפו
- * city=8600 = רמת גן
- * etc.
- */
-function extractCityFromUrl(url: string): string | null {
+export function extractCityFromUrl(url: string): string | null {
   const CITY_CODES: Record<string, string> = {
     '5000': 'תל אביב יפו',
     '8600': 'רמת גן',
@@ -422,16 +353,7 @@ function extractCityFromUrl(url: string): string | null {
     if (cityCode && CITY_CODES[cityCode]) {
       return CITY_CODES[cityCode];
     }
-    
-    // Also try extracting from path (e.g., /realestate/rent/tel-aviv)
-    const pathMatch = url.match(/\/tel-aviv|\/ramat-gan|\/herzliya/i);
-    if (pathMatch) {
-      if (pathMatch[0].includes('tel-aviv')) return 'תל אביב יפו';
-      if (pathMatch[0].includes('ramat-gan')) return 'רמת גן';
-      if (pathMatch[0].includes('herzliya')) return 'הרצליה';
-    }
   } catch {
-    // Invalid URL, try simple regex
     const cityMatch = url.match(/city=(\d+)/);
     if (cityMatch && CITY_CODES[cityMatch[1]]) {
       return CITY_CODES[cityMatch[1]];
