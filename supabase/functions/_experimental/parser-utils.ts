@@ -42,16 +42,17 @@ export function extractPrice(text: string): number | null {
 
 /**
  * Extract room count from Hebrew text
- * Handles: "3 חדרים", "3.5", "3", etc.
+ * Handles: "3 חד׳", "3.5 חדרים", "4 חד'", etc.
+ * MUST have room suffix to avoid false positives from prices/addresses
  */
 export function extractRooms(text: string): number | null {
   if (!text) return null;
   
-  // Look for decimal or integer room count
-  const match = text.match(/([\d.]+)/);
+  // Must have number followed by room indicator (חד׳, חדרים, חד')
+  const match = text.match(/(\d+(?:[.,]\d)?)\s*(?:חד[׳']|חדרים)/);
   if (!match) return null;
   
-  const rooms = parseFloat(match[1]);
+  const rooms = parseFloat(match[1].replace(',', '.'));
   
   // Sanity check - rooms should be 1-20
   if (rooms < 1 || rooms > 20) return null;
@@ -66,12 +67,13 @@ export function extractRooms(text: string): number | null {
 /**
  * Extract size in sqm from Hebrew text
  * Handles: "75 מ"ר", "75 מטר", "75m²", etc.
+ * MUST have size suffix to avoid false positives from addresses
  */
 export function extractSize(text: string): number | null {
   if (!text) return null;
   
-  // Look for number followed by size indicator
-  const match = text.match(/(\d+)\s*(?:מ"ר|מטר|m²|sqm|מ״ר)?/i);
+  // Must have number followed by size indicator (מ"ר, מ״ר, מטר, m², sqm)
+  const match = text.match(/(\d+)\s*(?:מ"ר|מ״ר|מטר|m²|sqm)/i);
   if (!match) return null;
   
   const size = parseInt(match[1], 10);
@@ -89,20 +91,26 @@ export function extractSize(text: string): number | null {
 /**
  * Extract floor number from Hebrew text
  * Handles: "קומה 3", "קומת קרקע", "קומה -1", etc.
+ * MUST have floor indicator to avoid false positives
  */
 export function extractFloor(text: string): number | null {
   if (!text) return null;
   
-  const lowerText = text.toLowerCase();
+  // Debug: Log input with special char codes
+  if (text.includes('קרקע')) {
+    console.log(`[extractFloor] Found קרקע in text: "${text.substring(0, 60)}"`);
+    console.log(`[extractFloor] Regex test result: ${/קומת?\s*קרקע/.test(text)}`);
+  }
   
-  // Ground floor variations
-  if (/קרקע|ground|גראונד/.test(lowerText)) return 0;
+  // Ground floor variations (Hebrew doesn't need toLowerCase)
+  if (/קומת?\s*קרקע|קרקע/.test(text)) return 0;
+  if (/ground|גראונד/i.test(text)) return 0;
   
   // Basement variations
-  if (/מרתף|basement/.test(lowerText)) return -1;
+  if (/מרתף|basement/i.test(text)) return -1;
   
-  // Look for floor number
-  const match = text.match(/(?:קומה\s*)?(-?\d+)/);
+  // Must have "קומה X" pattern
+  const match = text.match(/קומה\s*(-?\d+)/);
   if (!match) return null;
   
   const floor = parseInt(match[1], 10);
