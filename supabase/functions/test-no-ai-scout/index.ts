@@ -52,13 +52,17 @@ import {
   createSupabaseClient
 } from '../_experimental/street-lookup.ts';
 
+// Import production modules for comparison
+import { extractPropertiesWithAI } from '../_shared/ai-extraction.ts';
+import { scrapeWithRetry, validateScrapedContent } from '../_shared/scraping.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 interface TestRequest {
-  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup';
+  mode: 'parse' | 'translate' | 'stats' | 'test-utils' | 'street-lookup' | 'compare';
   
   // For parse mode
   source?: 'homeless' | 'yad2' | 'madlan';
@@ -80,6 +84,10 @@ interface TestRequest {
   street?: string;
   city?: string;
   streets?: Array<{ street: string; city: string }>;
+  
+  // For compare mode
+  compare_url?: string;
+  compare_source?: 'homeless' | 'yad2';
 }
 
 serve(async (req) => {
@@ -110,11 +118,14 @@ serve(async (req) => {
       case 'street-lookup':
         return await handleStreetLookup(body);
       
+      case 'compare':
+        return await handleCompare(body);
+      
       default:
         return new Response(
           JSON.stringify({ 
             error: 'Invalid mode',
-            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup'] 
+            valid_modes: ['parse', 'translate', 'stats', 'test-utils', 'street-lookup', 'compare'] 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -146,11 +157,284 @@ function handleStats(): Response {
       dictionary_stats: stats,
       parsers_available: ['homeless', 'yad2'],
       translation_directions: ['he-en', 'en-he'],
-      features: ['street-lookup'],
+      features: ['street-lookup', 'compare'],
       message: 'Experimental non-AI system ready for testing'
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+// ============================================
+// Compare Mode: AI vs Non-AI
+// ============================================
+
+async function handleCompare(body: TestRequest): Promise<Response> {
+  const source = body.compare_source || 'homeless';
+  const propertyType = body.property_type || 'rent';
+  
+  // Default URLs for testing
+  const defaultUrls: Record<string, string> = {
+    homeless: 'https://www.homeless.co.il/rent/?area=1',
+    yad2: 'https://www.yad2.co.il/realestate/rent?city=5000&propertyGroup=apartments'
+  };
+  
+  const url = body.compare_url || defaultUrls[source];
+  
+  console.log(`[Compare] Starting AI vs Non-AI comparison for ${source}`);
+  console.log(`[Compare] URL: ${url}`);
+  
+  // Get API keys
+  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (!firecrawlApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  if (!lovableApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // 1. Scrape the page (single request - same content for both)
+  const scrapeStart = Date.now();
+  console.log(`[Compare] Scraping ${url}...`);
+  
+  const scrapeResult = await scrapeWithRetry(url, firecrawlApiKey, source, 2);
+  const scrapeTime = Date.now() - scrapeStart;
+  
+  if (!scrapeResult?.data) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Scrape failed',
+        scrape_time_ms: scrapeTime,
+        result: scrapeResult
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  const html = scrapeResult.data.html || '';
+  const markdown = scrapeResult.data.markdown || '';
+  
+  console.log(`[Compare] Scraped ${html.length} chars HTML, ${markdown.length} chars markdown in ${scrapeTime}ms`);
+  
+  // Validate content
+  const validation = validateScrapedContent(markdown, html, source);
+  if (!validation.valid) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Invalid content',
+        reason: validation.reason,
+        html_length: html.length,
+        markdown_length: markdown.length
+      }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // 2. AI Extraction
+  console.log(`[Compare] Running AI extraction...`);
+  const aiStart = Date.now();
+  let aiResults: any[] = [];
+  let aiError: string | null = null;
+  
+  try {
+    aiResults = await extractPropertiesWithAI(
+      markdown, 
+      html, 
+      url, 
+      source as 'homeless' | 'yad2' | 'madlan', 
+      propertyType, 
+      lovableApiKey
+    );
+  } catch (e) {
+    aiError = e instanceof Error ? e.message : String(e);
+    console.error(`[Compare] AI extraction error:`, aiError);
+  }
+  const aiTime = Date.now() - aiStart;
+  console.log(`[Compare] AI extracted ${aiResults.length} properties in ${aiTime}ms`);
+  
+  // 3. Non-AI Parsing
+  console.log(`[Compare] Running Non-AI parsing...`);
+  const noAiStart = Date.now();
+  let noAiResult: ParserResult;
+  
+  if (source === 'homeless') {
+    noAiResult = parseHomelessHtml(html, propertyType);
+  } else if (source === 'yad2') {
+    noAiResult = await parseYad2Html(html, propertyType, false); // No street lookup for speed
+  } else {
+    noAiResult = { success: false, properties: [], stats: { total_found: 0 }, errors: [`Parser for ${source} not implemented`] };
+  }
+  const noAiTime = Date.now() - noAiStart;
+  console.log(`[Compare] Non-AI extracted ${noAiResult.properties.length} properties in ${noAiTime}ms`);
+  
+  // 4. Build comparison report
+  const comparison = buildComparisonReport(aiResults, noAiResult.properties, aiTime, noAiTime);
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: 'compare',
+      source,
+      url,
+      property_type: propertyType,
+      
+      scrape: {
+        time_ms: scrapeTime,
+        html_length: html.length,
+        markdown_length: markdown.length
+      },
+      
+      ai_extraction: {
+        count: aiResults.length,
+        time_ms: aiTime,
+        error: aiError,
+        with_price: aiResults.filter(p => p.price).length,
+        with_rooms: aiResults.filter(p => p.rooms).length,
+        with_floor: aiResults.filter(p => p.floor !== undefined && p.floor !== null).length,
+        with_city: aiResults.filter(p => p.city).length,
+        with_neighborhood: aiResults.filter(p => p.neighborhood).length,
+        with_address: aiResults.filter(p => p.address).length,
+      },
+      
+      noai_parsing: {
+        count: noAiResult.properties.length,
+        time_ms: noAiTime,
+        errors: noAiResult.errors?.length || 0,
+        stats: noAiResult.stats,
+      },
+      
+      comparison,
+      
+      samples: {
+        ai: aiResults.slice(0, 3),
+        noai: noAiResult.properties.slice(0, 3)
+      }
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function buildComparisonReport(
+  ai: any[], 
+  noAi: ParsedProperty[],
+  aiTime: number,
+  noAiTime: number
+): Record<string, unknown> {
+  const aiCount = ai.length;
+  const noAiCount = noAi.length;
+  
+  // Field coverage comparison
+  const fieldCoverage = {
+    price: {
+      ai: ai.filter(p => p.price).length,
+      noai: noAi.filter(p => p.price !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.price).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.price !== null).length / noAiCount * 100) : 0,
+    },
+    rooms: {
+      ai: ai.filter(p => p.rooms).length,
+      noai: noAi.filter(p => p.rooms !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.rooms).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.rooms !== null).length / noAiCount * 100) : 0,
+    },
+    floor: {
+      ai: ai.filter(p => p.floor !== undefined && p.floor !== null).length,
+      noai: noAi.filter(p => p.floor !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.floor !== undefined && p.floor !== null).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.floor !== null).length / noAiCount * 100) : 0,
+    },
+    city: {
+      ai: ai.filter(p => p.city).length,
+      noai: noAi.filter(p => p.city !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.city).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.city !== null).length / noAiCount * 100) : 0,
+    },
+    neighborhood: {
+      ai: ai.filter(p => p.neighborhood).length,
+      noai: noAi.filter(p => p.neighborhood !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.neighborhood).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.neighborhood !== null).length / noAiCount * 100) : 0,
+    },
+    address: {
+      ai: ai.filter(p => p.address).length,
+      noai: noAi.filter(p => p.address !== null).length,
+      ai_rate: aiCount > 0 ? Math.round(ai.filter(p => p.address).length / aiCount * 100) : 0,
+      noai_rate: noAiCount > 0 ? Math.round(noAi.filter(p => p.address !== null).length / noAiCount * 100) : 0,
+    },
+  };
+  
+  // Speed comparison
+  const speedRatio = aiTime > 0 ? Math.round(aiTime / noAiTime) : 0;
+  
+  // Try to match properties by price+rooms to compare accuracy
+  const matchedPairs: Array<{ ai: any; noai: ParsedProperty; match_quality: string }> = [];
+  
+  for (const aiProp of ai) {
+    if (!aiProp.price || !aiProp.rooms) continue;
+    
+    const match = noAi.find(noAiProp => 
+      noAiProp.price === aiProp.price && 
+      noAiProp.rooms === aiProp.rooms
+    );
+    
+    if (match) {
+      const qualities: string[] = [];
+      if (aiProp.floor === match.floor) qualities.push('floor');
+      if (aiProp.city === match.city) qualities.push('city');
+      if (aiProp.neighborhood === match.neighborhood) qualities.push('neighborhood');
+      
+      matchedPairs.push({
+        ai: { price: aiProp.price, rooms: aiProp.rooms, floor: aiProp.floor, city: aiProp.city, neighborhood: aiProp.neighborhood },
+        noai: { price: match.price, rooms: match.rooms, floor: match.floor, city: match.city, neighborhood: match.neighborhood },
+        match_quality: qualities.join(', ') || 'price+rooms only'
+      });
+    }
+  }
+  
+  // Generate verdict
+  let verdict = '';
+  if (noAiCount >= aiCount && noAiTime < aiTime / 10) {
+    verdict = '✅ Non-AI parser is faster and extracts equal or more properties';
+  } else if (noAiCount >= aiCount * 0.9) {
+    verdict = '⚠️ Non-AI parser extracts ~90%+ of AI results but much faster';
+  } else {
+    verdict = '❌ AI extracts significantly more properties - parser needs improvement';
+  }
+  
+  return {
+    count_comparison: {
+      ai: aiCount,
+      noai: noAiCount,
+      difference: noAiCount - aiCount,
+      diff_label: noAiCount >= aiCount ? `+${noAiCount - aiCount} (noai)` : `${noAiCount - aiCount} (noai)`
+    },
+    
+    speed_comparison: {
+      ai_ms: aiTime,
+      noai_ms: noAiTime,
+      ratio: `${speedRatio}x faster (noai)`,
+    },
+    
+    cost_comparison: {
+      ai: '~0.01-0.02 credits',
+      noai: '0 credits'
+    },
+    
+    field_coverage: fieldCoverage,
+    
+    matched_pairs: matchedPairs.slice(0, 5),
+    total_matched: matchedPairs.length,
+    
+    verdict
+  };
 }
 
 function handleTranslate(body: TestRequest): Response {
