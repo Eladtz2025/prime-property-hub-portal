@@ -14,10 +14,10 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  WAIT_FOR_MS: 8000,
+  WAIT_FOR_MS: 3000,        // Simplified: quick scrape works better
   MAX_RETRIES: 3,
-  NEXT_PAGE_DELAY: 45000,   // 45 seconds between successful pages
-  RECOVERY_DELAY: 90000     // 90 seconds after a block before trying next page
+  NEXT_PAGE_DELAY: 5000,    // 5 seconds between pages - faster
+  RECOVERY_DELAY: 15000     // 15 seconds after a block
 };
 
 /**
@@ -82,7 +82,7 @@ serve(async (req) => {
   const runId = body.run_id as string | undefined;
   const configId = body.config_id as string | undefined;
   const maxPages = body.max_pages as number | undefined;
-  const startPage = body.start_page as number || 2;  // Default to 2 for Madlan
+  const startPage = body.start_page as number || 1;  // Default to 1 - simplified approach
 
   // Validate required parameters
   if (!page || !runId || !configId) {

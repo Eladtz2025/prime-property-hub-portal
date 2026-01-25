@@ -93,32 +93,12 @@ export async function scrapeWithRetry(
   maxRetries = 3,
   delayMs?: number
 ): Promise<any> {
-  // Determine wait time based on source - Madlan needs extra long waits due to aggressive bot detection
-  // Increased Madlan wait from 15s to 12s (handled in config) + random delay below
-  const waitForMs = delayMs || (source === 'madlan' ? 12000 : source === 'yad2' ? 5000 : 3000);
-  
-  // Madlan-specific actions to simulate real user behavior (more thorough)
-  const madlanActions = [
-    { type: 'wait', milliseconds: 2000 },
-    { type: 'scroll', direction: 'down', amount: 300 },
-    { type: 'wait', milliseconds: 1500 },
-    { type: 'scroll', direction: 'down', amount: 400 },
-    { type: 'wait', milliseconds: 2000 },
-    { type: 'scroll', direction: 'up', amount: 200 },
-    { type: 'wait', milliseconds: 1000 },
-    { type: 'scroll', direction: 'down', amount: 500 },
-    { type: 'wait', milliseconds: 1500 },
-  ];
+  // Determine wait time based on source
+  // Madlan simplified: no complex delays, just quick scrape
+  const waitForMs = delayMs || (source === 'yad2' ? 5000 : 3000);
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      // Add random delay before Madlan scrapes to avoid pattern detection
-      // Increased range from 2-7s to 5-12s for better evasion
-      if (source === 'madlan') {
-        const randomDelay = Math.floor(Math.random() * 7000) + 5000; // 5-12 seconds
-        console.log(`[Madlan] Adding ${randomDelay}ms random delay before scrape (attempt ${attempt + 1})`);
-        await new Promise(r => setTimeout(r, randomDelay));
-      }
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (edge functions have 60s limit)
@@ -130,8 +110,8 @@ export async function scrapeWithRetry(
         formats: ['markdown', 'html'],
         onlyMainContent: true,
         waitFor: waitForMs,
-        // Use stealth proxy for Yad2 and Madlan (5 credits) to rotate IP and avoid CAPTCHA
-        proxy: (source === 'yad2' || source === 'madlan') ? 'stealth' : 'auto',
+        // Yad2 uses stealth proxy (5 credits), Madlan uses auto (1 credit) - simplified approach works better
+        proxy: source === 'yad2' ? 'stealth' : 'auto',
         // Request Israeli proxy for better results on Hebrew sites
         location: {
           country: 'IL',
@@ -151,12 +131,7 @@ export async function scrapeWithRetry(
           'Upgrade-Insecure-Requests': '1',
         }
       };
-
-      // Add human-like actions for Madlan to bypass bot detection
-      if (source === 'madlan') {
-        requestBody.actions = madlanActions;
-        console.log(`[Madlan] Adding ${madlanActions.length} actions to simulate user behavior`);
-      }
+      // No special actions for any source - simpler is better
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
