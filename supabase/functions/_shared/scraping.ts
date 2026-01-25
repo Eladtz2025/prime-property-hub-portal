@@ -6,12 +6,24 @@ export const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// User agents for retry mechanism
+// User agents for retry mechanism - expanded list for better rotation
 export const userAgents = [
+  // Chrome on Windows
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  // Safari on Mac
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+  // Chrome on Mac
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  // Firefox
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+  // Edge
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+  // Chrome on Linux
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
 ];
 
 /**
@@ -82,23 +94,29 @@ export async function scrapeWithRetry(
   delayMs?: number
 ): Promise<any> {
   // Determine wait time based on source - Madlan needs extra long waits due to aggressive bot detection
-  const waitForMs = delayMs || (source === 'madlan' ? 15000 : source === 'yad2' ? 5000 : 3000);
+  // Increased Madlan wait from 15s to 12s (handled in config) + random delay below
+  const waitForMs = delayMs || (source === 'madlan' ? 12000 : source === 'yad2' ? 5000 : 3000);
   
-  // Madlan-specific actions to simulate real user behavior
+  // Madlan-specific actions to simulate real user behavior (more thorough)
   const madlanActions = [
-    { type: 'wait', milliseconds: 3000 },
-    { type: 'scroll', direction: 'down', amount: 500 },
     { type: 'wait', milliseconds: 2000 },
     { type: 'scroll', direction: 'down', amount: 300 },
+    { type: 'wait', milliseconds: 1500 },
+    { type: 'scroll', direction: 'down', amount: 400 },
+    { type: 'wait', milliseconds: 2000 },
+    { type: 'scroll', direction: 'up', amount: 200 },
+    { type: 'wait', milliseconds: 1000 },
+    { type: 'scroll', direction: 'down', amount: 500 },
     { type: 'wait', milliseconds: 1500 },
   ];
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // Add random delay before Madlan scrapes to avoid pattern detection
-      if (source === 'madlan' && attempt === 0) {
-        const randomDelay = Math.floor(Math.random() * 5000) + 2000; // 2-7 seconds
-        console.log(`[Madlan] Adding ${randomDelay}ms random delay before scrape`);
+      // Increased range from 2-7s to 5-12s for better evasion
+      if (source === 'madlan') {
+        const randomDelay = Math.floor(Math.random() * 7000) + 5000; // 5-12 seconds
+        console.log(`[Madlan] Adding ${randomDelay}ms random delay before scrape (attempt ${attempt + 1})`);
         await new Promise(r => setTimeout(r, randomDelay));
       }
       
@@ -120,10 +138,17 @@ export async function scrapeWithRetry(
           languages: ['he']
         },
         headers: {
-          'User-Agent': userAgents[attempt % userAgents.length],
-          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
+          'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
         }
       };
 

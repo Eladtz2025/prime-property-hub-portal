@@ -159,6 +159,30 @@ serve(async (req) => {
 
     console.log(`🟠 Yad2 page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
 
+    if (extractedProperties.length === 0) {
+      console.warn(`⚠️ Yad2 page ${page}: 0 properties extracted`);
+      console.warn(`   Markdown length: ${markdown?.length || 0} chars`);
+      // Log first 500 chars for debugging
+      console.warn(`   Markdown preview: ${markdown?.substring(0, 500) || 'empty'}`);
+    }
+
+    // Save raw HTML/Markdown sample for parser debugging (any successful page with content)
+    if (markdown.length > 1000) {
+      try {
+        await supabase.from('debug_scrape_samples').upsert({
+          source: 'yad2',
+          url: url,
+          html: html?.substring(0, 100000) || null,
+          markdown: markdown?.substring(0, 100000) || null,
+          properties_found: extractedProperties.length,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'source' });
+        console.log(`📝 Saved debug sample for yad2 (${markdown.length} chars, ${extractedProperties.length} properties)`);
+      } catch (debugErr) {
+        console.warn('Failed to save debug sample:', debugErr);
+      }
+    }
+
     // Save properties and count new ones
     let pageNew = 0;
     for (const property of extractedProperties) {
