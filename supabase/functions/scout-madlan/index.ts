@@ -184,6 +184,23 @@ serve(async (req) => {
       console.warn(`   Markdown length: ${markdown?.length || 0} chars`);
     }
 
+    // Save raw HTML/Markdown sample for parser debugging (only on page 1 with successful content)
+    if (page === 1 && markdown.length > 1000) {
+      try {
+        await supabase.from('debug_scrape_samples').upsert({
+          source: 'madlan',
+          url: url,
+          html: html?.substring(0, 100000) || null,
+          markdown: markdown?.substring(0, 100000) || null,
+          properties_found: extractedProperties.length,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'source' });
+        console.log(`📝 Saved debug sample for madlan (${markdown.length} chars)`);
+      } catch (debugErr) {
+        console.warn('Failed to save debug sample:', debugErr);
+      }
+    }
+
     // Save properties and count new ones
     let pageNew = 0;
     for (const property of extractedProperties) {
