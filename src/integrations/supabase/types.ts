@@ -2377,6 +2377,7 @@ export type Database = {
           schedule_times: string[] | null
           search_url: string | null
           source: string
+          start_page: number | null
           updated_at: string
           wait_for_ms: number | null
         }
@@ -2403,6 +2404,7 @@ export type Database = {
           schedule_times?: string[] | null
           search_url?: string | null
           source: string
+          start_page?: number | null
           updated_at?: string
           wait_for_ms?: number | null
         }
@@ -2429,6 +2431,7 @@ export type Database = {
           schedule_times?: string[] | null
           search_url?: string | null
           source?: string
+          start_page?: number | null
           updated_at?: string
           wait_for_ms?: number | null
         }
