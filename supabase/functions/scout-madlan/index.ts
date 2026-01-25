@@ -21,6 +21,17 @@ const MADLAN_CONFIG = {
 };
 
 /**
+ * Calculate actual max pages based on page_stats length
+ * This ensures finalization works correctly with startPage offset
+ */
+function getActualMaxPages(pageStats: any[] | null, startPage: number, maxPages: number): number {
+  if (pageStats && pageStats.length > 0) {
+    return pageStats.length;
+  }
+  return maxPages - startPage + 1;
+}
+
+/**
  * Trigger the next page in sequence (Madlan sequential mode)
  */
 async function triggerNextPage(
@@ -175,9 +186,8 @@ serve(async (req) => {
         }
       }
       
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
-      }
+      // ALWAYS check and finalize - use page_stats length for accurate count
+      await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
       
       return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -211,9 +221,8 @@ serve(async (req) => {
         }
       }
       
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
-      }
+      // ALWAYS check and finalize
+      await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
       
       return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -286,10 +295,8 @@ serve(async (req) => {
       }
     }
 
-    // Check if all pages are done and finalize
-    if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
-    }
+    // ALWAYS check if all pages are done and finalize (use actual page count)
+    await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
 
     return new Response(JSON.stringify({
       success: true,
@@ -312,9 +319,8 @@ serve(async (req) => {
       duration_ms: Date.now() - pageStartTime
     });
 
-    if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
-    }
+    // ALWAYS check and finalize on error
+    await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
 
     return new Response(JSON.stringify({
       success: false,
