@@ -103,7 +103,7 @@ function findPropertyBlocks(markdown: string): string[] {
   const lines = markdown.split('\n');
   
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i].trim();
     
     // Look for listing OR project URL patterns
     const hasListingUrl = line.includes('madlan.co.il/listings/') || line.includes('madlan.co.il/projects/');
@@ -118,7 +118,7 @@ function findPropertyBlocks(markdown: string): string[] {
     }
     
     // Format B: Compact block with \\ separators - entire listing in one line
-    if (line.includes('\\\\') && line.match(/^\[!\[/)) {
+    if (line.includes('\\\\') || line.includes('\\\n')) {
       // Accept blocks with price OR rooms OR size OR project keywords
       if (line.includes('₪') || /\d+\s*חד[׳'ר]/.test(line) || /\d+\s*מ"ר/.test(line) || /קומות/.test(line)) {
         blocks.push(line);
@@ -126,7 +126,7 @@ function findPropertyBlocks(markdown: string): string[] {
       continue;
     }
     
-    // Format A: Fragmented block - listing URL is at the start, details follow
+    // Format A: Fragmented block - listing URL is in line with image, details follow
     if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)\//)) {
       // Collect the block - grab next 10-15 lines until we hit termination
       const blockLines: string[] = [line];
@@ -142,6 +142,11 @@ function findPropertyBlocks(markdown: string): string[] {
         
         // Stop at section headers
         if (nextLineTrimmed.startsWith('## ') || nextLineTrimmed.startsWith('# ')) {
+          break;
+        }
+        
+        // Stop at agent badge/premium blocks
+        if (nextLineTrimmed.includes('משרד מוביל') || nextLineTrimmed.includes('צרו קשר עם המשרד')) {
           break;
         }
         
@@ -333,18 +338,23 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
 function cleanMadlanContent(markdown: string): string {
   let cleaned = markdown;
   
-  // 1. Skip navigation - find the listings header
+  // 1. Skip navigation - find the listings header (more flexible patterns)
   const headerPatterns = [
     /# דירות להשכרה/,
     /# דירות למכירה/,
+    /## \d+ דירות להשכרה/,
+    /## \d+ דירות למכירה/,
     /דירות להשכרה בתל אביב/,
-    /דירות למכירה בתל אביב/
+    /דירות למכירה בתל אביב/,
+    /מיינו לפי:/  // Sort selector appears just before listings
   ];
   
   for (const pattern of headerPatterns) {
     const match = cleaned.search(pattern);
     if (match > 100) {
+      // Keep from this header onwards
       cleaned = cleaned.substring(match);
+      console.log(`[Madlan Clean] Skipped ${match} chars of navigation`);
       break;
     }
   }
@@ -353,7 +363,8 @@ function cleanMadlanContent(markdown: string): string {
   const blogPatterns = [
     '## יעניין אותך לדעת',
     '## כתבות שיעניינו אותך',
-    '### יעניין אותך'
+    '### יעניין אותך',
+    '![](https://images2.madlan.co.il/t:nonce:v=2;convert:type=webp/realEstateAgent/office/' // Agent promotion blocks
   ];
   
   for (const blogStart of blogPatterns) {
@@ -361,7 +372,7 @@ function cleanMadlanContent(markdown: string): string {
     if (blogIdx > 0) {
       // Find where listings resume (next property block)
       const afterBlog = cleaned.substring(blogIdx);
-      const nextListingMatch = afterBlog.search(/\n\[!\[[^\]]+\]\([^\)]+\)/);
+      const nextListingMatch = afterBlog.search(/\n\[!\[[^\]]+\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)/);
       
       if (nextListingMatch > 0) {
         // Remove blog section, keep content before and after
@@ -386,6 +397,7 @@ function cleanMadlanContent(markdown: string): string {
   for (const pattern of footerPatterns) {
     const match = cleaned.search(pattern);
     if (match > 0) {
+      console.log(`[Madlan Clean] Trimmed ${cleaned.length - match} chars of footer`);
       cleaned = cleaned.substring(0, match);
     }
   }

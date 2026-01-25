@@ -187,7 +187,7 @@ function handleStats(): Response {
 // ============================================
 
 async function handleCompare(body: TestRequest): Promise<Response> {
-  const source = body.compare_source || 'homeless';
+  const source = body.compare_source || body.source || 'homeless';
   const propertyType = body.property_type || 'rent';
   
   // Default URLs for testing
