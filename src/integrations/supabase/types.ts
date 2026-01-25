@@ -594,6 +594,39 @@ export type Database = {
           },
         ]
       }
+      debug_scrape_samples: {
+        Row: {
+          created_at: string | null
+          html: string | null
+          id: string
+          markdown: string | null
+          properties_found: number | null
+          source: string
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          html?: string | null
+          id?: string
+          markdown?: string | null
+          properties_found?: number | null
+          source: string
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          html?: string | null
+          id?: string
+          markdown?: string | null
+          properties_found?: number | null
+          source?: string
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       development_ideas: {
         Row: {
           completed_at: string | null

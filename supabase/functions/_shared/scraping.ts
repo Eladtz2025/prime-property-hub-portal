@@ -81,8 +81,17 @@ export async function scrapeWithRetry(
   maxRetries = 3,
   delayMs?: number
 ): Promise<any> {
-  // Determine wait time based on source - Madlan/Yad2 need longer waits to avoid CAPTCHA
-  const waitForMs = delayMs || (source === 'madlan' ? 8000 : source === 'yad2' ? 5000 : 3000);
+  // Determine wait time based on source - Madlan needs extra long waits due to aggressive bot detection
+  const waitForMs = delayMs || (source === 'madlan' ? 15000 : source === 'yad2' ? 5000 : 3000);
+  
+  // Madlan-specific actions to simulate real user behavior
+  const madlanActions = [
+    { type: 'wait', milliseconds: 3000 },
+    { type: 'scroll', direction: 'down', amount: 500 },
+    { type: 'wait', milliseconds: 2000 },
+    { type: 'scroll', direction: 'down', amount: 300 },
+    { type: 'wait', milliseconds: 1500 },
+  ];
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -91,32 +100,39 @@ export async function scrapeWithRetry(
 
       console.log(`Scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, waitFor: ${waitForMs}ms)`);
 
+      const requestBody: Record<string, unknown> = {
+        url,
+        formats: ['markdown', 'html'],
+        onlyMainContent: true,
+        waitFor: waitForMs,
+        // Use stealth proxy for Yad2 and Madlan (5 credits) to rotate IP and avoid CAPTCHA
+        proxy: (source === 'yad2' || source === 'madlan') ? 'stealth' : 'auto',
+        // Request Israeli proxy for better results on Hebrew sites
+        location: {
+          country: 'IL',
+          languages: ['he']
+        },
+        headers: {
+          'User-Agent': userAgents[attempt % userAgents.length],
+          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Cache-Control': 'no-cache',
+        }
+      };
+
+      // Add human-like actions for Madlan to bypass bot detection
+      if (source === 'madlan') {
+        requestBody.actions = madlanActions;
+        console.log(`[Madlan] Adding ${madlanActions.length} actions to simulate user behavior`);
+      }
+
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${firecrawlApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          url,
-          formats: ['markdown', 'html'],
-          onlyMainContent: true,
-          waitFor: waitForMs,
-          // Use stealth proxy for Yad2 (5 credits) to rotate IP and avoid CAPTCHA, auto for others (1 credit)
-          // Use stealth proxy for Yad2 and Madlan (5 credits) to rotate IP and avoid CAPTCHA
-          proxy: (source === 'yad2' || source === 'madlan') ? 'stealth' : 'auto',
-          // Request Israeli proxy for better results on Hebrew sites
-          location: {
-            country: 'IL',
-            languages: ['he']
-          },
-          headers: {
-            'User-Agent': userAgents[attempt % userAgents.length],
-            'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Cache-Control': 'no-cache',
-          }
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
 
