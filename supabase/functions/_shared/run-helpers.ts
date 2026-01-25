@@ -15,16 +15,22 @@ export interface PageStat {
 
 /**
  * Create initial page_stats array for a run
+ * @param maxPages - Total pages to scan (e.g., 4)
+ * @param startPage - First page to scan (default 1, Madlan uses 2)
  */
-export function createInitialPageStats(maxPages: number): PageStat[] {
-  return Array.from({ length: maxPages }, (_, i) => ({
-    page: i + 1,
-    url: '',
-    status: 'pending' as const,
-    found: 0,
-    new: 0,
-    duration_ms: 0
-  }));
+export function createInitialPageStats(maxPages: number, startPage: number = 1): PageStat[] {
+  const pages: PageStat[] = [];
+  for (let i = startPage; i <= maxPages; i++) {
+    pages.push({
+      page: i,
+      url: '',
+      status: 'pending' as const,
+      found: 0,
+      new: 0,
+      duration_ms: 0
+    });
+  }
+  return pages;
 }
 
 /**

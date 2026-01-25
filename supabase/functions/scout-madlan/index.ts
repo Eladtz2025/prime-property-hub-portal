@@ -7,16 +7,52 @@ import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Madlan - SINGLE PAGE MODE ONLY
- * Each invocation handles exactly one page.
+ * Edge Function for scraping Madlan - SEQUENTIAL MODE
+ * Each invocation handles exactly one page, then triggers the next page.
  * Uses NON-AI parser for cost-free extraction.
  */
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
   WAIT_FOR_MS: 8000,
-  MAX_RETRIES: 3
+  MAX_RETRIES: 3,
+  NEXT_PAGE_DELAY: 45000,   // 45 seconds between successful pages
+  RECOVERY_DELAY: 90000     // 90 seconds after a block before trying next page
 };
+
+/**
+ * Trigger the next page in sequence (Madlan sequential mode)
+ */
+async function triggerNextPage(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  configId: string,
+  nextPage: number,
+  runId: string,
+  maxPages: number,
+  startPage: number
+): Promise<void> {
+  console.log(`📄 Madlan: triggering page ${nextPage}/${maxPages}`);
+  
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/scout-madlan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`
+      },
+      body: JSON.stringify({
+        config_id: configId,
+        page: nextPage,
+        run_id: runId,
+        max_pages: maxPages,
+        start_page: startPage
+      })
+    });
+  } catch (error) {
+    console.error(`Error triggering Madlan page ${nextPage}:`, error);
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,6 +71,7 @@ serve(async (req) => {
   const runId = body.run_id as string | undefined;
   const configId = body.config_id as string | undefined;
   const maxPages = body.max_pages as number | undefined;
+  const startPage = body.start_page as number || 2;  // Default to 2 for Madlan
 
   // Validate required parameters
   if (!page || !runId || !configId) {
@@ -123,6 +160,21 @@ serve(async (req) => {
         duration_ms: Date.now() - pageStartTime
       });
       
+      // SEQUENTIAL MODE: Trigger next page even after block (with recovery delay)
+      if (maxPages && page < maxPages) {
+        const { data: runCheck } = await supabase
+          .from('scout_runs')
+          .select('status')
+          .eq('id', runId)
+          .single();
+        
+        if (runCheck?.status !== 'stopped') {
+          console.log(`⏳ Madlan: blocked, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before page ${page + 1}`);
+          await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
+          await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
+        }
+      }
+      
       if (maxPages) {
         await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
       }
@@ -143,6 +195,21 @@ serve(async (req) => {
         error: validation.reason || 'Content validation failed',
         duration_ms: Date.now() - pageStartTime
       });
+      
+      // SEQUENTIAL MODE: Trigger next page even after validation failure (with recovery delay)
+      if (maxPages && page < maxPages) {
+        const { data: runCheck } = await supabase
+          .from('scout_runs')
+          .select('status')
+          .eq('id', runId)
+          .single();
+        
+        if (runCheck?.status !== 'stopped') {
+          console.log(`⏳ Madlan: validation failed, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before page ${page + 1}`);
+          await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
+          await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
+        }
+      }
       
       if (maxPages) {
         await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
@@ -204,6 +271,21 @@ serve(async (req) => {
     // Update run totals atomically
     await incrementRunStats(supabase, runId, extractedProperties.length, pageNew);
 
+    // SEQUENTIAL MODE: Trigger next page after success (with normal delay)
+    if (maxPages && page < maxPages) {
+      const { data: runCheck } = await supabase
+        .from('scout_runs')
+        .select('status')
+        .eq('id', runId)
+        .single();
+      
+      if (runCheck?.status !== 'stopped') {
+        console.log(`⏳ Madlan: success, waiting ${MADLAN_CONFIG.NEXT_PAGE_DELAY/1000}s before page ${page + 1}`);
+        await new Promise(r => setTimeout(r, MADLAN_CONFIG.NEXT_PAGE_DELAY));
+        await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
+      }
+    }
+
     // Check if all pages are done and finalize
     if (maxPages) {
       await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
@@ -215,7 +297,8 @@ serve(async (req) => {
       found: extractedProperties.length,
       new: pageNew,
       duration_ms: duration,
-      parser: 'no-ai'
+      parser: 'no-ai',
+      next_page: page < maxPages ? page + 1 : null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
