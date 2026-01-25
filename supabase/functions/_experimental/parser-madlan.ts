@@ -2,9 +2,19 @@
  * Madlan Markdown Parser
  * 
  * Parses property listings from Madlan markdown.
- * Format: Each property is a markdown link containing image + details separated by \\
+ * Handles TWO distinct formats:
  * 
- * Example:
+ * Format A - Broker listings (fragmented blocks):
+ * [![Address, City](IMG_URL)](listing_url)
+ * [![](AGENT_IMG)](agent_url)
+ * ‏Price ‏₪
+ * X חד׳
+ * קומה Y
+ * Z מ"ר
+ * Type, Street, Neighborhood
+ * תיווך
+ * 
+ * Format B - Private listings (compact block with \\):
  * [![Address, City](IMG_URL)\\
  * \\
  * ‏Price ‏₪\\
@@ -15,7 +25,7 @@
  * \\
  * Z מ"ר\\
  * \\
- * Type, Street, Neighborhood](https://www.madlan.co.il/listings/ID)
+ * Type, Street, Neighborhood](listing_url)
  */
 
 import { 
@@ -85,54 +95,63 @@ export function parseMadlanMarkdown(
 export const parseMadlanHtml = parseMadlanMarkdown;
 
 // ============================================
-// Block Detection
+// Block Detection - Handles Format A & B
 // ============================================
 
 function findPropertyBlocks(markdown: string): string[] {
   const blocks: string[] = [];
-  
-  // Split by lines and find blocks that start with [![ and end with ](listing_url)
   const lines = markdown.split('\n');
-  let currentBlock: string[] = [];
-  let inBlock = false;
   
-  for (const line of lines) {
-    // Start of a new block: [![...](...)]
-    if (line.match(/^\[!\[/)) {
-      // Save previous block if exists
-      if (inBlock && currentBlock.length > 0) {
-        const blockText = currentBlock.join('\n');
-        if (blockText.includes('₪') && blockText.includes('madlan.co.il/listings/')) {
-          blocks.push(blockText);
-        }
-      }
-      currentBlock = [line];
-      inBlock = true;
-      
-      // Check if single-line complete block
-      if (line.includes('](https://www.madlan.co.il/listings/')) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Look for listing URL patterns
+    const hasListingUrl = line.includes('madlan.co.il/listings/');
+    
+    if (!hasListingUrl) continue;
+    
+    // Format B: Compact block with \\ separators - entire listing in one line
+    if (line.includes('\\\\') && line.match(/^\[!\[/)) {
+      // Validate it has price (₪) to ensure it's a property listing
+      if (line.includes('₪')) {
         blocks.push(line);
-        inBlock = false;
-        currentBlock = [];
       }
       continue;
     }
     
-    // End of block: contains the listing URL
-    if (inBlock && line.includes('](https://www.madlan.co.il/listings/')) {
-      currentBlock.push(line);
-      const blockText = currentBlock.join('\n');
+    // Format A: Fragmented block - listing URL is at the start, details follow
+    if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/listings\//)) {
+      // Collect the block - grab next 10-15 lines until we hit termination
+      const blockLines: string[] = [line];
+      
+      for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
+        const nextLine = lines[j];
+        const nextLineTrimmed = nextLine.trim();
+        
+        // Stop if we hit a new property block
+        if (nextLineTrimmed.startsWith('[![') && nextLineTrimmed.includes('/listings/')) {
+          break;
+        }
+        
+        // Stop at section headers
+        if (nextLineTrimmed.startsWith('## ') || nextLineTrimmed.startsWith('# ')) {
+          break;
+        }
+        
+        blockLines.push(nextLine);
+        
+        // Stop after broker/exclusivity markers
+        if (nextLineTrimmed === 'תיווך' || nextLineTrimmed === 'בבלעדיות') {
+          break;
+        }
+      }
+      
+      const blockText = blockLines.join('\n');
+      // Validate it has price
       if (blockText.includes('₪')) {
         blocks.push(blockText);
       }
-      inBlock = false;
-      currentBlock = [];
       continue;
-    }
-    
-    // Continue building block
-    if (inBlock) {
-      currentBlock.push(line);
     }
   }
   
@@ -140,7 +159,7 @@ function findPropertyBlocks(markdown: string): string[] {
 }
 
 // ============================================
-// Block Parsing
+// Block Parsing - Extract fields from either format
 // ============================================
 
 function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): ParsedProperty | null {
@@ -148,68 +167,95 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s\]]+)/);
   if (!urlMatch) return null;
   
-  const sourceId = urlMatch[1];
+  const sourceId = urlMatch[1].replace(/\)$/, ''); // Clean trailing )
   const sourceUrl = `https://www.madlan.co.il/listings/${sourceId}`;
   
-  // Split block into parts (by \\ or newlines)
-  const parts = block
-    .replace(/\\\\/g, '\n')
-    .split('\n')
-    .map(p => p.trim())
-    .filter(p => p.length > 0 && p !== '\\');
+  // Determine block format and split accordingly
+  const isCompactBlock = block.includes('\\\\') && block.startsWith('[![');
   
-  // Extract fields
+  let parts: string[];
+  if (isCompactBlock) {
+    // Format B: Split by \\ 
+    parts = block
+      .split(/\\\\/)
+      .map(p => p.trim())
+      .filter(p => p.length > 0 && p !== '\\');
+  } else {
+    // Format A: Split by newlines
+    parts = block
+      .split('\n')
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+  }
+  
+  // Extract price
   const pricePart = parts.find(p => p.includes('₪'));
   const price = pricePart ? extractPrice(pricePart) : null;
   
+  // Extract rooms - look for "X חד׳" pattern
   const roomsPart = parts.find(p => /\d+\.?\d*\s*חד[׳'ר]/.test(p));
   const rooms = roomsPart ? extractRooms(roomsPart) : null;
   
-  const floorPart = parts.find(p => /קומה\s*\d/.test(p));
+  // Extract floor - look for "קומה" pattern
+  const floorPart = parts.find(p => /קומה/.test(p));
   const floor = floorPart ? extractFloor(floorPart) : null;
   
+  // Extract size - look for מ"ר pattern
   const sizePart = parts.find(p => /\d+\s*מ"ר|\d+\s*מ״ר/.test(p));
   const size = sizePart ? extractSize(sizePart) : null;
   
-  // Extract address and neighborhood
+  // Extract address and neighborhood from "Type, Street, Neighborhood" pattern
   let address: string | null = null;
   let neighborhood: string | null = null;
   let neighborhoodValue: string | null = null;
-  const city = 'תל אביב יפו';
+  const city = 'תל אביב יפו'; // Default for now, can be extracted from title
   
-  // Look for "דירה, כתובת, שכונה" pattern
+  // Look for property type patterns like "דירה, כתובת, שכונה"
   for (const part of parts) {
-    const addrMatch = part.match(/(?:דירה|דירת גג|פנטהאוז|סטודיו),?\s*([^,\]]+)\s*,\s*([^,\]\)]+)/);
-    if (addrMatch) {
-      address = cleanText(addrMatch[1]);
-      const rawNeighborhood = cleanText(addrMatch[2]);
-      const neighborhoodInfo = extractNeighborhood(rawNeighborhood, city);
-      if (neighborhoodInfo) {
-        neighborhood = neighborhoodInfo.label;
-        neighborhoodValue = neighborhoodInfo.value;
-      } else {
-        neighborhood = rawNeighborhood;
+    // Match: "דירה, כתובת, שכונה" or "דירת גג, כתובת, שכונה" etc.
+    const typePattern = /^(דירה|דירת גג|פנטהאוז|סטודיו|גן|קוטג'?|בית פרטי)/;
+    if (typePattern.test(part)) {
+      // Split by comma and extract
+      const segments = part.split(',').map(s => s.trim());
+      if (segments.length >= 2) {
+        // Skip the type (first segment), street is usually second
+        address = cleanText(segments[1]);
+      }
+      if (segments.length >= 3) {
+        // Neighborhood is usually the last segment (remove trailing ] if present)
+        const rawNeighborhood = cleanText(segments[segments.length - 1].replace(/\]$/, ''));
+        const neighborhoodInfo = extractNeighborhood(rawNeighborhood, city);
+        if (neighborhoodInfo) {
+          neighborhood = neighborhoodInfo.label;
+          neighborhoodValue = neighborhoodInfo.value;
+        } else {
+          neighborhood = rawNeighborhood;
+        }
       }
       break;
     }
   }
   
-  // Fallback: extract from image alt text
+  // Fallback: extract address from image alt text
   if (!address) {
     const altMatch = block.match(/\[!\[([^\]]+)\]/);
     if (altMatch) {
-      const altParts = altMatch[1].split(',').map(p => p.trim());
-      if (altParts.length >= 1) {
+      const altText = altMatch[1];
+      // Alt text is usually "Street, City"
+      const altParts = altText.split(',').map(p => p.trim());
+      if (altParts.length >= 1 && !altParts[0].includes('תל אביב')) {
         address = cleanText(altParts[0]);
       }
     }
   }
   
-  // Skip if no useful data
+  // Skip if no useful data extracted
   if (!price && !rooms && !address) return null;
   
-  // Detect broker
-  const isBroker = detectBroker(block);
+  // Detect broker - check for explicit markers OR agent image links
+  const hasAgentImage = block.includes('[![](https://') && block.includes('/agents/');
+  const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך/.test(block);
+  const isBroker = hasBrokerKeyword || hasAgentImage || detectBroker(block);
   
   // Build title
   const roomsLabel = rooms ? `${rooms} חדרים` : '';
@@ -240,35 +286,60 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
 }
 
 // ============================================
-// Content Cleaning
+// Content Cleaning - Remove noise before parsing
 // ============================================
 
 function cleanMadlanContent(markdown: string): string {
   let cleaned = markdown;
   
-  // 1. Skip navigation - find first property listing header or image
-  const startMatch = cleaned.search(/# דירות להשכרה|# דירות למכירה|\[!\[.*?\]\(https:\/\/images/);
-  if (startMatch > 100) {
-    cleaned = cleaned.substring(startMatch);
-  }
+  // 1. Skip navigation - find the listings header
+  const headerPatterns = [
+    /# דירות להשכרה/,
+    /# דירות למכירה/,
+    /דירות להשכרה בתל אביב/,
+    /דירות למכירה בתל אביב/
+  ];
   
-  // 2. Remove blog section "יעניין אותך לדעת" 
-  // This section appears between listings - remove it entirely
-  const blogStart = cleaned.indexOf('## יעניין אותך לדעת');
-  if (blogStart > 0) {
-    // Find where listings resume (next [![)
-    const afterBlog = cleaned.substring(blogStart);
-    const nextListing = afterBlog.search(/\[!\[/);
-    if (nextListing > 0) {
-      cleaned = cleaned.substring(0, blogStart) + cleaned.substring(blogStart + nextListing);
+  for (const pattern of headerPatterns) {
+    const match = cleaned.search(pattern);
+    if (match > 100) {
+      cleaned = cleaned.substring(match);
+      break;
     }
   }
   
-  // 3. Remove footer
+  // 2. Remove blog section "יעניין אותך לדעת" - this appears mid-page
+  const blogPatterns = [
+    '## יעניין אותך לדעת',
+    '## כתבות שיעניינו אותך',
+    '### יעניין אותך'
+  ];
+  
+  for (const blogStart of blogPatterns) {
+    const blogIdx = cleaned.indexOf(blogStart);
+    if (blogIdx > 0) {
+      // Find where listings resume (next property block)
+      const afterBlog = cleaned.substring(blogIdx);
+      const nextListingMatch = afterBlog.search(/\n\[!\[[^\]]+\]\([^\)]+\)/);
+      
+      if (nextListingMatch > 0) {
+        // Remove blog section, keep content before and after
+        cleaned = cleaned.substring(0, blogIdx) + afterBlog.substring(nextListingMatch);
+      } else {
+        // Blog is at end, just remove it
+        cleaned = cleaned.substring(0, blogIdx);
+      }
+      break;
+    }
+  }
+  
+  // 3. Remove footer sections
   const footerPatterns = [
     /\[דף הבית\]/,
     /## מידע חשוב/,
     /## דירות לפי/,
+    /## חיפושים נפוצים/,
+    /## שאלות נפוצות/
   ];
   
   for (const pattern of footerPatterns) {

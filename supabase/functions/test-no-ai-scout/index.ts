@@ -517,18 +517,43 @@ function handleTranslate(body: TestRequest): Response {
 }
 
 async function handleParse(body: TestRequest): Promise<Response> {
-  const { source, html, property_type = 'rent', use_street_lookup = true } = body;
-  
-  if (!html) {
-    return new Response(
-      JSON.stringify({ error: 'Missing html parameter' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+  const { source, html: inputHtml, property_type = 'rent', use_street_lookup = true, use_sample = false } = body;
   
   if (!source) {
     return new Response(
       JSON.stringify({ error: 'Missing source parameter (homeless, yad2, madlan)' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // Load from debug_scrape_samples if use_sample is true
+  let html = inputHtml || '';
+  if (use_sample) {
+    const supabase = createSupabaseClient();
+    
+    const { data: sample, error } = await supabase
+      .from('debug_scrape_samples')
+      .select('markdown, html')
+      .eq('source', source)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (error || !sample) {
+      return new Response(
+        JSON.stringify({ error: `No sample found for source ${source}`, details: error }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Prefer markdown for Madlan, HTML for others
+    html = source === 'madlan' ? (sample.markdown || sample.html || '') : (sample.html || sample.markdown || '');
+    console.log(`[Parse] Loaded sample for ${source}: ${html.length} chars`);
+  }
+  
+  if (!html) {
+    return new Response(
+      JSON.stringify({ error: 'Missing html parameter (or use use_sample: true to load from debug_scrape_samples)' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
