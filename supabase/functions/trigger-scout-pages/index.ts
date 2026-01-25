@@ -97,8 +97,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create a run record with initial page_stats
-    const initialPageStats = createInitialPageStats(pagesToScan);
+    // Use start_page from config (default 1, Madlan uses 2 to avoid CAPTCHA on landing page)
+    const startPage = config.start_page || 1;
+    
+    // Create a run record with initial page_stats (only for pages we'll actually scan)
+    const initialPageStats = createInitialPageStats(pagesToScan, startPage);
 
     const { data: runData, error: runError } = await supabase
       .from('scout_runs')
@@ -128,70 +131,94 @@ Deno.serve(async (req) => {
       ? config.page_delay_seconds * 1000 
       : SOURCE_DELAYS[source] || 5000;
     
-    // Use start_page from config (default 1, Madlan uses 2 to avoid CAPTCHA on landing page)
-    const startPage = config.start_page || 1;
     const totalPages = pagesToScan - startPage + 1;
 
     console.log(`📄 Created run ${runId} for ${source}: pages ${startPage}-${pagesToScan} (${totalPages} pages, delay: ${delayMs}ms)`);
 
-    // Trigger each page as a separate function call with delays
-    const triggerPromises: Promise<void>[] = [];
-    
-    for (let page = startPage; page <= pagesToScan; page++) {
-      const pageDelay = (page - startPage) * delayMs;
+    // MADLAN: Sequential mode - trigger only first page, it will trigger the rest
+    if (source === 'madlan') {
+      console.log(`📄 Madlan sequential mode: triggering only page ${startPage}`);
       
-      const triggerPage = async () => {
-        // Wait for the delay
-        await new Promise(resolve => setTimeout(resolve, pageDelay));
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/scout-madlan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({
+            config_id: config_id,
+            page: startPage,
+            run_id: runId,
+            max_pages: pagesToScan,
+            start_page: startPage
+          })
+        });
+      } catch (error) {
+        console.error(`Error triggering Madlan page ${startPage}:`, error);
+      }
+    } else {
+      // YAD2 and HOMELESS: Parallel mode with delays (existing logic)
+      const triggerPromises: Promise<void>[] = [];
+      
+      for (let page = startPage; page <= pagesToScan; page++) {
+        const pageDelay = (page - startPage) * delayMs;
         
-        // Check if run was stopped before triggering
-        const { data: runCheck } = await supabase
-          .from('scout_runs')
-          .select('status')
-          .eq('id', runId)
-          .single();
-        
-        if (runCheck?.status === 'stopped') {
-          console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
-          return;
-        }
+        const triggerPage = async () => {
+          // Wait for the delay
+          await new Promise(resolve => setTimeout(resolve, pageDelay));
+          
+          // Check if run was stopped before triggering
+          const { data: runCheck } = await supabase
+            .from('scout_runs')
+            .select('status')
+            .eq('id', runId)
+            .single();
+          
+          if (runCheck?.status === 'stopped') {
+            console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
+            return;
+          }
 
-        console.log(`📄 Triggering ${source} page ${page}/${pagesToScan} for run ${runId}`);
-        
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/${targetFunction}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`
-            },
-            body: JSON.stringify({
-              config_id: config_id,
-              page: page,
-              run_id: runId,
-              max_pages: pagesToScan
-            })
-          });
-        } catch (error) {
-          console.error(`Error triggering ${source} page ${page}:`, error);
-        }
-      };
+          console.log(`📄 Triggering ${source} page ${page}/${pagesToScan} for run ${runId}`);
+          
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/${targetFunction}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`
+              },
+              body: JSON.stringify({
+                config_id: config_id,
+                page: page,
+                run_id: runId,
+                max_pages: pagesToScan
+              })
+            });
+          } catch (error) {
+            console.error(`Error triggering ${source} page ${page}:`, error);
+          }
+        };
 
-      triggerPromises.push(triggerPage());
+        triggerPromises.push(triggerPage());
+      }
+
+      // Start all page triggers (they will execute with their own delays)
+      Promise.all(triggerPromises).catch(err => {
+        console.error('Error in page triggers:', err);
+      });
     }
-
-    // Start all page triggers (they will execute with their own delays)
-    Promise.all(triggerPromises).catch(err => {
-      console.error('Error in page triggers:', err);
-    });
 
     return new Response(JSON.stringify({
       success: true,
       run_id: runId,
       source: source,
-      pages_triggered: pagesToScan,
+      pages_triggered: totalPages,
+      start_page: startPage,
       delay_ms: delayMs,
-      message: `Started scraping ${pagesToScan} pages for ${config.name}`
+      mode: source === 'madlan' ? 'sequential' : 'parallel',
+      message: `Started scraping pages ${startPage}-${pagesToScan} for ${config.name}`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
