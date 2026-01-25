@@ -6,6 +6,128 @@ export const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Scrape Madlan directly using fetch (bypass Firecrawl)
+ * This works because Firecrawl's IP pool is blocked by Madlan, not Madlan itself
+ * Cost: 0 credits | Speed: 1-3 seconds per page
+ */
+export async function scrapeMadlanDirect(url: string): Promise<{
+  markdown: string;
+  html: string;
+} | null> {
+  const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+  
+  const headers = {
+    'User-Agent': userAgent,
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+  };
+  
+  console.log(`[Madlan Direct] Fetching ${url}`);
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    const response = await fetch(url, { 
+      headers,
+      signal: controller.signal 
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.error(`[Madlan Direct] Failed with status: ${response.status}`);
+      return null;
+    }
+    
+    const html = await response.text();
+    console.log(`[Madlan Direct] Got ${html.length} chars of HTML`);
+    
+    // Check for CAPTCHA in raw HTML
+    const lowerHtml = html.toLowerCase();
+    if (lowerHtml.includes('captcha') || lowerHtml.includes('אנחנו צריכים לוודא')) {
+      console.error('[Madlan Direct] CAPTCHA detected in response');
+      return null;
+    }
+    
+    // Convert HTML to markdown-like text for parsing
+    const markdown = convertHtmlToMarkdown(html);
+    console.log(`[Madlan Direct] Converted to ${markdown.length} chars of markdown`);
+    
+    return { markdown, html };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[Madlan Direct] Request timeout');
+    } else {
+      console.error('[Madlan Direct] Fetch error:', error);
+    }
+    return null;
+  }
+}
+
+/**
+ * Convert HTML to markdown-like text for property parsing
+ * Preserves structure needed for parser (prices, rooms, addresses)
+ */
+function convertHtmlToMarkdown(html: string): string {
+  let text = html;
+  
+  // Remove script and style tags completely
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  text = text.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+  
+  // Convert links to markdown format [text](url)
+  text = text.replace(/<a[^>]*href=["']([^"']*)["'][^>]*>([^<]*)<\/a>/gi, '[$2]($1)');
+  
+  // Convert headers
+  text = text.replace(/<h1[^>]*>/gi, '# ');
+  text = text.replace(/<h2[^>]*>/gi, '## ');
+  text = text.replace(/<h3[^>]*>/gi, '### ');
+  text = text.replace(/<\/h[1-6]>/gi, '\n');
+  
+  // Convert line breaks and paragraphs
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/li>/gi, '\n');
+  
+  // Remove remaining HTML tags but keep content
+  text = text.replace(/<[^>]+>/g, ' ');
+  
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&rsquo;/g, "'");
+  text = text.replace(/&lsquo;/g, "'");
+  text = text.replace(/&rdquo;/g, '"');
+  text = text.replace(/&ldquo;/g, '"');
+  text = text.replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  text = text.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
+  
+  // Clean up whitespace
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n[ \t]+/g, '\n');
+  text = text.replace(/[ \t]+\n/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.trim();
+  
+  return text;
+}
+
 // User agents for retry mechanism - expanded list for better rotation
 export const userAgents = [
   // Chrome on Windows
