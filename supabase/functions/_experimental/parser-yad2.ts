@@ -32,16 +32,22 @@ import {
 
 /**
  * Parse Yad2 property listings from HTML content
+ * @param url - Optional URL to extract city from query params (e.g., city=5000)
  */
 export async function parseYad2Html(
   html: string, 
   propertyType: 'rent' | 'sale',
-  useStreetLookup: boolean = true
+  useStreetLookup: boolean = true,
+  url?: string
 ): Promise<ParserResult> {
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
   
   const $ = cheerio.load(html);
+  
+  // Extract city from URL if provided (e.g., city=5000 = תל אביב יפו)
+  const urlCity = url ? extractCityFromUrl(url) : null;
+  console.log(`[parser-yad2] City from URL: ${urlCity || 'none'}`);
   
   // Initialize supabase client for street lookup
   let supabase = null;
@@ -70,9 +76,9 @@ export async function parseYad2Html(
       const addressText = item.find('[data-testid="address"], .item_data_address, [class*="address"], [class*="location"]').first().text();
       const address = cleanText(addressText);
       
-      // Extract city and neighborhood from address
-      const city = extractCity(address);
-      let neighborhood = extractNeighborhood(address, city);
+      // Extract city - prefer URL, then address parsing
+      const city = urlCity || extractCity(address) || extractCity(item.text());
+      let neighborhood = extractNeighborhood(address, city) || extractNeighborhood(item.text(), city);
       let neighborhoodConfidence = neighborhood ? 70 : 0;
       
       // Try street lookup if no neighborhood found and city is available
@@ -118,7 +124,7 @@ export async function parseYad2Html(
         source_id: generateSourceId('yad2', sourceUrl, i),
         source_url: sourceUrl,
         title,
-        city: city || 'לא ידוע',
+        city: city || urlCity || 'לא ידוע',
         neighborhood: neighborhood?.label || null,
         neighborhood_value: neighborhood?.value || null,
         address,
@@ -375,4 +381,62 @@ function calculateStats(properties: ParsedProperty[]): ParserResult['stats'] {
     private_count: properties.filter(p => p.is_private).length,
     broker_count: properties.filter(p => !p.is_private).length,
   };
+}
+
+// ============================================
+// URL City Extraction
+// ============================================
+
+/**
+ * Extract city from Yad2 URL query parameters
+ * city=5000 = תל אביב יפו
+ * city=8600 = רמת גן
+ * etc.
+ */
+function extractCityFromUrl(url: string): string | null {
+  const CITY_CODES: Record<string, string> = {
+    '5000': 'תל אביב יפו',
+    '8600': 'רמת גן',
+    '6400': 'גבעתיים',
+    '6900': 'הרצליה',
+    '8700': 'רעננה',
+    '7900': 'פתח תקווה',
+    '8300': 'ראשון לציון',
+    '6600': 'חולון',
+    '6200': 'בת ים',
+    '7400': 'נתניה',
+    '6100': 'בני ברק',
+    '6800': 'כפר סבא',
+    '6700': 'הוד השרון',
+    '8500': 'רמת השרון',
+    '70': 'אשדוד',
+    '7100': 'אשקלון',
+    '3000': 'ירושלים',
+    '4000': 'חיפה',
+    '7500': 'באר שבע',
+  };
+  
+  try {
+    const urlObj = new URL(url);
+    const cityCode = urlObj.searchParams.get('city');
+    if (cityCode && CITY_CODES[cityCode]) {
+      return CITY_CODES[cityCode];
+    }
+    
+    // Also try extracting from path (e.g., /realestate/rent/tel-aviv)
+    const pathMatch = url.match(/\/tel-aviv|\/ramat-gan|\/herzliya/i);
+    if (pathMatch) {
+      if (pathMatch[0].includes('tel-aviv')) return 'תל אביב יפו';
+      if (pathMatch[0].includes('ramat-gan')) return 'רמת גן';
+      if (pathMatch[0].includes('herzliya')) return 'הרצליה';
+    }
+  } catch {
+    // Invalid URL, try simple regex
+    const cityMatch = url.match(/city=(\d+)/);
+    if (cityMatch && CITY_CODES[cityMatch[1]]) {
+      return CITY_CODES[cityMatch[1]];
+    }
+  }
+  
+  return null;
 }

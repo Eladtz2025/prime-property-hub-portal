@@ -293,7 +293,7 @@ async function handleCompare(body: TestRequest): Promise<Response> {
   if (source === 'homeless') {
     noAiResult = parseHomelessHtml(html, propertyType);
   } else if (source === 'yad2') {
-    noAiResult = await parseYad2Html(html, propertyType, false); // No street lookup for speed
+    noAiResult = await parseYad2Html(html, propertyType, false, url); // Pass URL for city extraction
   } else if (source === 'madlan') {
     noAiResult = parseMadlanHtml(html, propertyType);
   } else {
