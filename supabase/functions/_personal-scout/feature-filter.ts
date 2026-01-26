@@ -112,32 +112,49 @@ function checkProperty(
     }
   }
   
-  // 4. Feature filters - for future use
-  // Note: Current parsers don't extract these features from listings
-  // When we add feature extraction, uncomment these checks
+  // 4. Outdoor space filter (balcony/roof/yard) - OR logic
+  // If lead requires any outdoor space, check if property has at least one
+  // Note: Parsers don't yet extract these features, so we only filter
+  // when we have explicit false values (not undefined/null)
+  const hasOutdoorRequirement = 
+    (lead.balcony_required && !lead.balcony_flexible) ||
+    (lead.roof_required && !lead.roof_flexible) ||
+    (lead.yard_required && !lead.yard_flexible);
   
-  /*
-  // Balcony
-  if (lead.balcony_required && !lead.balcony_flexible) {
-    if (prop.has_balcony === false) {
-      return 'no_balcony';
+  if (hasOutdoorRequirement) {
+    // Check if property explicitly has NO outdoor space
+    // Only filter if we have explicit false values (not undefined)
+    const hasBalcony = (prop as any).has_balcony;
+    const hasRoof = (prop as any).has_roof;
+    const hasYard = (prop as any).has_yard;
+    
+    // If all are explicitly false, reject
+    // If any is true or undefined, allow (benefit of the doubt)
+    const allExplicitlyFalse = 
+      hasBalcony === false && 
+      hasRoof === false && 
+      hasYard === false;
+    
+    if (allExplicitlyFalse) {
+      return 'no_outdoor_space';
     }
   }
   
-  // Parking
+  // 5. Parking filter (if strictly required)
   if (lead.parking_required && !lead.parking_flexible) {
-    if (prop.has_parking === false) {
+    const hasParking = (prop as any).has_parking;
+    if (hasParking === false) {
       return 'no_parking';
     }
   }
   
-  // Elevator
+  // 6. Elevator filter (if strictly required)
   if (lead.elevator_required && !lead.elevator_flexible) {
-    if (prop.has_elevator === false) {
+    const hasElevator = (prop as any).has_elevator;
+    if (hasElevator === false) {
       return 'no_elevator';
     }
   }
-  */
   
   // Property passed all filters
   return null;

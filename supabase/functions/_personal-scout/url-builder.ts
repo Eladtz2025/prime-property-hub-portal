@@ -117,9 +117,22 @@ function buildYad2Url(
   
   params.set('propertyGroup', 'apartments');
   
-  // Price filter - Yad2 supports this!
-  if (minPrice || maxPrice) {
-    const priceRange = `${minPrice || ''}-${maxPrice || ''}`;
+  // Price filter - adjust units for sale listings
+  // DB stores sale prices in thousands (7000 = 7M), Yad2 expects full price (7000000)
+  let adjustedMinPrice = minPrice;
+  let adjustedMaxPrice = maxPrice;
+  
+  if (propertyType === 'sale') {
+    // If price looks like thousands (< 100,000), multiply by 1000
+    if (maxPrice && maxPrice < 100000) {
+      adjustedMinPrice = minPrice ? minPrice * 1000 : null;
+      adjustedMaxPrice = maxPrice * 1000;
+      console.log(`[personal-scout/url-builder] Adjusted sale prices: ${minPrice}-${maxPrice} → ${adjustedMinPrice}-${adjustedMaxPrice}`);
+    }
+  }
+  
+  if (adjustedMinPrice || adjustedMaxPrice) {
+    const priceRange = `${adjustedMinPrice || ''}-${adjustedMaxPrice || ''}`;
     params.set('price', priceRange);
   }
   
