@@ -19,7 +19,7 @@ const corsHeaders = {
  * COMPLETELY SEPARATE from scout-yad2/madlan/homeless.
  */
 
-const MAX_PAGES_PER_SOURCE = 3; // Only 3 pages - filters should narrow results
+const MAX_PAGES_PER_SOURCE = 5; // 5 pages per source for better coverage
 const DELAY_BETWEEN_PAGES_MS = 2000;
 const DELAY_BETWEEN_SOURCES_MS = 3000;
 
@@ -86,8 +86,10 @@ Deno.serve(async (req) => {
     }
 
     const allMatches: Array<ParsedProperty & { lead_id: string; source: string; page: number }> = [];
-    const propertyType = (lead.property_type as 'rent' | 'sale') || 'rent';
+    const propertyType = normalizePropertyType(lead.property_type);
     const city = lead.preferred_cities[0]; // Use first preferred city
+    
+    console.log(`   Property type: ${lead.property_type} → ${propertyType}`);
 
     const stats = {
       total_scraped: 0,
@@ -253,3 +255,20 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/**
+ * Normalize property_type to 'rent' | 'sale'
+ * Handles: rental, rent, השכרה → rent
+ *          sale, מכירה → sale
+ */
+function normalizePropertyType(type: string | null | undefined): 'rent' | 'sale' {
+  if (!type) return 'rent';
+  const lower = type.toLowerCase();
+  if (lower.includes('rent') || lower === 'rental' || type === 'השכרה') {
+    return 'rent';
+  }
+  if (lower.includes('sale') || type === 'מכירה') {
+    return 'sale';
+  }
+  return 'rent'; // default to rent
+}
