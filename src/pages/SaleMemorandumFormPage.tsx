@@ -253,7 +253,7 @@ const SaleMemorandumFormPage = () => {
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/sale-memorandum-form?token=${data.token}`;
+      const link = `${window.location.origin}/sale-memorandum-form/${data.token}`;
       await navigator.clipboard.writeText(link);
       toast.success(t.linkCopied);
     } catch (err) {

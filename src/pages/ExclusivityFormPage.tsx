@@ -257,7 +257,7 @@ const ExclusivityFormPage = () => {
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/exclusivity-form?token=${data.token}`;
+      const link = `${window.location.origin}/exclusivity-form/${data.token}`;
       await navigator.clipboard.writeText(link);
       toast.success(t.linkCopied);
     } catch (err) {

@@ -267,7 +267,7 @@ const MemorandumFormPage = () => {
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/memorandum-form?token=${data.token}`;
+      const link = `${window.location.origin}/memorandum-form/${data.token}`;
       await navigator.clipboard.writeText(link);
       toast.success(t.linkCopied);
     } catch (err) {
