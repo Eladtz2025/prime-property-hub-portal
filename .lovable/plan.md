@@ -1,57 +1,39 @@
 
-# תיקון: קישורי חתימה מרחוק שבורים
+# תיקון: קריאת הטוקן מהנתיב
 
 ## הבעיה
+הקוד מחפש `?token=xxx` (query parameter) אבל הלינק שנוצר הוא `/memorandum-form/xxx` (path parameter).
 
-הקוד יוצר קישורים עם **query parameter** (`?token=XXX`) אבל הניתוב מוגדר לקבל **path parameter** (`/:token`):
+## מה כבר קיים ועובד
+- ✅ עמוד תודה (FormThankYouScreen)
+- ✅ שמירת הטופס (legal_forms table)
+- ✅ הורדת PDF (downloadMemorandumPDF)
+- ✅ שליחת WhatsApp
+- ✅ החתימה נשמרת בטוקן (agent_signature)
 
-| קובץ | קישור שנוצר (שבור) | נתיב מוגדר ב-App.tsx |
-|------|-------------------|---------------------|
-| MemorandumFormPage | `/memorandum-form?token=XXX` | `/memorandum-form/:token` |
-| SaleMemorandumFormPage | `/sale-memorandum-form?token=XXX` | `/sale-memorandum-form/:token` |
-| ExclusivityFormPage | `/exclusivity-form?token=XXX` | `/exclusivity-form/:token` |
-| BrokerSharingFormPage | `/broker-sharing-form/XXX` ✅ | `/broker-sharing-form/:token` |
+## התיקון הנדרש
+שינוי קטן ב-3 קבצים - להחליף את אופן קריאת הטוקן:
 
-## הפתרון
-
-### 3 קבצים לתיקון
-
-**1. src/pages/MemorandumFormPage.tsx (שורה 270)**
+**1. MemorandumFormPage.tsx**
 ```typescript
-// לפני:
-const link = `${window.location.origin}/memorandum-form?token=${data.token}`;
+// שורה 2 - להוסיף useParams:
+import { useParams, useSearchParams } from 'react-router-dom';
 
-// אחרי:
-const link = `${window.location.origin}/memorandum-form/${data.token}`;
+// שורות 23-24 - להחליף:
+const { token } = useParams<{ token?: string }>();
+const [searchParams] = useSearchParams();
 ```
 
-**2. src/pages/SaleMemorandumFormPage.tsx (שורה 256)**
-```typescript
-// לפני:
-const link = `${window.location.origin}/sale-memorandum-form?token=${data.token}`;
+**2. SaleMemorandumFormPage.tsx** - אותו שינוי
 
-// אחרי:
-const link = `${window.location.origin}/sale-memorandum-form/${data.token}`;
-```
+**3. ExclusivityFormPage.tsx** - אותו שינוי
 
-**3. src/pages/ExclusivityFormPage.tsx (שורה 260)**
-```typescript
-// לפני:
-const link = `${window.location.origin}/exclusivity-form?token=${data.token}`;
+## למה זה יעבוד
+1. לקוח נכנס ל-`/memorandum-form/abc123`
+2. `useParams()` קורא את `abc123` מהנתיב
+3. `loadTokenData()` מופעלת ומביאה את כל הנתונים + החתימה
+4. הטופס מוצג עם כל מה שהסוכן מילא
+5. לקוח חותם ושומר → עמוד תודה + PDF
 
-// אחרי:
-const link = `${window.location.origin}/exclusivity-form/${data.token}`;
-```
-
-## מה לא צריך לתקן
-
-- `BrokerSharingFormPage.tsx` - כבר משתמש בפורמט הנכון עם `/`
-
-## תוצאה צפויה
-
-אחרי התיקון, הקישורים שייווצרו יהיו:
-- `https://www.ctmarketproperties.com/memorandum-form/ecdc74a63c76af39baa65d5a22e7c9b3`
-- `https://www.ctmarketproperties.com/sale-memorandum-form/abc123...`
-- `https://www.ctmarketproperties.com/exclusivity-form/def456...`
-
-והם יעבדו כי React Router יזהה את הנתיב ויטען את הטופס עם הנתונים מהדאטאבייס.
+## סיכום
+זה לא עבודה מחדש - רק תיקון של 2 שורות בכל קובץ!
