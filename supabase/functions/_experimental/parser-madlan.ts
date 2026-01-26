@@ -203,6 +203,44 @@ function findPropertyBlocks(markdown: string): string[] {
 // Block Parsing - Extract fields from either format
 // ============================================
 
+/**
+ * Known Tel Aviv neighborhoods with patterns for detection
+ */
+const KNOWN_NEIGHBORHOODS = [
+  { pattern: /צפון\s*(?:ה)?ישן|הצפון\s*הישן/i, value: 'צפון_ישן', label: 'צפון ישן' },
+  { pattern: /צפון\s*(?:ה)?חדש|הצפון\s*החדש/i, value: 'צפון_חדש', label: 'צפון חדש' },
+  { pattern: /נמל\s*תל\s*אביב|יורדי\s*הסירה/i, value: 'נמל_תל_אביב', label: 'נמל תל אביב' },
+  { pattern: /לב\s*(?:ה)?עיר/i, value: 'לב_העיר', label: 'לב העיר' },
+  { pattern: /פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
+  { pattern: /נווה\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
+  { pattern: /כרם\s*(?:ה)?תימנים/i, value: 'כרם_התימנים', label: 'כרם התימנים' },
+  { pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
+  { pattern: /רמת\s*אביב\s*ג'?/i, value: 'רמת_אביב_ג', label: "רמת אביב ג'" },
+  { pattern: /רמת\s*אביב/i, value: 'רמת_אביב', label: 'רמת אביב' },
+  { pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
+  { pattern: /נווה\s*אביבים/i, value: 'נווה_אביבים', label: 'נווה אביבים' },
+  { pattern: /יפו\s*(?:ה)?עתיקה|עג'?מי/i, value: 'יפו', label: 'יפו' },
+  { pattern: /שפירא/i, value: 'שפירא', label: 'שפירא' },
+  { pattern: /מונטיפיורי/i, value: 'מונטיפיורי', label: 'מונטיפיורי' },
+  { pattern: /הדר\s*יוסף/i, value: 'הדר_יוסף', label: 'הדר יוסף' },
+  { pattern: /בבלי/i, value: 'בבלי', label: 'בבלי' },
+  { pattern: /קרית\s*שלום/i, value: 'קרית_שלום', label: 'קרית שלום' },
+  { pattern: /נוה\s*שאנן|נווה\s*שאנן/i, value: 'נווה_שאנן', label: 'נווה שאנן' },
+  { pattern: /שכונת\s*התקווה/i, value: 'התקווה', label: 'שכונת התקווה' },
+];
+
+/**
+ * Extract neighborhood from entire block text
+ */
+function extractNeighborhoodFromBlock(block: string): { label: string; value: string } | null {
+  for (const { pattern, value, label } of KNOWN_NEIGHBORHOODS) {
+    if (pattern.test(block)) {
+      return { value, label };
+    }
+  }
+  return null;
+}
+
 function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): ParsedProperty | null {
   // Extract listing OR project URL and ID
   const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/(listings|projects)\/([^\)\s\]]+)/);
@@ -211,6 +249,12 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   const urlType = urlMatch[1]; // 'listings' or 'projects'
   const sourceId = urlMatch[2].replace(/\)$/, ''); // Clean trailing )
   const sourceUrl = `https://www.madlan.co.il/${urlType}/${sourceId}`;
+  
+  // Filter out projects (new construction) - we only want second-hand listings
+  const isProject = urlType === 'projects' || block.includes('פרויקט') || block.includes('מקבלן');
+  if (isProject) {
+    return null; // Skip projects entirely
+  }
   
   // Determine block format and split accordingly
   const isCompactBlock = block.includes('\\\\') && block.startsWith('[![');
@@ -246,25 +290,29 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   const sizePart = parts.find(p => /\d+\s*מ"ר|\d+\s*מ״ר/.test(p));
   const size = sizePart ? extractSize(sizePart) : null;
   
-  // Extract address and neighborhood from "Type, Street, Neighborhood" pattern
+  // Extract address and neighborhood
   let address: string | null = null;
   let neighborhood: string | null = null;
   let neighborhoodValue: string | null = null;
-  const city = 'תל אביב יפו'; // Default for now, can be extracted from title
+  const city = 'תל אביב יפו';
+  
+  // First: Try to extract neighborhood from the ENTIRE block (most reliable)
+  const blockNeighborhood = extractNeighborhoodFromBlock(block);
+  if (blockNeighborhood) {
+    neighborhood = blockNeighborhood.label;
+    neighborhoodValue = blockNeighborhood.value;
+  }
   
   // Look for property type patterns like "דירה, כתובת, שכונה"
   for (const part of parts) {
-    // Match: "דירה, כתובת, שכונה" or "דירת גג, כתובת, שכונה" etc.
     const typePattern = /^(דירה|דירת גג|פנטהאוז|סטודיו|גן|קוטג'?|בית פרטי)/;
     if (typePattern.test(part)) {
-      // Split by comma and extract
       const segments = part.split(',').map(s => s.trim());
       if (segments.length >= 2) {
-        // Skip the type (first segment), street is usually second
         address = cleanText(segments[1]);
       }
-      if (segments.length >= 3) {
-        // Neighborhood is usually the last segment (remove trailing ] if present)
+      // If we didn't find neighborhood from block, try from segments
+      if (!neighborhood && segments.length >= 3) {
         const rawNeighborhood = cleanText(segments[segments.length - 1].replace(/\]$/, ''));
         const neighborhoodInfo = extractNeighborhood(rawNeighborhood, city);
         if (neighborhoodInfo) {
@@ -283,7 +331,6 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     const altMatch = block.match(/\[!\[([^\]]+)\]/);
     if (altMatch) {
       const altText = altMatch[1];
-      // Alt text is usually "Street, City"
       const altParts = altText.split(',').map(p => p.trim());
       if (altParts.length >= 1 && !altParts[0].includes('תל אביב')) {
         address = cleanText(altParts[0]);
@@ -291,17 +338,13 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     }
   }
   
-  // Skip if no useful data extracted - but be lenient (at least one field)
-  // For projects, rooms might be the only field
-  const isProject = block.includes('/projects/') || block.includes('פרויקט');
-  if (!price && !rooms && !address && !size && !isProject) return null;
+  // Skip if no useful data extracted
+  if (!price && !rooms && !address && !size) return null;
   
-  // Detect broker - check for explicit markers OR agent image links
-  // Projects are always considered "broker" (developer)
+  // Detect broker
   const hasAgentImage = block.includes('[![](https://') && (block.includes('/agents/') || block.includes('/developers/'));
   const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך/.test(block);
-  const isProjectDeveloper = isProject;
-  const isBroker = hasBrokerKeyword || hasAgentImage || isProjectDeveloper || detectBroker(block);
+  const isBroker = hasBrokerKeyword || hasAgentImage || detectBroker(block);
   
   // Build title
   const roomsLabel = rooms ? `${rooms} חדרים` : '';
