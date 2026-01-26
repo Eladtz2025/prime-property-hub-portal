@@ -294,11 +294,11 @@ const SaleMemorandumFormPage = () => {
         onDownloadPDF={() => downloadSaleMemorandumPDF(savedFormData)}
         onFinish={() => window.close()}
         isRTL={isRTL}
-        onSendWhatsApp={handleSendWhatsApp}
-        sendWhatsAppText={t.sendViaWhatsApp}
-        whatsAppSentText={t.whatsAppSent}
-        whatsAppErrorText={t.whatsAppError}
-        sendingWhatsAppText={t.sendingWhatsApp}
+        onSendWhatsApp={isRemoteSigning ? undefined : handleSendWhatsApp}
+        sendWhatsAppText={isRemoteSigning ? undefined : t.sendViaWhatsApp}
+        whatsAppSentText={isRemoteSigning ? undefined : t.whatsAppSent}
+        whatsAppErrorText={isRemoteSigning ? undefined : t.whatsAppError}
+        sendingWhatsAppText={isRemoteSigning ? undefined : t.sendingWhatsApp}
       />
     );
   }
