@@ -104,7 +104,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [roomsMax, setRoomsMax] = useState<string>('');
   const [minBudget, setMinBudget] = useState<string>('');
   const [maxBudget, setMaxBudget] = useState<string>('');
-  const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all');
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState<string[]>([]);
   const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
   
   // Applied filters state - starts with default values to show all properties
@@ -113,7 +113,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     roomsMax: string;
     minBudget: string;
     maxBudget: string;
-    neighborhood: string;
+    neighborhoods: string[];
     features: string[];
     status: string;
     propertyType: string;
@@ -123,7 +123,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     roomsMax: '',
     minBudget: '',
     maxBudget: '',
-    neighborhood: 'all',
+    neighborhoods: [],
     features: [],
     status: 'all',
     propertyType: 'all',
@@ -387,17 +387,22 @@ export const ScoutedPropertiesTable: React.FC = () => {
     if (filters.maxBudget) {
       query = query.lte('price', parseInt(filters.maxBudget));
     }
-    if (filters.neighborhood !== 'all') {
-      // Use neighborhood groups for consolidated matching
-      const patterns = NEIGHBORHOOD_GROUPS[filters.neighborhood] || [filters.neighborhood];
-      const orConditions = patterns.map(p => `neighborhood.ilike.%${p}%`).join(',');
+    if (filters.neighborhoods.length > 0) {
+      // Use neighborhood groups for consolidated matching - multi-select with OR logic
+      const allPatterns: string[] = [];
+      filters.neighborhoods.forEach(n => {
+        const patterns = NEIGHBORHOOD_GROUPS[n] || [n];
+        allPatterns.push(...patterns);
+      });
+      const orConditions = allPatterns.map(p => `neighborhood.ilike.%${p}%`).join(',');
       query = query.or(orConditions);
     }
-    // Filter by features in DB query (JSONB)
+    // Filter by features in DB query (JSONB) - OR logic (show properties with ANY of the features)
     if (filters.features.length > 0) {
-      filters.features.forEach(feature => {
-        query = query.eq(`features->>${feature}`, 'true');
-      });
+      const orConditions = filters.features
+        .map(f => `features->>${f}.eq.true`)
+        .join(',');
+      query = query.or(orConditions);
     }
     // Text search - search in title, address, neighborhood (DB level)
     if (filters.searchTerm) {
@@ -690,12 +695,21 @@ export const ScoutedPropertiesTable: React.FC = () => {
       roomsMax,
       minBudget,
       maxBudget,
-      neighborhood: neighborhoodFilter,
+      neighborhoods: neighborhoodFilter,
       features: featuresFilter,
       status: statusFilter,
       propertyType: propertyTypeFilter,
       searchTerm
     });
+  };
+
+  // Toggle neighborhood filter (multi-select)
+  const toggleNeighborhood = (neighborhood: string) => {
+    setNeighborhoodFilter(prev => 
+      prev.includes(neighborhood) 
+        ? prev.filter(n => n !== neighborhood)
+        : [...prev, neighborhood]
+    );
   };
 
   // Toggle feature filter
@@ -718,14 +732,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setRoomsMax('');
     setMinBudget('');
     setMaxBudget('');
-    setNeighborhoodFilter('all');
+    setNeighborhoodFilter([]);
     setFeaturesFilter([]);
     setAppliedFilters({
       roomsMin: '',
       roomsMax: '',
       minBudget: '',
       maxBudget: '',
-      neighborhood: 'all',
+      neighborhoods: [],
       features: [],
       status: 'all',
       propertyType: 'all',
@@ -736,7 +750,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   // Check if any filters are active
   const hasActiveFilters = statusFilter !== 'all' || propertyTypeFilter !== 'all' || 
     roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
-    neighborhoodFilter !== 'all' || featuresFilter.length > 0;
+    neighborhoodFilter.length > 0 || featuresFilter.length > 0;
 
   return (
     <>
@@ -1001,7 +1015,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     פילטרים
                     {hasActiveFilters && (
                       <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                        {(roomsMin ? 1 : 0) + (roomsMax ? 1 : 0) + (minBudget ? 1 : 0) + (maxBudget ? 1 : 0) + (neighborhoodFilter !== 'all' ? 1 : 0) + featuresFilter.length + (statusFilter !== 'all' ? 1 : 0) + (propertyTypeFilter !== 'all' ? 1 : 0)}
+                        {(roomsMin ? 1 : 0) + (roomsMax ? 1 : 0) + (minBudget ? 1 : 0) + (maxBudget ? 1 : 0) + neighborhoodFilter.length + featuresFilter.length + (statusFilter !== 'all' ? 1 : 0) + (propertyTypeFilter !== 'all' ? 1 : 0)}
                       </Badge>
                     )}
                   </Button>
@@ -1069,20 +1083,39 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Neighborhood - Consolidated groups */}
+                    {/* Neighborhood - Multi-select with Checkboxes */}
                     <div>
-                      <label className="text-sm font-medium mb-2 block">שכונה</label>
-                      <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-                        <SelectTrigger className="w-full h-10">
-                          <SelectValue placeholder="כל השכונות" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">כל השכונות</SelectItem>
-                          {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
-                            <SelectItem key={group} value={group}>{group}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <label className="text-sm font-medium mb-2 block">שכונות</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full h-10 justify-between">
+                            <span className="text-sm">
+                              {neighborhoodFilter.length === 0 
+                                ? 'כל השכונות' 
+                                : `${neighborhoodFilter.length} שכונות נבחרו`}
+                            </span>
+                            {neighborhoodFilter.length > 0 && (
+                              <Badge className="h-5 px-1.5">{neighborhoodFilter.length}</Badge>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 max-h-64 overflow-y-auto" align="start">
+                          <div className="space-y-2">
+                            {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
+                              <div key={group} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`mobile-neighborhood-${group}`}
+                                  checked={neighborhoodFilter.includes(group)}
+                                  onCheckedChange={() => toggleNeighborhood(group)}
+                                />
+                                <label htmlFor={`mobile-neighborhood-${group}`} className="text-sm cursor-pointer flex-1">
+                                  {group}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
                     {/* Status */}
@@ -1226,18 +1259,37 @@ export const ScoutedPropertiesTable: React.FC = () => {
               />
             </div>
 
-            {/* Neighborhood */}
-            <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-              <SelectTrigger className="w-[110px] h-8 text-sm">
-                <SelectValue placeholder="שכונה" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל השכונות</SelectItem>
-                {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
-                  <SelectItem key={group} value={group}>{group}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Neighborhood - Multi-select */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-8 min-w-[110px] justify-between text-sm">
+                  <span>
+                    {neighborhoodFilter.length === 0 
+                      ? 'שכונות' 
+                      : `${neighborhoodFilter.length} שכונות`}
+                  </span>
+                  {neighborhoodFilter.length > 0 && (
+                    <Badge className="h-4 px-1 ml-1 text-[10px]">{neighborhoodFilter.length}</Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 max-h-64 overflow-y-auto" align="start">
+                <div className="space-y-2">
+                  {Object.keys(NEIGHBORHOOD_GROUPS).map(group => (
+                    <div key={group} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`desktop-neighborhood-${group}`}
+                        checked={neighborhoodFilter.includes(group)}
+                        onCheckedChange={() => toggleNeighborhood(group)}
+                      />
+                      <label htmlFor={`desktop-neighborhood-${group}`} className="text-sm cursor-pointer flex-1">
+                        {group}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* Property Type */}
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
