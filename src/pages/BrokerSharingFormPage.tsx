@@ -206,6 +206,8 @@ const BrokerSharingFormPage = () => {
 
     setSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const formData = getFormData();
       const newToken = crypto.randomUUID();
       const expiresAt = new Date();
@@ -219,6 +221,7 @@ const BrokerSharingFormPage = () => {
           language,
           status: 'pending',
           expires_at: expiresAt.toISOString(),
+          created_by: user?.id,
           form_data: formData as unknown as Json,
         }]);
 
