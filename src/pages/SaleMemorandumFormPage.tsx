@@ -225,11 +225,14 @@ const SaleMemorandumFormPage = () => {
 
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('legal_form_tokens')
         .insert({
           form_type: 'sale_memorandum',
           language,
+          created_by: user?.id,
           form_data: {
             property_address: propertyAddress,
             property_city: propertyCity,
