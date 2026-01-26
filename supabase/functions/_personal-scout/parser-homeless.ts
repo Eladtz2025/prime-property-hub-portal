@@ -2,6 +2,7 @@
  * Homeless Parser - Personal Scout Version
  * 
  * ISOLATED COPY - Does not modify production code
+ * Uses text-based extraction for robustness against variable HTML layouts
  */
 
 import { load as cheerioLoad } from "npm:cheerio@1.0.0";
@@ -9,6 +10,7 @@ import {
   extractPrice,
   extractRooms,
   extractFloor,
+  extractSize,
   extractCity,
   extractNeighborhood,
   cleanText,
@@ -39,7 +41,7 @@ export function parseHomelessHtml(
       const $row = $(element);
       const tds = $row.find('td');
       
-      if (tds.length < 8) {
+      if (tds.length < 5) {
         errors.push(`Row ${index}: Not enough cells (${tds.length})`);
         return;
       }
@@ -47,15 +49,47 @@ export function parseHomelessHtml(
       const rowId = $row.attr('id') || '';
       const numericId = rowId.replace('ad_', '') || `${index}`;
       
-      const propertyTypeText = cleanText($(tds[2]).text());
-      const cityText = cleanText($(tds[3]).text());
-      const neighborhoodText = cleanText($(tds[4]).text());
-      const streetText = cleanText($(tds[5]).text());
-      const roomsText = cleanText($(tds[6]).text());
-      const floorText = cleanText($(tds[7]).text());
-      const priceText = cleanText($(tds[8]).text());
-      const entryDateText = tds.length > 9 ? cleanText($(tds[9]).text()) : null;
+      // Get full row text for robust extraction
+      const fullRowText = $row.text();
       
+      // Extract data from full row text (more robust than fixed columns)
+      const price = extractPrice(fullRowText);
+      const rooms = extractRooms(fullRowText);
+      const floor = extractFloor(fullRowText);
+      const size = extractSize(fullRowText);
+      
+      // Try to extract structured data from cells when available
+      // But use flexible detection instead of fixed column indices
+      let cityText = '';
+      let neighborhoodText = '';
+      let streetText = '';
+      let propertyTypeText = '';
+      
+      // Scan cells for content patterns
+      tds.each((cellIndex: number, cell: any) => {
+        const cellText = cleanText($(cell).text());
+        if (!cellText) return;
+        
+        // Property type detection
+        if (/דירה|פנטהאוז|סטודיו|קוטג'?|בית/.test(cellText) && !propertyTypeText) {
+          propertyTypeText = cellText;
+        }
+        // City detection (common Israeli cities)
+        else if (/תל.?אביב|רמת.?גן|גבעתיים|הרצליה|רעננה|חולון|בת.?ים|ראשון|פתח.?תקווה|ירושלים|חיפה|באר.?שבע|נתניה|אשדוד|כפר.?סבא|רחובות|הוד.?השרון|מודיעין|נס.?ציונה|רמת.?השרון|גבעת.?שמואל/.test(cellText) && !cityText) {
+          cityText = cellText;
+        }
+        // Street detection (Hebrew text that's not a city)
+        else if (cellText.length > 3 && /[א-ת]/.test(cellText) && !streetText && cellIndex > 1) {
+          // Could be street or neighborhood
+          if (!neighborhoodText) {
+            neighborhoodText = cellText;
+          } else if (!streetText) {
+            streetText = cellText;
+          }
+        }
+      });
+      
+      // Extract link from row
       let sourceUrl = '';
       const linkElement = $row.find('a[href*="homeless.co.il"]').first();
       if (linkElement.length) {
@@ -67,9 +101,13 @@ export function parseHomelessHtml(
         }
       }
       
-      const city = extractCity(cityText) || cityText || null;
-      const neighborhood = extractNeighborhood(neighborhoodText, city);
+      // Normalize city
+      const city = extractCity(cityText) || cityText || extractCity(fullRowText) || null;
       
+      // Extract neighborhood with city context
+      const neighborhood = extractNeighborhood(neighborhoodText, city) || extractNeighborhood(fullRowText, city);
+      
+      // Build address
       let address: string | null = null;
       if (streetText) {
         address = neighborhoodText 
@@ -77,13 +115,14 @@ export function parseHomelessHtml(
           : `${streetText}, ${cityText}`;
       }
       
-      const title = buildTitle(propertyTypeText, roomsText, neighborhoodText || cityText);
+      // Build title
+      const roomsLabel = rooms ? `${rooms}` : '';
+      const title = buildTitle(propertyTypeText, roomsLabel, neighborhood?.label || neighborhoodText || cityText || '');
       
-      const price = extractPrice(priceText);
-      const rooms = extractRooms(roomsText);
-      const floor = extractFloor(floorText);
-      const entryDate = entryDateText ? parseHebrewDate(entryDateText) : null;
+      // Parse entry date from full text
+      const entryDate = parseHebrewDate(fullRowText);
       
+      // Skip rows with no meaningful data
       if (!price && !rooms && !city) {
         errors.push(`Row ${index}: No meaningful data extracted`);
         return;
@@ -100,20 +139,17 @@ export function parseHomelessHtml(
         address,
         price,
         rooms,
-        size: null,
+        size,
         floor,
         property_type: propertyType,
-        is_private: true,
+        is_private: true, // Homeless is primarily private listings
         entry_date: entryDate,
         raw_data: {
           propertyTypeText,
           cityText,
           neighborhoodText,
           streetText,
-          roomsText,
-          floorText,
-          priceText,
-          entryDateText
+          fullRowText: fullRowText.substring(0, 300)
         }
       };
       
@@ -128,6 +164,7 @@ export function parseHomelessHtml(
   const stats = calculateStats(properties);
   
   console.log(`[personal-scout/parser-homeless] Completed: ${properties.length} properties, ${errors.length} errors`);
+  console.log(`[personal-scout/parser-homeless] Stats: price=${stats.with_price}, rooms=${stats.with_rooms}, size=${stats.with_size}`);
   
   return {
     success: true,
