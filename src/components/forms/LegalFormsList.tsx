@@ -107,7 +107,9 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
           agent_signature: String(rawData.agent_signature || ''),
           language: (form.language || 'he') as 'he' | 'en',
         };
-        await generateMemorandumPDF(formData);
+        const pdf = await generateMemorandumPDF(formData);
+        const fileName = `memorandum-${form.client_name?.replace(/\s+/g, '-') || 'form'}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        pdf.save(fileName);
         toast.success('ה-PDF הורד בהצלחה');
       } else if (form.form_type === 'exclusivity') {
         const formData = {
@@ -133,7 +135,9 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
           agent_signature: String(rawData.agent_signature || ''),
           language: (form.language || 'he') as 'he' | 'en',
         };
-        await generateExclusivityPDF(formData);
+        const pdf = await generateExclusivityPDF(formData);
+        const fileName = `exclusivity-${form.client_name?.replace(/\s+/g, '-') || 'form'}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        pdf.save(fileName);
         toast.success('ה-PDF הורד בהצלחה');
       } else if (form.form_type === 'broker_sharing') {
         const formData = {
@@ -288,22 +292,24 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
                         PDF
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const routes: Record<string, string> = {
-                          memorandum: `/memorandum-form/${form.id}`,
-                          exclusivity: `/exclusivity-form/${form.id}`,
-                          broker_sharing: `/broker-sharing-form/${form.id}`,
-                        };
-                        window.open(routes[form.form_type] || `/memorandum-form/${form.id}`, '_blank');
-                      }}
-                      className="gap-1.5"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      פתח
-                    </Button>
+                    {form.status !== 'signed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const routes: Record<string, string> = {
+                            memorandum: `/memorandum-form/${form.id}`,
+                            exclusivity: `/exclusivity-form/${form.id}`,
+                            broker_sharing: `/broker-sharing-form/${form.id}`,
+                          };
+                          window.open(routes[form.form_type] || `/memorandum-form/${form.id}`, '_blank');
+                        }}
+                        className="gap-1.5"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        פתח
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
