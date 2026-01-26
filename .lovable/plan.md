@@ -1,98 +1,141 @@
 
+# תיקון Personal Scout - 4 בעיות קריטיות
 
-# תוכנית: הוספת Cron יומי + בדיקת סטטיסטיקות
+## הבעיות שמצאתי
 
-## סיכום מה שמצאתי
+### 1. Property Type לא ממופה נכון
+**הבעיה:** רוני מוגדר כ-`property_type: "rental"` אבל הקוד מצפה ל-`"rent"` או `"sale"`
+**התוצאה:** ה-URL יוצא `/realestate/forsale` במקום `/realestate/rent`
 
-### המערכת עובדת - תיווך כלול! ✅
-הפרסר **לא מסנן** נכסי תיווך - הוא רק מסמן אותם:
 ```typescript
-is_private: !isBroker  // false = תיווך, true = פרטי
+// שורה 89 - הקוד הנוכחי
+const propertyType = (lead.property_type as 'rent' | 'sale') || 'rent';
+// rental לא ממופה ל-rent, אז הוא נשאר כמו שהוא ולא עובד
 ```
 
-### סטטיסטיקות מהריצה
-| מדד | ערך |
-|-----|-----|
-| לקוחות eligible | 35 |
-| לקוחות עם matches | 2 (Eli Aviad, Ziv Yogev) |
-| סטטוס ריצה | running |
+### 2. מחירים ביחידות שגויות
+**הבעיה:** רוני מוגדר עם `budget_max: 7000` (שמייצג 7,000,000₪ = 7M)
+**התוצאה:** ה-URL מכיל `price=6500-7000` במקום `price=6500000-7000000`
 
-### דוגמה מהלוגים
-```text
-בנדתה:
-- madlan page 3: Input 31, Passed 9
-- Rejection: price_too_high(16), too_few_rooms(4), too_many_rooms(2)
-- homeless page 1: Input 45, Passed 0
-- Rejection: price_too_high(43), wrong_neighborhood(1)
-```
+**הפתרון:** לזהות אם זה שכירות (מחיר נמוך) או מכירה (צריך להכפיל ב-1000)
 
-### למה רוני עדיין לא נסרק?
-הריצה מעבדת 35 לקוחות ברצף עם 5 שניות delay בין כל אחד + 9 דפים לכל אחד (3 דפים × 3 אתרים). רוני כנראה נמצא מאוחר בתור.
+### 3. פיצ'רים לא מסוננים
+**הבעיה:** רוני צריך מרפסת (required+flexible) וחצר (required+flexible)
+**התוצאה:** כרגע הקוד **לא** מסנן לפי פיצ'רים כי הוא commented out
+
+**האתגר:** הפרסרים הנוכחיים לא מחלצים פיצ'רים מהמודעות!
+- יד2/מדלן/הומלס - לא מפרסרים balcony/roof/yard
+
+**הפתרון:** להוסיף חילוץ פיצ'רים לפרסרים + להפעיל את הסינון
+
+### 4. רק 3 דפים מוגבל מדי
+**הבעיה:** `MAX_PAGES_PER_SOURCE = 3` זה מעט מאוד
+**התוצאה:** מפספסים הרבה נכסים פוטנציאליים
+
+**הפתרון:** להגדיל ל-5-7 דפים לפחות
 
 ---
 
-## מה אעשה
+## שינויים נדרשים
 
-### 1. הוספת Cron יומי ב-01:00 IST (23:00 UTC)
-אריץ את ה-SQL הבא דרך הכלי:
+### קובץ 1: `personal-scout-worker/index.ts`
 
-```sql
-SELECT cron.schedule(
-  'personal-scout-daily',
-  '0 23 * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/personal-scout-trigger',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVApI8wFaVYeLYJec-2vFcGeYPe9mM"}'::jsonb,
-    body := '{}'::jsonb
-  ) as request_id;
-  $$
-);
+```typescript
+// שורה 89 - תיקון המרת property_type
+const propertyType = normalizePropertyType(lead.property_type);
+
+// פונקציה חדשה
+function normalizePropertyType(type: string | null): 'rent' | 'sale' {
+  if (!type) return 'rent';
+  // rental, rent, השכרה -> rent
+  if (type.toLowerCase().includes('rent') || type === 'rental' || type === 'השכרה') {
+    return 'rent';
+  }
+  // sale, מכירה -> sale
+  return 'sale';
+}
 ```
 
-### 2. הרצת בדיקה ספציפית לרוני
-אפעיל ידנית את ה-worker רק עבור רוני לראות מה קורה:
-
-```bash
-curl -X POST \
-  https://jswumsdymlooeobrxict.supabase.co/functions/v1/personal-scout-worker \
-  -d '{"lead_id": "6b95f5af-fa94-47a2-87f7-e0c17934b91b"}'
+```typescript
+// שורה 22 - הגדלת מספר דפים
+const MAX_PAGES_PER_SOURCE = 5; // היה 3
 ```
 
----
+### קובץ 2: `_personal-scout/url-builder.ts`
 
-## מידע שייאסף עבור כל לקוח
-
-המערכת כבר אוספת סטטיסטיקות מלאות בלוגים:
-
-| שדה | מקור |
-|-----|------|
-| דפים שנסרקו per source | `stats.by_source[source].scraped` |
-| נכסים שנפרסו per source | `stats.by_source[source].parsed` |
-| התאמות per source | `stats.by_source[source].matched` |
-| סיבות סינון | `filter_reasons` |
-
-### דוגמה מהתוצאה JSON:
-```json
-{
-  "stats": {
-    "total_scraped": 9,
-    "total_parsed": 180,
-    "total_filtered": 25,
-    "by_source": {
-      "yad2": { "scraped": 3, "parsed": 60, "matched": 8 },
-      "madlan": { "scraped": 3, "parsed": 80, "matched": 12 },
-      "homeless": { "scraped": 3, "parsed": 40, "matched": 5 }
+```typescript
+// תיקון המחירים - זיהוי אוטומטי לפי סוג עסקה
+function buildYad2Url(...) {
+  // מחירי שכירות: עד 50,000₪ - השתמש כמו שהם
+  // מחירי מכירה: מעל 50,000₪ - כפול ב-1000 אם נראה קטן
+  
+  let adjustedMinPrice = minPrice;
+  let adjustedMaxPrice = maxPrice;
+  
+  if (propertyType === 'sale') {
+    // אם המחיר נראה כמו אלפים (למשל 7000 במקום 7000000)
+    if (maxPrice && maxPrice < 100000) {
+      adjustedMinPrice = minPrice ? minPrice * 1000 : null;
+      adjustedMaxPrice = maxPrice * 1000;
     }
+  }
+  
+  if (adjustedMinPrice || adjustedMaxPrice) {
+    params.set('price', `${adjustedMinPrice || ''}-${adjustedMaxPrice || ''}`);
   }
 }
 ```
+
+### קובץ 3: `_personal-scout/feature-filter.ts`
+
+**הפעלת סינון פיצ'רים (ללא חילוץ מהפרסר כרגע):**
+
+```typescript
+// שורה 115-140 - הסרת ה-comments והוספת לוגיקה חכמה
+// אם הלקוח דורש פיצ'ר אבל הוא FLEXIBLE - לא מסנן החוצה
+// אם הלקוח דורש פיצ'ר ללא FLEXIBLE - מסנן רק אם יש לנו מידע
+
+// מרפסת/גג/חצר - OR logic
+if (hasOutdoorRequirement(lead)) {
+  // לקוח צריך לפחות אחד מ: מרפסת, גג, חצר
+  const hasAnyOutdoor = prop.has_balcony || prop.has_roof || prop.has_yard;
+  const allFlexible = allOutdoorFlexible(lead);
+  
+  // אם כולם גמישים - לא מסנן
+  // אם לא גמישים ויש מידע שאין - מסנן
+  if (!allFlexible && hasAnyOutdoor === false) {
+    return 'no_outdoor_space';
+  }
+}
+```
+
+### קובץ 4: פרסרים - הוספת חילוץ פיצ'רים (אופציונלי)
+
+**זה יותר מורכב** - צריך לזהות פיצ'רים מהטקסט:
+- יד2: "מרפסת", "חניה", "מעלית", "ממ\"ד"
+- מדלן: אייקונים בטקסט
+- הומלס: עמודות ספציפיות
+
+**הצעה:** לעכשיו, לא לסנן לפי פיצ'רים כי אין מידע מהפרסר.
+נציג את כל התוצאות ובעתיד נוסיף חילוץ פיצ'רים.
+
+---
+
+## סיכום שינויים
+
+| קובץ | שינוי | השפעה |
+|------|-------|-------|
+| `personal-scout-worker/index.ts` | המרת `rental`→`rent` | יד2 יעבוד |
+| `personal-scout-worker/index.ts` | `MAX_PAGES = 5` | יותר תוצאות |
+| `url-builder.ts` | תיקון מחירי מכירה | מחירים נכונים |
+| `feature-filter.ts` | הפעלת סינון OR לפיצ'רים | מרפסת/גג/חצר |
 
 ---
 
 ## שלבי ביצוע
 
-1. **הוספת Cron** - SQL לתזמון יומי
-2. **בדיקת רוני** - הרצה ידנית עם הפרמטרים שלו
-3. **אופציונלי**: הוספת שמירת stats לטבלה לצפייה בהיסטוריה
-
+1. **תיקון property_type** - הוספת פונקציית נורמליזציה
+2. **תיקון מחירים** - לוגיקה לזיהוי יחידות
+3. **הגדלת דפים** - מ-3 ל-5
+4. **פיצ'רים** - הפעלת סינון OR עם גמישות
+5. **Deploy + בדיקה** - ריצה חוזרת על רוני
