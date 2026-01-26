@@ -1407,6 +1407,120 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_scout_matches: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          floor: number | null
+          id: string
+          is_private: boolean | null
+          is_reviewed: boolean | null
+          lead_id: string | null
+          neighborhood: string | null
+          notes: string | null
+          price: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rooms: number | null
+          run_id: string | null
+          size: number | null
+          source: string
+          source_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          floor?: number | null
+          id?: string
+          is_private?: boolean | null
+          is_reviewed?: boolean | null
+          lead_id?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          price?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rooms?: number | null
+          run_id?: string | null
+          size?: number | null
+          source: string
+          source_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          floor?: number | null
+          id?: string
+          is_private?: boolean | null
+          is_reviewed?: boolean | null
+          lead_id?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          price?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rooms?: number | null
+          run_id?: string | null
+          size?: number | null
+          source?: string
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_scout_matches_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "contact_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_scout_matches_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "personal_scout_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_scout_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          leads_completed: number | null
+          leads_count: number | null
+          started_at: string | null
+          status: string | null
+          total_matches: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          leads_completed?: number | null
+          leads_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_matches?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          leads_completed?: number | null
+          leads_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_matches?: number | null
+        }
+        Relationships: []
+      }
       pipeline_runs: {
         Row: {
           branch: string | null

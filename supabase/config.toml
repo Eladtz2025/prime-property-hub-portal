@@ -128,3 +128,9 @@ verify_jwt = false
 
 [functions.test-no-ai-scout]
 verify_jwt = false
+
+[functions.personal-scout-trigger]
+verify_jwt = false
+
+[functions.personal-scout-worker]
+verify_jwt = false
