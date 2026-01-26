@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,8 @@ import { FormSignatureBox } from '@/components/forms/FormSignatureBox';
 import { FormThankYouScreen } from '@/components/forms/FormThankYouScreen';
 
 const ExclusivityFormPage = () => {
+  const { token } = useParams<{ token?: string }>();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
   const isRemoteSigning = !!token;
 
   const [language, setLanguage] = useState<ExclusivityLanguage>('he');

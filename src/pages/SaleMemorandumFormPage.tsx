@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,8 +19,8 @@ import { FormThankYouScreen } from '@/components/forms/FormThankYouScreen';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 
 const SaleMemorandumFormPage = () => {
+  const { token } = useParams<{ token?: string }>();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
   const isRemoteSigning = !!token;
 
   const [language, setLanguage] = useState<SaleMemorandumLanguage>('he');
