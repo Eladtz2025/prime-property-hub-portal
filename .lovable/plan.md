@@ -1,117 +1,115 @@
 
-# תוכנית: שלושה שיפורים ל-Personal Scout
+# תוכנית: הוספת Features ב-URL ל-Yad2 ו-Madlan
 
-## 1. תיקון באג Homeless - הוספת await
+## סיכום המחקר
 
-**בעיה:** ה-parser של Homeless הוא `async` אבל נקרא בלי `await`
+### Yad2 - תומך בפרמטרים!
+מהמחקר מצאתי ש-Yad2 **כן** תומך בפרמטרי URL לסינון features:
+- `balcony=1` - מרפסת
+- `parking=1` - חניה
+- `elevator=1` - מעלית
+- `shelter=1` - ממ"ד
 
-**קובץ:** `supabase/functions/personal-scout-worker/index.ts`
+דוגמה: `https://yad2.co.il/realestate/forsale?shelter=1` מציגה "נדל"ן למכירה עם ממד"
 
-**שינוי בשורה 154-155:**
-```typescript
-// לפני
-} else if (source === 'homeless') {
-  properties = parseHomelessHtml(html, propertyType).properties;
-}
+### Madlan - לא תומך
+מהמחקר נראה ש-Madlan **לא** תומך בסינון features דרך URL. פרמטר ה-`filters` שלהם תומך רק במחיר וחדרים בפורמט `_price-range_rooms-range`.
 
-// אחרי
-} else if (source === 'homeless') {
-  const result = await parseHomelessHtml(html, propertyType);
-  properties = result.properties;
-}
-```
+### Homeless - כבר מיושם
+כבר הוספנו תמיכה ב:
+- `inumber14=on` - מרפסת
+- `inumber12=on` - חניה  
+- `inumber7=on` - מעלית
 
 ---
 
-## 2. הוספת Features ל-URL
+## שינויים נדרשים
 
-### 2.1 עדכון PersonalUrlParams
+### 1. עדכון buildYad2Url להוסיף features
 
 **קובץ:** `supabase/functions/_personal-scout/url-builder.ts`
 
+הפונקציה `buildYad2Url` צריכה לקבל פרמטרים נוספים ולהוסיף אותם ל-URL:
+
 ```typescript
-export interface PersonalUrlParams {
-  source: string;
-  city: string;
-  property_type: 'rent' | 'sale';
-  min_price?: number | null;
-  max_price?: number | null;
-  min_rooms?: number | null;
-  max_rooms?: number | null;
+function buildYad2Url(
+  city: string,
+  propertyType: 'rent' | 'sale',
+  minPrice?: number | null,
+  maxPrice?: number | null,
+  minRooms?: number | null,
+  maxRooms?: number | null,
+  page: number = 1,
   // NEW: Feature filters
-  balcony_required?: boolean | null;
-  parking_required?: boolean | null;
-  elevator_required?: boolean | null;
-  page: number;
+  balconyRequired?: boolean | null,
+  parkingRequired?: boolean | null,
+  elevatorRequired?: boolean | null
+): string {
+  // ...existing code...
+  
+  // NEW: Feature filters
+  if (balconyRequired) {
+    params.set('balcony', '1');
+  }
+  if (parkingRequired) {
+    params.set('parking', '1');
+  }
+  if (elevatorRequired) {
+    params.set('elevator', '1');
+  }
+  
+  // ...rest of code...
 }
 ```
 
-### 2.2 עדכון buildHomelessUrl
+### 2. עדכון buildPersonalUrl להעביר features ל-Yad2
 
-הוספת פרמטרים ל-Homeless:
-- `inumber14=on` למרפסת
-- נחקור אילו פרמטרים קיימים לחניה/מעלית
+**שינוי בשורה 122-123:**
 
 ```typescript
-// Inside buildHomelessUrl
-if (balconyRequired) {
-  params.push(`inumber14=on`);
+if (source === 'yad2') {
+  return buildYad2Url(
+    city, property_type, 
+    leakedMinPrice, leakedMaxPrice, 
+    min_rooms, max_rooms, page,
+    balcony_required, parking_required, elevator_required  // NEW
+  );
 }
 ```
 
-### 2.3 עדכון Worker להעביר features
+### 3. Madlan - השארה ללא שינוי + הערה
 
+Madlan לא תומך בסינון features ב-URL. ה-features ימשיכו להסנן אחרי הסריקה (post-parse filtering).
+
+נוסיף הערה בקוד:
 ```typescript
-const url = buildPersonalUrl({
-  source,
-  city,
-  property_type: propertyType,
-  min_price: applyBudgetLeakage(lead.budget_min, 'min'),
-  max_price: applyBudgetLeakage(lead.budget_max, 'max'),
-  min_rooms: lead.rooms_min,
-  max_rooms: lead.rooms_max,
-  // Only add if required AND not flexible
-  balcony_required: lead.balcony_required && !lead.balcony_flexible,
-  parking_required: lead.parking_required && !lead.parking_flexible,
-  elevator_required: lead.elevator_required && !lead.elevator_flexible,
-  page
-});
+// NOTE: Madlan does NOT support feature filtering via URL
+// Features are filtered post-parse in feature-filter.ts
 ```
 
 ---
 
-## 3. הוספת זליגה לתקציב (Budget Leakage)
+## תוצאה צפויה
 
-**מיקום:** `supabase/functions/_personal-scout/url-builder.ts`
+| מקור | מחיר ב-URL | חדרים ב-URL | מרפסת ב-URL | חניה ב-URL | מעלית ב-URL |
+|------|-----------|-------------|-------------|-----------|-------------|
+| **Yad2** | ✅ | ✅ | ✅ (חדש!) | ✅ (חדש!) | ✅ (חדש!) |
+| **Madlan** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Homeless** | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-```typescript
-/**
- * Apply budget leakage for more flexible search
- * Expands search range by 10%
- */
-function applyBudgetLeakage(
-  value: number | null | undefined,
-  type: 'min' | 'max'
-): number | null {
-  if (!value) return null;
-  
-  const LEAKAGE_PERCENT = 0.10; // 10%
-  
-  if (type === 'min') {
-    // Lower the minimum by 10%
-    return Math.floor(value * (1 - LEAKAGE_PERCENT));
-  } else {
-    // Raise the maximum by 10%
-    return Math.ceil(value * (1 + LEAKAGE_PERCENT));
-  }
-}
+---
+
+## דוגמה ל-URL אחרי השינויים
+
+**לפני:**
+```
+https://www.yad2.co.il/realestate/rent?city=5000&price=7200-12100&rooms=3-4
 ```
 
-### דוגמא:
-| תקציב מקורי | עם זליגה 10% |
-|------------|--------------|
-| 8,000 - 11,000 | 7,200 - 12,100 |
-| 5,000 - 7,000 | 4,500 - 7,700 |
+**אחרי (עם lead שדורש חניה + מעלית, לא גמיש):**
+```
+https://www.yad2.co.il/realestate/rent?city=5000&price=7200-12100&rooms=3-4&parking=1&elevator=1
+```
 
 ---
 
@@ -119,49 +117,18 @@ function applyBudgetLeakage(
 
 | קובץ | שינוי |
 |------|-------|
-| `url-builder.ts` | הוספת PersonalUrlParams, זליגה, features ב-URL |
-| `personal-scout-worker/index.ts` | await ל-Homeless, העברת features |
+| `url-builder.ts` | הוספת features לסיגנטורת `buildYad2Url` והטמעה |
+| `personal-scout-worker/index.ts` | אין שינוי (כבר מעביר את ה-features ל-buildPersonalUrl) |
 
 ---
 
-## תרשים זרימה אחרי השינויים
+## הערה טכנית
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        IMPROVED FLOW                                     │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Lead: Eli Aviad                                                        │
-│  ─────────────────                                                      │
-│  Budget: 8,000-11,000 → WITH LEAKAGE: 7,200-12,100                     │
-│  Rooms: 3-4                                                             │
-│  Balcony: required + flexible → NOT in URL (flexible=true)             │
-│                                                                          │
-│  URL Builder:                                                            │
-│  ─────────────                                                          │
-│  Homeless: /rent/city=תל אביב$$inumber4=3$$flong3=7200$$flong3_1=12100  │
-│  Madlan: /for-rent/תל-אביב?filters=_7200-12100_3-4                     │
-│  Yad2: /rent?city=5000&price=7200-12100&rooms=3-4                      │
-│                                                                          │
-│          ↓ סריקה מחזירה ~150 נכסים                                       │
-│                                                                          │
-│  Post-Parse Filter:                                                      │
-│  ─────────────────                                                      │
-│  ✓ שכונות (מסננים אחרי)                                                 │
-│  ✓ Features (רק אם לא גמישים)                                           │
-│                                                                          │
-│          ↓ נשארים ~30 נכסים                                              │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+ה-Worker כבר מעביר את ה-features כמו שצריך:
+```typescript
+balcony_required: lead.balcony_required && !lead.balcony_flexible,
+parking_required: lead.parking_required && !lead.parking_flexible,
+elevator_required: lead.elevator_required && !lead.elevator_flexible,
 ```
 
----
-
-## הערה על Lead הנוכחי
-
-ל-Eli Aviad יש:
-- `balcony_required: true` + `balcony_flexible: true`
-- `parking_required: true` + `parking_flexible: true`
-- `elevator_required: true` + `elevator_flexible: true`
-
-כי `flexible=true`, **לא** נוסיף את ה-features ל-URL - הם יסוננו רק אם יש `explicit false` בנכס.
+רק צריך לעדכן את `buildYad2Url` לקבל ולהשתמש בפרמטרים האלה.
