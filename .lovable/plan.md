@@ -1,50 +1,49 @@
 
-# עדכון Personal Scout - תמיכה בפילטרים ב-URL למדלן
+# עדכון Personal Scout - תמיכה בפילטרים ב-URL להומלס
 
 ## ממצא חדש
 
-מדלן **כן תומכת בפילטרים ב-URL** - זה חוסך המון קריאות ל-Firecrawl!
+הומלס **גם תומכת בפילטרים ב-URL** - חיסכון נוסף!
 
-### פורמט הפילטר שזוהה:
+### פורמט הפילטר שזוהה מה-URL:
 ```
-?filters=_{minPrice}-{maxPrice}_{minRooms}-{maxRooms}
+https://www.homeless.co.il/rent/city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000$$inumber14=on
 ```
 
-### הוכחות:
-| URL | תוצאות |
-|-----|--------|
-| ללא פילטר | 1,644 דירות |
-| `?filters=_5000-8000_3-4` | 278 דירות |
-| `?filters=_-10000_3-` | 296 דירות |
+### פירוט הפרמטרים:
+| פרמטר | משמעות | דוגמא |
+|-------|--------|-------|
+| `city` | שם העיר | `תל אביב` |
+| `inumber4` | חדרים (מינימום) | `3` |
+| `flong3` | מחיר מינימלי | `5500` |
+| `flong3_1` | מחיר מקסימלי | `8000` |
+| `inumber14=on` | מרפסת | `on` |
 
-### השפעה על יעילות:
-- **ללא פילטר:** סורקים 1,644 נכסים, מסננים ~95% אחר כך
-- **עם פילטר:** סורקים 278 נכסים רלוונטיים מראש
-- **חיסכון:** ~83% פחות נתונים לעבד!
+### שימו לב למפריד:
+הומלס משתמש ב-`$$` (דולר כפול) להפרדה בין פרמטרים, לא `&` רגיל!
 
 ---
 
 ## תוכנית השינויים
 
-### שלב 1: עדכון `buildMadlanUrl` ב-url-builder.ts
+### שלב 1: עדכון `buildHomelessUrl` ב-url-builder.ts
 
 **קובץ:** `supabase/functions/_personal-scout/url-builder.ts`
 
-**לפני:**
+**לפני (שורות 201-223):**
 ```typescript
-function buildMadlanUrl(
+function buildHomelessUrl(
   city: string,
   propertyType: 'rent' | 'sale',
   page: number = 1
 ): string {
-  // ... רק עיר
-  // Madlan doesn't support price/rooms in URL
+  // Homeless doesn't support price/rooms in URL
 }
 ```
 
 **אחרי:**
 ```typescript
-function buildMadlanUrl(
+function buildHomelessUrl(
   city: string,
   propertyType: 'rent' | 'sale',
   minPrice?: number | null,
@@ -53,61 +52,74 @@ function buildMadlanUrl(
   maxRooms?: number | null,
   page: number = 1
 ): string {
-  const pathType = propertyType === 'rent' ? 'for-rent' : 'for-sale';
-  let baseUrl = `https://www.madlan.co.il/${pathType}`;
+  const baseType = propertyType === 'rent' ? 'rent' : 'sale';
+  let url = `https://www.homeless.co.il/${baseType}/`;
   
-  // City mapping
-  const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-') + '-ישראל';
-  baseUrl += `/${citySlug}`;
+  // Build parameters with $$ separator
+  const params: string[] = [];
   
-  // Build filters parameter
-  // Format: _minPrice-maxPrice_minRooms-maxRooms
-  const priceFilter = `${minPrice || ''}-${maxPrice || ''}`;
-  const roomsFilter = `${minRooms || ''}-${maxRooms || ''}`;
-  const filters = `_${priceFilter}_${roomsFilter}`;
+  // City parameter
+  params.push(`city=${encodeURIComponent(city)}`);
   
-  const params = new URLSearchParams();
-  params.set('filters', filters);
-  
-  if (page > 1) {
-    params.set('page', page.toString());
+  // Rooms filter (inumber4 = minimum rooms)
+  if (minRooms) {
+    params.push(`inumber4=${minRooms}`);
   }
   
-  return `${baseUrl}?${params.toString()}`;
+  // Price filters
+  if (minPrice) {
+    params.push(`flong3=${minPrice}`);
+  }
+  if (maxPrice) {
+    params.push(`flong3_1=${maxPrice}`);
+  }
+  
+  // Pagination
+  if (page > 1) {
+    params.push(`page=${page}`);
+  }
+  
+  // Join with $$ separator
+  url += params.join('$$');
+  
+  console.log(`[personal-scout/url-builder] Built Homeless URL: ${url}`);
+  return url;
 }
 ```
 
-### שלב 2: עדכון הקריאה ל-buildMadlanUrl
+### שלב 2: עדכון הקריאה ל-buildHomelessUrl
 
-**לפני (שורה 90):**
+**לפני (שורה 91-92):**
 ```typescript
-} else if (source === 'madlan') {
-  return buildMadlanUrl(city, property_type, page);
+} else if (source === 'homeless') {
+  return buildHomelessUrl(city, property_type, page);
 }
 ```
 
 **אחרי:**
 ```typescript
-} else if (source === 'madlan') {
-  return buildMadlanUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
+} else if (source === 'homeless') {
+  return buildHomelessUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
 }
 ```
 
-### שלב 3: טיפול ביחידות מחיר (מכירה)
+### שלב 3: עדכון הערת הפונקציה הראשית
 
-במכירה, המחירים במדלן הם בש"ח מלאים (לא באלפים). אם הליד שומר מחירים באלפים (למשל budget_max = 5000 = 5 מיליון), צריך להכפיל ב-1000:
-
+**לפני (שורות 79-83):**
 ```typescript
-// For sale: DB stores in thousands (5000 = 5M), Madlan expects full price
-let adjustedMinPrice = minPrice;
-let adjustedMaxPrice = maxPrice;
+/**
+ * Build URL with lead-specific filters
+ * Yad2 supports price + rooms in URL
+ * Madlan/Homeless only support city in URL
+ */
+```
 
-if (propertyType === 'sale') {
-  if (maxPrice && maxPrice < 100000) {
-    adjustedMinPrice = minPrice ? minPrice * 1000 : null;
-    adjustedMaxPrice = maxPrice ? maxPrice * 1000 : null;
-  }
-}
+**אחרי:**
+```typescript
+/**
+ * Build URL with lead-specific filters
+ * All sources (Yad2, Madlan, Homeless) support price + rooms in URL
+ */
 ```
 
 ---
@@ -116,59 +128,68 @@ if (propertyType === 'sale') {
 
 ### לפני התיקון:
 ```text
-Lead: תל אביב, 5,000-8,000₪, 3-4 חדרים
-  └─ Madlan URL: /for-rent/תל-אביב-יפו-ישראל
-  └─ Results: 1,644 properties
-  └─ After filtering: ~50 matches
+Lead: תל אביב, 5,500-8,000₪, 3 חדרים+
+  └─ Homeless URL: /rent/?inumber1=17,1,150
+  └─ Results: ~1,158 properties
+  └─ After filtering: ~80 matches
 ```
 
 ### אחרי התיקון:
 ```text
-Lead: תל אביב, 5,000-8,000₪, 3-4 חדרים
-  └─ Madlan URL: /for-rent/תל-אביב-יפו-ישראל?filters=_5000-8000_3-4
-  └─ Results: ~278 properties
-  └─ After filtering: ~50 matches
+Lead: תל אביב, 5,500-8,000₪, 3 חדרים+
+  └─ Homeless URL: /rent/city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000
+  └─ Results: ~150 properties
+  └─ After filtering: ~80 matches
 ```
 
-### חיסכון:
-- **83% פחות נתונים** לסרוק ולעבד
-- **פחות זמן** לכל ריצה
-- **Post-parsing filter** עדיין פעיל לשכונות ותכונות
+### חיסכון מצטבר (כל המקורות):
+| מקור | לפני | אחרי | חיסכון |
+|------|------|------|--------|
+| Yad2 | כבר מסונן | כבר מסונן | - |
+| Madlan | 1,644 | ~278 | 83% |
+| Homeless | 1,158 | ~150 | 87% |
+| **סה"כ** | **2,802** | **~428** | **~85%** |
 
 ---
 
-## קובץ לעדכון
+## קבצים לעדכון
 
 | קובץ | שינוי |
 |------|-------|
-| `supabase/functions/_personal-scout/url-builder.ts` | הוספת פרמטרים לפונקציית Madlan + בניית `filters` |
+| `supabase/functions/_personal-scout/url-builder.ts` | הוספת פרמטרים לפונקציית Homeless + שימוש במפריד `$$` |
 
 ---
 
 ## בדיקה אחרי התיקון
 
 1. הפעלת Personal Scout Worker לליד ספציפי
-2. בדיקת הלוגים שה-URL כולל `?filters=`
+2. בדיקת הלוגים שה-URL של Homeless כולל `$$flong3=` ו-`$$inumber4=`
 3. וידוא שמספר התוצאות מופחת משמעותית
 
 ---
 
-## סיכום טכני
+## סיכום טכני - כל שלושת המקורות
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    MADLAN URL Filter Format                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ?filters=_{minPrice}-{maxPrice}_{minRooms}-{maxRooms}      │
-│                                                              │
-│  Examples:                                                   │
-│  ─────────                                                   │
-│  • Price 5K-8K, Rooms 3-4:  ?filters=_5000-8000_3-4         │
-│  • Max price 10K, Rooms 3+: ?filters=_-10000_3-             │
-│  • Price 2M-5M (sale):      ?filters=_2000000-5000000_3-4   │
-│                                                              │
-│  Note: Empty values use just dash: _5000-_ means min 5000   │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    URL Filter Formats by Source                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  YAD2:                                                                   │
+│  ─────                                                                   │
+│  ?city=5000&price=5000-8000&rooms=3-4                                   │
+│                                                                          │
+│  MADLAN:                                                                 │
+│  ──────                                                                  │
+│  ?filters=_5000-8000_3-4                                                │
+│                                                                          │
+│  HOMELESS:                                                               │
+│  ─────────                                                               │
+│  city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000                   │
+│                                                                          │
+│  Note: Homeless uses $$ as parameter separator, not &                   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+**שורה תחתונה:** אחרי התיקון הזה, כל שלושת המקורות יתמכו בפילטרי מחיר וחדרים ב-URL - חיסכון של ~85% בנתונים לעיבוד!
