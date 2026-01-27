@@ -1,132 +1,171 @@
 
 
-# תוכנית: הוספת Features ב-URL ל-Madlan
+# תוכנית: הוספת סינון שכונות ב-URL לצמצום דפים
 
-## מה גילינו בשיחה הקודמת
+## הבעיה שזיהינו
 
-מהתמונה שהעלית, Madlan **כן** תומך ב-features דרך URL!
+לאחר בדיקה מעמיקה, התברר שהסיבה לכמות הגדולה של דפים (30+ לכל אתר) היא ש**שכונות לא מסוננות ברמת ה-URL** - למרות שיש ללקוחות העדפות שכונות מוגדרות.
 
-הפורמט שמצאנו:
-```
-filters=_5500-8000_2.5-____balcony____0-10000
-```
+**דוגמה מספרית:**
+- לקוח עם 4 שכונות מועדפות → מקבל 1,179 תוצאות מכל תל אביב
+- אם היינו מסננים לשכונות בלבד → היינו מקבלים ~200 תוצאות (הפחתה של 83%)
 
-## ניתוח הפורמט
+## מה גיליתי
 
-| חלק | משמעות |
-|-----|--------|
-| `_5500-8000` | טווח מחירים (min-max) |
-| `_2.5-` | טווח חדרים (min-max) |
-| `____balcony____` | פילטר מרפסת (4 קווים תחתונים לפני ואחרי) |
-| `0-10000` | נראה כמו טווח שטח (0-10000 מ"ר) |
+**Yad2 תומך בסינון שכונות ב-URL!**
+- פרמטר: `neighborhood=XXX` (קודים מספריים)
+- תומך בריבוי שכונות: `neighborhood=204,1483,1519`
+
+**קודי שכונות תל אביב שמצאתי:**
+
+| שכונה | קוד Yad2 |
+|-------|----------|
+| צפון חדש | 204 |
+| צפון ישן | 1483 |
+| צפון חדש דרום | 1519 |
+| לב העיר צפון | 1520 |
+| רביבים | 202 |
 
 ## שינויים נדרשים
 
-### 1. עדכון buildMadlanUrl
+### שלב 1: יצירת מיפוי קודי שכונות
+
+**קובץ חדש:** `supabase/functions/_personal-scout/neighborhood-codes.ts`
+
+```typescript
+// Yad2 neighborhood codes for Tel Aviv
+export const yad2NeighborhoodCodes: Record<string, string> = {
+  // צפון
+  'צפון_חדש': '204',
+  'צפון_ישן': '1483',
+  'צפון_חדש_דרום': '1519',
+  
+  // מרכז
+  'לב_העיר': '1520',
+  'מרכז_העיר': '1520', // alias
+  'רוטשילד': '???', // צריך למצוא
+  
+  // שכונות נוספות
+  'רביבים': '202',
+  'בבלי': '???',
+  'רמת_אביב': '???',
+  'כיכר_המדינה': '???',
+  // ... יש להשלים
+};
+```
+
+### שלב 2: עדכון buildYad2Url
 
 **קובץ:** `supabase/functions/_personal-scout/url-builder.ts`
 
-**שינוי בסיגנטורה (שורות 206-213):**
 ```typescript
-function buildMadlanUrl(
+function buildYad2Url(
   city: string,
   propertyType: 'rent' | 'sale',
-  minPrice?: number | null,
-  maxPrice?: number | null,
-  minRooms?: number | null,
-  maxRooms?: number | null,
-  page: number = 1,
-  // NEW: Feature filters
-  balconyRequired?: boolean | null,
-  parkingRequired?: boolean | null,
-  elevatorRequired?: boolean | null
+  // ... existing params ...
+  neighborhoods?: string[] | null  // NEW
 ): string {
-```
-
-**שינוי בבניית הפילטר (שורות 234-238):**
-```typescript
-// Build filters parameter
-// Format: _minPrice-maxPrice_minRooms-maxRooms____feature1____feature2____...
-const priceFilter = `${adjustedMinPrice || ''}-${adjustedMaxPrice || ''}`;
-const roomsFilter = `${minRooms || ''}-${maxRooms || ''}`;
-
-// Start with price and rooms
-let filters = `_${priceFilter}_${roomsFilter}`;
-
-// Add feature filters (Madlan uses ____featureName____ format)
-if (balconyRequired) {
-  filters += '____balcony';
-}
-if (parkingRequired) {
-  filters += '____parking';
-}
-if (elevatorRequired) {
-  filters += '____elevator';
-}
-
-// Close the last feature with ____
-if (balconyRequired || parkingRequired || elevatorRequired) {
-  filters += '____';
+  // ... existing code ...
+  
+  // NEW: Add neighborhood filter
+  if (neighborhoods && neighborhoods.length > 0) {
+    const codes = neighborhoods
+      .map(n => yad2NeighborhoodCodes[n])
+      .filter(Boolean);
+    
+    if (codes.length > 0) {
+      params.set('neighborhood', codes.join(','));
+    }
+  }
+  
+  // ...
 }
 ```
 
-### 2. עדכון buildPersonalUrl להעביר features ל-Madlan
+### שלב 3: עדכון PersonalUrlParams
 
-**שינוי בשורות 124-126:**
 ```typescript
-} else if (source === 'madlan') {
-  return buildMadlanUrl(
-    city, property_type, 
-    leakedMinPrice, leakedMaxPrice, 
-    min_rooms, max_rooms, page,
-    balcony_required, parking_required, elevator_required  // NEW
-  );
+export interface PersonalUrlParams {
+  source: string;
+  city: string;
+  property_type: 'rent' | 'sale';
+  // ... existing ...
+  neighborhoods?: string[] | null;  // NEW
+  page: number;
 }
 ```
 
-### 3. מחיקת ההערה הישנה
+### שלב 4: עדכון Worker להעביר שכונות
 
-מחיקת ההערה הישנה שאומרת ש-Madlan לא תומך:
 ```typescript
-// NOTE: Madlan does NOT support feature filtering via URL  ← למחוק
-// Features are filtered post-parse in feature-filter.ts     ← למחוק
+const url = buildPersonalUrl({
+  source,
+  city,
+  property_type: propertyType,
+  min_price: lead.budget_min,
+  max_price: lead.budget_max,
+  min_rooms: lead.rooms_min,
+  max_rooms: lead.rooms_max,
+  balcony_required: ...,
+  parking_required: ...,
+  elevator_required: ...,
+  neighborhoods: lead.preferred_neighborhoods,  // NEW
+  page
+});
 ```
 
 ---
 
-## תוצאה צפויה - כל המקורות תומכים!
+## מה נשאר לבדוק
 
-| מקור | מחיר ב-URL | חדרים ב-URL | מרפסת ב-URL | חניה ב-URL | מעלית ב-URL |
-|------|-----------|-------------|-------------|-----------|-------------|
-| **Yad2** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Madlan** | ✅ | ✅ | ✅ (חדש!) | ✅ (חדש!) | ✅ (חדש!) |
-| **Homeless** | ✅ | ✅ | ✅ | ✅ | ✅ |
+### פערי ידע - קודי שכונות חסרים:
 
----
+| שכונה | סטטוס |
+|-------|-------|
+| בבלי | צריך למצוא קוד |
+| כיכר_המדינה | צריך למצוא קוד |
+| רמת_אביב | צריך למצוא קוד |
+| נווה_צדק | צריך למצוא קוד |
+| כרם_התימנים | צריך למצוא קוד |
+| רוטשילד | צריך למצוא קוד |
+| פלורנטין | צריך למצוא קוד |
 
-## דוגמה ל-Madlan URL אחרי השינויים
+### מאדלן והומלס
 
-**לפני:**
-```
-https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל?filters=_7200-12100_3-4
-```
-
-**אחרי (עם מרפסת + חניה):**
-```
-https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל?filters=_7200-12100_3-4____balcony____parking____
-```
+צריך לבדוק אם גם הם תומכים בסינון שכונות ב-URL.
 
 ---
 
-## קבצים לעדכון
+## תוצאה צפויה
 
-| קובץ | שינוי |
+**לפני הטמעה:**
+```
+לקוח Eli: 1,179 תוצאות ב-Yad2 → 30 דפים
+```
+
+**אחרי הטמעה (עם 4 שכונות):**
+```
+לקוח Eli: ~200 תוצאות ב-Yad2 → 5-8 דפים
+```
+
+**חיסכון:** ~75-85% פחות סריקות!
+
+---
+
+## סדר עבודה מומלץ
+
+1. **קודם:** מצא את כל קודי השכונות הרלוונטיות ב-Yad2
+2. **אז:** הטמע את השינויים ב-url-builder.ts
+3. **אז:** בדוק אם Madlan/Homeless תומכים בשכונות
+4. **אז:** הרץ בדיקה להשוואת מספר דפים לפני/אחרי
+
+---
+
+## קבצים לעדכון/יצירה
+
+| קובץ | פעולה |
 |------|-------|
-| `url-builder.ts` | הוספת features לסיגנטורת `buildMadlanUrl` והטמעת הפורמט `____feature____` |
-
----
-
-## הערה
-
-סליחה שלא זכרתי! עכשיו המערכת תהיה מושלמת - כל 3 המקורות יתמכו בסינון features ישירות ב-URL!
+| `_personal-scout/neighborhood-codes.ts` | **חדש** - מיפוי שכונות לקודים |
+| `_personal-scout/url-builder.ts` | עדכון - הוספת פרמטר שכונות |
+| `personal-scout-worker/index.ts` | עדכון - העברת שכונות מהלקוח |
 
