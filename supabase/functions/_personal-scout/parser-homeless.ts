@@ -10,7 +10,7 @@ import {
   extractPrice,
   extractRooms,
   extractFloor,
-  extractSize,
+  // NOTE: extractSize not imported - Size is NOT available in Homeless search results
   extractCity,
   extractNeighborhood,
   cleanText,
@@ -52,22 +52,23 @@ export function parseHomelessHtml(
       // Get full row text for robust extraction
       const fullRowText = $row.text();
       
-      // Extract data from full row text first (works when units are present)
-      let price = extractPrice(fullRowText);
-      let rooms = extractRooms(fullRowText);
-      let floor = extractFloor(fullRowText);
-      let size = extractSize(fullRowText);
-      
-      // ========== FALLBACK: Direct column extraction ==========
+      // ========== PRIMARY: Direct column extraction (more reliable) ==========
       // Homeless table ACTUAL column mapping (verified from HTML):
       // [0]=checkbox, [1]=image, [2]=type, [3]=city, [4]=neighborhood, [5]=street
       // [6]=rooms, [7]=floor, [8]=price, [9]=entry, [10]=date
       // NOTE: There is NO size column in the Homeless table!
       
-      // Rooms (column 6) - standalone number or "X חדרים", range 1-20
-      if (!rooms && tds.length > 6) {
+      let price: number | null = null;
+      let rooms: number | null = null;
+      let floor: number | null = null;
+      
+      // Size: NOT available in Homeless search results table
+      // It only appears in individual property detail pages
+      const size: number | null = null;
+      
+      // Rooms (column 6) - standalone number, range 1-20
+      if (tds.length > 6) {
         const roomsCell = cleanText($(tds[6]).text());
-        // Match standalone number like "5" or "3.5"
         const roomsMatch = roomsCell.match(/^(\d+(?:[.,]\d)?)$/);
         if (roomsMatch) {
           const num = parseFloat(roomsMatch[1].replace(',', '.'));
@@ -75,10 +76,9 @@ export function parseHomelessHtml(
         }
       }
       
-      // Floor (column 7) - can be number or text like "קרקע", range -5 to 100
-      if (!floor && tds.length > 7) {
+      // Floor (column 7) - number or "קרקע", range -5 to 100
+      if (tds.length > 7) {
         const floorCell = cleanText($(tds[7]).text());
-        // Handle "קרקע" = 0
         if (/קרקע|ground/i.test(floorCell)) {
           floor = 0;
         } else {
@@ -90,46 +90,56 @@ export function parseHomelessHtml(
         }
       }
       
-      // Price (column 8) - format like "4,000 ₪" or "8,500"
-      if (!price && tds.length > 8) {
+      // Price (column 8) - PRIORITY extraction to avoid phone numbers
+      // Format like "4,000 ₪" or "8,500"
+      if (tds.length > 8) {
         const priceCell = cleanText($(tds[8]).text());
         const cleaned = priceCell.replace(/[^\d]/g, '');
         if (cleaned) {
           const num = parseInt(cleaned, 10);
-          if (num >= 500 && num <= 100000000) price = num;
+          // Validate price range based on property type
+          if (propertyType === 'rent') {
+            if (num >= 500 && num <= 50000) price = num;
+          } else {
+            if (num >= 100000 && num <= 50000000) price = num;
+          }
         }
       }
       
-      // Try to extract structured data from cells when available
-      // But use flexible detection instead of fixed column indices
+      // ========== FALLBACK: Text-based extraction ==========
+      // Only use if column extraction failed
+      if (!rooms) rooms = extractRooms(fullRowText);
+      if (!floor) floor = extractFloor(fullRowText);
+      if (!price) price = extractPrice(fullRowText);
+      
+      // ========== CITY: Direct column extraction (td[3]) ==========
       let cityText = '';
       let neighborhoodText = '';
       let streetText = '';
       let propertyTypeText = '';
       
-      // Scan cells for content patterns
-      tds.each((cellIndex: number, cell: any) => {
-        const cellText = cleanText($(cell).text());
-        if (!cellText) return;
-        
-        // Property type detection
-        if (/דירה|פנטהאוז|סטודיו|קוטג'?|בית/.test(cellText) && !propertyTypeText) {
-          propertyTypeText = cellText;
+      // Extract city directly from column 3 (most reliable)
+      if (tds.length > 3) {
+        cityText = cleanText($(tds[3]).text());
+      }
+      
+      // Extract neighborhood from column 4
+      if (tds.length > 4) {
+        neighborhoodText = cleanText($(tds[4]).text());
+      }
+      
+      // Extract street from column 5
+      if (tds.length > 5) {
+        streetText = cleanText($(tds[5]).text());
+      }
+      
+      // Extract property type from column 2
+      if (tds.length > 2) {
+        const typeCell = cleanText($(tds[2]).text());
+        if (/דירה|פנטהאוז|סטודיו|קוטג'?|בית|דופלקס|גג|מיני/.test(typeCell)) {
+          propertyTypeText = typeCell;
         }
-        // City detection (common Israeli cities)
-        else if (/תל.?אביב|רמת.?גן|גבעתיים|הרצליה|רעננה|חולון|בת.?ים|ראשון|פתח.?תקווה|ירושלים|חיפה|באר.?שבע|נתניה|אשדוד|כפר.?סבא|רחובות|הוד.?השרון|מודיעין|נס.?ציונה|רמת.?השרון|גבעת.?שמואל/.test(cellText) && !cityText) {
-          cityText = cellText;
-        }
-        // Street detection (Hebrew text that's not a city)
-        else if (cellText.length > 3 && /[א-ת]/.test(cellText) && !streetText && cellIndex > 1) {
-          // Could be street or neighborhood
-          if (!neighborhoodText) {
-            neighborhoodText = cellText;
-          } else if (!streetText) {
-            streetText = cellText;
-          }
-        }
-      });
+      }
       
       // Extract link from row
       let sourceUrl = '';
@@ -143,7 +153,7 @@ export function parseHomelessHtml(
         }
       }
       
-      // Normalize city
+      // Normalize city - try column first, then pattern matching
       const city = extractCity(cityText) || cityText || extractCity(fullRowText) || null;
       
       // Extract neighborhood with city context
