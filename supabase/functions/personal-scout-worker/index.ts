@@ -19,9 +19,9 @@ const corsHeaders = {
  * COMPLETELY SEPARATE from scout-yad2/madlan/homeless.
  */
 
-const MAX_PAGES_PER_SOURCE = 5; // 5 pages per source for better coverage
-const DELAY_BETWEEN_PAGES_MS = 2000;
-const DELAY_BETWEEN_SOURCES_MS = 3000;
+const MAX_PAGES_PER_SOURCE = 2; // Reduced to 2 pages to avoid timeouts (60s limit)
+const DELAY_BETWEEN_PAGES_MS = 1000; // Reduced delay
+const DELAY_BETWEEN_SOURCES_MS = 1500; // Reduced delay
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -218,13 +218,39 @@ Deno.serve(async (req) => {
 
     // 4. Update run statistics if run_id provided
     if (run_id) {
-      await supabase
+      // Get current values (can't use RPC increment - it doesn't exist)
+      const { data: currentRun } = await supabase
         .from('personal_scout_runs')
-        .update({
-          leads_completed: supabase.rpc('increment', { x: 1 }),
-          total_matches: supabase.rpc('increment', { x: savedCount })
-        })
-        .eq('id', run_id);
+        .select('leads_completed, total_matches, leads_count')
+        .eq('id', run_id)
+        .single();
+      
+      if (currentRun) {
+        const newLeadsCompleted = (currentRun.leads_completed || 0) + 1;
+        const newTotalMatches = (currentRun.total_matches || 0) + savedCount;
+        
+        // Check if this was the last lead
+        const isComplete = newLeadsCompleted >= (currentRun.leads_count || 0);
+        
+        const { error: updateError } = await supabase
+          .from('personal_scout_runs')
+          .update({
+            leads_completed: newLeadsCompleted,
+            total_matches: newTotalMatches,
+            status: isComplete ? 'completed' : 'running',
+            completed_at: isComplete ? new Date().toISOString() : null
+          })
+          .eq('id', run_id);
+        
+        if (updateError) {
+          console.error('Error updating run stats:', updateError);
+        } else {
+          console.log(`📊 Updated run: ${newLeadsCompleted}/${currentRun.leads_count} leads, ${newTotalMatches} total matches`);
+          if (isComplete) {
+            console.log(`✅ Run ${run_id} marked as COMPLETED`);
+          }
+        }
+      }
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
