@@ -73,7 +73,32 @@ export interface PersonalUrlParams {
   max_price?: number | null;
   min_rooms?: number | null;
   max_rooms?: number | null;
+  // Feature filters (only applied if required AND not flexible)
+  balcony_required?: boolean | null;
+  parking_required?: boolean | null;
+  elevator_required?: boolean | null;
   page: number;
+}
+
+/**
+ * Apply budget leakage for more flexible search
+ * Expands search range by 10%
+ */
+export function applyBudgetLeakage(
+  value: number | null | undefined,
+  type: 'min' | 'max'
+): number | null {
+  if (!value) return null;
+  
+  const LEAKAGE_PERCENT = 0.10; // 10%
+  
+  if (type === 'min') {
+    // Lower the minimum by 10%
+    return Math.floor(value * (1 - LEAKAGE_PERCENT));
+  } else {
+    // Raise the maximum by 10%
+    return Math.ceil(value * (1 + LEAKAGE_PERCENT));
+  }
 }
 
 /**
@@ -81,14 +106,25 @@ export interface PersonalUrlParams {
  * All sources (Yad2, Madlan, Homeless) support price + rooms in URL
  */
 export function buildPersonalUrl(params: PersonalUrlParams): string {
-  const { source, city, property_type, min_price, max_price, min_rooms, max_rooms, page } = params;
+  const { 
+    source, city, property_type, 
+    min_price, max_price, min_rooms, max_rooms, 
+    balcony_required, parking_required, elevator_required,
+    page 
+  } = params;
+  
+  // Apply 10% budget leakage for flexible matching
+  const leakedMinPrice = applyBudgetLeakage(min_price, 'min');
+  const leakedMaxPrice = applyBudgetLeakage(max_price, 'max');
+  
+  console.log(`[personal-scout/url-builder] Budget leakage: ${min_price}-${max_price} → ${leakedMinPrice}-${leakedMaxPrice}`);
   
   if (source === 'yad2') {
-    return buildYad2Url(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
-} else if (source === 'madlan') {
-    return buildMadlanUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
+    return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page);
+  } else if (source === 'madlan') {
+    return buildMadlanUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page);
   } else if (source === 'homeless') {
-    return buildHomelessUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
+    return buildHomelessUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   }
   
   throw new Error(`Unknown source: ${source}`);
@@ -204,7 +240,10 @@ function buildHomelessUrl(
   maxPrice?: number | null,
   minRooms?: number | null,
   maxRooms?: number | null,
-  page: number = 1
+  page: number = 1,
+  balconyRequired?: boolean | null,
+  parkingRequired?: boolean | null,
+  elevatorRequired?: boolean | null
 ): string {
   const baseType = propertyType === 'rent' ? 'rent' : 'sale';
   let url = `https://www.homeless.co.il/${baseType}/`;
@@ -226,6 +265,20 @@ function buildHomelessUrl(
   }
   if (maxPrice) {
     params.push(`flong3_1=${maxPrice}`);
+  }
+  
+  // Feature filters (Homeless-specific parameter names)
+  // inumber14=on for balcony
+  if (balconyRequired) {
+    params.push(`inumber14=on`);
+  }
+  // inumber12=on for parking
+  if (parkingRequired) {
+    params.push(`inumber12=on`);
+  }
+  // inumber7=on for elevator
+  if (elevatorRequired) {
+    params.push(`inumber7=on`);
   }
   
   // Pagination
