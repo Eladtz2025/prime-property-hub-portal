@@ -1,113 +1,152 @@
 
+# תיקון מלא של Personal Scout
 
-# עדכון SCOUT_ARCHITECTURE.md
+## בעיות שזוהו
 
-## סיכום השינויים לתיעוד
-
-### קובץ לעדכון
-`supabase/functions/_shared/SCOUT_ARCHITECTURE.md`
-
-### שינויים לסקשן Homeless (שורות 90-126)
-
-**מה להוסיף:**
-
-```markdown
-### שדרוגים אחרונים (ינואר 2026):
-
-**1. Async Parser עם DB Lookup:**
-- הפרסר הפך ל-async לתמיכה בקריאות לדאטאבייס
-- חיפוש רחוב בטבלת `street_neighborhoods` (1,245 רחובות בתל אביב)
-- סדר עדיפות לזיהוי שכונות:
-  1. עמודה 4 (שכונה) - regex
-  2. עמודה 5 (רחוב) - regex  
-  3. טקסט מלא - regex
-  4. **חדש:** חיפוש רחוב בדאטאבייס
-
-**2. מגבלת גודל:**
-- גודל (מ"ר) **לא זמין** בתוצאות החיפוש
-- קיים רק בדפי פרטים בודדים
-- extraction rate: 0% (מתוכנן)
-
-**3. שיעורי חילוץ מאומתים:**
-| שדה | שיעור |
-|-----|-------|
-| עיר | 100% |
-| שכונה | 89% (עם DB lookup) |
-| מחיר | 92% |
-| חדרים | 100% |
-| קומה | 62% (תלוי במקור) |
-| גודל | 0% (לא זמין) |
+### בעיה 1: עדכון סטטיסטיקות לא עובד (Run Stuck)
+**הקוד הנוכחי (שורות 223-226):**
+```javascript
+await supabase
+  .from('personal_scout_runs')
+  .update({
+    leads_completed: supabase.rpc('increment', { x: 1 }),  // ❌ לא עובד!
+    total_matches: supabase.rpc('increment', { x: savedCount })  // ❌ לא עובד!
+  })
+  .eq('id', run_id);
 ```
 
-### סקשן חדש: Edge Function Timeouts
+**הבעיה:** `supabase.rpc('increment')` מוחזר כ-Promise, לא כערך. בנוסף, אין RPC function בשם `increment` בדאטאבייס.
 
-**מיקום:** אחרי סקשן Proxy Logic (שורה 160)
+**פתרון:** לקרוא את הערכים הנוכחיים ולעדכן ידנית.
 
-```markdown
-## Edge Function Timeouts
+### בעיה 2: Madlan Parser ב-Personal Scout לא מסונכרן
+הפרסר ב-`_personal-scout/parser-madlan.ts` לא משתמש באותה לוגיקה המשופרת כמו `_experimental/parser-madlan.ts`.
 
-### מגבלת Supabase:
-- **60 שניות** - תכנית חינמית
-- **400 שניות** - תכניות בתשלום
+**נתונים מהריצה האחרונה:**
+| מקור | התאמות | עם שכונה | עם גודל | עם קומה |
+|------|--------|----------|---------|---------|
+| Madlan | 48 | 0 (0%) | 0 (0%) | 0 (0%) |
+| Homeless | 1 | 1 (100%) | 0 (N/A) | 0 |
 
-### למה קורים Timeouts:
-- סריקת דף: 5-10 שניות
-- CAPTCHA/המתנה: 15-30 שניות
-- 4 דפים ברצף: 60+ שניות
+**פתרון:** העתקת הלוגיקה המשופרת מ-`_experimental/parser-madlan.ts`.
 
-### הפתרון - Single Page Mode:
-כל פונקציה מטפלת בדף אחד בלבד:
+### בעיה 3: אין Finalization של הריצה
+הריצה נשארת ב-`running` לנצח כי אין לוגיקה שמסיימת אותה.
 
-```text
-trigger-scout-pages:
-  ├─ scout-homeless(page=1) → 10s ✓
-  ├─ scout-homeless(page=2) → 12s ✓ (יוצא אחרי 2s)
-  ├─ scout-homeless(page=3) → 8s ✓ (יוצא אחרי 4s)
-  └─ scout-homeless(page=4) → 15s ✓ (יוצא אחרי 6s)
+**פתרון:** הוספת בדיקה אם כל הלידים הושלמו ועדכון הסטטוס ל-`completed`.
+
+### בעיה 4: אין Cron Job
+לא מוגדר cron job לסריקה אוטומטית.
+
+**פתרון:** הוספת cron job לשעה 01:00 ו-12:00 (IST).
+
+---
+
+## תוכנית תיקון
+
+### שלב 1: תיקון Worker - עדכון סטטיסטיקות
+
+**קובץ:** `supabase/functions/personal-scout-worker/index.ts`
+
+**שינויים:**
+1. להחליף את הלוגיקה השבורה של `supabase.rpc`:
+```javascript
+// OLD (broken):
+await supabase.from('personal_scout_runs').update({
+  leads_completed: supabase.rpc('increment', { x: 1 }),
+  ...
+});
+
+// NEW (working):
+if (run_id) {
+  // Get current values
+  const { data: currentRun } = await supabase
+    .from('personal_scout_runs')
+    .select('leads_completed, total_matches, leads_count')
+    .eq('id', run_id)
+    .single();
+  
+  if (currentRun) {
+    const newLeadsCompleted = (currentRun.leads_completed || 0) + 1;
+    const newTotalMatches = (currentRun.total_matches || 0) + savedCount;
+    
+    // Check if this was the last lead
+    const isComplete = newLeadsCompleted >= currentRun.leads_count;
+    
+    await supabase
+      .from('personal_scout_runs')
+      .update({
+        leads_completed: newLeadsCompleted,
+        total_matches: newTotalMatches,
+        status: isComplete ? 'completed' : 'running',
+        completed_at: isComplete ? new Date().toISOString() : null
+      })
+      .eq('id', run_id);
+  }
+}
 ```
 
-### Recovery מ-Timeout:
-- `checkAndFinalizeRun` בודק אחרי כל דף
-- דפים שנכשלו מסומנים `failed` 
-- הריצה ממשיכה לדפים הבאים
-- סטטוס סופי: `partial` אם יש כשלונות
+### שלב 2: סנכרון Madlan Parser
+
+**קובץ:** `supabase/functions/_personal-scout/parser-madlan.ts`
+
+**שינויים:**
+העתקת ה-KNOWN_NEIGHBORHOODS והלוגיקה של `extractNeighborhoodFromBlock` מגרסת הפרודקשן.
+
+הפרסר הנוכחי כבר מכיל את הלוגיקה הזו - צריך רק לוודא שהיא עובדת. הבעיה העיקרית היא שהנתונים לא נשמרים נכון.
+
+### שלב 3: הוספת Cron Job
+
+**SQL להרצה:**
+```sql
+SELECT cron.schedule(
+  'personal-scout-daily',
+  '0 23 * * *',  -- 23:00 UTC = 01:00 IST
+  $$
+  SELECT net.http_post(
+    url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/personal-scout-trigger',
+    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVYeLYJec-2vFcGeYPe9mM", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
 ```
 
-### עדכון טבלת קבצים (שורות 163-175)
+### שלב 4: תיקון ריצה תקועה
 
-**להוסיף:**
-```markdown
-| `supabase/functions/_experimental/street-lookup.ts` | חיפוש רחוב בדאטאבייס |
+**SQL להרצה:**
+```sql
+UPDATE personal_scout_runs
+SET status = 'completed', 
+    completed_at = NOW(),
+    leads_completed = (SELECT COUNT(DISTINCT lead_id) FROM personal_scout_matches WHERE run_id = '7cee8cbd-b5f0-46fc-b1d2-c12d10679468'),
+    total_matches = (SELECT COUNT(*) FROM personal_scout_matches WHERE run_id = '7cee8cbd-b5f0-46fc-b1d2-c12d10679468')
+WHERE id = '7cee8cbd-b5f0-46fc-b1d2-c12d10679468';
 ```
 
-### עדכון מסקנות (שורות 178-184)
-
-**להחליף/להוסיף:**
-```markdown
-## מסקנות מהניסיון
-
-1. **מדלן** - סדרתי עם recovery = יציבות מקסימלית
-2. **יד2** - מקבילי עובד, יש בעיית orphan pages בדפים מאוחרים
-3. **הומלס** - הכי יציב, DB lookup משפר שכונות ב-10%+
-4. **פרסרים** - regex/cheerio מותאם לכל אתר, לא AI
-5. **ניקוי** - קריטי להסיר noise לפני פרסינג
-6. **Timeouts** - Single Page Mode מונע חסימות
-
-> עדכון אחרון: 27/01/2026
-```
-
-## תוצאה צפויה
-
-המסמך יכיל:
-- תיעוד מלא של השינויים האחרונים
-- הסבר על Timeouts ואיך פותרים
-- שיעורי חילוץ מאומתים לכל אתר
-- מידע על מגבלת Size ב-Homeless
+---
 
 ## קבצים לעדכון
 
 | קובץ | פעולה |
 |------|-------|
-| `supabase/functions/_shared/SCOUT_ARCHITECTURE.md` | עדכון עם כל השינויים |
-| `.lovable/plan.md` | עדכון סטטוס (כבר נעשה) |
+| `supabase/functions/personal-scout-worker/index.ts` | תיקון לוגיקת עדכון סטטיסטיקות והשלמת ריצה |
+| SQL Script | הוספת cron job + תיקון ריצה תקועה |
 
+## בדיקה לאחר התיקון
+
+1. הרצת `personal-scout-trigger` ידנית
+2. בדיקה שהסטטוס מתעדכן ל-`completed`
+3. בדיקה שהנתונים נשמרים עם שכונות
+4. אישור שה-cron job רץ בשעה הנכונה
+
+---
+
+## סיכום טכני
+
+| בעיה | סיבה | פתרון |
+|------|------|-------|
+| Run stuck at 'running' | `supabase.rpc('increment')` לא קיים | קריאה ידנית + עדכון |
+| leads_completed = 0 | אותה בעיה | תיקון הלוגיקה |
+| Madlan 0% neighborhoods | הנתונים לא נשמרים | בדיקת parser והתאמה |
+| אין cron job | לא הוגדר | הוספת SQL schedule |
