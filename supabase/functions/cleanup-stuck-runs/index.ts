@@ -339,11 +339,77 @@ serve(async (req) => {
       console.log('✅ No stuck backfill tasks found');
     }
 
+    // === CLEANUP STUCK PERSONAL SCOUT RUNS ===
+    console.log('\n🎯 Checking for stuck personal scout runs...');
+    let personalScoutsCleaned = 0;
+
+    const { data: stuckPersonalRuns, error: personalRunsError } = await supabase
+      .from('personal_scout_runs')
+      .select('*')
+      .eq('status', 'running');
+
+    if (personalRunsError) {
+      console.error('❌ Error fetching personal scout runs:', personalRunsError);
+    } else if (stuckPersonalRuns && stuckPersonalRuns.length > 0) {
+      for (const run of stuckPersonalRuns) {
+        const runStarted = run.started_at || run.created_at;
+        const ageMinutes = (now - new Date(runStarted).getTime()) / 60000;
+        
+        console.log(`   🔍 Personal Scout Run ${run.id}: ${ageMinutes.toFixed(1)} min old`);
+        
+        // If run is stuck for more than 30 minutes, mark as completed
+        if (ageMinutes > 30) {
+          console.log(`   ⏰ PERSONAL SCOUT STUCK: ${run.id} - completing`);
+          
+          // Get actual match counts
+          const { count: matchCount } = await supabase
+            .from('personal_scout_matches')
+            .select('*', { count: 'exact', head: true })
+            .eq('run_id', run.id);
+          
+          const { data: leadCounts } = await supabase
+            .from('personal_scout_matches')
+            .select('lead_id')
+            .eq('run_id', run.id);
+          
+          const uniqueLeads = new Set(leadCounts?.map(m => m.lead_id) || []).size;
+          
+          const { error: updateError } = await supabase
+            .from('personal_scout_runs')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+              leads_completed: uniqueLeads,
+              total_matches: matchCount || 0
+            })
+            .eq('id', run.id);
+          
+          if (!updateError) {
+            personalScoutsCleaned++;
+            console.log(`   ✅ Personal scout run marked as completed (${uniqueLeads} leads, ${matchCount} matches)`);
+            cleanupDetails.push({
+              type: 'personal_scout',
+              id: run.id,
+              action: 'marked_completed',
+              leadsCompleted: uniqueLeads,
+              totalMatches: matchCount,
+              ageMinutes: ageMinutes.toFixed(1)
+            });
+          } else {
+            console.error(`   ❌ Failed to update personal scout run:`, updateError);
+          }
+        }
+      }
+    } else {
+      console.log('✅ No stuck personal scout runs found');
+    }
+
     console.log('\n' + '='.repeat(60));
     console.log('🧹 CLEANUP COMPLETE');
     console.log(`   Pages timed out: ${pagesTimedOut}`);
     console.log(`   Runs force-completed: ${runsForceCompleted}`);
     console.log(`   Backfills cleaned: ${backfillsCleaned}`);
+    console.log(`   Personal scouts cleaned: ${personalScoutsCleaned}`);
     console.log('='.repeat(60));
 
     return new Response(
@@ -352,6 +418,7 @@ serve(async (req) => {
         pagesTimedOut,
         runsForceCompleted,
         backfillsCleaned,
+        personalScoutsCleaned,
         details: cleanupDetails,
         settings: { pageTimeoutMinutes, runTimeoutMinutes }
       }),

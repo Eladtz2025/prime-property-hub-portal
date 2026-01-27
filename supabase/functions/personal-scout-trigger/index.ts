@@ -103,7 +103,9 @@ Deno.serve(async (req) => {
     console.log(`📝 Created run record: ${runId}`);
 
     // 3. Trigger worker for each lead with delays
-    const DELAY_BETWEEN_LEADS_MS = 5000; // 5 seconds between leads
+    // 15 seconds between leads to prevent concurrency overload
+    // 35 leads × 15s = 525s = ~9 minutes total
+    const DELAY_BETWEEN_LEADS_MS = 15000;
     const sources = body.source ? [body.source] : ['yad2', 'madlan', 'homeless'];
     
     let triggeredCount = 0;
