@@ -1,116 +1,103 @@
 
-# תיקון פרסר Homeless - מיקוד בתל אביב + שכונות
 
-## מה למדתי מהפרסרים של Yad2 ו-Madlan
+# שיפור הפרסר של Homeless - שימוש בטבלת הרחובות
 
-### 1. מילון שכונות מובנה (parser-madlan.ts שורות 209-230)
-Madlan משתמש ב-`KNOWN_NEIGHBORHOODS` עם רשימה מפורשת:
+## מה גיליתי
+
+### 1. יש טבלת `street_neighborhoods` עם 933 רחובות
+מיפוי רחוב → שכונה עם confidence score, אבל **הפרסר לא משתמש בזה**!
+
+### 2. מהתמונה - הפרטים שזמינים בדף נכס
+| שדה | זמין בחיפוש | זמין בדף פרטים |
+|-----|-------------|----------------|
+| מחיר | ✓ | ✓ |
+| חדרים | ✓ | ✓ |
+| קומה | ✓ | ✓ (+ מתוך כמה) |
+| **גודל** | ✗ | ✓ (40 מ"ר) |
+| שכונה | ✓ | ✓ |
+| רחוב | ✓ | ✓ |
+| מרפסת | ✗ | ✓ |
+| חניה | ✗ | ✓ |
+| מעלית | ✗ | ✓ |
+| מחסן | ✗ | ✓ |
+| מזגן | ✗ | ✓ |
+
+## הפתרון
+
+### שלב 1: שימוש ב-street_neighborhoods לזיהוי שכונות
+כשיש שם רחוב (עמודה 5) אבל אין שכונה מזוהה, נחפש בטבלה:
+
 ```typescript
-const KNOWN_NEIGHBORHOODS = [
-  { pattern: /צפון\s*(?:ה)?ישן/, value: 'צפון_ישן', label: 'צפון ישן' },
-  { pattern: /פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
-  { pattern: /נווה\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
-  // ... 20+ שכונות
-];
-```
+import { lookupNeighborhoodByStreet, createSupabaseClient } from './street-lookup.ts';
 
-### 2. חיפוש בכל הבלוק (parser-madlan.ts שורות 299-304)
-```typescript
-// First: Try to extract neighborhood from the ENTIRE block (most reliable)
-const blockNeighborhood = extractNeighborhoodFromBlock(block);
-```
-
-### 3. ברירת מחדל לעיר (parser-madlan.ts שורה 297)
-```typescript
-const city = 'תל אביב יפו'; // ברירת מחדל כי סורקים רק תל אביב
-```
-
-## מה חסר ב-Homeless
-
-### בעיה 1: אין ברירת מחדל לעיר
-הפרסר מנסה לחלץ עיר מעמודה 3, אבל אם זה לא עובד - מקבלים `null`.
-
-### בעיה 2: שכונות לא מזוהות
-`extractNeighborhood` מוגדר ב-parser-utils.ts ויש שם רשימה טובה, אבל:
-- הקוד מחפש רק ב-`neighborhoodText` (עמודה 4)
-- לא מחפש בטקסט המלא של השורה
-- אם `city` הוא null, הפונקציה לא יודעת באיזו רשימת שכונות לחפש
-
-### בעיה 3: אין סינון לפי עיר
-Homeless כולל נכסים מכל הארץ, אבל אתה רוצה רק תל אביב.
-
-## הפתרון המוצע
-
-### שינוי 1: ברירת מחדל "תל אביב יפו" (כמו Madlan)
-```typescript
-// Homeless parser - since we're scanning Tel Aviv, default to it
-const DEFAULT_CITY = 'תל אביב יפו';
-
-// Use extracted city or default
-const city = extractCity(cityText) || cityText || DEFAULT_CITY;
-```
-
-### שינוי 2: חיפוש שכונות בטקסט המלא
-במקום רק בעמודה 4, נחפש גם ב-`fullRowText`:
-```typescript
-// Try neighborhood from column 4 first
-let neighborhood = extractNeighborhood(neighborhoodText, city);
-
-// Fallback: search in full row text
-if (!neighborhood) {
-  neighborhood = extractNeighborhood(fullRowText, city);
+// After extracting streetText from column 5
+if (!neighborhood && streetText && city === 'תל אביב יפו') {
+  const supabase = createSupabaseClient();
+  const streetLookup = await lookupNeighborhoodByStreet(supabase, streetText, city);
+  if (streetLookup) {
+    neighborhood = {
+      label: streetLookup.neighborhood,
+      value: streetLookup.neighborhood_value
+    };
+  }
 }
 ```
 
-### שינוי 3: סינון נכסים שלא מתל אביב
-בסוף הפרסר, נסנן נכסים שהעיר שלהם לא תל אביב:
+### שלב 2: הפיכת הפרסר ל-async
+כדי להשתמש ב-database lookup, הפונקציה צריכה להיות async:
+
 ```typescript
-// Filter to Tel Aviv only (optional - can be config-based)
-const filteredProperties = properties.filter(p => 
-  p.city === 'תל אביב יפו' || 
-  p.city === 'תל אביב' ||
-  !p.city // Keep unknown cities for now
-);
+export async function parseHomelessHtml(
+  html: string,
+  propertyType: 'rent' | 'sale',
+  supabase?: SupabaseClient  // Optional - pass from caller
+): Promise<ParserResult>
 ```
 
-### שינוי 4: הרחבת רשימת השכונות (parser-utils.ts)
-להוסיף שכונות שחסרות:
-```typescript
-// הוספה ל-TEL_AVIV_NEIGHBORHOODS
-{ pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
-{ pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
-{ pattern: /קרית\s*שלום/i, value: 'קרית_שלום', label: 'קרית שלום' },
-{ pattern: /שכונת\s*התקווה/i, value: 'התקווה', label: 'שכונת התקווה' },
-```
+### שלב 3: סדר עדיפות לזיהוי שכונה
+
+1. **עמודה 4 (neighborhoodText)** - מידע ישיר מ-Homeless
+2. **חיפוש רחוב בטבלה (streetText)** - 933 רחובות ממופים
+3. **עמודה 5 (streetText) regex** - חיפוש patterns בשם הרחוב
+4. **fullRowText** - חיפוש בכל הטקסט
+
+## הערה על גודל ופרטים נוספים
+
+הגודל (40 מ"ר) ופרטים כמו מרפסת/חניה/מזגן **זמינים רק בדף הפרטים** של הנכס, לא בתוצאות החיפוש.
+
+כדי לקבל אותם היינו צריכים לגרד כל דף נכס בנפרד - זה אפשרי אבל:
+- מגדיל את כמות הקריאות פי 50-100
+- מגדיל את העלות משמעותית
+- מאט את הסקאן
+
+**המלצה:** להתמקד קודם בשיפור זיהוי השכונות באמצעות טבלת הרחובות. אפשר להוסיף scraping של דפי פרטים בשלב מאוחר יותר.
 
 ## קבצים לעדכון
 
 1. **`_experimental/parser-homeless.ts`**
-   - הוספת `DEFAULT_CITY = 'תל אביב יפו'`
-   - חיפוש שכונות ב-fullRowText
-   - סינון אופציונלי לתל אביב בלבד
+   - המרה ל-async function
+   - הוספת import ל-street-lookup
+   - שימוש ב-lookupNeighborhoodByStreet כ-fallback
 
-2. **`_experimental/parser-utils.ts`**
-   - הרחבת `TEL_AVIV_NEIGHBORHOODS`
+2. **`_experimental/scout-homeless.ts`** (אם קיים)
+   - עדכון לקריאה ל-async parseHomelessHtml
 
 3. **`_personal-scout/parser-homeless.ts`**
    - סנכרון אותם שינויים
-
-4. **`_personal-scout/parser-utils.ts`**
-   - סנכרון שכונות
 
 ## תוצאה צפויה
 
 | שדה | לפני | אחרי (צפי) |
 |-----|------|------------|
-| עיר | ~50% | 100% (ברירת מחדל) |
-| שכונות | ~10% | 60%+ |
-| מחיר | 80%+ | 80%+ (כבר תוקן) |
-| חדרים | 100% | 100% |
-| קומה | 100% | 100% |
-| גודל | 0% | 0% (לא קיים בטבלה) |
+| שכונות | 89% | 95%+ |
+| עיר | 100% | 100% |
+| מחיר | 93% | 93% |
+| רחוב | כבר נקלט | כבר נקלט |
 
-## הערה על גודל
+## שלב עתידי (אופציונלי)
 
-גודל **לא זמין** בטבלת תוצאות Homeless. הוא מופיע רק בדפי הפרטים של הנכסים.
-כדי לקבל גודל היינו צריכים לגרד כל דף נכס בנפרד - זה אפשרי אבל מגדיל משמעותית את כמות הקריאות והעלות.
+לקבלת גודל ופרטים נוספים - scraping של דפי פרטים:
+- לכל נכס חדש, לגרד את `source_url`
+- לחלץ גודל, מרפסת, חניה, מזגן וכו'
+- זה יהיה פרויקט נפרד עם עלות נוספת
+
