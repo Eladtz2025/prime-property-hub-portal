@@ -1,113 +1,174 @@
 
+# עדכון Personal Scout - תמיכה בפילטרים ב-URL למדלן
 
-# תיקון Personal Scout - חלק 2
+## ממצא חדש
 
-## מצב נוכחי
+מדלן **כן תומכת בפילטרים ב-URL** - זה חוסך המון קריאות ל-Firecrawl!
 
-### ✅ מה תוקן בהצלחה:
-- Worker statistics update - עובד
-- Madlan parser - מסונכרן עם פרודקשן
-- שיעורי חילוץ מעולים (92% שכונות, 92% גודל)
-
-### ⚠️ מה עדיין לא עובד:
-- ריצות נתקעות ב-"running" 
-- רק 2 מתוך 35 לידים הושלמו
-- אין Cron Job אוטומטי
-
-## בעיית שורש: Concurrency
-
-**הבעיה:** ה-Trigger שולח 35 workers ברצף מהיר עם רק 5 שניות ביניהם.
-זה גורם ל:
-1. עומס על Edge Functions
-2. חלק מה-workers לא מגיעים כלל
-3. Supabase מגביל concurrency
-
-**פתרון:** להגדיל את ה-delay בין לידים מ-5 שניות ל-15 שניות.
-
-## תוכנית תיקון
-
-### שלב 1: עדכון Trigger עם delay ארוך יותר
-
-**קובץ:** `supabase/functions/personal-scout-trigger/index.ts`
-
-**שינוי:** שורה 66
-```javascript
-// OLD:
-const DELAY_BETWEEN_LEADS_MS = 5000; // 5 seconds
-
-// NEW:
-const DELAY_BETWEEN_LEADS_MS = 15000; // 15 seconds between leads
+### פורמט הפילטר שזוהה:
+```
+?filters=_{minPrice}-{maxPrice}_{minRooms}-{maxRooms}
 ```
 
-**סיבה:** 35 לידים × 15 שניות = 525 שניות = ~9 דקות. 
-זה נותן לכל worker זמן לסיים לפני שהבא מתחיל.
+### הוכחות:
+| URL | תוצאות |
+|-----|--------|
+| ללא פילטר | 1,644 דירות |
+| `?filters=_5000-8000_3-4` | 278 דירות |
+| `?filters=_-10000_3-` | 296 דירות |
 
-### שלב 2: תיקון ריצות תקועות (SQL)
+### השפעה על יעילות:
+- **ללא פילטר:** סורקים 1,644 נכסים, מסננים ~95% אחר כך
+- **עם פילטר:** סורקים 278 נכסים רלוונטיים מראש
+- **חיסכון:** ~83% פחות נתונים לעבד!
 
-```sql
--- Fix stuck runs
-UPDATE personal_scout_runs
-SET status = 'completed', 
-    completed_at = NOW(),
-    leads_completed = CASE 
-      WHEN id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d' THEN 
-        (SELECT COUNT(DISTINCT lead_id) FROM personal_scout_matches WHERE run_id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d')
-      ELSE leads_completed
-    END,
-    total_matches = CASE 
-      WHEN id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d' THEN 
-        (SELECT COUNT(*) FROM personal_scout_matches WHERE run_id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d')
-      ELSE total_matches
-    END
-WHERE status = 'running' 
-  AND created_at < NOW() - INTERVAL '1 hour';
+---
+
+## תוכנית השינויים
+
+### שלב 1: עדכון `buildMadlanUrl` ב-url-builder.ts
+
+**קובץ:** `supabase/functions/_personal-scout/url-builder.ts`
+
+**לפני:**
+```typescript
+function buildMadlanUrl(
+  city: string,
+  propertyType: 'rent' | 'sale',
+  page: number = 1
+): string {
+  // ... רק עיר
+  // Madlan doesn't support price/rooms in URL
+}
 ```
 
-### שלב 3: הוספת Cron Job (SQL)
-
-```sql
--- Schedule personal scout to run at 01:00 IST (23:00 UTC)
-SELECT cron.schedule(
-  'personal-scout-daily',
-  '0 23 * * *',  -- 23:00 UTC = 01:00 IST
-  $$
-  SELECT net.http_post(
-    url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/personal-scout-trigger',
-    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVYeLYJec-2vFcGeYPe9mM", "Content-Type": "application/json"}'::jsonb,
-    body := '{}'::jsonb
-  );
-  $$
-);
+**אחרי:**
+```typescript
+function buildMadlanUrl(
+  city: string,
+  propertyType: 'rent' | 'sale',
+  minPrice?: number | null,
+  maxPrice?: number | null,
+  minRooms?: number | null,
+  maxRooms?: number | null,
+  page: number = 1
+): string {
+  const pathType = propertyType === 'rent' ? 'for-rent' : 'for-sale';
+  let baseUrl = `https://www.madlan.co.il/${pathType}`;
+  
+  // City mapping
+  const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-') + '-ישראל';
+  baseUrl += `/${citySlug}`;
+  
+  // Build filters parameter
+  // Format: _minPrice-maxPrice_minRooms-maxRooms
+  const priceFilter = `${minPrice || ''}-${maxPrice || ''}`;
+  const roomsFilter = `${minRooms || ''}-${maxRooms || ''}`;
+  const filters = `_${priceFilter}_${roomsFilter}`;
+  
+  const params = new URLSearchParams();
+  params.set('filters', filters);
+  
+  if (page > 1) {
+    params.set('page', page.toString());
+  }
+  
+  return `${baseUrl}?${params.toString()}`;
+}
 ```
 
-### שלב 4: הרצת בדיקה ידנית
+### שלב 2: עדכון הקריאה ל-buildMadlanUrl
 
-לאחר התיקונים, נריץ את ה-Trigger ידנית עם ליד אחד לבדיקה:
-```bash
-curl -X POST .../personal-scout-trigger -d '{"lead_id": "f6379896-9686-4f75-bb92-75a7059ef859"}'
+**לפני (שורה 90):**
+```typescript
+} else if (source === 'madlan') {
+  return buildMadlanUrl(city, property_type, page);
+}
 ```
+
+**אחרי:**
+```typescript
+} else if (source === 'madlan') {
+  return buildMadlanUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
+}
+```
+
+### שלב 3: טיפול ביחידות מחיר (מכירה)
+
+במכירה, המחירים במדלן הם בש"ח מלאים (לא באלפים). אם הליד שומר מחירים באלפים (למשל budget_max = 5000 = 5 מיליון), צריך להכפיל ב-1000:
+
+```typescript
+// For sale: DB stores in thousands (5000 = 5M), Madlan expects full price
+let adjustedMinPrice = minPrice;
+let adjustedMaxPrice = maxPrice;
+
+if (propertyType === 'sale') {
+  if (maxPrice && maxPrice < 100000) {
+    adjustedMinPrice = minPrice ? minPrice * 1000 : null;
+    adjustedMaxPrice = maxPrice ? maxPrice * 1000 : null;
+  }
+}
+```
+
+---
+
+## תוצאה צפויה
+
+### לפני התיקון:
+```text
+Lead: תל אביב, 5,000-8,000₪, 3-4 חדרים
+  └─ Madlan URL: /for-rent/תל-אביב-יפו-ישראל
+  └─ Results: 1,644 properties
+  └─ After filtering: ~50 matches
+```
+
+### אחרי התיקון:
+```text
+Lead: תל אביב, 5,000-8,000₪, 3-4 חדרים
+  └─ Madlan URL: /for-rent/תל-אביב-יפו-ישראל?filters=_5000-8000_3-4
+  └─ Results: ~278 properties
+  └─ After filtering: ~50 matches
+```
+
+### חיסכון:
+- **83% פחות נתונים** לסרוק ולעבד
+- **פחות זמן** לכל ריצה
+- **Post-parsing filter** עדיין פעיל לשכונות ותכונות
+
+---
+
+## קובץ לעדכון
+
+| קובץ | שינוי |
+|------|-------|
+| `supabase/functions/_personal-scout/url-builder.ts` | הוספת פרמטרים לפונקציית Madlan + בניית `filters` |
+
+---
+
+## בדיקה אחרי התיקון
+
+1. הפעלת Personal Scout Worker לליד ספציפי
+2. בדיקת הלוגים שה-URL כולל `?filters=`
+3. וידוא שמספר התוצאות מופחת משמעותית
 
 ---
 
 ## סיכום טכני
 
-| בעיה | סיבה | פתרון |
-|------|------|-------|
-| רק 2/35 לידים הושלמו | Concurrency overload | הגדלת delay ל-15 שניות |
-| ריצות תקועות | Workers לא חוזרים | תיקון ידני + timeout ב-cleanup |
-| אין אוטומציה | לא הוגדר cron | הוספת cron job לשעה 01:00 |
-
-## קבצים לעדכון
-
-| קובץ | פעולה |
-|------|-------|
-| `supabase/functions/personal-scout-trigger/index.ts` | הגדלת DELAY_BETWEEN_LEADS_MS |
-| SQL Script | תיקון ריצות + הוספת cron |
-
-## בדיקה
-
-לאחר התיקון:
-1. הרצת trigger ידנית עם ליד בודד
-2. בדיקה שהסטטוס מתעדכן ל-completed
-3. בדיקה שיש התאמות עם שכונות וגודל
-
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    MADLAN URL Filter Format                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ?filters=_{minPrice}-{maxPrice}_{minRooms}-{maxRooms}      │
+│                                                              │
+│  Examples:                                                   │
+│  ─────────                                                   │
+│  • Price 5K-8K, Rooms 3-4:  ?filters=_5000-8000_3-4         │
+│  • Max price 10K, Rooms 3+: ?filters=_-10000_3-             │
+│  • Price 2M-5M (sale):      ?filters=_2000000-5000000_3-4   │
+│                                                              │
+│  Note: Empty values use just dash: _5000-_ means min 5000   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
