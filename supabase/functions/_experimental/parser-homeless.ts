@@ -28,6 +28,9 @@ import {
 /**
  * Parse Homeless HTML and extract property listings
  */
+// Default city - since we're scanning Tel Aviv, default to it
+const DEFAULT_CITY = 'תל אביב יפו';
+
 export function parseHomelessHtml(
   html: string,
   propertyType: 'rent' | 'sale'
@@ -161,11 +164,17 @@ export function parseHomelessHtml(
         }
       }
       
-      // Normalize city - try column first, then pattern matching
-      const city = extractCity(cityText) || cityText || extractCity(fullRowText) || null;
+      // Normalize city - try column first, then pattern matching, then default to Tel Aviv
+      const city = extractCity(cityText) || extractCity(neighborhoodText) || extractCity(fullRowText) || DEFAULT_CITY;
       
-      // Extract neighborhood with city context
-      const neighborhood = extractNeighborhood(neighborhoodText, city) || extractNeighborhood(fullRowText, city);
+      // Extract neighborhood with city context - search in multiple sources
+      let neighborhood = extractNeighborhood(neighborhoodText, city);
+      if (!neighborhood) {
+        neighborhood = extractNeighborhood(streetText, city);
+      }
+      if (!neighborhood) {
+        neighborhood = extractNeighborhood(fullRowText, city);
+      }
       
       // Build address
       let address: string | null = null;
