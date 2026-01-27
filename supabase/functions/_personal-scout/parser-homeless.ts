@@ -6,6 +6,7 @@
  */
 
 import { load as cheerioLoad } from "npm:cheerio@1.0.0";
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   extractPrice,
   extractRooms,
@@ -19,6 +20,7 @@ import {
   type ParsedProperty,
   type ParserResult
 } from './parser-utils.ts';
+import { lookupNeighborhoodByStreet } from '../_experimental/street-lookup.ts';
 
 /**
  * Parse Homeless HTML and extract property listings
@@ -26,10 +28,11 @@ import {
 // Default city - since we're scanning Tel Aviv, default to it
 const DEFAULT_CITY = 'תל אביב יפו';
 
-export function parseHomelessHtml(
+export async function parseHomelessHtml(
   html: string,
-  propertyType: 'rent' | 'sale'
-): ParserResult {
+  propertyType: 'rent' | 'sale',
+  supabase?: SupabaseClient
+): Promise<ParserResult> {
   const $ = cheerioLoad(html);
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
@@ -39,7 +42,10 @@ export function parseHomelessHtml(
   const rows = $('tr[type="ad"]');
   console.log(`[personal-scout/parser-homeless] Found ${rows.length} potential property rows`);
   
-  rows.each((index, element) => {
+  // Process rows - use for...of to support async/await
+  const rowsArray = rows.toArray();
+  for (let index = 0; index < rowsArray.length; index++) {
+    const element = rowsArray[index];
     try {
       const $row = $(element);
       const tds = $row.find('td');
@@ -168,6 +174,23 @@ export function parseHomelessHtml(
         neighborhood = extractNeighborhood(fullRowText, city);
       }
       
+      // NEW: Fallback to street_neighborhoods database lookup (1,245 streets mapped!)
+      if (!neighborhood && streetText && supabase && city === 'תל אביב יפו') {
+        try {
+          const streetLookup = await lookupNeighborhoodByStreet(supabase, streetText, city);
+          if (streetLookup) {
+            neighborhood = {
+              label: streetLookup.neighborhood,
+              value: streetLookup.neighborhood_value
+            };
+            console.log(`[personal-scout/parser-homeless] DB lookup: "${streetText}" → ${streetLookup.neighborhood}`);
+          }
+        } catch (lookupErr) {
+          // Silent fail - continue with regex-only results
+          console.warn(`[personal-scout/parser-homeless] Street lookup failed for "${streetText}":`, lookupErr);
+        }
+      }
+      
       // Build address
       let address: string | null = null;
       if (streetText) {
@@ -220,7 +243,7 @@ export function parseHomelessHtml(
       const errorMessage = err instanceof Error ? err.message : String(err);
       errors.push(`Row ${index}: ${errorMessage}`);
     }
-  });
+  }
   
   const stats = calculateStats(properties);
   

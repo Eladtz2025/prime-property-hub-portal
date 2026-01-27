@@ -153,9 +153,9 @@ serve(async (req) => {
       });
     }
 
-    // Extract properties with NON-AI parser (uses HTML)
+    // Extract properties with NON-AI parser (uses HTML) + DB street lookup
     const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
-    const parseResult = parseHomelessHtml(html, propertyTypeForParsing);
+    const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase);
     const extractedProperties = parseResult.properties;
 
     console.log(`🟣 Homeless page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
