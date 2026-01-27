@@ -111,6 +111,7 @@ Deno.serve(async (req) => {
       for (let page = 1; page <= MAX_PAGES_PER_SOURCE; page++) {
         try {
           // Build URL with lead parameters
+          // Features are only added to URL if required AND not flexible
           const url = buildPersonalUrl({
             source,
             city,
@@ -119,6 +120,10 @@ Deno.serve(async (req) => {
             max_price: lead.budget_max,
             min_rooms: lead.rooms_min,
             max_rooms: lead.rooms_max,
+            // Only filter by features if required AND not flexible
+            balcony_required: lead.balcony_required && !lead.balcony_flexible,
+            parking_required: lead.parking_required && !lead.parking_flexible,
+            elevator_required: lead.elevator_required && !lead.elevator_flexible,
             page
           });
 
@@ -152,7 +157,9 @@ Deno.serve(async (req) => {
           } else if (source === 'madlan') {
             properties = parseMadlanMarkdown(markdown, propertyType).properties;
           } else if (source === 'homeless') {
-            properties = parseHomelessHtml(html, propertyType).properties;
+            // FIX: parseHomelessHtml is async - must await
+            const homelessResult = await parseHomelessHtml(html, propertyType);
+            properties = homelessResult.properties;
           }
 
           stats.total_parsed += properties.length;
