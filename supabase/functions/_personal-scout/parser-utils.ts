@@ -121,6 +121,7 @@ export function extractFloor(text: string): number | null {
 
 // Canonical city names (matching locations.ts)
 const CITY_PATTERNS: Array<{ pattern: RegExp; canonical: string }> = [
+  // Main cities (original)
   { pattern: /תל\s*[-]?\s*אביב(?:\s*[-]?\s*יפו)?|ת"א/i, canonical: 'תל אביב יפו' },
   { pattern: /רמת\s*[-]?\s*גן/i, canonical: 'רמת גן' },
   { pattern: /גבעתיים|גבעת\s*יים/i, canonical: 'גבעתיים' },
@@ -137,6 +138,40 @@ const CITY_PATTERNS: Array<{ pattern: RegExp; canonical: string }> = [
   { pattern: /רמת\s*[-]?\s*השרון/i, canonical: 'רמת השרון' },
   { pattern: /אשדוד/i, canonical: 'אשדוד' },
   { pattern: /אשקלון/i, canonical: 'אשקלון' },
+  
+  // Additional cities (common in Homeless)
+  { pattern: /ירושלים/i, canonical: 'ירושלים' },
+  { pattern: /חיפה/i, canonical: 'חיפה' },
+  { pattern: /באר\s*[-]?\s*שבע/i, canonical: 'באר שבע' },
+  { pattern: /קרית\s*[-]?\s*מוצקין/i, canonical: 'קרית מוצקין' },
+  { pattern: /קרית\s*[-]?\s*ביאליק/i, canonical: 'קרית ביאליק' },
+  { pattern: /קרית\s*[-]?\s*אתא/i, canonical: 'קרית אתא' },
+  { pattern: /קרית\s*[-]?\s*ים/i, canonical: 'קרית ים' },
+  { pattern: /קרית\s*[-]?\s*גת/i, canonical: 'קרית גת' },
+  { pattern: /טבריה/i, canonical: 'טבריה' },
+  { pattern: /אילת/i, canonical: 'אילת' },
+  { pattern: /חדרה/i, canonical: 'חדרה' },
+  { pattern: /מודיעין/i, canonical: 'מודיעין' },
+  { pattern: /נס\s*[-]?\s*ציונה/i, canonical: 'נס ציונה' },
+  { pattern: /יבנה/i, canonical: 'יבנה' },
+  { pattern: /לוד/i, canonical: 'לוד' },
+  { pattern: /רמלה/i, canonical: 'רמלה' },
+  { pattern: /עפולה/i, canonical: 'עפולה' },
+  { pattern: /נהריה/i, canonical: 'נהריה' },
+  { pattern: /עכו/i, canonical: 'עכו' },
+  { pattern: /נשר/i, canonical: 'נשר' },
+  { pattern: /טירת\s*[-]?\s*כרמל/i, canonical: 'טירת כרמל' },
+  { pattern: /גבעת\s*[-]?\s*שמואל/i, canonical: 'גבעת שמואל' },
+  { pattern: /רחובות/i, canonical: 'רחובות' },
+  { pattern: /קדימה|צורן/i, canonical: 'קדימה צורן' },
+  { pattern: /דאלית\s*אל[-]?\s*כרמל/i, canonical: 'דאלית אל כרמל' },
+  { pattern: /עראבה/i, canonical: 'עראבה' },
+  { pattern: /סח'נין|סכנין/i, canonical: 'סכנין' },
+  { pattern: /אום\s*אל[-]?\s*פחם/i, canonical: 'אום אל פחם' },
+  { pattern: /נצרת/i, canonical: 'נצרת' },
+  { pattern: /צפת/i, canonical: 'צפת' },
+  { pattern: /עראד/i, canonical: 'ערד' },
+  { pattern: /דימונה/i, canonical: 'דימונה' },
 ];
 
 /**
