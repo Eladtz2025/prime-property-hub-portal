@@ -78,8 +78,7 @@ export interface PersonalUrlParams {
 
 /**
  * Build URL with lead-specific filters
- * Yad2 supports price + rooms in URL
- * Madlan/Homeless only support city in URL
+ * All sources (Yad2, Madlan, Homeless) support price + rooms in URL
  */
 export function buildPersonalUrl(params: PersonalUrlParams): string {
   const { source, city, property_type, min_price, max_price, min_rooms, max_rooms, page } = params;
@@ -89,7 +88,7 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
 } else if (source === 'madlan') {
     return buildMadlanUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
   } else if (source === 'homeless') {
-    return buildHomelessUrl(city, property_type, page);
+    return buildHomelessUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
   }
   
   throw new Error(`Unknown source: ${source}`);
@@ -201,23 +200,42 @@ function buildMadlanUrl(
 function buildHomelessUrl(
   city: string,
   propertyType: 'rent' | 'sale',
+  minPrice?: number | null,
+  maxPrice?: number | null,
+  minRooms?: number | null,
+  maxRooms?: number | null,
   page: number = 1
 ): string {
-  let baseUrl: string;
+  const baseType = propertyType === 'rent' ? 'rent' : 'sale';
+  let url = `https://www.homeless.co.il/${baseType}/`;
   
-  if (propertyType === 'rent') {
-    const cityData = homelessCityMap[city];
-    if (cityData) {
-      baseUrl = `https://www.homeless.co.il/rent/?inumber1=${cityData.code}`;
-    } else {
-      baseUrl = 'https://www.homeless.co.il/rent/';
-    }
-  } else {
-    baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(city)}`;
+  // Build parameters with $$ separator (Homeless-specific syntax)
+  const params: string[] = [];
+  
+  // City parameter
+  params.push(`city=${encodeURIComponent(city)}`);
+  
+  // Rooms filter (inumber4 = minimum rooms)
+  if (minRooms) {
+    params.push(`inumber4=${minRooms}`);
   }
   
-  // Homeless doesn't support price/rooms in URL - will filter post-parsing
-  const url = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
+  // Price filters
+  if (minPrice) {
+    params.push(`flong3=${minPrice}`);
+  }
+  if (maxPrice) {
+    params.push(`flong3_1=${maxPrice}`);
+  }
+  
+  // Pagination
+  if (page > 1) {
+    params.push(`page=${page}`);
+  }
+  
+  // Join with $$ separator (Homeless uses $$ instead of &)
+  url += params.join('$$');
+  
   console.log(`[personal-scout/url-builder] Built Homeless URL: ${url}`);
   return url;
 }
