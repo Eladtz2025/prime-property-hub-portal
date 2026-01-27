@@ -1,103 +1,98 @@
 
 
-# שיפור הפרסר של Homeless - שימוש בטבלת הרחובות
+# שילוב טבלת הרחובות בפרסר Homeless
 
-## מה גיליתי
+## המצב הנוכחי
 
-### 1. יש טבלת `street_neighborhoods` עם 933 רחובות
-מיפוי רחוב → שכונה עם confidence score, אבל **הפרסר לא משתמש בזה**!
+### יש בסיס מוכן שלא מנוצל:
+| רכיב | סטטוס | שימוש |
+|------|--------|-------|
+| טבלת `street_neighborhoods` | 1,245 רחובות בתל אביב | לא משמש |
+| פונקציות `street-lookup.ts` | מוכן לשימוש | לא משמש |
+| הפרסר | sync, לא ניגש לדאטאבייס | מחפש רק regex |
 
-### 2. מהתמונה - הפרטים שזמינים בדף נכס
-| שדה | זמין בחיפוש | זמין בדף פרטים |
-|-----|-------------|----------------|
-| מחיר | ✓ | ✓ |
-| חדרים | ✓ | ✓ |
-| קומה | ✓ | ✓ (+ מתוך כמה) |
-| **גודל** | ✗ | ✓ (40 מ"ר) |
-| שכונה | ✓ | ✓ |
-| רחוב | ✓ | ✓ |
-| מרפסת | ✗ | ✓ |
-| חניה | ✗ | ✓ |
-| מעלית | ✗ | ✓ |
-| מחסן | ✗ | ✓ |
-| מזגן | ✗ | ✓ |
+### סדר עדיפות נוכחי לזיהוי שכונות:
+1. `neighborhoodText` (עמודה 4) - regex
+2. `streetText` (עמודה 5) - regex
+3. `fullRowText` - regex
+
+**חסר:** חיפוש בטבלת הרחובות (1,245 רחובות ממופים!)
 
 ## הפתרון
 
-### שלב 1: שימוש ב-street_neighborhoods לזיהוי שכונות
-כשיש שם רחוב (עמודה 5) אבל אין שכונה מזוהה, נחפש בטבלה:
+### שינוי 1: המרה ל-async והעברת Supabase client
+**קובץ:** `_experimental/parser-homeless.ts`
 
 ```typescript
-import { lookupNeighborhoodByStreet, createSupabaseClient } from './street-lookup.ts';
+import { lookupNeighborhoodByStreet, normalizeStreetName } from './street-lookup.ts';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// After extracting streetText from column 5
+export async function parseHomelessHtml(
+  html: string,
+  propertyType: 'rent' | 'sale',
+  supabase: SupabaseClient  // מועבר מה-caller
+): Promise<ParserResult>
+```
+
+### שינוי 2: הוספת lookup לרחובות
+אחרי שורה 177, לפני בניית הכתובת:
+
+```typescript
+// Fallback: lookup street in database (1,245 streets mapped!)
 if (!neighborhood && streetText && city === 'תל אביב יפו') {
-  const supabase = createSupabaseClient();
   const streetLookup = await lookupNeighborhoodByStreet(supabase, streetText, city);
   if (streetLookup) {
-    neighborhood = {
-      label: streetLookup.neighborhood,
-      value: streetLookup.neighborhood_value
+    neighborhood = { 
+      label: streetLookup.neighborhood, 
+      value: streetLookup.neighborhood_value 
     };
   }
 }
 ```
 
-### שלב 2: הפיכת הפרסר ל-async
-כדי להשתמש ב-database lookup, הפונקציה צריכה להיות async:
+### שינוי 3: עדכון ה-caller
+**קובץ:** `scout-homeless/index.ts`
 
 ```typescript
-export async function parseHomelessHtml(
-  html: string,
-  propertyType: 'rent' | 'sale',
-  supabase?: SupabaseClient  // Optional - pass from caller
-): Promise<ParserResult>
+// שינוי הקריאה לפרסר
+const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase);
 ```
 
-### שלב 3: סדר עדיפות לזיהוי שכונה
+### שינוי 4: סנכרון ל-personal-scout
+אותם שינויים ב:
+- `_personal-scout/parser-homeless.ts`
 
-1. **עמודה 4 (neighborhoodText)** - מידע ישיר מ-Homeless
-2. **חיפוש רחוב בטבלה (streetText)** - 933 רחובות ממופים
-3. **עמודה 5 (streetText) regex** - חיפוש patterns בשם הרחוב
-4. **fullRowText** - חיפוש בכל הטקסט
+## סדר עדיפות חדש לזיהוי שכונות
 
-## הערה על גודל ופרטים נוספים
-
-הגודל (40 מ"ר) ופרטים כמו מרפסת/חניה/מזגן **זמינים רק בדף הפרטים** של הנכס, לא בתוצאות החיפוש.
-
-כדי לקבל אותם היינו צריכים לגרד כל דף נכס בנפרד - זה אפשרי אבל:
-- מגדיל את כמות הקריאות פי 50-100
-- מגדיל את העלות משמעותית
-- מאט את הסקאן
-
-**המלצה:** להתמקד קודם בשיפור זיהוי השכונות באמצעות טבלת הרחובות. אפשר להוסיף scraping של דפי פרטים בשלב מאוחר יותר.
+1. `neighborhoodText` (עמודה 4) - regex ישיר
+2. `streetText` (עמודה 5) - regex  
+3. `fullRowText` - regex בכל הטקסט
+4. **חדש:** `streetText` → חיפוש בטבלת `street_neighborhoods` (1,245 רחובות)
 
 ## קבצים לעדכון
 
-1. **`_experimental/parser-homeless.ts`**
-   - המרה ל-async function
-   - הוספת import ל-street-lookup
-   - שימוש ב-lookupNeighborhoodByStreet כ-fallback
-
-2. **`_experimental/scout-homeless.ts`** (אם קיים)
-   - עדכון לקריאה ל-async parseHomelessHtml
-
-3. **`_personal-scout/parser-homeless.ts`**
-   - סנכרון אותם שינויים
+| קובץ | שינוי |
+|------|-------|
+| `_experimental/parser-homeless.ts` | async + import street-lookup + DB query |
+| `_experimental/scout-homeless.ts` | await על הקריאה לפרסר |
+| `_personal-scout/parser-homeless.ts` | סנכרון אותם שינויים |
 
 ## תוצאה צפויה
 
 | שדה | לפני | אחרי (צפי) |
 |-----|------|------------|
-| שכונות | 89% | 95%+ |
+| שכונות (89%) | regex בלבד | 95%+ (עם 1,245 רחובות) |
 | עיר | 100% | 100% |
 | מחיר | 93% | 93% |
-| רחוב | כבר נקלט | כבר נקלט |
 
-## שלב עתידי (אופציונלי)
+## הערות טכניות
 
-לקבלת גודל ופרטים נוספים - scraping של דפי פרטים:
-- לכל נכס חדש, לגרד את `source_url`
-- לחלץ גודל, מרפסת, חניה, מזגן וכו'
-- זה יהיה פרויקט נפרד עם עלות נוספת
+### ביצועים
+- הפרסר יהיה איטי יותר (קריאות DB)
+- אפשרי לשקול `batchLookupStreets` לכל הרחובות בבת אחת
+- לשלב הראשון - lookup בודד לכל נכס
+
+### Fallback
+- אם ה-lookup נכשל → ממשיכים עם מה שיש
+- לא שוברים את הפרסר אם הדאטאבייס לא זמין
 
