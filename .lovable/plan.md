@@ -1,57 +1,18 @@
+# Homeless Parser - Status Summary
 
+## Current Extraction Rates (Verified)
+| Field | Rate | Notes |
+|-------|------|-------|
+| City | 100% | Working |
+| Neighborhoods | 89% | With DB street lookup |
+| Price | 92% | Validated ranges |
+| Rooms | 100% | Working |
+| Floor | 62% | Source data often empty |
+| Size | 0% | **Not available in search results** |
 
-# תיקון הבהרה - מה זמין ומה לא ב-Homeless
+## Technical Decision
+Size data is only available on individual property detail pages, not in the search results table.
+Current parser extracts ALL available data from the search results.
 
-## אימות מה-HTML
-
-בדקתי את ה-HTML האמיתי של דף תוצאות החיפוש והנה ה-header הרשמי:
-
-```
-סימון | תמונה | סוג הנכס | עיר | שכונה | רחוב | חדרים | קומה | מחיר | כניסה | ת.עידכון | לפרטים
-```
-
-**אין עמודת "גודל" בטבלת תוצאות החיפוש של Homeless.**
-
-## ההבדל בין דף חיפוש לדף פרטים
-
-| נתון | דף תוצאות (`/rent/?page=X`) | דף פרטים (`/rent/viewad,XXXXX.aspx`) |
-|------|----------------------------|--------------------------------------|
-| מחיר | כן | כן |
-| חדרים | כן | כן |
-| קומה | כן | כן (+ מתוך כמה) |
-| **גודל** | **לא קיים** | **כן** (40 מ"ר) |
-| מרפסת | לא | כן |
-| חניה | לא | כן |
-| מזגן | לא | כן |
-
-התמונה שצירפת (image-503) היא מדף פרטים - לכן ראית שם גודל.
-
-## הקומה כן עובדת
-
-מהלוגים רואים שהפרסר מזהה:
-- "קרקע" → 0
-- "מרתף" → -1  
-- מספרים (1, 10, 22) → מזוהים
-
-62% extraction rate כי 38% מהמודעות לא מילאו את השדה (תא ריק).
-
-## אפשרויות להתקדם
-
-### אפשרות 1: להמשיך עם מה שיש (מומלץ)
-- הפרסר כבר מחלץ את כל מה שזמין בטבלת החיפוש
-- שיעורי החילוץ טובים: עיר 100%, שכונות 89%, מחיר 92%, חדרים 100%, קומה 62%
-- גודל פשוט לא זמין - זו מגבלה של המקור
-
-### אפשרות 2: Scraping של דפי פרטים (יקר יותר)
-אם רוצים גודל, צריך לגרד כל `source_url` בנפרד:
-- מגדיל קריאות API פי 50-100
-- מגדיל עלות משמעותית
-- מאט את הסקאן
-
-## המלצה
-
-להמשיך הלאה - הפרסר של Homeless מחלץ **את כל מה שזמין** בתוצאות החיפוש.
-הגודל לא קיים שם - זו מגבלה של האתר, לא של הפרסר.
-
-אם בעתיד תרצה להוסיף scraping של דפי פרטים לקבלת גודל, זה אפשרי אבל יהיה פרויקט נפרד.
-
+## Next Steps
+Continue to next feature - Homeless parser is complete for search results.
