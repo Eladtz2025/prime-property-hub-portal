@@ -1,154 +1,117 @@
 
-# עדכון Personal Scout - תמיכה בפילטרים ב-URL להומלס
+# תוכנית: שלושה שיפורים ל-Personal Scout
 
-## ממצא חדש
+## 1. תיקון באג Homeless - הוספת await
 
-הומלס **גם תומכת בפילטרים ב-URL** - חיסכון נוסף!
+**בעיה:** ה-parser של Homeless הוא `async` אבל נקרא בלי `await`
 
-### פורמט הפילטר שזוהה מה-URL:
+**קובץ:** `supabase/functions/personal-scout-worker/index.ts`
+
+**שינוי בשורה 154-155:**
+```typescript
+// לפני
+} else if (source === 'homeless') {
+  properties = parseHomelessHtml(html, propertyType).properties;
+}
+
+// אחרי
+} else if (source === 'homeless') {
+  const result = await parseHomelessHtml(html, propertyType);
+  properties = result.properties;
+}
 ```
-https://www.homeless.co.il/rent/city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000$$inumber14=on
-```
-
-### פירוט הפרמטרים:
-| פרמטר | משמעות | דוגמא |
-|-------|--------|-------|
-| `city` | שם העיר | `תל אביב` |
-| `inumber4` | חדרים (מינימום) | `3` |
-| `flong3` | מחיר מינימלי | `5500` |
-| `flong3_1` | מחיר מקסימלי | `8000` |
-| `inumber14=on` | מרפסת | `on` |
-
-### שימו לב למפריד:
-הומלס משתמש ב-`$$` (דולר כפול) להפרדה בין פרמטרים, לא `&` רגיל!
 
 ---
 
-## תוכנית השינויים
+## 2. הוספת Features ל-URL
 
-### שלב 1: עדכון `buildHomelessUrl` ב-url-builder.ts
+### 2.1 עדכון PersonalUrlParams
 
 **קובץ:** `supabase/functions/_personal-scout/url-builder.ts`
 
-**לפני (שורות 201-223):**
 ```typescript
-function buildHomelessUrl(
-  city: string,
-  propertyType: 'rent' | 'sale',
-  page: number = 1
-): string {
-  // Homeless doesn't support price/rooms in URL
+export interface PersonalUrlParams {
+  source: string;
+  city: string;
+  property_type: 'rent' | 'sale';
+  min_price?: number | null;
+  max_price?: number | null;
+  min_rooms?: number | null;
+  max_rooms?: number | null;
+  // NEW: Feature filters
+  balcony_required?: boolean | null;
+  parking_required?: boolean | null;
+  elevator_required?: boolean | null;
+  page: number;
 }
 ```
 
-**אחרי:**
+### 2.2 עדכון buildHomelessUrl
+
+הוספת פרמטרים ל-Homeless:
+- `inumber14=on` למרפסת
+- נחקור אילו פרמטרים קיימים לחניה/מעלית
+
 ```typescript
-function buildHomelessUrl(
-  city: string,
-  propertyType: 'rent' | 'sale',
-  minPrice?: number | null,
-  maxPrice?: number | null,
-  minRooms?: number | null,
-  maxRooms?: number | null,
-  page: number = 1
-): string {
-  const baseType = propertyType === 'rent' ? 'rent' : 'sale';
-  let url = `https://www.homeless.co.il/${baseType}/`;
-  
-  // Build parameters with $$ separator
-  const params: string[] = [];
-  
-  // City parameter
-  params.push(`city=${encodeURIComponent(city)}`);
-  
-  // Rooms filter (inumber4 = minimum rooms)
-  if (minRooms) {
-    params.push(`inumber4=${minRooms}`);
-  }
-  
-  // Price filters
-  if (minPrice) {
-    params.push(`flong3=${minPrice}`);
-  }
-  if (maxPrice) {
-    params.push(`flong3_1=${maxPrice}`);
-  }
-  
-  // Pagination
-  if (page > 1) {
-    params.push(`page=${page}`);
-  }
-  
-  // Join with $$ separator
-  url += params.join('$$');
-  
-  console.log(`[personal-scout/url-builder] Built Homeless URL: ${url}`);
-  return url;
+// Inside buildHomelessUrl
+if (balconyRequired) {
+  params.push(`inumber14=on`);
 }
 ```
 
-### שלב 2: עדכון הקריאה ל-buildHomelessUrl
+### 2.3 עדכון Worker להעביר features
 
-**לפני (שורה 91-92):**
 ```typescript
-} else if (source === 'homeless') {
-  return buildHomelessUrl(city, property_type, page);
-}
-```
-
-**אחרי:**
-```typescript
-} else if (source === 'homeless') {
-  return buildHomelessUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
-}
-```
-
-### שלב 3: עדכון הערת הפונקציה הראשית
-
-**לפני (שורות 79-83):**
-```typescript
-/**
- * Build URL with lead-specific filters
- * Yad2 supports price + rooms in URL
- * Madlan/Homeless only support city in URL
- */
-```
-
-**אחרי:**
-```typescript
-/**
- * Build URL with lead-specific filters
- * All sources (Yad2, Madlan, Homeless) support price + rooms in URL
- */
+const url = buildPersonalUrl({
+  source,
+  city,
+  property_type: propertyType,
+  min_price: applyBudgetLeakage(lead.budget_min, 'min'),
+  max_price: applyBudgetLeakage(lead.budget_max, 'max'),
+  min_rooms: lead.rooms_min,
+  max_rooms: lead.rooms_max,
+  // Only add if required AND not flexible
+  balcony_required: lead.balcony_required && !lead.balcony_flexible,
+  parking_required: lead.parking_required && !lead.parking_flexible,
+  elevator_required: lead.elevator_required && !lead.elevator_flexible,
+  page
+});
 ```
 
 ---
 
-## תוצאה צפויה
+## 3. הוספת זליגה לתקציב (Budget Leakage)
 
-### לפני התיקון:
-```text
-Lead: תל אביב, 5,500-8,000₪, 3 חדרים+
-  └─ Homeless URL: /rent/?inumber1=17,1,150
-  └─ Results: ~1,158 properties
-  └─ After filtering: ~80 matches
+**מיקום:** `supabase/functions/_personal-scout/url-builder.ts`
+
+```typescript
+/**
+ * Apply budget leakage for more flexible search
+ * Expands search range by 10%
+ */
+function applyBudgetLeakage(
+  value: number | null | undefined,
+  type: 'min' | 'max'
+): number | null {
+  if (!value) return null;
+  
+  const LEAKAGE_PERCENT = 0.10; // 10%
+  
+  if (type === 'min') {
+    // Lower the minimum by 10%
+    return Math.floor(value * (1 - LEAKAGE_PERCENT));
+  } else {
+    // Raise the maximum by 10%
+    return Math.ceil(value * (1 + LEAKAGE_PERCENT));
+  }
+}
 ```
 
-### אחרי התיקון:
-```text
-Lead: תל אביב, 5,500-8,000₪, 3 חדרים+
-  └─ Homeless URL: /rent/city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000
-  └─ Results: ~150 properties
-  └─ After filtering: ~80 matches
-```
-
-### חיסכון מצטבר (כל המקורות):
-| מקור | לפני | אחרי | חיסכון |
-|------|------|------|--------|
-| Yad2 | כבר מסונן | כבר מסונן | - |
-| Madlan | 1,644 | ~278 | 83% |
-| Homeless | 1,158 | ~150 | 87% |
-| **סה"כ** | **2,802** | **~428** | **~85%** |
+### דוגמא:
+| תקציב מקורי | עם זליגה 10% |
+|------------|--------------|
+| 8,000 - 11,000 | 7,200 - 12,100 |
+| 5,000 - 7,000 | 4,500 - 7,700 |
 
 ---
 
@@ -156,40 +119,49 @@ Lead: תל אביב, 5,500-8,000₪, 3 חדרים+
 
 | קובץ | שינוי |
 |------|-------|
-| `supabase/functions/_personal-scout/url-builder.ts` | הוספת פרמטרים לפונקציית Homeless + שימוש במפריד `$$` |
+| `url-builder.ts` | הוספת PersonalUrlParams, זליגה, features ב-URL |
+| `personal-scout-worker/index.ts` | await ל-Homeless, העברת features |
 
 ---
 
-## בדיקה אחרי התיקון
-
-1. הפעלת Personal Scout Worker לליד ספציפי
-2. בדיקת הלוגים שה-URL של Homeless כולל `$$flong3=` ו-`$$inumber4=`
-3. וידוא שמספר התוצאות מופחת משמעותית
-
----
-
-## סיכום טכני - כל שלושת המקורות
+## תרשים זרימה אחרי השינויים
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    URL Filter Formats by Source                          │
+│                        IMPROVED FLOW                                     │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  YAD2:                                                                   │
-│  ─────                                                                   │
-│  ?city=5000&price=5000-8000&rooms=3-4                                   │
+│  Lead: Eli Aviad                                                        │
+│  ─────────────────                                                      │
+│  Budget: 8,000-11,000 → WITH LEAKAGE: 7,200-12,100                     │
+│  Rooms: 3-4                                                             │
+│  Balcony: required + flexible → NOT in URL (flexible=true)             │
 │                                                                          │
-│  MADLAN:                                                                 │
-│  ──────                                                                  │
-│  ?filters=_5000-8000_3-4                                                │
+│  URL Builder:                                                            │
+│  ─────────────                                                          │
+│  Homeless: /rent/city=תל אביב$$inumber4=3$$flong3=7200$$flong3_1=12100  │
+│  Madlan: /for-rent/תל-אביב?filters=_7200-12100_3-4                     │
+│  Yad2: /rent?city=5000&price=7200-12100&rooms=3-4                      │
 │                                                                          │
-│  HOMELESS:                                                               │
-│  ─────────                                                               │
-│  city=תל אביב$$inumber4=3$$flong3=5500$$flong3_1=8000                   │
+│          ↓ סריקה מחזירה ~150 נכסים                                       │
 │                                                                          │
-│  Note: Homeless uses $$ as parameter separator, not &                   │
+│  Post-Parse Filter:                                                      │
+│  ─────────────────                                                      │
+│  ✓ שכונות (מסננים אחרי)                                                 │
+│  ✓ Features (רק אם לא גמישים)                                           │
+│                                                                          │
+│          ↓ נשארים ~30 נכסים                                              │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**שורה תחתונה:** אחרי התיקון הזה, כל שלושת המקורות יתמכו בפילטרי מחיר וחדרים ב-URL - חיסכון של ~85% בנתונים לעיבוד!
+---
+
+## הערה על Lead הנוכחי
+
+ל-Eli Aviad יש:
+- `balcony_required: true` + `balcony_flexible: true`
+- `parking_required: true` + `parking_flexible: true`
+- `elevator_required: true` + `elevator_flexible: true`
+
+כי `flexible=true`, **לא** נוסיף את ה-features ל-URL - הם יסוננו רק אם יש `explicit false` בנכס.
