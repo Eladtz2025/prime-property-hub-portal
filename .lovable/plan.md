@@ -1,18 +1,113 @@
-# Homeless Parser - Status Summary
 
-## Current Extraction Rates (Verified)
-| Field | Rate | Notes |
-|-------|------|-------|
-| City | 100% | Working |
-| Neighborhoods | 89% | With DB street lookup |
-| Price | 92% | Validated ranges |
-| Rooms | 100% | Working |
-| Floor | 62% | Source data often empty |
-| Size | 0% | **Not available in search results** |
 
-## Technical Decision
-Size data is only available on individual property detail pages, not in the search results table.
-Current parser extracts ALL available data from the search results.
+# עדכון SCOUT_ARCHITECTURE.md
 
-## Next Steps
-Continue to next feature - Homeless parser is complete for search results.
+## סיכום השינויים לתיעוד
+
+### קובץ לעדכון
+`supabase/functions/_shared/SCOUT_ARCHITECTURE.md`
+
+### שינויים לסקשן Homeless (שורות 90-126)
+
+**מה להוסיף:**
+
+```markdown
+### שדרוגים אחרונים (ינואר 2026):
+
+**1. Async Parser עם DB Lookup:**
+- הפרסר הפך ל-async לתמיכה בקריאות לדאטאבייס
+- חיפוש רחוב בטבלת `street_neighborhoods` (1,245 רחובות בתל אביב)
+- סדר עדיפות לזיהוי שכונות:
+  1. עמודה 4 (שכונה) - regex
+  2. עמודה 5 (רחוב) - regex  
+  3. טקסט מלא - regex
+  4. **חדש:** חיפוש רחוב בדאטאבייס
+
+**2. מגבלת גודל:**
+- גודל (מ"ר) **לא זמין** בתוצאות החיפוש
+- קיים רק בדפי פרטים בודדים
+- extraction rate: 0% (מתוכנן)
+
+**3. שיעורי חילוץ מאומתים:**
+| שדה | שיעור |
+|-----|-------|
+| עיר | 100% |
+| שכונה | 89% (עם DB lookup) |
+| מחיר | 92% |
+| חדרים | 100% |
+| קומה | 62% (תלוי במקור) |
+| גודל | 0% (לא זמין) |
+```
+
+### סקשן חדש: Edge Function Timeouts
+
+**מיקום:** אחרי סקשן Proxy Logic (שורה 160)
+
+```markdown
+## Edge Function Timeouts
+
+### מגבלת Supabase:
+- **60 שניות** - תכנית חינמית
+- **400 שניות** - תכניות בתשלום
+
+### למה קורים Timeouts:
+- סריקת דף: 5-10 שניות
+- CAPTCHA/המתנה: 15-30 שניות
+- 4 דפים ברצף: 60+ שניות
+
+### הפתרון - Single Page Mode:
+כל פונקציה מטפלת בדף אחד בלבד:
+
+```text
+trigger-scout-pages:
+  ├─ scout-homeless(page=1) → 10s ✓
+  ├─ scout-homeless(page=2) → 12s ✓ (יוצא אחרי 2s)
+  ├─ scout-homeless(page=3) → 8s ✓ (יוצא אחרי 4s)
+  └─ scout-homeless(page=4) → 15s ✓ (יוצא אחרי 6s)
+```
+
+### Recovery מ-Timeout:
+- `checkAndFinalizeRun` בודק אחרי כל דף
+- דפים שנכשלו מסומנים `failed` 
+- הריצה ממשיכה לדפים הבאים
+- סטטוס סופי: `partial` אם יש כשלונות
+```
+
+### עדכון טבלת קבצים (שורות 163-175)
+
+**להוסיף:**
+```markdown
+| `supabase/functions/_experimental/street-lookup.ts` | חיפוש רחוב בדאטאבייס |
+```
+
+### עדכון מסקנות (שורות 178-184)
+
+**להחליף/להוסיף:**
+```markdown
+## מסקנות מהניסיון
+
+1. **מדלן** - סדרתי עם recovery = יציבות מקסימלית
+2. **יד2** - מקבילי עובד, יש בעיית orphan pages בדפים מאוחרים
+3. **הומלס** - הכי יציב, DB lookup משפר שכונות ב-10%+
+4. **פרסרים** - regex/cheerio מותאם לכל אתר, לא AI
+5. **ניקוי** - קריטי להסיר noise לפני פרסינג
+6. **Timeouts** - Single Page Mode מונע חסימות
+
+> עדכון אחרון: 27/01/2026
+```
+
+## תוצאה צפויה
+
+המסמך יכיל:
+- תיעוד מלא של השינויים האחרונים
+- הסבר על Timeouts ואיך פותרים
+- שיעורי חילוץ מאומתים לכל אתר
+- מידע על מגבלת Size ב-Homeless
+
+## קבצים לעדכון
+
+| קובץ | פעולה |
+|------|-------|
+| `supabase/functions/_shared/SCOUT_ARCHITECTURE.md` | עדכון עם כל השינויים |
+| `.lovable/plan.md` | עדכון סטטוס (כבר נעשה) |
+
