@@ -1,8 +1,13 @@
 /**
+ * ⚠️ PRODUCTION CODE - DO NOT MODIFY WITHOUT TESTING ⚠️
+ * 
  * Homeless Parser - No AI
  * 
  * Parses property listings from Homeless.co.il HTML using cheerio.
- * Completely isolated from production code.
+ * This parser is used by the production scout-homeless function.
+ * 
+ * IMPORTANT: Any changes to this file will affect production scans.
+ * Always test thoroughly before deploying.
  */
 
 import { load as cheerioLoad } from "npm:cheerio@1.0.0";
@@ -151,11 +156,7 @@ export function parseHomelessHtml(
           propertyTypeText,
           cityText,
           neighborhoodText,
-          streetText,
-          roomsText,
-          floorText,
-          priceText,
-          entryDateText
+          streetText
         }
       };
       
