@@ -120,8 +120,10 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
   console.log(`[personal-scout/url-builder] Budget leakage: ${min_price}-${max_price} → ${leakedMinPrice}-${leakedMaxPrice}`);
   
   if (source === 'yad2') {
-    return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page);
+    return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   } else if (source === 'madlan') {
+    // NOTE: Madlan does NOT support feature filtering via URL
+    // Features are filtered post-parse in feature-filter.ts
     return buildMadlanUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page);
   } else if (source === 'homeless') {
     return buildHomelessUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
@@ -137,7 +139,10 @@ function buildYad2Url(
   maxPrice?: number | null,
   minRooms?: number | null,
   maxRooms?: number | null,
-  page: number = 1
+  page: number = 1,
+  balconyRequired?: boolean | null,
+  parkingRequired?: boolean | null,
+  elevatorRequired?: boolean | null
 ): string {
   const baseUrl = `https://www.yad2.co.il/realestate/${propertyType === 'rent' ? 'rent' : 'forsale'}`;
   const params = new URLSearchParams();
@@ -175,6 +180,17 @@ function buildYad2Url(
   if (minRooms || maxRooms) {
     const roomsRange = `${minRooms || ''}-${maxRooms || ''}`;
     params.set('rooms', roomsRange);
+  }
+  
+  // Feature filters - Yad2 supports these!
+  if (balconyRequired) {
+    params.set('balcony', '1');
+  }
+  if (parkingRequired) {
+    params.set('parking', '1');
+  }
+  if (elevatorRequired) {
+    params.set('elevator', '1');
   }
   
   // Pagination
