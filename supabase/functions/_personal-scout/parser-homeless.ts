@@ -52,11 +52,53 @@ export function parseHomelessHtml(
       // Get full row text for robust extraction
       const fullRowText = $row.text();
       
-      // Extract data from full row text (more robust than fixed columns)
-      const price = extractPrice(fullRowText);
-      const rooms = extractRooms(fullRowText);
-      const floor = extractFloor(fullRowText);
-      const size = extractSize(fullRowText);
+      // Extract data from full row text first (works when units are present)
+      let price = extractPrice(fullRowText);
+      let rooms = extractRooms(fullRowText);
+      let floor = extractFloor(fullRowText);
+      let size = extractSize(fullRowText);
+      
+      // ========== FALLBACK: Direct column extraction ==========
+      // Homeless table ACTUAL column mapping (verified from HTML):
+      // [0]=checkbox, [1]=image, [2]=type, [3]=city, [4]=neighborhood, [5]=street
+      // [6]=rooms, [7]=floor, [8]=price, [9]=entry, [10]=date
+      // NOTE: There is NO size column in the Homeless table!
+      
+      // Rooms (column 6) - standalone number or "X חדרים", range 1-20
+      if (!rooms && tds.length > 6) {
+        const roomsCell = cleanText($(tds[6]).text());
+        // Match standalone number like "5" or "3.5"
+        const roomsMatch = roomsCell.match(/^(\d+(?:[.,]\d)?)$/);
+        if (roomsMatch) {
+          const num = parseFloat(roomsMatch[1].replace(',', '.'));
+          if (num >= 1 && num <= 20) rooms = num;
+        }
+      }
+      
+      // Floor (column 7) - can be number or text like "קרקע", range -5 to 100
+      if (!floor && tds.length > 7) {
+        const floorCell = cleanText($(tds[7]).text());
+        // Handle "קרקע" = 0
+        if (/קרקע|ground/i.test(floorCell)) {
+          floor = 0;
+        } else {
+          const floorMatch = floorCell.match(/^(-?\d+)$/);
+          if (floorMatch) {
+            const num = parseInt(floorMatch[1], 10);
+            if (num >= -5 && num <= 100) floor = num;
+          }
+        }
+      }
+      
+      // Price (column 8) - format like "4,000 ₪" or "8,500"
+      if (!price && tds.length > 8) {
+        const priceCell = cleanText($(tds[8]).text());
+        const cleaned = priceCell.replace(/[^\d]/g, '');
+        if (cleaned) {
+          const num = parseInt(cleaned, 10);
+          if (num >= 500 && num <= 100000000) price = num;
+        }
+      }
       
       // Try to extract structured data from cells when available
       // But use flexible detection instead of fixed column indices
