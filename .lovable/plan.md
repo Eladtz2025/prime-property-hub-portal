@@ -1,42 +1,53 @@
 
-# תיקון: העתקת שיפורי הפרסרים לתיקייה הנכונה
 
-## הבעיה
-תיקנתי את הפרסרים ב-`_experimental/` אבל ה-`personal-scout-worker` מייבא מ-`_personal-scout/`.
-לכן התיקונים לא השפיעו על הריצה של רוני.
+# תיקון באג בפרסר Homeless + ריצה מחדש
 
-## הפתרון
-להעתיק את התיקונים מ-`_experimental/` אל `_personal-scout/`:
+## הבעיה שמצאתי
 
-### קובץ 1: `_personal-scout/parser-homeless.ts`
-העתקת הלוגיקה החדשה:
-- חילוץ מחיר/חדרים/גודל מהטקסט הכללי (לא מעמודות קבועות)
-- זיהוי סוג נכס ועיר מהטקסט
-- טיפול בפורמטים שונים של טבלאות
+בקובץ `_experimental/parser-homeless.ts` שורות 150-159:
 
-### קובץ 2: `_personal-scout/parser-madlan.ts`
-העתקת הלוגיקה החדשה:
-- חיפוש שכונות בכל הבלוק עם `KNOWN_NEIGHBORHOODS`
-- סינון פרויקטים חדשים (URLs עם `/projects/`)
-- שיפור זיהוי תיווך
-
-## שינויים טכניים
-
-```text
-_personal-scout/parser-homeless.ts:
-├── הוספת extractFromRowText() - חילוץ מטקסט במקום עמודות
-├── שימוש ב-extractPrice(), extractRooms(), extractSize() על כל הטקסט
-└── fallback לעמודות אם החילוץ מטקסט נכשל
-
-_personal-scout/parser-madlan.ts:
-├── הוספת KNOWN_NEIGHBORHOODS mapping
-├── הוספת extractNeighborhoodFromBlock() - חיפוש בכל הבלוק
-├── הוספת isProject filter - סינון פרויקטים
-└── שיפור זיהוי תיווך עם "בבלעדיות"
+```typescript
+raw_data: {
+  propertyTypeText,
+  cityText,
+  neighborhoodText,
+  streetText,
+  roomsText,      // ❌ לא מוגדר!
+  floorText,      // ❌ לא מוגדר!
+  priceText,      // ❌ לא מוגדר!
+  entryDateText   // ❌ לא מוגדר!
+}
 ```
 
-## לאחר התיקון
-ריצה חוזרת של Personal Scout על רוני כדי לוודא:
-- ✅ Homeless מחזיר price/rooms/size
-- ✅ Madlan מחזיר שכונות
-- ✅ פרויקטים מסוננים החוצה
+המשתנים `propertyTypeText`, `cityText`, `neighborhoodText`, `streetText` מוגדרים בשורות 66-69, אבל ארבעת המשתנים האחרים מעולם לא הוגדרו - מה שגרם לקריסה של הפרסר.
+
+## התיקון
+
+הסרת המשתנים הלא מוגדרים מ-`raw_data`:
+
+```typescript
+raw_data: {
+  propertyTypeText,
+  cityText,
+  neighborhoodText,
+  streetText
+}
+```
+
+## שלבי ביצוע
+
+1. **תיקון הבאג** - הסרת המשתנים הלא מוגדרים מ-raw_data
+2. **Deploy** - העלאת הפונקציה scout-homeless
+3. **ריצה ידנית** - הרצת סקאן Homeless בלבד לוודא שעובד
+4. **בדיקת תוצאות** - וידוא שנמצאו נכסים ושהסטטוס completed
+
+## לגבי "נעילת הקוד"
+
+בגלל שזו מערכת מבוססת קוד, אין דרך טכנית "לנעול" קבצים. אבל יש כמה אפשרויות:
+
+1. **תיעוד ברור** - אוסיף הערה בראש הקובץ שזה קוד פרודקשן יציב
+2. **הפרדה פיזית** - אפשר להעתיק את הפרסרים היציבים לתיקייה `_shared/` והפרודקשן ישתמש רק משם
+3. **בדיקות אוטומטיות** - אפשר ליצור טסט פשוט שמריץ את הפרסר על HTML לדוגמה ומוודא שלא קורס
+
+**המלצה:** אוסיף הערת אזהרה בראש הקובץ והפרדה ברורה בין _experimental (לניסויים) ל-_shared (לפרודקשן).
+
