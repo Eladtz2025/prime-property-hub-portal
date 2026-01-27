@@ -1,142 +1,116 @@
 
-# תיקון חילוץ מחיר, עיר וגודל מ-Homeless
+# תיקון פרסר Homeless - מיקוד בתל אביב + שכונות
 
-## הבעיות שמצאתי
+## מה למדתי מהפרסרים של Yad2 ו-Madlan
 
-### 1. מחיר - קולט מספרים שגויים
-| ערך שנקלט | סוג הבעיה |
-|-----------|----------|
-| 32,425,100 | מספר טלפון |
-| 62,133,100 | מספר טלפון או ID |
-| 2,107,700 | תעודת זהות |
-
-**הסיבה:** הפונקציה `extractPrice` מחפשת קודם בטקסט הכללי של השורה (`fullRowText`) ומוצאת מספרי טלפון או IDs לפני שמגיעה ל-fallback של עמודה 8.
-
-### 2. עיר - לא נקלטת ב-50% מהמקרים
-הרבה נכסים עם `city: null` למרות שיש עיר ב-`neighborhoodText`:
-- "קרית מוצקין", "טבריה", "אילת", "חדרה"
-
-**הסיבה:** הרשימה ב-`extractCity` מכילה רק ערים נפוצות (תל אביב, רמת גן וכו') אבל לא ערים כמו קרית מוצקין, טבריה, אילת.
-
-### 3. גודל - 0% תמיד
-**הסיבה:** מאושר - אין עמודת גודל בטבלה של Homeless. הגודל זמין רק בדף הפרטים של הנכס.
-
-## הפתרון
-
-### שינוי 1: תיקון לוגיקת המחיר (עדיפות ל-fallback)
-**קובץ:** `_experimental/parser-homeless.ts`
-
-**לפני:**
+### 1. מילון שכונות מובנה (parser-madlan.ts שורות 209-230)
+Madlan משתמש ב-`KNOWN_NEIGHBORHOODS` עם רשימה מפורשת:
 ```typescript
-let price = extractPrice(fullRowText);
-// ...
-if (!price && tds.length > 8) {
-  const priceCell = cleanText($(tds[8]).text());
-  // fallback
-}
-```
-
-**אחרי:**
-```typescript
-// Price: extract from column FIRST, then fallback to text
-let price: number | null = null;
-
-// Primary: Get from price column (td[8]) - more reliable
-if (tds.length > 8) {
-  const priceCell = cleanText($(tds[8]).text());
-  const cleaned = priceCell.replace(/[^\d]/g, '');
-  if (cleaned) {
-    const num = parseInt(cleaned, 10);
-    // Rent: 500-50,000 | Sale: 100,000-50,000,000
-    if ((propertyType === 'rent' && num >= 500 && num <= 50000) ||
-        (propertyType === 'sale' && num >= 100000 && num <= 50000000)) {
-      price = num;
-    }
-  }
-}
-
-// Fallback: Extract from full text only if column failed
-if (!price) {
-  price = extractPrice(fullRowText);
-}
-```
-
-### שינוי 2: הרחבת רשימת הערים ב-parser-utils.ts
-**קובץ:** `_experimental/parser-utils.ts`
-
-```typescript
-const CITY_PATTERNS: Array<{ pattern: RegExp; canonical: string }> = [
-  // ערים קיימות...
-  
-  // ערים נוספות (נפוצות ב-Homeless)
-  { pattern: /קרית\s*מוצקין/i, canonical: 'קרית מוצקין' },
-  { pattern: /קרית\s*ביאליק/i, canonical: 'קרית ביאליק' },
-  { pattern: /קרית\s*אתא/i, canonical: 'קרית אתא' },
-  { pattern: /טבריה/i, canonical: 'טבריה' },
-  { pattern: /אילת/i, canonical: 'אילת' },
-  { pattern: /חדרה/i, canonical: 'חדרה' },
-  { pattern: /קדימה|צורן/i, canonical: 'קדימה צורן' },
-  { pattern: /דאלית\s*אל\s*כרמל/i, canonical: 'דאלית אל כרמל' },
-  { pattern: /ירושלים/i, canonical: 'ירושלים' },
-  { pattern: /חיפה/i, canonical: 'חיפה' },
-  { pattern: /באר\s*שבע/i, canonical: 'באר שבע' },
-  { pattern: /מודיעין/i, canonical: 'מודיעין' },
-  { pattern: /נס\s*ציונה/i, canonical: 'נס ציונה' },
-  { pattern: /יבנה/i, canonical: 'יבנה' },
-  { pattern: /לוד/i, canonical: 'לוד' },
-  { pattern: /רמלה/i, canonical: 'רמלה' },
-  { pattern: /עפולה/i, canonical: 'עפולה' },
-  { pattern: /נהריה/i, canonical: 'נהריה' },
-  { pattern: /עכו/i, canonical: 'עכו' },
-  { pattern: /קרית\s*ים/i, canonical: 'קרית ים' },
-  { pattern: /נשר/i, canonical: 'נשר' },
-  { pattern: /טירת\s*כרמל/i, canonical: 'טירת כרמל' },
+const KNOWN_NEIGHBORHOODS = [
+  { pattern: /צפון\s*(?:ה)?ישן/, value: 'צפון_ישן', label: 'צפון ישן' },
+  { pattern: /פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
+  { pattern: /נווה\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
+  // ... 20+ שכונות
 ];
 ```
 
-### שינוי 3: חילוץ עיר מתא td[3]
-**קובץ:** `_experimental/parser-homeless.ts`
-
+### 2. חיפוש בכל הבלוק (parser-madlan.ts שורות 299-304)
 ```typescript
-// City: extract directly from column td[3]
-let directCity: string | null = null;
-if (tds.length > 3) {
-  const cityCell = cleanText($(tds[3]).text());
-  directCity = extractCity(cityCell) || cityCell;
+// First: Try to extract neighborhood from the ENTIRE block (most reliable)
+const blockNeighborhood = extractNeighborhoodFromBlock(block);
+```
+
+### 3. ברירת מחדל לעיר (parser-madlan.ts שורה 297)
+```typescript
+const city = 'תל אביב יפו'; // ברירת מחדל כי סורקים רק תל אביב
+```
+
+## מה חסר ב-Homeless
+
+### בעיה 1: אין ברירת מחדל לעיר
+הפרסר מנסה לחלץ עיר מעמודה 3, אבל אם זה לא עובד - מקבלים `null`.
+
+### בעיה 2: שכונות לא מזוהות
+`extractNeighborhood` מוגדר ב-parser-utils.ts ויש שם רשימה טובה, אבל:
+- הקוד מחפש רק ב-`neighborhoodText` (עמודה 4)
+- לא מחפש בטקסט המלא של השורה
+- אם `city` הוא null, הפונקציה לא יודעת באיזו רשימת שכונות לחפש
+
+### בעיה 3: אין סינון לפי עיר
+Homeless כולל נכסים מכל הארץ, אבל אתה רוצה רק תל אביב.
+
+## הפתרון המוצע
+
+### שינוי 1: ברירת מחדל "תל אביב יפו" (כמו Madlan)
+```typescript
+// Homeless parser - since we're scanning Tel Aviv, default to it
+const DEFAULT_CITY = 'תל אביב יפו';
+
+// Use extracted city or default
+const city = extractCity(cityText) || cityText || DEFAULT_CITY;
+```
+
+### שינוי 2: חיפוש שכונות בטקסט המלא
+במקום רק בעמודה 4, נחפש גם ב-`fullRowText`:
+```typescript
+// Try neighborhood from column 4 first
+let neighborhood = extractNeighborhood(neighborhoodText, city);
+
+// Fallback: search in full row text
+if (!neighborhood) {
+  neighborhood = extractNeighborhood(fullRowText, city);
 }
-
-// Use direct city if available, otherwise fall back to pattern matching
-const city = directCity || extractCity(fullRowText) || null;
 ```
 
-### שינוי 4: הערה לגבי גודל
-נוסיף הערה בקוד שמסבירה למה גודל תמיד null ב-Homeless:
-
+### שינוי 3: סינון נכסים שלא מתל אביב
+בסוף הפרסר, נסנן נכסים שהעיר שלהם לא תל אביב:
 ```typescript
-// NOTE: Size is NOT available in Homeless search results.
-// It only appears in individual property detail pages.
-// To get size, we would need a second scrape of each property page.
-const size: number | null = null;
+// Filter to Tel Aviv only (optional - can be config-based)
+const filteredProperties = properties.filter(p => 
+  p.city === 'תל אביב יפו' || 
+  p.city === 'תל אביב' ||
+  !p.city // Keep unknown cities for now
+);
 ```
 
-## שלבי ביצוע
+### שינוי 4: הרחבת רשימת השכונות (parser-utils.ts)
+להוסיף שכונות שחסרות:
+```typescript
+// הוספה ל-TEL_AVIV_NEIGHBORHOODS
+{ pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
+{ pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
+{ pattern: /קרית\s*שלום/i, value: 'קרית_שלום', label: 'קרית שלום' },
+{ pattern: /שכונת\s*התקווה/i, value: 'התקווה', label: 'שכונת התקווה' },
+```
 
-1. **עדכון parser-utils.ts** - הוספת ערים נוספות
-2. **עדכון parser-homeless.ts** - תיקון לוגיקת מחיר ועיר
-3. **סנכרון לקובץ personal-scout** - אותם שינויים
-4. **Deploy** - העלאת scout-homeless ו-personal-scout-worker
-5. **ריצת בדיקה** - סקאן Homeless לוודא שהשיפור עובד
+## קבצים לעדכון
+
+1. **`_experimental/parser-homeless.ts`**
+   - הוספת `DEFAULT_CITY = 'תל אביב יפו'`
+   - חיפוש שכונות ב-fullRowText
+   - סינון אופציונלי לתל אביב בלבד
+
+2. **`_experimental/parser-utils.ts`**
+   - הרחבת `TEL_AVIV_NEIGHBORHOODS`
+
+3. **`_personal-scout/parser-homeless.ts`**
+   - סנכרון אותם שינויים
+
+4. **`_personal-scout/parser-utils.ts`**
+   - סנכרון שכונות
 
 ## תוצאה צפויה
 
 | שדה | לפני | אחרי (צפי) |
 |-----|------|------------|
-| חדרים | 100% ✅ | 100% |
-| קומה | 100% ✅ | 100% |
-| מחיר | ~50% (עם שגיאות) | 80%+ (נכון) |
-| עיר | ~50% | 80%+ |
+| עיר | ~50% | 100% (ברירת מחדל) |
+| שכונות | ~10% | 60%+ |
+| מחיר | 80%+ | 80%+ (כבר תוקן) |
+| חדרים | 100% | 100% |
+| קומה | 100% | 100% |
 | גודל | 0% | 0% (לא קיים בטבלה) |
 
-## הערה לגבי גודל
+## הערה על גודל
 
-הגודל **לא זמין** בתוצאות החיפוש של Homeless - הוא מופיע רק בדף הפרטים של כל נכס. כדי לקבל אותו היינו צריכים לגרד כל דף נכס בנפרד, מה שיגדיל משמעותית את כמות הקריאות והעלות. זה אפשרי אבל דורש שינוי משמעותי בארכיטקטורה.
+גודל **לא זמין** בטבלת תוצאות Homeless. הוא מופיע רק בדפי הפרטים של הנכסים.
+כדי לקבל גודל היינו צריכים לגרד כל דף נכס בנפרד - זה אפשרי אבל מגדיל משמעותית את כמות הקריאות והעלות.
