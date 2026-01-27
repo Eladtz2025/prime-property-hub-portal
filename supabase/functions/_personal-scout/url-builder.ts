@@ -86,8 +86,8 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
   
   if (source === 'yad2') {
     return buildYad2Url(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
-  } else if (source === 'madlan') {
-    return buildMadlanUrl(city, property_type, page);
+} else if (source === 'madlan') {
+    return buildMadlanUrl(city, property_type, min_price, max_price, min_rooms, max_rooms, page);
   } else if (source === 'homeless') {
     return buildHomelessUrl(city, property_type, page);
   }
@@ -155,6 +155,10 @@ function buildYad2Url(
 function buildMadlanUrl(
   city: string,
   propertyType: 'rent' | 'sale',
+  minPrice?: number | null,
+  maxPrice?: number | null,
+  minRooms?: number | null,
+  maxRooms?: number | null,
   page: number = 1
 ): string {
   const pathType = propertyType === 'rent' ? 'for-rent' : 'for-sale';
@@ -164,8 +168,32 @@ function buildMadlanUrl(
   const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-') + '-ישראל';
   baseUrl += `/${citySlug}`;
   
-  // Madlan doesn't support price/rooms in URL - will filter post-parsing
-  const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+  // Adjust prices for sale listings (DB stores in thousands, Madlan expects full price)
+  let adjustedMinPrice = minPrice;
+  let adjustedMaxPrice = maxPrice;
+  
+  if (propertyType === 'sale') {
+    if (maxPrice && maxPrice < 100000) {
+      adjustedMinPrice = minPrice ? minPrice * 1000 : null;
+      adjustedMaxPrice = maxPrice * 1000;
+      console.log(`[personal-scout/url-builder] Adjusted Madlan sale prices: ${minPrice}-${maxPrice} → ${adjustedMinPrice}-${adjustedMaxPrice}`);
+    }
+  }
+  
+  // Build filters parameter
+  // Format: _minPrice-maxPrice_minRooms-maxRooms
+  const priceFilter = `${adjustedMinPrice || ''}-${adjustedMaxPrice || ''}`;
+  const roomsFilter = `${minRooms || ''}-${maxRooms || ''}`;
+  const filters = `_${priceFilter}_${roomsFilter}`;
+  
+  const params = new URLSearchParams();
+  params.set('filters', filters);
+  
+  if (page > 1) {
+    params.set('page', page.toString());
+  }
+  
+  const url = `${baseUrl}?${params.toString()}`;
   console.log(`[personal-scout/url-builder] Built Madlan URL: ${url}`);
   return url;
 }
