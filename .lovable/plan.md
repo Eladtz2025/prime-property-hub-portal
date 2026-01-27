@@ -1,61 +1,113 @@
 
-# תיקון Personal Scout - הושלם ✅
 
-## מה תוקן
+# תיקון Personal Scout - חלק 2
 
-### ✅ בעיה 1: עדכון סטטיסטיקות
-**לפני:** `supabase.rpc('increment')` - לא קיים ולא עובד
-**אחרי:** קריאה ידנית + עדכון עם finalization אוטומטי
+## מצב נוכחי
 
-### ✅ בעיה 2: Timeout של Workers
-**לפני:** 5 דפים X 3 מקורות = 75+ שניות (מעל ה-60s limit)
-**אחרי:** 2 דפים X מקור = ~27 שניות (בטוח)
+### ✅ מה תוקן בהצלחה:
+- Worker statistics update - עובד
+- Madlan parser - מסונכרן עם פרודקשן
+- שיעורי חילוץ מעולים (92% שכונות, 92% גודל)
 
-### ✅ בעיה 3: Finalization
-**לפני:** ריצה נשארת "running" לנצח
-**אחרי:** כשכל הלידים מסתיימים → status = "completed"
+### ⚠️ מה עדיין לא עובד:
+- ריצות נתקעות ב-"running" 
+- רק 2 מתוך 35 לידים הושלמו
+- אין Cron Job אוטומטי
 
-## תוצאות אימות
+## בעיית שורש: Concurrency
 
-| מדד | תוצאה |
-|-----|-------|
-| Worker response | ✅ 200 OK |
-| Duration | 26.9s (בתוך 60s) |
-| Matches saved | 25 |
-| leads_completed | מתעדכן ✅ |
-| total_matches | מתעדכן ✅ |
-| Yad2 neighborhoods | 92% |
+**הבעיה:** ה-Trigger שולח 35 workers ברצף מהיר עם רק 5 שניות ביניהם.
+זה גורם ל:
+1. עומס על Edge Functions
+2. חלק מה-workers לא מגיעים כלל
+3. Supabase מגביל concurrency
 
-## עוד לעשות
+**פתרון:** להגדיל את ה-delay בין לידים מ-5 שניות ל-15 שניות.
 
-### שלב 1: תיקון ריצות תקועות (SQL)
+## תוכנית תיקון
+
+### שלב 1: עדכון Trigger עם delay ארוך יותר
+
+**קובץ:** `supabase/functions/personal-scout-trigger/index.ts`
+
+**שינוי:** שורה 66
+```javascript
+// OLD:
+const DELAY_BETWEEN_LEADS_MS = 5000; // 5 seconds
+
+// NEW:
+const DELAY_BETWEEN_LEADS_MS = 15000; // 15 seconds between leads
+```
+
+**סיבה:** 35 לידים × 15 שניות = 525 שניות = ~9 דקות. 
+זה נותן לכל worker זמן לסיים לפני שהבא מתחיל.
+
+### שלב 2: תיקון ריצות תקועות (SQL)
+
 ```sql
 -- Fix stuck runs
 UPDATE personal_scout_runs
 SET status = 'completed', 
     completed_at = NOW(),
-    leads_completed = (SELECT COUNT(DISTINCT lead_id) FROM personal_scout_matches WHERE run_id = personal_scout_runs.id)
-WHERE status = 'running' AND created_at < NOW() - INTERVAL '1 hour';
+    leads_completed = CASE 
+      WHEN id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d' THEN 
+        (SELECT COUNT(DISTINCT lead_id) FROM personal_scout_matches WHERE run_id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d')
+      ELSE leads_completed
+    END,
+    total_matches = CASE 
+      WHEN id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d' THEN 
+        (SELECT COUNT(*) FROM personal_scout_matches WHERE run_id = 'd8f299c2-09b1-4fde-b10e-619a35e89b7d')
+      ELSE total_matches
+    END
+WHERE status = 'running' 
+  AND created_at < NOW() - INTERVAL '1 hour';
 ```
 
-### שלב 2: Cron Job
+### שלב 3: הוספת Cron Job (SQL)
+
 ```sql
+-- Schedule personal scout to run at 01:00 IST (23:00 UTC)
 SELECT cron.schedule(
   'personal-scout-daily',
-  '0 23 * * *',  -- 23:00 UTC = 01:00 IST (after midnight)
+  '0 23 * * *',  -- 23:00 UTC = 01:00 IST
   $$
   SELECT net.http_post(
     url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/personal-scout-trigger',
-    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVApI8wFaVYeLYJec-2vFcGeYPe9mM", "Content-Type": "application/json"}'::jsonb,
+    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVYeLYJec-2vFcGeYPe9mM", "Content-Type": "application/json"}'::jsonb,
     body := '{}'::jsonb
   );
   $$
 );
 ```
 
-## קבצים שעודכנו
+### שלב 4: הרצת בדיקה ידנית
 
-| קובץ | שינוי |
+לאחר התיקונים, נריץ את ה-Trigger ידנית עם ליד אחד לבדיקה:
+```bash
+curl -X POST .../personal-scout-trigger -d '{"lead_id": "f6379896-9686-4f75-bb92-75a7059ef859"}'
+```
+
+---
+
+## סיכום טכני
+
+| בעיה | סיבה | פתרון |
+|------|------|-------|
+| רק 2/35 לידים הושלמו | Concurrency overload | הגדלת delay ל-15 שניות |
+| ריצות תקועות | Workers לא חוזרים | תיקון ידני + timeout ב-cleanup |
+| אין אוטומציה | לא הוגדר cron | הוספת cron job לשעה 01:00 |
+
+## קבצים לעדכון
+
+| קובץ | פעולה |
 |------|-------|
-| `supabase/functions/personal-scout-worker/index.ts` | תיקון increment + הפחתת דפים ל-2 |
+| `supabase/functions/personal-scout-trigger/index.ts` | הגדלת DELAY_BETWEEN_LEADS_MS |
+| SQL Script | תיקון ריצות + הוספת cron |
+
+## בדיקה
+
+לאחר התיקון:
+1. הרצת trigger ידנית עם ליד בודד
+2. בדיקה שהסטטוס מתעדכן ל-completed
+3. בדיקה שיש התאמות עם שכונות וגודל
 
