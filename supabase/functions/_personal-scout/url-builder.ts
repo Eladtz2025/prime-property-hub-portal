@@ -122,9 +122,7 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
   if (source === 'yad2') {
     return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   } else if (source === 'madlan') {
-    // NOTE: Madlan does NOT support feature filtering via URL
-    // Features are filtered post-parse in feature-filter.ts
-    return buildMadlanUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page);
+    return buildMadlanUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   } else if (source === 'homeless') {
     return buildHomelessUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   }
@@ -210,7 +208,10 @@ function buildMadlanUrl(
   maxPrice?: number | null,
   minRooms?: number | null,
   maxRooms?: number | null,
-  page: number = 1
+  page: number = 1,
+  balconyRequired?: boolean | null,
+  parkingRequired?: boolean | null,
+  elevatorRequired?: boolean | null
 ): string {
   const pathType = propertyType === 'rent' ? 'for-rent' : 'for-sale';
   let baseUrl = `https://www.madlan.co.il/${pathType}`;
@@ -232,10 +233,28 @@ function buildMadlanUrl(
   }
   
   // Build filters parameter
-  // Format: _minPrice-maxPrice_minRooms-maxRooms
+  // Format: _minPrice-maxPrice_minRooms-maxRooms____feature1____feature2____...
   const priceFilter = `${adjustedMinPrice || ''}-${adjustedMaxPrice || ''}`;
   const roomsFilter = `${minRooms || ''}-${maxRooms || ''}`;
-  const filters = `_${priceFilter}_${roomsFilter}`;
+  
+  // Start with price and rooms
+  let filters = `_${priceFilter}_${roomsFilter}`;
+  
+  // Add feature filters (Madlan uses ____featureName____ format)
+  if (balconyRequired) {
+    filters += '____balcony';
+  }
+  if (parkingRequired) {
+    filters += '____parking';
+  }
+  if (elevatorRequired) {
+    filters += '____elevator';
+  }
+  
+  // Close the last feature with ____
+  if (balconyRequired || parkingRequired || elevatorRequired) {
+    filters += '____';
+  }
   
   const params = new URLSearchParams();
   params.set('filters', filters);
