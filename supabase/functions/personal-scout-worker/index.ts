@@ -3,7 +3,7 @@ import { scrapeWithRetry, validateScrapedContent } from '../_personal-scout/scra
 import { buildPersonalUrl } from '../_personal-scout/url-builder.ts';
 import { parseYad2Markdown } from '../_personal-scout/parser-yad2.ts';
 import { parseMadlanMarkdown } from '../_personal-scout/parser-madlan.ts';
-import { parseHomelessHtml } from '../_personal-scout/parser-homeless.ts';
+import { parseHomelessHtml, parseHomelessMarkdown } from '../_personal-scout/parser-homeless.ts';
 import { filterByLeadPreferences, hasMinimalPreferences } from '../_personal-scout/feature-filter.ts';
 import { extractPaginationInfo, getDefaultPagesToScan } from '../_personal-scout/pagination.ts';
 import type { ParsedProperty } from '../_personal-scout/parser-utils.ts';
@@ -156,7 +156,12 @@ Deno.serve(async (req) => {
         } else if (source === 'madlan') {
           properties = parseMadlanMarkdown(firstMarkdown, propertyType).properties;
         } else if (source === 'homeless') {
-          const homelessResult = await parseHomelessHtml(firstHtml, propertyType);
+          let homelessResult = await parseHomelessHtml(firstHtml, propertyType);
+          // Fallback to markdown if HTML parsing found nothing
+          if (homelessResult.properties.length === 0 && firstMarkdown.length > 500) {
+            console.log(`[personal-scout] HTML parse found 0, trying markdown fallback`);
+            homelessResult = parseHomelessMarkdown(firstMarkdown, propertyType);
+          }
           properties = homelessResult.properties;
         }
 
@@ -227,7 +232,12 @@ Deno.serve(async (req) => {
           } else if (source === 'madlan') {
             properties = parseMadlanMarkdown(markdown, propertyType).properties;
           } else if (source === 'homeless') {
-            const homelessResult = await parseHomelessHtml(html, propertyType);
+            let homelessResult = await parseHomelessHtml(html, propertyType);
+            // Fallback to markdown if HTML parsing found nothing
+            if (homelessResult.properties.length === 0 && markdown.length > 500) {
+              console.log(`[personal-scout] Page ${page}: HTML parse found 0, trying markdown fallback`);
+              homelessResult = parseHomelessMarkdown(markdown, propertyType);
+            }
             properties = homelessResult.properties;
           }
 
