@@ -1,135 +1,164 @@
 
+# תוכנית השלמה: Personal Scout
 
-# תוכנית: תיקון הורדת PDF עבור טפסים משפטיים
+## סיכום מצב נוכחי
 
-## הבעיה
+### מה קיים ✅
+| רכיב | סטטוס |
+|------|--------|
+| Edge Functions (trigger + worker) | ✅ עובד |
+| סינון ב-URL (מחיר, חדרים, פיצ'רים) | ✅ כל 3 המקורות |
+| סינון שכונות ב-Yad2 URL | ✅ הוטמע |
+| פילטור אחרי פארסינג | ✅ עובד |
+| טבלאות DB | ✅ קיימות |
+| Budget leakage (10%) | ✅ פעיל |
 
-כפתור "הורד PDF" ברשימת הטפסים המשפטיים יוצר PDF ריק/פגום כי:
-
-1. **שליפת נתונים שגויה**: הקוד שולף נתונים מ-`form.form_data` (שדה JSON) במקום מהעמודות הישירות בטבלה
-2. **החתימות והפרטים לא מועברים ל-PDF Generator**
-
-## הנתונים בבסיס הנתונים - תקינים
-
-| שדה | ערך (דוגמה - יניב סיפריס) |
-|-----|---------------------------|
-| client_name | יניב סיפריס |
-| client_id_number | 311148589 |
-| client_phone | 054-6577778 |
-| client_signature | data:image/png;base64,... (40K+ תווים) |
-| agent_signature | data:image/png;base64,... (40K+ תווים) |
-| property_address | פינקס 67 |
-| rental_price | 9,500 |
-
-הנתונים שמורים בעמודות הנפרדות בטבלה ולא ב-form_data.
+### מה חסר ❌
+1. **סריקה דינמית** - כרגע מוגבל ל-2 דפים קבועים
+2. **ממשק UI** - אין דרך להפעיל ולראות תוצאות
+3. **תצוגת התאמות ללקוח** - אין דרך לראות מה נמצא לכל לקוח
 
 ---
 
-## הפתרון
+## שלב 1: סריקה דינמית (Dynamic Pagination)
 
-### עדכון LegalFormsList.tsx
+### הרעיון
+במקום לסרוק 2 דפים קבועים - לזהות כמה תוצאות קיימות ולסרוק בהתאם.
 
-**שורות 92-175** - פונקציית `handleDownloadPDF`:
+### לוגיקה חדשה ל-worker
 
-במקום לקרוא מ-`form.form_data`, לקרוא ישירות מעמודות הטופס:
+```text
+לכל מקור:
+1. סרוק דף ראשון
+2. חלץ מספר תוצאות/דפים מהתוכן
+3. חשב כמה דפים לסרוק (מקסימום 30)
+4. סרוק את שאר הדפים
+```
 
-**לפני (שורות 95-109):**
+### פטרנים לחילוץ מספר תוצאות
+
+| מקור | פטרן | דוגמה |
+|------|------|-------|
+| Yad2 | `מתוך (\d+) תוצאות` | "מתוך 157 תוצאות" |
+| Madlan | `(\d+) דירות` | "278 דירות" |
+| Homeless | `נמצאו (\d+) תוצאות` | "נמצאו 85 תוצאות" |
+
+### שינויים בקוד
+
+**קובץ חדש: `_personal-scout/pagination.ts`**
+
 ```typescript
-const rawData = (form.form_data || {}) as Record<string, unknown>;
+export interface PaginationInfo {
+  total_results: number;
+  total_pages: number;
+  pages_to_scan: number; // capped at MAX_PAGES
+}
 
-if (form.form_type === 'memorandum') {
-  const formData = {
-    client_name: String(rawData.client_name || form.client_name || ''),
-    client_id_number: String(rawData.client_id_number || ''),
-    client_signature: String(rawData.client_signature || ''),  // ריק!
-    agent_signature: String(rawData.agent_signature || ''),    // ריק!
-    ...
-  };
+export function extractPaginationInfo(
+  content: string, 
+  source: string,
+  resultsPerPage: number = 20
+): PaginationInfo | null {
+  // Source-specific regex patterns
+  // Returns null if no pagination info found
 }
 ```
 
-**אחרי:**
-```typescript
-if (form.form_type === 'memorandum') {
-  const formData = {
-    client_name: form.client_name || '',
-    client_id_number: form.client_id_number || '',
-    client_phone: form.client_phone || '',
-    client_email: form.client_email || '',
-    property_address: form.property_address || '',
-    property_city: form.property_city || '',
-    property_floor: form.property_floor || '',
-    property_rooms: form.property_rooms || '',
-    property_size: form.property_size || '',
-    rental_price: form.rental_price || '',
-    deposit_amount: form.deposit_amount || '',
-    payment_method: form.payment_method || '',
-    guarantees: form.guarantees || '',
-    entry_date: form.entry_date || '',
-    notes: form.notes || '',
-    client_signature: form.client_signature || '',   // מהעמודה הישירה
-    agent_signature: form.agent_signature || '',      // מהעמודה הישירה
-    form_date: form.created_at,
-    language: (form.language || 'he') as 'he' | 'en',
-  };
-  const pdf = await generateMemorandumPDF(formData);
-  ...
-}
-```
+**עדכון `personal-scout-worker/index.ts`:**
 
-### עדכון ה-Interface
+```text
+לפני:
+for (let page = 1; page <= MAX_PAGES_PER_SOURCE; page++) { ... }
 
-**שורות 16-26** - הוספת שדות חסרים ל-LegalForm interface:
+אחרי:
+// סרוק דף 1 קודם
+const firstPageData = await scrapeFirstPage(source, url);
+const pagination = extractPaginationInfo(content, source);
 
-```typescript
-interface LegalForm {
-  id: string;
-  form_type: string;
-  language: string;
-  status: string;
-  created_at: string;
-  signed_at: string | null;
-  // Existing
-  client_name: string | null;
-  property_address: string | null;
-  form_data: unknown;
-  // NEW - add missing columns
-  client_id_number: string | null;
-  client_phone: string | null;
-  client_email: string | null;
-  client_signature: string | null;
-  agent_signature: string | null;
-  property_city: string | null;
-  property_floor: string | null;
-  property_rooms: string | null;
-  property_size: string | null;
-  rental_price: string | null;
-  deposit_amount: string | null;
-  payment_method: string | null;
-  guarantees: string | null;
-  entry_date: string | null;
-  notes: string | null;
-  // For exclusivity
-  second_party_name: string | null;
-  second_party_id: string | null;
-  second_party_phone: string | null;
-  second_party_signature: string | null;
-}
+// קבע כמה דפים לסרוק
+const pagesToScan = pagination?.pages_to_scan || 2;
+
+// סרוק את שאר הדפים
+for (let page = 2; page <= pagesToScan; page++) { ... }
 ```
 
 ---
 
-## סיכום השינויים
+## שלב 2: ממשק משתמש (UI)
+
+### מיקום
+טאב חדש בדף Property Scout: "סקאוט אישי"
+
+### רכיבים
+
+**1. כרטיס סטטיסטיקות**
+- לידים זכאים: 10
+- ריצה אחרונה: לפני 2 שעות
+- התאמות שנמצאו: 307
+
+**2. כפתור הפעלה**
+- "הפעל סריקה אישית לכל הלקוחות"
+- אופציה: הפעל רק ללקוח ספציפי
+
+**3. טבלת התאמות**
+
+| לקוח | התאמות | מקורות | פעולות |
+|------|--------|--------|--------|
+| Eli Aviad | 161 | Yad2: 120, Madlan: 25, Homeless: 16 | צפה |
+| רוני אלפנט | 84 | Yad2: 60, Madlan: 15, Homeless: 9 | צפה |
+
+**4. תצוגת התאמות ללקוח**
+לחיצה על "צפה" פותחת דיאלוג עם:
+- פרטי הלקוח (תקציב, שכונות, חדרים)
+- רשימת הנכסים שנמצאו
+- סינון לפי מקור
+- כפתור "סמן כנבדק"
+
+---
+
+## קבצים לעדכון/יצירה
 
 | קובץ | פעולה |
 |------|-------|
-| `src/components/forms/LegalFormsList.tsx` | עדכון interface + שינוי handleDownloadPDF |
+| `supabase/functions/_personal-scout/pagination.ts` | חדש |
+| `supabase/functions/personal-scout-worker/index.ts` | עדכון |
+| `src/components/scout/PersonalScoutTab.tsx` | חדש |
+| `src/components/scout/PersonalScoutMatchesDialog.tsx` | חדש |
+| `src/pages/AdminPropertyScout.tsx` | עדכון |
 
 ---
 
 ## תוצאה צפויה
 
-- PDF יכלול את כל הפרטים: שם לקוח, ת.ז., טלפון, כתובת נכס, מחיר
-- PDF יכלול את שתי החתימות (סוכן + לקוח)
-- הטקסט העברי יוצג נכון (ללא "ג'יבריש")
+**לפני:**
+```
+לקוח עם 4 שכונות בתל אביב:
+סורק 2 דפים × 3 מקורות = 6 דפים
+מוצא ~20 התאמות
+```
 
+**אחרי:**
+```
+לקוח עם 4 שכונות בתל אביב:
+מזהה 157 תוצאות ב-Yad2 = 8 דפים
+סורק דינמית עד 30 דפים
+מוצא ~80 התאמות
+```
+
+---
+
+## הערות טכניות
+
+1. **מגבלת timeout**: Edge Function מוגבל ל-60 שניות. עם סריקה דינמית נצטרך לעבוד ב-fire-and-forget לכל דף או להפעיל workers נפרדים.
+
+2. **Firecrawl credits**: סריקה של 30 דפים × 3 מקורות = 90 קריאות ללקוח. נצטרך לשקול עלויות.
+
+3. **Priority**: הסריקה הדינמית היא האופטימיזציה העיקרית. ה-UI חשוב אבל משני.
+
+---
+
+## סדר הטמעה מומלץ
+
+1. **קודם**: סריקה דינמית + pagination extraction
+2. **אח"כ**: UI בסיסי (כפתור הפעלה + טבלת התאמות)
+3. **לבסוף**: דיאלוג צפייה מפורט
