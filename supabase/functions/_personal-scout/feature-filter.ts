@@ -74,9 +74,23 @@ export function filterByLeadPreferences(
  */
 function checkProperty(
   prop: ParsedProperty,
-  lead: LeadPreferences,
+  lead: LeadPreferences & { preferred_cities?: string[] },
   source: string
 ): string | null {
+  // 0. City filter - CRITICAL: Reject properties from wrong cities
+  // Madlan parser sets city='תל אביב יפו' by default, but address might reveal real city
+  if (lead.preferred_cities && lead.preferred_cities.length > 0 && prop.city) {
+    const propCity = normalizeCity(prop.city);
+    const matchesCity = lead.preferred_cities.some(c => normalizeCity(c) === propCity);
+    if (!matchesCity) {
+      // Additional check: address might contain a different city name
+      const addressCity = extractCityFromAddress(prop.address || '');
+      if (addressCity && !lead.preferred_cities.some(c => normalizeCity(c) === addressCity)) {
+        return 'wrong_city';
+      }
+    }
+  }
+  
   // 1. Budget filter (for Madlan/Homeless that don't support URL filter)
   // Yad2 already filters by price in URL, but double-check
   if (lead.budget_max && prop.price && prop.price > lead.budget_max) {
@@ -170,6 +184,44 @@ function normalizeNeighborhood(name: string): string {
     .replace(/['"״]/g, '')   // Remove quotes
     .replace(/ה$/g, '')      // Remove trailing ה (definite article)
     .trim();
+}
+
+/**
+ * Normalize city name for comparison
+ */
+function normalizeCity(name: string): string {
+  return name
+    .replace(/[\s\-_]/g, '')
+    .replace(/יפו/g, '') // Treat "תל אביב" and "תל אביב יפו" as same
+    .trim();
+}
+
+/**
+ * Known cities that appear in Israeli property listings
+ * Used to detect when a property is actually in a different city
+ */
+const KNOWN_CITIES = [
+  { pattern: /רמת\s*גן/i, normalized: 'רמתגן' },
+  { pattern: /גבעתיים/i, normalized: 'גבעתיים' },
+  { pattern: /בני\s*ברק/i, normalized: 'בניברק' },
+  { pattern: /חולון/i, normalized: 'חולון' },
+  { pattern: /בת\s*ים/i, normalized: 'בתים' },
+  { pattern: /הרצליה/i, normalized: 'הרצליה' },
+  { pattern: /רעננה/i, normalized: 'רעננה' },
+  { pattern: /פתח\s*תקוה/i, normalized: 'פתחתקוה' },
+  { pattern: /ראשון\s*לציון/i, normalized: 'ראשוןלציון' },
+];
+
+/**
+ * Extract city from address if present (e.g., "הרב חבה, רמת גן" → "רמתגן")
+ */
+function extractCityFromAddress(address: string): string | null {
+  for (const { pattern, normalized } of KNOWN_CITIES) {
+    if (pattern.test(address)) {
+      return normalized;
+    }
+  }
+  return null;
 }
 
 /**

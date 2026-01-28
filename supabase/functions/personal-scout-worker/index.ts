@@ -295,32 +295,42 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Save matches to personal_scout_matches
+    // 3. Save matches to personal_scout_matches (with upsert to prevent duplicates)
     let savedCount = 0;
     if (allMatches.length > 0) {
-      const { error: insertError } = await supabase.from('personal_scout_matches').insert(
-        allMatches.map(m => ({
-          run_id,
-          lead_id: m.lead_id,
-          source: m.source,
-          source_url: m.source_url,
-          address: m.address,
-          city: m.city,
-          neighborhood: m.neighborhood,
-          price: m.price,
-          rooms: m.rooms,
-          floor: m.floor,
-          size: m.size,
-          is_private: m.is_private
-        }))
-      );
+      // Use individual upserts to handle duplicates gracefully
+      for (const m of allMatches) {
+        // Check if this exact source_url + lead_id combo already exists
+        const { data: existing } = await supabase
+          .from('personal_scout_matches')
+          .select('id')
+          .eq('lead_id', m.lead_id)
+          .eq('source_url', m.source_url)
+          .maybeSingle();
+        
+        if (!existing) {
+          const { error: insertError } = await supabase.from('personal_scout_matches').insert({
+            run_id,
+            lead_id: m.lead_id,
+            source: m.source,
+            source_url: m.source_url,
+            address: m.address,
+            city: m.city,
+            neighborhood: m.neighborhood,
+            price: m.price,
+            rooms: m.rooms,
+            floor: m.floor,
+            size: m.size,
+            is_private: m.is_private
+          });
 
-      if (insertError) {
-        console.error('Error saving matches:', insertError);
-      } else {
-        savedCount = allMatches.length;
-        console.log(`💾 Saved ${savedCount} matches to database`);
+          if (!insertError) {
+            savedCount++;
+          }
+        }
       }
+      
+      console.log(`💾 Saved ${savedCount} new matches (${allMatches.length - savedCount} duplicates skipped)`);
     }
 
     // 4. Update run statistics if run_id provided
