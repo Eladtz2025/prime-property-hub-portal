@@ -1,67 +1,78 @@
 
-# תוכנית תיקון: Homeless Parser - הוספת Fallback ל-Markdown
 
-## הבעיה
-הפרסר של Homeless מחפש `tr[type="ad"]` ב-HTML, אבל ה-Firecrawl עם `onlyMainContent: true` מחזיר HTML שלא מכיל את ה-elements האלה. התוצאה: **0 נכסים** מזוהים.
+## תוכנית: בחירת לקוחות לסריקה אישית
 
-## הלוגים מוכיחים את הבעיה
+### הבעיה הנוכחית
+1. **סריקה כפולה**: הלוגיקה בודקת רק לידים עם התאמות מהיום - לידים שנסרקו בלי תוצאות יסרקו שוב
+2. **חוסר שליטה**: אין אפשרות לבחור לקוחות ספציפיים לסריקה
+
+---
+
+### הפתרון המוצע
+
+#### 1. הוספת צ'קבוקסים לבחירת לקוחות
+- עמודה חדשה בטבלה עם צ'קבוקס לכל לקוח
+- צ'קבוקס "בחר הכל" בכותרת הטבלה
+- כפתור "סרוק נבחרים" שמופיע כשיש בחירה
+
+#### 2. מעקב אמיתי על סריקות (לא רק התאמות)
+- טבלה חדשה `personal_scout_lead_scans` או עמודה בטבלת הריצות שתעקוב על איזה לידים נסרקו בכל ריצה
+- או: פשוט לשלוח רשימת lead_ids מהפרונט לטריגר
+
+#### 3. שינויי ממשק
+
 ```
-Found 0 potential property rows
-Parsed 0 properties
-```
+┌─────────────────────────────────────────────────────────────┐
+│  ☑ בחר  │ לקוח   │ ערים  │ תקציב  │ חדרים │ התאמות │ פעולות │
+├─────────────────────────────────────────────────────────────┤
+│  ☐      │ לימור  │ ת"א   │ 8-26K  │ 2-4   │  0     │  👁    │
+│  ☑      │ מיכל   │ ת"א   │ 5-10K  │ 2-3   │  12    │  👁    │
+│  ☑      │ דני    │ רמת גן│ 10-15K │ 3-4   │  0     │  👁    │
+└─────────────────────────────────────────────────────────────┘
 
-## הפתרון
-להוסיף fallback ל-Markdown parser כמו שקיים ב-production (`parseHomelessMarkdown`).
-
-## שינויים טכניים
-
-### קובץ: `supabase/functions/_personal-scout/parser-homeless.ts`
-
-**הוספת פונקציית fallback:**
-
-```typescript
-export function parseHomelessMarkdown(
-  markdown: string,
-  propertyType: 'rent' | 'sale'
-): ParserResult {
-  // Parse markdown when HTML structure is not available
-  // Uses price patterns as property separators
-  // Extracts: price, rooms, city, neighborhood, floor
-}
-```
-
-### קובץ: `supabase/functions/personal-scout-worker/index.ts`
-
-**עדכון הלוגיקה:**
-
-```typescript
-// לפני:
-const homelessResult = await parseHomelessHtml(html, propertyType);
-
-// אחרי:
-let homelessResult = await parseHomelessHtml(html, propertyType);
-// Fallback to markdown if HTML parsing found nothing
-if (homelessResult.properties.length === 0 && markdown.length > 500) {
-  console.log('[personal-scout] HTML parse found 0, trying markdown fallback');
-  homelessResult = parseHomelessMarkdown(markdown, propertyType);
-}
+               ┌────────────────────────┐
+               │ 🔍 סרוק 2 נבחרים       │
+               └────────────────────────┘
 ```
 
-## קבצים לעדכון
+---
 
-| קובץ | פעולה |
-|------|-------|
-| `supabase/functions/_personal-scout/parser-homeless.ts` | הוספת `parseHomelessMarkdown` |
-| `supabase/functions/personal-scout-worker/index.ts` | הוספת fallback logic |
+### פירוט טכני
 
-## תוצאה צפויה
+#### קובץ: `PersonalScoutTab.tsx`
+1. הוספת state לניהול הבחירה:
+   ```typescript
+   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+   ```
 
-| מדד | לפני | אחרי |
-|-----|------|------|
-| Homeless properties parsed | 0 | 10-25 לדף |
-| Homeless rooms extraction | 0% | 30-50% |
-| Homeless price extraction | 24% | 50-70% |
+2. הוספת עמודת צ'קבוקס בטבלה עם:
+   - צ'קבוקס בכותרת לבחירה/ביטול הכל
+   - צ'קבוקס בכל שורה
 
-## הערות
-- ה-Markdown parser פחות מדויק מ-HTML parser אבל עדיף על 0 תוצאות
-- השינויים ישתלבו עם התיקונים שכבר בוצעו (regex relaxed, neighborhoods expanded)
+3. שינוי ה-mutation לשלוח את הלידים הנבחרים:
+   ```typescript
+   mutationFn: async (leadIds?: string[]) => {
+     const { data, error } = await supabase.functions.invoke('personal-scout-trigger', {
+       body: { lead_ids: leadIds }  // רשימת IDs ספציפיים
+     });
+   }
+   ```
+
+4. כפתור חדש "סרוק נבחרים" שמופיע כשיש בחירה
+
+#### קובץ: `personal-scout-trigger/index.ts`
+1. קבלת פרמטר `lead_ids` (מערך):
+   ```typescript
+   body: { lead_id?: string; lead_ids?: string[]; source?: string; skip_already_scanned?: boolean }
+   ```
+
+2. אם מתקבל `lead_ids`, לסנן רק את הלידים הללו במקום כל הזכאים
+
+---
+
+### יתרונות
+- שליטה מלאה על מי נסרק
+- אפשרות לסרוק מחדש לקוחות ספציפיים
+- אפשרות לסרוק רק לקוחות חדשים או עם 0 התאמות
+- אין צורך לחכות לסריקה של כל 35 הלקוחות
+
