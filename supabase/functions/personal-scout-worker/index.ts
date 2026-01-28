@@ -124,6 +124,8 @@ Deno.serve(async (req) => {
             balcony_required: lead.balcony_required && !lead.balcony_flexible,
             parking_required: lead.parking_required && !lead.parking_flexible,
             elevator_required: lead.elevator_required && !lead.elevator_flexible,
+            // Neighborhood filtering (Yad2 only)
+            neighborhoods: lead.preferred_neighborhoods,
             page
           });
 
