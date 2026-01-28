@@ -177,7 +177,7 @@ export const PersonalScoutTab: React.FC = () => {
           <CardContent>
             <Button 
               onClick={() => triggerScanMutation.mutate()}
-              disabled={triggerScanMutation.isPending || lastRun?.status === 'running'}
+              disabled={triggerScanMutation.isPending || (lastRun?.status === 'running' && lastRun?.started_at && (Date.now() - new Date(lastRun.started_at).getTime()) < 10 * 60 * 1000)}
               className="w-full"
             >
               {triggerScanMutation.isPending ? (
@@ -185,7 +185,9 @@ export const PersonalScoutTab: React.FC = () => {
               ) : (
                 <Play className="h-4 w-4 mr-2" />
               )}
-              {lastRun?.status === 'running' ? 'סריקה פועלת...' : 'הפעל סריקה אישית'}
+              {lastRun?.status === 'running' && lastRun?.started_at && (Date.now() - new Date(lastRun.started_at).getTime()) < 10 * 60 * 1000 
+                ? 'סריקה פועלת...' 
+                : 'הפעל סריקה אישית'}
             </Button>
           </CardContent>
         </Card>
