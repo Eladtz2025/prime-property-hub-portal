@@ -2,8 +2,10 @@
  * URL Builder for Personal Scout
  * 
  * ISOLATED COPY - Does not modify production code
- * Builds URLs with lead-specific filters (city, price, rooms)
+ * Builds URLs with lead-specific filters (city, price, rooms, neighborhoods)
  */
+
+import { getYad2NeighborhoodCodes } from './neighborhood-codes.ts';
 
 // City mappings - exact copy from production
 export const yad2CityMap: Record<string, { topArea: string; area: string; city: string }> = {
@@ -77,6 +79,8 @@ export interface PersonalUrlParams {
   balcony_required?: boolean | null;
   parking_required?: boolean | null;
   elevator_required?: boolean | null;
+  // Neighborhood filtering (Yad2 only for now)
+  neighborhoods?: string[] | null;
   page: number;
 }
 
@@ -110,6 +114,7 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
     source, city, property_type, 
     min_price, max_price, min_rooms, max_rooms, 
     balcony_required, parking_required, elevator_required,
+    neighborhoods,
     page 
   } = params;
   
@@ -120,7 +125,7 @@ export function buildPersonalUrl(params: PersonalUrlParams): string {
   console.log(`[personal-scout/url-builder] Budget leakage: ${min_price}-${max_price} → ${leakedMinPrice}-${leakedMaxPrice}`);
   
   if (source === 'yad2') {
-    return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
+    return buildYad2Url(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required, neighborhoods);
   } else if (source === 'madlan') {
     return buildMadlanUrl(city, property_type, leakedMinPrice, leakedMaxPrice, min_rooms, max_rooms, page, balcony_required, parking_required, elevator_required);
   } else if (source === 'homeless') {
@@ -140,7 +145,8 @@ function buildYad2Url(
   page: number = 1,
   balconyRequired?: boolean | null,
   parkingRequired?: boolean | null,
-  elevatorRequired?: boolean | null
+  elevatorRequired?: boolean | null,
+  neighborhoods?: string[] | null
 ): string {
   const baseUrl = `https://www.yad2.co.il/realestate/${propertyType === 'rent' ? 'rent' : 'forsale'}`;
   const params = new URLSearchParams();
@@ -178,6 +184,15 @@ function buildYad2Url(
   if (minRooms || maxRooms) {
     const roomsRange = `${minRooms || ''}-${maxRooms || ''}`;
     params.set('rooms', roomsRange);
+  }
+  
+  // Neighborhood filter - Yad2 supports filtering by neighborhood codes
+  if (neighborhoods && neighborhoods.length > 0) {
+    const codes = getYad2NeighborhoodCodes(neighborhoods);
+    if (codes.length > 0) {
+      params.set('neighborhood', codes.join(','));
+      console.log(`[personal-scout/url-builder] Neighborhood filter: ${neighborhoods.join(', ')} → ${codes.join(',')}`);
+    }
   }
   
   // Feature filters - Yad2 supports these!
