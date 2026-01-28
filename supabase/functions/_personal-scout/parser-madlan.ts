@@ -27,18 +27,18 @@ const KNOWN_NEIGHBORHOODS = [
   { pattern: /לב\s*(?:ה)?עיר/i, value: 'לב_העיר', label: 'לב העיר' },
   { pattern: /לב\s*תל\s*אביב/i, value: 'לב_תל_אביב', label: 'לב תל אביב' },
   { pattern: /פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
-  { pattern: /נווה\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
+  { pattern: /נווה\s*צדק|נוה\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
   { pattern: /כרם\s*(?:ה)?תימנים/i, value: 'כרם_התימנים', label: 'כרם התימנים' },
   { pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
   { pattern: /רמת\s*אביב\s*ג'?/i, value: 'רמת_אביב_ג', label: "רמת אביב ג'" },
   { pattern: /רמת\s*אביב/i, value: 'רמת_אביב', label: 'רמת אביב' },
   { pattern: /רמת\s*החייל/i, value: 'רמת_החייל', label: 'רמת החייל' },
   { pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
-  { pattern: /נווה\s*אביבים/i, value: 'נווה_אביבים', label: 'נווה אביבים' },
-  { pattern: /נווה\s*עופר/i, value: 'נווה_עופר', label: 'נווה עופר' },
-  { pattern: /נווה\s*חן/i, value: 'נווה_חן', label: 'נווה חן' },
-  { pattern: /נווה\s*אליעזר/i, value: 'נווה_אליעזר', label: 'נווה אליעזר' },
-  { pattern: /נווה\s*צה"?ל/i, value: 'נווה_צהל', label: 'נווה צה"ל' },
+  { pattern: /נווה\s*אביבים|נוה\s*אביבים/i, value: 'נווה_אביבים', label: 'נווה אביבים' },
+  { pattern: /נווה\s*עופר|נוה\s*עופר/i, value: 'נווה_עופר', label: 'נווה עופר' },
+  { pattern: /נווה\s*חן|נוה\s*חן/i, value: 'נווה_חן', label: 'נווה חן' },
+  { pattern: /נווה\s*אליעזר|נוה\s*אליעזר/i, value: 'נווה_אליעזר', label: 'נווה אליעזר' },
+  { pattern: /נווה\s*צה"?ל|נוה\s*צה"?ל/i, value: 'נווה_צהל', label: 'נווה צה"ל' },
   { pattern: /יפו\s*(?:ה)?עתיקה|עג'?מי/i, value: 'יפו', label: 'יפו' },
   { pattern: /שפירא/i, value: 'שפירא', label: 'שפירא' },
   { pattern: /מונטיפיורי/i, value: 'מונטיפיורי', label: 'מונטיפיורי' },
@@ -60,6 +60,14 @@ const KNOWN_NEIGHBORHOODS = [
   { pattern: /כיכר\s*המדינה/i, value: 'כיכר_המדינה', label: 'כיכר המדינה' },
   { pattern: /רוטשילד/i, value: 'רוטשילד', label: 'רוטשילד' },
   { pattern: /צהלה/i, value: 'צהלה', label: 'צהלה' },
+  // Additional neighborhoods found in data
+  { pattern: /תל\s*ברוך\s*צפון/i, value: 'תל_ברוך_צפון', label: 'תל ברוך צפון' },
+  { pattern: /תל\s*ברוך/i, value: 'תל_ברוך', label: 'תל ברוך' },
+  { pattern: /אזורי\s*חן/i, value: 'אזורי_חן', label: 'אזורי חן' },
+  { pattern: /הדר/i, value: 'הדר', label: 'הדר' },
+  { pattern: /יד\s*לבנים/i, value: 'יד_לבנים', label: 'יד לבנים' },
+  { pattern: /תוכנית\s*ל/i, value: 'תוכנית_ל', label: 'תוכנית ל' },
+  { pattern: /הסבוראים/i, value: 'הסבוראים', label: 'הסבוראים' },
 ];
 
 /**
@@ -304,6 +312,22 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
         }
       }
       break;
+    }
+  }
+  
+  // If address looks like a neighborhood name (no street number), use it as neighborhood
+  if (address && !neighborhood) {
+    const hasStreetNumber = /\d+/.test(address);
+    if (!hasStreetNumber) {
+      // Check if address matches a known neighborhood
+      const addressAsNeighborhood = extractNeighborhoodFromBlock(address);
+      if (addressAsNeighborhood) {
+        neighborhood = addressAsNeighborhood.label;
+        neighborhoodValue = addressAsNeighborhood.value;
+      } else {
+        // Just use the address as neighborhood if it doesn't have a street number
+        neighborhood = address;
+      }
     }
   }
   
