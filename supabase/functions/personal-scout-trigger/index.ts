@@ -9,8 +9,16 @@ const corsHeaders = {
  * Personal Scout Trigger
  * 
  * Triggers personalized property scans for each eligible lead.
- * COMPLETELY SEPARATE from trigger-scout-pages.
+ * SEQUENTIAL execution - waits for each worker to complete before starting next.
+ * This prevents overload and ensures all leads are processed.
  */
+
+// Worker timeout - if worker doesn't respond in 3 minutes, consider it failed
+const WORKER_TIMEOUT_MS = 180000;
+// Delay between leads to prevent rate limiting
+const DELAY_BETWEEN_LEADS_MS = 2000;
+// Max retries per worker
+const MAX_RETRIES = 2;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -102,66 +110,127 @@ Deno.serve(async (req) => {
     const runId = runRecord.id;
     console.log(`📝 Created run record: ${runId}`);
 
-    // 3. Trigger worker for each lead with delays
-    // 15 seconds between leads to prevent concurrency overload
-    // 35 leads × 15s = 525s = ~9 minutes total
-    const DELAY_BETWEEN_LEADS_MS = 15000;
+    // 3. Process each lead SEQUENTIALLY with await
     const sources = body.source ? [body.source] : ['yad2', 'madlan', 'homeless'];
     
-    let triggeredCount = 0;
+    let successCount = 0;
+    let failedCount = 0;
     const errors: string[] = [];
+    const results: Array<{ lead: string; success: boolean; matches?: number; error?: string }> = [];
 
     for (let i = 0; i < eligibleLeads.length; i++) {
       const lead = eligibleLeads[i];
-      
-      // Wait before triggering (except first)
-      if (i > 0) {
-        await new Promise(r => setTimeout(r, DELAY_BETWEEN_LEADS_MS));
-      }
-
       const leadName = lead.name || lead.id.substring(0, 8);
-      console.log(`📄 [${i + 1}/${eligibleLeads.length}] Triggering for lead: ${leadName}`);
+      
+      console.log(`\n📄 [${i + 1}/${eligibleLeads.length}] Processing: ${leadName}`);
       console.log(`   Cities: ${lead.preferred_cities?.join(', ')}`);
       console.log(`   Budget: ${lead.budget_min || 'N/A'}-${lead.budget_max || 'N/A'}`);
       console.log(`   Rooms: ${lead.rooms_min || 'N/A'}-${lead.rooms_max || 'N/A'}`);
 
-      try {
-        // Fire and forget - don't wait for completion
-        fetch(`${supabaseUrl}/functions/v1/personal-scout-worker`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`
-          },
-          body: JSON.stringify({
-            lead_id: lead.id,
-            run_id: runId,
-            sources
-          })
-        }).catch(err => {
-          console.error(`Background call failed for lead ${leadName}:`, err);
-        });
+      // Delay between leads (except first)
+      if (i > 0) {
+        await new Promise(r => setTimeout(r, DELAY_BETWEEN_LEADS_MS));
+      }
 
-        triggeredCount++;
-      } catch (err) {
-        const errorMsg = `Error triggering lead ${leadName}: ${err}`;
-        console.error(errorMsg);
-        errors.push(errorMsg);
+      let success = false;
+      let lastError = '';
+      let matchesFound = 0;
+
+      // Retry loop
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          console.log(`   Attempt ${attempt}/${MAX_RETRIES}...`);
+          
+          // Create AbortController for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), WORKER_TIMEOUT_MS);
+
+          const response = await fetch(`${supabaseUrl}/functions/v1/personal-scout-worker`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`
+            },
+            body: JSON.stringify({
+              lead_id: lead.id,
+              run_id: runId,
+              sources
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const result = await response.json();
+            matchesFound = result.matches_found || 0;
+            console.log(`   ✅ Success: ${matchesFound} matches found`);
+            success = true;
+            break;
+          } else {
+            const errorText = await response.text();
+            lastError = `HTTP ${response.status}: ${errorText}`;
+            console.error(`   ❌ Failed: ${lastError}`);
+          }
+
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            lastError = 'Worker timeout (3 minutes)';
+            console.error(`   ⏱️ Timeout on attempt ${attempt}`);
+          } else {
+            lastError = err instanceof Error ? err.message : String(err);
+            console.error(`   ❌ Error on attempt ${attempt}:`, lastError);
+          }
+        }
+
+        // Wait before retry
+        if (attempt < MAX_RETRIES) {
+          console.log(`   Waiting 5s before retry...`);
+          await new Promise(r => setTimeout(r, 5000));
+        }
+      }
+
+      if (success) {
+        successCount++;
+        results.push({ lead: leadName, success: true, matches: matchesFound });
+      } else {
+        failedCount++;
+        errors.push(`${leadName}: ${lastError}`);
+        results.push({ lead: leadName, success: false, error: lastError });
       }
     }
 
+    // 4. Update run record with final status
+    const finalStatus = failedCount === 0 ? 'completed' : 
+                        successCount === 0 ? 'failed' : 'partial';
+    
+    await supabase
+      .from('personal_scout_runs')
+      .update({
+        status: finalStatus,
+        completed_at: new Date().toISOString(),
+        error_message: errors.length > 0 ? `${failedCount} leads failed` : null
+      })
+      .eq('id', runId);
+
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`✅ Personal Scout Trigger completed in ${duration}s`);
-    console.log(`   Triggered: ${triggeredCount}/${eligibleLeads.length} leads`);
+    console.log(`\n✅ Personal Scout Trigger completed in ${duration}s`);
+    console.log(`   Success: ${successCount}/${eligibleLeads.length}`);
+    console.log(`   Failed: ${failedCount}/${eligibleLeads.length}`);
 
     return new Response(JSON.stringify({
       success: true,
       run_id: runId,
-      leads_triggered: triggeredCount,
-      leads_total: eligibleLeads.length,
+      status: finalStatus,
+      leads_processed: {
+        success: successCount,
+        failed: failedCount,
+        total: eligibleLeads.length
+      },
       sources,
       duration_seconds: parseFloat(duration),
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
+      results
     }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
