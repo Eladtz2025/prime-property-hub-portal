@@ -321,9 +321,9 @@ Deno.serve(async (req) => {
           continue;
         }
         
-        // Skip properties with no useful data (must have price OR rooms to be useful)
-        if (!m.price && !m.rooms) {
-          console.log(`   ⏭️ Skipping property without price/rooms: ${m.address || 'no address'}`);
+        // Skip properties without room count (rooms is mandatory)
+        if (!m.rooms) {
+          console.log(`   ⏭️ Skipping property without rooms: ${m.address || 'no address'}`);
           skippedEmptyData++;
           continue;
         }
