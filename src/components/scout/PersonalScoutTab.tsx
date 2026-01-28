@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Play, Clock, CheckCircle2, AlertCircle, Eye, RefreshCw } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, Play, Clock, CheckCircle2, AlertCircle, Eye, RefreshCw, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -28,6 +29,7 @@ interface LeadWithMatches {
 export const PersonalScoutTab: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState<LeadWithMatches | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
 
   // Fetch eligible leads count
   const { data: eligibleLeads = [] } = useQuery({
@@ -106,22 +108,44 @@ export const PersonalScoutTab: React.FC = () => {
 
   // Trigger scan mutation
   const triggerScanMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (leadIds?: string[]) => {
       const { data, error } = await supabase.functions.invoke('personal-scout-trigger', {
-        body: {}
+        body: leadIds && leadIds.length > 0 ? { lead_ids: leadIds } : {}
       });
       
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`סריקה אישית החלה עבור ${data.leads_count} לקוחות`);
+      toast.success(`סריקה אישית החלה עבור ${data.leads_count || data.leads_processed?.total || 0} לקוחות`);
       queryClient.invalidateQueries({ queryKey: ['personal-scout-last-run'] });
+      setSelectedLeadIds(new Set()); // Clear selection after scan
     },
     onError: (error) => {
       toast.error(`שגיאה בהפעלת הסריקה: ${error.message}`);
     }
   });
+
+  // Selection handlers
+  const handleToggleLead = (leadId: string) => {
+    setSelectedLeadIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(leadId)) {
+        newSet.delete(leadId);
+      } else {
+        newSet.add(leadId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (selectedLeadIds.size === leadsWithMatches.length) {
+      setSelectedLeadIds(new Set());
+    } else {
+      setSelectedLeadIds(new Set(leadsWithMatches.map(l => l.id)));
+    }
+  };
 
   const totalMatches = leadsWithMatches.reduce((sum, lead) => sum + lead.match_count, 0);
 
@@ -174,11 +198,12 @@ export const PersonalScoutTab: React.FC = () => {
             <CardTitle className="text-sm font-medium">הפעל סריקה</CardTitle>
             <Play className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <Button 
-              onClick={() => triggerScanMutation.mutate()}
+              onClick={() => triggerScanMutation.mutate(undefined)}
               disabled={triggerScanMutation.isPending || (lastRun?.status === 'running' && lastRun?.started_at && (Date.now() - new Date(lastRun.started_at).getTime()) < 10 * 60 * 1000)}
               className="w-full"
+              variant="outline"
             >
               {triggerScanMutation.isPending ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -187,8 +212,18 @@ export const PersonalScoutTab: React.FC = () => {
               )}
               {lastRun?.status === 'running' && lastRun?.started_at && (Date.now() - new Date(lastRun.started_at).getTime()) < 10 * 60 * 1000 
                 ? 'סריקה פועלת...' 
-                : 'הפעל סריקה אישית'}
+                : 'סרוק את כולם'}
             </Button>
+            {selectedLeadIds.size > 0 && (
+              <Button 
+                onClick={() => triggerScanMutation.mutate(Array.from(selectedLeadIds))}
+                disabled={triggerScanMutation.isPending}
+                className="w-full"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                סרוק {selectedLeadIds.size} נבחרים
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -214,6 +249,12 @@ export const PersonalScoutTab: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-center w-12">
+                    <Checkbox 
+                      checked={selectedLeadIds.size === leadsWithMatches.length && leadsWithMatches.length > 0}
+                      onCheckedChange={handleToggleAll}
+                    />
+                  </TableHead>
                   <TableHead className="text-right">לקוח</TableHead>
                   <TableHead className="text-right">ערים</TableHead>
                   <TableHead className="text-right">תקציב</TableHead>
@@ -226,6 +267,12 @@ export const PersonalScoutTab: React.FC = () => {
               <TableBody>
                 {leadsWithMatches.map((lead) => (
                   <TableRow key={lead.id}>
+                    <TableCell className="text-center">
+                      <Checkbox 
+                        checked={selectedLeadIds.has(lead.id)}
+                        onCheckedChange={() => handleToggleLead(lead.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{lead.name}</TableCell>
                     <TableCell>
                       {lead.preferred_cities?.slice(0, 2).join(', ')}

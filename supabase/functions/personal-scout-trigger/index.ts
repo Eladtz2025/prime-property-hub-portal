@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     console.log('🎯 Personal Scout Trigger started');
 
     // Parse request body for optional filters
-    let body: { lead_id?: string; source?: string; skip_already_scanned?: boolean } = {};
+    let body: { lead_id?: string; lead_ids?: string[]; source?: string; skip_already_scanned?: boolean } = {};
     try {
       body = await req.json();
     } catch {
@@ -78,8 +78,13 @@ Deno.serve(async (req) => {
       .eq('matching_status', 'eligible')
       .not('preferred_cities', 'is', null);
 
-    // Optional: filter to specific lead
-    if (body.lead_id) {
+    // Optional: filter to specific leads by array of IDs
+    if (body.lead_ids && body.lead_ids.length > 0) {
+      query = query.in('id', body.lead_ids);
+      console.log(`🎯 Filtering to ${body.lead_ids.length} specific leads`);
+    }
+    // Optional: filter to single lead (legacy support)
+    else if (body.lead_id) {
       query = query.eq('id', body.lead_id);
     }
 
