@@ -297,9 +297,37 @@ Deno.serve(async (req) => {
 
     // 3. Save matches to personal_scout_matches (with upsert to prevent duplicates)
     let savedCount = 0;
+    let skippedGenericUrls = 0;
+    let skippedProjectUrls = 0;
+    let skippedEmptyData = 0;
+    
     if (allMatches.length > 0) {
       // Use individual upserts to handle duplicates gracefully
       for (const m of allMatches) {
+        // Skip generic Homeless URLs (no specific property ID)
+        if (m.source === 'homeless' && m.source_url) {
+          if (m.source_url === 'https://www.homeless.co.il' || 
+              !m.source_url.includes('/viewad,')) {
+            console.log(`   ⏭️ Skipping generic Homeless URL: ${m.source_url}`);
+            skippedGenericUrls++;
+            continue;
+          }
+        }
+        
+        // Skip Madlan project URLs (not individual listings)
+        if (m.source === 'madlan' && m.source_url?.includes('/projects/')) {
+          console.log(`   ⏭️ Skipping Madlan project URL: ${m.source_url}`);
+          skippedProjectUrls++;
+          continue;
+        }
+        
+        // Skip properties with no useful data (no price, no rooms, no address)
+        if (!m.price && !m.rooms && !m.address) {
+          console.log(`   ⏭️ Skipping empty property (no price/rooms/address)`);
+          skippedEmptyData++;
+          continue;
+        }
+        
         // Check if this exact source_url + lead_id combo already exists
         const { data: existing } = await supabase
           .from('personal_scout_matches')
@@ -330,7 +358,10 @@ Deno.serve(async (req) => {
         }
       }
       
-      console.log(`💾 Saved ${savedCount} new matches (${allMatches.length - savedCount} duplicates skipped)`);
+      console.log(`💾 Saved ${savedCount} new matches`);
+      if (skippedGenericUrls > 0) console.log(`   ⏭️ Skipped ${skippedGenericUrls} generic URLs`);
+      if (skippedProjectUrls > 0) console.log(`   ⏭️ Skipped ${skippedProjectUrls} project URLs`);
+      if (skippedEmptyData > 0) console.log(`   ⏭️ Skipped ${skippedEmptyData} empty records`);
     }
 
     // 4. Update run statistics if run_id provided

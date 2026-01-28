@@ -78,16 +78,22 @@ function checkProperty(
   source: string
 ): string | null {
   // 0. City filter - CRITICAL: Reject properties from wrong cities
-  // Madlan parser sets city='תל אביב יפו' by default, but address might reveal real city
-  if (lead.preferred_cities && lead.preferred_cities.length > 0 && prop.city) {
-    const propCity = normalizeCity(prop.city);
-    const matchesCity = lead.preferred_cities.some(c => normalizeCity(c) === propCity);
-    if (!matchesCity) {
-      // Additional check: address might contain a different city name
-      const addressCity = extractCityFromAddress(prop.address || '');
-      if (addressCity && !lead.preferred_cities.some(c => normalizeCity(c) === addressCity)) {
-        return 'wrong_city';
-      }
+  if (lead.preferred_cities && lead.preferred_cities.length > 0) {
+    // Direct check: Is property city in preferred cities?
+    const propCity = normalizeCity(prop.city || '');
+    const matchesPreferredCity = lead.preferred_cities.some(
+      c => normalizeCity(c) === propCity
+    );
+    
+    // If city doesn't match AND we have a city value, reject immediately
+    if (!matchesPreferredCity && prop.city) {
+      return 'wrong_city';
+    }
+    
+    // Additional check: address might contain a different city name
+    const addressCity = extractCityFromAddress(prop.address || '');
+    if (addressCity && !lead.preferred_cities.some(c => normalizeCity(c) === addressCity)) {
+      return 'wrong_city';
     }
   }
   
@@ -210,6 +216,13 @@ const KNOWN_CITIES = [
   { pattern: /רעננה/i, normalized: 'רעננה' },
   { pattern: /פתח\s*תקוה/i, normalized: 'פתחתקוה' },
   { pattern: /ראשון\s*לציון/i, normalized: 'ראשוןלציון' },
+  { pattern: /כפר\s*סבא/i, normalized: 'כפרסבא' },
+  { pattern: /אשדוד/i, normalized: 'אשדוד' },
+  { pattern: /עכו/i, normalized: 'עכו' },
+  { pattern: /נתניה/i, normalized: 'נתניה' },
+  { pattern: /ירושלים/i, normalized: 'ירושלים' },
+  { pattern: /חיפה/i, normalized: 'חיפה' },
+  { pattern: /באר\s*שבע/i, normalized: 'בארשבע' },
 ];
 
 /**
