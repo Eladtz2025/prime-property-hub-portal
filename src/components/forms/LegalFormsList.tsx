@@ -23,6 +23,27 @@ interface LegalForm {
   client_name: string | null;
   property_address: string | null;
   form_data: unknown;
+  // All form fields from table columns
+  client_id_number: string | null;
+  client_phone: string | null;
+  client_email: string | null;
+  client_signature: string | null;
+  agent_signature: string | null;
+  property_city: string | null;
+  property_floor: string | null;
+  property_rooms: string | null;
+  property_size: string | null;
+  rental_price: string | null;
+  deposit_amount: string | null;
+  payment_method: string | null;
+  guarantees: string | null;
+  entry_date: string | null;
+  notes: string | null;
+  // For broker_sharing forms
+  second_party_name: string | null;
+  second_party_id: string | null;
+  second_party_phone: string | null;
+  second_party_signature: string | null;
 }
 
 interface LegalFormsListProps {
@@ -92,19 +113,27 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
   const handleDownloadPDF = async (form: LegalForm) => {
     setDownloadingId(form.id);
     try {
-      const rawData = (form.form_data || {}) as Record<string, unknown>;
-      
       if (form.form_type === 'memorandum') {
+        // Read directly from table columns, NOT from form_data
         const formData = {
-          client_name: String(rawData.client_name || form.client_name || ''),
-          client_id_number: String(rawData.client_id_number || ''),
-          client_phone: String(rawData.client_phone || ''),
-          property_address: String(rawData.property_address || form.property_address || ''),
-          property_city: String(rawData.property_city || ''),
-          rental_price: String(rawData.rental_price || ''),
-          form_date: String(rawData.form_date || form.created_at || ''),
-          client_signature: String(rawData.client_signature || ''),
-          agent_signature: String(rawData.agent_signature || ''),
+          client_name: form.client_name || '',
+          client_id_number: form.client_id_number || '',
+          client_phone: form.client_phone || '',
+          client_email: form.client_email || '',
+          property_address: form.property_address || '',
+          property_city: form.property_city || '',
+          property_floor: form.property_floor || '',
+          property_rooms: form.property_rooms || '',
+          property_size: form.property_size || '',
+          rental_price: form.rental_price || '',
+          deposit_amount: form.deposit_amount || '',
+          payment_method: form.payment_method || '',
+          guarantees: form.guarantees || '',
+          entry_date: form.entry_date || '',
+          notes: form.notes || '',
+          client_signature: form.client_signature || '',
+          agent_signature: form.agent_signature || '',
+          form_date: form.created_at,
           language: (form.language || 'he') as 'he' | 'en',
         };
         const pdf = await generateMemorandumPDF(formData);
@@ -112,17 +141,19 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
         pdf.save(fileName);
         toast.success('ה-PDF הורד בהצלחה');
       } else if (form.form_type === 'exclusivity') {
+        // For exclusivity, read from table columns (seller = client in DB)
+        const rawData = (form.form_data || {}) as Record<string, unknown>;
         const formData = {
-          seller_name: String(form.client_name || ''),
-          seller_id_number: String(rawData.seller_id_number || ''),
+          seller_name: form.client_name || '',
+          seller_id_number: form.client_id_number || '',
           seller_address: String(rawData.seller_address || ''),
-          seller_phone: String(rawData.seller_phone || ''),
-          seller_email: String(rawData.seller_email || ''),
-          property_address: String(form.property_address || ''),
-          property_city: String(rawData.property_city || ''),
-          property_floor: String(rawData.property_floor || ''),
-          property_rooms: String(rawData.property_rooms || ''),
-          property_size: String(rawData.property_size || ''),
+          seller_phone: form.client_phone || '',
+          seller_email: form.client_email || '',
+          property_address: form.property_address || '',
+          property_city: form.property_city || '',
+          property_floor: form.property_floor || '',
+          property_rooms: form.property_rooms || '',
+          property_size: form.property_size || '',
           property_gush_helka: String(rawData.property_gush_helka || ''),
           exclusivity_period: String(rawData.exclusivity_period || ''),
           start_date: String(rawData.start_date || ''),
@@ -130,9 +161,9 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
           asking_price: String(rawData.asking_price || ''),
           commission_percentage: String(rawData.commission_percentage || ''),
           commission_includes_vat: Boolean(rawData.commission_includes_vat),
-          form_date: String(rawData.form_date || form.created_at || ''),
-          seller_signature: String(rawData.seller_signature || ''),
-          agent_signature: String(rawData.agent_signature || ''),
+          form_date: form.created_at,
+          seller_signature: form.client_signature || '',
+          agent_signature: form.agent_signature || '',
           language: (form.language || 'he') as 'he' | 'en',
         };
         const pdf = await generateExclusivityPDF(formData);
@@ -140,24 +171,26 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
         pdf.save(fileName);
         toast.success('ה-PDF הורד בהצלחה');
       } else if (form.form_type === 'broker_sharing') {
+        // For broker_sharing, second_party = secondary broker
+        const rawData = (form.form_data || {}) as Record<string, unknown>;
         const formData = {
           primary_broker_name: form.language === 'he' ? BUSINESS_INFO.brokerName : BUSINESS_INFO.brokerNameEn,
           primary_broker_license: BUSINESS_INFO.license,
           primary_broker_phone: BUSINESS_INFO.phone,
           primary_broker_company: BUSINESS_INFO.name,
-          secondary_broker_name: String(form.client_name || rawData.secondary_broker_name || ''),
-          secondary_broker_license: String(rawData.secondary_broker_license || ''),
-          secondary_broker_phone: String(rawData.secondary_broker_phone || ''),
-          secondary_broker_email: String(rawData.secondary_broker_email || ''),
+          secondary_broker_name: form.second_party_name || form.client_name || '',
+          secondary_broker_license: form.second_party_id || '',
+          secondary_broker_phone: form.second_party_phone || '',
+          secondary_broker_email: form.client_email || '',
           secondary_broker_company: String(rawData.secondary_broker_company || ''),
-          property_address: String(form.property_address || ''),
-          property_city: String(rawData.property_city || ''),
-          transaction_type: (rawData.transaction_type as 'sale' | 'rental') || 'sale',
+          property_address: form.property_address || '',
+          property_city: form.property_city || '',
+          transaction_type: (String(rawData.transaction_type) as 'sale' | 'rental') || 'sale',
           primary_broker_share: String(rawData.primary_broker_share || '50'),
           secondary_broker_share: String(rawData.secondary_broker_share || '50'),
-          form_date: String(rawData.form_date || form.created_at || ''),
-          primary_broker_signature: String(rawData.primary_broker_signature || ''),
-          secondary_broker_signature: String(rawData.secondary_broker_signature || ''),
+          form_date: form.created_at,
+          primary_broker_signature: form.agent_signature || '',
+          secondary_broker_signature: form.second_party_signature || '',
           language: (form.language || 'he') as 'he' | 'en',
         };
         const pdf = await generateBrokerSharingPDF(formData);
