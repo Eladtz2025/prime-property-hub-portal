@@ -92,6 +92,18 @@ Deno.serve(async (req) => {
     
     console.log(`   Property type: ${lead.property_type} → ${propertyType}`);
 
+    // Fetch existing source_urls for this lead to prevent duplicates
+    const { data: existingMatches } = await supabase
+      .from('personal_scout_matches')
+      .select('source_url')
+      .eq('lead_id', lead_id)
+      .not('source_url', 'is', null);
+    
+    const existingUrls = new Set<string>(
+      (existingMatches || []).map(m => m.source_url).filter(Boolean)
+    );
+    console.log(`   📋 Found ${existingUrls.size} existing matches for this lead`);
+
     const stats = {
       total_scraped: 0,
       total_parsed: 0,
@@ -171,17 +183,27 @@ Deno.serve(async (req) => {
 
         const filterResult = filterByLeadPreferences(properties, lead, source);
         const filtered = filterResult.passed;
+        
+        // Filter out properties we already have for this lead
+        const newMatches = filtered.filter(prop => !existingUrls.has(prop.source_url || ''));
+        const skippedCount = filtered.length - newMatches.length;
 
-        stats.total_filtered += filtered.length;
-        stats.by_source[source].matched += filtered.length;
+        stats.total_filtered += newMatches.length;
+        stats.by_source[source].matched += newMatches.length;
+        
+        if (skippedCount > 0) {
+          console.log(`   🔄 Skipped ${skippedCount} duplicates`);
+        }
 
-        for (const prop of filtered) {
+        for (const prop of newMatches) {
           allMatches.push({
             ...prop,
             lead_id: lead.id,
             source,
             page: 1
           });
+          // Add to existingUrls to prevent duplicates from other pages
+          if (prop.source_url) existingUrls.add(prop.source_url);
         }
       }
 
@@ -247,18 +269,24 @@ Deno.serve(async (req) => {
 
           const filterResult = filterByLeadPreferences(properties, lead, source);
           const filtered = filterResult.passed;
+          
+          // Filter out properties we already have for this lead
+          const newMatches = filtered.filter(prop => !existingUrls.has(prop.source_url || ''));
+          const skippedCount = filtered.length - newMatches.length;
 
-          stats.total_filtered += filtered.length;
-          stats.by_source[source].matched += filtered.length;
-          console.log(`   🎯 After filtering: ${filtered.length} matches`);
+          stats.total_filtered += newMatches.length;
+          stats.by_source[source].matched += newMatches.length;
+          console.log(`   🎯 After filtering: ${newMatches.length} matches${skippedCount > 0 ? ` (skipped ${skippedCount} duplicates)` : ''}`);
 
-          for (const prop of filtered) {
+          for (const prop of newMatches) {
             allMatches.push({
               ...prop,
               lead_id: lead.id,
               source,
               page
             });
+            // Add to existingUrls to prevent duplicates from other pages
+            if (prop.source_url) existingUrls.add(prop.source_url);
           }
 
         } catch (pageError) {
