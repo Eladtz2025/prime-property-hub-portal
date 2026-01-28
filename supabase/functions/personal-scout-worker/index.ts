@@ -5,6 +5,7 @@ import { parseYad2Markdown } from '../_personal-scout/parser-yad2.ts';
 import { parseMadlanMarkdown } from '../_personal-scout/parser-madlan.ts';
 import { parseHomelessHtml } from '../_personal-scout/parser-homeless.ts';
 import { filterByLeadPreferences, hasMinimalPreferences } from '../_personal-scout/feature-filter.ts';
+import { extractPaginationInfo, getDefaultPagesToScan } from '../_personal-scout/pagination.ts';
 import type { ParsedProperty } from '../_personal-scout/parser-utils.ts';
 
 const corsHeaders = {
@@ -16,12 +17,12 @@ const corsHeaders = {
  * Personal Scout Worker
  * 
  * Scans properties for a specific lead using their preferences.
- * COMPLETELY SEPARATE from scout-yad2/madlan/homeless.
+ * Uses dynamic pagination - detects total results and scans accordingly.
  */
 
-const MAX_PAGES_PER_SOURCE = 2; // Reduced to 2 pages to avoid timeouts (60s limit)
-const DELAY_BETWEEN_PAGES_MS = 1000; // Reduced delay
-const DELAY_BETWEEN_SOURCES_MS = 1500; // Reduced delay
+const MAX_PAGES_PER_SOURCE = 10; // Max pages per source (capped by pagination.ts)
+const DELAY_BETWEEN_PAGES_MS = 800; // Delay between pages
+const DELAY_BETWEEN_SOURCES_MS = 1000; // Delay between sources
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
       by_source: {} as Record<string, { scraped: number; parsed: number; matched: number }>
     };
 
-    // 2. Scan each source
+    // 2. Scan each source with dynamic pagination
     for (const source of sources) {
       console.log(`\n📡 Scanning ${source} for lead ${leadName}`);
       stats.by_source[source] = { scraped: 0, parsed: 0, matched: 0 };
@@ -108,10 +109,82 @@ Deno.serve(async (req) => {
         await new Promise(r => setTimeout(r, DELAY_BETWEEN_SOURCES_MS));
       }
 
-      for (let page = 1; page <= MAX_PAGES_PER_SOURCE; page++) {
+      // First, scrape page 1 to get pagination info
+      const firstPageUrl = buildPersonalUrl({
+        source,
+        city,
+        property_type: propertyType,
+        min_price: lead.budget_min,
+        max_price: lead.budget_max,
+        min_rooms: lead.rooms_min,
+        max_rooms: lead.rooms_max,
+        balcony_required: lead.balcony_required && !lead.balcony_flexible,
+        parking_required: lead.parking_required && !lead.parking_flexible,
+        elevator_required: lead.elevator_required && !lead.elevator_flexible,
+        neighborhoods: lead.preferred_neighborhoods,
+        page: 1
+      });
+
+      console.log(`   Page 1 (initial): ${firstPageUrl}`);
+      
+      const firstPageData = await scrapeWithRetry(firstPageUrl, firecrawlApiKey, source, 2);
+      
+      if (!firstPageData) {
+        console.log(`   ❌ Page 1 blocked/failed - skipping source`);
+        continue;
+      }
+
+      stats.total_scraped++;
+      stats.by_source[source].scraped++;
+
+      const firstMarkdown = firstPageData.data?.markdown || firstPageData.markdown || '';
+      const firstHtml = firstPageData.data?.html || firstPageData.html || '';
+
+      // Extract pagination info from first page
+      const paginationContent = source === 'homeless' ? firstHtml : firstMarkdown;
+      const paginationInfo = extractPaginationInfo(paginationContent, source);
+      const pagesToScan = paginationInfo?.pages_to_scan || getDefaultPagesToScan();
+      
+      console.log(`   📊 Pagination: ${paginationInfo?.total_results || '?'} results, scanning ${pagesToScan} pages`);
+
+      // Process first page
+      const firstValidation = validateScrapedContent(firstMarkdown, firstHtml, source);
+      if (firstValidation.valid) {
+        let properties: ParsedProperty[] = [];
+        if (source === 'yad2') {
+          properties = parseYad2Markdown(firstMarkdown, propertyType).properties;
+        } else if (source === 'madlan') {
+          properties = parseMadlanMarkdown(firstMarkdown, propertyType).properties;
+        } else if (source === 'homeless') {
+          const homelessResult = await parseHomelessHtml(firstHtml, propertyType);
+          properties = homelessResult.properties;
+        }
+
+        stats.total_parsed += properties.length;
+        stats.by_source[source].parsed += properties.length;
+        console.log(`   ✅ Page 1: ${properties.length} properties`);
+
+        const filterResult = filterByLeadPreferences(properties, lead, source);
+        const filtered = filterResult.passed;
+
+        stats.total_filtered += filtered.length;
+        stats.by_source[source].matched += filtered.length;
+
+        for (const prop of filtered) {
+          allMatches.push({
+            ...prop,
+            lead_id: lead.id,
+            source,
+            page: 1
+          });
+        }
+      }
+
+      // Scan remaining pages (2 to pagesToScan)
+      for (let page = 2; page <= pagesToScan; page++) {
         try {
-          // Build URL with lead parameters
-          // Features are only added to URL if required AND not flexible
+          await new Promise(r => setTimeout(r, DELAY_BETWEEN_PAGES_MS));
+
           const url = buildPersonalUrl({
             source,
             city,
@@ -120,18 +193,15 @@ Deno.serve(async (req) => {
             max_price: lead.budget_max,
             min_rooms: lead.rooms_min,
             max_rooms: lead.rooms_max,
-            // Only filter by features if required AND not flexible
             balcony_required: lead.balcony_required && !lead.balcony_flexible,
             parking_required: lead.parking_required && !lead.parking_flexible,
             elevator_required: lead.elevator_required && !lead.elevator_flexible,
-            // Neighborhood filtering (Yad2 only)
             neighborhoods: lead.preferred_neighborhoods,
             page
           });
 
-          console.log(`   Page ${page}/${MAX_PAGES_PER_SOURCE}: ${url}`);
+          console.log(`   Page ${page}/${pagesToScan}: ${url}`);
 
-          // Scrape with EXACT same logic as production
           const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, source, 2);
           
           if (!scrapeData) {
@@ -145,21 +215,18 @@ Deno.serve(async (req) => {
           const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
           const html = scrapeData.data?.html || scrapeData.html || '';
 
-          // Validate with EXACT same logic
           const validation = validateScrapedContent(markdown, html, source);
           if (!validation.valid) {
             console.log(`   ❌ Validation failed: ${validation.reason}`);
             continue;
           }
 
-          // Parse with EXACT same parsers
           let properties: ParsedProperty[] = [];
           if (source === 'yad2') {
             properties = parseYad2Markdown(markdown, propertyType).properties;
           } else if (source === 'madlan') {
             properties = parseMadlanMarkdown(markdown, propertyType).properties;
           } else if (source === 'homeless') {
-            // FIX: parseHomelessHtml is async - must await
             const homelessResult = await parseHomelessHtml(html, propertyType);
             properties = homelessResult.properties;
           }
@@ -168,7 +235,6 @@ Deno.serve(async (req) => {
           stats.by_source[source].parsed += properties.length;
           console.log(`   ✅ Parsed ${properties.length} properties`);
 
-          // Filter by lead preferences (neighborhoods, budget for non-Yad2, etc.)
           const filterResult = filterByLeadPreferences(properties, lead, source);
           const filtered = filterResult.passed;
 
@@ -176,7 +242,6 @@ Deno.serve(async (req) => {
           stats.by_source[source].matched += filtered.length;
           console.log(`   🎯 After filtering: ${filtered.length} matches`);
 
-          // Add to results
           for (const prop of filtered) {
             allMatches.push({
               ...prop,
@@ -184,11 +249,6 @@ Deno.serve(async (req) => {
               source,
               page
             });
-          }
-
-          // Small delay between pages
-          if (page < MAX_PAGES_PER_SOURCE) {
-            await new Promise(r => setTimeout(r, DELAY_BETWEEN_PAGES_MS));
           }
 
         } catch (pageError) {
