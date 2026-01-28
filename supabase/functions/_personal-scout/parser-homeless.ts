@@ -75,10 +75,11 @@ export async function parseHomelessHtml(
       // It only appears in individual property detail pages
       const size: number | null = null;
       
-      // Rooms (column 6) - standalone number, range 1-20
+      // Rooms (column 6) - extract number, range 1-20
       if (tds.length > 6) {
         const roomsCell = cleanText($(tds[6]).text());
-        const roomsMatch = roomsCell.match(/^(\d+(?:[.,]\d)?)$/);
+        // Relaxed regex - allow number anywhere in cell (not just standalone)
+        const roomsMatch = roomsCell.match(/(\d+(?:[.,]\d)?)/);
         if (roomsMatch) {
           const num = parseFloat(roomsMatch[1].replace(',', '.'));
           if (num >= 1 && num <= 20) rooms = num;
@@ -117,7 +118,16 @@ export async function parseHomelessHtml(
       
       // ========== FALLBACK: Text-based extraction ==========
       // Only use if column extraction failed
-      if (!rooms) rooms = extractRooms(fullRowText);
+      if (!rooms) {
+        // Try to find rooms with Hebrew pattern in full text
+        const roomsFallback = fullRowText.match(/(\d+(?:\.\d)?)\s*(?:חדרים|חד)/);
+        if (roomsFallback) {
+          const num = parseFloat(roomsFallback[1]);
+          if (num >= 1 && num <= 20) rooms = num;
+        }
+        // Last resort: use generic extractor
+        if (!rooms) rooms = extractRooms(fullRowText);
+      }
       if (!floor) floor = extractFloor(fullRowText);
       if (!price) price = extractPrice(fullRowText);
       
