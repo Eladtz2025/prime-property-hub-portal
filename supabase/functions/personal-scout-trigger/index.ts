@@ -35,12 +35,41 @@ Deno.serve(async (req) => {
     console.log('🎯 Personal Scout Trigger started');
 
     // Parse request body for optional filters
-    let body: { lead_id?: string; source?: string } = {};
+    let body: { lead_id?: string; source?: string; skip_already_scanned?: boolean } = {};
     try {
       body = await req.json();
     } catch {
       // No body is fine
     }
+
+    // Mark any stuck "running" runs as failed (older than 30 minutes)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: stuckRuns } = await supabase
+      .from('personal_scout_runs')
+      .update({ 
+        status: 'failed', 
+        error_message: 'Run timed out (30 min)',
+        completed_at: new Date().toISOString()
+      })
+      .eq('status', 'running')
+      .lt('started_at', thirtyMinutesAgo)
+      .select('id');
+    
+    if (stuckRuns && stuckRuns.length > 0) {
+      console.log(`🧹 Marked ${stuckRuns.length} stuck runs as failed`);
+    }
+
+    // Also mark any recent stuck run (no progress in 5 minutes) - for the UI
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    await supabase
+      .from('personal_scout_runs')
+      .update({ 
+        status: 'failed', 
+        error_message: 'Run stuck - no progress',
+        completed_at: new Date().toISOString()
+      })
+      .eq('status', 'running')
+      .lt('started_at', fiveMinutesAgo);
 
     // 1. Get eligible leads
     let query = supabase
@@ -68,16 +97,41 @@ Deno.serve(async (req) => {
     }
 
     // Filter leads that have at least one city preference
-    const eligibleLeads = (leads || []).filter(lead => 
+    let eligibleLeads = (leads || []).filter(lead => 
       lead.preferred_cities && lead.preferred_cities.length > 0
     );
 
+    // Skip leads already scanned today (default: true)
+    const skipAlreadyScanned = body.skip_already_scanned !== false;
+    if (skipAlreadyScanned && eligibleLeads.length > 0) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      
+      // Get leads that already have matches from today
+      const { data: todayMatches } = await supabase
+        .from('personal_scout_matches')
+        .select('lead_id')
+        .gte('created_at', todayStart.toISOString());
+      
+      const alreadyScannedLeadIds = new Set(
+        (todayMatches || []).map(m => m.lead_id)
+      );
+      
+      const beforeCount = eligibleLeads.length;
+      eligibleLeads = eligibleLeads.filter(lead => !alreadyScannedLeadIds.has(lead.id));
+      
+      if (beforeCount !== eligibleLeads.length) {
+        console.log(`⏭️ Skipping ${beforeCount - eligibleLeads.length} leads already scanned today`);
+      }
+    }
+
     if (eligibleLeads.length === 0) {
-      console.log('⚠️ No eligible leads with city preferences found');
+      console.log('⚠️ No eligible leads to scan (all already scanned today or no city preferences)');
       return new Response(JSON.stringify({ 
         success: true, 
-        message: 'No eligible leads with city preferences found',
-        leads_checked: leads?.length || 0
+        message: 'No eligible leads to scan',
+        leads_checked: leads?.length || 0,
+        skipped_already_scanned: skipAlreadyScanned
       }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
