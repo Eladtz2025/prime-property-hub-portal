@@ -305,3 +305,118 @@ function calculateStats(properties: ParsedProperty[]): ParserResult['stats'] {
     broker_count: properties.filter(p => !p.is_private).length,
   };
 }
+
+/**
+ * Markdown Fallback Parser for Homeless
+ * Used when HTML structure doesn't contain expected tr[type="ad"] elements
+ * (e.g., when Firecrawl returns onlyMainContent)
+ */
+export function parseHomelessMarkdown(
+  markdown: string,
+  propertyType: 'rent' | 'sale'
+): ParserResult {
+  const properties: ParsedProperty[] = [];
+  const errors: string[] = [];
+  
+  console.log(`[personal-scout/parser-homeless] Markdown fallback for ${propertyType}, length=${markdown.length}`);
+  
+  // Split by price patterns to identify property blocks
+  // Homeless prices appear as "X,XXX ₪" or similar
+  const pricePattern = /(\d{1,3}(?:,\d{3})*)\s*₪/g;
+  const priceMatches = [...markdown.matchAll(pricePattern)];
+  
+  console.log(`[personal-scout/parser-homeless] Found ${priceMatches.length} potential price matches`);
+  
+  // Process each potential property block
+  for (let i = 0; i < priceMatches.length; i++) {
+    try {
+      const match = priceMatches[i];
+      const priceNum = parseInt(match[1].replace(/,/g, ''), 10);
+      
+      // Validate price range
+      let price: number | null = null;
+      if (propertyType === 'rent') {
+        if (priceNum >= 500 && priceNum <= 50000) price = priceNum;
+      } else {
+        if (priceNum >= 100000 && priceNum <= 50000000) price = priceNum;
+      }
+      
+      if (!price) continue;
+      
+      // Get context around this price (200 chars before, 100 after)
+      const startIdx = Math.max(0, (match.index || 0) - 200);
+      const endIdx = Math.min(markdown.length, (match.index || 0) + 100);
+      const context = markdown.substring(startIdx, endIdx);
+      
+      // Extract rooms
+      let rooms: number | null = null;
+      const roomsMatch = context.match(/(\d+(?:\.\d)?)\s*(?:חדרים|חד)/);
+      if (roomsMatch) {
+        const num = parseFloat(roomsMatch[1]);
+        if (num >= 1 && num <= 20) rooms = num;
+      }
+      
+      // Extract floor
+      let floor: number | null = null;
+      const floorMatch = context.match(/קומה\s*(\d+)|קרקע/);
+      if (floorMatch) {
+        floor = floorMatch[1] ? parseInt(floorMatch[1], 10) : 0;
+      }
+      
+      // Extract city
+      const city = extractCity(context) || DEFAULT_CITY;
+      
+      // Extract neighborhood
+      const neighborhood = extractNeighborhood(context, city);
+      
+      // Skip duplicates (same price within same context likely means same property)
+      const isDuplicate = properties.some(p => 
+        p.price === price && 
+        p.rooms === rooms && 
+        p.neighborhood === neighborhood?.label
+      );
+      if (isDuplicate) continue;
+      
+      // Build property
+      const property: ParsedProperty = {
+        source: 'homeless',
+        source_id: generateSourceId('homeless', '', i),
+        source_url: 'https://www.homeless.co.il',
+        title: `${rooms ? `${rooms} חדרים` : 'דירה'} ${neighborhood?.label ? `ב${neighborhood.label}` : `ב${city}`}`,
+        city,
+        neighborhood: neighborhood?.label || null,
+        neighborhood_value: neighborhood?.value || null,
+        address: null,
+        price,
+        rooms,
+        size: null, // Size not available in Homeless search results
+        floor,
+        property_type: propertyType,
+        is_private: true,
+        entry_date: null,
+        raw_data: {
+          context: context.substring(0, 200),
+          parser: 'markdown-fallback'
+        }
+      };
+      
+      properties.push(property);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      errors.push(`Price block ${i}: ${errorMessage}`);
+    }
+  }
+  
+  const stats = calculateStats(properties);
+  
+  console.log(`[personal-scout/parser-homeless] Markdown parsed: ${properties.length} properties`);
+  console.log(`[personal-scout/parser-homeless] Stats: price=${stats.with_price}, rooms=${stats.with_rooms}`);
+  
+  return {
+    success: true,
+    properties,
+    stats,
+    errors: errors.length > 0 ? errors : undefined
+  };
+}
