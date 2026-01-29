@@ -396,6 +396,110 @@ export function parseHebrewDate(dateStr: string): string | null {
 }
 
 // ============================================
+// Features Extraction
+// ============================================
+
+export interface PropertyFeatures {
+  balcony?: boolean;
+  parking?: boolean;
+  elevator?: boolean;
+  mamad?: boolean;     // Safe room
+  storage?: boolean;   // מחסן
+  aircon?: boolean;    // מזגן
+  furnished?: boolean; // מרוהטת
+  renovated?: boolean; // משופצת
+  yard?: boolean;      // חצר/גינה
+  roof?: boolean;      // גג
+  accessible?: boolean; // נגיש
+}
+
+/**
+ * Extract property features from Hebrew text
+ * Looks for keywords indicating amenities
+ */
+export function extractFeatures(text: string): PropertyFeatures {
+  if (!text) return {};
+  
+  const features: PropertyFeatures = {};
+  const lowerText = text.toLowerCase();
+  
+  // Balcony patterns (מרפסת)
+  if (/מרפסת|balcon|mirpeset/.test(text)) {
+    features.balcony = true;
+  }
+  
+  // Parking patterns (חניה)
+  if (/חניה|חנייה|parking|מחסן\s*וחניה/.test(text)) {
+    features.parking = true;
+  }
+  
+  // Elevator patterns (מעלית)
+  if (/מעלית|elevator|lift/.test(text)) {
+    features.elevator = true;
+  }
+  
+  // Mamad / Safe room patterns (ממ"ד)
+  if (/ממ"ד|ממד|מרחב\s*מוגן|safe\s*room/.test(text)) {
+    features.mamad = true;
+  }
+  
+  // Storage patterns (מחסן)
+  if (/מחסן|storage/.test(text)) {
+    features.storage = true;
+  }
+  
+  // Air conditioning patterns (מזגן)
+  if (/מזגן|מיזוג|מזג|a\/c|air\s*condition/.test(text)) {
+    features.aircon = true;
+  }
+  
+  // Furnished patterns (מרוהטת)
+  if (/מרוהט|ריהוט|furnished/.test(text)) {
+    features.furnished = true;
+  }
+  
+  // Renovated patterns (משופצת)
+  if (/משופצ|שיפוץ|חדש|renovated|modern/.test(text)) {
+    features.renovated = true;
+  }
+  
+  // Yard/Garden patterns (חצר/גינה)
+  if (/חצר|גינה|גן\s*פרטי|garden|yard/.test(text)) {
+    features.yard = true;
+  }
+  
+  // Roof patterns (גג)
+  if (/גג|פנטהאוז|penthouse|roof/.test(text)) {
+    features.roof = true;
+  }
+  
+  // Accessible patterns (נגיש)
+  if (/נגיש|accessible|wheelchair/.test(text)) {
+    features.accessible = true;
+  }
+  
+  return features;
+}
+
+/**
+ * Merge multiple feature objects (for when features appear in different parts of the listing)
+ */
+export function mergeFeatures(...featureSets: PropertyFeatures[]): PropertyFeatures {
+  const merged: PropertyFeatures = {};
+  
+  for (const features of featureSets) {
+    if (!features) continue;
+    for (const [key, value] of Object.entries(features)) {
+      if (value === true) {
+        (merged as any)[key] = true;
+      }
+    }
+  }
+  
+  return merged;
+}
+
+// ============================================
 // Parsed Property Interface
 // ============================================
 
@@ -415,7 +519,9 @@ export interface ParsedProperty {
   property_type: 'rent' | 'sale';
   is_private: boolean;
   entry_date: string | null;
+  features?: PropertyFeatures;
   raw_text?: string; // For debugging
+  raw_data?: any;
 }
 
 export interface ParserResult {

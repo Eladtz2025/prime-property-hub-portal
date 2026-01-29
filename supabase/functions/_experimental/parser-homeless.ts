@@ -19,11 +19,14 @@ import {
   // NOTE: extractSize not imported - Size is NOT available in Homeless search results
   extractCity,
   extractNeighborhood,
+  extractFeatures,
+  mergeFeatures,
   cleanText,
   parseHebrewDate,
   generateSourceId,
   type ParsedProperty,
-  type ParserResult
+  type ParserResult,
+  type PropertyFeatures
 } from './parser-utils.ts';
 import { lookupNeighborhoodByStreet } from './street-lookup.ts';
 
@@ -220,6 +223,9 @@ export async function parseHomelessHtml(
         return;
       }
       
+      // Extract features from full row text
+      const features = extractFeatures(fullRowText);
+      
       const property: ParsedProperty = {
         source: 'homeless',
         source_id: generateSourceId('homeless', sourceUrl, index),
@@ -236,6 +242,7 @@ export async function parseHomelessHtml(
         property_type: propertyType,
         is_private: true, // Homeless is primarily private listings
         entry_date: entryDate,
+        features,
         raw_data: {
           propertyTypeText,
           cityText,
