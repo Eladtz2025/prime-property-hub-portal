@@ -106,6 +106,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [maxBudget, setMaxBudget] = useState<string>('');
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string[]>([]);
   const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   
   // Applied filters state - starts with default values to show all properties
   const [appliedFilters, setAppliedFilters] = useState<{
@@ -118,6 +119,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     status: string;
     propertyType: string;
     searchTerm: string;
+    source: string;
   }>({
     roomsMin: '',
     roomsMax: '',
@@ -127,7 +129,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     features: [],
     status: 'all',
     propertyType: 'all',
-    searchTerm: ''
+    searchTerm: '',
+    source: 'all'
   });
 
   // Statistics query
@@ -374,6 +377,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
     if (filters.propertyType !== 'all') {
       query = query.eq('property_type', filters.propertyType);
+    }
+    if (filters.source !== 'all') {
+      // Handle yad2_private as part of yad2
+      if (filters.source === 'yad2') {
+        query = query.or('source.eq.yad2,source.eq.yad2_private');
+      } else {
+        query = query.eq('source', filters.source);
+      }
     }
     if (filters.roomsMin) {
       query = query.gte('rooms', parseFloat(filters.roomsMin));
@@ -721,7 +732,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
       features: featuresFilter,
       status: statusFilter,
       propertyType: propertyTypeFilter,
-      searchTerm
+      searchTerm,
+      source: sourceFilter
     });
   };
 
@@ -750,6 +762,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setPropertyTypeFilter('all');
+    setSourceFilter('all');
     setRoomsMin('');
     setRoomsMax('');
     setMinBudget('');
@@ -765,12 +778,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
       features: [],
       status: 'all',
       propertyType: 'all',
-      searchTerm: ''
+      searchTerm: '',
+      source: 'all'
     });
   };
 
   // Check if any filters are active
-  const hasActiveFilters = statusFilter !== 'all' || propertyTypeFilter !== 'all' || 
+  const hasActiveFilters = statusFilter !== 'all' || propertyTypeFilter !== 'all' || sourceFilter !== 'all' ||
     roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
     neighborhoodFilter.length > 0 || featuresFilter.length > 0;
 
@@ -1177,6 +1191,22 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </Select>
                     </div>
 
+                    {/* Source Filter */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">מקור</label>
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="כל המקורות" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">כל המקורות</SelectItem>
+                          <SelectItem value="yad2">יד2</SelectItem>
+                          <SelectItem value="madlan">מדלן</SelectItem>
+                          <SelectItem value="homeless">הומלס</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Property Type (Rent/Sale) */}
                     <div>
                       <label className="text-sm font-medium mb-2 block">סוג עסקה</label>
@@ -1331,6 +1361,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Source Filter */}
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[85px] h-8 text-sm">
+                <SelectValue placeholder="מקור" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל המקורות</SelectItem>
+                <SelectItem value="yad2">יד2</SelectItem>
+                <SelectItem value="madlan">מדלן</SelectItem>
+                <SelectItem value="homeless">הומלס</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Property Type */}
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
