@@ -17,137 +17,103 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json().catch(() => ({}));
-    const dryRun = body.dry_run !== false; // Default to dry run for safety
+    const dryRun = body.dry_run !== false;
+    const batchSize = body.batch_size || 100; // Process fewer URLs per batch
 
-    console.log(`🧹 Starting duplicate cleanup (dry_run: ${dryRun})`);
+    console.log(`🧹 Starting duplicate cleanup (dry_run: ${dryRun}, batch_size: ${batchSize})`);
 
-    // Step 1: Fetch ALL source_urls using pagination to bypass 1000 limit
-    const allUrls: string[] = [];
-    let offset = 0;
-    const pageSize = 1000;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data, error } = await supabase
+    // Use a more efficient SQL approach to find duplicates
+    // Get URLs that appear more than once, with count
+    const { data: duplicateUrls, error: dupError } = await supabase.rpc('get_duplicate_scouted_urls');
+    
+    if (dupError) {
+      // If RPC doesn't exist, fall back to manual approach but with limit
+      console.log('RPC not found, using fallback approach...');
+      
+      // Get a sample of duplicate URLs to process
+      const { data: sampleData, error: sampleError } = await supabase
         .from('scouted_properties')
         .select('source_url')
         .not('source_url', 'is', null)
         .neq('source_url', '')
-        .range(offset, offset + pageSize - 1);
+        .limit(5000);
 
-      if (error) throw error;
+      if (sampleError) throw sampleError;
 
-      if (data && data.length > 0) {
-        for (const record of data) {
-          allUrls.push(record.source_url);
-        }
-        offset += pageSize;
-        hasMore = data.length === pageSize;
-      } else {
-        hasMore = false;
-      }
-    }
-
-    console.log(`Fetched ${allUrls.length} total records`);
-
-    // Count duplicates manually
-    const urlCounts = new Map<string, number>();
-    for (const url of allUrls) {
-      urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
-    }
-
-    // Filter to only duplicates
-    const duplicateUrlsList = Array.from(urlCounts.entries())
-      .filter(([_, count]) => count > 1)
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .map(([url, count]) => ({ url, count }));
-
-    const totalDuplicatesToDelete = duplicateUrlsList.reduce((sum, item) => sum + item.count - 1, 0);
-
-    console.log(`Found ${duplicateUrlsList.length} duplicate URLs, ${totalDuplicatesToDelete} records to delete`);
-
-    if (duplicateUrlsList.length === 0) {
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'No duplicates found',
-        duplicate_urls: 0,
-        records_to_delete: 0
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    if (dryRun) {
-      return new Response(JSON.stringify({
-        success: true,
-        dry_run: true,
-        duplicate_urls: duplicateUrlsList.length,
-        records_to_delete: totalDuplicatesToDelete,
-        top_duplicates: duplicateUrlsList.slice(0, 20),
-        message: 'Dry run complete. Set dry_run: false to execute deletion.'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Step 2: For each duplicate URL, get all IDs and keep only the oldest
-    const idsToDelete: string[] = [];
-    let processedUrls = 0;
-
-    for (const { url } of duplicateUrlsList) {
-      const { data: records, error: fetchError } = await supabase
-        .from('scouted_properties')
-        .select('id, created_at')
-        .eq('source_url', url)
-        .order('created_at', { ascending: true });
-
-      if (fetchError) {
-        console.error(`Error fetching records for URL: ${url}`, fetchError);
-        continue;
+      // Count duplicates
+      const urlCounts = new Map<string, number>();
+      for (const record of sampleData || []) {
+        urlCounts.set(record.source_url, (urlCounts.get(record.source_url) || 0) + 1);
       }
 
-      if (records && records.length > 1) {
-        // Skip the first (oldest), delete the rest
-        for (let i = 1; i < records.length; i++) {
-          idsToDelete.push(records[i].id);
-        }
+      const duplicateUrlsList = Array.from(urlCounts.entries())
+        .filter(([_, count]) => count > 1)
+        .slice(0, batchSize)
+        .map(([url, count]) => ({ url, count }));
+
+      if (duplicateUrlsList.length === 0) {
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'No duplicates found in sample',
+          duplicate_urls: 0
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      processedUrls++;
-      if (processedUrls % 100 === 0) {
-        console.log(`Processed ${processedUrls}/${duplicateUrlsList.length} URLs`);
+      if (dryRun) {
+        return new Response(JSON.stringify({
+          success: true,
+          dry_run: true,
+          duplicate_urls_in_batch: duplicateUrlsList.length,
+          sample_duplicates: duplicateUrlsList.slice(0, 10),
+          message: `Found ${duplicateUrlsList.length} duplicate URLs in this batch. Set dry_run: false to delete.`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
-    }
 
-    console.log(`Total records to delete: ${idsToDelete.length}`);
-
-    // Delete in batches of 500
-    let deletedCount = 0;
-    const batchSize = 500;
-
-    for (let i = 0; i < idsToDelete.length; i += batchSize) {
-      const batch = idsToDelete.slice(i, i + batchSize);
+      // Delete duplicates one URL at a time, keeping oldest
+      let totalDeleted = 0;
       
-      const { error: deleteError } = await supabase
-        .from('scouted_properties')
-        .delete()
-        .in('id', batch);
+      for (const { url } of duplicateUrlsList) {
+        // Get all records for this URL, ordered by created_at
+        const { data: records, error: fetchError } = await supabase
+          .from('scouted_properties')
+          .select('id, created_at')
+          .eq('source_url', url)
+          .order('created_at', { ascending: true });
 
-      if (deleteError) {
-        console.error(`Error deleting batch ${i / batchSize + 1}:`, deleteError);
-        throw deleteError;
+        if (fetchError || !records || records.length <= 1) continue;
+
+        // Keep the first (oldest), delete the rest
+        const idsToDelete = records.slice(1).map(r => r.id);
+        
+        const { error: deleteError } = await supabase
+          .from('scouted_properties')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (!deleteError) {
+          totalDeleted += idsToDelete.length;
+        }
       }
 
-      deletedCount += batch.length;
-      console.log(`Deleted batch ${Math.floor(i / batchSize) + 1}: ${deletedCount}/${idsToDelete.length}`);
+      return new Response(JSON.stringify({
+        success: true,
+        dry_run: false,
+        duplicate_urls_processed: duplicateUrlsList.length,
+        records_deleted: totalDeleted,
+        message: `Deleted ${totalDeleted} duplicate records. Run again to process more.`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
+    // If RPC exists, use it
     return new Response(JSON.stringify({
       success: true,
-      dry_run: false,
-      duplicate_urls: duplicateUrlsList.length,
-      records_deleted: deletedCount,
-      message: `Successfully deleted ${deletedCount} duplicate records`
+      data: duplicateUrls
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
