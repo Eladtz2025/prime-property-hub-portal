@@ -43,7 +43,15 @@ Deno.serve(async (req) => {
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action = 'start', task_id, dry_run = false } = await req.json().catch(() => ({}));
+    const { 
+      action = 'start', 
+      task_id, 
+      dry_run = false,
+      source_filter,      // Filter by source (yad2, homeless, madlan)
+      only_recent = false, // Only process properties from last 30 min
+      batch_size,          // Override default batch size
+      auto_trigger = false // Flag for auto-triggered runs (after scout)
+    } = await req.json().catch(() => ({}));
 
     // Handle stop action
     if (action === 'stop' && task_id) {
@@ -108,8 +116,8 @@ Deno.serve(async (req) => {
       }
       
       lastProcessedId = taskData?.last_processed_id || null;
-    } else if (existingTask && action === 'start') {
-      // Return existing running task info
+    } else if (existingTask && action === 'start' && !auto_trigger) {
+      // Return existing running task info (unless this is an auto-trigger which runs independently)
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'Task already running',
@@ -119,8 +127,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     } else {
-      // Start new task - count total items first
-      const { count: totalCount } = await supabase
+      // Build count query with filters
+      let countQuery = supabase
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
@@ -128,10 +136,26 @@ Deno.serve(async (req) => {
         .neq('source_url', 'https://www.homeless.co.il')
         .or('rooms.is.null,price.is.null,size.is.null,features.is.null');
 
+      // Apply source filter if specified
+      if (source_filter) {
+        countQuery = countQuery.eq('source', source_filter);
+      }
+
+      // Apply recent filter (last 30 minutes) for auto-triggered runs
+      if (only_recent) {
+        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        countQuery = countQuery.gte('created_at', thirtyMinAgo);
+      }
+
+      const { count: totalCount } = await countQuery;
+
+      // For auto-triggers, use a different task name to avoid conflicts
+      const taskName = auto_trigger ? `${TASK_NAME}_auto_${source_filter || 'all'}` : TASK_NAME;
+
       const { data: newTask, error: insertError } = await supabase
         .from('backfill_progress')
         .insert({
-          task_name: TASK_NAME,
+          task_name: taskName,
           status: 'running',
           total_items: totalCount || 0,
           processed_items: 0,
@@ -146,10 +170,16 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
       progressId = newTask.id;
       
-      console.log(`🚀 New backfill task started: ${progressId}, total items: ${totalCount}`);
+      const triggerType = auto_trigger ? '🤖 Auto-backfill' : '🚀 Manual backfill';
+      const filterInfo = source_filter ? ` for ${source_filter}` : '';
+      const recentInfo = only_recent ? ' (recent only)' : '';
+      console.log(`${triggerType} task started${filterInfo}${recentInfo}: ${progressId}, total items: ${totalCount}`);
     }
 
-    // Get properties with missing data
+    // Determine effective batch size
+    const effectiveBatchSize = batch_size || BATCH_SIZE;
+
+    // Build properties query with same filters
     let query = supabase
       .from('scouted_properties')
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features')
@@ -158,7 +188,18 @@ Deno.serve(async (req) => {
       .neq('source_url', 'https://www.homeless.co.il')
       .or('rooms.is.null,price.is.null,size.is.null,features.is.null')
       .order('id', { ascending: true })
-      .limit(BATCH_SIZE);
+      .limit(effectiveBatchSize);
+
+    // Apply source filter if specified
+    if (source_filter) {
+      query = query.eq('source', source_filter);
+    }
+
+    // Apply recent filter for auto-triggered runs
+    if (only_recent) {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      query = query.gte('created_at', thirtyMinAgo);
+    }
 
     if (lastProcessedId) {
       query = query.gt('id', lastProcessedId);
