@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
@@ -573,6 +573,26 @@ export const ScoutedPropertiesTable: React.FC = () => {
       toast.error('שגיאה בהפעלת חישוב התאמות');
     }
   });
+
+  // Backfill missing property data mutation
+  const backfillMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('backfill-property-data', {
+        body: { limit: 25, dry_run: false }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      toast.success(`עודכנו ${data.updated || 0} נכסים, נכשלו ${data.failed || 0}`);
+    },
+    onError: (error) => {
+      console.error('Backfill error:', error);
+      toast.error('שגיאה בהשלמת נתונים');
+    }
+  });
   const importMutation = useMutation({
     mutationFn: async (scoutedProperty: ScoutedProperty) => {
       // 1. Create property in properties table
@@ -846,8 +866,26 @@ export const ScoutedPropertiesTable: React.FC = () => {
           )}
         </div>
         
-        {/* Duplicates - Clickable */}
-        <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
+        {/* Action Buttons + Duplicates */}
+        <div className="flex items-center gap-2">
+          {/* Backfill Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => backfillMutation.mutate()}
+            disabled={backfillMutation.isPending}
+            className="h-8 text-sm gap-1.5"
+          >
+            {backfillMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Database className="h-3.5 w-3.5" />
+            )}
+            השלמת נתונים
+          </Button>
+          
+          {/* Duplicates - Clickable */}
+          <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
           <SheetTrigger asChild>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-yellow-500/10 border border-transparent hover:border-yellow-500/30 transition-colors cursor-pointer">
               <Copy className="h-4 w-4 text-yellow-600" />
@@ -998,6 +1036,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
             )}
           </SheetContent>
         </Sheet>
+        </div>
       </div>
 
       <Card>
