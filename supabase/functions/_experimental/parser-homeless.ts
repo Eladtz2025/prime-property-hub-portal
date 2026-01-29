@@ -110,46 +110,86 @@ export async function parseHomelessHtml(
         }
       }
       
-      // Price (column 8) - Extract price carefully to avoid garbage from adjacent elements
-      // PROBLEM: Cell text often includes extra digits from rooms (prefix) and ad IDs (suffix)
-      // Example: "3 10,900 01" where 3=rooms, 10,900=price, 01=ad ID suffix
-      // SOLUTION: Look for price patterns with ₪ symbol or find the most reasonable number
+      // Price (column 8) - Extract price carefully
+      // KNOWN ISSUES:
+      // 1. Cell contains mixed text like "3 10,900 01" (rooms + price + ad ID)
+      // 2. Years (2025, 2026) are mistaken for prices
+      // 3. Room numbers get concatenated with price (e.g., "421,000" = 4 rooms + 21,000)
+      // SOLUTION: Multiple strategies with strict validation
       if (tds.length > 8) {
         const $priceCell = $(tds[8]);
-        // First, try to get ONLY direct text content, not from child elements
+        const priceCellText = cleanText($priceCell.text());
         const priceCellHtml = $priceCell.html() || '';
         
-        // Try to find price with ₪ symbol first (most reliable)
-        let priceMatch = priceCellHtml.match(/([\d,]+)\s*₪/);
-        if (!priceMatch) {
-          // Try ₪ before number
-          priceMatch = priceCellHtml.match(/₪\s*([\d,]+)/);
-        }
-        if (!priceMatch) {
-          // Look for a standalone number that looks like a price (with commas)
-          // This pattern finds numbers with proper comma formatting (Israeli style)
-          priceMatch = priceCellHtml.match(/\b((?:\d{1,3},)*\d{3,})\b/);
-        }
+        // Filter out years (2020-2030) - these are NOT prices
+        const yearPattern = /\b(20[2-3]\d)\b/g;
+        const cleanedPriceText = priceCellText.replace(yearPattern, '');
+        
+        // Strategy 1: Look for price with ₪ symbol (most reliable)
+        let priceMatch = priceCellHtml.match(/([\d,]+)\s*₪/) || priceCellHtml.match(/₪\s*([\d,]+)/);
         
         if (priceMatch) {
           const cleaned = priceMatch[1].replace(/,/g, '');
           const num = parseInt(cleaned, 10);
-          // Validate price range based on property type
-          if (propertyType === 'rent') {
-            // Rental: 500-50,000 ₪
-            if (num >= 500 && num <= 50000) price = num;
-          } else {
-            // Sale: 100,000-50,000,000 ₪
-            if (num >= 100000 && num <= 50000000) price = num;
+          // Skip if it looks like a year
+          if (num < 2000 || num > 2100) {
+            if (propertyType === 'rent' && num >= 1000 && num <= 30000) price = num;
+            else if (propertyType === 'sale' && num >= 100000 && num <= 50000000) price = num;
+          }
+        }
+        
+        // Strategy 2: Find comma-formatted numbers (Israeli style: 10,000 or 5,500)
+        if (!price) {
+          // Match numbers with comma formatting
+          const commaPattern = /\b(\d{1,2},\d{3})\b/g;
+          const matches = cleanedPriceText.match(commaPattern) || [];
+          
+          for (const numStr of matches) {
+            const cleaned = numStr.replace(/,/g, '');
+            const num = parseInt(cleaned, 10);
+            
+            // Validate rental price range (1,000 - 30,000)
+            if (propertyType === 'rent' && num >= 1000 && num <= 30000) {
+              price = num;
+              break;
+            }
+          }
+          
+          // For sales, look for larger numbers
+          if (!price && propertyType === 'sale') {
+            const salePattern = /\b(\d{1,3},\d{3},\d{3})\b/g;
+            const saleMatches = cleanedPriceText.match(salePattern) || [];
+            for (const numStr of saleMatches) {
+              const cleaned = numStr.replace(/,/g, '');
+              const num = parseInt(cleaned, 10);
+              if (num >= 500000 && num <= 50000000) {
+                price = num;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Strategy 3: Plain number without comma (common for round prices like 5000, 8000)
+        if (!price && propertyType === 'rent') {
+          // Find all 4-5 digit numbers
+          const allNumbers = cleanedPriceText.match(/\b(\d{4,5})\b/g) || [];
+          for (const numStr of allNumbers) {
+            const num = parseInt(numStr, 10);
+            // Skip years (2000-2100) and validate range
+            if ((num < 2000 || num > 2100) && num >= 1000 && num <= 30000) {
+              price = num;
+              break;
+            }
           }
         }
       }
       
-      // ========== FALLBACK: Text-based extraction ==========
-      // Only use if column extraction failed
+      // ========== FALLBACK: Text-based extraction for rooms/floor only ==========
+      // DO NOT use fallback for price - it grabs sale prices, phone numbers, etc.
       if (!rooms) rooms = extractRooms(fullRowText);
       if (!floor) floor = extractFloor(fullRowText);
-      if (!price) price = extractPrice(fullRowText);
+      // Price: Leave as null if column extraction failed - don't use unreliable fallback
       
       // ========== CITY: Direct column extraction (td[3]) ==========
       let cityText = '';
