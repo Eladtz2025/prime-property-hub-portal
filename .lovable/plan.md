@@ -1,112 +1,133 @@
 
-# תוכנית השבתת Personal Scout
+# תוכנית ניקוי וסידור נכסים במערכת
 
-## סיכום
-השבתה מלאה של מערכת Personal Scout - הסרה מה-UI, עצירת הריצה האוטומטית, וארגון הקבצים בתיקייה נפרדת.
+## סיכום מצב נוכחי
 
----
-
-## שלב 1: הסרת הטאב מה-Admin UI
-
-**קובץ:** `src/pages/AdminPropertyScout.tsx`
-
-שינויים:
-- הסרת הייבוא של `PersonalScoutTab`
-- הסרת הייבוא של `UserSearch` icon
-- שינוי ה-grid מ-4 עמודות ל-3 עמודות
-- הסרת הטריגר והתוכן של "סקאוט אישי"
+| סוג נכס | סטטוס | כמות | הערות |
+|---------|-------|------|-------|
+| rental | unknown | 344 | 🔴 דורש טיפול |
+| rental | occupied | 34 | ✅ תקין |
+| rental | vacant | 5 | ✅ תקין |
+| sale | vacant | 7 | ✅ תקין |
+| sale | occupied | 2 | ✅ תקין |
+| management | occupied | 3 | ✅ תקין |
+| **סה"כ** | | **395** | |
 
 ---
 
-## שלב 2: עצירת ה-Cron Job האוטומטי
+## בעיות שזוהו
 
-**פעולה:** מחיקת ה-cron job בשם `personal-scout-daily`
+### 1. נכסים עם כתובת "רחוב" בלבד (12 נכסים)
+**חומרה: גבוהה - למחיקה**
 
-מה קיים כרגע:
-- Job ID: 15
-- שם: `personal-scout-daily`
-- לוח זמנים: `0 23 * * *` (23:00 UTC = 01:00 IST)
+| כתובת | בעלים | טלפון | חדרים | מחיר |
+|-------|-------|-------|-------|------|
+| רחוב | שם בעל דירה | ❌ | ❌ | ❌ |
+| (x12) | | | | |
 
-**SQL למחיקה:**
+**מקור:** נוצרו ב-30/09/2025 - נראה כמו ייבוא כושל או בדיקה.
+**פעולה:** מחיקת כל 12 הנכסים.
+
+---
+
+### 2. כפילויות לפי כתובת+עיר+חדרים (20 נכסים כפולים)
+**חומרה: בינונית**
+
+דוגמאות:
+| כתובת | עיר | כפילויות |
+|-------|-----|-----------|
+| דיזנגוף 173 | תל אביב-יפו | 4 |
+| נורדאו | תל אביב-יפו | 3 |
+| הירקון 313 | תל אביב-יפו | 3 |
+| בן יהודה 139 | תל אביב-יפו | 3 |
+| זלטופולסקי 19 | תל אביב-יפו | 3 |
+| (ועוד ~15 כפילויות) | | |
+
+**פעולה:** השארת הנכס עם המידע המלא ביותר, מחיקת הכפילויות.
+
+---
+
+### 3. נכסים "occupied" בלי פרטי דייר (35 נכסים)
+**חומרה: נמוכה - לא למחיקה**
+
+35 נכסים מסומנים כ-occupied אבל אין להם רשומת דייר פעיל בטבלת `tenants`.
+
+**פעולה:** לא למחוק - אלה נכסים אמיתיים. צריך רק להוסיף פרטי דיירים או לעדכן סטטוס.
+
+---
+
+### 4. נכסים "unknown" עם פרטי בעלים (332 נכסים)
+**חומרה: נמוכה - לא למחיקה**
+
+332 נכסים עם סטטוס "unknown" אבל **יש להם** פרטי בעלים וטלפון.
+אלה נכסים שנוספו ידנית (לא מהסקאוט) ופשוט לא עודכן הסטטוס שלהם.
+
+**פעולה:** לא למחוק - אלה לידים פוטנציאליים.
+
+---
+
+## תוכנית ניקוי
+
+### שלב 1: מחיקת נכסים ריקים (12 נכסים)
 ```sql
-SELECT cron.unschedule('personal-scout-daily');
+DELETE FROM properties 
+WHERE address = 'רחוב' 
+  AND owner_name = 'שם בעל דירה'
+  AND monthly_rent IS NULL;
 ```
 
----
+### שלב 2: מחיקת כפילויות (20 נכסים)
+לכל קבוצת כפילויות:
+1. זיהוי הנכס עם המידע המלא ביותר (מחיר, חדרים, תמונות)
+2. מחיקת שאר הנכסים בקבוצה
 
-## שלב 3: העברת קבצי Frontend לתיקייה נפרדת
-
-**קבצים להעברה:**
-| מיקום נוכחי | מיקום חדש |
-|-------------|-----------|
-| `src/components/scout/PersonalScoutTab.tsx` | `src/components/_archived/personal-scout/PersonalScoutTab.tsx` |
-| `src/components/scout/PersonalScoutMatchesDialog.tsx` | `src/components/_archived/personal-scout/PersonalScoutMatchesDialog.tsx` |
-
----
-
-## שלב 4: העברת Edge Functions לתיקייה נפרדת
-
-**קבצים להעברה:**
-| מיקום נוכחי | מיקום חדש |
-|-------------|-----------|
-| `supabase/functions/personal-scout-trigger/` | `supabase/functions/_archived/personal-scout-trigger/` |
-| `supabase/functions/personal-scout-worker/` | `supabase/functions/_archived/personal-scout-worker/` |
-| `supabase/functions/_personal-scout/` | `supabase/functions/_archived/_personal-scout/` |
-
-**הערה:** תיקיות שמתחילות ב-`_` לא מתפרסות כ-Edge Functions.
-
----
-
-## שלב 5: מחיקת Edge Functions שפורסמו
-
-**פעולה:** מחיקת הפונקציות מ-Supabase:
-- `personal-scout-trigger`
-- `personal-scout-worker`
+```sql
+-- דוגמה: דיזנגוף 173 (4 כפילויות → להשאיר 1)
+-- לפני המחיקה צריך לבדוק איזה יש לו הכי הרבה מידע
+WITH ranked AS (
+  SELECT id,
+    (CASE WHEN monthly_rent IS NOT NULL THEN 1 ELSE 0 END +
+     CASE WHEN rooms IS NOT NULL THEN 1 ELSE 0 END +
+     CASE WHEN owner_phone IS NOT NULL THEN 1 ELSE 0 END) as score
+  FROM properties
+  WHERE address = 'דיזנגוף 173' AND city = 'תל אביב-יפו'
+)
+-- נשאיר את זה עם ה-score הגבוה ביותר
+```
 
 ---
 
 ## סיכום פעולות
 
-| # | פעולה | סוג |
-|---|-------|-----|
-| 1 | הסרת טאב "סקאוט אישי" מ-AdminPropertyScout | עריכת קוד |
-| 2 | מחיקת cron job `personal-scout-daily` | SQL |
-| 3 | העברת 2 קומפוננטות React לתיקיית ארכיון | העברת קבצים |
-| 4 | העברת 2 Edge Functions + תיקיית shared לארכיון | העברת קבצים |
-| 5 | מחיקת Edge Functions שפורסמו | Supabase API |
+| # | פעולה | כמות נכסים | סוג |
+|---|-------|------------|-----|
+| 1 | מחיקת נכסים עם "רחוב" | 12 | SQL DELETE |
+| 2 | מחיקת כפילויות | ~20 | SQL DELETE (בזהירות) |
 
-**הערה חשובה:** הטבלאות `personal_scout_runs` ו-`personal_scout_matches` יישארו בDB עם הנתונים הקיימים. אם תרצה למחוק אותן בעתיד - נעשה את זה בנפרד.
+**סה"כ למחיקה:** ~32 נכסים
+**נשארים:** ~363 נכסים
+
+---
+
+## מה לא למחוק
+
+| קטגוריה | כמות | סיבה |
+|---------|------|------|
+| נכסים unknown עם בעלים | 332 | לידים פוטנציאליים עם טלפונים |
+| נכסים occupied בלי דייר | 35 | נכסים אמיתיים, חסרים פרטים |
+| נכסים עם מידע חלקי | רבים | עדיף להשלים מאשר למחוק |
 
 ---
 
 ## פרטים טכניים
 
-### מבנה חדש של התיקיות
-```text
-src/components/_archived/
-  personal-scout/
-    PersonalScoutTab.tsx
-    PersonalScoutMatchesDialog.tsx
+### כפילויות לפי טלפון בעלים
+זוהו בעלים עם מספר נכסים (לגיטימי):
+- `0545503055` (אלעד צברי) - 4 נכסים (management)
+- `052-633-0515` - 4 נכסים
+- `0526882202` - 3 נכסים (דיזנגוף 173 - כפילות!)
+- `0544666843` - 3 נכסים (זלטופולסקי 19 - כפילות!)
 
-supabase/functions/_archived/
-  personal-scout-trigger/
-    index.ts
-  personal-scout-worker/
-    index.ts
-  _personal-scout/
-    feature-filter.ts
-    neighborhood-codes.ts
-    pagination.ts
-    parser-homeless.ts
-    parser-madlan.ts
-    parser-utils.ts
-    parser-yad2.ts
-    scraping.ts
-    url-builder.ts
-```
-
-### AdminPropertyScout אחרי השינוי
-הדף יישאר עם 3 טאבים בלבד:
-1. דירות שנמצאו (properties)
-2. הגדרות (settings)
-3. היסטוריית ריצות (history)
+### נכסים מהסקאוט
+רק 12 נכסים נוצרו מהסקאוט (owner_name = "שם בעל דירה").
+כולם עם כתובת "רחוב" - למחיקה.
