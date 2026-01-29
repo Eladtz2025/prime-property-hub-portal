@@ -111,11 +111,15 @@ export async function parseHomelessHtml(
       }
       
       // Price (column 8) - PRIORITY extraction to avoid phone numbers
-      // Format like "4,000 ₪" or "8,500"
+      // Format like "4,000 ₪" or "8,500" or "3,109,000"
+      // IMPORTANT: Only extract the FIRST price-like number to avoid grabbing ad IDs
       if (tds.length > 8) {
         const priceCell = cleanText($(tds[8]).text());
-        const cleaned = priceCell.replace(/[^\d]/g, '');
-        if (cleaned) {
+        // Match price pattern: digits with optional commas, optionally followed by ₪
+        // This ensures we get ONLY the price number, not any trailing ad IDs
+        const priceMatch = priceCell.match(/^[\d,]+/);
+        if (priceMatch) {
+          const cleaned = priceMatch[0].replace(/,/g, '');
           const num = parseInt(cleaned, 10);
           // Validate price range based on property type
           if (propertyType === 'rent') {
