@@ -1,6 +1,12 @@
 // Shared URL building utilities for Edge Functions
 // Extracted from scout-properties for better maintainability
 
+import { 
+  getYad2NeighborhoodCodes, 
+  getMadlanNeighborhoodSlug, 
+  getHomelessAreaCodes 
+} from './neighborhood-codes.ts';
+
 export interface ScoutConfig {
   id: string;
   name: string;
@@ -116,6 +122,15 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         }
       }
       
+      // Add neighborhood filtering for Yad2
+      if (config.neighborhoods?.length) {
+        const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
+        if (neighborhoodCodes.length > 0) {
+          params.set('neighborhood', neighborhoodCodes.join(','));
+          console.log(`Yad2 neighborhoods: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
+        }
+      }
+      
       params.set('propertyGroup', 'apartments');
       
       if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
@@ -139,10 +154,25 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
       
       let baseUrl = `https://www.madlan.co.il/${pathType}`;
       
-      if (config.cities?.length) {
+      // For Madlan, check if we have a single neighborhood (can use URL-based filtering)
+      if (config.neighborhoods?.length === 1) {
+        const neighborhoodSlug = getMadlanNeighborhoodSlug(config.neighborhoods[0]);
+        if (neighborhoodSlug && config.cities?.length) {
+          const hebrewCity = config.cities[0];
+          const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+          // Extract just the city part without "ישראל"
+          const cityPart = citySlug.replace('-ישראל', '');
+          baseUrl += `/${neighborhoodSlug}-${cityPart}-ישראל`;
+          console.log(`Madlan single neighborhood URL: ${baseUrl}`);
+        }
+      } else if (config.cities?.length) {
+        // Multiple neighborhoods or no neighborhoods - use city-level URL
         const hebrewCity = config.cities[0];
         const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
         baseUrl += `/${citySlug}`;
+        if (config.neighborhoods?.length > 1) {
+          console.log(`Madlan: ${config.neighborhoods.length} neighborhoods selected - using city URL, filtering post-scan`);
+        }
       }
       
       const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
@@ -163,6 +193,20 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
           }
         } else {
           baseUrl = 'https://www.homeless.co.il/rent/';
+        }
+        
+        // Override with neighborhood-specific area code if available
+        if (config.neighborhoods?.length) {
+          const areaCodes = getHomelessAreaCodes(config.neighborhoods);
+          if (areaCodes.length === 1) {
+            // Single area - use that code
+            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
+            console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
+          } else if (areaCodes.length > 1) {
+            // Multiple areas - will need to run multiple URLs or filter post-scan
+            console.log(`Homeless: ${areaCodes.length} area codes for neighborhoods - using first: ${areaCodes[0]}`);
+            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
+          }
         }
       } else {
         baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
@@ -221,6 +265,15 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
           }
         }
         
+        // Add neighborhood filtering for Yad2
+        if (config.neighborhoods?.length) {
+          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
+          if (neighborhoodCodes.length > 0) {
+            params.set('neighborhood', neighborhoodCodes.join(','));
+            console.log(`Yad2 neighborhoods: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
+          }
+        }
+        
         params.set('propertyGroup', 'apartments');
         
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
@@ -250,10 +303,23 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         
         let baseUrl = `https://www.madlan.co.il/${pathType}`;
         
-        if (config.cities?.length) {
+        // For Madlan, check if we have a single neighborhood (can use URL-based filtering)
+        if (config.neighborhoods?.length === 1) {
+          const neighborhoodSlug = getMadlanNeighborhoodSlug(config.neighborhoods[0]);
+          if (neighborhoodSlug && config.cities?.length) {
+            const hebrewCity = config.cities[0];
+            const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+            const cityPart = citySlug.replace('-ישראל', '');
+            baseUrl += `/${neighborhoodSlug}-${cityPart}-ישראל`;
+            console.log(`Madlan single neighborhood URL: ${baseUrl}`);
+          }
+        } else if (config.cities?.length) {
           const hebrewCity = config.cities[0];
           const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
           baseUrl += `/${citySlug}`;
+          if (config.neighborhoods?.length > 1) {
+            console.log(`Madlan: ${config.neighborhoods.length} neighborhoods selected - using city URL, filtering post-scan`);
+          }
         }
         
         // Use config-specific max_pages if set, otherwise use global setting
@@ -280,6 +346,18 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
             }
           } else {
             baseUrl = 'https://www.homeless.co.il/rent/';
+          }
+          
+          // Override with neighborhood-specific area code if available
+          if (config.neighborhoods?.length) {
+            const areaCodes = getHomelessAreaCodes(config.neighborhoods);
+            if (areaCodes.length === 1) {
+              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
+              console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
+            } else if (areaCodes.length > 1) {
+              console.log(`Homeless: ${areaCodes.length} area codes for neighborhoods - using first: ${areaCodes[0]}`);
+              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
+            }
           }
         } else {
           baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
