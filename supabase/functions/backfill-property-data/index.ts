@@ -631,10 +631,10 @@ function extractFeatures(markdown: string): PropertyFeatures {
     features.furnished = true;
   }
 
-  // Accessible - context patterns
+  // Accessible - VERY specific patterns (avoid "נגישות לאתר" false positives)
   if (hasFeature(
-    [/נגיש\s*(ל?נכים)?/i, /נגישות/i, /מותאם\s*לנכים/i, /גישה\s*לכיסא\s*גלגלים/i],
-    []
+    [/נגיש\s+לנכים/i, /מותאם\s+לנכים/i, /גישה\s+לכיסא\s+גלגלים/i, /נגישות\s+לנכים/i, /דירה\s+נגישה/i, /נגיש\s+לנפי\s+תנועה/i],
+    [/נגישות\s*לאתר/i, /תנאי\s*נגישות/i, /הצהרת\s*נגישות/i]
   )) {
     features.accessible = true;
   }
