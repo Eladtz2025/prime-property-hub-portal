@@ -417,65 +417,74 @@ export interface PropertyFeatures {
  * Extract property features from Hebrew text
  * Looks for keywords indicating amenities
  */
+/**
+ * Extract property features from a single property block text
+ * This function is used by parsers that already isolate individual property blocks,
+ * so the patterns can be simpler than the backfill version
+ */
 export function extractFeatures(text: string): PropertyFeatures {
   if (!text) return {};
   
   const features: PropertyFeatures = {};
-  const lowerText = text.toLowerCase();
   
   // Balcony patterns (מרפסת)
-  if (/מרפסת|balcon|mirpeset/.test(text)) {
+  if (/מרפסת/.test(text)) {
     features.balcony = true;
   }
   
   // Parking patterns (חניה)
-  if (/חניה|חנייה|parking|מחסן\s*וחניה/.test(text)) {
+  if (/חניה|חנייה|מקום\s*חניה/.test(text)) {
     features.parking = true;
   }
   
   // Elevator patterns (מעלית)
-  if (/מעלית|elevator|lift/.test(text)) {
+  if (/מעלית/.test(text)) {
     features.elevator = true;
   }
   
   // Mamad / Safe room patterns (ממ"ד)
-  if (/ממ"ד|ממד|מרחב\s*מוגן|safe\s*room/.test(text)) {
+  if (/ממ"?ד|מרחב\s*מוגן/.test(text)) {
     features.mamad = true;
   }
   
   // Storage patterns (מחסן)
-  if (/מחסן|storage/.test(text)) {
+  if (/\bמחסן\b/.test(text)) {
     features.storage = true;
   }
   
   // Air conditioning patterns (מזגן)
-  if (/מזגן|מיזוג|מזג|a\/c|air\s*condition/.test(text)) {
+  if (/מזגנ?|מיזוג/.test(text)) {
     features.aircon = true;
   }
   
   // Furnished patterns (מרוהטת)
-  if (/מרוהט|ריהוט|furnished/.test(text)) {
+  if (/מרוהט/.test(text)) {
     features.furnished = true;
   }
   
-  // Renovated patterns (משופצת)
-  if (/משופצ|שיפוץ|חדש|renovated|modern/.test(text)) {
+  // Renovated patterns (משופצת) - more specific to avoid "חדש" false positives
+  if (/משופצ|שופץ|לאחר\s*שיפוץ/.test(text)) {
     features.renovated = true;
   }
   
   // Yard/Garden patterns (חצר/גינה)
-  if (/חצר|גינה|גן\s*פרטי|garden|yard/.test(text)) {
+  if (/חצר|גינה|גן\s*פרטי|דירת\s*גן/.test(text)) {
     features.yard = true;
   }
   
-  // Roof patterns (גג)
-  if (/גג|פנטהאוז|penthouse|roof/.test(text)) {
+  // Roof/Penthouse patterns (גג) - more specific
+  if (/גג\s*(פרטי|צמוד)?|פנטהאו[זס]|דירת\s*גג/.test(text)) {
     features.roof = true;
   }
   
-  // Accessible patterns (נגיש)
-  if (/נגיש|accessible|wheelchair/.test(text)) {
+  // Accessible patterns (נגיש) - more specific  
+  if (/נגיש\s*(ל?נכים)?|נגישות/.test(text)) {
     features.accessible = true;
+  }
+  
+  // Pets allowed (חיות מחמד)
+  if (/מותר\s*(חיות|בע"ח)|pet\s*friendly/i.test(text)) {
+    features.pets = true;
   }
   
   return features;

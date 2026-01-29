@@ -519,69 +519,193 @@ function extractPropertyData(markdown: string, source: string): PropertyData {
   return data;
 }
 
+/**
+ * Extract features from property description - IMPROVED VERSION
+ * 
+ * Key improvements:
+ * 1. Isolates the main property description section (avoids nav/footer)
+ * 2. Uses context-aware patterns to reduce false positives
+ * 3. Checks for negative patterns (e.g., "אין מרפסת", "ללא חניה")
+ */
 function extractFeatures(markdown: string): PropertyFeatures {
   const features: PropertyFeatures = {};
-  const text = markdown.toLowerCase();
+  
+  // First, try to isolate the property description section
+  const text = isolatePropertyDescription(markdown);
+  const lowerText = text.toLowerCase();
 
-  // Balcony
-  if (/מרפסת|balcon|mirpeset|מרפסת שמש|מרפסת גדולה/.test(text)) {
+  // Helper to check for positive mention without negation
+  const hasFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean => {
+    // Check if any negative pattern matches
+    for (const neg of negativePatterns) {
+      if (neg.test(text)) {
+        return false;
+      }
+    }
+    // Check if any positive pattern matches
+    for (const pos of positivePatterns) {
+      if (pos.test(text)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Balcony - positive context patterns
+  if (hasFeature(
+    [/יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, /מרפסת\s*(שמש|גדולה|מרווחת|יפה)/i, /\bמרפסת\b.*מ"ר/i],
+    [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i]
+  )) {
     features.balcony = true;
   }
 
-  // Yard/Garden
-  if (/חצר|גינה|גן פרטי|garden|yard|גינה פרטית|חצר פרטית/.test(text)) {
+  // Yard/Garden - specific patterns
+  if (hasFeature(
+    [/יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה)/i, /גן\s*פרטי/i, /דירת\s*גן/i],
+    [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i]
+  )) {
     features.yard = true;
   }
 
-  // Elevator
-  if (/מעלית|elevator|lift/.test(text)) {
+  // Elevator - context patterns
+  if (hasFeature(
+    [/יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, /בניין\s*עם\s*מעלית/i, /\bמעלית\b/],
+    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i]
+  )) {
     features.elevator = true;
   }
 
-  // Parking
-  if (/חניה|חנייה|parking|חניון|מקום חניה/.test(text)) {
+  // Parking - specific context
+  if (hasFeature(
+    [/יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, /חניה\s*(פרטית|בטאבו|בבניין|בחניון)/i, /מקום\s*חניה/i, /חנייה/],
+    [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i]
+  )) {
     features.parking = true;
   }
 
-  // Mamad (safe room)
-  if (/ממ"ד|ממד|מרחב מוגן|mamad|safe room|חדר ביטחון/.test(text)) {
+  // Mamad (safe room) - specific patterns (almost always contextual)
+  if (hasFeature(
+    [/יש\s*ממ"?ד/i, /כולל\s*ממ"?ד/i, /עם\s*ממ"?ד/i, /\bממ"ד\b/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i],
+    [/אין\s*ממ"?ד/i, /ללא\s*ממ"?ד/i]
+  )) {
     features.mamad = true;
   }
 
-  // Storage
-  if (/מחסן|storage|אחסון/.test(text)) {
+  // Storage - context patterns
+  if (hasFeature(
+    [/יש\s*מחסן/i, /כולל\s*מחסן/i, /עם\s*מחסן/i, /\bמחסן\b\s*(פרטי|גדול|בבניין)/i, /מחסן\s*ו?חניה/i],
+    [/אין\s*מחסן/i, /ללא\s*מחסן/i]
+  )) {
     features.storage = true;
   }
 
-  // Roof/Penthouse
-  if (/גג|פנטהאוז|penthouse|roof|גג פרטי|גישה לגג/.test(text)) {
+  // Roof/Penthouse - specific patterns
+  if (hasFeature(
+    [/גג\s*(פרטי|צמוד|מרווח)/i, /גישה\s*לגג/i, /פנטהאו[זס]/i, /דירת\s*גג/i],
+    []
+  )) {
     features.roof = true;
   }
 
-  // Air conditioning
-  if (/מזגן|מיזוג|מזגנים|air.?condition|a\/c|מיזוג אוויר/.test(text)) {
+  // Air conditioning - context patterns
+  if (hasFeature(
+    [/יש\s*מזגנ?/i, /כולל\s*מזגנ?/i, /עם\s*מזגנ?/i, /מזגנים/i, /מיזוג\s*(אוויר|מרכזי)/i, /מיזוג\s*בכל/i],
+    [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i]
+  )) {
     features.aircon = true;
   }
 
-  // Renovated
-  if (/משופצ|שיפוץ|renovated|שופץ|חדש/.test(text)) {
+  // Renovated - context patterns
+  if (hasFeature(
+    [/משופצ[תת]/i, /שיפוץ\s*(יסודי|מלא|חדש)/i, /לאחר\s*שיפוץ/i, /חדש\s*מהניילון/i, /שופץ\s*(לאחרונה|ב\d{4})/i],
+    []
+  )) {
     features.renovated = true;
   }
 
-  // Furnished
-  if (/מרוהט|ריהוט|furnished|רהיטים/.test(text)) {
+  // Furnished - context patterns  
+  if (hasFeature(
+    [/מרוהט[תת]?\s*(במלואה|חלקית)?/i, /כולל\s*ריהוט/i, /עם\s*ריהוט/i, /ריהוט\s*(מלא|חלקי)/i],
+    [/לא\s*מרוהט/i, /ללא\s*ריהוט/i, /ריק[הה]?\s*מריהוט/i]
+  )) {
     features.furnished = true;
   }
 
-  // Accessible
-  if (/נגיש|נגישות|accessible|wheelchair/.test(text)) {
+  // Accessible - context patterns
+  if (hasFeature(
+    [/נגיש\s*(ל?נכים)?/i, /נגישות/i, /מותאם\s*לנכים/i, /גישה\s*לכיסא\s*גלגלים/i],
+    []
+  )) {
     features.accessible = true;
   }
 
-  // Pets allowed
-  if (/חיות מחמד|בעלי חיים|pets?.?allowed|pets?.?friendly|מותר חיות/.test(text)) {
+  // Pets allowed - context patterns
+  if (hasFeature(
+    [/מותר\s*(חיות|בע"ח)/i, /חיות\s*מחמד\s*(מותר|אפשר)/i, /ידידותי\s*לחיות/i, /pet\s*friendly/i],
+    [/אסור\s*חיות/i, /ללא\s*חיות/i, /לא\s*מותר\s*חיות/i]
+  )) {
     features.pets = true;
   }
 
   return features;
+}
+
+/**
+ * Try to isolate just the property description from full page markdown
+ * This helps avoid matching features from navigation, filters, etc.
+ */
+function isolatePropertyDescription(markdown: string): string {
+  // If markdown is short, it's probably already isolated
+  if (markdown.length < 2000) {
+    return markdown;
+  }
+
+  // For Homeless pages, look for the main content section
+  // Usually starts after the breadcrumb/header and ends before footer
+  
+  // Try to find description markers
+  const descriptionMarkers = [
+    /תיאור\s*(הנכס|הדירה)?:?/i,
+    /פרטי\s*(הנכס|הדירה)/i,
+    /מידע\s*על\s*(הנכס|הדירה)/i,
+    /על\s*הנכס/i
+  ];
+  
+  let startIndex = 0;
+  for (const marker of descriptionMarkers) {
+    const match = markdown.search(marker);
+    if (match > 0 && match < markdown.length / 2) {
+      startIndex = match;
+      break;
+    }
+  }
+  
+  // Try to find end markers (footer, related listings, etc.)
+  const endMarkers = [
+    /נכסים\s*דומים/i,
+    /נכסים\s*נוספים/i,
+    /צור\s*קשר/i,
+    /שתף\s*(את\s*)?הנכס/i,
+    /דווח\s*על\s*מודעה/i,
+    /תנאי\s*שימוש/i
+  ];
+  
+  let endIndex = markdown.length;
+  for (const marker of endMarkers) {
+    const match = markdown.search(marker);
+    if (match > startIndex && match < endIndex) {
+      endIndex = match;
+      break;
+    }
+  }
+  
+  // Extract the relevant portion
+  const extracted = markdown.substring(startIndex, endIndex);
+  
+  // If we extracted a reasonable portion, use it; otherwise use full text
+  if (extracted.length > 200 && extracted.length < markdown.length * 0.8) {
+    return extracted;
+  }
+  
+  return markdown;
 }
