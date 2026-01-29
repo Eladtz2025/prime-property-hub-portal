@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database, Square } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 
 interface ScoutedProperty {
   id: string;
@@ -585,27 +586,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
-  // Backfill missing property data mutation
-  const backfillMutation = useMutation({
-    mutationFn: async () => {
-      toast.info('מתחיל השלמת נתונים... סורק 25 נכסים', { duration: 5000 });
-      const { data, error } = await supabase.functions.invoke('backfill-property-data', {
-        body: { limit: 25, dry_run: false }
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
-      const summary = `✅ הושלם! עודכנו: ${data.updated || 0} | נכשלו: ${data.failed || 0} | דולגו: ${data.skipped || 0}`;
-      toast.success(summary, { duration: 8000 });
-    },
-    onError: (error) => {
-      console.error('Backfill error:', error);
-      toast.error('❌ שגיאה בהשלמת נתונים - בדוק את הלוגים');
-    }
-  });
+  // Backfill progress hook
+  const backfill = useBackfillProgress();
+
   const importMutation = useMutation({
     mutationFn: async (scoutedProperty: ScoutedProperty) => {
       // 1. Create property in properties table
@@ -884,21 +867,49 @@ export const ScoutedPropertiesTable: React.FC = () => {
         
         {/* Action Buttons + Duplicates */}
         <div className="flex items-center gap-2">
-          {/* Backfill Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => backfillMutation.mutate()}
-            disabled={backfillMutation.isPending}
-            className="h-8 text-sm gap-1.5"
-          >
-            {backfillMutation.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Database className="h-3.5 w-3.5" />
-            )}
-            השלמת נתונים
-          </Button>
+          {/* Backfill Button with Progress */}
+          {backfill.isRunning ? (
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-1 min-w-[160px]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {backfill.progress?.processed_items || 0}/{backfill.progress?.total_items || 0}
+                  </span>
+                  <span className="font-medium">{backfill.percentComplete}%</span>
+                </div>
+                <Progress value={backfill.percentComplete} className="h-2" />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={backfill.stop}
+                disabled={backfill.isStopping}
+                className="h-8 text-sm gap-1.5 text-destructive border-destructive/50 hover:bg-destructive/10"
+              >
+                {backfill.isStopping ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Square className="h-3.5 w-3.5" />
+                )}
+                עצור
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={backfill.start}
+              disabled={backfill.isStarting}
+              className="h-8 text-sm gap-1.5"
+            >
+              {backfill.isStarting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Database className="h-3.5 w-3.5" />
+              )}
+              השלמת נתונים
+            </Button>
+          )}
           
           {/* Duplicates - Clickable */}
           <Sheet open={duplicatesSheetOpen} onOpenChange={setDuplicatesSheetOpen}>
