@@ -577,6 +577,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   // Backfill missing property data mutation
   const backfillMutation = useMutation({
     mutationFn: async () => {
+      toast.info('מתחיל השלמת נתונים... סורק 25 נכסים', { duration: 5000 });
       const { data, error } = await supabase.functions.invoke('backfill-property-data', {
         body: { limit: 25, dry_run: false }
       });
@@ -586,11 +587,12 @@ export const ScoutedPropertiesTable: React.FC = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
       queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
-      toast.success(`עודכנו ${data.updated || 0} נכסים, נכשלו ${data.failed || 0}`);
+      const summary = `✅ הושלם! עודכנו: ${data.updated || 0} | נכשלו: ${data.failed || 0} | דולגו: ${data.skipped || 0}`;
+      toast.success(summary, { duration: 8000 });
     },
     onError: (error) => {
       console.error('Backfill error:', error);
-      toast.error('שגיאה בהשלמת נתונים');
+      toast.error('❌ שגיאה בהשלמת נתונים - בדוק את הלוגים');
     }
   });
   const importMutation = useMutation({
