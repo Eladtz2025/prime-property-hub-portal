@@ -747,7 +747,17 @@ export const UnifiedScoutSettings: React.FC = () => {
             <div className="space-y-4">
               {/* Add button */}
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                {/* Add button removed per user request */}
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => { resetForm(); }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    הוסף קונפיגורציה
+                  </Button>
+                </DialogTrigger>
                 <DialogContent className="max-w-md" dir="rtl">
                   <DialogHeader>
                     <DialogTitle>
