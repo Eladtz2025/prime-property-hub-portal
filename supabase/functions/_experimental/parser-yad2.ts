@@ -30,11 +30,14 @@ import {
   extractFloor,
   extractCity,
   extractNeighborhood,
+  extractFeatures,
+  mergeFeatures,
   detectBroker,
   cleanText,
   generateSourceId,
   type ParsedProperty,
-  type ParserResult
+  type ParserResult,
+  type PropertyFeatures
 } from './parser-utils.ts';
 
 // ============================================
@@ -209,6 +212,9 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים/.test(block);
   const isBroker = hasAgencyPattern || hasBrokerKeywords || detectBroker(block);
   
+  // Extract features from the entire block
+  const features = extractFeatures(block);
+  
   // Skip if no meaningful data
   if (!price && !rooms && !address) {
     return null;
@@ -233,6 +239,7 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     property_type: propertyType,
     is_private: !isBroker,
     entry_date: null,
+    features,
     raw_text: block.substring(0, 500)
   };
 }

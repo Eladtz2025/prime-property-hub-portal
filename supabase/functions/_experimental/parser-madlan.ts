@@ -34,10 +34,13 @@ import {
   extractSize, 
   extractFloor,
   extractNeighborhood,
+  extractFeatures,
+  mergeFeatures,
   detectBroker,
   cleanText,
   type ParsedProperty,
-  type ParserResult
+  type ParserResult,
+  type PropertyFeatures
 } from './parser-utils.ts';
 
 // ============================================
@@ -346,6 +349,9 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך/.test(block);
   const isBroker = hasBrokerKeyword || hasAgentImage || detectBroker(block);
   
+  // Extract features from the entire block
+  const features = extractFeatures(block);
+  
   // Build title
   const roomsLabel = rooms ? `${rooms} חדרים` : '';
   const typeLabel = propertyType === 'rent' ? 'להשכרה' : 'למכירה';
@@ -370,6 +376,7 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     property_type: propertyType,
     is_private: !isBroker,
     entry_date: null,
+    features,
     raw_text: block.substring(0, 500)
   };
 }
