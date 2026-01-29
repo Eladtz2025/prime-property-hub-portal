@@ -110,21 +110,36 @@ export async function parseHomelessHtml(
         }
       }
       
-      // Price (column 8) - PRIORITY extraction to avoid phone numbers
-      // Format like "4,000 ₪" or "8,500" or "3,109,000"
-      // IMPORTANT: Only extract the FIRST price-like number to avoid grabbing ad IDs
+      // Price (column 8) - Extract price carefully to avoid garbage from adjacent elements
+      // PROBLEM: Cell text often includes extra digits from rooms (prefix) and ad IDs (suffix)
+      // Example: "3 10,900 01" where 3=rooms, 10,900=price, 01=ad ID suffix
+      // SOLUTION: Look for price patterns with ₪ symbol or find the most reasonable number
       if (tds.length > 8) {
-        const priceCell = cleanText($(tds[8]).text());
-        // Match price pattern: digits with optional commas, optionally followed by ₪
-        // This ensures we get ONLY the price number, not any trailing ad IDs
-        const priceMatch = priceCell.match(/^[\d,]+/);
+        const $priceCell = $(tds[8]);
+        // First, try to get ONLY direct text content, not from child elements
+        const priceCellHtml = $priceCell.html() || '';
+        
+        // Try to find price with ₪ symbol first (most reliable)
+        let priceMatch = priceCellHtml.match(/([\d,]+)\s*₪/);
+        if (!priceMatch) {
+          // Try ₪ before number
+          priceMatch = priceCellHtml.match(/₪\s*([\d,]+)/);
+        }
+        if (!priceMatch) {
+          // Look for a standalone number that looks like a price (with commas)
+          // This pattern finds numbers with proper comma formatting (Israeli style)
+          priceMatch = priceCellHtml.match(/\b((?:\d{1,3},)*\d{3,})\b/);
+        }
+        
         if (priceMatch) {
-          const cleaned = priceMatch[0].replace(/,/g, '');
+          const cleaned = priceMatch[1].replace(/,/g, '');
           const num = parseInt(cleaned, 10);
           // Validate price range based on property type
           if (propertyType === 'rent') {
+            // Rental: 500-50,000 ₪
             if (num >= 500 && num <= 50000) price = num;
           } else {
+            // Sale: 100,000-50,000,000 ₪
             if (num >= 100000 && num <= 50000000) price = num;
           }
         }
