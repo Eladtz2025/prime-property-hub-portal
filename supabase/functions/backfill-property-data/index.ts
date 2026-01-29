@@ -302,22 +302,7 @@ Deno.serve(async (req) => {
         successCount++;
         lastId = prop.id;
 
-        // Update progress after each property
-        await supabase.rpc('increment_backfill_progress', {
-          p_task_id: progressId,
-          p_success: 1,
-          p_fail: 0,
-          p_last_id: prop.id
-        }).catch(() => {
-          // Fallback if RPC doesn't exist
-          supabase
-            .from('backfill_progress')
-            .update({
-              processed_items: supabase.rpc('', {}), // Will use direct update below
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', progressId);
-        });
+        // Progress is updated at batch end to avoid too many DB calls
 
         // Delay between requests
         await new Promise(r => setTimeout(r, 1500));
