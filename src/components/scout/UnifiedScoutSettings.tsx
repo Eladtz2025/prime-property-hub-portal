@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
 import {
   Accordion,
   AccordionContent,
@@ -157,6 +158,7 @@ export const UnifiedScoutSettings: React.FC = () => {
     name: '',
     source: 'yad2',
     cities: [] as string[],
+    neighborhoods: [] as string[],
     property_type: 'rent',
     min_price: '',
     max_price: '',
@@ -335,7 +337,7 @@ export const UnifiedScoutSettings: React.FC = () => {
 
   // Config mutations
   const createConfigMutation = useMutation({
-    mutationFn: async (config: { name: string; source: string; cities: string[] | null; property_type: string; min_price: number | null; max_price: number | null; min_rooms: number | null; max_rooms: number | null; search_url: string | null }) => {
+    mutationFn: async (config: { name: string; source: string; cities: string[] | null; neighborhoods: string[] | null; property_type: string; min_price: number | null; max_price: number | null; min_rooms: number | null; max_rooms: number | null; search_url: string | null }) => {
       const { data, error } = await supabase
         .from('scout_configs')
         .insert([config])
@@ -354,7 +356,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   });
 
   const updateConfigMutation = useMutation({
-    mutationFn: async ({ id, ...config }: { id: string; name: string; source: string; cities: string[] | null; property_type: string; min_price: number | null; max_price: number | null; min_rooms: number | null; max_rooms: number | null; search_url: string | null }) => {
+    mutationFn: async ({ id, ...config }: { id: string; name: string; source: string; cities: string[] | null; neighborhoods: string[] | null; property_type: string; min_price: number | null; max_price: number | null; min_rooms: number | null; max_rooms: number | null; search_url: string | null }) => {
       const { error } = await supabase
         .from('scout_configs')
         .update(config)
@@ -470,6 +472,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       name: '',
       source: 'yad2',
       cities: [],
+      neighborhoods: [],
       property_type: 'rental',
       min_price: '',
       max_price: '',
@@ -495,6 +498,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       name: config.name,
       source: config.source,
       cities: config.cities || [],
+      neighborhoods: config.neighborhoods || [],
       property_type: config.property_type,
       min_price: config.min_price?.toString() || '',
       max_price: config.max_price?.toString() || '',
@@ -523,6 +527,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       name: formData.name,
       source: formData.source,
       cities: formData.cities.length > 0 ? formData.cities : null,
+      neighborhoods: formData.neighborhoods.length > 0 ? formData.neighborhoods : null,
       property_type: formData.property_type,
       min_price: formData.min_price ? parseInt(formData.min_price) : null,
       max_price: formData.max_price ? parseInt(formData.max_price) : null,
@@ -800,7 +805,7 @@ export const UnifiedScoutSettings: React.FC = () => {
                       <Label>ערים</Label>
                       <Select
                         value={formData.cities[0] || ''}
-                        onValueChange={(value) => setFormData({ ...formData, cities: [value] })}
+                        onValueChange={(value) => setFormData({ ...formData, cities: [value], neighborhoods: [] })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="בחר עיר" />
@@ -813,6 +818,19 @@ export const UnifiedScoutSettings: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label>שכונות (אופציונלי)</Label>
+                      <NeighborhoodSelectorDropdown
+                        selectedCities={formData.cities}
+                        selectedNeighborhoods={formData.neighborhoods}
+                        onChange={(neighborhoods) => setFormData({ ...formData, neighborhoods })}
+                      />
+                      {formData.neighborhoods.length > 0 && formData.source === 'madlan' && formData.neighborhoods.length > 1 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          הערה: מדלן תומך בשכונה אחת בלבד ב-URL - סינון יתבצע לאחר הסריקה
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -998,6 +1016,11 @@ export const UnifiedScoutSettings: React.FC = () => {
                             <Badge variant="outline" className="text-xs px-1.5 py-0">
                               {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
                             </Badge>
+                            {config.neighborhoods && config.neighborhoods.length > 0 && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0" title={config.neighborhoods.join(', ')}>
+                                {config.neighborhoods.length} שכונות
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         
