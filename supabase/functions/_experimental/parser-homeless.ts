@@ -269,9 +269,9 @@ export async function parseHomelessHtml(
           : `${streetText}, ${cityText}`;
       }
       
-      // Build title
+      // Build title - now includes street name for better identification
       const roomsLabel = rooms ? `${rooms}` : '';
-      const title = buildTitle(propertyTypeText, roomsLabel, neighborhood?.label || neighborhoodText || cityText || '');
+      const title = buildTitle(propertyTypeText, roomsLabel, neighborhood?.label || neighborhoodText || cityText || '', streetText || null);
       
       // Parse entry date from full text
       const entryDate = parseHebrewDate(fullRowText);
@@ -333,11 +333,13 @@ export async function parseHomelessHtml(
 
 /**
  * Build a descriptive title for the property
+ * FIXED: Now includes street name for better identification
  */
 function buildTitle(
   propertyType: string,
   rooms: string,
-  location: string
+  location: string,
+  street: string | null = null
 ): string {
   const parts: string[] = [];
   
@@ -349,7 +351,12 @@ function buildTitle(
     parts.push(`${rooms} חדרים`);
   }
   
-  if (location) {
+  // Include street in location for better identification
+  if (street && location) {
+    parts.push(`ב${street}, ${location}`);
+  } else if (street) {
+    parts.push(`ב${street}`);
+  } else if (location) {
     parts.push(`ב${location}`);
   }
   

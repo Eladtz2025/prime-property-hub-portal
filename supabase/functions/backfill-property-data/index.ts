@@ -490,17 +490,21 @@ function extractPropertyData(markdown: string, source: string): PropertyData {
     }
   }
 
-  // Extract size
+  // Extract size - FIXED: Only extract from MAIN content (before "related ads" section)
+  // This prevents grabbing sizes from "מודעות דומות" section which often appear first in regex matches
+  const mainContent = markdown.split(/עוד מודעות|מודעות דומות|עוד חיפושים|מודעות נוספות/i)[0] || markdown;
+  
   const sizePatterns = [
-    /(\d+)\s*מ"ר/,
-    /(\d+)\s*מטר/,
+    /מ"ר[:\s]*(\d+)/,        // "מ"ר: 70" format (labeled - highest priority)
+    /שטח[:\s]*(\d+)/,        // "שטח: 70" format (labeled)
+    /(\d+)\s*מ"ר(?!\s*[•|])/i, // "70 מ"ר" but NOT followed by bullet (avoids related ads list format)
+    /(\d+)\s*מטר\s*רבוע/i,   // "70 מטר רבוע" (explicit)
     /(\d+)\s*sqm/i,
     /(\d+)\s*sq\.?\s*m/i,
-    /שטח[:\s]*(\d+)/,
     /size[:\s]*(\d+)/i,
   ];
   for (const pattern of sizePatterns) {
-    const match = markdown.match(pattern);
+    const match = mainContent.match(pattern);
     if (match) {
       const size = parseInt(match[1]);
       if (size >= 20 && size <= 1000) {
