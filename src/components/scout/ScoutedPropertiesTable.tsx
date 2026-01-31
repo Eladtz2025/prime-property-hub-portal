@@ -319,21 +319,24 @@ export const ScoutedPropertiesTable: React.FC = () => {
       const today = startOfDay(new Date()).toISOString();
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }).toISOString();
 
-      // Total count
+      // Total count (active properties only)
       const { count: totalCount } = await supabase
         .from('scouted_properties')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
 
-      // Today count
+      // Today count (active properties only)
       const { count: todayCount } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
         .gte('first_seen_at', today);
 
-      // Today by source
+      // Today by source (active properties only)
       const { data: todayBySourceData } = await supabase
         .from('scouted_properties')
         .select('source')
+        .eq('is_active', true)
         .gte('first_seen_at', today);
 
       const todayBySources = todayBySourceData?.reduce((acc, item) => {
@@ -341,26 +344,30 @@ export const ScoutedPropertiesTable: React.FC = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // This week count
+      // This week count (active properties only)
       const { count: weekCount } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
         .gte('first_seen_at', weekStart);
 
-      // By source (total) - use separate count queries to avoid 1000 row limit
+      // By source (total, active only) - use separate count queries to avoid 1000 row limit
       const { count: yad2Count } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
         .eq('source', 'yad2');
 
       const { count: homelessCount } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
         .eq('source', 'homeless');
 
       const { count: madlanCount } = await supabase
         .from('scouted_properties')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
         .eq('source', 'madlan');
 
       const sourceCounts = {
@@ -482,13 +489,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   };
 
-  // Fetch neighborhoods - only Tel Aviv
+  // Fetch neighborhoods - only Tel Aviv, active properties only
   const { data: neighborhoods } = useQuery({
     queryKey: ['scouted-properties-neighborhoods-tel-aviv'],
     queryFn: async () => {
       const { data } = await supabase
         .from('scouted_properties')
         .select('neighborhood')
+        .eq('is_active', true)
         .not('neighborhood', 'is', null)
         .ilike('city', '%תל אביב%');
       
@@ -499,6 +507,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
   // Build query filters helper - uses appliedFilters
   const applyFilters = (query: any, filters: NonNullable<typeof appliedFilters>) => {
+    // Always filter for active properties only
+    query = query.eq('is_active', true);
+    
     // Always filter for Tel Aviv
     query = query.ilike('city', '%תל אביב%');
     
