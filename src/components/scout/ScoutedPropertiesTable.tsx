@@ -543,35 +543,34 @@ export const ScoutedPropertiesTable: React.FC = () => {
     if (filters.maxBudget) {
       query = query.lte('price', parseInt(filters.maxBudget));
     }
-    // Build combined OR conditions for neighborhoods AND features (single .or() call)
-    // This avoids PostgREST conflict from multiple .or() calls
-    const orParts: string[] = [];
+    // SEPARATE .or() calls for neighborhoods and features
+    // PostgREST ANDs multiple .or() calls together, which is what we want:
+    // (neighborhood1 OR neighborhood2) AND (feature1 OR feature2)
     
+    // Neighborhoods - internal OR between all patterns
     if (filters.neighborhoods.length > 0) {
-      // Use neighborhood groups for consolidated matching - multi-select with OR logic
+      const neighborhoodParts: string[] = [];
       filters.neighborhoods.forEach(n => {
         const patterns = NEIGHBORHOOD_GROUPS[n] || [n];
         patterns.forEach(p => {
           // Skip patterns with commas - PostgREST uses comma as OR separator
           if (!p.includes(',')) {
-            orParts.push(`neighborhood.ilike.%${p}%`);
+            neighborhoodParts.push(`neighborhood.ilike.%${p}%`);
           }
         });
       });
+      if (neighborhoodParts.length > 0) {
+        query = query.or(neighborhoodParts.join(','));
+      }
     }
     
-    // Filter by features in DB query (JSONB) - OR logic (show properties with ANY of the features)
+    // Features - separate OR (will be ANDed with neighborhoods by PostgREST)
     if (filters.features.length > 0) {
-      filters.features.forEach(f => {
-        orParts.push(`features->>${f}.eq.true`);
-      });
+      const featureParts = filters.features.map(f => `features->>${f}.eq.true`);
+      query = query.or(featureParts.join(','));
     }
     
-    // Apply single combined OR
-    if (orParts.length > 0) {
-      query = query.or(orParts.join(','));
-    }
-    // Text search - search in title, address, neighborhood (DB level)
+    // Text search - yet another separate OR
     if (filters.searchTerm) {
       const term = filters.searchTerm;
       const normalizedTerm = normalizeSearch(term);
