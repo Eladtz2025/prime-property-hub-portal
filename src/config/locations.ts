@@ -395,7 +395,7 @@ export function findNeighborhoodByAlias(cityValue: string, searchTerm: string): 
 // The street_neighborhoods database table is used for address-based neighborhood resolution.
 
 // Source-specific neighborhoods - displayed EXACTLY as they appear on each site
-// Some sites (like Homeless) only support broad areas, not specific neighborhoods
+// Each source shows neighborhoods exactly as they appear on that site
 export const SOURCE_NEIGHBORHOODS: Record<string, Record<string, Neighborhood[]>> = {
   // Homeless only supports 6 broad areas for Tel Aviv (not specific neighborhoods!)
   // These are displayed exactly as they appear on homeless.co.il
@@ -409,5 +409,67 @@ export const SOURCE_NEIGHBORHOODS: Record<string, Record<string, Neighborhood[]>
       { value: 'homeless_יפו', label: 'יפו', aliases: [] },
     ],
   },
-  // Yad2 and Madlan continue to use the existing NEIGHBORHOODS (no specific mapping needed)
+  
+  // Yad2 - neighborhoods exactly as they appear on yad2.co.il
+  yad2: {
+    'תל אביב יפו': [
+      { value: 'yad2_צפון_ישן', label: 'הצפון הישן', aliases: [] },
+      { value: 'yad2_צפון_חדש', label: 'הצפון החדש', aliases: [] },
+      { value: 'yad2_כיכר_המדינה', label: 'כיכר המדינה', aliases: [] },
+      { value: 'yad2_לב_העיר', label: 'לב העיר', aliases: [] },
+      { value: 'yad2_בבלי', label: 'בבלי', aliases: [] },
+      { value: 'yad2_נווה_צדק', label: 'נווה צדק', aliases: [] },
+      { value: 'yad2_כרם_התימנים', label: 'כרם התימנים', aliases: [] },
+      { value: 'yad2_רמת_אביב', label: 'רמת אביב', aliases: [] },
+      { value: 'yad2_פלורנטין', label: 'פלורנטין', aliases: [] },
+      { value: 'yad2_רוטשילד', label: 'שדרות רוטשילד', aliases: [] },
+      { value: 'yad2_צהלה', label: 'גני צהלה', aliases: [] },
+      { value: 'yad2_נמל_תל_אביב', label: 'נמל תל אביב', aliases: [] },
+      { value: 'yad2_רמת_החייל', label: 'רמת החייל', aliases: [] },
+      { value: 'yad2_יד_אליהו', label: 'יד אליהו', aliases: [] },
+      { value: 'yad2_תל_ברוך', label: 'תל ברוך', aliases: [] },
+      { value: 'yad2_דרום_תל_אביב', label: 'דרום העיר', aliases: [] },
+      { value: 'yad2_אזורי_חן', label: 'אזורי חן', aliases: [] },
+      { value: 'yad2_נווה_אביבים', label: 'נווה אביבים', aliases: [] },
+      { value: 'yad2_הדר_יוסף', label: 'הדר יוסף', aliases: [] },
+      { value: 'yad2_נווה_שרת', label: 'נווה שרת', aliases: [] },
+      { value: 'yad2_יפו', label: 'יפו', aliases: [] },
+    ],
+  },
+  
+  // Madlan - granular sub-areas exactly as they appear on madlan.co.il
+  madlan: {
+    'תל אביב יפו': [
+      // צפון ישן - 4 תת-אזורים במדלן
+      { value: 'madlan_צפון_ישן_צפוני', label: 'הצפון הישן - החלק הצפוני', aliases: [] },
+      { value: 'madlan_צפון_ישן_מרכזי', label: 'הצפון הישן - החלק המרכזי', aliases: [] },
+      { value: 'madlan_צפון_ישן_דרום_מזרחי', label: 'הצפון הישן - החלק הדרום מזרחי', aliases: [] },
+      { value: 'madlan_צפון_ישן_דרום_מערבי', label: 'הצפון הישן - החלק הדרום מערבי', aliases: [] },
+      // צפון חדש - 3 תת-אזורים במדלן
+      { value: 'madlan_צפון_חדש_צפוני', label: 'הצפון החדש - החלק הצפוני', aliases: [] },
+      { value: 'madlan_צפון_חדש_דרומי', label: 'הצפון החדש - החלק הדרומי', aliases: [] },
+      { value: 'madlan_כיכר_המדינה', label: 'הצפון החדש - סביבת כיכר המדינה', aliases: [] },
+      // שאר השכונות
+      { value: 'madlan_לב_תל_אביב', label: 'לב תל אביב', aliases: [] },
+      { value: 'madlan_בבלי', label: 'בבלי', aliases: [] },
+      { value: 'madlan_נווה_צדק', label: 'נווה צדק', aliases: [] },
+      { value: 'madlan_כרם_התימנים', label: 'כרם התימנים', aliases: [] },
+      { value: 'madlan_רמת_אביב', label: 'רמת אביב', aliases: [] },
+      { value: 'madlan_רמת_אביב_החדשה', label: 'רמת אביב החדשה', aliases: [] },
+      { value: 'madlan_פלורנטין', label: 'פלורנטין', aliases: [] },
+      { value: 'madlan_רוטשילד', label: 'שדרות רוטשילד', aliases: [] },
+      { value: 'madlan_צהלה', label: 'גני צהלה, רמות צהלה', aliases: [] },
+      { value: 'madlan_נמל_תל_אביב', label: 'נמל תל אביב', aliases: [] },
+      { value: 'madlan_תל_ברוך', label: 'תל ברוך', aliases: [] },
+      { value: 'madlan_תל_ברוך_צפון', label: 'תל ברוך צפון', aliases: [] },
+      { value: 'madlan_דרום_העיר', label: 'דרום העיר', aliases: [] },
+      { value: 'madlan_אזורי_חן', label: 'אזורי חן', aliases: [] },
+      { value: 'madlan_נווה_אביבים', label: 'נווה אביבים', aliases: [] },
+      { value: 'madlan_הדר_יוסף', label: 'הדר יוסף', aliases: [] },
+      { value: 'madlan_נווה_שרת', label: 'נווה שרת', aliases: [] },
+      { value: 'madlan_רמת_החייל', label: 'רמת החייל', aliases: [] },
+      { value: 'madlan_יד_אליהו', label: 'יד אליהו', aliases: [] },
+      { value: 'madlan_יפו', label: 'יפו', aliases: [] },
+    ],
+  },
 };
