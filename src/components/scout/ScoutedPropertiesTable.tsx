@@ -85,12 +85,11 @@ const NEIGHBORHOOD_GROUPS: Record<string, string[]> = {
     'לואי מרשל',
   ],
   
-  // לב העיר / מרכז
+  // לב העיר / מרכז (הסרנו פטרנים עם פסיק - PostgREST משתמש בפסיק כמפריד OR)
   'לב העיר': [
     'לב העיר',
     'מרכז העיר',             // 333
-    'לב תל אביב',            // 74
-    'לב תל אביב, לב העיר',   // משולב - 197
+    'לב תל אביב',            // 74 - תופס גם "לב תל אביב, לב העיר"
     'לב העיר צפון',
     'לב העיר דרום',
   ],
@@ -133,14 +132,13 @@ const NEIGHBORHOOD_GROUPS: Record<string, string[]> = {
     'עג\'מי',
   ],
   
-  // רמת אביב - איחוד עם הגוש הגדול
+  // רמת אביב - איחוד עם הגוש הגדול (הסרנו פטרנים עם פסיק)
   'רמת אביב': [
     'רמת אביב',              // 150
     'רמת אביב ג',
-    'רמת אביב החדשה',
+    'רמת אביב החדשה',        // תופס גם "הגוש הגדול, רמת אביב החדשה"
     'נופי ים',
     'הגוש הגדול',
-    'הגוש הגדול, רמת אביב החדשה', // 60
   ],
   
   // נווה אביבים (חדש!)
@@ -172,11 +170,10 @@ const NEIGHBORHOOD_GROUPS: Record<string, string[]> = {
     'נוה שאנן',
   ],
   
-  // שרונה / קרית הממשלה (חדש!)
+  // שרונה / קרית הממשלה (הסרנו פטרנים עם פסיק)
   'שרונה': [
-    'גני שרונה',
+    'גני שרונה',             // תופס גם "גני שרונה, קרית הממשלה"
     'קרית הממשלה',
-    'גני שרונה, קרית הממשלה', // 88
   ],
   
   // הדר יוסף (חדש!)
@@ -200,12 +197,11 @@ const NEIGHBORHOOD_GROUPS: Record<string, string[]> = {
     'שפירא',                 // 59
   ],
   
-  // התקווה
+  // התקווה (הסרנו פטרנים עם פסיק)
   'התקווה': [
     'התקוה',
     'שכונת התקווה',
-    'בית יעקב',
-    'התקוה, בית יעקב',       // 57
+    'בית יעקב',              // תופס גם "התקוה, בית יעקב"
     'שוק הפשפשים',
   ],
   
@@ -547,22 +543,33 @@ export const ScoutedPropertiesTable: React.FC = () => {
     if (filters.maxBudget) {
       query = query.lte('price', parseInt(filters.maxBudget));
     }
+    // Build combined OR conditions for neighborhoods AND features (single .or() call)
+    // This avoids PostgREST conflict from multiple .or() calls
+    const orParts: string[] = [];
+    
     if (filters.neighborhoods.length > 0) {
       // Use neighborhood groups for consolidated matching - multi-select with OR logic
-      const allPatterns: string[] = [];
       filters.neighborhoods.forEach(n => {
         const patterns = NEIGHBORHOOD_GROUPS[n] || [n];
-        allPatterns.push(...patterns);
+        patterns.forEach(p => {
+          // Skip patterns with commas - PostgREST uses comma as OR separator
+          if (!p.includes(',')) {
+            orParts.push(`neighborhood.ilike.%${p}%`);
+          }
+        });
       });
-      const orConditions = allPatterns.map(p => `neighborhood.ilike.%${p}%`).join(',');
-      query = query.or(orConditions);
     }
+    
     // Filter by features in DB query (JSONB) - OR logic (show properties with ANY of the features)
     if (filters.features.length > 0) {
-      const orConditions = filters.features
-        .map(f => `features->>${f}.eq.true`)
-        .join(',');
-      query = query.or(orConditions);
+      filters.features.forEach(f => {
+        orParts.push(`features->>${f}.eq.true`);
+      });
+    }
+    
+    // Apply single combined OR
+    if (orParts.length > 0) {
+      query = query.or(orParts.join(','));
     }
     // Text search - search in title, address, neighborhood (DB level)
     if (filters.searchTerm) {
