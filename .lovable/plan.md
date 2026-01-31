@@ -1,188 +1,151 @@
 
+# תיקון בעיות + כפתור "הרץ הכל" לפי מקור
 
-# עדכון הומלס + יצירת יד2 + תצוגה לפי עמודות
+## הבעיות שזיהיתי
 
-## חלק 1: תיקון קונפיגורציות Homeless
+### בעיה 1: שתי שעות בטופס העריכה למרות שעה אחת ב-DB
+**הסיבה**: כשפותחים טופס עריכה, הקוד ממלא אוטומטית את השדה השני מברירת המחדל של המקור:
+```typescript
+// שורה 634-635 הנוכחית
+schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
+schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1], // ← ממלא מברירת מחדל!
+```
 
-### קונפיגורציות שצריכות עדכון:
+**הפתרון**: לא למלא את השדה השני אם אין ערך ב-DB:
+```typescript
+schedule_time_2: configSchedule?.[1] || '', // ← ריק אם אין
+```
 
-| שם | בעיה | תיקון |
-|----|------|-------|
-| Homeless מזרח - השכרה | 5 דפים, 2s | 8 דפים, 15s |
-| Homeless מזרח - מכירה | 5 דפים, 2s | 8 דפים, 15s |
-| Homeless מרכז - השכרה | 16:00 בתזמון | להסיר 16:00 |
-| Homeless מרכז - מכירה | 16:00 בתזמון | להסיר 16:00 |
-| Homeless צפון - השכרה | 5 דפים, 2s | 8 דפים, 15s |
-| Homeless צפון - מכירה | 16:00 בתזמון | להסיר 16:00 |
-| Homeless צפון ירקון - השכרה | 16:00 בתזמון | להסיר 16:00 |
-| Homeless צפון ירקון - מכירה | 5 דפים, 2s | 8 דפים, 15s |
-| הומלס השכרה - צפון ישן וחדש | ישן, שכונות לא תקינות | למחוק |
-
-**גם חסרות 2 קונפיגורציות:**
-- Homeless דרום - השכרה
-- Homeless דרום - מכירה
-- Homeless יפו - השכרה  
-- Homeless יפו - מכירה
+### בעיה 2: חסר כפתור "הרץ הכל" לכל מקור
+**הבקשה**: להוסיף כפתור Play בכותרת של כל עמודה שמריץ את כל הקונפיגורציות של אותו מקור ברצף, עם הפרש של 5 דקות בין כל אחת.
 
 ---
 
-## חלק 2: יצירת 20 קונפיגורציות Yad2
+## שינויים בקוד
 
-10 שכונות × 2 סוגים (השכרה/מכירה) = **20 קונפיגורציות**
+### קובץ: `src/components/scout/UnifiedScoutSettings.tsx`
 
-**תזמון:** מתחיל ב-08:00 עם הפרש 5 דקות
+#### שינוי 1: תיקון מילוי שעה שנייה בטופס עריכה
 
-| # | שכונה | סוג | שעה |
-|---|-------|-----|-----|
-| 1 | הצפון הישן | השכרה | 08:00 |
-| 2 | הצפון הישן | מכירה | 08:05 |
-| 3 | הצפון החדש | השכרה | 08:10 |
-| 4 | הצפון החדש | מכירה | 08:15 |
-| 5 | כיכר המדינה | השכרה | 08:20 |
-| 6 | כיכר המדינה | מכירה | 08:25 |
-| 7 | לב העיר | השכרה | 08:30 |
-| 8 | לב העיר | מכירה | 08:35 |
-| 9 | בבלי | השכרה | 08:40 |
-| 10 | בבלי | מכירה | 08:45 |
-| 11 | נווה צדק | השכרה | 08:50 |
-| 12 | נווה צדק | מכירה | 08:55 |
-| 13 | כרם התימנים | השכרה | 09:00 |
-| 14 | כרם התימנים | מכירה | 09:05 |
-| 15 | רמת אביב | השכרה | 09:10 |
-| 16 | רמת אביב | מכירה | 09:15 |
-| 17 | שדרות רוטשילד | השכרה | 09:20 |
-| 18 | שדרות רוטשילד | מכירה | 09:25 |
-| 19 | נמל תל אביב | השכרה | 09:30 |
-| 20 | נמל תל אביב | מכירה | 09:35 |
-
-**פרמטרים:** pages=8, delay=15s, waitFor=5000
-
----
-
-## חלק 3: תצוגה חדשה - 3 עמודות לפי מקור
-
-במקום גריד 2 עמודות כללי, נציג **3 עמודות** - אחת לכל מקור:
-
-```
-┌─────────────────┬─────────────────┬─────────────────┐
-│     מדלן        │      יד2        │     הומלס       │
-│   (כחול)        │    (כתום)       │    (סגול)       │
-├─────────────────┼─────────────────┼─────────────────┤
-│ קונפיג 1        │ קונפיג 1        │ קונפיג 1        │
-│ קונפיג 2        │ קונפיג 2        │ קונפיג 2        │
-│ קונפיג 3        │ קונפיג 3        │ קונפיג 3        │
-│ ...             │ ...             │ ...             │
-└─────────────────┴─────────────────┴─────────────────┘
+**לפני** (שורה 635):
+```typescript
+schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1],
 ```
 
-**כל עמודה:**
-- כותרת עם צבע המקור + מספר קונפיגורציות
-- רשימה אנכית של כרטיסים קומפקטיים
-- במובייל: עמודה אחת עם מסננים
-
----
-
-## שינויים טכניים
-
-### קובץ 1: עדכוני DB להומלס
-
-```sql
--- עדכון כל ההומלס ל-8 דפים, 15s דיליי, והסרת 16:00
-UPDATE scout_configs 
-SET max_pages = 8, 
-    page_delay_seconds = 15,
-    schedule_times = ARRAY[schedule_times[1]]  -- Keep only first time
-WHERE source = 'homeless' 
-  AND name != 'הומלס השכרה - צפון ישן וחדש';
-
--- מחיקת הקונפיגורציה הישנה
-DELETE FROM scout_configs WHERE id = '94ceebc9-44d5-4d47-82c5-d00cb0c17d85';
-
--- הוספת החסרות
-INSERT INTO scout_configs (...) VALUES 
-  ('Homeless דרום - השכרה', ...),
-  ('Homeless דרום - מכירה', ...),
-  ('Homeless יפו - השכרה', ...),
-  ('Homeless יפו - מכירה', ...);
+**אחרי**:
+```typescript
+schedule_time_2: configSchedule?.[1] || '',
 ```
 
-### קובץ 2: הוספת 20 קונפיגורציות Yad2
-
-```sql
-INSERT INTO scout_configs (name, source, cities, neighborhoods, property_type, is_active, max_pages, page_delay_seconds, wait_for_ms, schedule_times)
-VALUES 
-  ('Yad2 צפון ישן - השכרה', 'yad2', '{"תל אביב יפו"}', '{"yad2_צפון_ישן"}', 'rent', true, 8, 15, 5000, '{"08:00"}'),
-  -- ... 19 more
-;
-```
-
-### קובץ 3: `UnifiedScoutSettings.tsx` - תצוגת עמודות
+#### שינוי 2: הוספת פונקציה להרצת כל הקונפיגורציות של מקור
 
 ```typescript
-// Group configs by source
-const configsBySource = useMemo(() => {
-  if (!configs) return { madlan: [], yad2: [], homeless: [] };
-  return {
-    madlan: configs.filter(c => c.source === 'madlan'),
-    yad2: configs.filter(c => c.source === 'yad2'),
-    homeless: configs.filter(c => c.source === 'homeless'),
-  };
-}, [configs]);
+// Function to run all configs of a source sequentially with 5 min delay
+const [runningSource, setRunningSource] = useState<string | null>(null);
 
-// Render 3 columns
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-  {/* Madlan Column */}
-  <div className="space-y-2">
-    <div className="flex items-center gap-2 p-2 bg-blue-500/10 rounded-lg border-l-4 border-l-blue-500">
-      <span className="font-semibold">מדלן</span>
-      <Badge variant="outline">{configsBySource.madlan.length}</Badge>
-    </div>
-    {configsBySource.madlan.map(config => <ConfigCard key={config.id} config={config} />)}
-  </div>
+const runAllSourceConfigs = async (source: string) => {
+  const sourceConfigs = configs?.filter(c => c.source === source && c.is_active) || [];
   
-  {/* Yad2 Column */}
-  <div className="space-y-2">
-    <div className="flex items-center gap-2 p-2 bg-orange-500/10 rounded-lg border-l-4 border-l-orange-500">
-      <span className="font-semibold">יד2</span>
-      <Badge variant="outline">{configsBySource.yad2.length}</Badge>
-    </div>
-    {configsBySource.yad2.map(config => <ConfigCard key={config.id} config={config} />)}
+  if (sourceConfigs.length === 0) {
+    toast.warning('אין קונפיגורציות פעילות למקור זה');
+    return;
+  }
+
+  setRunningSource(source);
+  toast.info(`מתחיל להריץ ${sourceConfigs.length} קונפיגורציות של ${source}...`);
+
+  for (let i = 0; i < sourceConfigs.length; i++) {
+    const config = sourceConfigs[i];
+    
+    try {
+      await runConfigMutation.mutateAsync(config.id);
+      toast.success(`הופעלה: ${config.name} (${i + 1}/${sourceConfigs.length})`);
+      
+      // Wait 5 minutes before next (except for the last one)
+      if (i < sourceConfigs.length - 1) {
+        toast.info(`ממתין 5 דקות לפני הבא...`);
+        await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)); // 5 minutes
+      }
+    } catch (error) {
+      console.error(`Failed to run ${config.name}:`, error);
+      toast.error(`שגיאה בהפעלת ${config.name}`);
+    }
+  }
+
+  setRunningSource(null);
+  toast.success(`הושלמו כל ${sourceConfigs.length} הריצות של ${source}!`);
+};
+```
+
+#### שינוי 3: הוספת כפתור Play לכותרת כל עמודה
+
+**כותרת עמודת הומלס לדוגמה** (דומה לשאר):
+```tsx
+<div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border-r-4 border-r-purple-500">
+  <div className="flex items-center gap-2">
+    <span className="font-semibold text-purple-700 dark:text-purple-400">הומלס</span>
+    <Badge variant="outline" className="bg-purple-500/20">
+      {configs.filter(c => c.source === 'homeless').length}
+    </Badge>
   </div>
-  
-  {/* Homeless Column */}
-  <div className="space-y-2">
-    <div className="flex items-center gap-2 p-2 bg-purple-500/10 rounded-lg border-l-4 border-l-purple-500">
-      <span className="font-semibold">הומלס</span>
-      <Badge variant="outline">{configsBySource.homeless.length}</Badge>
-    </div>
-    {configsBySource.homeless.map(config => <ConfigCard key={config.id} config={config} />)}
+  <div className="flex items-center gap-2">
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-purple-600 hover:bg-purple-500/20"
+            onClick={() => runAllSourceConfigs('homeless')}
+            disabled={runningSource !== null}
+          >
+            {runningSource === 'homeless' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>הרץ את כל ההומלס (5 דק׳ הפרש)</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   </div>
 </div>
 ```
 
 ---
 
-## תוצאה צפויה
+## לגבי שאלה 3 - העיר לא נבחרה
 
-### תצוגה חדשה:
-- 3 עמודות ברורות לפי מקור
-- כותרת צבעונית לכל עמודה עם מספר הקונפיגורציות
-- קל לראות ולהשוות בין המקורות
+בדקתי את ה-DB וכל הקונפיגורציות החדשות שיצרנו **כן מכילות עיר** (`תל אביב יפו`):
 
-### Homeless (12 קונפיגורציות):
-- כולם עם 8 דפים, 15s דיליי
-- תזמון רק לשעות ה-19:XX שביקשת
+| Name | Cities | Neighborhoods |
+|------|--------|---------------|
+| Homeless דרום - השכרה | `["תל אביב יפו"]` | `["homeless_תא_דרום"]` |
+| Yad2 צפון ישן - השכרה | `["תל אביב יפו"]` | `["yad2_צפון_ישן"]` |
 
-### Yad2 (20 קונפיגורציות חדשות):
-- 10 שכונות × השכרה + מכירה
-- תזמון 08:00-09:35 עם הפרש 5 דקות
+**מה שראית בתמונה**: כנראה זו קונפיגורציה ישנה או שהשדה "ערים" נראה ריק כי הוא dropdown שלא נבחר עדיין (בזמן עריכה/יצירה).
+
+**ככה זה אמור לעבוד**: השכונה מכילה את העיר בשם שלה (למשל `homeless_תא_דרום`), והמערכת יודעת לפרש את זה נכון. אבל עדיף שגם שדה העיר יהיה מלא.
 
 ---
 
-## סיכום קבצים
+## תוצאה צפויה
 
-| קובץ/טבלה | שינוי |
-|-----------|-------|
-| `scout_configs` (DB) | עדכון 8 הומלס, מחיקת 1 ישן, הוספת 4 חסרים + 20 יד2 |
-| `UnifiedScoutSettings.tsx` | תצוגת 3 עמודות לפי מקור |
+1. **טופס עריכה**: יציג רק את השעות שבאמת קיימות ב-DB (לא ימלא אוטומטית שעה שנייה)
 
+2. **כפתור Play בכותרת**: בלחיצה על Play בכותרת "הומלס" - יריץ את כל 10 הקונפיגורציות של הומלס אחת אחרי השנייה עם הפרש 5 דקות
+
+3. **אינדיקציה ויזואלית**: הכפתור יהפוך ל-Spinner בזמן ההמתנה + הודעות Toast על ההתקדמות
+
+---
+
+## סיכום
+
+| שינוי | תיאור |
+|-------|-------|
+| תיקון openEditDialog | לא למלא שעה שנייה מברירת מחדל |
+| הוספת runAllSourceConfigs | פונקציה שמריצה כל קונפיגורציות מקור ברצף |
+| עדכון כותרות עמודות | הוספת כפתור Play + Tooltip לכל מקור |
