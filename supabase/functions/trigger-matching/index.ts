@@ -59,7 +59,7 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
   while (hasMore) {
     const { data: propBatch, error: propError } = await supabase
       .from('scouted_properties')
-      .select('*')
+      .select('id, city, neighborhood, address, price, rooms, size, floor, property_type, title, description, is_private, source, source_url, features, matched_leads')
       .eq('is_active', true)
       .range(from, from + PAGE_SIZE - 1);
 
@@ -77,36 +77,56 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
   const properties = allProperties;
   console.log(`Lead re-match: Fetched ${properties.length} active properties`);
 
-  let updatedCount = 0;
-
-  for (const property of properties || []) {
-    const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
-    const currentMatches = property.matched_leads || [];
-    
-    // Remove this lead from current matches
-    const filteredMatches = currentMatches.filter((m: any) => m.lead_id !== leadId);
-    
-    // Add back if score is high enough
-    if (matchResult.matchScore >= 60) {
-      filteredMatches.push({
-        lead_id: lead.id,
-        name: lead.name,
-        phone: lead.phone,
-        score: matchResult.matchScore,
-        priority: matchResult.priority,
-        reasons: matchResult.matchReasons
-      });
-      updatedCount++;
-    }
-
-    // Update property with new matches
-    await supabase
-      .from('scouted_properties')
-      .update({
+  // Process all properties and calculate matches in parallel
+  const matchResults = await Promise.all(
+    properties.map(async (property) => {
+      const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
+      const currentMatches = property.matched_leads || [];
+      
+      // Remove this lead from current matches
+      const filteredMatches = currentMatches.filter((m: any) => m.lead_id !== leadId);
+      
+      // Add back if score is high enough
+      const isMatch = matchResult.matchScore >= 60;
+      if (isMatch) {
+        filteredMatches.push({
+          lead_id: lead.id,
+          name: lead.name,
+          phone: lead.phone,
+          score: matchResult.matchScore,
+          priority: matchResult.priority,
+          reasons: matchResult.matchReasons
+        });
+      }
+      
+      return {
+        id: property.id,
         matched_leads: filteredMatches,
-        status: filteredMatches.length > 0 ? 'matched' : 'new'
-      })
-      .eq('id', property.id);
+        hasMatches: filteredMatches.length > 0,
+        isNewMatch: isMatch
+      };
+    })
+  );
+
+  // Batch update properties - group by 100 for efficiency
+  const BATCH_SIZE = 100;
+  let updatedCount = 0;
+  
+  for (let i = 0; i < matchResults.length; i += BATCH_SIZE) {
+    const batch = matchResults.slice(i, i + BATCH_SIZE);
+    
+    // Use Promise.all for parallel updates within batch
+    await Promise.all(batch.map(async (result) => {
+      await supabase
+        .from('scouted_properties')
+        .update({
+          matched_leads: result.matched_leads,
+          status: result.hasMatches ? 'matched' : 'new'
+        })
+        .eq('id', result.id);
+      
+      if (result.isNewMatch) updatedCount++;
+    }));
   }
 
   console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched`);
