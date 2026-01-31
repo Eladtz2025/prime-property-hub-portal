@@ -784,30 +784,80 @@ function isolatePropertyDescription(markdown: string): string {
 
 /**
  * Detect if property is private or broker based on markdown content
- * Uses strong indicators only to avoid false positives
+ * Uses source-specific logic with careful regex to avoid phone number false positives
  */
 function detectBrokerFromMarkdown(markdown: string, source: string): boolean | null {
   if (!markdown) return null;
   
   const textLower = markdown.toLowerCase();
   
-  // Strong broker indicators - these almost certainly mean it's a broker listing
-  const hasTivuchLabel = /תיווך/.test(markdown);
-  const hasLicenseNumber = /רישיון/.test(markdown) || /\d{7}/.test(markdown);
-  const hasAgencyName = /שם הסוכנות/.test(markdown);
-  const hasExclusivity = /בבלעדיות/.test(markdown);
-  const hasMediatorLabel = /מתווך|מתווכת/.test(markdown);
+  // === Source-specific logic ===
   
-  // Known broker brands
-  const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'anglo saxon', 'century 21', 'century21', 'קולדוול בנקר', 'coldwell banker'];
-  const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
-  
-  // If any strong broker indicator is found, it's a broker
-  if (hasTivuchLabel || hasLicenseNumber || hasAgencyName || hasExclusivity || hasMediatorLabel || hasBrokerBrand) {
-    console.log(`🔍 Broker indicators found: tivuch=${hasTivuchLabel}, license=${hasLicenseNumber}, agency=${hasAgencyName}, exclusivity=${hasExclusivity}, brand=${hasBrokerBrand}`);
-    return false; // is_private = false (it's a broker)
+  // MADLAN: Check individual property page for broker info
+  if (source === 'madlan') {
+    // Look for "מתיווך" (from broker) - appears on property page
+    const hasMativauch = /מתיווך/.test(markdown);
+    // Look for license number with context (not plain 7 digits which catches phones)
+    const hasLicenseWithContext = /(?:רישיון|ר\.?ת\.?|תיווך)\s*:?\s*\d{7,8}/.test(markdown);
+    const hasAgencyName = /שם הסוכנות/.test(markdown);
+    
+    if (hasMativauch || hasLicenseWithContext || hasAgencyName) {
+      console.log(`🔍 Madlan broker: mativauch=${hasMativauch}, license=${hasLicenseWithContext}, agency=${hasAgencyName}`);
+      return false; // Broker
+    }
+    
+    // Check for explicit private indicators
+    const isExplicitlyPrivate = /ללא\s*(ה)?תיווך|לא\s*למתווכים|ללא\s*מתווכים/i.test(markdown);
+    if (isExplicitlyPrivate) {
+      console.log(`🔍 Madlan explicit private indicator found`);
+      return true; // Private
+    }
+    
+    return null; // Can't determine from markdown
   }
   
-  // If no broker indicators found, mark as private
-  return true; // is_private = true
+  // YAD2: Check for תיווך label with license
+  if (source === 'yad2') {
+    // Look for תיווך: with license number (not plain 7 digits)
+    const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(markdown);
+    const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(markdown);
+    const hasExclusivity = /בבלעדיות/.test(markdown);
+    
+    // Known broker brands
+    const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21', 'קולדוול'];
+    const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
+    
+    if (hasTivuchWithLicense || hasExplicitLicense || hasExclusivity || hasBrokerBrand) {
+      console.log(`🔍 Yad2 broker: tivuch+license=${hasTivuchWithLicense}, license=${hasExplicitLicense}, exclusivity=${hasExclusivity}, brand=${hasBrokerBrand}`);
+      return false; // Broker
+    }
+    
+    // Yad2 default: if no broker indicators, it's private
+    return true;
+  }
+  
+  // HOMELESS: Check for agency name
+  if (source === 'homeless') {
+    const hasAgencyName = /שם הסוכנות/.test(markdown);
+    const hasAgentName = /שם הסוכן/.test(markdown);
+    
+    if (hasAgencyName || hasAgentName) {
+      console.log(`🔍 Homeless broker: agency=${hasAgencyName}, agent=${hasAgentName}`);
+      return false; // Broker
+    }
+    
+    // Homeless default: if no broker indicators, it's private
+    return true;
+  }
+  
+  // Fallback for unknown sources: check for generic broker indicators
+  const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21', 'קולדוול'];
+  const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
+  
+  if (hasBrokerBrand) {
+    console.log(`🔍 Generic broker brand found`);
+    return false; // Broker
+  }
+  
+  return null; // Can't determine
 }
