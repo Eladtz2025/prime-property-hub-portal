@@ -127,6 +127,16 @@ const SOURCE_TECHNICAL_PARAMS: Record<string, {
   },
 };
 
+// Helper to get source-specific border color for config cards
+const getSourceBorderColor = (source: string): string => {
+  switch (source) {
+    case 'madlan': return 'border-l-4 border-l-blue-500';
+    case 'yad2': return 'border-l-4 border-l-orange-500';
+    case 'homeless': return 'border-l-4 border-l-purple-500';
+    default: return '';
+  }
+};
+
 const CITIES = [
   'תל אביב',
   'הרצליה',
@@ -1028,7 +1038,7 @@ export const UnifiedScoutSettings: React.FC = () => {
               {/* Config list - flat grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {configs?.map((config) => (
-                  <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''}`} dir="rtl">
+                  <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''} ${getSourceBorderColor(config.source)}`} dir="rtl">
                     <CardContent className="p-3 md:p-4">
                       {/* Unified compact view - same for mobile and desktop */}
                       <div>
