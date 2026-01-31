@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -264,14 +264,11 @@ export const UnifiedScoutSettings: React.FC = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ScoutConfig | null>(null);
-  const [isBackfilling, setIsBackfilling] = useState(false);
-  const [isFastBackfilling, setIsFastBackfilling] = useState(false);
   const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
   const [isDuplicatesDialogOpen, setIsDuplicatesDialogOpen] = useState(false);
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [isEligibilityDialogOpen, setIsEligibilityDialogOpen] = useState(false);
-  const [isBackfillDialogOpen, setIsBackfillDialogOpen] = useState(false);
   const [isBrokerBackfillDialogOpen, setIsBrokerBackfillDialogOpen] = useState(false);
   const [isBrokerBackfilling, setIsBrokerBackfilling] = useState(false);
   const [isRefreshingEligibility, setIsRefreshingEligibility] = useState(false);
@@ -295,95 +292,6 @@ export const UnifiedScoutSettings: React.FC = () => {
     schedule_time_2: '',
   });
 
-  // Fetch backfill progress (supports both regular and fast backfill)
-  const { data: backfillProgress, refetch: refetchProgress } = useQuery({
-    queryKey: ['backfill-progress'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('backfill_progress')
-        .select('*')
-        .in('task_name', ['backfill_entry_dates', 'backfill_entry_dates_fast'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    refetchInterval: (isBackfilling || isFastBackfilling) ? 3000 : false,
-  });
-
-  // Update backfilling states based on progress
-  useEffect(() => {
-    if (backfillProgress?.status === 'running') {
-      if (backfillProgress.task_name === 'backfill_entry_dates_fast') {
-        setIsFastBackfilling(true);
-      } else {
-        setIsBackfilling(true);
-      }
-    } else if (backfillProgress?.status === 'completed' || backfillProgress?.status === 'failed') {
-      setIsBackfilling(false);
-      setIsFastBackfilling(false);
-    }
-  }, [backfillProgress?.status, backfillProgress?.task_name]);
-
-  // Ref to prevent duplicate concurrent calls
-  const isProcessingRef = useRef(false);
-
-  // Auto-continue backfill with proper mutex handling
-  useEffect(() => {
-    // Skip if not backfilling or already processing
-    if (!isBackfilling || isProcessingRef.current) return;
-    if (backfillProgress?.status !== 'running') return;
-    
-    const processedItems = backfillProgress?.processed_items || 0;
-    const totalItems = backfillProgress?.total_items || 0;
-    
-    // Check if completed
-    if (processedItems >= totalItems && totalItems > 0) {
-      toast.success('עדכון תאריכי כניסה הושלם!');
-      setIsBackfilling(false);
-      return;
-    }
-
-    // Schedule next batch with longer delay to prevent overlap
-    const timer = setTimeout(async () => {
-      if (isProcessingRef.current) return;
-      isProcessingRef.current = true;
-      
-      try {
-        console.log(`Triggering backfill batch, progress: ${processedItems}/${totalItems}`);
-        
-        const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-          body: { batch_size: 15 },
-        });
-        
-        if (error) {
-          console.error('Continue error:', error);
-          toast.error('שגיאה בהמשך העדכון');
-          setIsBackfilling(false);
-          return;
-        }
-        
-        // If skipped due to mutex, just refetch and wait
-        if (data?.skipped) {
-          console.log('Batch skipped - another instance processing');
-        } else if (data?.completed) {
-          toast.success('עדכון תאריכי כניסה הושלם בהצלחה!');
-          setIsBackfilling(false);
-        }
-        
-        refetchProgress();
-      } catch (err) {
-        console.error('Continue error:', err);
-        setIsBackfilling(false);
-      } finally {
-        isProcessingRef.current = false;
-      }
-    }, 5000); // Increased to 5 seconds to prevent overlap
-    
-    return () => clearTimeout(timer);
-  }, [isBackfilling, backfillProgress?.processed_items, backfillProgress?.status]);
 
   // Fetch scout configs
   const { data: configs, isLoading: configsLoading } = useQuery({
@@ -716,141 +624,6 @@ export const UnifiedScoutSettings: React.FC = () => {
     updateSetting.mutate({ category, setting_key, setting_value: value });
   };
 
-  // Backfill entry dates handler
-  const handleBackfillEntryDates = async () => {
-    try {
-      setIsBackfilling(true);
-      toast.info('מתחיל עדכון תאריכי כניסה...');
-      
-      // Delete any existing progress to start completely fresh
-      await supabase
-        .from('backfill_progress')
-        .delete()
-        .eq('task_name', 'backfill_entry_dates');
-      
-      const { error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batch_size: 30 },
-      });
-      
-      if (error) throw error;
-      
-      refetchProgress();
-    } catch (error) {
-      console.error('Backfill error:', error);
-      toast.error('שגיאה בהפעלת העדכון');
-      setIsBackfilling(false);
-    }
-  };
-
-  // Cancel backfill (supports both regular and fast)
-  const handleCancelBackfill = async () => {
-    try {
-      // Cancel both types
-      await Promise.all([
-        supabase.functions.invoke('backfill-entry-dates', { body: { cancel: true } }),
-        supabase.functions.invoke('backfill-entry-dates-fast', { body: { cancel: true } }),
-      ]);
-      toast.info('בוטל');
-      setIsBackfilling(false);
-      setIsFastBackfilling(false);
-      refetchProgress();
-    } catch (error) {
-      console.error('Cancel error:', error);
-    }
-  };
-
-  // Fast backfill with Regex-first approach (much faster)
-  const handleFastBackfill = async () => {
-    try {
-      setIsFastBackfilling(true);
-      toast.info('מתחיל עדכון מהיר (Regex + AI)...');
-
-      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
-        body: { batch_size: 3, use_ai_fallback: false }
-      });
-
-      if (error) throw error;
-
-      refetchProgress();
-
-      if (data.completed) {
-        toast.success('עדכון מהיר הושלם!');
-        setIsFastBackfilling(false);
-      } else if (data.hasMore) {
-        const regexPct = data.processed > 0 ? Math.round((data.regexHits / data.processed) * 100) : 0;
-        toast.success(`עובד ${data.processed} נכסים (${regexPct}% Regex). ממשיך...`);
-        setTimeout(() => continueFastBackfill(), 500);
-      } else {
-        toast.success(`עדכון הושלם: ${data.successful} הצליחו, Regex: ${data.regexHits}, AI: ${data.aiHits}`);
-        setIsFastBackfilling(false);
-      }
-    } catch (err: any) {
-      console.error('Fast backfill error:', err);
-      toast.error(`שגיאה: ${err.message}`);
-      setIsFastBackfilling(false);
-    }
-  };
-
-  const continueFastBackfill = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('backfill-entry-dates-fast', {
-        body: { batch_size: 3, use_ai_fallback: false }
-      });
-
-      if (error) throw error;
-
-      refetchProgress();
-
-      if (data.completed || !data.hasMore) {
-        toast.success(`עדכון מהיר הושלם! Regex: ${data.regexHits || 0}, AI: ${data.aiHits || 0}`);
-        setIsFastBackfilling(false);
-      } else {
-        setTimeout(() => continueFastBackfill(), 500);
-      }
-    } catch (err: any) {
-      console.error('Fast backfill continue error:', err);
-      // Don't stop on error - continue with next batch after a delay
-      toast.warning(`שגיאה חלקית: ${err.message}. ממשיך...`);
-      setTimeout(() => continueFastBackfill(), 1000);
-    }
-  };
-
-  // Continue backfill if more items
-  const continueBackfill = async (continueFrom: string) => {
-    try {
-      console.log('Continuing backfill from:', continueFrom);
-      
-      const { data, error } = await supabase.functions.invoke('backfill-entry-dates', {
-        body: { batch_size: 30, continue_from: continueFrom },
-      });
-      
-      if (error) throw error;
-      
-      // Check if completed
-      if (data?.completed) {
-        toast.success('עדכון תאריכי כניסה הושלם בהצלחה!');
-        setIsBackfilling(false);
-      }
-      
-      refetchProgress();
-    } catch (error) {
-      console.error('Continue backfill error:', error);
-      toast.error('שגיאה בהמשך העדכון');
-      setIsBackfilling(false);
-    }
-  };
-  
-  // Calculate estimated time remaining
-  const getEstimatedTime = () => {
-    if (!backfillProgress?.started_at || !backfillProgress?.processed_items || backfillProgress.processed_items === 0) {
-      return null;
-    }
-    const elapsed = Date.now() - new Date(backfillProgress.started_at).getTime();
-    const rate = backfillProgress.processed_items / (elapsed / 60000); // per minute
-    const remaining = (backfillProgress.total_items || 0) - backfillProgress.processed_items;
-    const minutesLeft = Math.ceil(remaining / rate);
-    return { rate: Math.round(rate), minutesLeft };
-  };
 
   // Count changes from defaults
   const countChangesFromDefault = () => {
@@ -878,9 +651,6 @@ export const UnifiedScoutSettings: React.FC = () => {
   }
 
   const changesCount = countChangesFromDefault();
-  const progressPercent = backfillProgress?.total_items 
-    ? Math.round(((backfillProgress.processed_items || 0) / backfillProgress.total_items) * 100)
-    : 0;
 
   return (
     <div className="space-y-4">
@@ -1508,37 +1278,6 @@ export const UnifiedScoutSettings: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Entry Date Backfill Card */}
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-shadow" 
-                  onClick={() => setIsBackfillDialogOpen(true)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                          <Calendar className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">עדכון תאריכי כניסה</h4>
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Batch: {settings?.backfill?.batch_size ?? 30} נכסים
-                            </p>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <Clock className="h-3 w-3" />
-                              <span>{(settings?.backfill?.schedule_times ?? ['03:00', '12:00']).join(', ')}</span>
-                              <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                {settings?.backfill?.enabled !== false ? 'אוטומטי' : 'כבוי'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
 
                 {/* Broker Classification Backfill Card */}
                 <Card 
@@ -2022,135 +1761,6 @@ export const UnifiedScoutSettings: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Backfill Entry Dates Dialog */}
-      <Dialog open={isBackfillDialogOpen} onOpenChange={setIsBackfillDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-yellow-600" />
-              עדכון תאריכי כניסה
-            </DialogTitle>
-            <DialogDescription>
-              סריקה מחדש של נכסי השכירות לחילוץ תאריך הכניסה
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Automation Toggle */}
-            <div className="flex items-center justify-between py-2 border-b">
-              <div>
-                <Label className="text-sm font-medium">ריצה אוטומטית</Label>
-                <p className="text-xs text-muted-foreground">פעמיים ביום ב-03:00 ו-12:00</p>
-              </div>
-              <Switch
-                checked={settings?.backfill?.enabled !== false}
-                onCheckedChange={(checked) => handleBooleanChange('backfill', 'enabled', checked)}
-              />
-            </div>
-
-            {/* Batch Size */}
-            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-              <h5 className="font-medium text-sm">הגדרות</h5>
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground flex-1">גודל אצווה</span>
-                <Input
-                  type="number"
-                  className="w-20 h-8"
-                  min={5}
-                  max={100}
-                  value={settings?.backfill?.batch_size ?? 30}
-                  onChange={(e) => handleNumberChange('backfill', 'batch_size', e.target.value)}
-                />
-                <span>נכסים</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground flex-1">זמן מקסימלי</span>
-                <Input
-                  type="number"
-                  className="w-20 h-8"
-                  min={1}
-                  max={30}
-                  value={settings?.backfill?.timeout_minutes ?? 5}
-                  onChange={(e) => handleNumberChange('backfill', 'timeout_minutes', e.target.value)}
-                />
-                <span>דקות</span>
-              </div>
-            </div>
-
-            {/* Progress */}
-            {backfillProgress && backfillProgress.status === 'running' && (
-              <div className="space-y-2 bg-muted/30 rounded-lg p-4">
-                <div className="flex justify-between text-sm">
-                  <span>התקדמות:</span>
-                  <span>{backfillProgress.processed_items || 0} / {backfillProgress.total_items || 0}</span>
-                </div>
-                <Progress value={progressPercent} className="h-2" />
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span className="text-green-600">✓ הצליחו: {backfillProgress.successful_items || 0}</span>
-                  <span className="text-red-600">✗ נכשלו: {backfillProgress.failed_items || 0}</span>
-                </div>
-              </div>
-            )}
-
-            {backfillProgress && backfillProgress.status === 'completed' && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm">
-                <span className="text-green-600 dark:text-green-400">
-                  ✓ הושלם! עודכנו {backfillProgress.successful_items || 0} נכסים
-                </span>
-              </div>
-            )}
-
-            {backfillProgress && backfillProgress.status === 'failed' && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm">
-                <span className="text-red-600 dark:text-red-400">
-                  ✗ נכשל: {backfillProgress.error_message}
-                </span>
-              </div>
-            )}
-
-            {/* Manual Run Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleFastBackfill}
-                disabled={isBackfilling || isFastBackfilling}
-                className="flex-1"
-              >
-                {isFastBackfilling ? (
-                  <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                    רץ...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 ml-2" />
-                    הרץ עכשיו
-                  </>
-                )}
-              </Button>
-              
-              {(isBackfilling || isFastBackfilling) && (
-                <Button 
-                  variant="destructive"
-                  size="icon"
-                  onClick={handleCancelBackfill}
-                  title="ביטול"
-                >
-                  <Square className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              משתמש ב-Regex לזיהוי מהיר, עם AI כ-fallback למקרים מורכבים
-            </p>
-
-            {/* Schedule Info */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 rounded p-2">
-              <Clock className="h-3.5 w-3.5" />
-              <span>הריצה האוטומטית פעילה ב-03:00 ו-12:00 (שעון ישראל)</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Broker Classification Backfill Dialog */}
       <Dialog open={isBrokerBackfillDialogOpen} onOpenChange={setIsBrokerBackfillDialogOpen}>
