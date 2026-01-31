@@ -9,6 +9,10 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Maximum batches per run to avoid timeout (Edge Function limit is 60s)
+const MAX_BATCHES_PER_RUN = 5;
+const DELAY_BETWEEN_BATCHES_MS = 200; // Fast dispatch since we're fire-and-forget
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,33 +29,50 @@ serve(async (req) => {
     // Fetch availability settings from database
     const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
     const batchSize = availabilitySettings.batch_size;
-    const delayBetweenBatches = availabilitySettings.delay_between_batches_ms;
 
-    console.log(`⚙️ Settings: batchSize=${batchSize}, delayBetweenBatches=${delayBetweenBatches}ms`);
+    console.log(`⚙️ Settings: batchSize=${batchSize}, maxBatchesPerRun=${MAX_BATCHES_PER_RUN}`);
 
-    // Fetch ALL active property IDs using pagination (Supabase limits to 1000 by default)
-    const PAGE_SIZE = 1000;
+    // Check if we received property_ids from a previous self-trigger
+    let propertyIds: string[] = [];
+    try {
+      const body = await req.json();
+      if (body.property_ids && Array.isArray(body.property_ids) && body.property_ids.length > 0) {
+        propertyIds = body.property_ids;
+        console.log(`📋 Received ${propertyIds.length} property IDs from self-trigger (continuation)`);
+      }
+    } catch {
+      // No body - this is a fresh run, fetch all properties
+    }
+
     let allProperties: { id: string }[] = [];
-    let page = 0;
-    let hasMore = true;
 
-    while (hasMore) {
-      const { data: properties, error: fetchError } = await supabase
-        .from('scouted_properties')
-        .select('id')
-        .eq('status', 'matched')
-        .or('is_active.is.null,is_active.eq.true')
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (propertyIds.length > 0) {
+      // Use the provided IDs (continuation run)
+      allProperties = propertyIds.map(id => ({ id }));
+    } else {
+      // Fresh run: Fetch ALL active property IDs using pagination
+      const PAGE_SIZE = 1000;
+      let page = 0;
+      let hasMore = true;
 
-      if (fetchError) throw fetchError;
+      while (hasMore) {
+        const { data: properties, error: fetchError } = await supabase
+          .from('scouted_properties')
+          .select('id')
+          .eq('status', 'matched')
+          .or('is_active.is.null,is_active.eq.true')
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-      if (properties && properties.length > 0) {
-        allProperties = [...allProperties, ...properties];
-        page++;
-        hasMore = properties.length === PAGE_SIZE;
-        console.log(`📄 Fetched page ${page}: ${properties.length} properties (total so far: ${allProperties.length})`);
-      } else {
-        hasMore = false;
+        if (fetchError) throw fetchError;
+
+        if (properties && properties.length > 0) {
+          allProperties = [...allProperties, ...properties];
+          page++;
+          hasMore = properties.length === PAGE_SIZE;
+          console.log(`📄 Fetched page ${page}: ${properties.length} properties (total so far: ${allProperties.length})`);
+        } else {
+          hasMore = false;
+        }
       }
     }
 
@@ -67,26 +88,25 @@ serve(async (req) => {
       });
     }
 
-    const properties = allProperties;
-
-    console.log(`📊 Found ${properties.length} properties to check`);
+    console.log(`📊 Processing ${allProperties.length} properties`);
 
     // Split into batches using configurable batch size
     const batches: string[][] = [];
-    for (let i = 0; i < properties.length; i += batchSize) {
-      batches.push(properties.slice(i, i + batchSize).map(p => p.id));
+    for (let i = 0; i < allProperties.length; i += batchSize) {
+      batches.push(allProperties.slice(i, i + batchSize).map(p => p.id));
     }
 
     console.log(`📦 Split into ${batches.length} batches of up to ${batchSize} properties`);
 
+    // Only process MAX_BATCHES_PER_RUN batches in this run
+    const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
     let triggeredCount = 0;
-    const errors: string[] = [];
 
-    // Trigger each batch with delay - FIRE AND FORGET (no await on response)
-    for (let i = 0; i < batches.length; i++) {
+    // Trigger limited batches - FIRE AND FORGET
+    for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
       
-      console.log(`🚀 Triggering batch ${i + 1}/${batches.length} (${batch.length} properties)...`);
+      console.log(`🚀 Triggering batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
       
       // Fire and forget - don't await the response
       fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
@@ -108,20 +128,46 @@ serve(async (req) => {
 
       triggeredCount++;
 
-      // Configurable delay between triggering batches to spread the load
-      if (i < batches.length - 1) {
-        await sleep(delayBetweenBatches);
+      // Short delay between triggering batches
+      if (i < batchesToProcess - 1) {
+        await sleep(DELAY_BETWEEN_BATCHES_MS);
       }
     }
 
-    console.log(`✅ Availability check orchestration complete: ${triggeredCount}/${batches.length} batches triggered`);
+    // If there are remaining batches, trigger self with remaining IDs
+    const remainingBatches = batches.slice(batchesToProcess);
+    if (remainingBatches.length > 0) {
+      const remainingIds = remainingBatches.flat();
+      console.log(`🔄 ${remainingBatches.length} batches remaining (${remainingIds.length} properties). Triggering self-continuation...`);
+      
+      // Fire and forget self-trigger
+      fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ property_ids: remainingIds })
+      }).then(response => {
+        if (!response.ok) {
+          console.error(`❌ Self-trigger returned error status: ${response.status}`);
+        } else {
+          console.log(`✅ Self-trigger dispatched for ${remainingIds.length} remaining properties`);
+        }
+      }).catch(error => {
+        console.error(`❌ Error in self-trigger:`, error.message);
+      });
+    }
+
+    console.log(`✅ Orchestration run complete: ${triggeredCount} batches triggered, ${remainingBatches.length} batches remaining`);
 
     return new Response(JSON.stringify({
       success: true,
-      total_properties: properties.length,
+      total_properties: allProperties.length,
       batches_triggered: triggeredCount,
       total_batches: batches.length,
-      errors: errors.length > 0 ? errors : undefined
+      remaining_batches: remainingBatches.length,
+      will_continue: remainingBatches.length > 0
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
