@@ -91,6 +91,8 @@ export const madlanNeighborhoodSlugs: Record<string, string> = {
   'נווה שרת': 'נווה-שרת',
   'רמת_החייל': 'רמת-החייל',
   'רמת החייל': 'רמת-החייל',
+  'יד_אליהו': 'יד-אליהו',
+  'יד אליהו': 'יד-אליהו',
 };
 
 // Homeless area codes (inumber1 parameter)

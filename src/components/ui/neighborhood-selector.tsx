@@ -3,9 +3,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NEIGHBORHOODS, Neighborhood, CITIES } from "@/config/locations";
+import { filterNeighborhoodsBySource, getSupportedSources } from "@/config/neighborhoodSupport";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Building2 } from "lucide-react";
+import { ChevronDown, Building2, Info } from "lucide-react";
 
 // Helper function to normalize city names to canonical form for NEIGHBORHOODS lookup
 function normalizeCityValue(city: string): string {
@@ -255,13 +257,16 @@ interface NeighborhoodSelectorDropdownProps {
   selectedNeighborhoods: string[];
   onChange: (neighborhoods: string[]) => void;
   className?: string;
+  /** Optional: filter neighborhoods to only those supported by this source */
+  filterBySource?: string;
 }
 
 export function NeighborhoodSelectorDropdown({ 
   selectedCities, 
   selectedNeighborhoods, 
   onChange,
-  className 
+  className,
+  filterBySource
 }: NeighborhoodSelectorDropdownProps) {
   const [open, setOpen] = useState(false);
   
@@ -274,8 +279,12 @@ export function NeighborhoodSelectorDropdown({
   for (const cityValue of selectedCities) {
     // Normalize city value to find neighborhoods
     const normalizedCity = normalizeCityValue(cityValue);
-    const neighborhoods = NEIGHBORHOODS[normalizedCity];
+    let neighborhoods = NEIGHBORHOODS[normalizedCity];
     if (neighborhoods) {
+      // Filter by source if specified
+      if (filterBySource) {
+        neighborhoods = filterNeighborhoodsBySource(neighborhoods, filterBySource);
+      }
       const cityConfig = CITIES.find(c => c.value === normalizedCity || c.value === cityValue);
       availableNeighborhoods.push({
         city: cityValue,
@@ -312,6 +321,16 @@ export function NeighborhoodSelectorDropdown({
     return `${normalizedSelection.length} שכונות נבחרו`;
   };
 
+  // Get source label for display
+  const getSourceLabel = (source: string): string => {
+    const labels: Record<string, string> = {
+      'yad2': 'יד2',
+      'madlan': 'מדלן',
+      'homeless': 'הומלס'
+    };
+    return labels[source] || source;
+  };
+
   const isDisabled = selectedCities.length === 0;
 
   return (
@@ -338,26 +357,59 @@ export function NeighborhoodSelectorDropdown({
                   {cityLabel}:
                 </p>
               )}
-              <div className="space-y-1">
-                {neighborhoods.map((neighborhood) => (
-                  <div
-                    key={neighborhood.value}
-                    onClick={() => toggleNeighborhood(neighborhood.value)}
-                    className={cn(
-                      "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
-                      isNeighborhoodSelected(neighborhood.value)
-                        ? "bg-primary/10"
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    <Checkbox
-                      checked={isNeighborhoodSelected(neighborhood.value)}
-                      onCheckedChange={() => toggleNeighborhood(neighborhood.value)}
-                    />
-                    <span className="text-sm">{neighborhood.label}</span>
-                  </div>
-                ))}
-              </div>
+              {neighborhoods.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-2 py-1">
+                  אין שכונות נתמכות ל{filterBySource ? getSourceLabel(filterBySource) : 'מקור זה'}
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {neighborhoods.map((neighborhood) => {
+                    const supportedSources = getSupportedSources(neighborhood.value);
+                    return (
+                      <div
+                        key={neighborhood.value}
+                        onClick={() => toggleNeighborhood(neighborhood.value)}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                          isNeighborhoodSelected(neighborhood.value)
+                            ? "bg-primary/10"
+                            : "hover:bg-muted"
+                        )}
+                      >
+                        <Checkbox
+                          checked={isNeighborhoodSelected(neighborhood.value)}
+                          onCheckedChange={() => toggleNeighborhood(neighborhood.value)}
+                        />
+                        <span className="text-sm flex-1">{neighborhood.label}</span>
+                        {!filterBySource && supportedSources.length < 3 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex gap-0.5">
+                                  {['yad2', 'madlan', 'homeless'].map(source => (
+                                    <span 
+                                      key={source}
+                                      className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        supportedSources.includes(source) 
+                                          ? "bg-primary" 
+                                          : "bg-muted-foreground/30"
+                                      )}
+                                    />
+                                  ))}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="text-xs">
+                                <div>נתמך ע"י: {supportedSources.map(s => getSourceLabel(s)).join(', ')}</div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>

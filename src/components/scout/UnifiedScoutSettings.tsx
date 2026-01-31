@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
+import { NEIGHBORHOODS } from '@/config/locations';
+import { filterNeighborhoodsBySource, getSupportedSources } from '@/config/neighborhoodSupport';
 import {
   Accordion,
   AccordionContent,
@@ -34,6 +36,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Settings,
   ListFilter,
   Calendar,
@@ -53,6 +61,7 @@ import {
   Link,
   UserCheck,
   Zap,
+  Info,
 } from 'lucide-react';
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 import { LiveScanProgress } from './LiveScanProgress';
@@ -830,11 +839,24 @@ export const UnifiedScoutSettings: React.FC = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label>שכונות (אופציונלי)</Label>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Label>שכונות (אופציונלי)</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-xs">מוצגות רק שכונות שנתמכות ע"י {SOURCES.find(s => s.value === formData.source)?.label || formData.source}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <NeighborhoodSelectorDropdown
                         selectedCities={formData.cities}
                         selectedNeighborhoods={formData.neighborhoods}
                         onChange={(neighborhoods) => setFormData({ ...formData, neighborhoods })}
+                        filterBySource={formData.source}
                       />
                       {formData.neighborhoods.length > 0 && formData.source === 'madlan' && formData.neighborhoods.length > 1 && (
                         <p className="text-xs text-muted-foreground mt-1">
