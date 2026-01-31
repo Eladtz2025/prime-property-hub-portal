@@ -1005,11 +1005,6 @@ export const UnifiedScoutSettings: React.FC = () => {
                         onChange={(neighborhoods) => setFormData({ ...formData, neighborhoods })}
                         filterBySource={formData.source}
                       />
-                      {formData.neighborhoods.length > 0 && formData.source === 'madlan' && formData.neighborhoods.length > 1 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          הערה: מדלן תומך בשכונה אחת בלבד ב-URL - סינון יתבצע לאחר הסריקה
-                        </p>
-                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
