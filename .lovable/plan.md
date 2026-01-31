@@ -1,102 +1,72 @@
 
 
-# תיקון באג: סינון שכונות נכשל עם 3+ בחירות
+# תיקון: הפרדת לוגיקת סינון שכונות מפיצ'רים
 
-## סיכום הבעיה
+## הבעיה
 
-כשבוחרים 3 שכונות (צפון ישן + צפון חדש + לב העיר), השאילתה נכשלת עם שגיאת **PGRST100** ומחזירה 0 תוצאות.
-
-## שורש הבעיה - שתי בעיות
-
-### 1. פסיק בשם השכונה שובר את ה-PostgREST OR syntax
-
-ב-`NEIGHBORHOOD_GROUPS` יש ערכים עם פסיקים:
-```typescript
-'לב העיר': [
-  'לב תל אביב, לב העיר',  // ← הפסיק הזה שובר את הפרסר!
-  'לב העיר צפון',
-  ...
-]
-```
-
-PostgREST משתמש בפסיק כמפריד בין תנאי OR, אז הערך `לב תל אביב, לב העיר` מתפרש כשני תנאים נפרדים ושובר את הסינטקס.
-
-### 2. שני קריאות `.or()` מתנגשות
-
-כשיש גם סינון שכונות וגם סינון פיצ'רים (balcony/roof/yard), נוצרים שני פרמטרי `or=` ב-URL וזה גורם לשגיאה.
+בתיקון הקודם שילבתי שכונות ופיצ'רים ל-OR אחד, וזה גורם ל:
+- בחירת "צפון ישן" + "מרפסת" → מציג **כל** הדירות עם מרפסת (גם אם לא בצפון ישן!)
 
 ## הפתרון
 
-### שלב 1: הסרת פסיקים מהפטרנים (או החלפתם ל-wildcard)
+שני סוגי הסינון צריכים להיות **נפרדים**:
+- שכונות: `.or()` פנימי בין כל הפטרנים
+- פיצ'רים: `.or()` פנימי נפרד
+- הקריאות יהיו ב-AND (PostgREST מחבר בין קריאות `.or()` באופן AND)
 
-עדכון `NEIGHBORHOOD_GROUPS`:
-```typescript
-'לב העיר': [
-  'לב העיר',
-  'מרכז העיר',
-  'לב תל אביב',
-  // הסרת הפטרן עם הפסיק - כי הוא כבר נתפס ע"י 'לב תל אביב'
-  'לב העיר צפון',
-  'לב העיר דרום',
-],
-```
-
-### שלב 2: שילוב כל תנאי ה-OR לתנאי אחד
-
-במקום לקרוא ל-`.or()` מספר פעמים, נבנה תנאי OR אחד מאוחד:
+### הקוד המתוקן:
 
 ```typescript
 const applyFilters = (query: any, filters: NonNullable<typeof appliedFilters>) => {
-  // ... basic filters ...
+  // ... שאר הפילטרים (price, rooms, etc) ...
   
-  // Build combined OR conditions
-  const orParts: string[] = [];
-  
-  // Neighborhoods (OR between all patterns)
+  // Neighborhoods - internal OR, wrapped as a group
   if (filters.neighborhoods.length > 0) {
-    const allPatterns: string[] = [];
+    const neighborhoodParts: string[] = [];
     filters.neighborhoods.forEach(n => {
       const patterns = NEIGHBORHOOD_GROUPS[n] || [n];
       patterns.forEach(p => {
-        // Escape or skip patterns with commas
         if (!p.includes(',')) {
-          allPatterns.push(`neighborhood.ilike.*${p}*`);
+          neighborhoodParts.push(`neighborhood.ilike.%${p}%`);
         }
       });
     });
-    orParts.push(...allPatterns);
+    if (neighborhoodParts.length > 0) {
+      query = query.or(neighborhoodParts.join(','));
+    }
   }
   
-  // Features (OR between selected features)
+  // Features - separate OR (will be ANDed with neighborhoods by PostgREST)
   if (filters.features.length > 0) {
-    filters.features.forEach(f => {
-      orParts.push(`features->>${f}.eq.true`);
-    });
+    const featureParts = filters.features.map(f => `features->>${f}.eq.true`);
+    query = query.or(featureParts.join(','));
   }
   
-  // Apply single combined OR
-  if (orParts.length > 0) {
-    query = query.or(orParts.join(','));
+  // Text search - yet another separate OR
+  if (filters.searchTerm) {
+    // ... existing search logic ...
+    query = query.or('title.ilike.%term%,...');
   }
   
   return query;
 };
 ```
 
-### חלופה: שימוש ב-RPC במקום שאילתה ישירה
+### למה זה עובד?
 
-אם הפתרון הנ"ל לא מספיק, ניתן ליצור פונקציית RPC שמטפלת בסינון מורכב.
+PostgREST כשיש מספר `.or()` calls הוא **כן** מצרף אותם ב-AND, הבעיה הייתה אחרת - הפסיקים בתוך הפטרנים שברו את הסינטקס.
 
-## סיכום השינויים
+עכשיו שהסרנו את הפסיקים מה-NEIGHBORHOOD_GROUPS, נוכל לחזור ללוגיקה המקורית של קריאות `.or()` נפרדות.
+
+## סיכום השינוי
 
 | קובץ | פעולה |
 |------|-------|
-| `ScoutedPropertiesTable.tsx` | הסרת פטרנים עם פסיקים מ-NEIGHBORHOOD_GROUPS |
-| `ScoutedPropertiesTable.tsx` | איחוד כל תנאי ה-OR לקריאת `.or()` אחת |
+| `ScoutedPropertiesTable.tsx` | הפרדת שכונות ופיצ'רים לשתי קריאות `.or()` נפרדות |
 
 ## תוצאה צפויה
 
-- סינון 3+ שכונות יעבוד ללא שגיאות
-- שילוב סינון שכונות + פיצ'רים יעבוד נכון
-- הפילטר יחזיר תוצאות במקום 0
+- סינון שכונות → רק דירות בשכונות הנבחרות
+- סינון פיצ'רים → רק דירות עם הפיצ'רים הנבחרים  
+- שילוב שניהם → רק דירות **גם** בשכונה **וגם** עם הפיצ'ר
 
