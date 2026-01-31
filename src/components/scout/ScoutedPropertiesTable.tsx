@@ -1588,7 +1588,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                          {property.title || `${property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} ${property.neighborhood || ''}`}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {property.city?.replace(' יפו', '') || 'תל אביב'}
@@ -1731,7 +1731,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
-                    {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                    {property.title || `${property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} ${property.neighborhood || ''}`}
                   </span>
                   <span className="text-muted-foreground text-xs shrink-0">
                     {property.city?.replace(' יפו', '') || 'תל אביב'}
