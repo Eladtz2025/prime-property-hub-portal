@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database, Square } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database, Square, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
@@ -710,6 +710,24 @@ export const ScoutedPropertiesTable: React.FC = () => {
     },
     onError: () => {
       toast.error('שגיאה בעדכון הנכס');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('scouted_properties')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      toast.success('הנכס נמחק לצמיתות');
+    },
+    onError: () => {
+      toast.error('שגיאה במחיקת הנכס');
     }
   });
 
@@ -1707,6 +1725,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
                             <Archive className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm('האם אתה בטוח שברצונך למחוק את הנכס לצמיתות?')) {
+                              deleteMutation.mutate(property.id);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          title="מחק לצמיתות"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1788,6 +1820,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
                         <Archive className="h-3.5 w-3.5" />
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        if (confirm('האם אתה בטוח שברצונך למחוק את הנכס לצמיתות?')) {
+                          deleteMutation.mutate(property.id);
+                        }
+                      }}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                   
                   {/* Price + Time grouped together */}
