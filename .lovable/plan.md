@@ -1,89 +1,182 @@
 
 
-# תיקון נתונים קיימים - שכונות יפו שגויות
+# תיקון כותרות "יפו" שגויות - Homeless
 
-## סקירת הבעיה
+## סיכום הבעיות מהתמונות
 
-מצאתי **עשרות נכסים** בדאטאבייס שמסומנים כ"יפו" אבל הם בכלל לא ביפו:
+| בעיה | כמות | דוגמה |
+|------|------|-------|
+| **יפו בכותרת במקום שכונה אמיתית** | 159 | `"בפנקס, יפו"` במקום `"בפנקס, ככר המדינה"` |
+| יפו שגוי כשיש שכונה מזוהה | 2 | `"בשדרות נורדאו, יפו"` (שכונה: כיכר המדינה) |
+| תל אביב בכותרת | 3 | `"בגבעולים, תל אביב"` |
+| תל אביב יפו בכותרת | 1 | `"במזא''ה, תל אביב יפו"` |
+| **סה"כ לתיקון** | **165 נכסים** | |
 
-| רחוב | שכונה שגויה | שכונה נכונה |
-|------|-------------|-------------|
-| ארלוזורוב | יפו | לב העיר |
-| אבן גבירול | יפו | מרכז העיר |
-| דיזנגוף | יפו | צפון ישן |
-| זבוטינסקי | יפו | כיכר המדינה |
-| פנקס | יפו | כיכר המדינה |
-| דרך מנחם בגין | יפו | שרונה |
-| יגאל אלון (ביצרון) | יפו | ביצרון |
+## שורש הבעיה
 
-## פתרון
+הפארסר שומר ב-`raw_data.neighborhoodText` את השם הנכון (למשל "נווה חן", "אזור ככר המדינה") אבל:
+1. פונקציית `extractNeighborhood` לא מזהה את כל השכונות → `neighborhood = null`
+2. הכותרת נבנית עם fallback לא נכון → "יפו" במקום השכונה האמיתית
 
-ליצור סקריפט SQL שמתקן את הנתונים על פי הכתובת:
+**דוגמאות מהמסד:**
 
-```sql
--- תיקון שכונות לפי רחובות ידועים
-UPDATE scouted_properties SET 
-  neighborhood = 'צפון ישן',
-  title = REPLACE(title, 'יפו', 'צפון ישן')
-WHERE neighborhood = 'יפו' 
-  AND address ILIKE '%דיזנגוף%'
-  AND address NOT ILIKE '%יפו ג%'
-  AND address NOT ILIKE '%יפו ד%';
+| raw_data.neighborhoodText | neighborhood בDB | title שנוצר |
+|---------------------------|------------------|-------------|
+| `נווה חן` | null | `...במעפילי אגוז, יפו` ❌ |
+| `תל חיים` | null | `...בדרך השלום, יפו` ❌ |
+| `אזור ככר המדינה` | null | `...בפנקס, יפו` ❌ |
+| `קרית שאול` | null | `...במשה סנה, יפו` ❌ |
 
-UPDATE scouted_properties SET 
-  neighborhood = 'לב העיר',
-  title = REPLACE(title, 'יפו', 'לב העיר')
-WHERE neighborhood = 'יפו' 
-  AND address ILIKE '%ארלוזורוב%';
+---
 
-UPDATE scouted_properties SET 
-  neighborhood = 'מרכז העיר',
-  title = REPLACE(title, 'יפו', 'מרכז העיר')
-WHERE neighborhood = 'יפו' 
-  AND address ILIKE '%אבן גבירול%';
+## פתרון חלק 1: תיקון הקוד (parser-homeless.ts)
 
-UPDATE scouted_properties SET 
-  neighborhood = 'כיכר המדינה',
-  title = REPLACE(title, 'יפו', 'כיכר המדינה')
-WHERE neighborhood = 'יפו' 
-  AND (address ILIKE '%ככר המדינה%' 
-       OR address ILIKE '%זבוטינסקי%' 
-       OR address ILIKE '%פנקס%');
+### 1.1 שינוי buildTitle - שימוש ב-neighborhoodText כ-fallback ראשון
 
-UPDATE scouted_properties SET 
-  neighborhood = 'ביצרון',
-  title = REPLACE(title, 'יפו', 'ביצרון')
-WHERE neighborhood = 'יפו' 
-  AND address ILIKE '%ביצרון%';
+**שורה 275 (קריאה ל-buildTitle):**
 
-UPDATE scouted_properties SET 
-  neighborhood = 'שרונה',
-  title = REPLACE(title, 'יפו', 'שרונה')
-WHERE neighborhood = 'יפו' 
-  AND address ILIKE '%מנחם בגין%';
+```typescript
+// לפני - cityText כ-fallback אחרון
+const title = buildTitle(propertyTypeText, roomsLabel, 
+  neighborhood?.label || neighborhoodText || cityText || '', 
+  streetText || null);
+
+// אחרי - neighborhoodText ואז ריק (ללא cityText!)
+const title = buildTitle(propertyTypeText, roomsLabel, 
+  neighborhood?.label || neighborhoodText || '', 
+  streetText || null);
 ```
 
-## שלבי ביצוע
+### 1.2 תיקון buildTitle - סינון "תל אביב יפו" וכפילויות
 
-1. **בדיקה ראשונית** - ספירת הנכסים לתיקון בכל קטגוריה
-2. **הרצת UPDATE** - תיקון השכונות לפי מיפוי רחובות
-3. **אימות** - בדיקה שנכסים אמיתיים ביפו נשארו עם "יפו"
+**שורות 384-410 (פונקציית buildTitle):**
 
-## פרטים טכניים
+```typescript
+function buildTitle(
+  propertyType: string,
+  rooms: string,
+  location: string,
+  street: string | null = null
+): string {
+  const parts: string[] = [];
+  
+  if (propertyType) {
+    parts.push(propertyType);
+  }
+  
+  if (rooms) {
+    parts.push(`${rooms} חדרים`);
+  }
+  
+  // NEW: Clean city names and "יפו" from location
+  const INVALID_LOCATIONS = [
+    'תל אביב יפו', 'תל אביב-יפו', 'תל אביב - יפו', 'תל אביב',
+    'יפו' // Don't use standalone יפו as location fallback
+  ];
+  
+  let cleanLocation = location.trim();
+  
+  // If location is just a city name, clear it
+  if (INVALID_LOCATIONS.some(inv => cleanLocation === inv)) {
+    cleanLocation = '';
+  }
+  
+  // Remove city names if embedded in location string
+  for (const cityName of ['תל אביב יפו', 'תל אביב-יפו', 'תל אביב']) {
+    cleanLocation = cleanLocation.replace(cityName, '').trim();
+  }
+  cleanLocation = cleanLocation.replace(/^[,\-]\s*/, '').replace(/[,\-]\s*$/, '').trim();
+  
+  // Prevent street = location duplication
+  const streetEqualsLocation = street && cleanLocation && 
+    street.trim().toLowerCase() === cleanLocation.trim().toLowerCase();
+  
+  if (street && cleanLocation && !streetEqualsLocation) {
+    parts.push(`ב${street}, ${cleanLocation}`);
+  } else if (street) {
+    parts.push(`ב${street}`);
+  } else if (cleanLocation) {
+    parts.push(`ב${cleanLocation}`);
+  }
+  
+  return parts.join(' ') || 'נכס להשכרה';
+}
+```
 
-### לוגיקת זיהוי יפו אמיתי
+---
 
-נכס הוא באמת ביפו אם הכתובת מכילה:
-- `יפו א/ב/ג/ד` (תת-שכונות)
-- `עג'מי` / `עג׳מי`
-- `גבעת התמרים`
-- `יפו העתיקה`
-- `נמל יפו`
-- `פלורנטין` (גבול יפו)
+## פתרון חלק 2: תיקון 165 נכסים קיימים (SQL)
 
-נכס **לא** ביפו אם הכתובת מכילה רק "תל אביב יפו" בסוף.
+### 2.1 תיקון כותרות עם raw_data.neighborhoodText זמין
 
-### קבצים - אין שינויים לקוד
+```sql
+-- Update titles: replace "יפו" with the actual neighborhoodText from raw_data
+-- For 159 properties where neighborhood is NULL but raw_data has the info
+UPDATE scouted_properties SET
+  title = REPLACE(title, ', יפו', ', ' || (raw_data->>'neighborhoodText')),
+  neighborhood = raw_data->>'neighborhoodText'
+WHERE source = 'homeless'
+  AND is_active = true
+  AND title LIKE '%, יפו'
+  AND neighborhood IS NULL
+  AND raw_data->>'neighborhoodText' IS NOT NULL
+  AND raw_data->>'neighborhoodText' != ''
+  AND raw_data->>'neighborhoodText' NOT LIKE '%תל אביב%'
+  AND raw_data->>'neighborhoodText' != 'יפו';
+```
 
-זה תיקון נתונים בלבד דרך SQL migration.
+### 2.2 תיקון 2 נכסים עם שכונה מזוהה אבל כותרת שגויה
+
+```sql
+-- Fix titles where neighborhood is correctly identified but title still says יפו
+UPDATE scouted_properties SET
+  title = REPLACE(title, ', יפו', ', ' || neighborhood)
+WHERE source = 'homeless'
+  AND is_active = true
+  AND title LIKE '%, יפו'
+  AND neighborhood IS NOT NULL
+  AND neighborhood != 'יפו'
+  AND title NOT LIKE '%' || neighborhood || '%';
+```
+
+### 2.3 תיקון "תל אביב" ו-"תל אביב יפו" בכותרות
+
+```sql
+-- Remove "תל אביב יפו" from titles
+UPDATE scouted_properties SET
+  title = REPLACE(title, ', תל אביב יפו', '')
+WHERE source = 'homeless'
+  AND is_active = true
+  AND title LIKE '%, תל אביב יפו%';
+
+-- Remove "תל אביב" from titles (but not "תל אביב יפו")
+UPDATE scouted_properties SET
+  title = REPLACE(title, ', תל אביב', '')
+WHERE source = 'homeless'
+  AND is_active = true
+  AND title LIKE '%, תל אביב'
+  AND title NOT LIKE '%, תל אביב יפו%';
+```
+
+---
+
+## תוצאות צפויות
+
+| לפני | אחרי |
+|------|------|
+| `דירה 4 חדרים בפנקס, יפו` | `דירה 4 חדרים בפנקס, אזור ככר המדינה` |
+| `דירה 4 חדרים במעפילי אגוז, יפו` | `דירה 4 חדרים במעפילי אגוז, נווה חן` |
+| `דירה 2.5 חדרים בדרך השלום, יפו` | `דירה 2.5 חדרים בדרך השלום, תל חיים` |
+| `דירה 4 חדרים בשדרות נורדאו, יפו` | `דירה 4 חדרים בשדרות נורדאו, כיכר המדינה` |
+| `3 חדרים במזא''ה, תל אביב יפו` | `3 חדרים במזא''ה` |
+| `דירה 2 חדרים בגבעולים, תל אביב` | `דירה 2 חדרים בגבעולים` |
+
+---
+
+## קבצים לעדכון
+
+| קובץ | שינוי |
+|------|-------|
+| `supabase/functions/_experimental/parser-homeless.ts` | 1. הסרת cityText מ-fallback (שורה 275) 2. תיקון buildTitle (שורות 384-410) |
+| SQL Migration | תיקון 165 כותרות שגויות |
 
