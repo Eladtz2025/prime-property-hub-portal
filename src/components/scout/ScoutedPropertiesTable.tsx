@@ -1224,7 +1224,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                           <SelectValue placeholder="כל המקורות" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">כל המקורות</SelectItem>
+                <SelectItem value="all">מקורות</SelectItem>
                           <SelectItem value="yad2">יד2</SelectItem>
                           <SelectItem value="madlan">מדלן</SelectItem>
                           <SelectItem value="homeless">הומלס</SelectItem>
@@ -1240,7 +1240,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                           <SelectValue placeholder="כולם" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">כולם</SelectItem>
+                          <SelectItem value="all">מפרסמים</SelectItem>
                           <SelectItem value="private">פרטי</SelectItem>
                           <SelectItem value="broker">תיווך</SelectItem>
                         </SelectContent>
@@ -1408,7 +1408,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <SelectValue placeholder="מקורות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל המקורות</SelectItem>
+                <SelectItem value="all">מקורות</SelectItem>
                 <SelectItem value="yad2">יד2</SelectItem>
                 <SelectItem value="madlan">מדלן</SelectItem>
                 <SelectItem value="homeless">הומלס</SelectItem>
@@ -1421,7 +1421,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <SelectValue placeholder="סוג עסקה" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל העסקאות</SelectItem>
+                <SelectItem value="all">עסקאות</SelectItem>
                 <SelectItem value="rent">השכרה</SelectItem>
                 <SelectItem value="sale">מכירה</SelectItem>
               </SelectContent>
@@ -1433,7 +1433,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <SelectValue placeholder="פרטי/תיווך" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל המפרסמים</SelectItem>
+                <SelectItem value="all">מפרסמים</SelectItem>
                 <SelectItem value="private">פרטי</SelectItem>
                 <SelectItem value="broker">תיווך</SelectItem>
               </SelectContent>
