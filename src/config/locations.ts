@@ -451,13 +451,14 @@ export const SOURCE_NEIGHBORHOODS: Record<string, Record<string, Neighborhood[]>
       { value: 'madlan_כיכר_המדינה', label: 'הצפון החדש - סביבת כיכר המדינה', aliases: [] },
       // שאר השכונות
       { value: 'madlan_לב_תל_אביב', label: 'לב תל אביב', aliases: [] },
-      { value: 'madlan_בבלי', label: 'בבלי', aliases: [] },
+      { value: 'madlan_בבלי', label: 'שיכון בבלי', aliases: [] },  // תיקון: שיכון בבלי
       { value: 'madlan_נווה_צדק', label: 'נווה צדק', aliases: [] },
       { value: 'madlan_כרם_התימנים', label: 'כרם התימנים', aliases: [] },
       { value: 'madlan_רמת_אביב', label: 'רמת אביב', aliases: [] },
       { value: 'madlan_רמת_אביב_החדשה', label: 'רמת אביב החדשה', aliases: [] },
       { value: 'madlan_פלורנטין', label: 'פלורנטין', aliases: [] },
-      { value: 'madlan_רוטשילד', label: 'שדרות רוטשילד', aliases: [] },
+      // רוטשילד הוסר - לא קיים כשכונה במדל"ן
+      { value: 'madlan_שרונה', label: 'שרונה', aliases: [] },  // הוספה חדשה
       { value: 'madlan_צהלה', label: 'גני צהלה, רמות צהלה', aliases: [] },
       { value: 'madlan_נמל_תל_אביב', label: 'נמל תל אביב', aliases: [] },
       { value: 'madlan_תל_ברוך', label: 'תל ברוך', aliases: [] },

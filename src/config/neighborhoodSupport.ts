@@ -68,7 +68,8 @@ export const madlanSupportedNeighborhoods: Set<string> = new Set([
   'madlan_רמת_אביב',
   'madlan_רמת_אביב_החדשה',
   'madlan_פלורנטין',
-  'madlan_רוטשילד',
+  // רוטשילד הוסר - לא קיים כשכונה במדל"ן
+  'madlan_שרונה',  // הוספה חדשה
   'madlan_צהלה',
   'madlan_נמל_תל_אביב',
   'madlan_תל_ברוך',
