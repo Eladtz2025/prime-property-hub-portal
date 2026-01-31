@@ -33,8 +33,8 @@ import { lookupNeighborhoodByStreet } from './street-lookup.ts';
 /**
  * Parse Homeless HTML and extract property listings
  */
-// Default city - since we're scanning Tel Aviv, default to it
-const DEFAULT_CITY = 'תל אביב יפו';
+// NOTE: No default city fallback - we want NULL for unknown cities
+// This prevents properties from other cities being mislabeled as Tel Aviv
 
 export async function parseHomelessHtml(
   html: string,
@@ -232,8 +232,9 @@ export async function parseHomelessHtml(
         }
       }
       
-      // Normalize city - try column first, then pattern matching, then default to Tel Aviv
-      const city = extractCity(cityText) || extractCity(neighborhoodText) || extractCity(fullRowText) || DEFAULT_CITY;
+      // Normalize city - try column first, then pattern matching
+      // NO FALLBACK - if we can't detect city, leave as null to avoid mislabeling
+      const city = extractCity(cityText) || extractCity(neighborhoodText) || extractCity(fullRowText);
       
       // Extract neighborhood with city context - search in multiple sources
       let neighborhood = extractNeighborhood(neighborhoodText, city);
@@ -276,10 +277,17 @@ export async function parseHomelessHtml(
       // Parse entry date from full text
       const entryDate = parseHebrewDate(fullRowText);
       
+      // Skip rows with no city - this means it's from an unknown location
+      // We don't want to import properties we can't properly categorize
+      if (!city) {
+        errors.push(`Row ${index}: No city detected, skipping (address: ${streetText || 'unknown'})`);
+        continue;
+      }
+      
       // Skip rows with no meaningful data
-      if (!price && !rooms && !city) {
+      if (!price && !rooms) {
         errors.push(`Row ${index}: No meaningful data extracted`);
-        return;
+        continue;
       }
       
       // Extract features from full row text

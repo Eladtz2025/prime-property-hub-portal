@@ -233,7 +233,9 @@ const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: str
   { pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
   { pattern: /רמת\s*אביב\s*(?:ה)?ישנה/i, value: 'רמת_אביב', label: 'רמת אביב' },
   { pattern: /רמת\s*אביב/i, value: 'רמת_אביב', label: 'רמת אביב' },
-  { pattern: /יפו|עג'מי|ajami/i, value: 'יפו', label: 'יפו' },
+  // FIXED: Only match explicit Jaffa neighborhoods, NOT "תל אביב יפו" city suffix
+  // Use negative check: יפו should NOT be preceded by "תל אביב" or "אביב"
+  { pattern: /עג'?מי|ajami|יפו\s*(?:ה)?עתיקה|יפו\s*(?:ד'?|ג'?|ב'?|א'?)|גבעת\s*(?:ה)?תמרים/i, value: 'יפו', label: 'יפו' },
   { pattern: /צהלה|גני\s*צהלה/i, value: 'צהלה', label: 'צהלה' },
   { pattern: /בבלי/i, value: 'בבלי', label: 'בבלי' },
   { pattern: /נמל|הנמל|יורדי\s*הסירה/i, value: 'נמל_תל_אביב', label: 'נמל תל אביב' },

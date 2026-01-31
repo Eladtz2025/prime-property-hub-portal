@@ -64,6 +64,12 @@ const INVALID_ADDRESS_PATTERNS = [
   /ניהול\s*נכסים/i,              // Property management
   /משרד\s*תיווך/i,               // Brokerage office
   /סוכנות/i,                     // Agency
+  /Relocation/i,                 // Relocation broker
+  /REAL\s*ESTATE/i,              // Real estate broker
+  /FRANCHI/i,                    // Franchi broker
+  /^הצפון\s*(ה)?(חדש|ישן)/i,     // Neighborhood names, not addresses
+  /^צפון$/i,                     // Just "north", not address
+  /^מרכז$/i,                     // Just "center", not address
 ];
 
 function isValidAddress(address: string): boolean {
@@ -72,6 +78,8 @@ function isValidAddress(address: string): boolean {
   if (INVALID_ADDRESS_PATTERNS.some(p => p.test(address))) return false;
   // Address should contain at least one Hebrew letter
   if (!/[\u0590-\u05FF]/.test(address)) return false;
+  // Address should not be identical to neighborhood name patterns
+  if (/^הצפון|^צפון\s*(ישן|חדש)|^רמת\s*אביב$|^פלורנטין$|^נווה\s*צדק$/i.test(address)) return false;
   return true;
 }
 
