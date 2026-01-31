@@ -120,9 +120,19 @@ export default function AdminCustomers() {
   const handleResetAllMatches = async () => {
     setIsMatchingAll(true);
     try {
-      const { data, error } = await supabase.functions.invoke('reset-all-matches', {});
+      // First clear all matches, then trigger matching via trigger-matching
+      const { data: clearResult, error: clearError } = await supabase
+        .from('scouted_properties')
+        .update({ matched_leads: [], status: 'new' })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (clearError) throw clearError;
+      
+      const { data, error } = await supabase.functions.invoke('trigger-matching', {
+        body: { force: true, send_whatsapp: false }
+      });
       if (error) throw error;
-      toast.success(`חושב מחדש: ${data.total_matches} התאמות ב-${data.properties_with_matches} נכסים`);
+      toast.success(`חישוב מחדש הופעל: ${data.total_properties || 0} נכסים ב-${data.batches_triggered || 0} batches`);
       fetchCustomers();
     } catch (error) {
       console.error('Reset matches error:', error);

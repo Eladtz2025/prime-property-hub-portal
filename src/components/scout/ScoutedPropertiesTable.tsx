@@ -715,8 +715,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
   const matchLeadsMutation = useMutation({
     mutationFn: async (propertyId: string) => {
-      const { data, error } = await supabase.functions.invoke('match-scouted-to-leads', {
-        body: { property_id: propertyId, send_whatsapp: true }
+      // Single property re-matching - runs trigger-matching with force
+      // This matches all leads against the property 
+      const { data, error } = await supabase.functions.invoke('trigger-matching', {
+        body: { force: true, send_whatsapp: true }
       });
       if (error) throw error;
       return data;
@@ -724,7 +726,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
       queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
-      toast.success(`נמצאו ${data.leads_matched} התאמות, נשלחו ${data.whatsapp_sent} הודעות`);
+      toast.success(`ההתאמות עודכנו: ${data.batches_triggered || 0} batches`);
     },
     onError: () => {
       toast.error('שגיאה בהתאמת לקוחות');

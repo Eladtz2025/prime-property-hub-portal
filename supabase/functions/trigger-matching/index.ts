@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCategorySettings } from "../_shared/settings.ts";
+import { 
+  ScoutedProperty, 
+  ContactLead, 
+  calculateMatch,
+  MatchingSettings,
+  defaultMatchingSettings
+} from "../_shared/matching.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +15,111 @@ const corsHeaders = {
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Single lead re-matching logic
+ * This replaces the separate match-scouted-to-leads function
+ */
+async function rematchSingleLead(leadId: string, supabase: any): Promise<Response> {
+  console.log(`🔄 Re-matching single lead: ${leadId}`);
+  
+  // Get the specific lead
+  const { data: lead, error: leadError } = await supabase
+    .from('contact_leads')
+    .select('*')
+    .eq('id', leadId)
+    .single();
+
+  if (leadError || !lead) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Lead not found'
+    }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Fetch matching settings from database
+  const matchingDbSettings = await fetchCategorySettings(supabase, 'matching');
+  const matchingSettings: MatchingSettings = {
+    entry_date_range_strict: matchingDbSettings.entry_date_range_strict ?? defaultMatchingSettings.entry_date_range_strict,
+    entry_date_range_flexible: matchingDbSettings.entry_date_range_flexible ?? defaultMatchingSettings.entry_date_range_flexible,
+    immediate_max_days: matchingDbSettings.immediate_max_days ?? defaultMatchingSettings.immediate_max_days,
+  };
+  
+  console.log(`⚙️ Using settings: strict=±${matchingSettings.entry_date_range_strict}d, flex=±${matchingSettings.entry_date_range_flexible}d`);
+
+  // Get all active properties for matching (with pagination)
+  const PAGE_SIZE = 1000;
+  let allProperties: any[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: propBatch, error: propError } = await supabase
+      .from('scouted_properties')
+      .select('*')
+      .eq('is_active', true)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (propError) throw propError;
+    
+    if (propBatch && propBatch.length > 0) {
+      allProperties = allProperties.concat(propBatch);
+      from += PAGE_SIZE;
+      hasMore = propBatch.length === PAGE_SIZE;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  const properties = allProperties;
+  console.log(`Lead re-match: Fetched ${properties.length} active properties`);
+
+  let updatedCount = 0;
+
+  for (const property of properties || []) {
+    const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
+    const currentMatches = property.matched_leads || [];
+    
+    // Remove this lead from current matches
+    const filteredMatches = currentMatches.filter((m: any) => m.lead_id !== leadId);
+    
+    // Add back if score is high enough
+    if (matchResult.matchScore >= 60) {
+      filteredMatches.push({
+        lead_id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        score: matchResult.matchScore,
+        priority: matchResult.priority,
+        reasons: matchResult.matchReasons
+      });
+      updatedCount++;
+    }
+
+    // Update property with new matches
+    await supabase
+      .from('scouted_properties')
+      .update({
+        matched_leads: filteredMatches,
+        status: filteredMatches.length > 0 ? 'matched' : 'new'
+      })
+      .eq('id', property.id);
+  }
+
+  console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched`);
+
+  return new Response(JSON.stringify({
+    success: true,
+    lead_id: leadId,
+    properties_checked: properties?.length || 0,
+    matches_updated: updatedCount
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,6 +136,12 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const sendWhatsapp = body.send_whatsapp ?? false;
     const isForced = body.force === true;
+    const leadId = body.lead_id;
+
+    // If lead_id is provided, handle single lead re-matching
+    if (leadId) {
+      return await rematchSingleLead(leadId, supabase);
+    }
 
     // Fetch matching settings to check schedule
     const matchingSettings = await fetchCategorySettings(supabase, 'matching');

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { formatIsraeliPhone } from "@/utils/phoneFormatter";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,21 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, ChevronDown, ChevronUp, Save, X, Dog, AlertCircle, ExternalLink, RefreshCcw, Loader2, Building2, Copy } from "lucide-react";
+import { Phone, MessageSquare, Clock, Home, Briefcase, Wallet, Trash2, EyeOff, RotateCcw, Save, X, Dog, AlertCircle } from "lucide-react";
 import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
-import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
-import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
+import { CustomerMatchesCell } from "@/components/customers/CustomerMatchesCell";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
@@ -47,31 +42,11 @@ interface ExpandableCustomerRowProps {
   agents?: Agent[];
 }
 
-const statusColors: Record<string, string> = {
-  new: 'bg-blue-500 text-white',
-  contacted: 'bg-yellow-500 text-black',
-  active: 'bg-green-500 text-white',
-  viewing_scheduled: 'bg-purple-500 text-white',
-  offer_made: 'bg-orange-500 text-white',
-  closed_won: 'bg-emerald-600 text-white',
-  closed_lost: 'bg-gray-500 text-white',
-};
-
 const priorityColors: Record<string, string> = {
-  low: 'bg-gray-200 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-orange-100 text-orange-700',
-  urgent: 'bg-red-100 text-red-700',
-};
-
-const statusLabels: Record<string, string> = {
-  new: 'חדש',
-  contacted: 'נוצר קשר',
-  active: 'פעיל',
-  viewing_scheduled: 'צפייה קבועה',
-  offer_made: 'הצעה בוצעה',
-  closed_won: 'נסגר בהצלחה',
-  closed_lost: 'נסגר ללא הצלחה',
+  low: 'bg-muted text-muted-foreground',
+  medium: 'bg-primary/10 text-primary',
+  high: 'bg-warning/20 text-warning-foreground',
+  urgent: 'bg-destructive/20 text-destructive',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -85,14 +60,10 @@ const propertyTypeLabels: Record<string, string> = {
   rental: 'השכרה',
   sale: 'מכירה',
   both: 'שניהם',
-  // Legacy values for backwards compatibility
   rent: 'השכרה',
   purchase: 'מכירה',
-  RENT: 'השכרה',
-  SALE: 'מכירה',
 };
 
-// Normalize property_type to standard values
 const normalizePropertyType = (type: string | null | undefined): string | null => {
   if (!type) return null;
   const lower = type.toLowerCase();
@@ -105,12 +76,12 @@ const getTimeSinceContact = (lastContactDate: string | null, createdAt: string) 
   const date = lastContactDate ? new Date(lastContactDate) : new Date(createdAt);
   const daysDiff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
   
-  if (daysDiff === 0) return { text: 'היום', color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff === 1) return { text: 'אתמול', color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff <= 3) return { text: `${daysDiff} ימים`, color: 'text-green-600', bg: 'bg-green-100' };
-  if (daysDiff <= 7) return { text: `${daysDiff} ימים`, color: 'text-yellow-600', bg: 'bg-yellow-100' };
-  if (daysDiff <= 14) return { text: `${daysDiff} ימים`, color: 'text-orange-600', bg: 'bg-orange-100' };
-  return { text: `${daysDiff} ימים`, color: 'text-red-600', bg: 'bg-red-100' };
+  if (daysDiff === 0) return { text: 'היום', className: 'bg-accent text-accent-foreground' };
+  if (daysDiff === 1) return { text: 'אתמול', className: 'bg-accent text-accent-foreground' };
+  if (daysDiff <= 3) return { text: `${daysDiff} ימים`, className: 'bg-accent text-accent-foreground' };
+  if (daysDiff <= 7) return { text: `${daysDiff} ימים`, className: 'bg-warning/20 text-warning-foreground' };
+  if (daysDiff <= 14) return { text: `${daysDiff} ימים`, className: 'bg-warning/40 text-warning-foreground' };
+  return { text: `${daysDiff} ימים`, className: 'bg-destructive/20 text-destructive' };
 };
 
 const formatBudget = (min?: number | null, max?: number | null) => {
@@ -124,304 +95,6 @@ const formatBudget = (min?: number | null, max?: number | null) => {
   if (min) return `₪${formatNum(min)}+`;
   if (max) return `עד ₪${formatNum(max)}`;
   return '-';
-};
-
-// Separate component for matches to avoid hook call in render
-const CustomerMatchesCell = ({ 
-  customerId, 
-  customerName, 
-  customerPhone,
-  preferredCities,
-  preferredNeighborhoods,
-  budgetMin,
-  budgetMax,
-  roomsMin,
-  roomsMax,
-  propertyType
-}: { 
-  customerId: string; 
-  customerName: string; 
-  customerPhone?: string | null;
-  preferredCities?: string[] | null;
-  preferredNeighborhoods?: string[] | null;
-  budgetMin?: number | null;
-  budgetMax?: number | null;
-  roomsMin?: number | null;
-  roomsMax?: number | null;
-  propertyType?: string | null;
-}) => {
-  const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
-  const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
-    id: customerId,
-    budget_min: budgetMin,
-    budget_max: budgetMax,
-    rooms_min: roomsMin,
-    rooms_max: roomsMax,
-    preferred_cities: preferredCities,
-    preferred_neighborhoods: preferredNeighborhoods,
-    property_type: propertyType
-  });
-
-  const handleSendWhatsAppScouted = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
-    if (!customerPhone) return;
-    
-    const message = encodeURIComponent(
-      `שלום ${customerName}!\n\n` +
-      `מצאתי דירה שיכולה להתאים לך:\n` +
-      `📍 ${property.city || ''}\n` +
-      `🏠 ${property.rooms ? `${property.rooms} חדרים` : ''} ${property.size ? `| ${property.size} מ"ר` : ''}\n` +
-      `💰 ${property.price ? `₪${property.price.toLocaleString()}` : ''}\n\n` +
-      `לפרטים נוספים: ${property.source_url}\n\n` +
-      `אשמח לתאם צפייה, מה אומר/ת?`
-    );
-    window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
-  };
-
-  const handleSendWhatsAppOwn = (property: { title: string | null; address: string; city: string; rooms: number | null; property_size: number | null; monthly_rent: number | null }) => {
-    if (!customerPhone) return;
-    
-    const message = encodeURIComponent(
-      `שלום ${customerName}!\n\n` +
-      `מצאתי דירה שיכולה להתאים לך:\n` +
-      `📍 ${property.city}, ${property.address}\n` +
-      `🏠 ${property.rooms ? `${property.rooms} חדרים` : ''} ${property.property_size ? `| ${property.property_size} מ"ר` : ''}\n` +
-      `💰 ${property.monthly_rent ? `₪${property.monthly_rent.toLocaleString()}` : ''}\n\n` +
-      `אשמח לתאם צפייה, מה אומר/ת?`
-    );
-    window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
-  };
-
-  // Check if customer can receive matches
-  const hasCities = preferredCities && preferredCities.length > 0;
-  const hasNeighborhoods = preferredNeighborhoods && preferredNeighborhoods.length > 0;
-  const isLoading = isLoadingScouted || isLoadingOwn;
-
-  if (isLoading) {
-    return <span className="text-muted-foreground text-sm">...</span>;
-  }
-
-  // Missing neighborhoods - show red X with tooltip
-  if (!hasNeighborhoods) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center justify-center">
-              <X className="h-4 w-4 text-red-500" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>חסרות שכונות מועדפות</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  // Missing cities - show red X with tooltip
-  if (!hasCities) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center justify-center">
-              <X className="h-4 w-4 text-red-500" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>חסרה עיר מועדפת</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  // Calculate total individual matches from groups
-  const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
-  const totalMatches = scoutedMatchCount + ownMatches.length;
-
-  // Has data but no matches found
-  if (totalMatches === 0) {
-    return <span className="text-muted-foreground text-sm">אין התאמה</span>;
-  }
-
-  // Has matches - show buttons
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <div className="flex items-center gap-1">
-          {ownMatches.length > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
-              <Building2 className="h-3 w-3" />
-              {ownMatches.length}
-            </Button>
-          )}
-          {scoutedMatchCount > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800">
-              <Home className="h-3 w-3" />
-              {scoutedMatchCount}
-            </Button>
-          )}
-        </div>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col" dir="rtl">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            דירות שהותאמו ל{customerName}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <Tabs defaultValue={ownMatches.length > 0 ? "own" : "scouted"} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 shrink-0">
-            <TabsTrigger value="own" className="gap-2 data-[state=active]:bg-green-100 data-[state=active]:text-green-800">
-              <Building2 className="h-4 w-4" />
-              נכסים שלנו ({ownMatches.length})
-            </TabsTrigger>
-            <TabsTrigger value="scouted" className="gap-2 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
-              <Home className="h-4 w-4" />
-              נכסים נסרקים ({scoutedMatchCount})
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="own" className="flex-1 overflow-y-auto mt-4">
-            {ownMatches.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים שלנו</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {ownMatches.map((match) => (
-                  <div key={match.id} className="p-3 border border-green-200 rounded-lg bg-green-50/50 hover:bg-green-100/50 transition-colors">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate text-sm">{match.title || match.address}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {match.city && <span>{match.city}</span>}
-                          {match.neighborhood && <span> - {match.neighborhood}</span>}
-                          {match.rooms && <span> | {match.rooms} חד'</span>}
-                          {match.property_size && <span> | {match.property_size} מ"ר</span>}
-                        </p>
-                        <p className="text-sm font-semibold text-primary mt-1">
-                          {match.monthly_rent ? `₪${match.monthly_rent.toLocaleString()}` : ''}
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-700 text-xs">
-                        שלנו
-                      </Badge>
-                    </div>
-                    
-                    <div className="mt-2 flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-xs px-2"
-                        onClick={() => window.open(`/admin-dashboard?property=${match.id}`, '_blank')}
-                      >
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                        צפה
-                      </Button>
-                      {customerPhone && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 text-xs px-2 text-green-600 hover:text-green-700"
-                          onClick={() => handleSendWhatsAppOwn(match)}
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="scouted" className="flex-1 overflow-y-auto mt-4">
-            {scoutedMatchCount === 0 ? (
-              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים נסרקים</p>
-            ) : (
-              <div className="space-y-3">
-                {scoutedMatchGroups.map((group) => (
-                  <div 
-                    key={group.groupId} 
-                    className={group.matches.length > 1 
-                      ? "border-2 border-orange-300 rounded-lg p-3 bg-orange-50/30" 
-                      : ""
-                    }
-                  >
-                    {group.matches.length > 1 && (
-                      <div className="text-xs text-orange-600 font-medium mb-2 flex items-center gap-1">
-                        <Copy className="h-3 w-3" />
-                        {group.matches.length} כפילויות - אותה דירה ממקורות שונים
-                      </div>
-                    )}
-                    <div className={group.matches.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
-                      {group.matches.map((match) => (
-                        <div 
-                          key={match.id} 
-                          className="p-3 border border-purple-200 rounded-lg bg-purple-50/50 hover:bg-purple-100/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-1 flex-wrap mb-1">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-slate-100 text-slate-600">
-                              {match.source}
-                            </Badge>
-                            {match.is_private === true && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700">
-                                פרטי
-                              </Badge>
-                            )}
-                            {match.is_private === false && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700">
-                                תיווך
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-700 mr-auto">
-                              {match.matchScore}%
-                            </Badge>
-                          </div>
-                          
-                          <p className="font-medium truncate text-sm">{match.title || 'דירה ללא כותרת'}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {match.city && <span>{match.city}</span>}
-                            {match.rooms && <span> | {match.rooms} חד'</span>}
-                            {match.size && <span> | {match.size} מ"ר</span>}
-                          </p>
-                          <p className="text-sm font-semibold text-primary mt-1">
-                            {match.price ? `₪${match.price.toLocaleString()}` : 'מחיר לא צוין'}
-                          </p>
-                          
-                          <div className="mt-2 flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 text-xs px-2"
-                              onClick={() => window.open(match.source_url, '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                              צפה
-                            </Button>
-                            {customerPhone && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 text-xs px-2 text-green-600 hover:text-green-700"
-                                onClick={() => handleSendWhatsAppScouted(match)}
-                              >
-                                <MessageSquare className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
 };
 
 export const ExpandableCustomerRow = ({
@@ -442,32 +115,14 @@ export const ExpandableCustomerRow = ({
     ...customer,
     property_type: normalizePropertyType(customer.property_type) || customer.property_type,
   }));
-  // Parse phone on mount
   const { countryCode: initialCountryCode, localNumber: initialLocalNumber } = parsePhoneNumber(customer.phone);
   const [phoneCountry, setPhoneCountry] = useState(initialCountryCode);
   const [localPhone, setLocalPhone] = useState(initialLocalNumber);
   const [loading, setLoading] = useState(false);
-  const [isMatching, setIsMatching] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
-
-  const handleMatchLead = async () => {
-    setIsMatching(true);
-    try {
-      await supabase.functions.invoke('match-scouted-to-leads', {
-        body: { lead_id: customer.id, send_whatsapp: false }
-      });
-      toast({ title: 'התאמה הושלמה', description: 'ההתאמות עודכנו בהצלחה' });
-      onSave(); // Refresh data
-    } catch (error) {
-      console.error('Match error:', error);
-      toast({ title: 'שגיאה', description: 'לא ניתן להתאים נכסים', variant: 'destructive' });
-    } finally {
-      setIsMatching(false);
-    }
-  };
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -486,7 +141,8 @@ export const ExpandableCustomerRow = ({
   };
 
   const timeSince = getTimeSinceContact(customer.last_contact_date, customer.created_at);
-  const assignedAgent = agents.find(a => a.id === customer.assigned_agent_id);
+  const isEligibleForMatching = customer.matching_status === 'eligible';
+  const eligibilityReason = customer.eligibility_reason;
 
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -500,17 +156,8 @@ export const ExpandableCustomerRow = ({
     }
   };
 
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (customer.phone) {
-      window.location.href = `tel:${customer.phone}`;
-    }
-  };
-
-  // Get missing recommended fields (for warning display, not blocking save)
   const getMissingRecommendedFields = (data: typeof formData): string[] => {
     const missing: string[] = [];
-    
     if (!data.property_type) missing.push('סוג עסקה');
     if (!data.budget_min) missing.push('תקציב מינימום');
     if (!data.rooms_min) missing.push('חדרים מינימום');
@@ -518,9 +165,8 @@ export const ExpandableCustomerRow = ({
     if (!data.preferred_neighborhoods?.length) missing.push('שכונות');
     if (!data.move_in_date) missing.push('תאריך כניסה');
     
-    // Rental-specific recommended fields
-    const isRental = data.property_type === 'rental' || data.property_type === 'rent';
-    if (isRental) {
+    const isRentalType = data.property_type === 'rental' || data.property_type === 'rent';
+    if (isRentalType) {
       if (!data.tenant_type) missing.push('סוג דייר');
       if (data.pets === undefined || data.pets === null) missing.push('חיות');
     }
@@ -528,12 +174,7 @@ export const ExpandableCustomerRow = ({
     return missing;
   };
 
-  // Use eligibility status from DB trigger instead of hardcoded logic
-  const isEligibleForMatching = customer.matching_status === 'eligible';
-  const eligibilityReason = customer.eligibility_reason;
-
   const handleSaveForm = async () => {
-    // Validate basic fields
     const nameError = validateField(requiredNameSchema, formData.name || '');
     const phoneError = validateField(phoneSchema, localPhone || '');
     const emailError = validateField(emailSchema, formData.email || '');
@@ -546,7 +187,6 @@ export const ExpandableCustomerRow = ({
       return;
     }
     
-    // Check for missing recommended fields (warning only, don't block save)
     const missingFields = getMissingRecommendedFields(formData);
     if (missingFields.length > 0) {
       toast({ 
@@ -554,20 +194,17 @@ export const ExpandableCustomerRow = ({
         description: `מומלץ למלא: ${missingFields.join(', ')}`,
         variant: 'default' 
       });
-      // Don't return - allow save to continue
     }
     
     setLoading(true);
     try {
-      // Normalize property_type before save
       const normalizedPropertyType = normalizePropertyType(formData.property_type);
       const isRental = normalizedPropertyType === 'rental' || normalizedPropertyType === 'both';
       const isSale = normalizedPropertyType === 'sale' || normalizedPropertyType === 'both';
 
-      // Check if any matching-related preferences changed
-      const citiesChanged = JSON.stringify(formData.preferred_cities?.sort()) !== JSON.stringify(customer.preferred_cities?.sort());
-      const neighborhoodsChanged = JSON.stringify(formData.preferred_neighborhoods?.sort()) !== JSON.stringify(customer.preferred_neighborhoods?.sort());
-      const preferencesChanged = citiesChanged || neighborhoodsChanged || 
+      const preferencesChanged = 
+        JSON.stringify(formData.preferred_cities?.sort()) !== JSON.stringify(customer.preferred_cities?.sort()) ||
+        JSON.stringify(formData.preferred_neighborhoods?.sort()) !== JSON.stringify(customer.preferred_neighborhoods?.sort()) ||
         formData.budget_min !== customer.budget_min || formData.budget_max !== customer.budget_max ||
         formData.rooms_min !== customer.rooms_min || formData.rooms_max !== customer.rooms_max ||
         normalizedPropertyType !== normalizePropertyType(customer.property_type) ||
@@ -608,15 +245,12 @@ export const ExpandableCustomerRow = ({
           elevator_required: formData.elevator_required ?? null,
           yard_required: formData.yard_required ?? null,
           roof_required: formData.roof_required ?? null,
-          // Flexibility flags
           parking_flexible: formData.parking_flexible ?? true,
           balcony_flexible: formData.balcony_flexible ?? true,
           elevator_flexible: formData.elevator_flexible ?? true,
           yard_flexible: formData.yard_flexible ?? true,
           roof_flexible: formData.roof_flexible ?? true,
-          // Outdoor space any (OR logic)
           outdoor_space_any: formData.outdoor_space_any ?? false,
-          // Pets flexibility
           pets_flexible: isRental ? formData.pets_flexible ?? true : null,
           purchase_purpose: isSale ? formData.purchase_purpose : null,
           cash_available: isSale ? formData.cash_available : null,
@@ -632,7 +266,6 @@ export const ExpandableCustomerRow = ({
 
       if (error) throw error;
 
-      // Save completed - show success toast immediately
       toast({ title: 'עודכן בהצלחה', description: 'פרטי הלקוח נשמרו' });
       onSave();
       onToggleExpand();
@@ -640,20 +273,15 @@ export const ExpandableCustomerRow = ({
 
       // Re-run matching in background if preferences changed
       if (preferencesChanged) {
-        setIsMatching(true);
-        supabase.functions.invoke('match-scouted-to-leads', {
+        supabase.functions.invoke('trigger-matching', {
           body: { lead_id: customer.id, send_whatsapp: false }
         })
         .then(() => {
           toast({ description: 'ההתאמות עודכנו בהצלחה' });
-          onSave(); // Refresh to show new matches
+          onSave();
         })
         .catch((matchError) => {
           console.error('Error re-matching:', matchError);
-          toast({ description: 'שגיאה בעדכון התאמות', variant: 'destructive' });
-        })
-        .finally(() => {
-          setIsMatching(false);
         });
       }
     } catch (error) {
@@ -682,18 +310,18 @@ export const ExpandableCustomerRow = ({
 
   return (
     <>
+      {/* Table Row */}
       <TableRow 
         className={`hover:bg-muted/30 cursor-pointer transition-colors ${customer.is_hidden ? 'opacity-50 bg-muted/20' : ''} ${isExpanded ? 'bg-muted/40' : ''}`}
         onClick={onToggleExpand}
       >
         <TableCell className="font-medium text-right">
           <div className="flex items-center gap-2">
-            {/* WhatsApp button next to name */}
             {customer.phone && (
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="h-6 w-6 p-0 text-green-600 hover:text-green-700" 
+                className="h-6 w-6 p-0" 
                 onClick={handleWhatsApp} 
                 title="WhatsApp"
               >
@@ -702,11 +330,10 @@ export const ExpandableCustomerRow = ({
             )}
             <div>
               <div className="flex items-center gap-2">
-                {/* Name as clickable blue link for calling */}
                 {customer.phone ? (
                   <a 
                     href={`tel:${customer.phone}`}
-                    className="font-medium text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    className="font-medium text-sm text-primary hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {customer.name}
@@ -718,7 +345,7 @@ export const ExpandableCustomerRow = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <AlertCircle className="h-4 w-4 text-amber-500 cursor-help" />
+                        <AlertCircle className="h-4 w-4 text-warning cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-[200px]">
                         <p className="text-sm">{eligibilityReason}</p>
@@ -774,37 +401,22 @@ export const ExpandableCustomerRow = ({
           </Select>
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-1">
-            <CustomerMatchesCell 
-              customerId={customer.id} 
-              customerName={customer.name} 
-              customerPhone={customer.phone}
-              preferredCities={customer.preferred_cities}
-              preferredNeighborhoods={customer.preferred_neighborhoods}
-              budgetMin={customer.budget_min}
-              budgetMax={customer.budget_max}
-              roomsMin={customer.rooms_min}
-              roomsMax={customer.rooms_max}
-              propertyType={customer.property_type}
-            />
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 w-7 p-0"
-              onClick={() => handleMatchLead()}
-              disabled={isMatching}
-              title="התאם נכסים"
-            >
-              {isMatching ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCcw className="h-3 w-3" />
-              )}
-            </Button>
-          </div>
+          <CustomerMatchesCell 
+            customerId={customer.id} 
+            customerName={customer.name} 
+            customerPhone={customer.phone}
+            preferredCities={customer.preferred_cities}
+            preferredNeighborhoods={customer.preferred_neighborhoods}
+            budgetMin={customer.budget_min}
+            budgetMax={customer.budget_max}
+            roomsMin={customer.rooms_min}
+            roomsMax={customer.rooms_max}
+            propertyType={customer.property_type}
+            onRefresh={onSave}
+          />
         </TableCell>
         <TableCell className="text-right">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.bg} ${timeSince.color}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${timeSince.className}`}>
             <Clock className="h-3 w-3" />
             {timeSince.text}
           </span>
@@ -895,7 +507,7 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Budget, Rooms, Size, Cities, Neighborhoods - Combined Row */}
+                {/* Budget, Rooms, Size, Cities, Neighborhoods */}
                 <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
                   <div>
                     <Label className="text-xs">תקציב מינ.</Label>
@@ -970,7 +582,7 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Dates, Tenant Type, Pets, Features, Agent - Combined Row */}
+                {/* Dates, Tenant Type, Pets, Features, Agent */}
                 <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                   <div className="col-span-2 md:col-span-2">
                     <Label className="text-xs">תאריך כניסה</Label>
@@ -1100,7 +712,6 @@ export const ExpandableCustomerRow = ({
                     </Select>
                   </div>
                 </div>
-
 
                 {/* Purchase-specific fields */}
                 {isSale && (

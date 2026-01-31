@@ -11,7 +11,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Customer } from "@/hooks/useCustomerData";
-import { CustomerPropertyMatches } from "@/components/CustomerPropertyMatches";
+// CustomerPropertyMatches removed - using matches in ExpandableCustomerRow instead
 import { Dog, Home, Briefcase, Baby, TrendingUp, Wrench, Eye, Layers, AlertCircle } from "lucide-react";
 import { PropertyRequirementsDropdown } from "@/components/PropertyRequirementsDropdown";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
@@ -679,9 +679,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
             />
           </div>
 
-          {/* Property Matches Section */}
-          <Separator />
-          <CustomerPropertyMatches customer={customer} maxResults={5} />
+          {/* Property Matches Section removed - use main table view instead */}
 
           <div className="flex gap-2 justify-end pt-4">
             <Button variant="outline" onClick={handleClose}>
