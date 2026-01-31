@@ -393,3 +393,21 @@ export function findNeighborhoodByAlias(cityValue: string, searchTerm: string): 
 // - supabase/functions/_shared/matching.ts - main matching logic
 // - supabase/functions/_shared/locations.ts - neighborhood matching with street lookups
 // The street_neighborhoods database table is used for address-based neighborhood resolution.
+
+// Source-specific neighborhoods - displayed EXACTLY as they appear on each site
+// Some sites (like Homeless) only support broad areas, not specific neighborhoods
+export const SOURCE_NEIGHBORHOODS: Record<string, Record<string, Neighborhood[]>> = {
+  // Homeless only supports 6 broad areas for Tel Aviv (not specific neighborhoods!)
+  // These are displayed exactly as they appear on homeless.co.il
+  homeless: {
+    'תל אביב יפו': [
+      { value: 'homeless_תא_מרכז', label: 'תל-אביב מרכז', aliases: [] },
+      { value: 'homeless_תא_דרום', label: 'תל-אביב דרום', aliases: [] },
+      { value: 'homeless_תא_צפון', label: 'תל-אביב צפון', aliases: [] },
+      { value: 'homeless_תא_מזרח', label: 'תל-אביב מזרח', aliases: [] },
+      { value: 'homeless_תא_צפון_ירקון', label: 'ת"א צפונית לירקון', aliases: [] },
+      { value: 'homeless_יפו', label: 'יפו', aliases: [] },
+    ],
+  },
+  // Yad2 and Madlan continue to use the existing NEIGHBORHOODS (no specific mapping needed)
+};
