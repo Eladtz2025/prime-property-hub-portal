@@ -1,175 +1,171 @@
 
+# תיקון 3 בעיות בסקאוט
 
-# יצירת קונפיגורציות מדל"ן חדשות + מיון היסטוריית ריצות
+## בעיה 1: קונפיגורציות לא ממוינות לפי שעה
 
-## 1. קונפיגורציות חדשות - 14 סה"כ (7 השכרה + 7 מכירה)
+### מה לא עובד
+הקונפיגורציות בכל עמודה (מדלן/יד2/הומלס) לא ממוינות לפי `schedule_times` - נווה צדק ב-08:55 מופיע לפני צפון ישן ב-08:00.
 
-כל הקונפיגורציות יהיו עם:
-- **8 דפים** (`max_pages: 8`)
-- **5 שניות דיליי** (`page_delay_seconds: 5`)
-- **8000ms waitfor** (`wait_for_ms: 8000`)
-- **עיר**: תל אביב
-
-### טבלת זמנים (הפרש 5 דק בין ריצות)
-
-| # | שם | סוג | שכונות (madlan_*) | שעת ריצה |
-|---|-----|-----|-------------------|----------|
-| 1 | צפון ישן - השכרה | rent | madlan_צפון_ישן_צפוני, madlan_צפון_ישן_מרכזי, madlan_צפון_ישן_דרום_מזרחי, madlan_צפון_ישן_דרום_מערבי | 12:00 |
-| 2 | צפון ישן - מכירה | sale | אותן שכונות | 12:05 |
-| 3 | צפון חדש - השכרה | rent | madlan_צפון_חדש_צפוני, madlan_צפון_חדש_דרומי, madlan_כיכר_המדינה | 12:10 |
-| 4 | צפון חדש - מכירה | sale | אותן שכונות | 12:15 |
-| 5 | לב תל אביב - השכרה | rent | madlan_לב_תל_אביב | 12:20 |
-| 6 | לב תל אביב - מכירה | sale | אותה שכונה | 12:25 |
-| 7 | בבלי + נמל - השכרה | rent | madlan_בבלי, madlan_נמל_תל_אביב | 12:30 |
-| 8 | בבלי + נמל - מכירה | sale | אותן שכונות | 12:35 |
-| 9 | נווה צדק + כרם התימנים - השכרה | rent | madlan_נווה_צדק, madlan_כרם_התימנים | 12:40 |
-| 10 | נווה צדק + כרם התימנים - מכירה | sale | אותן שכונות | 12:45 |
-| 11 | רמת אביב + תל ברוך - השכרה | rent | madlan_רמת_אביב, madlan_רמת_אביב_החדשה, madlan_תל_ברוך, madlan_תל_ברוך_צפון | 12:50 |
-| 12 | רמת אביב + תל ברוך - מכירה | sale | אותן שכונות | 12:55 |
-| 13 | פלורנטין + דרום - השכרה | rent | madlan_פלורנטין, madlan_דרום_העיר | 13:00 |
-| 14 | פלורנטין + דרום - מכירה | sale | אותן שכונות | 13:05 |
-
----
-
-## 2. שינויים טכניים
-
-### א. הוספת 14 קונפיגורציות לטבלת scout_configs
-
-```sql
-INSERT INTO scout_configs (name, source, property_type, cities, neighborhoods, 
-  max_pages, page_delay_seconds, wait_for_ms, schedule_times, is_active)
-VALUES
--- 1. צפון ישן - השכרה
-('מדל"ן צפון ישן - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_צפון_ישן_צפוני', 'madlan_צפון_ישן_מרכזי', 'madlan_צפון_ישן_דרום_מזרחי', 'madlan_צפון_ישן_דרום_מערבי'],
- 8, 5, 8000, ARRAY['12:00'], true),
-
--- 2. צפון ישן - מכירה
-('מדל"ן צפון ישן - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_צפון_ישן_צפוני', 'madlan_צפון_ישן_מרכזי', 'madlan_צפון_ישן_דרום_מזרחי', 'madlan_צפון_ישן_דרום_מערבי'],
- 8, 5, 8000, ARRAY['12:05'], true),
-
--- 3. צפון חדש - השכרה
-('מדל"ן צפון חדש - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_צפון_חדש_צפוני', 'madlan_צפון_חדש_דרומי', 'madlan_כיכר_המדינה'],
- 8, 5, 8000, ARRAY['12:10'], true),
-
--- 4. צפון חדש - מכירה
-('מדל"ן צפון חדש - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_צפון_חדש_צפוני', 'madlan_צפון_חדש_דרומי', 'madlan_כיכר_המדינה'],
- 8, 5, 8000, ARRAY['12:15'], true),
-
--- 5. לב תל אביב - השכרה
-('מדל"ן לב תל אביב - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_לב_תל_אביב'],
- 8, 5, 8000, ARRAY['12:20'], true),
-
--- 6. לב תל אביב - מכירה
-('מדל"ן לב תל אביב - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_לב_תל_אביב'],
- 8, 5, 8000, ARRAY['12:25'], true),
-
--- 7. בבלי + נמל - השכרה
-('מדל"ן בבלי + נמל - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_בבלי', 'madlan_נמל_תל_אביב'],
- 8, 5, 8000, ARRAY['12:30'], true),
-
--- 8. בבלי + נמל - מכירה
-('מדל"ן בבלי + נמל - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_בבלי', 'madlan_נמל_תל_אביב'],
- 8, 5, 8000, ARRAY['12:35'], true),
-
--- 9. נווה צדק + כרם - השכרה
-('מדל"ן נווה צדק + כרם התימנים - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_נווה_צדק', 'madlan_כרם_התימנים'],
- 8, 5, 8000, ARRAY['12:40'], true),
-
--- 10. נווה צדק + כרם - מכירה
-('מדל"ן נווה צדק + כרם התימנים - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_נווה_צדק', 'madlan_כרם_התימנים'],
- 8, 5, 8000, ARRAY['12:45'], true),
-
--- 11. רמת אביב + תל ברוך - השכרה
-('מדל"ן רמת אביב + תל ברוך - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_רמת_אביב', 'madlan_רמת_אביב_החדשה', 'madlan_תל_ברוך', 'madlan_תל_ברוך_צפון'],
- 8, 5, 8000, ARRAY['12:50'], true),
-
--- 12. רמת אביב + תל ברוך - מכירה
-('מדל"ן רמת אביב + תל ברוך - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_רמת_אביב', 'madlan_רמת_אביב_החדשה', 'madlan_תל_ברוך', 'madlan_תל_ברוך_צפון'],
- 8, 5, 8000, ARRAY['12:55'], true),
-
--- 13. פלורנטין + דרום - השכרה
-('מדל"ן פלורנטין + דרום - השכרה', 'madlan', 'rent', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_פלורנטין', 'madlan_דרום_העיר'],
- 8, 5, 8000, ARRAY['13:00'], true),
-
--- 14. פלורנטין + דרום - מכירה
-('מדל"ן פלורנטין + דרום - מכירה', 'madlan', 'sale', 
- ARRAY['תל אביב'], 
- ARRAY['madlan_פלורנטין', 'madlan_דרום_העיר'],
- 8, 5, 8000, ARRAY['13:05'], true);
-```
-
-### ב. ביטול קונפיגורציות ישנות (אופציונלי)
-
-```sql
--- ביטול הקונפיגורציות הגנריות הישנות
-UPDATE scout_configs 
-SET is_active = false 
-WHERE source = 'madlan' 
-  AND (neighborhoods IS NULL OR array_length(neighborhoods, 1) = 0 OR neighborhoods = '{}');
-```
-
----
-
-### ג. מיון היסטוריית ריצות
-
-**קובץ: `src/components/scout/ScoutRunHistory.tsx`**
-
-צריך לשנות את השורה שמביאה את הריצות כך שימיין לפי `schedule_times`:
+### הפתרון
+בקובץ `UnifiedScoutSettings.tsx`, יש להוסיף מיון בתוך כל עמודת מקור לפי `schedule_times[0]`:
 
 ```typescript
-// לפני
-.order('created_at', { ascending: false })
-
-// אחרי - מיון לפי שעת הריצה
-.order('created_at', { ascending: false })
-
-// או אם רוצים לפי schedule_times:
-// מיון יעשה בצד הקליינט על פי schedule_times[0]
+// שורות 1204, 1261, 1318 - להוסיף .sort() לפני .map()
+configs
+  .filter(c => c.source === 'madlan')
+  .sort((a, b) => {
+    const timeA = (a as any).schedule_times?.[0] || '99:99';
+    const timeB = (b as any).schedule_times?.[0] || '99:99';
+    return timeA.localeCompare(timeB);
+  })
+  .map(config => ...)
 ```
 
 ---
 
-## 3. בדיקות לאחר היצירה
+## בעיה 2: כתובות שגויות ביד2 (שמות תיווך במקום רחוב)
 
-אריץ דף בודד מ-3 קונפיגורציות שונות:
-1. **צפון ישן - השכרה** - לוודא רחובות כמו דיזנגוף, ארלוזורוב, בן יהודה
-2. **נווה צדק + כרם - השכרה** - לוודא רחובות כמו שבזי, רוקח, אפס
-3. **רמת אביב - השכרה** - לוודא רחובות כמו איינשטיין, ברודצקי
+### מה לא עובד
+מהתמונות שהעלית:
+- `address = 'גג/'` - לא כתובת תקינה
+- `address = 'RS נדל"ן'` - שם משרד תיווך במקום רחוב
+- `address = 'דירה'` - סוג נכס במקום כתובת
+
+### הפתרון
+בקובץ `parser-yad2.ts`:
+
+1. **פילטר כתובות לא תקינות** - לוודא שכתובת מכילה לפחות מילה עברית תקינה ולא מילות מפתח שגויות:
+
+```typescript
+// רשימת דפוסים שמעידים על כתובת לא תקינה
+const INVALID_ADDRESS_PATTERNS = [
+  /^גג\/?$/,           // "גג/" - סוג נכס
+  /^דירה$/,            // "דירה" - סוג נכס
+  /נדל"?ן/i,           // שם משרד תיווך
+  /^RS$/i,             // ראשי תיבות תיווך
+  /רימקס|remax/i,      // רשת תיווך
+  /אנגלו סכסון/i,      // רשת תיווך
+  /century\s*21/i,     // רשת תיווך
+];
+
+function isValidAddress(address: string): boolean {
+  if (!address || address.length < 3) return false;
+  return !INVALID_ADDRESS_PATTERNS.some(p => p.test(address));
+}
+```
+
+2. **אם הכתובת לא תקינה - לשים null** במקום לשמור ערך שגוי
+
+3. **דירות ללא כתובת ורחוב - לדלג עליהן או לסנן אותן** (לשקול)
 
 ---
 
-## 4. סיכום פעולות
+## בעיה 3: שכונות שגויות במדלן (פינסקר ≠ יפו)
 
-| # | פעולה | תיאור |
-|---|-------|-------|
-| 1 | INSERT | 14 קונפיגורציות מדל"ן חדשות |
-| 2 | UPDATE (אופציונלי) | כיבוי קונפיגורציות גנריות ישנות |
-| 3 | קוד | מיון היסטוריית ריצות לפי שעות |
-| 4 | בדיקה | ריצת עמוד בודד מ-3 קונפיגורציות |
+### מה לא עובד
+רחובות כמו:
+- **פינסקר** → סומן כ"יפו" (צריך: צפון ישן / לב העיר)
+- **ליאונרדו דה וינצ'י** → סומן כ"יפו" (צריך: הצפון החדש)
+- **בוגרשוב** → סומן כ"יפו" (צריך: לב העיר / צפון ישן)
+- **בן יהודה** → ללא שכונה (צריך: צפון ישן / לב העיר)
 
+### הסיבה
+ה-parser של מדלן מזהה שכונות רק לפי דפוסים ספציפיים (`KNOWN_NEIGHBORHOODS`). כשאין התאמה, הוא לא שם שכונה או שלפעמים לוקח מידע שגוי מהבלוק.
+
+### הפתרון
+בקובץ `parser-madlan.ts`:
+
+1. **הוספת מיפוי רחובות-לשכונות**:
+
+```typescript
+const STREET_TO_NEIGHBORHOOD: Record<string, { value: string; label: string }> = {
+  'פינסקר': { value: 'לב_העיר', label: 'לב העיר' },
+  'בוגרשוב': { value: 'לב_העיר', label: 'לב העיר' },
+  'בן יהודה': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'דיזנגוף': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'ארלוזורוב': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'ליאונרדו': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'שלום עליכם': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'ז\'בוטינסקי': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'נורדאו': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'גורדון': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'פרישמן': { value: 'צפון_ישן', label: 'צפון ישן' },
+  // ... עוד רחובות מרכזיים
+};
+
+function extractNeighborhoodFromAddress(address: string): { value: string; label: string } | null {
+  for (const [street, info] of Object.entries(STREET_TO_NEIGHBORHOOD)) {
+    if (address.includes(street)) {
+      return info;
+    }
+  }
+  return null;
+}
+```
+
+2. **עדיפות לזיהוי מכתובת לפני ברירת מחדל שגויה**:
+   - אם לא נמצאה שכונה מהבלוק - לנסות מהכתובת
+   - אם עדיין לא נמצא - לשים `null` ולא "יפו"
+
+3. **הסרת ברירת מחדל "יפו"** - אם אין שכונה מזוהה, עדיף null
+
+---
+
+## סיכום שינויים
+
+| קובץ | שינוי |
+|------|-------|
+| `src/components/scout/UnifiedScoutSettings.tsx` | מיון קונפיגורציות לפי `schedule_times[0]` בכל עמודה |
+| `supabase/functions/_experimental/parser-yad2.ts` | פילטר כתובות לא תקינות (שמות תיווך, "גג/") |
+| `supabase/functions/_experimental/parser-madlan.ts` | מיפוי רחובות→שכונות + הסרת ברירת מחדל "יפו" |
+
+---
+
+## פרטים טכניים
+
+### קובץ 1: UnifiedScoutSettings.tsx
+
+שורות לשנות: 1204, 1261, 1318 (אותו שינוי ב-3 מקומות)
+
+```typescript
+// לפני:
+{configs.filter(c => c.source === 'madlan').map(config => (
+
+// אחרי:
+{configs
+  .filter(c => c.source === 'madlan')
+  .sort((a, b) => {
+    const timeA = (a as any).schedule_times?.[0] || '99:99';
+    const timeB = (b as any).schedule_times?.[0] || '99:99';
+    return timeA.localeCompare(timeB);
+  })
+  .map(config => (
+```
+
+### קובץ 2: parser-yad2.ts
+
+בפונקציה `parseYad2Block`, לפני החזרת תוצאה:
+
+```typescript
+// Validate address - skip broker names and invalid values
+if (address && !isValidAddress(address)) {
+  address = null;
+}
+```
+
+### קובץ 3: parser-madlan.ts
+
+בפונקציה `parsePropertyBlock`:
+
+```typescript
+// After block neighborhood extraction, try address-based detection
+if (!neighborhood && address) {
+  const addressNeighborhood = extractNeighborhoodFromAddress(address);
+  if (addressNeighborhood) {
+    neighborhood = addressNeighborhood.label;
+    neighborhoodValue = addressNeighborhood.value;
+  }
+}
+
+// Don't default to "יפו" - leave null if unknown
+```
