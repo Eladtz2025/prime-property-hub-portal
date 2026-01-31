@@ -110,26 +110,22 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
   
   for (const type of types) {
     if (source === 'yad2' || source === 'yad2_private') {
-      let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
-      const params = new URLSearchParams();
+      const baseUrl = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
       
-        // Check if we have neighborhoods - if so, use multiCity/multiNeighborhood format
-        if (config.neighborhoods?.length) {
-          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
-          if (neighborhoodCodes.length > 0) {
-            // Use multiCity/multiNeighborhood for neighborhood filtering (works for 1 or more)
-            if (config.cities?.length) {
-              const cityData = yad2CityMap[config.cities[0]];
-              if (cityData) {
-                params.set('multiCity', cityData.city);
-                // Don't set topArea/area/city when using multiCity format
-              }
-            }
-            params.set('multiNeighborhood', neighborhoodCodes.join(','));
-            console.log(`Yad2 multiNeighborhood: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
-          }
-        } else if (config.cities?.length) {
-          // No neighborhoods - use regular city format
+      // Get neighborhood codes if any
+      const neighborhoodCodes = config.neighborhoods?.length 
+        ? getYad2NeighborhoodCodes(config.neighborhoods) 
+        : [];
+      
+      // Yad2 doesn't support multiple neighborhoods in one URL - need separate URLs for each
+      // If no neighborhoods, create one URL for the whole city
+      const codesToProcess = neighborhoodCodes.length > 0 ? neighborhoodCodes : [null];
+      
+      for (const neighborhoodCode of codesToProcess) {
+        const params = new URLSearchParams();
+        
+        // Always set city location params for Yad2
+        if (config.cities?.length) {
           const cityData = yad2CityMap[config.cities[0]];
           if (cityData) {
             params.set('topArea', cityData.topArea);
@@ -137,19 +133,26 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
             params.set('city', cityData.city);
           }
         }
-      
-      params.set('propertyGroup', 'apartments');
-      
-      if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
-      if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
-      
-      if (page > 1) {
-        params.set('page', page.toString());
+        
+        // Add single neighborhood filter if specified
+        if (neighborhoodCode) {
+          params.set('neighborhood', neighborhoodCode);
+          console.log(`Yad2: Building URL for neighborhood code ${neighborhoodCode}`);
+        }
+        
+        params.set('propertyGroup', 'apartments');
+        
+        if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
+        if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+        
+        if (page > 1) {
+          params.set('page', page.toString());
+        }
+        
+        const pageUrl = baseUrl + '?' + params.toString();
+        console.log(`Built Yad2 single page URL (page ${page}, neighborhood: ${neighborhoodCode || 'all'}): ${pageUrl}`);
+        urls.push(pageUrl);
       }
-      
-      const pageUrl = url + '?' + params.toString();
-      console.log(`Built Yad2 single page URL (page ${page}): ${pageUrl}`);
-      urls.push(pageUrl);
       
     } else if (source === 'madlan' || source === 'madlan_projects') {
       let pathType: string;
@@ -260,51 +263,54 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
   for (const source of sources) {
     for (const type of types) {
       if (source === 'yad2' || source === 'yad2_private') {
-        let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
-        const params = new URLSearchParams();
+        const baseUrl = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
         
-        // Check if we have neighborhoods - if so, use multiCity/multiNeighborhood format
-        if (config.neighborhoods?.length) {
-          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
-          if (neighborhoodCodes.length > 0) {
-            // Use multiCity/multiNeighborhood for neighborhood filtering (works for 1 or more)
-            if (config.cities?.length) {
-              const cityData = yad2CityMap[config.cities[0]];
-              if (cityData) {
-                params.set('multiCity', cityData.city);
-                // Don't set topArea/area/city when using multiCity format
-              }
-            }
-            params.set('multiNeighborhood', neighborhoodCodes.join(','));
-            console.log(`Yad2 multiNeighborhood: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
-          }
-        } else if (config.cities?.length) {
-          // No neighborhoods - use regular city format
-          const cityData = yad2CityMap[config.cities[0]];
-          if (cityData) {
-            params.set('topArea', cityData.topArea);
-            params.set('area', cityData.area);
-            params.set('city', cityData.city);
-          }
-        }
+        // Get neighborhood codes if any
+        const neighborhoodCodes = config.neighborhoods?.length 
+          ? getYad2NeighborhoodCodes(config.neighborhoods) 
+          : [];
         
-        params.set('propertyGroup', 'apartments');
-        
-        if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
-        if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+        // Yad2 doesn't support multiple neighborhoods in one URL - need separate URLs for each
+        // If no neighborhoods, create one URL for the whole city
+        const codesToProcess = neighborhoodCodes.length > 0 ? neighborhoodCodes : [null];
         
         // Use config-specific max_pages if set, otherwise use global setting
         const pagesToScrape = config.max_pages ?? s.yad2_pages;
         console.log(`Yad2 pages to scrape: ${pagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
+        console.log(`Yad2 neighborhood codes to process: ${codesToProcess.length > 0 && codesToProcess[0] ? codesToProcess.join(',') : 'none (city-wide)'}`);
         
-        for (let page = 1; page <= pagesToScrape; page++) {
-          const pageParams = new URLSearchParams(params);
-          if (page > 1) {
-            pageParams.set('page', page.toString());
+        for (const neighborhoodCode of codesToProcess) {
+          const params = new URLSearchParams();
+          
+          // Always set city location params for Yad2
+          if (config.cities?.length) {
+            const cityData = yad2CityMap[config.cities[0]];
+            if (cityData) {
+              params.set('topArea', cityData.topArea);
+              params.set('area', cityData.area);
+              params.set('city', cityData.city);
+            }
           }
-          const pageUrl = url + '?' + pageParams.toString();
-          console.log(`Built Yad2 URL (page ${page}/${pagesToScrape}): ${pageUrl}`);
-          urls.push(pageUrl);
+          
+          // Add single neighborhood filter if specified
+          if (neighborhoodCode) {
+            params.set('neighborhood', neighborhoodCode);
+          }
+          
+          params.set('propertyGroup', 'apartments');
+          
+          if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
+          if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
+          
+          for (let page = 1; page <= pagesToScrape; page++) {
+            const pageParams = new URLSearchParams(params);
+            if (page > 1) {
+              pageParams.set('page', page.toString());
+            }
+            const pageUrl = baseUrl + '?' + pageParams.toString();
+            console.log(`Built Yad2 URL (page ${page}/${pagesToScrape}, neighborhood: ${neighborhoodCode || 'all'}): ${pageUrl}`);
+            urls.push(pageUrl);
+          }
         }
         
       } else if (source === 'madlan' || source === 'madlan_projects') {
