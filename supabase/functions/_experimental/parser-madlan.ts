@@ -432,29 +432,42 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   if (!price && !rooms && !address && !size) return null;
   
   // ============================================
-  // BROKER DETECTION - Madlan
-  // Based on user screenshots:
-  // - Broker: Shows "תיווך" label + 7-digit license number
-  // - Private: No such markers, just contact name
+  // BROKER DETECTION - Madlan (INVERTED LOGIC)
+  // Default = BROKER (most Madlan listings are broker)
+  // Only mark as private if EXPLICIT private indicators exist
   // ============================================
   
-  // Check for explicit "תיווך" label (appears at end of broker listings)
+  // Check for EXPLICIT private indicators
+  const isExplicitlyPrivate = /ללא\s*(ה)?תיווך|לא\s*למתווכים|ללא\s*מתווכים/i.test(block);
+  
+  // Check if this is Format A (fragmented block) or Format B (compact with \\)
+  const isCompactFormat = block.includes('\\\\');
+  
+  // Broker indicators (for Format A detection)
   const hasTivuchLabel = /תיווך/.test(block);
-  
-  // Check for 7-digit license number (Israeli broker license)
-  const hasLicenseNumber = /\d{7}/.test(block);
-  
-  // Check for "בבלעדיות" (exclusivity - broker indicator)
+  const hasLicenseNumber = /\d{7,8}/.test(block); // Updated: 7-8 digits
   const hasExclusivity = /בבלעדיות/.test(block);
+  const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
   
-  // Check for known broker brand names
   const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
   const blockLower = block.toLowerCase();
   const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
   
-  // SIMPLE RULE: "תיווך" OR license number OR exclusivity OR known brand = broker
-  // Otherwise = private
-  const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity || hasBrokerBrand;
+  // INVERTED LOGIC:
+  // - Default = broker (is_private: false)
+  // - Private only if: explicit "no broker" text, OR Format A without any broker indicators
+  let isPrivate = false;
+  
+  if (isExplicitlyPrivate) {
+    // Explicit "no broker" text = definitely private
+    isPrivate = true;
+  } else if (!isCompactFormat && !hasTivuchLabel && !hasLicenseNumber && 
+             !hasExclusivity && !hasBrokerBrand && !hasAgentOfficeLink) {
+    // Format A without ANY broker indicators = likely private
+    isPrivate = true;
+  }
+  // Format B (compact blocks) = default to broker (is_private: false)
+  // We can't determine from listing page, and statistically most are brokers
   
   // Extract features from the entire block
   const features = extractFeatures(block);
@@ -481,10 +494,10 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     size,
     floor,
     property_type: propertyType,
-    is_private: !isBroker,
+    is_private: isPrivate,
     entry_date: null,
     features,
-    raw_text: block.substring(0, 1000) // Save more raw text for future reclassification
+    raw_text: block.substring(0, 1000)
   };
 }
 
