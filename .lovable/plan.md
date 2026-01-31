@@ -1,101 +1,140 @@
 
 
-# תוכנית: תיקון נכסים מחוץ לתל אביב + תיקון Backfill תקוע
+# תיקון כפילויות + ניקוי נכסים לא מתל אביב
 
-## מצב נוכחי
+## הבעיות שזוהו
 
-| בעיה | סטטוס |
-|------|-------|
-| Backfill תקוע | `status: running` אבל לא זז כבר 40+ דקות |
-| נכס מבת ים | 1 נכס פעיל (ID: `f7dd66e1-eefe-4558-99c6-d4d810591b2c`) |
-| נכסים ללא עיר | 0 |
+| בעיה | כמות | סיבה |
+|------|------|------|
+| נכסים כפולים לא מקובצים | 100+ קבוצות | `detect_duplicates_batch` לא רץ |
+| נכסים מחוץ לתל אביב | 81 | עיר מופיעה בכתובת, לא בשדה city |
 
-## פעולות נדרשות
+## פתרון מלא
 
-### 1. תיקון ישיר בDB (Migration)
-
-אבצע migration שיעשה:
-1. **כיבוי הנכס מבת ים** - עדכון `is_active = false`
-2. **סימון ה-backfill כעצור** - עדכון `status = 'stopped'`
-3. **יצירת trigger למניעה עתידית** - trigger שמונע שמירת נכסים לא מתל אביב
+### שלב 1: Migration לתיקון מיידי
 
 ```sql
--- Deactivate the Bat Yam property
-UPDATE scouted_properties
-SET is_active = false
-WHERE id = 'f7dd66e1-eefe-4558-99c6-d4d810591b2c';
-
--- Stop the stuck backfill task
-UPDATE backfill_progress
-SET 
-  status = 'stopped',
-  completed_at = NOW(),
-  updated_at = NOW()
-WHERE id = '88907474-9435-440f-ac68-f516ecff9594'
-  AND status = 'running';
-
--- Deactivate ANY non-Tel Aviv properties (safety net)
+-- 1. DEACTIVATE all properties with non-TA cities in address
 UPDATE scouted_properties
 SET is_active = false
 WHERE is_active = true
-  AND city IS NOT NULL
-  AND city NOT LIKE '%תל אביב%'
-  AND city NOT LIKE '%תל-אביב%'
-  AND city NOT LIKE '%Tel Aviv%';
+  AND (
+    address ILIKE '%באר יעקב%'
+    OR address ILIKE '%ראש העין%'
+    OR address ILIKE '%ירושלים%'
+    OR address ILIKE '%יבנה%'
+    OR address ILIKE '%גני תקווה%'
+    OR address ILIKE '%שוהם%'
+    OR address ILIKE '%כפר סבא%'
+    OR address ILIKE '%קרית אונו%'
+    OR address ILIKE '%רמת גן%'
+    OR address ILIKE '%גבעתיים%'
+    OR address ILIKE '%חולון%'
+    OR address ILIKE '%בת ים%'
+    OR address ILIKE '%פתח תקווה%'
+    OR address ILIKE '%נתניה%'
+    OR address ILIKE '%מודיעין%'
+    OR address ILIKE '%הרצליה%'
+    OR address ILIKE '%רעננה%'
+    OR address ILIKE '%הוד השרון%'
+    OR address ILIKE '%אשדוד%'
+    OR address ILIKE '%ראשון לציון%'
+    OR address ILIKE '%נס ציונה%'
+    OR address ILIKE '%כפר יונה%'
+    OR address ILIKE '%צור יגאל%'
+    OR address ILIKE '%אלעד%'
+    OR address ILIKE '%בית שמש%'
+    OR address ILIKE '%פרדס חנה%'
+    OR address ILIKE '%זכרון יעקב%'
+    OR address ILIKE '%נהריה%'
+    OR address ILIKE '%עפולה%'
+    OR address ILIKE '%טבריה%'
+    OR address ILIKE '%אילת%'
+    OR address ILIKE '%חיפה%'
+    OR address ILIKE '%באר שבע%'
+  );
 
--- Create trigger to prevent non-Tel Aviv properties
+-- 2. RUN duplicate detection on ALL eligible properties
+DO $$
+DECLARE
+  batch_result RECORD;
+  total_found INTEGER := 0;
+  total_groups INTEGER := 0;
+  iterations INTEGER := 0;
+BEGIN
+  LOOP
+    SELECT * INTO batch_result 
+    FROM detect_duplicates_batch(1000);
+    
+    total_found := total_found + batch_result.duplicates_found;
+    total_groups := total_groups + batch_result.groups_created;
+    iterations := iterations + 1;
+    
+    -- Stop when no more properties to process
+    EXIT WHEN batch_result.properties_processed = 0 OR iterations > 20;
+  END LOOP;
+  
+  RAISE NOTICE 'Duplicate detection complete: % duplicates in % groups', 
+    total_found, total_groups;
+END $$;
+```
+
+### שלב 2: שיפור ה-Trigger לבדיקת כתובת
+
+נעדכן את הטריגר `check_tel_aviv_only` לבדוק גם את הכתובת:
+
+```sql
 CREATE OR REPLACE FUNCTION check_tel_aviv_only()
 RETURNS TRIGGER AS $$
+DECLARE
+  non_ta_cities TEXT[] := ARRAY[
+    'באר יעקב', 'ראש העין', 'ירושלים', 'יבנה', 'גני תקווה', 
+    'שוהם', 'כפר סבא', 'קרית אונו', 'רמת גן', 'גבעתיים', 
+    'חולון', 'בת ים', 'פתח תקווה', 'נתניה', 'מודיעין', 
+    'הרצליה', 'רעננה', 'הוד השרון', 'אשדוד', 'ראשון לציון',
+    'נס ציונה', 'כפר יונה', 'צור יגאל', 'אלעד', 'בית שמש',
+    'פרדס חנה', 'זכרון יעקב', 'נהריה', 'עפולה', 'טבריה',
+    'אילת', 'חיפה', 'באר שבע', 'נתיבות', 'אופקים', 'דימונה',
+    'ערד', 'לוד', 'רמלה', 'נתניה'
+  ];
+  city_name TEXT;
 BEGIN
-  -- Skip check if city is null (will be filled by backfill)
-  IF NEW.city IS NULL THEN
+  -- Check 1: city field is not Tel Aviv
+  IF NEW.city IS NOT NULL 
+     AND NEW.city NOT LIKE '%תל אביב%' 
+     AND NEW.city NOT LIKE '%תל-אביב%'
+     AND NEW.city NOT LIKE '%Tel Aviv%' THEN
+    NEW.is_active := false;
     RETURN NEW;
   END IF;
   
-  -- Check if city is Tel Aviv
-  IF NEW.city NOT LIKE '%תל אביב%' 
-     AND NEW.city NOT LIKE '%תל-אביב%'
-     AND NEW.city NOT LIKE '%Tel Aviv%' THEN
-    -- Instead of error, just mark as inactive
-    NEW.is_active := false;
+  -- Check 2: address contains a non-Tel Aviv city
+  IF NEW.address IS NOT NULL THEN
+    FOREACH city_name IN ARRAY non_ta_cities LOOP
+      IF NEW.address ILIKE '%' || city_name || '%' THEN
+        NEW.is_active := false;
+        RETURN NEW;
+      END IF;
+    END LOOP;
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS enforce_tel_aviv_only ON scouted_properties;
-CREATE TRIGGER enforce_tel_aviv_only
-  BEFORE INSERT OR UPDATE ON scouted_properties
-  FOR EACH ROW
-  EXECUTE FUNCTION check_tel_aviv_only();
 ```
 
-### 2. עדכון property-helpers.ts
+## תוצאה צפויה
 
-נוסיף בדיקת עיר **לפני** שמירה:
+| מדד | לפני | אחרי |
+|-----|------|------|
+| נכסים לא מתל אביב | 81 | 0 |
+| קבוצות כפילויות מזוהות | 0 | ~50-100 |
+| נכסים כפולים מקובצים | 0 | ~200+ |
 
-```typescript
-// In saveProperty function
-const normalizedCity = normalizeCityName(property.city);
+## קבצים לעדכון
 
-// Validate Tel Aviv only
-const isTelAviv = normalizedCity && 
-  (normalizedCity.includes('תל אביב') || normalizedCity.includes('תל-אביב'));
-
-if (normalizedCity && !isTelAviv) {
-  console.log(`🚫 Skipping non-Tel Aviv property: ${normalizedCity}`);
-  return { isNew: false, skipped: true };
-}
-```
-
----
-
-## סיכום
-
-| פעולה | מה יקרה |
-|-------|---------|
-| Migration | יכבה את נכס בת ים + יעצור backfill + יוסיף trigger |
-| property-helpers | ימנע שמירת נכסים לא מתל אביב מלכתחילה |
-| Trigger | רשת ביטחון - נכסים לא מתל אביב יסומנו כלא פעילים |
+| קובץ | פעולה |
+|------|-------|
+| Migration חדש | יצירה - ניקוי + זיהוי כפילויות |
+| check_tel_aviv_only trigger | עדכון - בדיקת כתובת |
 
