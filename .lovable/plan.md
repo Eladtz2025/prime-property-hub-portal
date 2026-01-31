@@ -1,151 +1,150 @@
 
-# תיקון בעיות + כפתור "הרץ הכל" לפי מקור
 
-## הבעיות שזיהיתי
+# תיקון פילטרים + ניקוי ערים לא מתל אביב
 
-### בעיה 1: שתי שעות בטופס העריכה למרות שעה אחת ב-DB
-**הסיבה**: כשפותחים טופס עריכה, הקוד ממלא אוטומטית את השדה השני מברירת המחדל של המקור:
-```typescript
-// שורה 634-635 הנוכחית
-schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
-schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1], // ← ממלא מברירת מחדל!
-```
+## סיכום הבעיות
 
-**הפתרון**: לא למלא את השדה השני אם אין ערך ב-DB:
-```typescript
-schedule_time_2: configSchedule?.[1] || '', // ← ריק אם אין
-```
+### 1. תצוגת פילטרים - "כל..." מוצג במקום שם הפילטר
 
-### בעיה 2: חסר כפתור "הרץ הכל" לכל מקור
-**הבקשה**: להוסיף כפתור Play בכותרת של כל עמודה שמריץ את כל הקונפיגורציות של אותו מקור ברצף, עם הפרש של 5 דקות בין כל אחת.
+**הבעיה**: כשהערך הוא `"all"`, ה-`SelectValue` מציג את הטקסט של ה-`SelectItem` ("כל המקורות", "כל העסקאות", וכו') במקום ה-placeholder.
+
+**הפתרון**: להחליף את הטקסט ב-`SelectItem` כך שיציג רק את שם הפילטר הקצר:
+
+| פילטר | מה מוצג היום | מה יהיה |
+|-------|-------------|---------|
+| מקורות | כל... → כל המקורות | **מקורות** |
+| סוג עסקה | כל... → כל העסקאות | **עסקאות** |
+| פרטי/תיווך | כל... → כל המפרסמים | **מפרסמים** |
 
 ---
 
-## שינויים בקוד
+### 2. מספרי רחוב בכתובות - איך זה עובד?
 
-### קובץ: `src/components/scout/UnifiedScoutSettings.tsx`
+**המצב**: הסורקים **כן** מושכים מספרי רחוב כשהם מופיעים בתוכן - זה תלוי במידע שהאתר מציג.
 
-#### שינוי 1: תיקון מילוי שעה שנייה בטופס עריכה
+**איפה המספר נמצא**: 
+- בפארסר של יד2 (שורות 193-205): הכתובת נשלפת מהטקסט המודגש (bold) או מה-alt של התמונה
+- זה יכול להיות `ארלוזרוב 17` או `ארלוזרוב` - תלוי במה שהאתר מציג
 
-**לפני** (שורה 635):
-```typescript
-schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1],
-```
+**הבעיה**: לא כל האתרים מציגים מספר בית ברשימה הראשית - לפעמים המספר מופיע רק בעמוד הספציפי של הנכס.
 
-**אחרי**:
-```typescript
-schedule_time_2: configSchedule?.[1] || '',
-```
+**אפשרות לשיפור**: להוסיף לפונקציית `backfill-property-data` חילוץ מספר רחוב מהעמוד הספציפי. אבל זה שינוי משמעותי - לא חלק מהתיקון הנוכחי.
 
-#### שינוי 2: הוספת פונקציה להרצת כל הקונפיגורציות של מקור
+---
 
-```typescript
-// Function to run all configs of a source sequentially with 5 min delay
-const [runningSource, setRunningSource] = useState<string | null>(null);
+### 3. כפתור "השלמת נתונים" - למה זה רץ אוטומטית?
 
-const runAllSourceConfigs = async (source: string) => {
-  const sourceConfigs = configs?.filter(c => c.source === source && c.is_active) || [];
-  
-  if (sourceConfigs.length === 0) {
-    toast.warning('אין קונפיגורציות פעילות למקור זה');
-    return;
-  }
+**איך זה עובד**:
+- הכפתור מפעיל את `backfill-property-data` edge function
+- הפונקציה סורקת נכסים שחסרים להם נתונים (חדרים/מחיר/גודל/features/פרטי-תיווך)
+- היא עובדת ב-batches של 20, מעדכנת את הנתונים, וממשיכה אוטומטית (self-invocation)
+- התקדמות נשמרת בטבלת `backfill_progress` ומתעדכנת כל כמה שניות
 
-  setRunningSource(source);
-  toast.info(`מתחיל להריץ ${sourceConfigs.length} קונפיגורציות של ${source}...`);
+**למה זה נראה אוטומטי**:
+- הפונקציה מתחילה ומריצה את עצמה שוב ושוב עד שמסיימת
+- הגרף והמספרים מתעדכנים כל 3 שניות (`refetchInterval: isRunning ? 3000 : false`)
 
-  for (let i = 0; i < sourceConfigs.length; i++) {
-    const config = sourceConfigs[i];
-    
-    try {
-      await runConfigMutation.mutateAsync(config.id);
-      toast.success(`הופעלה: ${config.name} (${i + 1}/${sourceConfigs.length})`);
-      
-      // Wait 5 minutes before next (except for the last one)
-      if (i < sourceConfigs.length - 1) {
-        toast.info(`ממתין 5 דקות לפני הבא...`);
-        await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)); // 5 minutes
-      }
-    } catch (error) {
-      console.error(`Failed to run ${config.name}:`, error);
-      toast.error(`שגיאה בהפעלת ${config.name}`);
-    }
-  }
+---
 
-  setRunningSource(null);
-  toast.success(`הושלמו כל ${sourceConfigs.length} הריצות של ${source}!`);
-};
-```
+### 4. הסרת נכסים שלא מתל אביב
 
-#### שינוי 3: הוספת כפתור Play לכותרת כל עמודה
+**הבקשה**: שכפתור השלמת הנתונים גם יסיר נכסים שלא מתל אביב.
 
-**כותרת עמודת הומלס לדוגמה** (דומה לשאר):
+**הפתרון**: להוסיף לוגיקה ב-`backfill-property-data` שבודקת:
+1. אם ה-city לא מכיל "תל אביב" → לסמן את הנכס כלא פעיל (`is_active = false`)
+2. גם לבדוק אם מתוך ה-address ניתן לזהות עיר אחרת
+
+---
+
+## שינויים טכניים
+
+### קובץ 1: `src/components/scout/ScoutedPropertiesTable.tsx`
+
+**שינוי 1: תיקון תצוגת פילטר מקורות (שורה ~1411)**
+
 ```tsx
-<div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border-r-4 border-r-purple-500">
-  <div className="flex items-center gap-2">
-    <span className="font-semibold text-purple-700 dark:text-purple-400">הומלס</span>
-    <Badge variant="outline" className="bg-purple-500/20">
-      {configs.filter(c => c.source === 'homeless').length}
-    </Badge>
-  </div>
-  <div className="flex items-center gap-2">
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-purple-600 hover:bg-purple-500/20"
-            onClick={() => runAllSourceConfigs('homeless')}
-            disabled={runningSource !== null}
-          >
-            {runningSource === 'homeless' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>הרץ את כל ההומלס (5 דק׳ הפרש)</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  </div>
-</div>
+// לפני
+<SelectItem value="all">כל המקורות</SelectItem>
+
+// אחרי
+<SelectItem value="all">מקורות</SelectItem>
 ```
+
+**שינוי 2: תיקון תצוגת פילטר עסקאות (שורה ~1424)**
+
+```tsx
+// לפני
+<SelectItem value="all">כל העסקאות</SelectItem>
+
+// אחרי
+<SelectItem value="all">עסקאות</SelectItem>
+```
+
+**שינוי 3: תיקון תצוגת פילטר מפרסמים (שורה ~1436)**
+
+```tsx
+// לפני
+<SelectItem value="all">כל המפרסמים</SelectItem>
+
+// אחרי
+<SelectItem value="all">מפרסמים</SelectItem>
+```
+
+**גם באזור המובייל** (שורות ~1222-1230 בערך):
+- לעשות את אותם שינויים לפילטרים במסך הנייד
 
 ---
 
-## לגבי שאלה 3 - העיר לא נבחרה
+### קובץ 2: `supabase/functions/backfill-property-data/index.ts`
 
-בדקתי את ה-DB וכל הקונפיגורציות החדשות שיצרנו **כן מכילות עיר** (`תל אביב יפו`):
+**שינוי: הוספת סינון ערים לא רלוונטיות**
 
-| Name | Cities | Neighborhoods |
-|------|--------|---------------|
-| Homeless דרום - השכרה | `["תל אביב יפו"]` | `["homeless_תא_דרום"]` |
-| Yad2 צפון ישן - השכרה | `["תל אביב יפו"]` | `["yad2_צפון_ישן"]` |
+לאחר שליפת הנתונים מהדף, לפני העדכון - לבדוק אם העיר היא תל אביב:
 
-**מה שראית בתמונה**: כנראה זו קונפיגורציה ישנה או שהשדה "ערים" נראה ריק כי הוא dropdown שלא נבחר עדיין (בזמן עריכה/יצירה).
+```typescript
+// After extracting city from scraped content (around line 311)
 
-**ככה זה אמור לעבוד**: השכונה מכילה את העיר בשם שלה (למשל `homeless_תא_דרום`), והמערכת יודעת לפרש את זה נכון. אבל עדיף שגם שדה העיר יהיה מלא.
+// Check if property is not in Tel Aviv - mark as inactive
+if (prop.city || extracted.city) {
+  const finalCity = extracted.city || prop.city || '';
+  const isTelAviv = finalCity.includes('תל אביב') || finalCity.includes('תל-אביב');
+  
+  if (!isTelAviv && finalCity.length > 0) {
+    console.log(`🗑️ Property ${prop.id} is in ${finalCity}, marking as inactive`);
+    await supabase
+      .from('scouted_properties')
+      .update({ is_active: false })
+      .eq('id', prop.id);
+    
+    successCount++; // Count as processed
+    lastId = prop.id;
+    continue; // Skip to next property
+  }
+}
+```
 
 ---
 
 ## תוצאה צפויה
 
-1. **טופס עריכה**: יציג רק את השעות שבאמת קיימות ב-DB (לא ימלא אוטומטית שעה שנייה)
+### פילטרים מתוקנים:
+- הפילטרים יציגו: **מקורות**, **עסקאות**, **מפרסמים** (ללא "כל...")
+- קומפקטי יותר ומתאים לרוחב השדות
 
-2. **כפתור Play בכותרת**: בלחיצה על Play בכותרת "הומלס" - יריץ את כל 10 הקונפיגורציות של הומלס אחת אחרי השנייה עם הפרש 5 דקות
+### ניקוי ערים:
+- נכסים שה-city שלהם לא מכיל "תל אביב" יסומנו כלא פעילים
+- לא יופיעו יותר בתוצאות החיפוש
 
-3. **אינדיקציה ויזואלית**: הכפתור יהפוך ל-Spinner בזמן ההמתנה + הודעות Toast על ההתקדמות
+### מספרי רחוב:
+- זה עובד כבר - השאלה היא מה המידע שנמשך מהאתר
+- אפשר לשפר בעתיד ע"י חילוץ מדף הנכס הספציפי
 
 ---
 
-## סיכום
+## סיכום קבצים
 
-| שינוי | תיאור |
-|-------|-------|
-| תיקון openEditDialog | לא למלא שעה שנייה מברירת מחדל |
-| הוספת runAllSourceConfigs | פונקציה שמריצה כל קונפיגורציות מקור ברצף |
-| עדכון כותרות עמודות | הוספת כפתור Play + Tooltip לכל מקור |
+| קובץ | שינוי |
+|------|-------|
+| `ScoutedPropertiesTable.tsx` | שינוי טקסט ב-3 פילטרים (מקורות/עסקאות/מפרסמים) |
+| `backfill-property-data/index.ts` | הוספת סינון נכסים שלא מתל אביב |
+
