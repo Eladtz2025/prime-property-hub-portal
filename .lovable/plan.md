@@ -1,88 +1,91 @@
 
+# יצירת תמיכה בריבוי שכונות ב-Yad2 + קונפיגורציה חדשה
 
-# תיקון תמיכת שכונות לכל מקור (Yad2/Madlan/Homeless)
+## מה גיליתי
 
-## הבעיה שזוהתה
+אתה צודק! Yad2 תומך בריבוי שכונות, אבל **בפורמט URL שונה**:
 
-אתה צודק! יש חוסר התאמה בין שלושת המקומות שמגדירים שכונות:
-1. **UI (locations.ts)** - מה שהמשתמש יכול לבחור
-2. **Edge Functions (neighborhood-codes.ts)** - הקודים לכל אתר
-3. **הממשק עצמו** - לא מציג אילו שכונות באמת נתמכות לכל מקור
+| פרמטר נוכחי | פרמטר נכון (ריבוי) |
+|-------------|---------------------|
+| `city=5000` | `multiCity=5000` |
+| `neighborhood=1483,204` | `multiNeighborhood=1483,204` |
 
-### פערים שנמצאו
-
-| שכונה | Yad2 | Madlan | Homeless | UI |
-|-------|------|--------|----------|-----|
-| יד אליהו | ✅ | ❌ | ✅ | ❌ חסר |
-| רמת החייל | ✅ | ✅ | ✅ | ❌ חסר |
-| רמת גן/גבעתיים | ❌ | ❌ | ❌ | ✅ קיים |
-
-**משמעות:** אם מישהו יוצר קונפיגורציה של מדל"ן עם "יד אליהו" - המערכת תתעלם מהשכונה הזו כי אין קוד עבורה.
+**הקוד הנוכחי** משתמש ב-`neighborhood` שעובד רק לשכונה אחת. כדי לתמוך במספר שכונות, צריך לעבור לפורמט `multiNeighborhood`.
 
 ---
 
-## הפתרון המוצע
+## קודי השכונות המבוקשות
 
-### שלב 1: עדכון locations.ts - הוספת שכונות חסרות ל-UI
+| שכונה | קוד Yad2 |
+|-------|----------|
+| צפון ישן | 1483 |
+| צפון חדש | 204 |
+| מרכז העיר | 1520 |
+| בבלי | 1518 |
+| כיכר המדינה | 1516 |
 
-נוסיף את השכונות החסרות לרשימת תל אביב:
-
-```typescript
-// Add to NEIGHBORHOODS['תל אביב יפו']:
-{ 
-  value: 'יד_אליהו', 
-  label: 'יד אליהו', 
-  aliases: ['yad eliyahu', 'בלומפילד'] 
-},
-{ 
-  value: 'רמת_החייל', 
-  label: 'רמת החייל', 
-  aliases: ['ramat hachayal', 'רמת החיל'] 
-},
+**URL מלא:**
+```
+https://www.yad2.co.il/realestate/rent?multiCity=5000&multiNeighborhood=1483,204,1520,1518,1516&propertyGroup=apartments
 ```
 
-### שלב 2: הוספת Madlan slug ליד אליהו
+---
 
+## שינויים נדרשים
+
+### שלב 1: עדכון URL Builder לתמיכה ב-multiNeighborhood
+
+**קובץ:** `supabase/functions/_shared/url-builders.ts`
+
+**לוגיקה חדשה:**
 ```typescript
-// Add to madlanNeighborhoodSlugs in neighborhood-codes.ts:
-'יד_אליהו': 'יד-אליהו',
-'יד אליהו': 'יד-אליהו',
-```
-
-### שלב 3: הוספת אינדיקטור בממשק ליצירת קונפיגורציה
-
-כשהמשתמש יוצר קונפיגורציה חדשה ובוחר מקור (Yad2/Madlan/Homeless), נסנן את רשימת השכונות הזמינות **רק לאלו שנתמכות באותו מקור**.
-
-**שינוי ב-UnifiedScoutSettings.tsx:**
-
-```typescript
-// Filter neighborhoods based on selected source
-const getAvailableNeighborhoods = (source: string, allNeighborhoods: Neighborhood[]) => {
-  return allNeighborhoods.filter(n => {
-    switch(source) {
-      case 'yad2':
-        return yad2NeighborhoodCodes[n.value] !== undefined;
-      case 'madlan':
-        return madlanNeighborhoodSlugs[n.value] !== undefined;
-      case 'homeless':
-        return homelessAreaCodes[n.value] !== undefined;
-      default:
-        return true;
+// When multiple neighborhoods selected, use multiCity + multiNeighborhood format
+if (config.neighborhoods?.length > 0) {
+  const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
+  if (neighborhoodCodes.length > 0) {
+    // Use multi-format for any number of neighborhoods (works for 1 or more)
+    if (cityData) {
+      params.set('multiCity', cityData.city);
+      params.delete('topArea');
+      params.delete('area');
+      params.delete('city');
     }
-  });
-};
+    params.set('multiNeighborhood', neighborhoodCodes.join(','));
+  }
+}
 ```
 
-### שלב 4: הוספת tooltip עם מידע על תמיכה
+### שלב 2: יצירת קונפיגורציה חדשה
 
-בממשק בחירת השכונות, נציג אייקון קטן שמראה באילו מקורות השכונה נתמכת:
+**נוסיף קונפיגורציה חדשה ב-Database:**
 
-```text
-שכונה    | תמיכה
----------|---------
-צפון ישן | 🟢 🟢 🟢  (Yad2, Madlan, Homeless)
-יד אליהו | 🟢 ⚪ 🟢  (Yad2, -, Homeless)
-רמת גן   | ⚪ ⚪ ⚪  (לא נתמך לסינון URL)
+```sql
+INSERT INTO scout_configs (
+  name,
+  source,
+  property_type,
+  cities,
+  neighborhoods,
+  max_pages,
+  page_delay_seconds,
+  is_active
+) VALUES (
+  'יד2 השכרה - צפון+מרכז תל אביב',
+  'yad2',
+  'rent',
+  ARRAY['תל אביב'],
+  ARRAY['צפון_ישן', 'צפון_חדש', 'מרכז_העיר', 'בבלי', 'כיכר_המדינה'],
+  5,
+  3,
+  true
+);
+```
+
+### שלב 3: Deploy ובדיקה
+
+לאחר השינויים, ה-URL שייבנה יהיה:
+```
+https://www.yad2.co.il/realestate/rent?multiCity=5000&multiNeighborhood=1483,204,1520,1518,1516&propertyGroup=apartments
 ```
 
 ---
@@ -91,10 +94,8 @@ const getAvailableNeighborhoods = (source: string, allNeighborhoods: Neighborhoo
 
 | קובץ | שינוי |
 |------|-------|
-| `src/config/locations.ts` | הוספת יד_אליהו, רמת_החייל |
-| `supabase/functions/_shared/neighborhood-codes.ts` | הוספת Madlan slug ליד אליהו |
-| `src/components/scout/UnifiedScoutSettings.tsx` | סינון שכונות לפי מקור |
-| `src/components/ui/neighborhood-selector.tsx` | (אופציונלי) הוספת tooltip תמיכה |
+| `supabase/functions/_shared/url-builders.ts` | שינוי ל-multiCity/multiNeighborhood |
+| Database | הוספת קונפיגורציה חדשה |
 
 ---
 
@@ -102,7 +103,6 @@ const getAvailableNeighborhoods = (source: string, allNeighborhoods: Neighborhoo
 
 | לפני | אחרי |
 |------|------|
-| משתמש יכול לבחור שכונה שלא נתמכת | רואים רק שכונות נתמכות לכל מקור |
-| אין משוב על מה עובד | אינדיקציה ברורה |
-| יד אליהו/רמת החייל לא זמינים ב-UI | זמינים לבחירה |
-
+| שכונה אחת בלבד ב-URL | מספר שכונות ב-URL אחד |
+| צריך 5 קונפיגורציות (שכונה לכל אחת) | קונפיגורציה אחת לכל השכונות |
+| 5 x 5 עמודים = 25 בקשות | 1 x 5 עמודים = 5 בקשות |
