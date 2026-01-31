@@ -53,46 +53,71 @@ export const yad2NeighborhoodCodes: Record<string, string> = {
   'יפו': '203',
 };
 
-// Madlan neighborhood slugs (URL path segments)
-// Format: neighborhood-slug that goes BEFORE city name in URL
-export const madlanNeighborhoodSlugs: Record<string, string> = {
-  'צפון_ישן': 'הצפון-הישן',
-  'צפון ישן': 'הצפון-הישן',
-  'צפון_חדש': 'הצפון-החדש',
-  'צפון חדש': 'הצפון-החדש',
-  'כיכר_המדינה': 'הצפון-החדש-סביבת-כיכר-המדינה',
-  'כיכר המדינה': 'הצפון-החדש-סביבת-כיכר-המדינה',
-  'מרכז_העיר': 'לב-תל-אביב-לב-העיר-צפון',
-  'מרכז העיר': 'לב-תל-אביב-לב-העיר-צפון',
-  'בבלי': 'בבלי',
-  'נווה_צדק': 'נווה-צדק',
-  'נווה צדק': 'נווה-צדק',
-  'כרם_התימנים': 'כרם-התימנים',
-  'כרם התימנים': 'כרם-התימנים',
-  'רמת_אביב': 'רמת-אביב-החדשה',
-  'רמת אביב': 'רמת-אביב-החדשה',
-  'פלורנטין': 'פלורנטין',
-  'רוטשילד': 'שדרות-רוטשילד',
-  'צהלה': 'גני-צהלה-רמות-צהלה',
-  'נמל_תל_אביב': 'נמל-תל-אביב',
-  'נמל תל אביב': 'נמל-תל-אביב',
-  'יפו': 'יפו',
-  'תל_ברוך': 'תל-ברוך',
-  'תל ברוך': 'תל-ברוך',
-  'דרום_תל_אביב': 'דרום-העיר',
-  'דרום תל אביב': 'דרום-העיר',
-  'אזורי_חן': 'אזורי-חן',
-  'אזורי חן': 'אזורי-חן',
-  'נווה_אביבים': 'נווה-אביבים',
-  'נווה אביבים': 'נווה-אביבים',
-  'הדר_יוסף': 'הדר-יוסף',
-  'הדר יוסף': 'הדר-יוסף',
-  'נווה_שרת': 'נווה-שרת',
-  'נווה שרת': 'נווה-שרת',
-  'רמת_החייל': 'רמת-החייל',
-  'רמת החייל': 'רמת-החייל',
-  'יד_אליהו': 'יד-אליהו',
-  'יד אליהו': 'יד-אליהו',
+// Madlan neighborhood sub-areas (with שכונה- prefix for proper recognition)
+// Large neighborhoods like צפון ישן/חדש need multiple sub-areas
+export const madlanNeighborhoodSubAreas: Record<string, string[]> = {
+  // צפון ישן - 3 תת-אזורים
+  'צפון_ישן': [
+    'שכונה-הצפון-הישן-החלק-הצפוני',
+    'שכונה-הצפון-הישן-החלק-המרכזי',
+    'שכונה-הצפון-הישן-החלק-הדרום-מזרחי',
+  ],
+  'צפון ישן': [
+    'שכונה-הצפון-הישן-החלק-הצפוני',
+    'שכונה-הצפון-הישן-החלק-המרכזי',
+    'שכונה-הצפון-הישן-החלק-הדרום-מזרחי',
+  ],
+  
+  // צפון חדש - 3 תת-אזורים
+  'צפון_חדש': [
+    'שכונה-הצפון-החדש-החלק-הצפוני',
+    'שכונה-הצפון-החדש-החלק-הדרומי',
+    'שכונה-הצפון-החדש-סביבת-כיכר-המדינה',
+  ],
+  'צפון חדש': [
+    'שכונה-הצפון-החדש-החלק-הצפוני',
+    'שכונה-הצפון-החדש-החלק-הדרומי',
+    'שכונה-הצפון-החדש-סביבת-כיכר-המדינה',
+  ],
+  
+  // כיכר המדינה - תת-אזור של צפון חדש
+  'כיכר_המדינה': ['שכונה-הצפון-החדש-סביבת-כיכר-המדינה'],
+  'כיכר המדינה': ['שכונה-הצפון-החדש-סביבת-כיכר-המדינה'],
+  
+  // מרכז העיר
+  'מרכז_העיר': ['שכונה-לב-תל-אביב-לב-העיר-צפון'],
+  'מרכז העיר': ['שכונה-לב-תל-אביב-לב-העיר-צפון'],
+  
+  // שכונות בודדות
+  'בבלי': ['שכונה-בבלי'],
+  'נווה_צדק': ['שכונה-נווה-צדק'],
+  'נווה צדק': ['שכונה-נווה-צדק'],
+  'כרם_התימנים': ['שכונה-כרם-התימנים'],
+  'כרם התימנים': ['שכונה-כרם-התימנים'],
+  'רמת_אביב': ['שכונה-רמת-אביב-החדשה'],
+  'רמת אביב': ['שכונה-רמת-אביב-החדשה'],
+  'פלורנטין': ['שכונה-פלורנטין'],
+  'רוטשילד': ['שכונה-שדרות-רוטשילד'],
+  'צהלה': ['שכונה-גני-צהלה-רמות-צהלה'],
+  'נמל_תל_אביב': ['שכונה-נמל-תל-אביב'],
+  'נמל תל אביב': ['שכונה-נמל-תל-אביב'],
+  'יפו': ['שכונה-יפו'],
+  'תל_ברוך': ['שכונה-תל-ברוך'],
+  'תל ברוך': ['שכונה-תל-ברוך'],
+  'דרום_תל_אביב': ['שכונה-דרום-העיר'],
+  'דרום תל אביב': ['שכונה-דרום-העיר'],
+  'אזורי_חן': ['שכונה-אזורי-חן'],
+  'אזורי חן': ['שכונה-אזורי-חן'],
+  'נווה_אביבים': ['שכונה-נווה-אביבים'],
+  'נווה אביבים': ['שכונה-נווה-אביבים'],
+  'הדר_יוסף': ['שכונה-הדר-יוסף'],
+  'הדר יוסף': ['שכונה-הדר-יוסף'],
+  'נווה_שרת': ['שכונה-נווה-שרת'],
+  'נווה שרת': ['שכונה-נווה-שרת'],
+  'רמת_החייל': ['שכונה-רמת-החייל'],
+  'רמת החייל': ['שכונה-רמת-החייל'],
+  'יד_אליהו': ['שכונה-יד-אליהו'],
+  'יד אליהו': ['שכונה-יד-אליהו'],
 };
 
 // Homeless area codes (inumber1 parameter)
@@ -146,6 +171,28 @@ export const homelessAreaCodes: Record<string, string> = {
   'יפו': '3',
 };
 
+// City slug mapping for Madlan URLs
+const madlanCityMap: Record<string, string> = {
+  'תל אביב': 'תל-אביב-יפו',
+  'תל אביב יפו': 'תל-אביב-יפו',
+  'ירושלים': 'ירושלים',
+  'חיפה': 'חיפה',
+  'ראשון לציון': 'ראשון-לציון',
+  'פתח תקווה': 'פתח-תקווה',
+  'אשדוד': 'אשדוד',
+  'נתניה': 'נתניה',
+  'באר שבע': 'באר-שבע',
+  'חולון': 'חולון',
+  'בת ים': 'בת-ים',
+  'רמת גן': 'רמת-גן',
+  'הרצליה': 'הרצליה',
+  'רעננה': 'רעננה',
+  'גבעתיים': 'גבעתיים',
+  'כפר סבא': 'כפר-סבא',
+  'הוד השרון': 'הוד-השרון',
+  'רמת השרון': 'רמת-השרון',
+};
+
 /**
  * Convert neighborhood names to Yad2 codes
  * Returns only valid codes, skips unknown neighborhoods
@@ -166,9 +213,11 @@ export function getYad2NeighborhoodCodes(neighborhoods: string[]): string[] {
 /**
  * Get Madlan slug for a single neighborhood
  * Returns null if no mapping exists
+ * @deprecated Use getMadlanMultiNeighborhoodPath instead
  */
 export function getMadlanNeighborhoodSlug(neighborhood: string): string | null {
-  return madlanNeighborhoodSlugs[neighborhood] || null;
+  const subAreas = madlanNeighborhoodSubAreas[neighborhood];
+  return subAreas ? subAreas[0] : null;
 }
 
 /**
@@ -190,50 +239,34 @@ export function getHomelessAreaCodes(neighborhoods: string[]): string[] {
 
 /**
  * Get multiple Madlan neighborhood slugs as comma-separated URL path
- * Format: neighborhood1-city-ישראל,neighborhood2-city-ישראל
- * Used when multiple neighborhoods are selected for a config
+ * Format: שכונה-neighborhood-city-ישראל,שכונה-neighborhood2-city-ישראל
+ * Uses sub-areas for large neighborhoods (צפון ישן/חדש = 3 sub-areas each)
  */
 export function getMadlanMultiNeighborhoodPath(
   neighborhoods: string[], 
   city: string
 ): string | null {
-  const slugs: string[] = [];
-  
-  // FIXED: Use proper city mapping instead of simple replace
-  // Map "תל אביב" -> "תל-אביב-יפו" (not just "תל-אביב")
-  const madlanCityMap: Record<string, string> = {
-    'תל אביב': 'תל-אביב-יפו',
-    'תל אביב יפו': 'תל-אביב-יפו',
-    'ירושלים': 'ירושלים',
-    'חיפה': 'חיפה',
-    'ראשון לציון': 'ראשון-לציון',
-    'פתח תקווה': 'פתח-תקווה',
-    'אשדוד': 'אשדוד',
-    'נתניה': 'נתניה',
-    'באר שבע': 'באר-שבע',
-    'חולון': 'חולון',
-    'בת ים': 'בת-ים',
-    'רמת גן': 'רמת-גן',
-    'הרצליה': 'הרצליה',
-    'רעננה': 'רעננה',
-    'גבעתיים': 'גבעתיים',
-    'כפר סבא': 'כפר-סבא',
-    'הוד השרון': 'הוד-השרון',
-    'רמת השרון': 'רמת-השרון',
-  };
-  
+  const allSlugs: string[] = [];
   const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-');
   
   for (const neighborhood of neighborhoods) {
-    const slug = madlanNeighborhoodSlugs[neighborhood];
-    if (slug) {
-      // Format: neighborhood-slug-city-ישראל
-      slugs.push(`${slug}-${citySlug}-ישראל`);
+    // Get array of sub-areas for this neighborhood
+    const subAreas = madlanNeighborhoodSubAreas[neighborhood] || 
+                     madlanNeighborhoodSubAreas[neighborhood.replace(/ /g, '_')];
+    
+    if (subAreas) {
+      for (const subArea of subAreas) {
+        // Format: שכונה-שם-תת-אזור-city-ישראל
+        const fullSlug = `${subArea}-${citySlug}-ישראל`;
+        if (!allSlugs.includes(fullSlug)) {
+          allSlugs.push(fullSlug);
+        }
+      }
     }
   }
   
-  if (slugs.length === 0) return null;
+  if (allSlugs.length === 0) return null;
   
   // Join with commas for Madlan multi-neighborhood URL format
-  return slugs.join(',');
+  return allSlugs.join(',');
 }
