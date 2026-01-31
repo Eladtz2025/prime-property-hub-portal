@@ -1,95 +1,73 @@
 
-# תיקון מערכתי: סינון URLs שבורים מרשימת הנכסים
+# תיקון מערכתי: זיהוי נכסים שהוסרו מ-Yad2
 
 ## סיכום הבעיה
 
-בלחיצה על נכסים מסוימים, המשתמש מגיע לדף 404 כי ה-`source_url` השמור במערכת אינו קישור ישיר לנכס אלא:
-- דף פרויקט (Yad2/Madlan)
-- דף חיפוש כללי (לא נכס ספציפי)
+נכסים שהוסרו מ-Yad2 עדיין מופיעים במערכת כי:
+1. ה-URL נראה תקין (`/realestate/item/xxx`) אבל המודעה עצמה הוסרה
+2. פונקציית בדיקת הזמינות לא מזהה את ההודעה הספציפית של Yad2: **"חיפשנו בכל מקום אבל אין לנו עמוד כזה"**
+3. יש 637 נכסים ישנים (מעל 14 יום) שעדיין מסומנים כ-active
 
-## אבחנת הבעיה - נתונים מ-DB
+## הפתרון - 3 חלקים
 
-| קטגוריה | כמות | דוגמה |
-|---------|------|-------|
-| Yad2 פרויקט | 21 | `/yad1/project/28706f6e/apartment/...` |
-| Yad2 דף חיפוש | 1 | `/forsale?topArea=2&area=1&city=5000` |
-| Madlan פרויקט | 18 | `/projects/הזוהר_21_תל_אביב` |
-| Madlan דף חיפוש | 5 | `/for-rent/תל-אביב-יפו-ישראל?page=6` |
-| **סה"כ שבורים** | **45** | |
+### חלק 1: עדכון רשימת האינדיקטורים (`check-property-availability`)
 
-## הפתרון - 3 שלבים
+הוספת הטקסט הספציפי של Yad2:
 
-### שלב 1: ניקוי מיידי - מחיקה/השבתה של URLs שבורים מ-DB
+```typescript
+const LISTING_REMOVED_INDICATORS = [
+  'המודעה הוסרה',
+  'מודעה לא נמצאה',
+  'הדף לא נמצא',
+  'הנכס אינו זמין',
+  'המודעה לא קיימת',
+  'listing not found',
+  'item removed',
+  'page not found',
+  'this listing is no longer available',
+  'האתר בשיפוצים',
+  // הוספות חדשות:
+  'חיפשנו בכל מקום אבל אין לנו עמוד כזה',  // Yad2 specific!
+  'אין לנו עמוד כזה',
+  'הלינק לא תקין',
+  'העמוד שחיפשת הוסר',
+  'listing has been removed',
+  'no longer exists',
+];
+```
 
-SQL Script שמסמן כ-`is_active = false` את כל ה-URLs הבעייתיים:
+### חלק 2: ניקוי מיידי של הנכסים הספציפיים (SQL)
+
+הרצת SQL שמסמן את שני הנכסים שמופיעים בתמונה כ-inactive:
 
 ```sql
 UPDATE scouted_properties
-SET is_active = false,
-    status = 'invalid_url'
-WHERE is_active = true
-AND (
-  -- Yad2 broken patterns
-  (source = 'yad2' AND (
-    source_url LIKE '%/yad1/project/%'
-    OR source_url LIKE '%/yad1/%'  
-    OR source_url LIKE '%forsale?%'
-    OR source_url LIKE '%forrent?%'
-  ))
-  -- Madlan broken patterns
-  OR (source = 'madlan' AND (
-    source_url LIKE '%/projects/%'
-    OR source_url NOT LIKE '%/listings/%'
-  ))
+SET is_active = false, status = 'inactive'
+WHERE id IN (
+  'cbf469d5-4d5a-45e7-8709-61ca939aad03',  -- בלוך, הצפון החדש
+  'ade2e72d-8d6c-4194-b51e-3600ddfe0089'   -- פלורנטין
 );
 ```
 
-### שלב 2: תיקון הפארסרים - מניעת כניסה של URLs שבורים
+### חלק 3: הוספת בדיקה אגרסיבית יותר לנכסים ישנים
 
-**עדכון `parser-madlan.ts` (שורות 112, 117, 133, 142, 181):**
-- הסרת `/projects/` מהרשימה המותרת
-- הוספת וולידציה ל-URL רק מסוג `/listings/`
+עדכון הפונקציה כך שתבדוק גם נכסים שעברו רק 3 ימים (לא 7), ותריץ batch גדול יותר:
 
-**עדכון `parser-yad2.ts` (שורה 149):**
-- כבר יש skip ל-project URLs, אבל נחזק עם regex מחמיר יותר
+| הגדרה | ערך נוכחי | ערך חדש |
+|-------|-----------|---------|
+| min_days_before_check | 3 | 3 (נשאר) |
+| batch_size | 50 | 100 |
 
-**עדכון `property-helpers.ts`:**
-- הוספת פונקציית ולידציה `isValidSourceUrl()` שבודקת לפני שמירה
-
-### שלב 3: פילטר קבוע בשאילתה (רשת ביטחון)
-
-בפונקציית ה-query ב-`ScoutedPropertiesTable.tsx`, הוספת סינון:
-
-```typescript
-// Filter out invalid URLs at query level (safety net)
-const INVALID_URL_PATTERNS = [
-  '/yad1/',
-  '/projects/',
-  'forsale?',
-  'forrent?',
-  '/for-rent/',
-  '/for-sale/'
-];
-
-// Add to query filters
-query = query.not('source_url', 'ilike', '%/yad1/%')
-             .not('source_url', 'ilike', '%/projects/%')
-             .not('source_url', 'ilike', '%forsale?%')
-             .not('source_url', 'ilike', '%forrent?%');
-```
-
-## קבצים לעדכון
+## סיכום הקבצים לעדכון
 
 | קובץ | פעולה |
 |------|-------|
-| **SQL Migration** | השבתת 45 URLs שבורים |
-| `supabase/functions/_experimental/parser-madlan.ts` | הסרת `/projects/` מפטרנים מותרים |
-| `supabase/functions/_experimental/parser-yad2.ts` | חיזוק סינון project URLs |
-| `supabase/functions/_shared/property-helpers.ts` | הוספת וולידציית URL לפני שמירה |
-| `src/components/scout/ScoutedPropertiesTable.tsx` | הוספת פילטר URL בשאילתה כרשת ביטחון |
+| `supabase/functions/check-property-availability/index.ts` | הוספת אינדיקטורים חדשים |
+| SQL Migration | השבתת 2 הנכסים הספציפיים |
+| `supabase/functions/_shared/settings.ts` | הגדלת batch_size ל-100 |
 
 ## תוצאה צפויה
 
-- **מיידית**: 45 נכסים עם URLs שבורים לא יוצגו יותר
-- **מניעה**: הפארסרים לא יכניסו יותר URLs בעייתיים
-- **רשת ביטחון**: גם אם נכנס URL בעייתי, הוא לא יוצג למשתמש
+- שני הנכסים הספציפיים יוסרו מהתצוגה מיד
+- נכסים עתידיים שיוסרו מ-Yad2 יזוהו אוטומטית
+- בדיקות יותר תכופות יתפסו נכסים שהוסרו מהר יותר
