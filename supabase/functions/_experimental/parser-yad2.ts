@@ -205,34 +205,30 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
   }
   
-  // Detect broker vs private listing
-  // 
-  // Broker format: The agency name appears TWICE in the listing (once alone, once before price)
-  // Example: "\\Properties-il tel aviv\\Properties-il tel aviv₪ 14,000\\"
-  //
-  // Private format: Price appears directly after \\, no agency name
-  // Example: "\\₪ 6,000\\"
+  // ============================================
+  // BROKER DETECTION - Yad2
+  // Based on user screenshots:
+  // - Broker: Shows "תיווך:" label + 7-digit license number
+  // - Private: No such markers
+  // ============================================
   
-  // SIMPLE & RELIABLE RULE: 
-  // Private = the text immediately before ₪ is just whitespace/backslashes (price is first)
-  // Broker = there's actual text before the ₪ sign (agency name)
+  // Check for explicit "תיווך" label (appears in broker listings)
+  const hasTivuchLabel = /תיווך:?/.test(block);
   
-  // Check if price comes right after backslash (private listing pattern)
-  // Pattern: "\\₪" or "\\ ₪" means private
-  const isPrivatePattern = /\\\s*₪/.test(cleanedBlock);
+  // Check for 7-digit license number (Israeli broker license)
+  const hasLicenseNumber = /\d{7}/.test(block);
   
-  // Also check for repeated agency name pattern (definite broker)
-  // Format: "AgencyName\\AgencyName₪" - same name appears twice
-  const agencyRepeatedPattern = /([A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF\s.'"-]+?)\s*\\+\s*\1\s*₪/;
-  const hasAgencyRepeated = agencyRepeatedPattern.test(cleanedBlock);
+  // Check for "בבלעדיות" (exclusivity - broker indicator)
+  const hasExclusivity = /בבלעדיות/.test(block);
   
-  // Known broker keywords (strong indicator)
-  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים|נכסים|Properties|HomeMe|הומלנד|בית ממכר/.test(block);
+  // Check for known broker brand names
+  const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
+  const blockLower = block.toLowerCase();
+  const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
   
-  // Final determination:
-  // - If price comes right after backslash -> private
-  // - If agency name repeated or broker keywords -> broker
-  const isBroker = !isPrivatePattern || hasAgencyRepeated || hasBrokerKeywords || detectBroker(block);
+  // SIMPLE RULE: "תיווך" OR license number OR exclusivity OR known brand = broker
+  // Otherwise = private
+  const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity || hasBrokerBrand;
   
   // Extract features from the entire block
   const features = extractFeatures(block);
