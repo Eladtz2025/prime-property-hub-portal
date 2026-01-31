@@ -2674,6 +2674,7 @@ export type Database = {
           price: number | null
           property_type: string | null
           raw_data: Json | null
+          raw_text: string | null
           rooms: number | null
           size: number | null
           source: string
@@ -2706,6 +2707,7 @@ export type Database = {
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
+          raw_text?: string | null
           rooms?: number | null
           size?: number | null
           source: string
@@ -2738,6 +2740,7 @@ export type Database = {
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
+          raw_text?: string | null
           rooms?: number | null
           size?: number | null
           source?: string

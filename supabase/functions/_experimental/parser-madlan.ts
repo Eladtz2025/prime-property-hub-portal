@@ -347,12 +347,27 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   // Detect broker - Madlan has explicit "תיווך" marker for broker listings
   // Also check for agent images and other indicators
   const hasAgentImage = block.includes('[![](https://') && (block.includes('/agents/') || block.includes('/developers/'));
-  const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך|משרד\s*נדל"?ן|סוכנות|real\s*estate/i.test(block);
   
-  // In Madlan, broker listings typically end with "תיווך" label
+  // Extended broker keywords for Madlan
+  const brokerKeywords = [
+    'תיווך', 'בבלעדיות', 'מתווך', 'מתווכת',
+    'משרד נדל"ן', 'משרד נדלן', 'סוכנות',
+    'real estate', 'agency', 'Properties', 'Premium',
+    'רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21',
+    'קולדוול בנקר', 'coldwell', 'HomeMe', 'הומלנד',
+    'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות', 'broker'
+  ];
+  const blockLower = block.toLowerCase();
+  const hasBrokerKeyword = brokerKeywords.some(k => blockLower.includes(k.toLowerCase()));
+  
+  // In Madlan, broker listings typically end with "תיווך" label or have it in the block
   const endsWithBrokerLabel = /תיווך\s*$/m.test(block) || /תיווך\s*\]/m.test(block);
   
-  const isBroker = endsWithBrokerLabel || hasBrokerKeyword || hasAgentImage || detectBroker(block);
+  // Check if "פרטי" appears (private indicator)
+  const hasPrivateLabel = /פרטי/.test(block);
+  
+  // Broker if: has broker label/keyword OR agent image, AND not explicitly private
+  const isBroker = (endsWithBrokerLabel || hasBrokerKeyword || hasAgentImage) && !hasPrivateLabel;
   
   // Extract features from the entire block
   const features = extractFeatures(block);
@@ -382,7 +397,7 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     is_private: !isBroker,
     entry_date: null,
     features,
-    raw_text: block.substring(0, 500)
+    raw_text: block.substring(0, 1000) // Save more raw text for future reclassification
   };
 }
 

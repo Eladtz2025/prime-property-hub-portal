@@ -285,6 +285,17 @@ export async function parseHomelessHtml(
       // Extract features from full row text
       const features = extractFeatures(fullRowText);
       
+      // Detect broker - check for broker keywords in the full row text
+      const brokerKeywords = [
+        'תיווך', 'נדל"ן', 'נדלן', 'סוכנות', 'משרד',
+        'רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21',
+        'קולדוול בנקר', 'coldwell', 'מתווך', 'מתווכת', 'agency', 'real estate',
+        'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות',
+        'broker', 'Properties', 'HomeMe', 'הומלנד', 'Premium'
+      ];
+      const fullRowLower = fullRowText.toLowerCase();
+      const isBroker = brokerKeywords.some(k => fullRowLower.includes(k.toLowerCase()));
+
       const property: ParsedProperty = {
         source: 'homeless',
         source_id: generateSourceId('homeless', sourceUrl, index),
@@ -299,9 +310,10 @@ export async function parseHomelessHtml(
         size,
         floor,
         property_type: propertyType,
-        is_private: true, // Homeless is primarily private listings
+        is_private: !isBroker, // Check broker keywords instead of assuming private
         entry_date: entryDate,
         features,
+        raw_text: fullRowText.substring(0, 500), // Save raw text for future reclassification
         raw_data: {
           propertyTypeText,
           cityText,
