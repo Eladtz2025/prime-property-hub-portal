@@ -131,8 +131,20 @@ export const madlanNeighborhoodSubAreas: Record<string, string[]> = {
 };
 
 // Homeless area codes (inumber1 parameter)
-// Homeless uses broader area codes, not specific neighborhoods
+// Homeless uses ONLY 6 broad areas for Tel Aviv (verified from website)
+// These codes are used for the new source-specific neighborhoods (homeless_*)
 export const homelessAreaCodes: Record<string, string> = {
+  // === NEW: Source-specific values from UI (homeless_* prefix) ===
+  // These match EXACTLY what appears on homeless.co.il dropdown
+  'homeless_תא_מרכז': '17',          // תל-אביב מרכז
+  'homeless_תא_דרום': '2',           // תל-אביב דרום
+  'homeless_תא_צפון': '1',           // תל-אביב צפון
+  'homeless_תא_מזרח': '382',         // תל-אביב מזרח
+  'homeless_תא_צפון_ירקון': '150',   // ת"א צפונית לירקון
+  'homeless_יפו': '401',             // יפו (FIXED: was incorrectly 3, which is Ramat Gan!)
+  
+  // === LEGACY: Old neighborhood mappings for backward compatibility ===
+  // These map specific neighborhoods to their broader Homeless areas
   // תל אביב צפון (inumber1=1)
   'צפון_ישן': '1',
   'צפון ישן': '1',
@@ -168,17 +180,17 @@ export const homelessAreaCodes: Record<string, string> = {
   'נווה_שרת': '382',
   'נווה שרת': '382',
   
-  // תל אביב מרכז - using city code
-  'מרכז_העיר': '150',
-  'מרכז העיר': '150',
-  'כרם_התימנים': '150',
-  'כרם התימנים': '150',
-  'רוטשילד': '150',
-  'אזורי_חן': '150',
-  'אזורי חן': '150',
+  // תל אביב מרכז (inumber1=17) - FIXED from 150
+  'מרכז_העיר': '17',
+  'מרכז העיר': '17',
+  'כרם_התימנים': '17',
+  'כרם התימנים': '17',
+  'רוטשילד': '17',
+  'אזורי_חן': '17',
+  'אזורי חן': '17',
   
-  // יפו (separate area)
-  'יפו': '3',
+  // יפו (inumber1=401) - FIXED from 3
+  'יפו': '401',
 };
 
 // City slug mapping for Madlan URLs

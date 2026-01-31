@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { NEIGHBORHOODS, Neighborhood, CITIES } from "@/config/locations";
+import { NEIGHBORHOODS, Neighborhood, CITIES, SOURCE_NEIGHBORHOODS } from "@/config/locations";
 import { filterNeighborhoodsBySource, getSupportedSources } from "@/config/neighborhoodSupport";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Building2, Info } from "lucide-react";
@@ -274,17 +274,27 @@ export function NeighborhoodSelectorDropdown({
   const normalizedSelection = normalizeNeighborhoods(selectedNeighborhoods, selectedCities);
 
   // Get all neighborhoods for selected cities
+  // If a source has specific neighborhoods defined, use those instead of the general list
   const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: Neighborhood[] }[] = [];
   
   for (const cityValue of selectedCities) {
     // Normalize city value to find neighborhoods
     const normalizedCity = normalizeCityValue(cityValue);
-    let neighborhoods = NEIGHBORHOODS[normalizedCity];
-    if (neighborhoods) {
-      // Filter by source if specified
+    
+    // Check if this source has specific neighborhoods defined (e.g., Homeless has only 6 broad areas)
+    let neighborhoods: Neighborhood[] = [];
+    if (filterBySource && SOURCE_NEIGHBORHOODS[filterBySource]?.[normalizedCity]) {
+      // Use source-specific neighborhoods (displayed exactly as they appear on that site)
+      neighborhoods = SOURCE_NEIGHBORHOODS[filterBySource][normalizedCity];
+    } else {
+      // Use general neighborhoods and optionally filter by source support
+      neighborhoods = NEIGHBORHOODS[normalizedCity] || [];
       if (filterBySource) {
         neighborhoods = filterNeighborhoodsBySource(neighborhoods, filterBySource);
       }
+    }
+    
+    if (neighborhoods.length > 0) {
       const cityConfig = CITIES.find(c => c.value === normalizedCity || c.value === cityValue);
       availableNeighborhoods.push({
         city: cityValue,

@@ -53,33 +53,16 @@ export const madlanSupportedNeighborhoods: Set<string> = new Set([
   'יפו',
 ]);
 
-// Homeless area codes (broader areas)
+// Homeless supported areas - NOW uses source-specific values (homeless_* prefix)
+// Homeless only supports 6 broad areas, not specific neighborhoods!
 export const homelessSupportedNeighborhoods: Set<string> = new Set([
-  'צפון_ישן',
-  'צפון_חדש',
-  'כיכר_המדינה',
-  'בבלי',
-  'רמת_אביב',
-  'נמל_תל_אביב',
-  'צהלה',
-  'תל_ברוך',
-  'נווה_אביבים',
-  'הדר_יוסף',
-  'רמת_החייל',
-  // South area
-  'פלורנטין',
-  'נווה_צדק',
-  'דרום_תל_אביב',
-  // East area
-  'יד_אליהו',
-  'נווה_שרת',
-  // Central area
-  'מרכז_העיר',
-  'כרם_התימנים',
-  'רוטשילד',
-  'אזורי_חן',
-  // Jaffa
-  'יפו',
+  // NEW: Source-specific values (these match exactly what appears on homeless.co.il)
+  'homeless_תא_מרכז',
+  'homeless_תא_דרום',
+  'homeless_תא_צפון',
+  'homeless_תא_מזרח',
+  'homeless_תא_צפון_ירקון',
+  'homeless_יפו',
 ]);
 
 /**
