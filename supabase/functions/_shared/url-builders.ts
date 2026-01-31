@@ -194,13 +194,12 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
       let baseUrl: string;
       
       // Priority: neighborhoods > cities > fallback
-      // CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
-      // Homeless IGNORES query params and returns all of Israel with ?param format!
+      // Use query string format: /rent/?inumber1=X&page=N
       if (config.neighborhoods?.length) {
         const areaCodes = getHomelessAreaCodes(config.neighborhoods);
         if (areaCodes.length >= 1) {
           const pathType = type === 'rent' ? 'rent' : 'sale';
-          baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+          baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${areaCodes[0]}`;
           console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
         } else {
           baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
@@ -209,7 +208,7 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         const cityData = homelessCityMap[config.cities[0]];
         if (cityData) {
           const pathType = type === 'rent' ? 'rent' : 'sale';
-          baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${cityData.code}`;
+          baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${cityData.code}`;
         } else {
           baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
         }
@@ -217,8 +216,8 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
       }
       
-      // For path-style URLs, pagination uses COMMA separator (not &)
-      const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+      // Query string pagination uses & separator
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
       console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
     }
@@ -353,12 +352,12 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         let baseUrl: string;
         
         // Priority: neighborhoods > cities > fallback
-        // CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
+        // Use query string format: /rent/?inumber1=X&page=N
         if (config.neighborhoods?.length) {
           const areaCodes = getHomelessAreaCodes(config.neighborhoods);
           if (areaCodes.length >= 1) {
             const pathType = type === 'rent' ? 'rent' : 'sale';
-            baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+            baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${areaCodes[0]}`;
             console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
           } else {
             baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
@@ -367,7 +366,7 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
           const cityData = homelessCityMap[config.cities[0]];
           if (cityData) {
             const pathType = type === 'rent' ? 'rent' : 'sale';
-            baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${cityData.code}`;
+            baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${cityData.code}`;
           } else {
             baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
           }
@@ -380,8 +379,8 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         console.log(`Homeless pages to scrape: ${homelessPagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
         
         for (let page = 1; page <= homelessPagesToScrape; page++) {
-          // For path-style URLs, pagination uses COMMA separator
-          const url = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+          // Query string pagination uses & separator
+          const url = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
           console.log(`Built Homeless URL (page ${page}/${homelessPagesToScrape}): ${url}`);
           urls.push(url);
         }
