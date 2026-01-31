@@ -237,14 +237,13 @@ export async function parseHomelessHtml(
       // NO FALLBACK - if we can't detect city, leave as null to avoid mislabeling
       const city = extractCity(cityText) || extractCity(neighborhoodText) || extractCity(fullRowText);
       
-      // Extract neighborhood with city context - search in multiple sources
+      // Extract neighborhood with city context - search in column sources only
+      // FIXED: Do NOT search fullRowText - it contains "תל אביב יפו" which triggers false "יפו" matches
       let neighborhood = extractNeighborhood(neighborhoodText, city);
-      if (!neighborhood) {
+      if (!neighborhood && streetText) {
         neighborhood = extractNeighborhood(streetText, city);
       }
-      if (!neighborhood) {
-        neighborhood = extractNeighborhood(fullRowText, city);
-      }
+      // NOTE: Removed extractNeighborhood(fullRowText) fallback - causes false "יפו" matches from city name
       
       // NEW: Fallback to street_neighborhoods database lookup (1,245 streets mapped!)
       if (!neighborhood && streetText && supabase && city === 'תל אביב יפו') {

@@ -224,18 +224,19 @@ export function extractCity(text: string): string | null {
 const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: string }> = [
   { pattern: /צפון\s*(?:ה)?ישן|הצפון\s*הישן|old\s*north/i, value: 'צפון_ישן', label: 'צפון ישן' },
   { pattern: /צפון\s*(?:ה)?חדש|הצפון\s*החדש|new\s*north/i, value: 'צפון_חדש', label: 'צפון חדש' },
-  { pattern: /מרכז\s*(?:ה)?עיר|לב\s*(?:ה)?עיר|לב\s*תל\s*אביב/i, value: 'מרכז_העיר', label: 'מרכז העיר' },
-  { pattern: /פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
+  { pattern: /מרכז\s*(?:ה)?עיר|לב\s*(?:ה)?עיר|לב\s*תל\s*אביב|^מרכז$|מרכז\s*תל[-\s]?אביב/i, value: 'מרכז_העיר', label: 'מרכז העיר' },
+  { pattern: /פלורנטין|גבול\s*פלורנטין/i, value: 'פלורנטין', label: 'פלורנטין' },
   { pattern: /נו?ו?ה?\s*צדק/i, value: 'נווה_צדק', label: 'נווה צדק' },
-  { pattern: /רוטשילד|שרונה|מונטיפיורי/i, value: 'רוטשילד', label: 'רוטשילד' },
+  { pattern: /רוטשילד|שרונה|מונטיפיורי|גני\s*שרונה/i, value: 'רוטשילד', label: 'רוטשילד' },
   { pattern: /כרם\s*(?:ה)?תימנים/i, value: 'כרם_התימנים', label: 'כרם התימנים' },
-  { pattern: /כיכר\s*(?:ה)?מדינה/i, value: 'כיכר_המדינה', label: 'כיכר המדינה' },
+  { pattern: /כיכר\s*(?:ה)?מדינה|ככר\s*(?:ה)?מדינה|אזור\s*כיכר\s*המדינה|אזור\s*ככר\s*המדינה/i, value: 'כיכר_המדינה', label: 'כיכר המדינה' },
   { pattern: /רמת\s*אביב\s*(?:ה)?חדשה/i, value: 'רמת_אביב_החדשה', label: 'רמת אביב החדשה' },
   { pattern: /רמת\s*אביב\s*(?:ה)?ישנה/i, value: 'רמת_אביב', label: 'רמת אביב' },
   { pattern: /רמת\s*אביב/i, value: 'רמת_אביב', label: 'רמת אביב' },
   // FIXED: Only match explicit Jaffa neighborhoods, NOT "תל אביב יפו" city suffix
-  // Use negative check: יפו should NOT be preceded by "תל אביב" or "אביב"
-  { pattern: /עג'?מי|ajami|יפו\s*(?:ה)?עתיקה|יפו\s*(?:ד'?|ג'?|ב'?|א'?)|גבעת\s*(?:ה)?תמרים/i, value: 'יפו', label: 'יפו' },
+  // Pattern requires יפו to be followed by specific sub-neighborhood markers (space + letter)
+  // This prevents matching "יפו" alone from "תל אביב יפו"
+  { pattern: /עג'?מי|ajami|יפו\s+העתיקה|יפו\s+[אבגד]'?|גבעת\s*(?:ה)?תמרים/i, value: 'יפו', label: 'יפו' },
   { pattern: /צהלה|גני\s*צהלה/i, value: 'צהלה', label: 'צהלה' },
   { pattern: /בבלי/i, value: 'בבלי', label: 'בבלי' },
   { pattern: /נמל|הנמל|יורדי\s*הסירה/i, value: 'נמל_תל_אביב', label: 'נמל תל אביב' },
@@ -245,7 +246,7 @@ const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: str
   { pattern: /הדר\s*יוסף/i, value: 'הדר_יוסף', label: 'הדר יוסף' },
   { pattern: /נו?ו?ה?\s*שרת/i, value: 'נווה_שרת', label: 'נווה שרת' },
   // Additional Tel Aviv neighborhoods
-  { pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
+  { pattern: /אפקה|נאות\s*אפקה|אפקה\s*[אב]'?/i, value: 'אפקה', label: 'אפקה' },
   { pattern: /קרית\s*שלום/i, value: 'קרית_שלום', label: 'קרית שלום' },
   { pattern: /שכונת\s*(?:ה)?תקווה|התקווה/i, value: 'התקווה', label: 'שכונת התקווה' },
   { pattern: /שפירא/i, value: 'שפירא', label: 'שפירא' },
@@ -259,6 +260,12 @@ const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: str
   { pattern: /קו\s*(?:ה)?ים/i, value: 'קו_הים', label: 'קו הים' },
   { pattern: /נחלת\s*יצחק/i, value: 'נחלת_יצחק', label: 'נחלת יצחק' },
   { pattern: /מונטיפיורי/i, value: 'מונטיפיורי', label: 'מונטיפיורי' },
+  // Additional neighborhoods from Homeless data (2026-01-31)
+  { pattern: /ביצרון/i, value: 'ביצרון', label: 'ביצרון' },
+  { pattern: /ליבנה/i, value: 'ליבנה', label: 'ליבנה' },
+  { pattern: /כוכב\s*(?:ה)?צפון/i, value: 'כוכב_הצפון', label: 'כוכב הצפון' },
+  { pattern: /נוה\s*(?:ה)?חן|נווה\s*חן/i, value: 'נווה_חן', label: 'נווה חן' },
+  { pattern: /הצמפון\s*הישן/i, value: 'צפון_ישן', label: 'צפון ישן' }, // Typo handling
 ];
 
 // ============================================
