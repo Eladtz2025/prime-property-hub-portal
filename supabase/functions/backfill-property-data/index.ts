@@ -127,14 +127,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     } else {
-      // Build count query with filters
+      // Build count query with filters - now also includes is_private = null for broker classification
       let countQuery = supabase
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
         .neq('source_url', 'https://www.homeless.co.il')
-        .or('rooms.is.null,price.is.null,size.is.null,features.is.null');
+        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null');
 
       // Apply source filter if specified
       if (source_filter) {
@@ -179,14 +179,14 @@ Deno.serve(async (req) => {
     // Determine effective batch size
     const effectiveBatchSize = batch_size || BATCH_SIZE;
 
-    // Build properties query with same filters
+    // Build properties query with same filters - now also includes is_private
     let query = supabase
       .from('scouted_properties')
-      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features')
+      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null')
+      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -319,6 +319,15 @@ Deno.serve(async (req) => {
           updates.features = { ...existingFeatures, ...features };
         }
 
+        // Detect broker/private classification from markdown
+        if (prop.is_private === null || prop.is_private === undefined) {
+          const isPrivate = detectBrokerFromMarkdown(markdown, prop.source);
+          if (isPrivate !== null) {
+            updates.is_private = isPrivate;
+            console.log(`🏷️ Classified as: ${isPrivate ? 'פרטי' : 'תיווך'}`);
+          }
+        }
+
         if (Object.keys(updates).length === 0) {
           console.log(`⏭️ No new data to update`);
           lastId = prop.id;
@@ -392,7 +401,7 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null')
+      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
       .gt('id', lastId || '');
 
     const hasMore = (remainingCount || 0) > 0;
@@ -753,4 +762,34 @@ function isolatePropertyDescription(markdown: string): string {
   }
   
   return markdown;
+}
+
+/**
+ * Detect if property is private or broker based on markdown content
+ * Uses strong indicators only to avoid false positives
+ */
+function detectBrokerFromMarkdown(markdown: string, source: string): boolean | null {
+  if (!markdown) return null;
+  
+  const textLower = markdown.toLowerCase();
+  
+  // Strong broker indicators - these almost certainly mean it's a broker listing
+  const hasTivuchLabel = /תיווך/.test(markdown);
+  const hasLicenseNumber = /רישיון/.test(markdown) || /\d{7}/.test(markdown);
+  const hasAgencyName = /שם הסוכנות/.test(markdown);
+  const hasExclusivity = /בבלעדיות/.test(markdown);
+  const hasMediatorLabel = /מתווך|מתווכת/.test(markdown);
+  
+  // Known broker brands
+  const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'anglo saxon', 'century 21', 'century21', 'קולדוול בנקר', 'coldwell banker'];
+  const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
+  
+  // If any strong broker indicator is found, it's a broker
+  if (hasTivuchLabel || hasLicenseNumber || hasAgencyName || hasExclusivity || hasMediatorLabel || hasBrokerBrand) {
+    console.log(`🔍 Broker indicators found: tivuch=${hasTivuchLabel}, license=${hasLicenseNumber}, agency=${hasAgencyName}, exclusivity=${hasExclusivity}, brand=${hasBrokerBrand}`);
+    return false; // is_private = false (it's a broker)
+  }
+  
+  // If no broker indicators found, mark as private
+  return true; // is_private = true
 }
