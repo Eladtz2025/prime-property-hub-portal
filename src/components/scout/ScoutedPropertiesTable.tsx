@@ -1404,8 +1404,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
             {/* Source Filter */}
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[85px] h-8 text-sm">
-                <SelectValue placeholder="מקור" />
+              <SelectTrigger className="w-[90px] h-8 text-sm">
+                <SelectValue placeholder="מקורות" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל המקורות</SelectItem>
@@ -1417,11 +1417,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
             {/* Property Type */}
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-              <SelectTrigger className="w-[90px] h-8 text-sm">
-                <SelectValue placeholder="סוג" />
+              <SelectTrigger className="w-[100px] h-8 text-sm">
+                <SelectValue placeholder="סוג עסקה" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל הסוגים</SelectItem>
+                <SelectItem value="all">כל העסקאות</SelectItem>
                 <SelectItem value="rent">השכרה</SelectItem>
                 <SelectItem value="sale">מכירה</SelectItem>
               </SelectContent>
@@ -1429,11 +1429,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
 
             {/* Owner Type Filter (Private/Broker) - Desktop */}
             <Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
-              <SelectTrigger className="w-[80px] h-8 text-sm">
-                <SelectValue placeholder="מפרסם" />
+              <SelectTrigger className="w-[100px] h-8 text-sm">
+                <SelectValue placeholder="פרטי/תיווך" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כולם</SelectItem>
+                <SelectItem value="all">כל המפרסמים</SelectItem>
                 <SelectItem value="private">פרטי</SelectItem>
                 <SelectItem value="broker">תיווך</SelectItem>
               </SelectContent>
@@ -1527,9 +1527,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{property.title || 'ללא כותרת'}</p>
+                        <p className="font-medium">
+                          {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {property.city}{property.neighborhood ? ` - ${property.neighborhood}` : ''}
+                          {property.city?.replace(' יפו', '') || 'תל אביב'}
                         </p>
                       </div>
                     </TableCell>
@@ -1669,11 +1671,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
-                    {property.address || property.title || 'ללא כתובת'}
+                    {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
                   </span>
-                      <span className="text-muted-foreground text-xs shrink-0">
-                        {property.city}
-                      </span>
+                  <span className="text-muted-foreground text-xs shrink-0">
+                    {property.city?.replace(' יפו', '') || 'תל אביב'}
+                  </span>
                   {property.is_private === true && (
                     <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
                   )}
