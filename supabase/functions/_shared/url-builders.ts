@@ -193,38 +193,32 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
     } else if (source === 'homeless') {
       let baseUrl: string;
       
-      if (type === 'rent') {
-        // FIXED: Use query string format with ? for proper pagination
-        if (config.cities?.length) {
-          const cityData = homelessCityMap[config.cities[0]];
-          if (cityData) {
-            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${cityData.code}`;
-          } else {
-            baseUrl = 'https://www.homeless.co.il/rent/';
-          }
+      // Priority: neighborhoods > cities > fallback
+      // CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
+      // Homeless IGNORES query params and returns all of Israel with ?param format!
+      if (config.neighborhoods?.length) {
+        const areaCodes = getHomelessAreaCodes(config.neighborhoods);
+        if (areaCodes.length >= 1) {
+          const pathType = type === 'rent' ? 'rent' : 'sale';
+          baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+          console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
         } else {
-          baseUrl = 'https://www.homeless.co.il/rent/';
+          baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
         }
-        
-        // Override with neighborhood-specific area code if available
-        if (config.neighborhoods?.length) {
-          const areaCodes = getHomelessAreaCodes(config.neighborhoods);
-          if (areaCodes.length === 1) {
-            // Single area - use that code
-            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
-            console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
-          } else if (areaCodes.length > 1) {
-            // Multiple areas - will need to run multiple URLs or filter post-scan
-            console.log(`Homeless: ${areaCodes.length} area codes for neighborhoods - using first: ${areaCodes[0]}`);
-            baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
-          }
+      } else if (config.cities?.length) {
+        const cityData = homelessCityMap[config.cities[0]];
+        if (cityData) {
+          const pathType = type === 'rent' ? 'rent' : 'sale';
+          baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${cityData.code}`;
+        } else {
+          baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
         }
       } else {
-        baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
+        baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
       }
       
-      // FIXED: Use & for pagination, not comma - tested and working format
-      const pageUrl = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
+      // For path-style URLs, pagination uses COMMA separator (not &)
+      const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
       console.log(`Built Homeless single page URL (page ${page}): ${pageUrl}`);
       urls.push(pageUrl);
     }
@@ -358,32 +352,27 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
       } else if (source === 'homeless' && s.homeless_pages > 0) {
         let baseUrl: string;
         
-        if (type === 'rent') {
-          // FIXED: Use query string format with ? for proper pagination
-          if (config.cities?.length) {
-            const cityData = homelessCityMap[config.cities[0]];
-            if (cityData) {
-              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${cityData.code}`;
-            } else {
-              baseUrl = 'https://www.homeless.co.il/rent/';
-            }
+        // Priority: neighborhoods > cities > fallback
+        // CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
+        if (config.neighborhoods?.length) {
+          const areaCodes = getHomelessAreaCodes(config.neighborhoods);
+          if (areaCodes.length >= 1) {
+            const pathType = type === 'rent' ? 'rent' : 'sale';
+            baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+            console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
           } else {
-            baseUrl = 'https://www.homeless.co.il/rent/';
+            baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
           }
-          
-          // Override with neighborhood-specific area code if available
-          if (config.neighborhoods?.length) {
-            const areaCodes = getHomelessAreaCodes(config.neighborhoods);
-            if (areaCodes.length === 1) {
-              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
-              console.log(`Homeless: using area code ${areaCodes[0]} for neighborhoods: ${config.neighborhoods.join(', ')}`);
-            } else if (areaCodes.length > 1) {
-              console.log(`Homeless: ${areaCodes.length} area codes for neighborhoods - using first: ${areaCodes[0]}`);
-              baseUrl = `https://www.homeless.co.il/rent/?inumber1=${areaCodes[0]}`;
-            }
+        } else if (config.cities?.length) {
+          const cityData = homelessCityMap[config.cities[0]];
+          if (cityData) {
+            const pathType = type === 'rent' ? 'rent' : 'sale';
+            baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${cityData.code}`;
+          } else {
+            baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
           }
         } else {
-          baseUrl = `https://www.homeless.co.il/sale/?city=${encodeURIComponent(config.cities?.[0] || '')}`;
+          baseUrl = `https://www.homeless.co.il/${type === 'rent' ? 'rent' : 'sale'}/`;
         }
         
         // Use config-specific max_pages if set, otherwise use global setting
@@ -391,8 +380,8 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         console.log(`Homeless pages to scrape: ${homelessPagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
         
         for (let page = 1; page <= homelessPagesToScrape; page++) {
-          // FIXED: Use & for pagination - tested and working format
-          const url = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
+          // For path-style URLs, pagination uses COMMA separator
+          const url = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
           console.log(`Built Homeless URL (page ${page}/${homelessPagesToScrape}): ${url}`);
           urls.push(url);
         }

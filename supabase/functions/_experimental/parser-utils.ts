@@ -178,6 +178,27 @@ const CITY_PATTERNS: Array<{ pattern: RegExp; canonical: string }> = [
   { pattern: /צפת/i, canonical: 'צפת' },
   { pattern: /עראד/i, canonical: 'ערד' },
   { pattern: /דימונה/i, canonical: 'דימונה' },
+  // Additional cities found in scouted data
+  { pattern: /קרית\s*[-]?\s*אונו/i, canonical: 'קרית אונו' },
+  { pattern: /ראש\s*(?:ה)?עין/i, canonical: 'ראש העין' },
+  { pattern: /באר\s*[-]?\s*יעקב/i, canonical: 'באר יעקב' },
+  { pattern: /מעלות(?:\s*[-]?\s*תרשיחא)?/i, canonical: 'מעלות תרשיחא' },
+  { pattern: /כפר\s*[-]?\s*יונה/i, canonical: 'כפר יונה' },
+  { pattern: /אורנית/i, canonical: 'אורנית' },
+  { pattern: /אבן\s*[-]?\s*יהודה/i, canonical: 'אבן יהודה' },
+  { pattern: /שוהם/i, canonical: 'שוהם' },
+  { pattern: /גן\s*[-]?\s*יבנה/i, canonical: 'גן יבנה' },
+  { pattern: /אור\s*[-]?\s*יהודה/i, canonical: 'אור יהודה' },
+  { pattern: /אזור/i, canonical: 'אזור' },
+  { pattern: /כרמיאל/i, canonical: 'כרמיאל' },
+  { pattern: /עכו/i, canonical: 'עכו' },
+  { pattern: /קרית\s*[-]?\s*שמונה/i, canonical: 'קרית שמונה' },
+  { pattern: /עתלית/i, canonical: 'עתלית' },
+  { pattern: /זכרון\s*[-]?\s*יעקב/i, canonical: 'זכרון יעקב' },
+  { pattern: /פרדס\s*[-]?\s*חנה/i, canonical: 'פרדס חנה' },
+  { pattern: /קציר/i, canonical: 'קציר' },
+  { pattern: /יקנעם/i, canonical: 'יקנעם' },
+  { pattern: /מגדל\s*[-]?\s*העמק/i, canonical: 'מגדל העמק' },
 ];
 
 /**
