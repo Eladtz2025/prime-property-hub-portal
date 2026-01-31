@@ -1,73 +1,86 @@
 
-# תיקון מערכתי: זיהוי נכסים שהוסרו מ-Yad2
+# תיקון מערכת בדיקת זמינות נכסים
 
-## סיכום הבעיה
+## הבעיה שהתגלתה
 
-נכסים שהוסרו מ-Yad2 עדיין מופיעים במערכת כי:
-1. ה-URL נראה תקין (`/realestate/item/xxx`) אבל המודעה עצמה הוסרה
-2. פונקציית בדיקת הזמינות לא מזהה את ההודעה הספציפית של Yad2: **"חיפשנו בכל מקום אבל אין לנו עמוד כזה"**
-3. יש 637 נכסים ישנים (מעל 14 יום) שעדיין מסומנים כ-active
+פונקציית `trigger-availability-check` עושה timeout ולא מצליחה לרוץ בכלל:
 
-## הפתרון - 3 חלקים
+| מדד | ערך |
+|-----|-----|
+| נכסים לבדיקה | 5,204 |
+| batches (100 נכסים כל אחד) | 52 |
+| delay בין batches | 1.5 שניות |
+| זמן נדרש | ~78 שניות |
+| Edge Function timeout | 60 שניות |
 
-### חלק 1: עדכון רשימת האינדיקטורים (`check-property-availability`)
+**תוצאה:** הפונקציה לא מסתיימת בזמן, אף נכס לא נבדק, אין לוגים.
 
-הוספת הטקסט הספציפי של Yad2:
+## פתרון: שינוי ארכיטקטורה ל-"Fast Trigger + Background Batches"
+
+במקום שה-trigger ישלח את כל ה-batches, הוא ישלח רק batch קטן ויתזמן את עצמו לריצה נוספת.
+
+### שינוי הלוגיקה:
+
+**לפני (הבעיה):**
+```
+trigger → שולח 52 batches → timeout
+```
+
+**אחרי (הפתרון):**
+```
+trigger → שולח 3-5 batches → מתזמן את עצמו לעוד 5 דקות → חוזר
+```
+
+### קוד מעודכן (`trigger-availability-check`):
 
 ```typescript
-const LISTING_REMOVED_INDICATORS = [
-  'המודעה הוסרה',
-  'מודעה לא נמצאה',
-  'הדף לא נמצא',
-  'הנכס אינו זמין',
-  'המודעה לא קיימת',
-  'listing not found',
-  'item removed',
-  'page not found',
-  'this listing is no longer available',
-  'האתר בשיפוצים',
-  // הוספות חדשות:
-  'חיפשנו בכל מקום אבל אין לנו עמוד כזה',  // Yad2 specific!
-  'אין לנו עמוד כזה',
-  'הלינק לא תקין',
-  'העמוד שחיפשת הוסר',
-  'listing has been removed',
-  'no longer exists',
-];
+// במקום לשלוח את כל ה-batches:
+const MAX_BATCHES_PER_RUN = 5;  // שולח רק 5 batches בכל ריצה
+
+for (let i = 0; i < Math.min(batches.length, MAX_BATCHES_PER_RUN); i++) {
+  // Fire and forget each batch
+  fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {...});
+  triggeredCount++;
+  await sleep(200);  // delay קצר יותר
+}
+
+// אם יש עוד batches - מתזמן קריאה עצמית
+if (batches.length > MAX_BATCHES_PER_RUN) {
+  const remainingIds = batches.slice(MAX_BATCHES_PER_RUN).flat();
+  fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
+    body: JSON.stringify({ property_ids: remainingIds })
+  });
+}
 ```
 
-### חלק 2: ניקוי מיידי של הנכסים הספציפיים (SQL)
+### אלטרנטיבה: שימוש ב-Cron תכוף יותר
 
-הרצת SQL שמסמן את שני הנכסים שמופיעים בתמונה כ-inactive:
+במקום לשנות את הארכיטקטורה, אפשר:
+1. לשנות את ה-Cron לרוץ כל שעה במקום פעם ביום
+2. לעבד רק ~500 נכסים בכל ריצה (5 batches)
+3. במשך 24 שעות נבדוק את כל הנכסים
 
-```sql
-UPDATE scouted_properties
-SET is_active = false, status = 'inactive'
-WHERE id IN (
-  'cbf469d5-4d5a-45e7-8709-61ca939aad03',  -- בלוך, הצפון החדש
-  'ade2e72d-8d6c-4194-b51e-3600ddfe0089'   -- פלורנטין
-);
-```
+## מערכת זיהוי כפילויות - סטטוס ✅
 
-### חלק 3: הוספת בדיקה אגרסיבית יותר לנכסים ישנים
+המערכת עובדת טוב:
 
-עדכון הפונקציה כך שתבדוק גם נכסים שעברו רק 3 ימים (לא 7), ותריץ batch גדול יותר:
+| שלב | סטטוס |
+|-----|-------|
+| זיהוי בסריקה | ✅ `saveProperty()` קורא ל-`find_property_duplicate` |
+| סנכרון matches | ✅ `match-batch` מעדכן כל הכפילויות בקבוצה |
+| זיהוי רטרואקטיבי | ✅ כפתור "זהה כפילויות" בממשק הניהול |
 
-| הגדרה | ערך נוכחי | ערך חדש |
-|-------|-----------|---------|
-| min_days_before_check | 3 | 3 (נשאר) |
-| batch_size | 50 | 100 |
+**סטטיסטיקה:** 617 נכסים (12%) כבר מזוהים כחלק מקבוצות כפילויות.
 
-## סיכום הקבצים לעדכון
+## קבצים לעדכון
 
 | קובץ | פעולה |
 |------|-------|
-| `supabase/functions/check-property-availability/index.ts` | הוספת אינדיקטורים חדשים |
-| SQL Migration | השבתת 2 הנכסים הספציפיים |
-| `supabase/functions/_shared/settings.ts` | הגדלת batch_size ל-100 |
+| `supabase/functions/trigger-availability-check/index.ts` | שינוי לארכיטקטורת batches מוגבלת + self-trigger |
+| SQL (cron) | אופציונלי - להריץ כל שעה במקום פעם ביום |
 
 ## תוצאה צפויה
 
-- שני הנכסים הספציפיים יוסרו מהתצוגה מיד
-- נכסים עתידיים שיוסרו מ-Yad2 יזוהו אוטומטית
-- בדיקות יותר תכופות יתפסו נכסים שהוסרו מהר יותר
+- הפונקציה תסתיים תוך 10-15 שניות (במקום timeout)
+- כל הנכסים ייבדקו במשך מספר ריצות
+- נכסים שהוסרו יזוהו אוטומטית ויסומנו כ-inactive
