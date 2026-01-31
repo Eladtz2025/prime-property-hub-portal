@@ -3,7 +3,8 @@
 
 import { 
   getYad2NeighborhoodCodes, 
-  getMadlanNeighborhoodSlug, 
+  getMadlanNeighborhoodSlug,
+  getMadlanMultiNeighborhoodPath,
   getHomelessAreaCodes 
 } from './neighborhood-codes.ts';
 
@@ -154,40 +155,40 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         urls.push(pageUrl);
       }
       
-    } else if (source === 'madlan' || source === 'madlan_projects') {
-      let pathType: string;
-      if (source === 'madlan_projects') {
-        pathType = 'projects-for-sale';
-      } else {
-        pathType = type === 'rent' ? 'for-rent' : 'for-sale';
-      }
-      
-      let baseUrl = `https://www.madlan.co.il/${pathType}`;
-      
-      // For Madlan, check if we have a single neighborhood (can use URL-based filtering)
-      if (config.neighborhoods?.length === 1) {
-        const neighborhoodSlug = getMadlanNeighborhoodSlug(config.neighborhoods[0]);
-        if (neighborhoodSlug && config.cities?.length) {
+      } else if (source === 'madlan' || source === 'madlan_projects') {
+        let pathType: string;
+        if (source === 'madlan_projects') {
+          pathType = 'projects-for-sale';
+        } else {
+          pathType = type === 'rent' ? 'for-rent' : 'for-sale';
+        }
+        
+        let baseUrl = `https://www.madlan.co.il/${pathType}`;
+        
+        // For Madlan, support multiple neighborhoods with comma-separated slugs
+        if (config.neighborhoods?.length > 0 && config.cities?.length) {
+          const hebrewCity = config.cities[0];
+          const multiPath = getMadlanMultiNeighborhoodPath(config.neighborhoods, hebrewCity);
+          
+          if (multiPath) {
+            baseUrl += `/${multiPath}`;
+            console.log(`Madlan multi-neighborhood URL (${config.neighborhoods.length} neighborhoods): ${baseUrl}`);
+          } else {
+            // Fallback to city if no valid slugs found
+            const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
+            baseUrl += `/${citySlug}`;
+            console.log(`Madlan: No valid slugs for neighborhoods, using city URL: ${baseUrl}`);
+          }
+        } else if (config.cities?.length) {
+          // No neighborhoods - use city-level URL
           const hebrewCity = config.cities[0];
           const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
-          // Extract just the city part without "ישראל"
-          const cityPart = citySlug.replace('-ישראל', '');
-          baseUrl += `/${neighborhoodSlug}-${cityPart}-ישראל`;
-          console.log(`Madlan single neighborhood URL: ${baseUrl}`);
+          baseUrl += `/${citySlug}`;
         }
-      } else if (config.cities?.length) {
-        // Multiple neighborhoods or no neighborhoods - use city-level URL
-        const hebrewCity = config.cities[0];
-        const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
-        baseUrl += `/${citySlug}`;
-        if (config.neighborhoods?.length > 1) {
-          console.log(`Madlan: ${config.neighborhoods.length} neighborhoods selected - using city URL, filtering post-scan`);
-        }
-      }
-      
-      const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
-      console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
-      urls.push(pageUrl);
+        
+        const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+        console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
+        urls.push(pageUrl);
       
     } else if (source === 'homeless') {
       let baseUrl: string;
@@ -323,23 +324,25 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         
         let baseUrl = `https://www.madlan.co.il/${pathType}`;
         
-        // For Madlan, check if we have a single neighborhood (can use URL-based filtering)
-        if (config.neighborhoods?.length === 1) {
-          const neighborhoodSlug = getMadlanNeighborhoodSlug(config.neighborhoods[0]);
-          if (neighborhoodSlug && config.cities?.length) {
-            const hebrewCity = config.cities[0];
+        // For Madlan, support multiple neighborhoods with comma-separated slugs
+        if (config.neighborhoods?.length > 0 && config.cities?.length) {
+          const hebrewCity = config.cities[0];
+          const multiPath = getMadlanMultiNeighborhoodPath(config.neighborhoods, hebrewCity);
+          
+          if (multiPath) {
+            baseUrl += `/${multiPath}`;
+            console.log(`Madlan multi-neighborhood URL (${config.neighborhoods.length} neighborhoods): ${baseUrl}`);
+          } else {
+            // Fallback to city if no valid slugs found
             const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
-            const cityPart = citySlug.replace('-ישראל', '');
-            baseUrl += `/${neighborhoodSlug}-${cityPart}-ישראל`;
-            console.log(`Madlan single neighborhood URL: ${baseUrl}`);
+            baseUrl += `/${citySlug}`;
+            console.log(`Madlan: No valid slugs for neighborhoods, using city URL: ${baseUrl}`);
           }
         } else if (config.cities?.length) {
+          // No neighborhoods - use city-level URL
           const hebrewCity = config.cities[0];
           const citySlug = madlanCityMap[hebrewCity] || hebrewCity.replace(/\s+/g, '-') + '-ישראל';
           baseUrl += `/${citySlug}`;
-          if (config.neighborhoods?.length > 1) {
-            console.log(`Madlan: ${config.neighborhoods.length} neighborhoods selected - using city URL, filtering post-scan`);
-          }
         }
         
         // Use config-specific max_pages if set, otherwise use global setting
