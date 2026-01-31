@@ -78,7 +78,7 @@ export const defaultSettings: ScoutSettings = {
   },
   availability: {
     min_days_before_check: 3,
-    batch_size: 50,
+    batch_size: 100,
     delay_between_batches_ms: 1500,
     delay_between_requests_ms: 150,
     head_timeout_ms: 10000,
