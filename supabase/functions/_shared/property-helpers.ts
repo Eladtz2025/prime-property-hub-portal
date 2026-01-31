@@ -36,8 +36,17 @@ export interface ScrapedProperty {
 export async function saveProperty(
   supabase: any, 
   property: ScrapedProperty
-): Promise<{ isNew: boolean }> {
+): Promise<{ isNew: boolean; skipped?: boolean }> {
   const normalizedCity = normalizeCityName(property.city);
+  
+  // Validate Tel Aviv only - skip non-Tel Aviv properties entirely
+  const isTelAviv = normalizedCity && 
+    (normalizedCity.includes('תל אביב') || normalizedCity.includes('תל-אביב'));
+  
+  if (normalizedCity && !isTelAviv) {
+    console.log(`🚫 Skipping non-Tel Aviv property: ${normalizedCity}`);
+    return { isNew: false, skipped: true };
+  }
   
   // Duplicate detection - only if we have valid data for strict matching
   let duplicateGroupId: string | null = null;
