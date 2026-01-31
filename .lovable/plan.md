@@ -1,67 +1,89 @@
 
-# תיקון באגים בפרסר Homeless
 
-## סיכום הבעיות שזוהו
+# תיקון נתונים קיימים - שכונות יפו שגויות
 
-### בעיה 1: שכונת "יפו" שגויה (CRITICAL)
-**הבעיה:** דירות ברחובות מרכזיים כמו דיזנגוף, ארלוזורוב, אבן גבירול מסומנות בטעות כ"יפו"
+## סקירת הבעיה
 
-**הסיבה:** כשאין שכונה בעמודת `neighborhoodText`, הפרסר מחפש ב-`fullRowText` ומוצא "יפו" בתוך המילה "תל אביב **יפו**"
+מצאתי **עשרות נכסים** בדאטאבייס שמסומנים כ"יפו" אבל הם בכלל לא ביפו:
 
-**פתרון:** הסרת ה-fallback ל-`extractNeighborhood(fullRowText)`
+| רחוב | שכונה שגויה | שכונה נכונה |
+|------|-------------|-------------|
+| ארלוזורוב | יפו | לב העיר |
+| אבן גבירול | יפו | מרכז העיר |
+| דיזנגוף | יפו | צפון ישן |
+| זבוטינסקי | יפו | כיכר המדינה |
+| פנקס | יפו | כיכר המדינה |
+| דרך מנחם בגין | יפו | שרונה |
+| יגאל אלון (ביצרון) | יפו | ביצרון |
 
-### בעיה 2: Regex יפו רחב מדי
-**הבעיה:** הביטוי `יפו\s*(?:ד'?|ג'?|ב'?|א'?)` תופס גם "יפו" בודד
+## פתרון
 
-**פתרון:** שינוי ל-`יפו\s+[אבגד]'?` - חייב רווח ואות אחריו
+ליצור סקריפט SQL שמתקן את הנתונים על פי הכתובת:
 
-### בעיה 3: שכונות לא מזוהות
-**שכונות חסרות:** ביצרון, ליבנה, כוכב הצפון, נווה חן, גני שרונה, גבול פלורנטין
+```sql
+-- תיקון שכונות לפי רחובות ידועים
+UPDATE scouted_properties SET 
+  neighborhood = 'צפון ישן',
+  title = REPLACE(title, 'יפו', 'צפון ישן')
+WHERE neighborhood = 'יפו' 
+  AND address ILIKE '%דיזנגוף%'
+  AND address NOT ILIKE '%יפו ג%'
+  AND address NOT ILIKE '%יפו ד%';
 
-**פתרון:** הוספת patterns חדשים והרחבת קיימים
+UPDATE scouted_properties SET 
+  neighborhood = 'לב העיר',
+  title = REPLACE(title, 'יפו', 'לב העיר')
+WHERE neighborhood = 'יפו' 
+  AND address ILIKE '%ארלוזורוב%';
 
----
+UPDATE scouted_properties SET 
+  neighborhood = 'מרכז העיר',
+  title = REPLACE(title, 'יפו', 'מרכז העיר')
+WHERE neighborhood = 'יפו' 
+  AND address ILIKE '%אבן גבירול%';
+
+UPDATE scouted_properties SET 
+  neighborhood = 'כיכר המדינה',
+  title = REPLACE(title, 'יפו', 'כיכר המדינה')
+WHERE neighborhood = 'יפו' 
+  AND (address ILIKE '%ככר המדינה%' 
+       OR address ILIKE '%זבוטינסקי%' 
+       OR address ILIKE '%פנקס%');
+
+UPDATE scouted_properties SET 
+  neighborhood = 'ביצרון',
+  title = REPLACE(title, 'יפו', 'ביצרון')
+WHERE neighborhood = 'יפו' 
+  AND address ILIKE '%ביצרון%';
+
+UPDATE scouted_properties SET 
+  neighborhood = 'שרונה',
+  title = REPLACE(title, 'יפו', 'שרונה')
+WHERE neighborhood = 'יפו' 
+  AND address ILIKE '%מנחם בגין%';
+```
+
+## שלבי ביצוע
+
+1. **בדיקה ראשונית** - ספירת הנכסים לתיקון בכל קטגוריה
+2. **הרצת UPDATE** - תיקון השכונות לפי מיפוי רחובות
+3. **אימות** - בדיקה שנכסים אמיתיים ביפו נשארו עם "יפו"
 
 ## פרטים טכניים
 
-### קובץ 1: parser-homeless.ts (שורות 240-247)
+### לוגיקת זיהוי יפו אמיתי
 
-**לפני:**
-```typescript
-let neighborhood = extractNeighborhood(neighborhoodText, city);
-if (!neighborhood) {
-  neighborhood = extractNeighborhood(streetText, city);
-}
-if (!neighborhood) {
-  neighborhood = extractNeighborhood(fullRowText, city); // הבעיה!
-}
-```
+נכס הוא באמת ביפו אם הכתובת מכילה:
+- `יפו א/ב/ג/ד` (תת-שכונות)
+- `עג'מי` / `עג׳מי`
+- `גבעת התמרים`
+- `יפו העתיקה`
+- `נמל יפו`
+- `פלורנטין` (גבול יפו)
 
-**אחרי:**
-```typescript
-let neighborhood = extractNeighborhood(neighborhoodText, city);
-if (!neighborhood && streetText) {
-  neighborhood = extractNeighborhood(streetText, city);
-}
-// REMOVED: extractNeighborhood(fullRowText) - causes false "יפו" matches
-```
+נכס **לא** ביפו אם הכתובת מכילה רק "תל אביב יפו" בסוף.
 
-### קובץ 2: parser-utils.ts
+### קבצים - אין שינויים לקוד
 
-| שורה | שינוי |
-|------|-------|
-| 227 | הוספת `^מרכז$` ו-`מרכז תל אביב` לזיהוי מרכז העיר |
-| 228 | הוספת `גבול פלורנטין` |
-| 230 | הוספת `גני שרונה` לרוטשילד |
-| 232 | הוספת `ככר המדינה` ו-`אזור כיכר המדינה` |
-| 238 | תיקון Regex יפו - חייב רווח+אות |
-| 248 | הוספת `נאות אפקה` |
-| 262+ | הוספת 5 שכונות חדשות: ביצרון, ליבנה, כוכב הצפון, נווה חן, הצמפון הישן |
+זה תיקון נתונים בלבד דרך SQL migration.
 
----
-
-## תוצאה צפויה
-
-1. דירות בדיזנגוף/ארלוזורוב לא יסומנו יותר כ"יפו"
-2. שכונות יוצגו עם שמות נכונים
-3. 5 שכונות נוספות יזוהו נכון
