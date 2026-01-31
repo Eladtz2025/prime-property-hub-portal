@@ -1,143 +1,108 @@
 
 
-# תיקון איכות נתונים בפרסר Homeless ובפונקציית Backfill
+# תיקון תמיכת שכונות לכל מקור (Yad2/Madlan/Homeless)
 
-## בעיות שזוהו
+## הבעיה שזוהתה
 
-### בעיה 1: גודל שגוי (152 מ"ר במקום 70 מ"ר)
-הפונקציה `backfill-property-data` מחלצת את הגודל מדפי מודעות בודדים, אבל הרגקס לוקח את המספר **הראשון** לפני "מ"ר" - שמגיע מ**מודעות דומות** בתחתית הדף במקום מהמודעה עצמה.
+אתה צודק! יש חוסר התאמה בין שלושת המקומות שמגדירים שכונות:
+1. **UI (locations.ts)** - מה שהמשתמש יכול לבחור
+2. **Edge Functions (neighborhood-codes.ts)** - הקודים לכל אתר
+3. **הממשק עצמו** - לא מציג אילו שכונות באמת נתמכות לכל מקור
 
-**דוגמה:**
-- במודעה עצמה: `מ"ר: 70`
-- במודעות דומות למטה: `152 מ"ר`
-- הרגקס לוקח 152 (ראשון) במקום 70
+### פערים שנמצאו
 
-### בעיה 2: כותרות חסרות שם רחוב
-הפרסר `parser-homeless.ts` בונה title מ: `סוג נכס + חדרים + שכונה`
+| שכונה | Yad2 | Madlan | Homeless | UI |
+|-------|------|--------|----------|-----|
+| יד אליהו | ✅ | ❌ | ✅ | ❌ חסר |
+| רמת החייל | ✅ | ✅ | ✅ | ❌ חסר |
+| רמת גן/גבעתיים | ❌ | ❌ | ❌ | ✅ קיים |
 
-**דוגמה:**
-- **כתובת שנשמרת:** `ארלוזורוב, הצפון הישן, תל אביב - יפו`
-- **כותרת שנוצרת:** `דירה 2.5 חדרים בצפון ישן` (חסר "ארלוזורוב")
-- **מה שצריך:** `דירה 2.5 חדרים בארלוזורוב, צפון ישן`
+**משמעות:** אם מישהו יוצר קונפיגורציה של מדל"ן עם "יד אליהו" - המערכת תתעלם מהשכונה הזו כי אין קוד עבורה.
 
 ---
 
-## שינויים נדרשים
+## הפתרון המוצע
 
-### שלב 1: תיקון חילוץ גודל ב-backfill-property-data
+### שלב 1: עדכון locations.ts - הוספת שכונות חסרות ל-UI
 
-**קובץ:** `supabase/functions/backfill-property-data/index.ts`
-
-**שינוי:** נשפר את לוגיקת החילוץ כך שתחפש גודל רק באזור התוכן הראשי של המודעה (לפני "מודעות דומות"):
+נוסיף את השכונות החסרות לרשימת תל אביב:
 
 ```typescript
-// Before extracting, clean the markdown to remove "related ads" sections
-const mainContent = markdown.split(/עוד מודעות|מודעות דומות|עוד חיפושים/i)[0] || markdown;
-
-// Extract size from main content only
-const sizePatterns = [
-  /מ"ר[:\s]*(\d+)/,           // Look for מ"ר: 70 format first
-  /שטח[:\s]*(\d+)/,
-  /(\d+)\s*מ"ר(?!\s*•)/,      // Avoid bullet format from related ads
-  /(\d+)\s*מטר/,
-];
+// Add to NEIGHBORHOODS['תל אביב יפו']:
+{ 
+  value: 'יד_אליהו', 
+  label: 'יד אליהו', 
+  aliases: ['yad eliyahu', 'בלומפילד'] 
+},
+{ 
+  value: 'רמת_החייל', 
+  label: 'רמת החייל', 
+  aliases: ['ramat hachayal', 'רמת החיל'] 
+},
 ```
 
-### שלב 2: תיקון בניית כותרת ב-parser-homeless.ts
-
-**קובץ:** `supabase/functions/_experimental/parser-homeless.ts`
-
-**שינוי בפונקציה `buildTitle`:** נוסיף את שם הרחוב לכותרת
+### שלב 2: הוספת Madlan slug ליד אליהו
 
 ```typescript
-function buildTitle(
-  propertyType: string,
-  rooms: string,
-  location: string,
-  street: string | null   // New parameter
-): string {
-  const parts: string[] = [];
-  
-  if (propertyType) {
-    parts.push(propertyType);
-  }
-  
-  if (rooms) {
-    parts.push(`${rooms} חדרים`);
-  }
-  
-  // Include street in location
-  if (street && location) {
-    parts.push(`ב${street}, ${location}`);
-  } else if (street) {
-    parts.push(`ב${street}`);
-  } else if (location) {
-    parts.push(`ב${location}`);
-  }
-  
-  return parts.join(' ') || 'נכס להשכרה';
-}
+// Add to madlanNeighborhoodSlugs in neighborhood-codes.ts:
+'יד_אליהו': 'יד-אליהו',
+'יד אליהו': 'יד-אליהו',
 ```
 
-**קריאה מעודכנת (שורה 274):**
+### שלב 3: הוספת אינדיקטור בממשק ליצירת קונפיגורציה
+
+כשהמשתמש יוצר קונפיגורציה חדשה ובוחר מקור (Yad2/Madlan/Homeless), נסנן את רשימת השכונות הזמינות **רק לאלו שנתמכות באותו מקור**.
+
+**שינוי ב-UnifiedScoutSettings.tsx:**
+
 ```typescript
-const title = buildTitle(
-  propertyTypeText, 
-  roomsLabel, 
-  neighborhood?.label || neighborhoodText || cityText || '',
-  streetText  // Add street parameter
-);
+// Filter neighborhoods based on selected source
+const getAvailableNeighborhoods = (source: string, allNeighborhoods: Neighborhood[]) => {
+  return allNeighborhoods.filter(n => {
+    switch(source) {
+      case 'yad2':
+        return yad2NeighborhoodCodes[n.value] !== undefined;
+      case 'madlan':
+        return madlanNeighborhoodSlugs[n.value] !== undefined;
+      case 'homeless':
+        return homelessAreaCodes[n.value] !== undefined;
+      default:
+        return true;
+    }
+  });
+};
 ```
 
-### שלב 3: ניקוי נתונים קיימים
+### שלב 4: הוספת tooltip עם מידע על תמיכה
 
-**מיגרציית SQL:** נקה גדלים שגויים ועדכן כותרות
+בממשק בחירת השכונות, נציג אייקון קטן שמראה באילו מקורות השכונה נתמכת:
 
-```sql
--- Step 1: Clear incorrect sizes from homeless properties
--- (they were extracted from "related ads" section)
-UPDATE scouted_properties 
-SET size = NULL
-WHERE source = 'homeless' 
-AND size IS NOT NULL;
-
--- Step 2: Update titles to include street names where available
-UPDATE scouted_properties
-SET title = CONCAT(
-  CASE 
-    WHEN title LIKE 'דירה%' THEN 'דירה'
-    WHEN title LIKE 'דירת גג%' THEN 'דירת גג'
-    WHEN title LIKE 'פנטהאוז%' THEN 'פנטהאוז'
-    WHEN title LIKE 'סטודיו%' THEN 'סטודיו'
-    ELSE 'דירה'
-  END,
-  ' ',
-  COALESCE(rooms::text, ''),
-  CASE WHEN rooms IS NOT NULL THEN ' חדרים ב' ELSE ' ב' END,
-  SPLIT_PART(address, ',', 1),  -- Street name
-  ', ',
-  COALESCE(neighborhood, '')
-)
-WHERE source = 'homeless'
-AND address IS NOT NULL
-AND address LIKE '%, %';
+```text
+שכונה    | תמיכה
+---------|---------
+צפון ישן | 🟢 🟢 🟢  (Yad2, Madlan, Homeless)
+יד אליהו | 🟢 ⚪ 🟢  (Yad2, -, Homeless)
+רמת גן   | ⚪ ⚪ ⚪  (לא נתמך לסינון URL)
 ```
 
 ---
 
-## סדר ביצוע
+## קבצים לעדכון
 
-1. **תיקון הקוד** - עדכון שני הקבצים (backfill + parser)
-2. **ניקוי נתונים** - מחיקת גדלים שגויים ועדכון כותרות
-3. **פריסת Edge Functions** - deploy של הפונקציות המעודכנות
-4. **בדיקה** - הרצת סריקת homeless חדשה ואימות איכות הנתונים
+| קובץ | שינוי |
+|------|-------|
+| `src/config/locations.ts` | הוספת יד_אליהו, רמת_החייל |
+| `supabase/functions/_shared/neighborhood-codes.ts` | הוספת Madlan slug ליד אליהו |
+| `src/components/scout/UnifiedScoutSettings.tsx` | סינון שכונות לפי מקור |
+| `src/components/ui/neighborhood-selector.tsx` | (אופציונלי) הוספת tooltip תמיכה |
 
 ---
 
 ## השפעה
 
-| נתון | לפני | אחרי |
-|------|------|------|
-| נכסים עם גודל שגוי | 370 | 0 |
-| כותרות ללא רחוב | 354 | 0 |
+| לפני | אחרי |
+|------|------|
+| משתמש יכול לבחור שכונה שלא נתמכת | רואים רק שכונות נתמכות לכל מקור |
+| אין משוב על מה עובד | אינדיקציה ברורה |
+| יד אליהו/רמת החייל לא זמינים ב-UI | זמינים לבחירה |
 
