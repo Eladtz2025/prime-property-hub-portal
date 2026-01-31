@@ -154,9 +154,26 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
   }
   
-  const hasAgencyPattern = /[א-ת\s]+\\[א-ת\s]+₪/.test(cleanedBlock);
-  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים/.test(block);
-  const isBroker = hasAgencyPattern || hasBrokerKeywords || detectBroker(block);
+  // Detect broker - check for agency name pattern
+  // Broker listings have agency name appearing TWICE before price, e.g.:
+  // "בר בן נכסים\\בר בן נכסים₪ 14,000"
+  // Private listings go straight to price: "₪ 17,500\\"
+  
+  // Pattern 1: Agency name repeated twice before price
+  const agencyRepeatedPattern = /([א-ת][א-ת\s.'"]+)\\+\s*\1\s*₪/;
+  const hasAgencyRepeated = agencyRepeatedPattern.test(cleanedBlock);
+  
+  // Pattern 2: Line before price contains agency-like name (not an address)
+  const linesBeforePrice = cleanedBlock.split('₪')[0];
+  const lastLineBeforePrice = linesBeforePrice.split('\\').filter(l => l.trim()).pop() || '';
+  const looksLikeAgencyName = /^[א-ת][א-ת\s.'"]+$/.test(lastLineBeforePrice.trim()) 
+    && lastLineBeforePrice.trim().length > 3
+    && !/\d/.test(lastLineBeforePrice);
+  
+  // Pattern 3: Known broker keywords
+  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים|נכסים/.test(block);
+  
+  const isBroker = hasAgencyRepeated || (looksLikeAgencyName && lastLineBeforePrice.trim().length > 5) || hasBrokerKeywords || detectBroker(block);
   
   if (!price && !rooms && !address) {
     return null;

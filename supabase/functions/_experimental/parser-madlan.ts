@@ -344,10 +344,15 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   // Skip if no useful data extracted
   if (!price && !rooms && !address && !size) return null;
   
-  // Detect broker
+  // Detect broker - Madlan has explicit "תיווך" marker for broker listings
+  // Also check for agent images and other indicators
   const hasAgentImage = block.includes('[![](https://') && (block.includes('/agents/') || block.includes('/developers/'));
-  const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך/.test(block);
-  const isBroker = hasBrokerKeyword || hasAgentImage || detectBroker(block);
+  const hasBrokerKeyword = /תיווך|בבלעדיות|מתווך|משרד\s*נדל"?ן|סוכנות|real\s*estate/i.test(block);
+  
+  // In Madlan, broker listings typically end with "תיווך" label
+  const endsWithBrokerLabel = /תיווך\s*$/m.test(block) || /תיווך\s*\]/m.test(block);
+  
+  const isBroker = endsWithBrokerLabel || hasBrokerKeyword || hasAgentImage || detectBroker(block);
   
   // Extract features from the entire block
   const features = extractFeatures(block);
