@@ -302,6 +302,24 @@ Deno.serve(async (req) => {
         console.log(`📊 Extracted data:`, JSON.stringify(extracted));
         console.log(`🏷️ Extracted features:`, JSON.stringify(features));
 
+        // Check if property is not in Tel Aviv - mark as inactive
+        const finalCity = extracted.city || prop.city || '';
+        if (finalCity.length > 0) {
+          const isTelAviv = finalCity.includes('תל אביב') || finalCity.includes('תל-אביב');
+          
+          if (!isTelAviv) {
+            console.log(`🗑️ Property ${prop.id} is in ${finalCity}, marking as inactive`);
+            await supabase
+              .from('scouted_properties')
+              .update({ is_active: false })
+              .eq('id', prop.id);
+            
+            successCount++;
+            lastId = prop.id;
+            continue;
+          }
+        }
+
         // Prepare update object with only missing fields
         const updates: Record<string, any> = {};
         
