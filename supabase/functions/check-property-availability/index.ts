@@ -18,7 +18,14 @@ const LISTING_REMOVED_INDICATORS = [
   'item removed',
   'page not found',
   'this listing is no longer available',
-  'האתר בשיפוצים'
+  'האתר בשיפוצים',
+  // Yad2 specific indicators
+  'חיפשנו בכל מקום אבל אין לנו עמוד כזה',
+  'אין לנו עמוד כזה',
+  'הלינק לא תקין',
+  'העמוד שחיפשת הוסר',
+  'listing has been removed',
+  'no longer exists',
 ];
 
 serve(async (req) => {
