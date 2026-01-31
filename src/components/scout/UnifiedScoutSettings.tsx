@@ -1926,10 +1926,40 @@ export const UnifiedScoutSettings: React.FC = () => {
               </ul>
             </div>
 
+            {/* Scrape from source toggle */}
+            <div className="flex items-center justify-between py-3 border rounded-lg px-3 bg-orange-50 dark:bg-orange-950/30">
+              <div>
+                <Label className="text-sm font-medium">גירוד מחדש מהמקור</Label>
+                <p className="text-xs text-muted-foreground">
+                  מוריד את הדף המקורי מחדש (איטי יותר, מדויק יותר)
+                </p>
+              </div>
+              <Switch
+                id="scrape-from-source"
+                checked={settings?.brokerBackfill?.scrapeFromSource ?? false}
+                onCheckedChange={(checked) => handleBooleanChange('brokerBackfill', 'scrapeFromSource', checked)}
+              />
+            </div>
+
+            {settings?.brokerBackfill?.scrapeFromSource && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+                  <div className="text-xs">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">שים לב: צריכת קרדיטים</p>
+                    <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                      אפשרות זו תצרוך כ-7,500 קרדיטים של Firecrawl ותיקח כ-3 שעות להשלמה.
+                      התהליך ירוץ ברקע ויעדכן את כל הנכסים.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isBrokerBackfilling && (
               <div className="flex items-center gap-2 text-sm text-indigo-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>מעבד נכסים...</span>
+                <span>מעבד נכסים ברקע...</span>
               </div>
             )}
 
@@ -1937,19 +1967,34 @@ export const UnifiedScoutSettings: React.FC = () => {
               <Button 
                 onClick={async () => {
                   setIsBrokerBackfilling(true);
+                  const scrapeFromSource = settings?.brokerBackfill?.scrapeFromSource ?? false;
+                  const batchSize = scrapeFromSource ? 50 : 100;
+                  
                   try {
                     const { data, error } = await supabase.functions.invoke('backfill-broker-classification', {
-                      body: { batchSize: 100, dryRun: false }
+                      body: { 
+                        batchSize, 
+                        dryRun: false, 
+                        scrapeFromSource,
+                        forceReset: true 
+                      }
                     });
                     if (error) throw error;
-                    toast.success(`עודכנו ${data?.updated || 0} נכסים`);
+                    
+                    if (scrapeFromSource) {
+                      toast.success('התהליך הופעל ברקע. ניתן לסגור את החלון.');
+                    } else {
+                      toast.success(`עודכנו ${data?.updated || 0} נכסים`);
+                    }
                     setIsBrokerBackfillDialogOpen(false);
                     queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
                   } catch (err) {
                     console.error('Broker backfill error:', err);
                     toast.error('שגיאה בעדכון הסיווג');
                   } finally {
-                    setIsBrokerBackfilling(false);
+                    if (!settings?.brokerBackfill?.scrapeFromSource) {
+                      setIsBrokerBackfilling(false);
+                    }
                   }
                 }}
                 disabled={isBrokerBackfilling}
@@ -1976,7 +2021,9 @@ export const UnifiedScoutSettings: React.FC = () => {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              התהליך ירוץ ברקע ויעדכן את כל הנכסים. זה עשוי לקחת מספר דקות.
+              {settings?.brokerBackfill?.scrapeFromSource 
+                ? 'התהליך ירוץ ברקע ויעדכן את כל ~7,500 הנכסים. ניתן לעקוב בלוגים של Supabase.'
+                : 'התהליך ירוץ ברקע ויעדכן נכסים לפי ה-description הקיים.'}
             </p>
           </div>
         </DialogContent>
