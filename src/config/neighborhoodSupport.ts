@@ -5,6 +5,29 @@
 
 // Yad2 neighborhood codes (numeric IDs)
 export const yad2SupportedNeighborhoods: Set<string> = new Set([
+  // NEW: Source-specific values (yad2_* prefix)
+  'yad2_צפון_ישן',
+  'yad2_צפון_חדש',
+  'yad2_כיכר_המדינה',
+  'yad2_לב_העיר',
+  'yad2_בבלי',
+  'yad2_נווה_צדק',
+  'yad2_כרם_התימנים',
+  'yad2_רמת_אביב',
+  'yad2_פלורנטין',
+  'yad2_רוטשילד',
+  'yad2_צהלה',
+  'yad2_נמל_תל_אביב',
+  'yad2_רמת_החייל',
+  'yad2_יד_אליהו',
+  'yad2_תל_ברוך',
+  'yad2_דרום_תל_אביב',
+  'yad2_אזורי_חן',
+  'yad2_נווה_אביבים',
+  'yad2_הדר_יוסף',
+  'yad2_נווה_שרת',
+  'yad2_יפו',
+  // LEGACY: Old values for backward compatibility
   'צפון_ישן',
   'צפון_חדש',
   'כיכר_המדינה',
@@ -30,6 +53,35 @@ export const yad2SupportedNeighborhoods: Set<string> = new Set([
 
 // Madlan neighborhood slugs (URL path segments)
 export const madlanSupportedNeighborhoods: Set<string> = new Set([
+  // NEW: Source-specific values (madlan_* prefix) - granular sub-areas
+  'madlan_צפון_ישן_צפוני',
+  'madlan_צפון_ישן_מרכזי',
+  'madlan_צפון_ישן_דרום_מזרחי',
+  'madlan_צפון_ישן_דרום_מערבי',
+  'madlan_צפון_חדש_צפוני',
+  'madlan_צפון_חדש_דרומי',
+  'madlan_כיכר_המדינה',
+  'madlan_לב_תל_אביב',
+  'madlan_בבלי',
+  'madlan_נווה_צדק',
+  'madlan_כרם_התימנים',
+  'madlan_רמת_אביב',
+  'madlan_רמת_אביב_החדשה',
+  'madlan_פלורנטין',
+  'madlan_רוטשילד',
+  'madlan_צהלה',
+  'madlan_נמל_תל_אביב',
+  'madlan_תל_ברוך',
+  'madlan_תל_ברוך_צפון',
+  'madlan_דרום_העיר',
+  'madlan_אזורי_חן',
+  'madlan_נווה_אביבים',
+  'madlan_הדר_יוסף',
+  'madlan_נווה_שרת',
+  'madlan_רמת_החייל',
+  'madlan_יד_אליהו',
+  'madlan_יפו',
+  // LEGACY: Old values for backward compatibility
   'צפון_ישן',
   'צפון_חדש',
   'כיכר_המדינה',
@@ -53,10 +105,10 @@ export const madlanSupportedNeighborhoods: Set<string> = new Set([
   'יפו',
 ]);
 
-// Homeless supported areas - NOW uses source-specific values (homeless_* prefix)
+// Homeless supported areas - uses source-specific values (homeless_* prefix)
 // Homeless only supports 6 broad areas, not specific neighborhoods!
 export const homelessSupportedNeighborhoods: Set<string> = new Set([
-  // NEW: Source-specific values (these match exactly what appears on homeless.co.il)
+  // Source-specific values (these match exactly what appears on homeless.co.il)
   'homeless_תא_מרכז',
   'homeless_תא_דרום',
   'homeless_תא_צפון',
