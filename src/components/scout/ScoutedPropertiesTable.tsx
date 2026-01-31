@@ -108,6 +108,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string[]>([]);
   const [featuresFilter, setFeaturesFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [ownerTypeFilter, setOwnerTypeFilter] = useState<string>('all');
   
   // Applied filters state - starts with default values to show all properties
   const [appliedFilters, setAppliedFilters] = useState<{
@@ -121,6 +122,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     propertyType: string;
     searchTerm: string;
     source: string;
+    ownerType: string;
   }>({
     roomsMin: '',
     roomsMax: '',
@@ -131,7 +133,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
     status: 'all',
     propertyType: 'all',
     searchTerm: '',
-    source: 'all'
+    source: 'all',
+    ownerType: 'all'
   });
 
   // Statistics query
@@ -385,6 +388,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
         query = query.or('source.eq.yad2,source.eq.yad2_private');
       } else {
         query = query.eq('source', filters.source);
+      }
+    }
+    // Owner type filter (private vs broker)
+    if (filters.ownerType !== 'all') {
+      if (filters.ownerType === 'private') {
+        query = query.eq('is_private', true);
+      } else if (filters.ownerType === 'broker') {
+        query = query.or('is_private.eq.false,is_private.is.null');
       }
     }
     if (filters.roomsMin) {
@@ -716,7 +727,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
       status: statusFilter,
       propertyType: propertyTypeFilter,
       searchTerm,
-      source: sourceFilter
+      source: sourceFilter,
+      ownerType: ownerTypeFilter
     });
   };
 
@@ -746,6 +758,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
     setStatusFilter('all');
     setPropertyTypeFilter('all');
     setSourceFilter('all');
+    setOwnerTypeFilter('all');
     setRoomsMin('');
     setRoomsMax('');
     setMinBudget('');
@@ -762,13 +775,14 @@ export const ScoutedPropertiesTable: React.FC = () => {
       status: 'all',
       propertyType: 'all',
       searchTerm: '',
-      source: 'all'
+      source: 'all',
+      ownerType: 'all'
     });
   };
 
   // Check if any filters are active
   const hasActiveFilters = statusFilter !== 'all' || propertyTypeFilter !== 'all' || sourceFilter !== 'all' ||
-    roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
+    ownerTypeFilter !== 'all' || roomsMin !== '' || roomsMax !== '' || minBudget !== '' || maxBudget !== '' ||
     neighborhoodFilter.length > 0 || featuresFilter.length > 0;
 
   return (
@@ -1218,6 +1232,21 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       </Select>
                     </div>
 
+                    {/* Owner Type (Private/Broker) - Mobile */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">סוג מפרסם</label>
+                      <Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="כולם" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">כולם</SelectItem>
+                          <SelectItem value="private">פרטי</SelectItem>
+                          <SelectItem value="broker">תיווך</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Property Type (Rent/Sale) */}
                     <div>
                       <label className="text-sm font-medium mb-2 block">סוג עסקה</label>
@@ -1398,7 +1427,18 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* Features - Icon only */}
+            {/* Owner Type Filter (Private/Broker) - Desktop */}
+            <Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
+              <SelectTrigger className="w-[80px] h-8 text-sm">
+                <SelectValue placeholder="מפרסם" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כולם</SelectItem>
+                <SelectItem value="private">פרטי</SelectItem>
+                <SelectItem value="broker">תיווך</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="icon" className="h-8 w-8 relative">
