@@ -1,108 +1,89 @@
 
-# יצירת תמיכה בריבוי שכונות ב-Yad2 + קונפיגורציה חדשה
+# תוכנית: הפעלת תיקון סיווג תיווך/פרטי עם גרידה מחדש מהמקור
 
-## מה גיליתי
+## סיכום המצב
 
-אתה צודק! Yad2 תומך בריבוי שכונות, אבל **בפורמט URL שונה**:
+כרגע יש שתי פונקציות נפרדות:
+- **`backfill-property-data`**: מגרדת מחדש להשלמת נתונים (rooms, price, size) - **עובדת טוב**
+- **`backfill-broker-classification`**: מסווגת פרטי/תיווך - **לא מגרדת מחדש כי הפרמטר `scrapeFromSource` לא מופעל מה-UI**
 
-| פרמטר נוכחי | פרמטר נכון (ריבוי) |
-|-------------|---------------------|
-| `city=5000` | `multiCity=5000` |
-| `neighborhood=1483,204` | `multiNeighborhood=1483,204` |
+הפונקציה `backfill-broker-classification` כבר תומכת בגרידה מחדש (פרמטר `scrapeFromSource: true`), אבל הכפתור ב-UI לא מפעיל אותו.
 
-**הקוד הנוכחי** משתמש ב-`neighborhood` שעובד רק לשכונה אחת. כדי לתמוך במספר שכונות, צריך לעבור לפורמט `multiNeighborhood`.
+## הפתרון
 
----
-
-## קודי השכונות המבוקשות
-
-| שכונה | קוד Yad2 |
-|-------|----------|
-| צפון ישן | 1483 |
-| צפון חדש | 204 |
-| מרכז העיר | 1520 |
-| בבלי | 1518 |
-| כיכר המדינה | 1516 |
-
-**URL מלא:**
-```
-https://www.yad2.co.il/realestate/rent?multiCity=5000&multiNeighborhood=1483,204,1520,1518,1516&propertyGroup=apartments
-```
+צריך להוסיף אפשרות ב-UI להפעיל את הגרידה מחדש ולתקן את הסיווג לכל ~7,500 הנכסים.
 
 ---
 
-## שינויים נדרשים
+## פרטים טכניים
 
-### שלב 1: עדכון URL Builder לתמיכה ב-multiNeighborhood
+### שינוי 1: עדכון ה-UI להפעלת גרידה מחדש
 
-**קובץ:** `supabase/functions/_shared/url-builders.ts`
+**קובץ**: `src/components/scout/UnifiedScoutSettings.tsx`
 
-**לוגיקה חדשה:**
-```typescript
-// When multiple neighborhoods selected, use multiCity + multiNeighborhood format
-if (config.neighborhoods?.length > 0) {
-  const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
-  if (neighborhoodCodes.length > 0) {
-    // Use multi-format for any number of neighborhoods (works for 1 or more)
-    if (cityData) {
-      params.set('multiCity', cityData.city);
-      params.delete('topArea');
-      params.delete('area');
-      params.delete('city');
-    }
-    params.set('multiNeighborhood', neighborhoodCodes.join(','));
-  }
-}
-```
+שינויים:
+- הוספת toggle או checkbox לבחירה: "גירוד מחדש מהמקור" (`scrapeFromSource`)
+- עדכון ה-API call לכלול את הפרמטר: `{ batchSize: 50, scrapeFromSource: true }`
+- הקטנת ה-batch size ל-50 (במקום 100) כי גרידה לוקחת יותר זמן
+- הוספת אזהרה שזה יצרוך קרדיטים של Firecrawl
 
-### שלב 2: יצירת קונפיגורציה חדשה
+### שינוי 2: שיפור לוגיקת הסיווג בפונקציה
 
-**נוסיף קונפיגורציה חדשה ב-Database:**
+**קובץ**: `supabase/functions/backfill-broker-classification/index.ts`
 
-```sql
-INSERT INTO scout_configs (
-  name,
-  source,
-  property_type,
-  cities,
-  neighborhoods,
-  max_pages,
-  page_delay_seconds,
-  is_active
-) VALUES (
-  'יד2 השכרה - צפון+מרכז תל אביב',
-  'yad2',
-  'rent',
-  ARRAY['תל אביב'],
-  ARRAY['צפון_ישן', 'צפון_חדש', 'מרכז_העיר', 'בבלי', 'כיכר_המדינה'],
-  5,
-  3,
-  true
-);
-```
+שיפורים:
+- הוספת delay ארוך יותר בין גרידות (1.5 שניות במקום 0.3) למניעת חסימות
+- שמירת ה-`raw_text` המלא להצלחות עתידיות
+- לוגים משופרים לצורך מעקב
 
-### שלב 3: Deploy ובדיקה
+### שינוי 3: אימות לוגיקת הסיווג לכל מקור
 
-לאחר השינויים, ה-URL שייבנה יהיה:
-```
-https://www.yad2.co.il/realestate/rent?multiCity=5000&multiNeighborhood=1483,204,1520,1518,1516&propertyGroup=apartments
-```
+אימות שהלוגיקה נכונה:
+
+**Yad2 (כבר מתוקן):**
+- פרטי = `\\\s*₪` (מחיר מיד אחרי backslash)
+- תיווך = שם סוכנות חוזר פעמיים לפני המחיר / מילות מפתח
+
+**Madlan (כבר מתוקן):**
+- תיווך = תווית "תיווך" בסוף הבלוק / מילות מפתח / תמונת סוכן
+- פרטי = תווית "פרטי" או אין אינדיקטור לתיווך
+
+**Homeless (כבר מתוקן):**
+- בדיקת מילות מפתח בטקסט המלא
+- ברירת מחדל = פרטי (רוב המודעות ב-Homeless הן פרטיות)
 
 ---
 
-## קבצים לעדכון
+## הערכת זמן וקרדיטים
+
+- ~7,500 נכסים
+- 1 קרדיט Firecrawl לכל גרידה = ~7,500 קרדיטים
+- בזמן: batch של 50 עם delay של 1.5 שניות = ~75 שניות לbatch
+- סה"כ: ~150 batches × 75 שניות = ~3 שעות
+
+---
+
+## אופציה חלופית (זולה יותר)
+
+במקום לגרד הכל מחדש, אפשר:
+1. להפעיל את `backfill-broker-classification` **בלי** `scrapeFromSource` - זה ינסה לסווג לפי ה-description הקיים
+2. להריץ סריקה חדשה רגילה - הסקאוט יעדכן את הנכסים הקיימים עם הלוגיקה החדשה
+
+---
+
+## קבצים שישתנו
 
 | קובץ | שינוי |
 |------|-------|
-| `supabase/functions/_shared/url-builders.ts` | שינוי ל-multiCity/multiNeighborhood |
-| Database | הוספת קונפיגורציה חדשה |
+| `src/components/scout/UnifiedScoutSettings.tsx` | הוספת toggle ל-scrapeFromSource + אזהרת קרדיטים |
+| `supabase/functions/backfill-broker-classification/index.ts` | delay ארוך יותר + לוגים משופרים |
 
 ---
 
-## השפעה
+## צעדים לביצוע
 
-| לפני | אחרי |
-|------|------|
-| שכונה אחת בלבד ב-URL | מספר שכונות ב-URL אחד |
-| צריך 5 קונפיגורציות (שכונה לכל אחת) | קונפיגורציה אחת לכל השכונות |
-| 5 x 5 עמודים = 25 בקשות | 1 x 5 עמודים = 5 בקשות |
+1. עדכון ה-UI עם אפשרות גרידה מחדש
+2. עדכון הפונקציה עם delays מתאימים
+3. Deploy
+4. הפעלת התהליך מה-UI
+5. מעקב אחר ה-logs ב-Supabase
