@@ -205,28 +205,34 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
   }
   
-  // Detect broker - check for agency name pattern
-  // Broker listings have agency name appearing TWICE before price, e.g.:
-  // "בר בן נכסים\\בר בן נכסים₪ 14,000"
-  // Private listings go straight to price: "₪ 17,500\\"
+  // Detect broker vs private listing
+  // 
+  // Broker format: The agency name appears TWICE in the listing (once alone, once before price)
+  // Example: "\\Properties-il tel aviv\\Properties-il tel aviv₪ 14,000\\"
+  //
+  // Private format: Price appears directly after \\, no agency name
+  // Example: "\\₪ 6,000\\"
   
-  // Pattern 1: Agency name repeated twice before price (most reliable for Yad2)
-  // Look for: "name\\name₪" or "name\\\nname₪" pattern
-  const agencyRepeatedPattern = /([א-ת][א-ת\s.'"]+)\\+\s*\1\s*₪/;
+  // SIMPLE & RELIABLE RULE: 
+  // Private = the text immediately before ₪ is just whitespace/backslashes (price is first)
+  // Broker = there's actual text before the ₪ sign (agency name)
+  
+  // Check if price comes right after backslash (private listing pattern)
+  // Pattern: "\\₪" or "\\ ₪" means private
+  const isPrivatePattern = /\\\s*₪/.test(cleanedBlock);
+  
+  // Also check for repeated agency name pattern (definite broker)
+  // Format: "AgencyName\\AgencyName₪" - same name appears twice
+  const agencyRepeatedPattern = /([A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF\s.'"-]+?)\s*\\+\s*\1\s*₪/;
   const hasAgencyRepeated = agencyRepeatedPattern.test(cleanedBlock);
   
-  // Pattern 2: Line before price contains agency-like name (not just address)
-  // Addresses typically have numbers or end with street type, agency names don't
-  const linesBeforePrice = cleanedBlock.split('₪')[0];
-  const lastLineBeforePrice = linesBeforePrice.split('\\').filter(l => l.trim()).pop() || '';
-  const looksLikeAgencyName = /^[א-ת][א-ת\s.'"]+$/.test(lastLineBeforePrice.trim()) 
-    && lastLineBeforePrice.trim().length > 3
-    && !/\d/.test(lastLineBeforePrice); // No numbers = probably not an address
+  // Known broker keywords (strong indicator)
+  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים|נכסים|Properties|HomeMe|הומלנד|בית ממכר/.test(block);
   
-  // Pattern 3: Known broker keywords
-  const hasBrokerKeywords = /תיווך|סוכנות|משרד|נדל"ן|REAL ESTATE|Premium|ניהול נכסים|נכסים/.test(block);
-  
-  const isBroker = hasAgencyRepeated || (looksLikeAgencyName && lastLineBeforePrice.trim().length > 5) || hasBrokerKeywords || detectBroker(block);
+  // Final determination:
+  // - If price comes right after backslash -> private
+  // - If agency name repeated or broker keywords -> broker
+  const isBroker = !isPrivatePattern || hasAgencyRepeated || hasBrokerKeywords || detectBroker(block);
   
   // Extract features from the entire block
   const features = extractFeatures(block);
