@@ -113,23 +113,30 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
       let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
       const params = new URLSearchParams();
       
-      if (config.cities?.length) {
-        const cityData = yad2CityMap[config.cities[0]];
-        if (cityData) {
-          params.set('topArea', cityData.topArea);
-          params.set('area', cityData.area);
-          params.set('city', cityData.city);
+        // Check if we have neighborhoods - if so, use multiCity/multiNeighborhood format
+        if (config.neighborhoods?.length) {
+          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
+          if (neighborhoodCodes.length > 0) {
+            // Use multiCity/multiNeighborhood for neighborhood filtering (works for 1 or more)
+            if (config.cities?.length) {
+              const cityData = yad2CityMap[config.cities[0]];
+              if (cityData) {
+                params.set('multiCity', cityData.city);
+                // Don't set topArea/area/city when using multiCity format
+              }
+            }
+            params.set('multiNeighborhood', neighborhoodCodes.join(','));
+            console.log(`Yad2 multiNeighborhood: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
+          }
+        } else if (config.cities?.length) {
+          // No neighborhoods - use regular city format
+          const cityData = yad2CityMap[config.cities[0]];
+          if (cityData) {
+            params.set('topArea', cityData.topArea);
+            params.set('area', cityData.area);
+            params.set('city', cityData.city);
+          }
         }
-      }
-      
-      // Add neighborhood filtering for Yad2
-      if (config.neighborhoods?.length) {
-        const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
-        if (neighborhoodCodes.length > 0) {
-          params.set('neighborhood', neighborhoodCodes.join(','));
-          console.log(`Yad2 neighborhoods: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
-        }
-      }
       
       params.set('propertyGroup', 'apartments');
       
@@ -256,21 +263,28 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         let url = `https://www.yad2.co.il/realestate/${type === 'rent' ? 'rent' : 'forsale'}`;
         const params = new URLSearchParams();
         
-        if (config.cities?.length) {
+        // Check if we have neighborhoods - if so, use multiCity/multiNeighborhood format
+        if (config.neighborhoods?.length) {
+          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
+          if (neighborhoodCodes.length > 0) {
+            // Use multiCity/multiNeighborhood for neighborhood filtering (works for 1 or more)
+            if (config.cities?.length) {
+              const cityData = yad2CityMap[config.cities[0]];
+              if (cityData) {
+                params.set('multiCity', cityData.city);
+                // Don't set topArea/area/city when using multiCity format
+              }
+            }
+            params.set('multiNeighborhood', neighborhoodCodes.join(','));
+            console.log(`Yad2 multiNeighborhood: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
+          }
+        } else if (config.cities?.length) {
+          // No neighborhoods - use regular city format
           const cityData = yad2CityMap[config.cities[0]];
           if (cityData) {
             params.set('topArea', cityData.topArea);
             params.set('area', cityData.area);
             params.set('city', cityData.city);
-          }
-        }
-        
-        // Add neighborhood filtering for Yad2
-        if (config.neighborhoods?.length) {
-          const neighborhoodCodes = getYad2NeighborhoodCodes(config.neighborhoods);
-          if (neighborhoodCodes.length > 0) {
-            params.set('neighborhood', neighborhoodCodes.join(','));
-            console.log(`Yad2 neighborhoods: ${config.neighborhoods.join(', ')} → codes: ${neighborhoodCodes.join(',')}`);
           }
         }
         
