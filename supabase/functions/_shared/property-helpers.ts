@@ -30,8 +30,8 @@ export interface ScrapedProperty {
 // ==================== Save Property ====================
 
 /**
- * Save a scraped property to the database with duplicate detection
- * Uses comprehensive logic with duplicate group management and price alerts
+ * Save a scraped property to the database with strict duplicate detection
+ * Requirements: exact address+city+rooms+floor match, optional size within 15%
  */
 export async function saveProperty(
   supabase: any, 
@@ -39,20 +39,25 @@ export async function saveProperty(
 ): Promise<{ isNew: boolean }> {
   const normalizedCity = normalizeCityName(property.city);
   
-  // Duplicate detection setup
+  // Duplicate detection - only if we have valid data for strict matching
   let duplicateGroupId: string | null = null;
   let isPrimaryListing = true;
-  const addressHasBuildingNumber = property.address && /\d+/.test(property.address);
-  const duplicateCheckPossible = addressHasBuildingNumber && !!property.rooms && !!normalizedCity;
   
-  if (duplicateCheckPossible) {
+  // Address must contain a building number to be eligible for duplicate detection
+  const hasValidAddress = property.address && /\d+/.test(property.address);
+  const canCheckDuplicates = hasValidAddress 
+    && property.rooms !== undefined 
+    && property.floor !== undefined 
+    && normalizedCity;
+  
+  if (canCheckDuplicates) {
     const { data: duplicates } = await supabase
-      .rpc('find_duplicate_property', {
+      .rpc('find_property_duplicate', {
         p_address: property.address,
-        p_rooms: property.rooms,
-        p_floor: property.floor || 0,
-        p_property_type: property.property_type || 'rental',
         p_city: normalizedCity,
+        p_rooms: property.rooms,
+        p_floor: property.floor,
+        p_size: property.size || null,
         p_exclude_id: null
       });
     
@@ -67,14 +72,15 @@ export async function saveProperty(
           .from('scouted_properties')
           .update({ 
             duplicate_group_id: duplicateGroupId,
-            duplicate_detected_at: new Date().toISOString()
+            duplicate_detected_at: new Date().toISOString(),
+            is_primary_listing: true
           })
           .eq('id', primaryDuplicate.id);
       }
     }
   }
   
-  // Upsert the property
+  // Upsert the property (without duplicate alerts - removed)
   const { data: upsertResult, error: upsertError } = await supabase
     .from('scouted_properties')
     .upsert({
@@ -89,7 +95,7 @@ export async function saveProperty(
       rooms: property.rooms,
       size: property.size,
       floor: property.floor,
-      duplicate_check_possible: duplicateCheckPossible,
+      duplicate_check_possible: canCheckDuplicates,
       property_type: property.property_type,
       description: property.description,
       images: property.images || [],
@@ -105,39 +111,10 @@ export async function saveProperty(
       onConflict: 'source,source_id',
       ignoreDuplicates: true
     })
-    .select('id, price')
+    .select('id')
     .single();
 
-  if (!upsertError && upsertResult) {
-    // Create duplicate alert if there's a significant price difference
-    if (duplicateGroupId && property.price) {
-      const { data: primaryProperty } = await supabase
-        .from('scouted_properties')
-        .select('id, price')
-        .eq('duplicate_group_id', duplicateGroupId)
-        .eq('is_primary_listing', true)
-        .single();
-      
-      if (primaryProperty?.price && primaryProperty.price > 0) {
-        const priceDiff = Math.abs(property.price - primaryProperty.price);
-        const priceDiffPercent = (priceDiff / Math.min(property.price, primaryProperty.price)) * 100;
-        
-        if (priceDiffPercent > 5) {
-          await supabase
-            .from('duplicate_alerts')
-            .insert({
-              primary_property_id: primaryProperty.id,
-              duplicate_property_id: upsertResult.id,
-              price_difference: priceDiff,
-              price_difference_percent: priceDiffPercent
-            });
-        }
-      }
-    }
-    return { isNew: true };
-  }
-  
-  return { isNew: false };
+  return { isNew: !upsertError && !!upsertResult };
 }
 
 // ==================== Date Parsing ====================
