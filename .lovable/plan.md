@@ -1,119 +1,114 @@
 
 
-# הוספת כפתור מחיקה לנכסים סקאוטים
+# תיקון URLs של Homeless - פורמט שגוי ב-Pagination
 
-## סיכום
+## הבעיה שזוהתה
 
-הוספת אייקון מחיקה (פח אשפה) לפעולות ליד כל נכס בטבלה - גם ב-Desktop וגם ב-Mobile.
+הסריקה של הומלס (ריצת "ירקון השכרה") מחזירה **0 נכסים** בדפים 2-8 כי ה-URL שנבנה שגוי.
 
----
-
-## שינויים נדרשים
-
-### 1. הוספת אייקון Trash2 ל-imports (שורה 15)
-
-```typescript
-// לפני
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ... } from 'lucide-react';
-
-// אחרי
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, Trash2, ... } from 'lucide-react';
+### לוגים:
+```
+🟣 Homeless page 1: [NO-AI] Parsed 14 properties ✓
+🟣 Homeless page 2: [NO-AI] Parsed 0 properties ❌
+🟣 Homeless page 3: [NO-AI] Parsed 0 properties ❌
+...
+🟣 Homeless page 8: [NO-AI] Parsed 0 properties ❌
 ```
 
+### הסיבה:
+
+| URL שנבנה (שגוי) | תוצאה |
+|-----------------|-------|
+| `/rent/inumber1=150,page=2` | מחזיר **דף הבית** של הומלס - אין נכסים |
+
+| URL נכון | תוצאה |
+|----------|-------|
+| `/rent/?inumber1=150&page=2` | מחזיר **דף חיפוש** עם טבלת נכסים |
+
 ---
 
-### 2. יצירת deleteMutation (אחרי archiveMutation, שורה ~714)
+## פרטים טכניים
+
+### מיקום הבאג
+**קובץ:** `supabase/functions/_shared/url-builders.ts`
+**פונקציות מושפעות:** `buildSinglePageUrl()` ו-`buildSearchUrls()`
+
+### הקוד הנוכחי (שורות 193-223):
 
 ```typescript
-const deleteMutation = useMutation({
-  mutationFn: async (id: string) => {
-    const { error } = await supabase
-      .from('scouted_properties')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-    queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
-    toast.success('הנכס נמחק לצמיתות');
-  },
-  onError: () => {
-    toast.error('שגיאה במחיקת הנכס');
+// CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
+// Homeless IGNORES query params and returns all of Israel with ?param format!
+if (config.neighborhoods?.length) {
+  const areaCodes = getHomelessAreaCodes(config.neighborhoods);
+  if (areaCodes.length >= 1) {
+    const pathType = type === 'rent' ? 'rent' : 'sale';
+    baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+    ...
   }
-});
+}
+
+// For path-style URLs, pagination uses COMMA separator (not &)
+const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+```
+
+**הבעיה:** ההערה שגויה! הומלס **לא** מתעלם מ-query params. ה-URL הנכון הוא:
+```
+/rent/?inumber1=150&page=2
+```
+
+לא:
+```
+/rent/inumber1=150,page=2
 ```
 
 ---
 
-### 3. הוספת כפתור מחיקה ב-Desktop (אחרי כפתור ארכיון, שורה ~1709)
+## התיקון הנדרש
 
+### שינוי 1: `buildSinglePageUrl()` - שורות 193-223
+
+**לפני:**
 ```typescript
-{/* Delete button - always show */}
-<Button
-  variant="ghost"
-  size="icon"
-  onClick={() => {
-    if (confirm('האם אתה בטוח שברצונך למחוק את הנכס לצמיתות?')) {
-      deleteMutation.mutate(property.id);
-    }
-  }}
-  disabled={deleteMutation.isPending}
-  title="מחק לצמיתות"
-  className="text-destructive hover:text-destructive hover:bg-destructive/10"
->
-  <Trash2 className="h-4 w-4" />
-</Button>
+baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
+...
+const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
 ```
 
----
-
-### 4. הוספת כפתור מחיקה ב-Mobile (אחרי כפתור ארכיון, שורה ~1790)
-
+**אחרי:**
 ```typescript
-{/* Delete button */}
-<Button
-  variant="ghost"
-  size="sm"
-  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-  onClick={() => {
-    if (confirm('האם אתה בטוח שברצונך למחוק את הנכס לצמיתות?')) {
-      deleteMutation.mutate(property.id);
-    }
-  }}
-  disabled={deleteMutation.isPending}
->
-  <Trash2 className="h-3.5 w-3.5" />
-</Button>
+baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${areaCodes[0]}`;
+...
+const pageUrl = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
 ```
+
+### שינוי 2: `buildSearchUrls()` - שורות 352-388
+
+אותו שינוי - להוסיף `?` אחרי `/rent/` ולהחליף פסיק ב-`&`.
 
 ---
 
-## הרשאות
+## סיכום השינויים
 
-כבר קיימת policy ב-DB שמאפשרת למנהלים למחוק:
-
-```sql
-CREATE POLICY "Admins can delete scouted properties"
-  ON public.scouted_properties FOR DELETE
-  USING (public.get_current_user_role() IN ('super_admin', 'admin'));
-```
+| מיקום | לפני | אחרי |
+|-------|------|------|
+| baseUrl | `/rent/inumber1=X` | `/rent/?inumber1=X` |
+| pagination | `baseUrl,page=N` | `baseUrl&page=N` |
 
 ---
 
 ## תוצאה צפויה
 
-| פעולות נוכחיות | פעולות אחרי השינוי |
-|----------------|-------------------|
-| 👁️ צפה, 🔗 מקור, 📥 ייבא, 💬 התאם, 📦 ארכיון | 👁️ צפה, 🔗 מקור, 📥 ייבא, 💬 התאם, 📦 ארכיון, 🗑️ **מחק** |
-
-הכפתור יופיע באדום כדי לסמן פעולה הרסנית, ויבקש אישור לפני מחיקה.
+| דף | לפני (0 נכסים) | אחרי (עובד) |
+|----|--------------|-------------|
+| 1 | `/rent/inumber1=150` → 14 נכסים | `/rent/?inumber1=150` → 14 נכסים |
+| 2 | `/rent/inumber1=150,page=2` → **0 נכסים** | `/rent/?inumber1=150&page=2` → נכסים |
+| 3 | `/rent/inumber1=150,page=3` → **0 נכסים** | `/rent/?inumber1=150&page=3` → נכסים |
 
 ---
 
 ## קובץ לעדכון
 
-| קובץ | שינויים |
-|------|----------|
-| `src/components/scout/ScoutedPropertiesTable.tsx` | 1. Import Trash2 2. deleteMutation 3. כפתור Desktop 4. כפתור Mobile |
+| קובץ | שינוי |
+|------|-------|
+| `supabase/functions/_shared/url-builders.ts` | תיקון פורמט URL ל-Homeless |
 
