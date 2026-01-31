@@ -247,11 +247,15 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   // - Private: No such markers
   // ============================================
   
-  // Check for explicit "תיווך" label (appears in broker listings)
+  // Check for explicit "תיווך" label with license number
+  // Don't use plain \d{7} as it catches phone numbers (050-1234567)
   const hasTivuchLabel = /תיווך:?/.test(block);
   
-  // Check for 7-digit license number (Israeli broker license)
-  const hasLicenseNumber = /\d{7}/.test(block);
+  // Check for license number ONLY when it appears with broker-related keywords
+  // Plain 7-digit check catches Israeli phone suffixes - causes false positives
+  const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(block);
+  const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(block);
+  const hasLicenseNumber = hasTivuchWithLicense || hasExplicitLicense;
   
   // Check for "בבלעדיות" (exclusivity - broker indicator)
   const hasExclusivity = /בבלעדיות/.test(block);
