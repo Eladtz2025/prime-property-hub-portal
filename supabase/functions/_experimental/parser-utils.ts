@@ -261,6 +261,58 @@ const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: str
   { pattern: /מונטיפיורי/i, value: 'מונטיפיורי', label: 'מונטיפיורי' },
 ];
 
+// ============================================
+// Blacklist Locations (Non-Tel Aviv)
+// ============================================
+
+/**
+ * Locations that are NOT in Tel Aviv but often get mislabeled due to:
+ * - Similar neighborhood names
+ * - Parsing errors defaulting to Tel Aviv
+ * - Address confusion
+ */
+const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
+  // Petah Tikva neighborhoods
+  { pattern: /נווה\s*כפיר/i, real_city: 'פתח תקווה' },
+  
+  // Settlements outside Tel Aviv
+  { pattern: /צופים/i, real_city: 'צופים (מזרח השומרון)' },
+  
+  // Coastal cities
+  { pattern: /קיסריה/i, real_city: 'קיסריה' },
+  
+  // Jerusalem area
+  { pattern: /מעלה\s*אדומים/i, real_city: 'מעלה אדומים' },
+  { pattern: /צמח\s*השדה/i, real_city: 'מעלה אדומים' },
+  
+  // Northern Israel
+  { pattern: /סמדר\s*עילית/i, real_city: 'יבנאל' },
+  
+  // English variations
+  { pattern: /rishon\s*le?\s*zion/i, real_city: 'ראשון לציון' },
+  
+  // Yavneel - Be careful! There's a Yavneel street in Neve Tzedek
+  // Only match when it's clearly the CITY Yavneel (duplication or end of address)
+  { pattern: /יבנאל,\s*יבנאל/i, real_city: 'יבנאל' }, // Duplication = the city
+  { pattern: /,\s*יבנאל$/i, real_city: 'יבנאל' }, // At end of address = the city
+];
+
+/**
+ * Check if text contains a blacklisted location (non-Tel Aviv)
+ * @param text - Text to check (title, address, or full row text)
+ * @returns Object with blacklisted status and real city if found
+ */
+export function isBlacklistedLocation(text: string): { blacklisted: boolean; real_city?: string } {
+  if (!text) return { blacklisted: false };
+  
+  for (const { pattern, real_city } of BLACKLIST_LOCATIONS) {
+    if (pattern.test(text)) {
+      return { blacklisted: true, real_city };
+    }
+  }
+  return { blacklisted: false };
+}
+
 // Ramat Gan neighborhoods
 const RAMAT_GAN_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: string }> = [
   { pattern: /בורסה|יהודה\s*המכבי/i, value: 'בורסה', label: 'אזור הבורסה' },
