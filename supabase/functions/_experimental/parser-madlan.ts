@@ -108,15 +108,21 @@ function findPropertyBlocks(markdown: string): string[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Look for listing OR project URL patterns
-    const hasListingUrl = line.includes('madlan.co.il/listings/') || line.includes('madlan.co.il/projects/');
+    // ONLY look for /listings/ URLs - skip /projects/ (new construction)
+    // Projects lead to 404 or project pages, not individual listings
+    const hasListingUrl = line.includes('madlan.co.il/listings/');
     
     if (!hasListingUrl) continue;
     
+    // Skip project/search patterns that slip through
+    if (line.includes('/projects/') || line.includes('/for-rent/') || line.includes('/for-sale/')) {
+      continue;
+    }
+    
     // Skip if this is a duplicate (same URL already captured)
-    const urlMatch = line.match(/https:\/\/www\.madlan\.co\.il\/(listings|projects)\/([^\)\s\]]+)/);
+    const urlMatch = line.match(/https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s\]]+)/);
     if (urlMatch) {
-      const urlId = urlMatch[2];
+      const urlId = urlMatch[1];
       if (blocks.some(b => b.includes(urlId))) continue;
     }
     
@@ -130,7 +136,7 @@ function findPropertyBlocks(markdown: string): string[] {
     }
     
     // Format A: Fragmented block - listing URL is in line with image, details follow
-    if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)\//)) {
+    if (line.match(/^\[!\[[^\]]*\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/listings\//)) {
       // Collect the block - grab next 10-15 lines until we hit termination
       const blockLines: string[] = [line];
       
@@ -139,7 +145,7 @@ function findPropertyBlocks(markdown: string): string[] {
         const nextLineTrimmed = nextLine.trim();
         
         // Stop if we hit a new property block (listing or project)
-        if (nextLineTrimmed.startsWith('[![') && (nextLineTrimmed.includes('/listings/') || nextLineTrimmed.includes('/projects/'))) {
+        if (nextLineTrimmed.startsWith('[![') && nextLineTrimmed.includes('/listings/')) {
           break;
         }
         
@@ -169,8 +175,8 @@ function findPropertyBlocks(markdown: string): string[] {
       continue;
     }
     
-    // Format C: Simple link without image prefix (sometimes appears for projects)
-    if (line.match(/^\[([^\]]+)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)\//) && !line.startsWith('[![')) {
+    // Format C: Simple link without image prefix 
+    if (line.match(/^\[([^\]]+)\]\(https:\/\/www\.madlan\.co\.il\/listings\//) && !line.startsWith('[![')) {
       // This is a text link - collect following lines
       const blockLines: string[] = [line];
       
@@ -178,7 +184,7 @@ function findPropertyBlocks(markdown: string): string[] {
         const nextLine = lines[j];
         const nextLineTrimmed = nextLine.trim();
         
-        if (nextLineTrimmed.startsWith('[') && (nextLineTrimmed.includes('/listings/') || nextLineTrimmed.includes('/projects/'))) {
+        if (nextLineTrimmed.startsWith('[') && nextLineTrimmed.includes('/listings/')) {
           break;
         }
         if (nextLineTrimmed.startsWith('## ') || nextLineTrimmed.startsWith('# ')) {
@@ -323,16 +329,20 @@ function extractNeighborhoodFromBlock(block: string): { label: string; value: st
 }
 
 function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): ParsedProperty | null {
-  // Extract listing OR project URL and ID
-  const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/(listings|projects)\/([^\)\s\]]+)/);
+  // Extract listing URL and ID - ONLY /listings/ URLs are valid
+  const urlMatch = block.match(/https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s\]]+)/);
   if (!urlMatch) return null;
   
-  const urlType = urlMatch[1]; // 'listings' or 'projects'
-  const sourceId = urlMatch[2].replace(/\)$/, ''); // Clean trailing )
-  const sourceUrl = `https://www.madlan.co.il/${urlType}/${sourceId}`;
+  const sourceId = urlMatch[1].replace(/\)$/, ''); // Clean trailing )
+  const sourceUrl = `https://www.madlan.co.il/listings/${sourceId}`;
   
-  // Filter out projects (new construction) - we only want second-hand listings
-  const isProject = urlType === 'projects' || block.includes('פרויקט') || block.includes('מקבלן');
+  // Double-check: Skip any project/search URLs that slipped through
+  if (block.includes('/projects/') || block.includes('/for-rent/') || block.includes('/for-sale/')) {
+    return null;
+  }
+  
+  // Filter out new construction listings
+  const isProject = block.includes('פרויקט') || block.includes('מקבלן');
   if (isProject) {
     return null; // Skip projects entirely
   }
