@@ -275,6 +275,7 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isBrokerBackfillDialogOpen, setIsBrokerBackfillDialogOpen] = useState(false);
   const [isBrokerBackfilling, setIsBrokerBackfilling] = useState(false);
   const [isRefreshingEligibility, setIsRefreshingEligibility] = useState(false);
+  const [runningSource, setRunningSource] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     source: 'yad2',
@@ -456,6 +457,40 @@ export const UnifiedScoutSettings: React.FC = () => {
     toast.success(`הופעלו ${ids.length} סריקות`);
   };
 
+  // Run all configs of a source sequentially with 5 min delay
+  const runAllSourceConfigs = async (source: string) => {
+    const sourceConfigs = configs?.filter(c => c.source === source && c.is_active) || [];
+    
+    if (sourceConfigs.length === 0) {
+      toast.warning('אין קונפיגורציות פעילות למקור זה');
+      return;
+    }
+
+    setRunningSource(source);
+    toast.info(`מתחיל להריץ ${sourceConfigs.length} קונפיגורציות של ${source}...`);
+
+    for (let i = 0; i < sourceConfigs.length; i++) {
+      const config = sourceConfigs[i];
+      
+      try {
+        await runConfigMutation.mutateAsync(config.id);
+        toast.success(`הופעלה: ${config.name} (${i + 1}/${sourceConfigs.length})`);
+        
+        // Wait 5 minutes before next (except for the last one)
+        if (i < sourceConfigs.length - 1) {
+          toast.info(`ממתין 5 דקות לפני הבא...`);
+          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)); // 5 minutes
+        }
+      } catch (error) {
+        console.error(`Failed to run ${config.name}:`, error);
+        toast.error(`שגיאה בהפעלת ${config.name}`);
+      }
+    }
+
+    setRunningSource(null);
+    toast.success(`הושלמו כל ${sourceConfigs.length} הריצות של ${source}!`);
+  };
+
   // Config mutations
   const createConfigMutation = useMutation({
     mutationFn: async (config: { name: string; source: string; cities: string[] | null; neighborhoods: string[] | null; property_type: string; min_price: number | null; max_price: number | null; min_rooms: number | null; max_rooms: number | null; search_url: string | null }) => {
@@ -632,7 +667,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       wait_for_ms: ((config as any).wait_for_ms ?? sourceDefaults?.waitForMs ?? 5000).toString(),
       // Schedule times - use existing values OR source defaults
       schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
-      schedule_time_2: configSchedule?.[1] ?? defaultSchedule[1],
+      schedule_time_2: configSchedule?.[1] || '',
     });
     setIsDialogOpen(true);
   };
@@ -1141,10 +1176,34 @@ export const UnifiedScoutSettings: React.FC = () => {
                   {/* Madlan Column */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border-r-4 border-r-blue-500">
-                      <span className="font-semibold text-blue-700 dark:text-blue-400">מדלן</span>
-                      <Badge variant="outline" className="bg-blue-500/20">
-                        {configs.filter(c => c.source === 'madlan').length}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-blue-700 dark:text-blue-400">מדלן</span>
+                        <Badge variant="outline" className="bg-blue-500/20">
+                          {configs.filter(c => c.source === 'madlan').length}
+                        </Badge>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-500/20"
+                              onClick={() => runAllSourceConfigs('madlan')}
+                              disabled={runningSource !== null}
+                            >
+                              {runningSource === 'madlan' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>הרץ את כל המדלן (5 דק׳ הפרש)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
                       {configs.filter(c => c.source === 'madlan').map(config => (
@@ -1174,10 +1233,34 @@ export const UnifiedScoutSettings: React.FC = () => {
                   {/* Yad2 Column */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg border-r-4 border-r-orange-500">
-                      <span className="font-semibold text-orange-700 dark:text-orange-400">יד2</span>
-                      <Badge variant="outline" className="bg-orange-500/20">
-                        {configs.filter(c => c.source === 'yad2').length}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-orange-700 dark:text-orange-400">יד2</span>
+                        <Badge variant="outline" className="bg-orange-500/20">
+                          {configs.filter(c => c.source === 'yad2').length}
+                        </Badge>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-orange-600 hover:bg-orange-500/20"
+                              onClick={() => runAllSourceConfigs('yad2')}
+                              disabled={runningSource !== null}
+                            >
+                              {runningSource === 'yad2' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>הרץ את כל היד2 (5 דק׳ הפרש)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
                       {configs.filter(c => c.source === 'yad2').map(config => (
@@ -1207,10 +1290,34 @@ export const UnifiedScoutSettings: React.FC = () => {
                   {/* Homeless Column */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border-r-4 border-r-purple-500">
-                      <span className="font-semibold text-purple-700 dark:text-purple-400">הומלס</span>
-                      <Badge variant="outline" className="bg-purple-500/20">
-                        {configs.filter(c => c.source === 'homeless').length}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-purple-700 dark:text-purple-400">הומלס</span>
+                        <Badge variant="outline" className="bg-purple-500/20">
+                          {configs.filter(c => c.source === 'homeless').length}
+                        </Badge>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-purple-600 hover:bg-purple-500/20"
+                              onClick={() => runAllSourceConfigs('homeless')}
+                              disabled={runningSource !== null}
+                            >
+                              {runningSource === 'homeless' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>הרץ את כל ההומלס (5 דק׳ הפרש)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
                       {configs.filter(c => c.source === 'homeless').map(config => (
