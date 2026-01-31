@@ -137,6 +137,106 @@ const getSourceBorderColor = (source: string): string => {
   }
 };
 
+// ConfigCard component for 3-column layout
+interface ConfigCardProps {
+  config: ScoutConfig;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onRun: () => void;
+  onStop: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  isRunning: boolean;
+  isRunPending: boolean;
+  isStopPending: boolean;
+  settings: any;
+}
+
+const ConfigCard: React.FC<ConfigCardProps> = ({
+  config,
+  isSelected,
+  onToggleSelect,
+  onRun,
+  onStop,
+  onEdit,
+  onDelete,
+  isRunning,
+  isRunPending,
+  isStopPending,
+  settings,
+}) => {
+  return (
+    <Card className={`${!config.is_active ? 'opacity-60' : ''}`} dir="rtl">
+      <CardContent className="p-2.5">
+        {/* Row 1: Checkbox + Name + Status */}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggleSelect}
+            className="shrink-0"
+          />
+          <span className="font-medium text-sm truncate flex-1" title={config.name}>
+            {config.name.replace(/^(Yad2|Homeless|Madlan)\s*/i, '')}
+          </span>
+          <Badge 
+            variant={config.is_active ? "default" : "secondary"} 
+            className="text-[10px] px-1.5 py-0 shrink-0"
+          >
+            {config.property_type === 'rent' ? 'השכרה' : 'מכירה'}
+          </Badge>
+        </div>
+        
+        {/* Row 2: Technical details + Actions */}
+        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t">
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <span>{(config as any).max_pages ?? 5} דפים</span>
+            <span>|</span>
+            <span>{(config as any).page_delay_seconds ?? 3}s</span>
+            <span>|</span>
+            <span>{(config as any).schedule_times?.[0] || '-'}</span>
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onRun}
+              disabled={isRunPending || isRunning}
+            >
+              <Play className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-destructive"
+              onClick={onStop}
+              disabled={isStopPending || !isRunning}
+            >
+              <Square className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onEdit}
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const CITIES = [
   'תל אביב',
   'הרצליה',
@@ -1035,95 +1135,112 @@ export const UnifiedScoutSettings: React.FC = () => {
                 </div>
               )}
 
-              {/* Config list - flat grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {configs?.map((config) => (
-                  <Card key={config.id} className={`${!config.is_active ? 'opacity-60' : ''} ${getSourceBorderColor(config.source)}`} dir="rtl">
-                    <CardContent className="p-3 md:p-4">
-                      {/* Unified compact view - same for mobile and desktop */}
-                      <div>
-                        {/* Row 1: Checkbox + Name + Badges */}
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={selectedConfigs.has(config.id)}
-                            onCheckedChange={() => toggleConfigSelection(config.id)}
-                            className="shrink-0"
-                          />
-                          <span className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-[200px]">{config.name}</span>
-                          <div className="flex items-center gap-1 flex-1">
-                            <Badge variant={config.is_active ? "default" : "secondary"} className="text-xs px-1.5 py-0">
-                              {config.is_active ? 'פעיל' : 'מושבת'}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs px-1.5 py-0">
-                              {SOURCES.find(s => s.value === config.source)?.label}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs px-1.5 py-0">
-                              {PROPERTY_TYPES.find(t => t.value === config.property_type)?.label}
-                            </Badge>
-                            {config.neighborhoods && config.neighborhoods.length > 0 && (
-                              <Badge variant="secondary" className="text-xs px-1.5 py-0" title={config.neighborhoods.join(', ')}>
-                                {config.neighborhoods.length} שכונות
-                              </Badge>
-                            )}
-                          </div>
+              {/* Config list - 3 columns by source */}
+              {configs && configs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Madlan Column */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border-r-4 border-r-blue-500">
+                      <span className="font-semibold text-blue-700 dark:text-blue-400">מדלן</span>
+                      <Badge variant="outline" className="bg-blue-500/20">
+                        {configs.filter(c => c.source === 'madlan').length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {configs.filter(c => c.source === 'madlan').map(config => (
+                        <ConfigCard 
+                          key={config.id} 
+                          config={config}
+                          isSelected={selectedConfigs.has(config.id)}
+                          onToggleSelect={() => toggleConfigSelection(config.id)}
+                          onRun={() => runConfigMutation.mutate(config.id)}
+                          onStop={() => stopMutation.mutate(config.id)}
+                          onEdit={() => openEditDialog(config)}
+                          onDelete={() => deleteConfigMutation.mutate(config.id)}
+                          isRunning={!!getActiveRunForConfig(config.id)}
+                          isRunPending={runConfigMutation.isPending}
+                          isStopPending={stopMutation.isPending}
+                          settings={settings}
+                        />
+                      ))}
+                      {configs.filter(c => c.source === 'madlan').length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          אין קונפיגורציות
                         </div>
-                        
-                        {/* Row 2: Technical details + Actions */}
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                          <div className="flex items-center gap-1.5 md:gap-2 text-xs text-muted-foreground">
-                            <span>{(config as any).max_pages ?? SOURCE_TECHNICAL_PARAMS[config.source]?.getPages(settings) ?? 5} דפים</span>
-                            <span>|</span>
-                            <span>{(config as any).page_delay_seconds ?? SOURCE_TECHNICAL_PARAMS[config.source]?.delaySeconds ?? 3}s</span>
-                            <span>|</span>
-                            <span className="hidden sm:inline">{(config as any).schedule_times?.join(', ') || SOURCE_TECHNICAL_PARAMS[config.source]?.schedule?.join(', ') || 'לא מתוזמן'}</span>
-                            <span className="sm:hidden">{((config as any).schedule_times || SOURCE_TECHNICAL_PARAMS[config.source]?.schedule || []).length} זמנים</span>
-                          </div>
-                          <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => runConfigMutation.mutate(config.id)}
-                              disabled={runConfigMutation.isPending || !!getActiveRunForConfig(config.id)}
-                            >
-                              <Play className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 text-destructive"
-                              onClick={() => stopMutation.mutate(config.id)}
-                              disabled={stopMutation.isPending || !getActiveRunForConfig(config.id)}
-                            >
-                              <Square className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => openEditDialog(config)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => deleteConfigMutation.mutate(config.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Yad2 Column */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg border-r-4 border-r-orange-500">
+                      <span className="font-semibold text-orange-700 dark:text-orange-400">יד2</span>
+                      <Badge variant="outline" className="bg-orange-500/20">
+                        {configs.filter(c => c.source === 'yad2').length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {configs.filter(c => c.source === 'yad2').map(config => (
+                        <ConfigCard 
+                          key={config.id} 
+                          config={config}
+                          isSelected={selectedConfigs.has(config.id)}
+                          onToggleSelect={() => toggleConfigSelection(config.id)}
+                          onRun={() => runConfigMutation.mutate(config.id)}
+                          onStop={() => stopMutation.mutate(config.id)}
+                          onEdit={() => openEditDialog(config)}
+                          onDelete={() => deleteConfigMutation.mutate(config.id)}
+                          isRunning={!!getActiveRunForConfig(config.id)}
+                          isRunPending={runConfigMutation.isPending}
+                          isStopPending={stopMutation.isPending}
+                          settings={settings}
+                        />
+                      ))}
+                      {configs.filter(c => c.source === 'yad2').length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          אין קונפיגורציות
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              {(!configs || configs.length === 0) && (
-                          <div className="text-center py-8 text-muted-foreground">
-                            אין הגדרות סריקה
-                          </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Homeless Column */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border-r-4 border-r-purple-500">
+                      <span className="font-semibold text-purple-700 dark:text-purple-400">הומלס</span>
+                      <Badge variant="outline" className="bg-purple-500/20">
+                        {configs.filter(c => c.source === 'homeless').length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {configs.filter(c => c.source === 'homeless').map(config => (
+                        <ConfigCard 
+                          key={config.id} 
+                          config={config}
+                          isSelected={selectedConfigs.has(config.id)}
+                          onToggleSelect={() => toggleConfigSelection(config.id)}
+                          onRun={() => runConfigMutation.mutate(config.id)}
+                          onStop={() => stopMutation.mutate(config.id)}
+                          onEdit={() => openEditDialog(config)}
+                          onDelete={() => deleteConfigMutation.mutate(config.id)}
+                          isRunning={!!getActiveRunForConfig(config.id)}
+                          isRunPending={runConfigMutation.isPending}
+                          isStopPending={stopMutation.isPending}
+                          settings={settings}
+                        />
+                      ))}
+                      {configs.filter(c => c.source === 'homeless').length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          אין קונפיגורציות
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  אין הגדרות סריקה
+                </div>
               )}
 
               {/* Duplicates, Matching & Availability Cards */}
