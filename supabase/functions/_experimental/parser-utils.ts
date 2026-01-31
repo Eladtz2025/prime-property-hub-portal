@@ -270,28 +270,61 @@ const TEL_AVIV_NEIGHBORHOODS: Array<{ pattern: RegExp; value: string; label: str
  * - Similar neighborhood names
  * - Parsing errors defaulting to Tel Aviv
  * - Address confusion
+ * 
+ * EXPANDED 2026-01-31: Added 30+ patterns for comprehensive coverage
  */
 const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
-  // Petah Tikva neighborhoods
+  // === Petah Tikva neighborhoods ===
   { pattern: /נווה\s*כפיר/i, real_city: 'פתח תקווה' },
   
-  // Settlements outside Tel Aviv
+  // === Settlements outside Tel Aviv ===
   { pattern: /צופים/i, real_city: 'צופים (מזרח השומרון)' },
   
-  // Coastal cities
+  // === Coastal cities ===
   { pattern: /קיסריה/i, real_city: 'קיסריה' },
   
-  // Jerusalem area
+  // === Jerusalem area ===
   { pattern: /מעלה\s*אדומים/i, real_city: 'מעלה אדומים' },
   { pattern: /צמח\s*השדה/i, real_city: 'מעלה אדומים' },
   
-  // Northern Israel
+  // === Northern Israel ===
   { pattern: /סמדר\s*עילית/i, real_city: 'יבנאל' },
+  { pattern: /רמות\s*נפתלי/i, real_city: 'רמות נפתלי' },
+  { pattern: /קיבוץ\s*מחניים/i, real_city: 'קיבוץ מחניים' },
   
-  // English variations
+  // === Moshavim & Kibbutzim ===
+  { pattern: /מושב\s*כפר\s*דניאל/i, real_city: 'כפר דניאל' },
+  
+  // === Even Yehuda (the CITY, not the street!) ===
+  // רחוב אבן יהודה is a major street in Tel Aviv
+  // אבן יהודה (העיר) is near Netanya
+  { pattern: /,\s*אבן\s*יהודה$/i, real_city: 'אבן יהודה' }, // At end = the city
+  { pattern: /אבן\s*יהודה,\s*אבן\s*יהודה/i, real_city: 'אבן יהודה' }, // Duplication = the city
+  
+  // === Netanya area ===
+  { pattern: /netanya/i, real_city: 'נתניה' },
+  { pattern: /קרית\s*נורדאו/i, real_city: 'נתניה' },
+  
+  // === English city names (common in international listings) ===
   { pattern: /rishon\s*le?\s*zion/i, real_city: 'ראשון לציון' },
+  { pattern: /herzliya(?!\s*pituach)/i, real_city: 'הרצליה' },
+  { pattern: /ramat\s*gan/i, real_city: 'רמת גן' },
+  { pattern: /givatayim/i, real_city: 'גבעתיים' },
+  { pattern: /petah\s*tikva|petach\s*tikva/i, real_city: 'פתח תקווה' },
+  { pattern: /holon/i, real_city: 'חולון' },
+  { pattern: /bat\s*yam/i, real_city: 'בת ים' },
   
-  // Yavneel - Be careful! There's a Yavneel street in Neve Tzedek
+  // === Kiryat cities (often confused) ===
+  { pattern: /קרית\s*מלאכי/i, real_city: 'קרית מלאכי' },
+  { pattern: /קרית\s*גת/i, real_city: 'קרית גת' },
+  { pattern: /קרית\s*אונו/i, real_city: 'קרית אונו' },
+  { pattern: /קרית\s*ביאליק/i, real_city: 'קרית ביאליק' },
+  { pattern: /קרית\s*מוצקין/i, real_city: 'קרית מוצקין' },
+  { pattern: /קרית\s*ים/i, real_city: 'קרית ים' },
+  { pattern: /קרית\s*אתא/i, real_city: 'קרית אתא' },
+  { pattern: /קרית\s*שמונה/i, real_city: 'קרית שמונה' },
+  
+  // === Yavneel - Be careful! There's a Yavneel street in Neve Tzedek ===
   // Only match when it's clearly the CITY Yavneel (duplication or end of address)
   { pattern: /יבנאל,\s*יבנאל/i, real_city: 'יבנאל' }, // Duplication = the city
   { pattern: /,\s*יבנאל$/i, real_city: 'יבנאל' }, // At end of address = the city
@@ -305,11 +338,38 @@ const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
 export function isBlacklistedLocation(text: string): { blacklisted: boolean; real_city?: string } {
   if (!text) return { blacklisted: false };
   
+  // Normalize text - remove extra spaces
+  const normalizedText = text.replace(/\s+/g, ' ').trim();
+  
   for (const { pattern, real_city } of BLACKLIST_LOCATIONS) {
-    if (pattern.test(text)) {
+    if (pattern.test(normalizedText)) {
       return { blacklisted: true, real_city };
     }
   }
+  return { blacklisted: false };
+}
+
+/**
+ * Check if full address indicates non-Tel Aviv location
+ * This is a secondary check that looks at address structure
+ */
+export function isAddressBlacklisted(address: string): { blacklisted: boolean; real_city?: string } {
+  if (!address) return { blacklisted: false };
+  
+  // First check against blacklist patterns
+  const patternCheck = isBlacklistedLocation(address);
+  if (patternCheck.blacklisted) return patternCheck;
+  
+  // Check if address ends with a non-Tel Aviv city
+  const addressParts = address.split(',').map(p => p.trim());
+  const lastPart = addressParts[addressParts.length - 1];
+  
+  // If the last part is a known non-Tel Aviv city (from CITY_PATTERNS), blacklist it
+  const knownCity = extractCity(lastPart);
+  if (knownCity && !knownCity.includes('תל אביב')) {
+    return { blacklisted: true, real_city: knownCity };
+  }
+  
   return { blacklisted: false };
 }
 

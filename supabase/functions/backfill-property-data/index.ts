@@ -13,13 +13,55 @@ const corsHeaders = {
  * Locations that are NOT in Tel Aviv but often get mislabeled
  */
 const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
+  // Petah Tikva neighborhoods
   { pattern: /נווה\s*כפיר/i, real_city: 'פתח תקווה' },
+  
+  // Settlements
   { pattern: /צופים/i, real_city: 'צופים (מזרח השומרון)' },
+  
+  // Coastal cities
   { pattern: /קיסריה/i, real_city: 'קיסריה' },
+  
+  // Jerusalem area
   { pattern: /מעלה\s*אדומים/i, real_city: 'מעלה אדומים' },
   { pattern: /צמח\s*השדה/i, real_city: 'מעלה אדומים' },
+  
+  // Northern Israel
   { pattern: /סמדר\s*עילית/i, real_city: 'יבנאל' },
+  { pattern: /רמות\s*נפתלי/i, real_city: 'רמות נפתלי' },
+  { pattern: /קיבוץ\s*מחניים/i, real_city: 'קיבוץ מחניים' },
+  
+  // Moshavim
+  { pattern: /מושב\s*כפר\s*דניאל/i, real_city: 'כפר דניאל' },
+  
+  // Even Yehuda (city, not the street!)
+  { pattern: /,\s*אבן\s*יהודה$/i, real_city: 'אבן יהודה' },
+  { pattern: /אבן\s*יהודה,\s*אבן\s*יהודה/i, real_city: 'אבן יהודה' },
+  
+  // Netanya area
+  { pattern: /netanya/i, real_city: 'נתניה' },
+  { pattern: /קרית\s*נורדאו/i, real_city: 'נתניה' },
+  
+  // English city names
   { pattern: /rishon\s*le?\s*zion/i, real_city: 'ראשון לציון' },
+  { pattern: /herzliya(?!\s*pituach)/i, real_city: 'הרצליה' },
+  { pattern: /ramat\s*gan/i, real_city: 'רמת גן' },
+  { pattern: /givatayim/i, real_city: 'גבעתיים' },
+  { pattern: /petah\s*tikva|petach\s*tikva/i, real_city: 'פתח תקווה' },
+  { pattern: /holon/i, real_city: 'חולון' },
+  { pattern: /bat\s*yam/i, real_city: 'בת ים' },
+  
+  // Kiryat cities
+  { pattern: /קרית\s*מלאכי/i, real_city: 'קרית מלאכי' },
+  { pattern: /קרית\s*גת/i, real_city: 'קרית גת' },
+  { pattern: /קרית\s*אונו/i, real_city: 'קרית אונו' },
+  { pattern: /קרית\s*ביאליק/i, real_city: 'קרית ביאליק' },
+  { pattern: /קרית\s*מוצקין/i, real_city: 'קרית מוצקין' },
+  { pattern: /קרית\s*ים/i, real_city: 'קרית ים' },
+  { pattern: /קרית\s*אתא/i, real_city: 'קרית אתא' },
+  { pattern: /קרית\s*שמונה/i, real_city: 'קרית שמונה' },
+  
+  // Yavneel (city, not street)
   { pattern: /יבנאל,\s*יבנאל/i, real_city: 'יבנאל' },
   { pattern: /,\s*יבנאל$/i, real_city: 'יבנאל' },
 ];
