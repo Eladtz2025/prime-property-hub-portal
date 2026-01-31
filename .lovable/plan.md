@@ -1,175 +1,118 @@
 
+# תיקון מלא - הצגת נכסים + עדכון נתונים חסרים
 
-# תיקון כותרות "יפו" שגויות - Homeless
+## סיכום הבעיות
 
-## סיכום הבעיות מהתמונות
-
-| בעיה | כמות | דוגמה |
-|------|------|-------|
-| **יפו בכותרת במקום שכונה אמיתית** | 159 | `"בפנקס, יפו"` במקום `"בפנקס, ככר המדינה"` |
-| יפו שגוי כשיש שכונה מזוהה | 2 | `"בשדרות נורדאו, יפו"` (שכונה: כיכר המדינה) |
-| תל אביב בכותרת | 3 | `"בגבעולים, תל אביב"` |
-| תל אביב יפו בכותרת | 1 | `"במזא''ה, תל אביב יפו"` |
-| **סה"כ לתיקון** | **165 נכסים** | |
-
-## שורש הבעיה
-
-הפארסר שומר ב-`raw_data.neighborhoodText` את השם הנכון (למשל "נווה חן", "אזור ככר המדינה") אבל:
-1. פונקציית `extractNeighborhood` לא מזהה את כל השכונות → `neighborhood = null`
-2. הכותרת נבנית עם fallback לא נכון → "יפו" במקום השכונה האמיתית
-
-**דוגמאות מהמסד:**
-
-| raw_data.neighborhoodText | neighborhood בDB | title שנוצר |
-|---------------------------|------------------|-------------|
-| `נווה חן` | null | `...במעפילי אגוז, יפו` ❌ |
-| `תל חיים` | null | `...בדרך השלום, יפו` ❌ |
-| `אזור ככר המדינה` | null | `...בפנקס, יפו` ❌ |
-| `קרית שאול` | null | `...במשה סנה, יפו` ❌ |
+| בעיה | מיקום | תיאור |
+|------|-------|-------|
+| **UI מציג address במקום title** | שורה 1591, 1734 | הממשק מציג `address` + `neighborhood` כפול |
+| **כפילות שכונה בתצוגה** | שורה 1591, 1734 | נוסף `, ${neighborhood}` גם כשהכתובת כבר מכילה שכונה |
+| **נכסים עם יפו בכותרת** | DB | ה-SQL הקודם לא עדכן נכסים עם `neighborhood = null` |
+| **נכסים ללא address** | DB | נכסי תיווך ללא רחוב צריכים address מושלמת |
 
 ---
 
-## פתרון חלק 1: תיקון הקוד (parser-homeless.ts)
+## פתרון חלק 1: תיקון ה-UI (ScoutedPropertiesTable.tsx)
 
-### 1.1 שינוי buildTitle - שימוש ב-neighborhoodText כ-fallback ראשון
+### שינוי 1: שורות 1591-1595 (טבלת Desktop)
 
-**שורה 275 (קריאה ל-buildTitle):**
-
+**לפני:**
 ```typescript
-// לפני - cityText כ-fallback אחרון
-const title = buildTitle(propertyTypeText, roomsLabel, 
-  neighborhood?.label || neighborhoodText || cityText || '', 
-  streetText || null);
-
-// אחרי - neighborhoodText ואז ריק (ללא cityText!)
-const title = buildTitle(propertyTypeText, roomsLabel, 
-  neighborhood?.label || neighborhoodText || '', 
-  streetText || null);
+<p className="font-medium">
+  {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+</p>
 ```
 
-### 1.2 תיקון buildTitle - סינון "תל אביב יפו" וכפילויות
-
-**שורות 384-410 (פונקציית buildTitle):**
-
+**אחרי:**
 ```typescript
-function buildTitle(
-  propertyType: string,
-  rooms: string,
-  location: string,
-  street: string | null = null
-): string {
-  const parts: string[] = [];
-  
-  if (propertyType) {
-    parts.push(propertyType);
-  }
-  
-  if (rooms) {
-    parts.push(`${rooms} חדרים`);
-  }
-  
-  // NEW: Clean city names and "יפו" from location
-  const INVALID_LOCATIONS = [
-    'תל אביב יפו', 'תל אביב-יפו', 'תל אביב - יפו', 'תל אביב',
-    'יפו' // Don't use standalone יפו as location fallback
-  ];
-  
-  let cleanLocation = location.trim();
-  
-  // If location is just a city name, clear it
-  if (INVALID_LOCATIONS.some(inv => cleanLocation === inv)) {
-    cleanLocation = '';
-  }
-  
-  // Remove city names if embedded in location string
-  for (const cityName of ['תל אביב יפו', 'תל אביב-יפו', 'תל אביב']) {
-    cleanLocation = cleanLocation.replace(cityName, '').trim();
-  }
-  cleanLocation = cleanLocation.replace(/^[,\-]\s*/, '').replace(/[,\-]\s*$/, '').trim();
-  
-  // Prevent street = location duplication
-  const streetEqualsLocation = street && cleanLocation && 
-    street.trim().toLowerCase() === cleanLocation.trim().toLowerCase();
-  
-  if (street && cleanLocation && !streetEqualsLocation) {
-    parts.push(`ב${street}, ${cleanLocation}`);
-  } else if (street) {
-    parts.push(`ב${street}`);
-  } else if (cleanLocation) {
-    parts.push(`ב${cleanLocation}`);
-  }
-  
-  return parts.join(' ') || 'נכס להשכרה';
-}
+<p className="font-medium">
+  {property.title || `${property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} ${property.neighborhood || ''}`}
+</p>
+```
+
+### שינוי 2: שורות 1733-1735 (כרטיסי Mobile)
+
+**לפני:**
+```typescript
+<span className="font-medium truncate flex-1 min-w-0">
+  {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+</span>
+```
+
+**אחרי:**
+```typescript
+<span className="font-medium truncate flex-1 min-w-0">
+  {property.title || `${property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} ${property.neighborhood || ''}`}
+</span>
 ```
 
 ---
 
-## פתרון חלק 2: תיקון 165 נכסים קיימים (SQL)
+## פתרון חלק 2: תיקון נתונים חסרים (SQL)
 
-### 2.1 תיקון כותרות עם raw_data.neighborhoodText זמין
+### 2.1 עדכון כותרות שעדיין מכילות "יפו" שגוי
+
+הקוד הקודם לא תיקן נכסים כי הם היו עם `neighborhood = null`. נתקן ישירות:
 
 ```sql
--- Update titles: replace "יפו" with the actual neighborhoodText from raw_data
--- For 159 properties where neighborhood is NULL but raw_data has the info
+-- Fix titles that still have "יפו" but have valid raw_neighborhood data
 UPDATE scouted_properties SET
-  title = REPLACE(title, ', יפו', ', ' || (raw_data->>'neighborhoodText')),
+  title = REPLACE(title, 'ביפו', 'ב' || (raw_data->>'neighborhoodText')),
   neighborhood = raw_data->>'neighborhoodText'
 WHERE source = 'homeless'
   AND is_active = true
-  AND title LIKE '%, יפו'
+  AND title LIKE '%ביפו%'
   AND neighborhood IS NULL
   AND raw_data->>'neighborhoodText' IS NOT NULL
   AND raw_data->>'neighborhoodText' != ''
-  AND raw_data->>'neighborhoodText' NOT LIKE '%תל אביב%'
-  AND raw_data->>'neighborhoodText' != 'יפו';
+  AND raw_data->>'neighborhoodText' NOT LIKE '%תל אביב%';
 ```
 
-### 2.2 תיקון 2 נכסים עם שכונה מזוהה אבל כותרת שגויה
+### 2.2 עדכון שדה neighborhood מ-raw_data לנכסים שחסר
 
 ```sql
--- Fix titles where neighborhood is correctly identified but title still says יפו
+-- Populate neighborhood from raw_data where it's null
 UPDATE scouted_properties SET
-  title = REPLACE(title, ', יפו', ', ' || neighborhood)
+  neighborhood = raw_data->>'neighborhoodText'
 WHERE source = 'homeless'
   AND is_active = true
-  AND title LIKE '%, יפו'
+  AND neighborhood IS NULL
+  AND raw_data->>'neighborhoodText' IS NOT NULL
+  AND raw_data->>'neighborhoodText' != ''
+  AND raw_data->>'neighborhoodText' NOT IN ('תל אביב יפו', 'תל אביב', 'יפו');
+```
+
+### 2.3 בניית address לנכסים בלי כתובת
+
+```sql
+-- Build address for properties with neighborhood but no address
+UPDATE scouted_properties SET
+  address = neighborhood || ', תל אביב יפו'
+WHERE source = 'homeless'
+  AND is_active = true
+  AND address IS NULL
   AND neighborhood IS NOT NULL
-  AND neighborhood != 'יפו'
-  AND title NOT LIKE '%' || neighborhood || '%';
-```
-
-### 2.3 תיקון "תל אביב" ו-"תל אביב יפו" בכותרות
-
-```sql
--- Remove "תל אביב יפו" from titles
-UPDATE scouted_properties SET
-  title = REPLACE(title, ', תל אביב יפו', '')
-WHERE source = 'homeless'
-  AND is_active = true
-  AND title LIKE '%, תל אביב יפו%';
-
--- Remove "תל אביב" from titles (but not "תל אביב יפו")
-UPDATE scouted_properties SET
-  title = REPLACE(title, ', תל אביב', '')
-WHERE source = 'homeless'
-  AND is_active = true
-  AND title LIKE '%, תל אביב'
-  AND title NOT LIKE '%, תל אביב יפו%';
+  AND city = 'תל אביב יפו';
 ```
 
 ---
 
 ## תוצאות צפויות
 
+### UI
+
 | לפני | אחרי |
 |------|------|
-| `דירה 4 חדרים בפנקס, יפו` | `דירה 4 חדרים בפנקס, אזור ככר המדינה` |
-| `דירה 4 חדרים במעפילי אגוז, יפו` | `דירה 4 חדרים במעפילי אגוז, נווה חן` |
-| `דירה 2.5 חדרים בדרך השלום, יפו` | `דירה 2.5 חדרים בדרך השלום, תל חיים` |
-| `דירה 4 חדרים בשדרות נורדאו, יפו` | `דירה 4 חדרים בשדרות נורדאו, כיכר המדינה` |
-| `3 חדרים במזא''ה, תל אביב יפו` | `3 חדרים במזא''ה` |
-| `דירה 2 חדרים בגבעולים, תל אביב` | `דירה 2 חדרים בגבעולים` |
+| `להשכרה טאגור, רמת אביב, תל אביב יפו, רמת אביב` | `דירה 4 חדרים בטאגור, רמת אביב` |
+| `להשכרה , הגוש הגדול` | `דופלקס 6 חדרים בהגוש הגדול` |
+| `להשכרה יהודה הנשיא, נוה אביבים, תל אביב יפו, נווה אביבים` | `דירה 4 חדרים ביהודה הנשיא, נווה אביבים` |
+
+### נתונים
+
+| לפני | אחרי |
+|------|------|
+| `title: "דופלקס 6 חדרים ביפו"`, `neighborhood: null` | `title: "דופלקס 6 חדרים בהגוש הגדול"`, `neighborhood: "הגוש הגדול"` |
+| `address: null`, `neighborhood: "כוכב הצפון"` | `address: "כוכב הצפון, תל אביב יפו"` |
 
 ---
 
@@ -177,6 +120,5 @@ WHERE source = 'homeless'
 
 | קובץ | שינוי |
 |------|-------|
-| `supabase/functions/_experimental/parser-homeless.ts` | 1. הסרת cityText מ-fallback (שורה 275) 2. תיקון buildTitle (שורות 384-410) |
-| SQL Migration | תיקון 165 כותרות שגויות |
-
+| `src/components/scout/ScoutedPropertiesTable.tsx` | שימוש ב-`title` במקום `address` + `neighborhood` |
+| SQL Migration | תיקון titles שגויים + מילוי neighborhood + בניית address |
