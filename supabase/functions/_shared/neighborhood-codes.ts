@@ -198,7 +198,31 @@ export function getMadlanMultiNeighborhoodPath(
   city: string
 ): string | null {
   const slugs: string[] = [];
-  const citySlug = city.replace(/\s+/g, '-');  // "תל אביב יפו" -> "תל-אביב-יפו"
+  
+  // FIXED: Use proper city mapping instead of simple replace
+  // Map "תל אביב" -> "תל-אביב-יפו" (not just "תל-אביב")
+  const madlanCityMap: Record<string, string> = {
+    'תל אביב': 'תל-אביב-יפו',
+    'תל אביב יפו': 'תל-אביב-יפו',
+    'ירושלים': 'ירושלים',
+    'חיפה': 'חיפה',
+    'ראשון לציון': 'ראשון-לציון',
+    'פתח תקווה': 'פתח-תקווה',
+    'אשדוד': 'אשדוד',
+    'נתניה': 'נתניה',
+    'באר שבע': 'באר-שבע',
+    'חולון': 'חולון',
+    'בת ים': 'בת-ים',
+    'רמת גן': 'רמת-גן',
+    'הרצליה': 'הרצליה',
+    'רעננה': 'רעננה',
+    'גבעתיים': 'גבעתיים',
+    'כפר סבא': 'כפר-סבא',
+    'הוד השרון': 'הוד-השרון',
+    'רמת השרון': 'רמת-השרון',
+  };
+  
+  const citySlug = madlanCityMap[city] || city.replace(/\s+/g, '-');
   
   for (const neighborhood of neighborhoods) {
     const slug = madlanNeighborhoodSlugs[neighborhood];
