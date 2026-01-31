@@ -1,149 +1,150 @@
 
+# שיפורי UI בטבלת הנכסים הנסרקים + השלמת נתונים משופרת
 
-# תיקון זיהוי פרטי/תיווך - לוגיקה פשוטה ומדויקת
+## הבעיות שזוהו
 
-## הבעיה הנוכחית
-
-בכל 3 הפרסרים יש רשימה ארוכה של `brokerKeywords` שכוללת מילים בעייתיות:
-- `"נכסים"` - מופיע בניווט של כל האתרים
-- `"Properties"` - מופיע בכותרות UI
-- `"Premium"` - מילה כללית מדי
-- `"קבוצת"`, `"group"`, `"אחוזות"` - שמות רחובות/שכונות
-
-**תוצאה**: כמעט כל הנכסים מסומנים כ"תיווך" בטעות!
+1. **פילטר מקורות** - רשום "כל..." במקום לציין שזה מקורות
+2. **פילטרים נוספים** - שני פילטרים נוספים רשומים "כל" או "כולם" ללא הקשר
+3. **כותרת הנכס** - הפורמט הנוכחי: "דירה X חדרים להשכרה בצפון חדש / תל אביב יפו - צפון חדש"
+   - הפורמט הרצוי: "להשכרה [רחוב] [מספר], [שכונה]" + שורה תחתית: "תל אביב"
+4. **כפתור השלמת נתונים** - כרגע משלים רק חדרים/מחיר/גודל/features
+   - הבקשה: להוסיף גם תיקון סיווג פרטי/תיווך
 
 ---
 
-## הלוגיקה הנכונה (לפי התמונות שסיפקת)
+## פתרון
 
-### מדלן
-**תיווך**: מופיע "תיווך" + מספר רישיון (7 ספרות)
-**פרטי**: אין שום אחד מהסימנים הללו
+### שינוי 1: תיקון תוויות הפילטרים (Desktop)
 
-### Yad2
-**תיווך**: מופיע "תיווך:" + מספר רישיון
-**פרטי**: אין שום אחד מהסימנים הללו
+**קובץ**: `src/components/scout/ScoutedPropertiesTable.tsx`
 
-### Homeless
-**תיווך**: מופיע "שם הסוכנות:" עם שם סוכנות
-**פרטי**: רק "איש קשר:" עם שם פרטי (ללא שם סוכנות)
+| פילטר | לפני | אחרי |
+|-------|------|------|
+| מקור | `placeholder="מקור"`, `value="all">כל המקורות` | `placeholder="מקורות"`, `value="all">כל המקורות` |
+| סוג עסקה | `placeholder="סוג"`, `value="all">כל הסוגים` | `placeholder="סוג עסקה"`, `value="all">כל העסקאות` |
+| סוג מפרסם | `placeholder="מפרסם"`, `value="all">כולם` | `placeholder="פרטי/תיווך"`, `value="all">כל המפרסמים` |
 
----
-
-## שינויים בקבצים
-
-### קובץ 1: `supabase/functions/_experimental/parser-utils.ts`
-
-**שורות 290-315** - לעדכן את `detectBroker`:
+**שורות 1406-1440** - עדכון ה-Select placeholders:
 
 ```typescript
-// מילות מפתח חזקות בלבד - אלה מעידות בוודאות על תיווך
-const STRONG_BROKER_KEYWORDS = [
-  'תיווך',           // מופיע מפורש במדלן ויד2
-  'בבלעדיות',        // בלעדיות לסוכנות
-  'מתווך',
-  'מתווכת',
-  'רישיון',          // מספר רישיון תיווך
-  'שם הסוכנות',      // Homeless specific
-];
+{/* Source Filter */}
+<Select value={sourceFilter} onValueChange={setSourceFilter}>
+  <SelectTrigger className="w-[90px] h-8 text-sm">
+    <SelectValue placeholder="מקורות" />
+  </SelectTrigger>
+  ...
+</Select>
 
-// שמות רשתות תיווך ידועות
-const BROKER_BRANDS = [
-  'רימקס', 're/max', 'remax',
-  'אנגלו סכסון', 'anglo saxon',
-  'century 21', 'century21',
-  'קולדוול בנקר', 'coldwell banker',
-];
+{/* Property Type */}
+<Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+  <SelectTrigger className="w-[100px] h-8 text-sm">
+    <SelectValue placeholder="סוג עסקה" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">כל העסקאות</SelectItem>
+    ...
+  </SelectContent>
+</Select>
 
-export function detectBroker(text: string): boolean {
-  if (!text) return false;
-  const textLower = text.toLowerCase();
+{/* Owner Type Filter */}
+<Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
+  <SelectTrigger className="w-[100px] h-8 text-sm">
+    <SelectValue placeholder="פרטי/תיווך" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">כל המפרסמים</SelectItem>
+    ...
+  </SelectContent>
+</Select>
+```
+
+---
+
+### שינוי 2: פורמט חדש לכותרת הנכס
+
+**לפני**:
+```
+דירה 10 חדרים להשכרה בצפון חדש
+תל אביב יפו - צפון חדש
+```
+
+**אחרי**:
+```
+להשכרה בן יהודה 173, צפון חדש
+תל אביב
+```
+
+**שורות 1528-1534** - עדכון תצוגת הפרטים בטבלה (Desktop):
+
+```typescript
+<TableCell>
+  <div>
+    <p className="font-medium">
+      {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+    </p>
+    <p className="text-sm text-muted-foreground">
+      {property.city?.replace(' יפו', '') || 'תל אביב'}
+    </p>
+  </div>
+</TableCell>
+```
+
+**שורות 1669-1676** - עדכון גם בתצוגה המובייל:
+
+```typescript
+<span className="font-medium truncate flex-1 min-w-0">
+  {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'} {property.address || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+</span>
+<span className="text-muted-foreground text-xs shrink-0">
+  {property.city?.replace(' יפו', '') || 'תל אביב'}
+</span>
+```
+
+---
+
+### שינוי 3: הרחבת כפתור "השלמת נתונים"
+
+כפתור "השלמת נתונים" יעבור על כל הנכסים ויתקן:
+1. **נתונים חסרים** (כמו היום): חדרים, מחיר, גודל, features
+2. **חדש - סיווג פרטי/תיווך**: יבדוק מחדש את ה-markdown לפי הלוגיקה החדשה
+
+**קובץ**: `supabase/functions/backfill-property-data/index.ts`
+
+הוספת פונקציה חדשה `detectBrokerFromMarkdown`:
+
+```typescript
+function detectBrokerFromMarkdown(markdown: string, source: string): boolean | null {
+  // Check for explicit broker indicators
+  const hasTivuchLabel = /תיווך/.test(markdown);
+  const hasLicenseNumber = /רישיון|\d{7}/.test(markdown);
+  const hasAgencyName = /שם הסוכנות/.test(markdown);
+  const hasExclusivity = /בבלעדיות/.test(markdown);
   
-  // 1. בדוק מילות מפתח חזקות
-  if (STRONG_BROKER_KEYWORDS.some(k => text.includes(k))) {
-    return true;
+  // Known broker brands
+  const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21'];
+  const hasBrokerBrand = BROKER_BRANDS.some(brand => 
+    markdown.toLowerCase().includes(brand.toLowerCase())
+  );
+  
+  if (hasTivuchLabel || hasLicenseNumber || hasAgencyName || hasExclusivity || hasBrokerBrand) {
+    return false; // is_private = false (it's a broker)
   }
   
-  // 2. בדוק שמות רשתות תיווך
-  if (BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()))) {
-    return true;
-  }
-  
-  // 3. בדוק מספר רישיון (7 ספרות)
-  if (/\d{7}/.test(text)) {
-    return true;
-  }
-  
-  return false;
+  // If no broker indicators found, mark as private
+  return true; // is_private = true
 }
 ```
 
----
-
-### קובץ 2: `supabase/functions/_experimental/parser-madlan.ts`
-
-**שורות 347-370** - לוגיקה חדשה:
+עדכון הלוגיקה הראשית להוסיף בדיקת `is_private`:
 
 ```typescript
-// Detect broker - Madlan shows "תיווך" + license explicitly
-// According to user screenshot: broker = "תיווך" label + 7-digit license number
-const hasTivuchLabel = /תיווך/.test(block);
-const hasLicenseNumber = /רישיון|מס'?\s*רישיון|\d{7}/.test(block);
-const hasExclusivity = /בבלעדיות/.test(block);
+// בתוך הלולאה הראשית
+const isPrivate = detectBrokerFromMarkdown(markdown, prop.source);
 
-// SIMPLE RULE: If "תיווך" appears OR license number - it's broker
-// Otherwise - it's private
-const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity;
-```
-
-**הסרת רשימת `brokerKeywords` הבעייתית** מהפונקציה `parsePropertyBlock`.
-
----
-
-### קובץ 3: `supabase/functions/_experimental/parser-homeless.ts`
-
-**שורות 288-297** - לוגיקה חדשה:
-
-```typescript
-// Detect broker - Homeless shows "שם הסוכנות:" for brokers
-// According to user screenshot: 
-// - Broker: "שם הסוכנות: גולדין נכסים" (agency name visible)
-// - Private: Only "איש קשר: אבי" (just first name, no agency)
-
-const hasAgencyName = /שם הסוכנות/.test(fullRowText);
-const hasAgencyField = /סוכנות|תיווך|משרד נדל"?ן/.test(fullRowText);
-const hasLicenseNumber = /רישיון|\d{7}/.test(fullRowText);
-
-// Known broker brands that might appear
-const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'century 21', 'קולדוול'];
-const hasBrokerBrand = BROKER_BRANDS.some(brand => 
-  fullRowText.toLowerCase().includes(brand.toLowerCase())
-);
-
-// SIMPLE RULE: Agency name, license, or known brand = broker
-const isBroker = hasAgencyName || hasAgencyField || hasLicenseNumber || hasBrokerBrand;
-```
-
-**הסרת רשימת `brokerKeywords` הבעייתית** (שורות 289-295).
-
----
-
-### קובץ 4: `supabase/functions/_experimental/parser-yad2.ts`
-
-בדיקת הקוד הקיים - הלוגיקה הנוכחית כבר בודקת את המבנה `\\₪` לפרטי, אבל צריך להסיר את ה-keywords הבעייתיים:
-
-**שורה ~170** - לעדכן:
-
-```typescript
-// SIMPLE RULE (per user screenshots):
-// Yad2 Broker: Shows "תיווך:" + license number
-// Yad2 Private: No such markers
-
-const hasTivuchLabel = /תיווך:?/.test(block);
-const hasLicenseNumber = /רישיון|מס'?\s*רישיון|\d{7}/.test(block);
-
-// Remove the generic brokerKeywords check that includes "נכסים", "Properties", etc.
-const isBroker = hasTivuchLabel || hasLicenseNumber;
+// הוספה ל-updates
+if (prop.is_private === null && isPrivate !== null) {
+  updates.is_private = isPrivate;
+}
 ```
 
 ---
@@ -152,27 +153,14 @@ const isBroker = hasTivuchLabel || hasLicenseNumber;
 
 | קובץ | שינוי |
 |------|-------|
-| `parser-utils.ts` | הגדרת STRONG_BROKER_KEYWORDS ו-BROKER_BRANDS |
-| `parser-madlan.ts` | הסרת keywords בעייתיים, בדיקת "תיווך" + רישיון בלבד |
-| `parser-homeless.ts` | הסרת keywords בעייתיים, בדיקת "שם הסוכנות" בלבד |
-| `parser-yad2.ts` | הסרת keywords בעייתיים, בדיקת "תיווך:" + רישיון בלבד |
+| `ScoutedPropertiesTable.tsx` | תיקון placeholders בפילטרים + פורמט כותרת חדש |
+| `backfill-property-data/index.ts` | הוספת זיהוי פרטי/תיווך מה-markdown |
 
 ---
 
-## תוצאות צפויות
+## בדיקות אחרי היישום
 
-| מדד | לפני | אחרי |
-|-----|------|------|
-| מדלן - דיוק זיהוי | ~30% | ~95% |
-| Yad2 - דיוק זיהוי | ~50% | ~95% |
-| Homeless - דיוק זיהוי | ~40% | ~90% |
-
----
-
-## בדיקה אחרי התיקון
-
-1. להריץ סריקה בכל אחד מ-3 האתרים
-2. לבדוק שהיחס פרטי/תיווך הגיוני (לא 0% או 100%)
-3. לדגום 5 נכסים ידנית ולוודא שהסיווג נכון
-4. לוודא שהמילים "נכסים" ו-"Properties" לא גורמות עוד לסיווג שגוי
+1. לוודא שהפילטרים מראים "מקורות", "סוג עסקה", "פרטי/תיווך" כברירת מחדל
+2. לוודא שכותרות הנכסים מופיעות בפורמט החדש
+3. להפעיל "השלמת נתונים" ולוודא שנכסים עם `is_private = null` מתעדכנים
 
