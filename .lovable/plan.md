@@ -1,128 +1,115 @@
 
+# ניקוי כפילויות מאותו מקור ותיקון מניעתי
 
-# תיקון מורחב: סינון מקיף של נכסים שאינם בתל אביב
+## סיכום הבעיה
 
-## סיכום הממצאים
+מצאתי **1,577 רשומות כפולות** שצריכות להימחק:
 
-המיגרציה הקודמת הצליחה להשבית את רוב הנכסים הבעייתיים, אבל נשארו עוד **15+ נכסים פעילים** שנכנסו דרך דפוסים שלא כיסינו:
+| מקור | כפילויות למחיקה | קבוצות בעייתיות |
+|------|-----------------|------------------|
+| Yad2 | 882 | 820 |
+| Homeless | 591 | 280 |
+| Madlan | 104 | 91 |
 
-| מיקום | כמות | סוג הבעיה |
-|-------|------|----------|
-| אבן יהודה (עיר) | 8 | עיר ליד נתניה - לא רחוב אבן יהודה |
-| נתניה / קרית נורדאו | 3 | Netanya באנגלית בכתובת |
-| מושב כפר דניאל | 1 | מושב ליד לוד |
-| קיבוץ מחניים | 1 | קיבוץ בגליל |
-| רמות נפתלי | 2 | ישוב בגליל העליון |
+### דוגמה לבעיה:
+אותה דירה באוסישקין (URL: `viewad,83208.aspx`) מופיעה **8 פעמים** עם source_id שונה:
+- `homeless-oqownc`, `homeless-oqownd`, `homeless-oqownk`, וכו'
 
-## פתרון מורחב - 3 שלבים
+## שורש הבעיה
 
-### שלב 1: תיקון מיידי - SQL Script להשבתת הנכסים החדשים
+### 1. חילוץ ID שגוי מ-URL
+פונקציית `generateSourceId` מחפשת `/(\d+)(?:\/|$|\?)` - אבל:
+- Homeless משתמש בפסיק: `viewad,83208.aspx` (לא נלכד!)
+- Madlan לפעמים משתמש בפורמטים שונים
+
+כשה-regex נכשל, הפונקציה יוצרת hash אקראי עם ה-index, וכל ריצה מייצרת ID שונה!
+
+### 2. ה-upsert לא עוזר
+למרות ש-upsert מוגדר על `source + source_id`, כל רשומה מקבלת source_id ייחודי אז הכפילויות נכנסות.
+
+## הפתרון - 3 שלבים
+
+### שלב 1: ניקוי מיידי - מחיקת כפילויות מ-DB
+
+SQL Script שמשאיר רק את הרשומה **הראשונה** מכל קבוצת כפילויות:
 
 ```sql
-UPDATE scouted_properties
-SET is_active = false
-WHERE is_active = true
-AND (
-  -- אבן יהודה (העיר, לא הרחוב)
-  address ILIKE '%, אבן יהודה%'
-  OR (address ILIKE '%אבן יהודה, אבן יהודה%')
-  -- נתניה
-  OR address ILIKE '%Netanya%'
-  OR address ILIKE '%נתניה%'
-  OR address ILIKE '%קרית נורדאו%'
-  OR title ILIKE '%קרית נורדאו%'
-  -- מושבים וקיבוצים שאינם בתל אביב
-  OR address ILIKE '%מושב כפר דניאל%'
-  OR address ILIKE '%קיבוץ מחניים%'
-  OR address ILIKE '%רמות נפתלי%'
-);
+-- Delete duplicate records from same source, keeping only the oldest one
+WITH duplicates_to_delete AS (
+  SELECT id
+  FROM (
+    SELECT 
+      id,
+      ROW_NUMBER() OVER (
+        PARTITION BY source, address, rooms, price, floor 
+        ORDER BY created_at ASC
+      ) as row_num
+    FROM scouted_properties
+    WHERE is_active = true
+    AND address IS NOT NULL
+    AND rooms IS NOT NULL
+    AND price IS NOT NULL
+  ) ranked
+  WHERE row_num > 1
+)
+DELETE FROM scouted_properties 
+WHERE id IN (SELECT id FROM duplicates_to_delete);
 ```
 
-### שלב 2: הרחבת ה-Blacklist ב-parser-utils.ts
-
-נוסיף את הדפוסים החדשים שמצאנו:
+### שלב 2: תיקון חילוץ ID - עדכון `generateSourceId`
 
 ```typescript
-const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
-  // === הדפוסים הקיימים ===
-  { pattern: /נווה\s*כפיר/i, real_city: 'פתח תקווה' },
-  { pattern: /צופים/i, real_city: 'צופים (מזרח השומרון)' },
-  { pattern: /קיסריה/i, real_city: 'קיסריה' },
-  { pattern: /מעלה\s*אדומים/i, real_city: 'מעלה אדומים' },
-  { pattern: /צמח\s*השדה/i, real_city: 'מעלה אדומים' },
-  { pattern: /סמדר\s*עילית/i, real_city: 'יבנאל' },
-  { pattern: /rishon\s*le?\s*zion/i, real_city: 'ראשון לציון' },
-  { pattern: /יבנאל,\s*יבנאל/i, real_city: 'יבנאל' },
-  { pattern: /,\s*יבנאל$/i, real_city: 'יבנאל' },
-  
-  // === דפוסים חדשים ===
-  // אבן יהודה - העיר (לא רחוב אבן יהודה בתל אביב!)
-  { pattern: /,\s*אבן\s*יהודה$/i, real_city: 'אבן יהודה' },
-  { pattern: /אבן\s*יהודה,\s*אבן\s*יהודה/i, real_city: 'אבן יהודה' },
-  
-  // נתניה
-  { pattern: /netanya/i, real_city: 'נתניה' },
-  { pattern: /קרית\s*נורדאו/i, real_city: 'נתניה' },
-  
-  // מושבים וקיבוצים
-  { pattern: /מושב\s*כפר\s*דניאל/i, real_city: 'כפר דניאל' },
-  { pattern: /קיבוץ\s*מחניים/i, real_city: 'קיבוץ מחניים' },
-  { pattern: /רמות\s*נפתלי/i, real_city: 'רמות נפתלי' },
-  
-  // ערים נוספות באנגלית
-  { pattern: /herzliya(?!\s*pituach)/i, real_city: 'הרצליה' },
-  { pattern: /ramat\s*gan/i, real_city: 'רמת גן' },
-  { pattern: /givatayim/i, real_city: 'גבעתיים' },
-  { pattern: /petah\s*tikva|petach\s*tikva/i, real_city: 'פתח תקווה' },
-  { pattern: /holon/i, real_city: 'חולון' },
-  { pattern: /bat\s*yam/i, real_city: 'בת ים' },
-  
-  // ערים בעברית שעלולות להתבלבל
-  { pattern: /קרית\s*מלאכי/i, real_city: 'קרית מלאכי' },
-  { pattern: /קרית\s*גת/i, real_city: 'קרית גת' },
-  { pattern: /קרית\s*אונו/i, real_city: 'קרית אונו' },
-  { pattern: /קרית\s*ביאליק/i, real_city: 'קרית ביאליק' },
-  { pattern: /קרית\s*מוצקין/i, real_city: 'קרית מוצקין' },
-  { pattern: /קרית\s*ים/i, real_city: 'קרית ים' },
-  { pattern: /קרית\s*אתא/i, real_city: 'קרית אתא' },
-  { pattern: /קרית\s*שמונה/i, real_city: 'קרית שמונה' },
-];
-```
-
-### שלב 3: שיפור הלוגיקה - בדיקת כתובת בנוסף לכותרת
-
-נעדכן את הפונקציה `isBlacklistedLocation` לבדוק גם את הכתובת המלאה:
-
-```typescript
-export function isBlacklistedLocation(text: string): { blacklisted: boolean; real_city?: string } {
-  if (!text) return { blacklisted: false };
-  
-  // Normalize text - remove extra spaces
-  const normalizedText = text.replace(/\s+/g, ' ').trim();
-  
-  for (const { pattern, real_city } of BLACKLIST_LOCATIONS) {
-    if (pattern.test(normalizedText)) {
-      return { blacklisted: true, real_city };
-    }
+export function generateSourceId(source: string, url: string, index: number): string {
+  if (!url) {
+    return `${source}-idx-${index}`;
   }
-  return { blacklisted: false };
+  
+  // HOMELESS: viewad,12345.aspx OR viewad,12345 OR /viewad,12345
+  const homelessMatch = url.match(/viewad[,\/](\d+)/i);
+  if (homelessMatch) {
+    return `${source}-${homelessMatch[1]}`;
+  }
+  
+  // MADLAN: /listing/ABC123 or listing ID in path
+  const madlanMatch = url.match(/\/listing\/([a-zA-Z0-9]+)/i) || 
+                      url.match(/\/([a-zA-Z0-9]{10,})/);
+  if (madlanMatch) {
+    return `${source}-${madlanMatch[1]}`;
+  }
+  
+  // YAD2: /item/12345678 or /ad/12345678
+  const yad2Match = url.match(/(?:item|ad)\/(\d+)/i);
+  if (yad2Match) {
+    return `${source}-${yad2Match[1]}`;
+  }
+  
+  // GENERIC: Any numeric ID in URL
+  const genericMatch = url.match(/\/(\d{5,})/);
+  if (genericMatch) {
+    return `${source}-${genericMatch[1]}`;
+  }
+  
+  // Last resort: Hash the FULL URL (without index!)
+  const hash = simpleHash(url);
+  return `${source}-url-${hash}`;
 }
+```
 
-// NEW: Check if full address indicates non-Tel Aviv
-export function isAddressBlacklisted(address: string): { blacklisted: boolean; real_city?: string } {
-  if (!address) return { blacklisted: false };
-  
-  // Check if address ends with a non-Tel Aviv city
-  const addressParts = address.split(',').map(p => p.trim());
-  const lastPart = addressParts[addressParts.length - 1];
-  
-  // If the last part is a known non-Tel Aviv city (from CITY_PATTERNS), blacklist it
-  const knownNonTACity = extractCity(lastPart);
-  if (knownNonTACity && !knownNonTACity.includes('תל אביב')) {
-    return { blacklisted: true, real_city: knownNonTACity };
-  }
-  
-  return isBlacklistedLocation(address);
+### שלב 3: הוספת בדיקת כפילות לפני שמירה
+
+ב-`parser-homeless.ts` וב-scouts - בדיקה מוקדמת לפני push:
+
+```typescript
+// Before adding property to array, check for existing source_url
+const existingIndex = properties.findIndex(p => 
+  p.source_url === property.source_url && 
+  p.source === property.source
+);
+
+if (existingIndex === -1) {
+  properties.push(property);
+} else {
+  console.log(`[Parser] Skipping duplicate URL: ${property.source_url}`);
 }
 ```
 
@@ -130,19 +117,13 @@ export function isAddressBlacklisted(address: string): { blacklisted: boolean; r
 
 | קובץ | פעולה |
 |------|-------|
-| **SQL Migration** | השבתת 15+ נכסים נוספים |
-| `parser-utils.ts` | הרחבת BLACKLIST_LOCATIONS עם 20+ דפוסים חדשים |
-| `parser-utils.ts` | הוספת `isAddressBlacklisted()` לבדיקה מבוססת-כתובת |
-| `parser-homeless.ts` | עדכון לשימוש בשתי הפונקציות |
-| `backfill-property-data` | עדכון לבדיקת כתובת מלאה |
+| **SQL Migration** | מחיקת 1,577 כפילויות מ-DB |
+| `parser-utils.ts` | תיקון `generateSourceId` לתמיכה ב-Homeless/Madlan/Yad2 |
+| `parser-homeless.ts` | הוספת בדיקת כפילות URL לפני push |
+| `property-helpers.ts` | (אופציונלי) הוספת בדיקת source_url כ-fallback |
 
 ## תוצאה צפויה
 
-- **מיידית**: כל 15+ הנכסים הבעייתיים שנותרו יוסתרו
-- **לעתיד**: סינון מקיף יותר שיתפוס גם דפוסים באנגלית, מושבים, קיבוצים
-- **דיוק**: בדיקת הכתובת המלאה מונעת false negatives
-
-## הערה חשובה
-
-אם אתה עדיין רואה את הנכסים הישנים (סמדר עילית, קיסריה וכו') בממשק - הם **כבר הושבתו** בבסיס הנתונים. תרענן את הדף (Ctrl+F5) כדי לראות את השינוי.
-
+- **מיידית**: מחיקת ~1,577 רשומות כפולות
+- **מניעה**: כל נכס יקבל source_id קבוע מבוסס URL
+- **אמינות**: לא יכנסו יותר כפילויות מאותו מקור
