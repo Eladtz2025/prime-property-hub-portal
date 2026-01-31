@@ -492,18 +492,44 @@ export function cleanText(text: string): string {
 }
 
 /**
- * Generate a unique source ID from URL or content
+ * Generate a stable source ID from URL
+ * FIXED 2026-01-31: Added support for Homeless comma format (viewad,12345.aspx)
+ * and improved Madlan/Yad2 patterns to prevent duplicate entries
  */
 export function generateSourceId(source: string, url: string, index: number): string {
-  // Try to extract ID from URL
-  const urlMatch = url.match(/\/(\d+)(?:\/|$|\?)/);
-  if (urlMatch) {
-    return `${source}-${urlMatch[1]}`;
+  if (!url) {
+    return `${source}-idx-${index}`;
   }
   
-  // Fallback to hash-based ID
-  const hash = simpleHash(url + index);
-  return `${source}-${hash}`;
+  // HOMELESS: viewad,12345.aspx OR viewad,12345 OR /viewad,12345
+  // This was the main bug - Homeless uses commas, not slashes!
+  const homelessMatch = url.match(/viewad[,\/](\d+)/i);
+  if (homelessMatch) {
+    return `${source}-${homelessMatch[1]}`;
+  }
+  
+  // MADLAN: /listing/ABC123 or listing ID in path
+  const madlanMatch = url.match(/\/listing\/([a-zA-Z0-9]+)/i) || 
+                      url.match(/\/([a-zA-Z0-9]{10,})/);
+  if (madlanMatch) {
+    return `${source}-${madlanMatch[1]}`;
+  }
+  
+  // YAD2: /item/12345678 or /ad/12345678
+  const yad2Match = url.match(/(?:item|ad)\/(\d+)/i);
+  if (yad2Match) {
+    return `${source}-${yad2Match[1]}`;
+  }
+  
+  // GENERIC: Any numeric ID (5+ digits) in URL path
+  const genericMatch = url.match(/\/(\d{5,})/);
+  if (genericMatch) {
+    return `${source}-${genericMatch[1]}`;
+  }
+  
+  // Last resort: Hash the FULL URL (WITHOUT index to ensure stability!)
+  const hash = simpleHash(url);
+  return `${source}-url-${hash}`;
 }
 
 /**
