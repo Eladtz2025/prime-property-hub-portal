@@ -152,8 +152,15 @@ function findYad2Blocks(markdown: string): string[] {
   while ((match = listItemPattern.exec(markdown)) !== null) {
     const block = match[0];
     
-    // Skip blocks that look like project/yad1 links
-    if (block.includes('/yad1/') || block.includes('/project/')) {
+    // Skip blocks with invalid URL patterns (projects, search pages, yad1)
+    // These lead to 404 errors or generic search pages
+    if (
+      block.includes('/yad1/') || 
+      block.includes('/project/') ||
+      block.includes('forsale?') ||
+      block.includes('forrent?') ||
+      block.includes('/yad1/project/')
+    ) {
       continue;
     }
     

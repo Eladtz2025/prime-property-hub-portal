@@ -27,6 +27,49 @@ export interface ScrapedProperty {
   is_private?: boolean | null;
 }
 
+// ==================== URL Validation ====================
+
+/**
+ * Validates that a source URL is a valid direct listing URL
+ * Rejects project pages, search pages, and other non-listing URLs
+ */
+export function isValidSourceUrl(url: string, source: string): boolean {
+  if (!url) return false;
+  
+  // Yad2 validation
+  if (source === 'yad2') {
+    // Must be /realestate/item/ pattern
+    if (!url.includes('/realestate/item/')) return false;
+    // Reject yad1, project, and search URLs
+    if (url.includes('/yad1/')) return false;
+    if (url.includes('/project/')) return false;
+    if (url.includes('forsale?')) return false;
+    if (url.includes('forrent?')) return false;
+    return true;
+  }
+  
+  // Madlan validation
+  if (source === 'madlan') {
+    // Must be /listings/ pattern
+    if (!url.includes('/listings/')) return false;
+    // Reject projects and search pages
+    if (url.includes('/projects/')) return false;
+    if (url.includes('/for-rent/')) return false;
+    if (url.includes('/for-sale/')) return false;
+    return true;
+  }
+  
+  // Homeless validation
+  if (source === 'homeless') {
+    // Must be /viewad.aspx pattern with specific ID
+    if (!url.includes('/viewad.aspx')) return false;
+    if (!url.includes('adid=')) return false;
+    return true;
+  }
+  
+  return true; // Unknown sources pass through
+}
+
 // ==================== Save Property ====================
 
 /**

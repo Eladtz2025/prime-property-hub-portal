@@ -509,6 +509,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
     // Always filter for Tel Aviv
     query = query.ilike('city', '%תל אביב%');
     
+    // Safety net: Exclude known broken URL patterns (projects, search pages)
+    // These lead to 404 errors when clicked
+    query = query
+      .not('source_url', 'ilike', '%/yad1/%')
+      .not('source_url', 'ilike', '%/projects/%')
+      .not('source_url', 'ilike', '%forsale?%')
+      .not('source_url', 'ilike', '%forrent?%')
+      .not('source_url', 'ilike', '%/for-rent/%')
+      .not('source_url', 'ilike', '%/for-sale/%');
+    
     if (filters.status !== 'all') {
       query = query.eq('status', filters.status);
     }
