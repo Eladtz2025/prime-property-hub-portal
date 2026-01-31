@@ -24,6 +24,7 @@ import {
   cleanText,
   parseHebrewDate,
   generateSourceId,
+  isBlacklistedLocation,
   type ParsedProperty,
   type ParserResult,
   type PropertyFeatures
@@ -276,6 +277,16 @@ export async function parseHomelessHtml(
       
       // Parse entry date from full text
       const entryDate = parseHebrewDate(fullRowText);
+      
+      // ========== BLACKLIST CHECK: Skip non-Tel-Aviv properties ==========
+      // Check title, address, and full row for blacklisted locations
+      const textToCheck = `${streetText} ${neighborhoodText} ${cityText} ${title}`;
+      const blacklistCheck = isBlacklistedLocation(textToCheck);
+      if (blacklistCheck.blacklisted) {
+        console.log(`[Homeless Parser] ⚠️ Blacklisted: ${streetText || neighborhoodText} → ${blacklistCheck.real_city}`);
+        errors.push(`Row ${index}: Blacklisted location (${blacklistCheck.real_city})`);
+        continue; // Skip this property entirely
+      }
       
       // Skip rows with no city - this means it's from an unknown location
       // We don't want to import properties we can't properly categorize

@@ -5,6 +5,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================
+// Blacklist Locations (Non-Tel Aviv)
+// ============================================
+
+/**
+ * Locations that are NOT in Tel Aviv but often get mislabeled
+ */
+const BLACKLIST_LOCATIONS: Array<{ pattern: RegExp; real_city: string }> = [
+  { pattern: /נווה\s*כפיר/i, real_city: 'פתח תקווה' },
+  { pattern: /צופים/i, real_city: 'צופים (מזרח השומרון)' },
+  { pattern: /קיסריה/i, real_city: 'קיסריה' },
+  { pattern: /מעלה\s*אדומים/i, real_city: 'מעלה אדומים' },
+  { pattern: /צמח\s*השדה/i, real_city: 'מעלה אדומים' },
+  { pattern: /סמדר\s*עילית/i, real_city: 'יבנאל' },
+  { pattern: /rishon\s*le?\s*zion/i, real_city: 'ראשון לציון' },
+  { pattern: /יבנאל,\s*יבנאל/i, real_city: 'יבנאל' },
+  { pattern: /,\s*יבנאל$/i, real_city: 'יבנאל' },
+];
+
+function isBlacklistedLocation(text: string): { blacklisted: boolean; real_city?: string } {
+  if (!text) return { blacklisted: false };
+  for (const { pattern, real_city } of BLACKLIST_LOCATIONS) {
+    if (pattern.test(text)) {
+      return { blacklisted: true, real_city };
+    }
+  }
+  return { blacklisted: false };
+}
+
 interface PropertyData {
   rooms?: number;
   price?: number;
@@ -325,6 +354,22 @@ Deno.serve(async (req) => {
         console.log(`📊 Extracted data:`, JSON.stringify(extracted));
         console.log(`🏷️ Extracted features:`, JSON.stringify(features));
 
+        // ========== BLACKLIST CHECK: Deactivate non-Tel-Aviv properties ==========
+        // Check existing title/address for blacklisted locations (catches mislabeled properties)
+        const existingText = `${prop.title || ''} ${prop.address || ''}`;
+        const blacklistCheck = isBlacklistedLocation(existingText);
+        if (blacklistCheck.blacklisted) {
+          console.log(`🗑️ Property ${prop.id} blacklisted (${blacklistCheck.real_city}), marking inactive`);
+          await supabase
+            .from('scouted_properties')
+            .update({ is_active: false })
+            .eq('id', prop.id);
+          
+          successCount++;
+          lastId = prop.id;
+          continue;
+        }
+        
         // Check if property is not in Tel Aviv - mark as inactive
         const finalCity = extracted.city || prop.city || '';
         if (finalCity.length > 0) {
