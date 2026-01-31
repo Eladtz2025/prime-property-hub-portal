@@ -344,30 +344,30 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   // Skip if no useful data extracted
   if (!price && !rooms && !address && !size) return null;
   
-  // Detect broker - Madlan has explicit "תיווך" marker for broker listings
-  // Also check for agent images and other indicators
-  const hasAgentImage = block.includes('[![](https://') && (block.includes('/agents/') || block.includes('/developers/'));
+  // ============================================
+  // BROKER DETECTION - Madlan
+  // Based on user screenshots:
+  // - Broker: Shows "תיווך" label + 7-digit license number
+  // - Private: No such markers, just contact name
+  // ============================================
   
-  // Extended broker keywords for Madlan
-  const brokerKeywords = [
-    'תיווך', 'בבלעדיות', 'מתווך', 'מתווכת',
-    'משרד נדל"ן', 'משרד נדלן', 'סוכנות',
-    'real estate', 'agency', 'Properties', 'Premium',
-    'רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21',
-    'קולדוול בנקר', 'coldwell', 'HomeMe', 'הומלנד',
-    'נכסים', 'ריאלטי', 'realty', 'קבוצת', 'group', 'אחוזות', 'broker'
-  ];
+  // Check for explicit "תיווך" label (appears at end of broker listings)
+  const hasTivuchLabel = /תיווך/.test(block);
+  
+  // Check for 7-digit license number (Israeli broker license)
+  const hasLicenseNumber = /\d{7}/.test(block);
+  
+  // Check for "בבלעדיות" (exclusivity - broker indicator)
+  const hasExclusivity = /בבלעדיות/.test(block);
+  
+  // Check for known broker brand names
+  const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
   const blockLower = block.toLowerCase();
-  const hasBrokerKeyword = brokerKeywords.some(k => blockLower.includes(k.toLowerCase()));
+  const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
   
-  // In Madlan, broker listings typically end with "תיווך" label or have it in the block
-  const endsWithBrokerLabel = /תיווך\s*$/m.test(block) || /תיווך\s*\]/m.test(block);
-  
-  // Check if "פרטי" appears (private indicator)
-  const hasPrivateLabel = /פרטי/.test(block);
-  
-  // Broker if: has broker label/keyword OR agent image, AND not explicitly private
-  const isBroker = (endsWithBrokerLabel || hasBrokerKeyword || hasAgentImage) && !hasPrivateLabel;
+  // SIMPLE RULE: "תיווך" OR license number OR exclusivity OR known brand = broker
+  // Otherwise = private
+  const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity || hasBrokerBrand;
   
   // Extract features from the entire block
   const features = extractFeatures(block);

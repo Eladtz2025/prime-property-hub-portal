@@ -287,28 +287,54 @@ export function extractNeighborhood(text: string, city: string | null): { value:
 // Broker Detection
 // ============================================
 
-const BROKER_PATTERNS = [
-  /תיווך/i,
-  /מתווך/i,
-  /רימקס|re\/max/i,
-  /אנגלו\s*סכסון/i,
-  /century\s*21/i,
-  /קולדוול/i,
-  /סוכנות/i,
-  /נדל"ן/i,
-  /רישיון\s*\d{7}/i, // 7-digit license number
+/**
+ * Strong broker keywords - these definitely indicate a broker listing
+ * Based on actual site screenshots:
+ * - Madlan: Shows "תיווך" + 7-digit license number
+ * - Yad2: Shows "תיווך:" + license number  
+ * - Homeless: Shows "שם הסוכנות:" with agency name
+ */
+const STRONG_BROKER_KEYWORDS = [
+  'תיווך',           // Explicit broker label (Madlan, Yad2)
+  'בבלעדיות',        // Exclusivity (broker indicator)
+  'מתווך',           // Broker (masculine)
+  'מתווכת',          // Broker (feminine)
+  'רישיון',          // License (broker registration)
+  'שם הסוכנות',      // Agency name field (Homeless)
+];
+
+/**
+ * Known broker brand names (case-insensitive matching)
+ */
+const BROKER_BRANDS = [
+  'רימקס', 're/max', 'remax',
+  'אנגלו סכסון', 'anglo saxon',
+  'century 21', 'century21',
+  'קולדוול בנקר', 'coldwell banker',
 ];
 
 /**
  * Detect if listing is from a broker
+ * Uses ONLY strong indicators to avoid false positives from generic words
+ * like "נכסים" or "Properties" that appear in site navigation
  */
 export function detectBroker(text: string): boolean {
   if (!text) return false;
+  const textLower = text.toLowerCase();
   
-  for (const pattern of BROKER_PATTERNS) {
-    if (pattern.test(text)) {
-      return true;
-    }
+  // 1. Check for strong broker keywords
+  if (STRONG_BROKER_KEYWORDS.some(k => text.includes(k))) {
+    return true;
+  }
+  
+  // 2. Check for known broker brands
+  if (BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()))) {
+    return true;
+  }
+  
+  // 3. Check for 7-digit license number (Israeli broker license format)
+  if (/\d{7}/.test(text)) {
+    return true;
   }
   
   return false;
