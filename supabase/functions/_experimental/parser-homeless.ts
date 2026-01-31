@@ -272,7 +272,7 @@ export async function parseHomelessHtml(
       
       // Build title - now includes street name for better identification
       const roomsLabel = rooms ? `${rooms}` : '';
-      const title = buildTitle(propertyTypeText, roomsLabel, neighborhood?.label || neighborhoodText || cityText || '', streetText || null);
+      const title = buildTitle(propertyTypeText, roomsLabel, neighborhood?.label || neighborhoodText || '', streetText || null);
       
       // Parse entry date from full text
       const entryDate = parseHebrewDate(fullRowText);
@@ -397,13 +397,35 @@ function buildTitle(
     parts.push(`${rooms} חדרים`);
   }
   
-  // Include street in location for better identification
-  if (street && location) {
-    parts.push(`ב${street}, ${location}`);
+  // Clean city names and "יפו" from location
+  const INVALID_LOCATIONS = [
+    'תל אביב יפו', 'תל אביב-יפו', 'תל אביב - יפו', 'תל אביב',
+    'יפו' // Don't use standalone יפו as location fallback
+  ];
+  
+  let cleanLocation = location.trim();
+  
+  // If location is just a city name, clear it
+  if (INVALID_LOCATIONS.some(inv => cleanLocation === inv)) {
+    cleanLocation = '';
+  }
+  
+  // Remove city names if embedded in location string
+  for (const cityName of ['תל אביב יפו', 'תל אביב-יפו', 'תל אביב']) {
+    cleanLocation = cleanLocation.replace(cityName, '').trim();
+  }
+  cleanLocation = cleanLocation.replace(/^[,\-]\s*/, '').replace(/[,\-]\s*$/, '').trim();
+  
+  // Prevent street = location duplication
+  const streetEqualsLocation = street && cleanLocation && 
+    street.trim().toLowerCase() === cleanLocation.trim().toLowerCase();
+  
+  if (street && cleanLocation && !streetEqualsLocation) {
+    parts.push(`ב${street}, ${cleanLocation}`);
   } else if (street) {
     parts.push(`ב${street}`);
-  } else if (location) {
-    parts.push(`ב${location}`);
+  } else if (cleanLocation) {
+    parts.push(`ב${cleanLocation}`);
   }
   
   return parts.join(' ') || 'נכס להשכרה';
