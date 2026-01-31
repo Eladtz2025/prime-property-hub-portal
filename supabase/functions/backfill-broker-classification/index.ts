@@ -119,21 +119,33 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { 
       source, 
-      batchSize = 50, 
+      batchSize = 100, 
       offset = 0, 
       dryRun = false,
       cancelRequested = false,
-      scrapeFromSource = false // If true, re-scrape from original URL
+      scrapeFromSource = false,
+      forceReset = false // Force start fresh
     } = body;
 
-    console.log(`[Backfill Broker] source=${source || 'all'}, offset=${offset}, batchSize=${batchSize}, dryRun=${dryRun}, scrape=${scrapeFromSource}`);
+    console.log(`[Backfill Broker] source=${source || 'all'}, offset=${offset}, batchSize=${batchSize}, dryRun=${dryRun}, forceReset=${forceReset}`);
+
+    const taskName = 'backfill_broker_classification';
+
+    // Handle force reset - mark any running task as completed first
+    if (forceReset) {
+      await supabase
+        .from('backfill_progress')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('task_name', taskName)
+        .eq('status', 'running');
+    }
 
     // Handle cancel
     if (cancelRequested) {
       await supabase
         .from('backfill_progress')
         .update({ status: 'cancelled', completed_at: new Date().toISOString() })
-        .eq('task_name', 'backfill_broker_classification')
+        .eq('task_name', taskName)
         .eq('status', 'running');
       
       return new Response(JSON.stringify({ success: true, cancelled: true }), {
@@ -141,10 +153,9 @@ serve(async (req) => {
       });
     }
 
-    // Get or create progress record
-    const taskName = 'backfill_broker_classification';
     let progressId: string;
     
+    // Only check for existing progress if not forcing reset and not continuing from offset
     const { data: existingProgress } = await supabase
       .from('backfill_progress')
       .select('*')
@@ -152,13 +163,13 @@ serve(async (req) => {
       .eq('status', 'running')
       .single();
 
-    if (existingProgress) {
-      // MUTEX CHECK
+    if (existingProgress && !forceReset && offset === 0) {
+      // Check if stale (more than 60 seconds without update)
       const lastUpdate = new Date(existingProgress.updated_at || existingProgress.started_at);
       const secondsSinceUpdate = (Date.now() - lastUpdate.getTime()) / 1000;
       
-      if (secondsSinceUpdate < 15) {
-        console.log(`Skipping - another instance is processing`);
+      if (secondsSinceUpdate < 60) {
+        console.log(`Skipping - another instance is processing (${Math.round(secondsSinceUpdate)}s ago)`);
         return new Response(JSON.stringify({
           success: true,
           skipped: true,
@@ -168,11 +179,11 @@ serve(async (req) => {
         });
       }
       
+      // Stale - take over
       progressId = existingProgress.id;
-      await supabase
-        .from('backfill_progress')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', progressId);
+    } else if (existingProgress && offset > 0) {
+      // Continuing from previous batch
+      progressId = existingProgress.id;
     } else {
       // Count total properties
       let countQuery = supabase
@@ -348,19 +359,25 @@ serve(async (req) => {
 
     const hasMore = properties.length === batchSize;
 
-    // Auto-trigger next batch if there are more
+    // Auto-trigger next batch if there are more - with small delay to prevent overlap
     if (hasMore && !dryRun) {
       const nextOffset = offset + batchSize;
-      console.log(`Triggering next batch at offset ${nextOffset}...`);
+      console.log(`Will trigger next batch at offset ${nextOffset} in 2s...`);
       
-      fetch(`${supabaseUrl}/functions/v1/backfill-broker-classification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`
-        },
-        body: JSON.stringify({ source, batchSize, offset: nextOffset, dryRun, scrapeFromSource })
-      }).catch(err => console.error('Error triggering next batch:', err));
+      // Use setTimeout-like pattern with fetch delay
+      setTimeout(() => {
+        fetch(`${supabaseUrl}/functions/v1/backfill-broker-classification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`
+          },
+          body: JSON.stringify({ source, batchSize, offset: nextOffset, dryRun, scrapeFromSource })
+        }).catch(err => console.error('Error triggering next batch:', err));
+      }, 2000);
+      
+      // Wait a bit before responding so the timeout can fire
+      await new Promise(r => setTimeout(r, 2500));
     }
 
     return new Response(JSON.stringify({
