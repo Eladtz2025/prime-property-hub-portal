@@ -116,17 +116,40 @@ Deno.serve(async (req) => {
       }
       
       lastProcessedId = taskData?.last_processed_id || null;
-    } else if (existingTask && action === 'start' && !auto_trigger) {
-      // Return existing running task info (unless this is an auto-trigger which runs independently)
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Task already running',
-        task_id: existingTask.id,
-        progress: existingTask
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    } else {
+    } else if (existingTask && action === 'start') {
+      // Check if task is stuck (older than 10 minutes)
+      const taskAge = Date.now() - new Date(existingTask.updated_at).getTime();
+      const isStuck = taskAge > 10 * 60 * 1000; // 10 minutes
+      
+      if (isStuck) {
+        // Auto-stop stuck task
+        console.log(`⚠️ Task ${existingTask.id} was stuck for ${Math.round(taskAge / 60000)} minutes, auto-stopping`);
+        await supabase
+          .from('backfill_progress')
+          .update({
+            status: 'stopped',
+            error_message: 'Task was stuck for 10+ minutes, auto-stopped',
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingTask.id);
+        // Continue to create a new task
+      } else if (!auto_trigger) {
+        // Return existing running task info (unless this is an auto-trigger which runs independently)
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Task already running',
+          task_id: existingTask.id,
+          progress: existingTask
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      // If stuck and auto-stopped, or if auto_trigger, continue to create new task
+    }
+    
+    // Create new task (moved outside else block to handle stuck task recovery)
+    if (!progressId!) {
       // Build count query with filters - now also includes is_private = null for broker classification
       let countQuery = supabase
         .from('scouted_properties')
