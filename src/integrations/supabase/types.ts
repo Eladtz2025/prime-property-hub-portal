@@ -3248,71 +3248,31 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: Json
       }
-      detect_existing_duplicates: {
-        Args: never
+      detect_duplicates_batch: {
+        Args: { batch_size?: number }
         Returns: {
           duplicates_found: number
           groups_created: number
+          properties_processed: number
         }[]
       }
-      find_duplicate_property:
-        | {
-            Args: {
-              p_address: string
-              p_city: string
-              p_exclude_id?: string
-              p_floor: number
-              p_property_type: string
-              p_rooms: number
-            }
-            Returns: {
-              duplicate_detected_at: string
-              duplicate_group_id: string
-              id: string
-              price: number
-              size: number
-              source: string
-            }[]
-          }
-        | {
-            Args: {
-              p_address: string
-              p_city: string
-              p_exclude_id?: string
-              p_floor: number
-              p_price?: number
-              p_property_type: string
-              p_rooms: number
-            }
-            Returns: {
-              duplicate_detected_at: string
-              duplicate_group_id: string
-              id: string
-              price: number
-              size: number
-              source: string
-            }[]
-          }
-        | {
-            Args: {
-              p_address: string
-              p_city: string
-              p_exclude_id?: string
-              p_floor: number
-              p_price?: number
-              p_property_type: string
-              p_rooms: number
-              p_size?: number
-            }
-            Returns: {
-              duplicate_detected_at: string
-              duplicate_group_id: string
-              id: string
-              price: number
-              size: number
-              source: string
-            }[]
-          }
+      find_property_duplicate: {
+        Args: {
+          p_address: string
+          p_city: string
+          p_exclude_id?: string
+          p_floor: number
+          p_rooms: number
+          p_size?: number
+        }
+        Returns: {
+          duplicate_group_id: string
+          id: string
+          price: number
+          size: number
+          source: string
+        }[]
+      }
       get_current_user_role: { Args: never; Returns: string }
       get_customer_matches: {
         Args: { customer_uuid: string }
