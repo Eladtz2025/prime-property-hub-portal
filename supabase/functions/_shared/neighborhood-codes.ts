@@ -56,8 +56,8 @@ export const yad2NeighborhoodCodes: Record<string, string> = {
 // Madlan neighborhood slugs (URL path segments)
 // Format: neighborhood-slug that goes BEFORE city name in URL
 export const madlanNeighborhoodSlugs: Record<string, string> = {
-  'צפון_ישן': 'הצפון-הישן-החלק-הצפוני',
-  'צפון ישן': 'הצפון-הישן-החלק-הצפוני',
+  'צפון_ישן': 'הצפון-הישן',
+  'צפון ישן': 'הצפון-הישן',
   'צפון_חדש': 'הצפון-החדש',
   'צפון חדש': 'הצפון-החדש',
   'כיכר_המדינה': 'הצפון-החדש-סביבת-כיכר-המדינה',
@@ -186,4 +186,30 @@ export function getHomelessAreaCodes(neighborhoods: string[]): string[] {
   }
   
   return codes;
+}
+
+/**
+ * Get multiple Madlan neighborhood slugs as comma-separated URL path
+ * Format: neighborhood1-city-ישראל,neighborhood2-city-ישראל
+ * Used when multiple neighborhoods are selected for a config
+ */
+export function getMadlanMultiNeighborhoodPath(
+  neighborhoods: string[], 
+  city: string
+): string | null {
+  const slugs: string[] = [];
+  const citySlug = city.replace(/\s+/g, '-');  // "תל אביב יפו" -> "תל-אביב-יפו"
+  
+  for (const neighborhood of neighborhoods) {
+    const slug = madlanNeighborhoodSlugs[neighborhood];
+    if (slug) {
+      // Format: neighborhood-slug-city-ישראל
+      slugs.push(`${slug}-${citySlug}-ישראל`);
+    }
+  }
+  
+  if (slugs.length === 0) return null;
+  
+  // Join with commas for Madlan multi-neighborhood URL format
+  return slugs.join(',');
 }
