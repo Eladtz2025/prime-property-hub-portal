@@ -285,8 +285,8 @@ serve(async (req) => {
           console.error(`Scrape failed for ${prop.id}:`, err);
         }
         
-        // Small delay between scrapes
-        await new Promise(r => setTimeout(r, 300));
+        // Longer delay between scrapes to prevent blocking (1.5 seconds)
+        await new Promise(r => setTimeout(r, 1500));
       }
 
       let newIsPrivate: boolean;

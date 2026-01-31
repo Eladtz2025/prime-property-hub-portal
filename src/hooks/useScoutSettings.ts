@@ -58,6 +58,9 @@ export interface ScoutSettings {
     batch_size: number;
     timeout_minutes: number;
   };
+  brokerBackfill: {
+    scrapeFromSource: boolean;
+  };
 }
 
 // Default values - simplified
@@ -104,6 +107,9 @@ export const defaultSettings: ScoutSettings = {
     schedule_times: ['03:00', '12:00'],
     batch_size: 30,
     timeout_minutes: 5,
+  },
+  brokerBackfill: {
+    scrapeFromSource: false,
   },
 };
 
@@ -185,6 +191,9 @@ export function useScoutSettings(category?: keyof ScoutSettings) {
         } else if (cat === 'backfill' && setting_key in settings.backfill) {
           const key = setting_key as keyof typeof settings.backfill;
           (settings.backfill as any)[key] = parseSettingValue(setting_value, defaultSettings.backfill[key]);
+        } else if (cat === 'brokerBackfill' && setting_key in settings.brokerBackfill) {
+          const key = setting_key as keyof typeof settings.brokerBackfill;
+          (settings.brokerBackfill as any)[key] = parseSettingValue(setting_value, defaultSettings.brokerBackfill[key]);
         }
       }
       
