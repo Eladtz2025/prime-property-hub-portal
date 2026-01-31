@@ -1201,7 +1201,14 @@ export const UnifiedScoutSettings: React.FC = () => {
                       </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                      {configs.filter(c => c.source === 'madlan').map(config => (
+                      {configs
+                        .filter(c => c.source === 'madlan')
+                        .sort((a, b) => {
+                          const timeA = (a as any).schedule_times?.[0] || '99:99';
+                          const timeB = (b as any).schedule_times?.[0] || '99:99';
+                          return timeA.localeCompare(timeB);
+                        })
+                        .map(config => (
                         <ConfigCard 
                           key={config.id} 
                           config={config}
@@ -1258,7 +1265,14 @@ export const UnifiedScoutSettings: React.FC = () => {
                       </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                      {configs.filter(c => c.source === 'yad2').map(config => (
+                      {configs
+                        .filter(c => c.source === 'yad2')
+                        .sort((a, b) => {
+                          const timeA = (a as any).schedule_times?.[0] || '99:99';
+                          const timeB = (b as any).schedule_times?.[0] || '99:99';
+                          return timeA.localeCompare(timeB);
+                        })
+                        .map(config => (
                         <ConfigCard 
                           key={config.id} 
                           config={config}
@@ -1315,7 +1329,14 @@ export const UnifiedScoutSettings: React.FC = () => {
                       </TooltipProvider>
                     </div>
                     <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                      {configs.filter(c => c.source === 'homeless').map(config => (
+                      {configs
+                        .filter(c => c.source === 'homeless')
+                        .sort((a, b) => {
+                          const timeA = (a as any).schedule_times?.[0] || '99:99';
+                          const timeB = (b as any).schedule_times?.[0] || '99:99';
+                          return timeA.localeCompare(timeB);
+                        })
+                        .map(config => (
                         <ConfigCard 
                           key={config.id} 
                           config={config}

@@ -41,6 +41,41 @@ import {
 } from './parser-utils.ts';
 
 // ============================================
+// Address Validation
+// ============================================
+
+// Patterns that indicate an invalid address (broker names, property types, etc.)
+const INVALID_ADDRESS_PATTERNS = [
+  /^גג\/?$/i,                    // "גג/" - property type
+  /^דירה$/i,                     // "דירה" - property type  
+  /^סטודיו$/i,                   // "סטודיו" - property type
+  /^פנטהאוז$/i,                  // "פנטהאוז" - property type
+  /נדל"?ן/i,                     // Real estate office name
+  /^RS\s/i,                      // RS broker prefix
+  /רימקס|re\/?max/i,             // RE/MAX broker
+  /אנגלו\s*סכסון/i,              // Anglo Saxon broker
+  /century\s*21/i,               // Century 21 broker
+  /קולדוול/i,                    // Coldwell broker
+  /הומלנד/i,                     // Homeland broker
+  /Properties/i,                 // Properties broker
+  /HomeMe/i,                     // HomeMe broker
+  /Premium/i,                    // Premium broker
+  /בית\s*ממכר/i,                 // Brokerage name
+  /ניהול\s*נכסים/i,              // Property management
+  /משרד\s*תיווך/i,               // Brokerage office
+  /סוכנות/i,                     // Agency
+];
+
+function isValidAddress(address: string): boolean {
+  if (!address || address.length < 3) return false;
+  // Check if address matches any invalid pattern
+  if (INVALID_ADDRESS_PATTERNS.some(p => p.test(address))) return false;
+  // Address should contain at least one Hebrew letter
+  if (!/[\u0590-\u05FF]/.test(address)) return false;
+  return true;
+}
+
+// ============================================
 // Main Entry Point
 // ============================================
 
@@ -232,6 +267,11 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   
   // Extract features from the entire block
   const features = extractFeatures(block);
+  
+  // Validate address - filter out broker names and invalid values
+  if (address && !isValidAddress(address)) {
+    address = null;
+  }
   
   // Skip if no meaningful data
   if (!price && !rooms && !address) {

@@ -222,7 +222,8 @@ const KNOWN_NEIGHBORHOODS = [
   { pattern: /רמת\s*אביב/i, value: 'רמת_אביב', label: 'רמת אביב' },
   { pattern: /אפקה/i, value: 'אפקה', label: 'אפקה' },
   { pattern: /נווה\s*אביבים/i, value: 'נווה_אביבים', label: 'נווה אביבים' },
-  { pattern: /יפו\s*(?:ה)?עתיקה|עג'?מי/i, value: 'יפו', label: 'יפו' },
+  // יפו - only match explicit Jaffa neighborhoods, NOT as a fallback
+  { pattern: /יפו\s*(?:ה)?עתיקה|עג'?מי|נוגה/i, value: 'יפו', label: 'יפו' },
   { pattern: /שפירא/i, value: 'שפירא', label: 'שפירא' },
   { pattern: /מונטיפיורי/i, value: 'מונטיפיורי', label: 'מונטיפיורי' },
   { pattern: /הדר\s*יוסף/i, value: 'הדר_יוסף', label: 'הדר יוסף' },
@@ -230,7 +231,84 @@ const KNOWN_NEIGHBORHOODS = [
   { pattern: /קרית\s*שלום/i, value: 'קרית_שלום', label: 'קרית שלום' },
   { pattern: /נוה\s*שאנן|נווה\s*שאנן/i, value: 'נווה_שאנן', label: 'נווה שאנן' },
   { pattern: /שכונת\s*התקווה/i, value: 'התקווה', label: 'שכונת התקווה' },
+  { pattern: /כיכר\s*המדינה/i, value: 'כיכר_המדינה', label: 'כיכר המדינה' },
+  { pattern: /לב\s*תל\s*אביב/i, value: 'לב_תל_אביב', label: 'לב תל אביב' },
 ];
+
+/**
+ * Street to neighborhood mapping for Tel Aviv
+ * Used as fallback when neighborhood is not detected from block
+ */
+const STREET_TO_NEIGHBORHOOD: Record<string, { value: string; label: string }> = {
+  // לב העיר / מרכז העיר
+  'פינסקר': { value: 'לב_העיר', label: 'לב העיר' },
+  'בוגרשוב': { value: 'לב_העיר', label: 'לב העיר' },
+  'אלנבי': { value: 'לב_העיר', label: 'לב העיר' },
+  'שינקין': { value: 'לב_העיר', label: 'לב העיר' },
+  'רוטשילד': { value: 'לב_העיר', label: 'לב העיר' },
+  'הרצל': { value: 'לב_העיר', label: 'לב העיר' },
+  'מונטיפיורי': { value: 'לב_העיר', label: 'לב העיר' },
+  'נחלת בנימין': { value: 'לב_העיר', label: 'לב העיר' },
+  
+  // צפון ישן
+  'בן יהודה': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'דיזנגוף': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'ארלוזורוב': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'נורדאו': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'גורדון': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'פרישמן': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'מפו': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'ירמיהו': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'יהושע בן נון': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'הירקון': { value: 'צפון_ישן', label: 'צפון ישן' },
+  'הירדן': { value: 'צפון_ישן', label: 'צפון ישן' },
+  
+  // צפון חדש  
+  'ליאונרדו': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'שלום עליכם': { value: 'צפון_חדש', label: 'צפון חדש' },
+  "ז'בוטינסקי": { value: 'צפון_חדש', label: 'צפון חדש' },
+  'ז\'בוטינסקי': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'ויצמן': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'פנקס': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'יהודה המכבי': { value: 'צפון_חדש', label: 'צפון חדש' },
+  'בלפור': { value: 'צפון_חדש', label: 'צפון חדש' },
+  
+  // בבלי
+  'שיכון בבלי': { value: 'בבלי', label: 'בבלי' },
+  
+  // רמת אביב
+  'איינשטיין': { value: 'רמת_אביב', label: 'רמת אביב' },
+  'ברודצקי': { value: 'רמת_אביב', label: 'רמת אביב' },
+  'לוי אשכול': { value: 'רמת_אביב', label: 'רמת אביב' },
+  'קלאוזנר': { value: 'רמת_אביב', label: 'רמת אביב' },
+  
+  // פלורנטין
+  'פלורנטין': { value: 'פלורנטין', label: 'פלורנטין' },
+  'סלמה': { value: 'פלורנטין', label: 'פלורנטין' },
+  
+  // נווה צדק
+  'שבזי': { value: 'נווה_צדק', label: 'נווה צדק' },
+  'אחד העם': { value: 'נווה_צדק', label: 'נווה צדק' },
+  'לילינבלום': { value: 'נווה_צדק', label: 'נווה צדק' },
+  'יהודית': { value: 'נווה_צדק', label: 'נווה צדק' },
+  
+  // כרם התימנים
+  'נחלת בנימין': { value: 'כרם_התימנים', label: 'כרם התימנים' },
+};
+
+/**
+ * Try to detect neighborhood from street address
+ */
+function extractNeighborhoodFromAddress(address: string): { value: string; label: string } | null {
+  if (!address) return null;
+  
+  for (const [street, info] of Object.entries(STREET_TO_NEIGHBORHOOD)) {
+    if (address.includes(street)) {
+      return info;
+    }
+  }
+  return null;
+}
 
 /**
  * Extract neighborhood from entire block text
@@ -338,6 +416,15 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
       if (altParts.length >= 1 && !altParts[0].includes('תל אביב')) {
         address = cleanText(altParts[0]);
       }
+    }
+  }
+  
+  // If no neighborhood found from block patterns, try to detect from address
+  if (!neighborhood && address) {
+    const addressNeighborhood = extractNeighborhoodFromAddress(address);
+    if (addressNeighborhood) {
+      neighborhood = addressNeighborhood.label;
+      neighborhoodValue = addressNeighborhood.value;
     }
   }
   
