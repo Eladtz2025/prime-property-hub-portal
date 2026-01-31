@@ -266,6 +266,24 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       ] 
     },
     { 
+      value: 'יד_אליהו', 
+      label: 'יד אליהו', 
+      aliases: [
+        'yad eliyahu',
+        'בלומפילד',
+        'אצטדיון בלומפילד'
+      ] 
+    },
+    { 
+      value: 'רמת_החייל', 
+      label: 'רמת החייל', 
+      aliases: [
+        'ramat hachayal',
+        'רמת החיל',
+        'ramat hahayal'
+      ] 
+    },
+    { 
       value: 'אחר_תא', 
       label: 'אחר', 
       aliases: [] 
