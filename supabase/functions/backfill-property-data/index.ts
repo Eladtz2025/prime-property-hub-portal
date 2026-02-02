@@ -222,13 +222,15 @@ Deno.serve(async (req) => {
     // Create new task (moved outside else block to handle stuck task recovery)
     if (!progressId!) {
       // Build count query with filters - now also includes is_private = null for broker classification
+      // NOTE: We check for empty features {} in the processing loop, not in the query
+      // because 'features.eq.{}' doesn't work correctly in Supabase .or() syntax
       let countQuery = supabase
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
         .neq('source_url', 'https://www.homeless.co.il')
-        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null');
+        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null');
 
       // Apply source filter if specified
       if (source_filter) {
@@ -241,7 +243,29 @@ Deno.serve(async (req) => {
         countQuery = countQuery.gte('created_at', thirtyMinAgo);
       }
 
-      const { count: totalCount } = await countQuery;
+      const { count: nullFieldsCount } = await countQuery;
+
+      // Also count properties with empty features {}
+      let emptyFeaturesCountQuery = supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .not('source_url', 'is', null)
+        .neq('source_url', 'https://www.homeless.co.il')
+        .eq('features', {});
+
+      if (source_filter) {
+        emptyFeaturesCountQuery = emptyFeaturesCountQuery.eq('source', source_filter);
+      }
+      if (only_recent) {
+        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        emptyFeaturesCountQuery = emptyFeaturesCountQuery.gte('created_at', thirtyMinAgo);
+      }
+
+      const { count: emptyFeaturesCount } = await emptyFeaturesCountQuery;
+
+      // Total is approximate (some may overlap)
+      const totalCount = (nullFieldsCount || 0) + (emptyFeaturesCount || 0);
 
       // For auto-triggers, use a different task name to avoid conflicts
       const taskName = auto_trigger ? `${TASK_NAME}_auto_${source_filter || 'all'}` : TASK_NAME;
@@ -274,13 +298,14 @@ Deno.serve(async (req) => {
     const effectiveBatchSize = batch_size || BATCH_SIZE;
 
     // Build properties query with same filters - now also includes is_private
+    // NOTE: We also fetch properties with empty features {} by checking in the loop
     let query = supabase
       .from('scouted_properties')
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null')
+      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -299,17 +324,62 @@ Deno.serve(async (req) => {
       query = query.gt('id', lastProcessedId);
     }
 
-    const { data: properties, error } = await query;
+    const { data: propertiesWithNulls, error } = await query;
 
     if (error) {
       console.error('Error fetching properties:', error);
       throw error;
     }
 
-    console.log(`📋 Batch: Found ${properties?.length || 0} properties to process`);
+    // Also fetch properties with empty features {} that might not have other null fields
+    // This is a separate query because 'features.eq.{}' doesn't work in .or()
+    let emptyFeaturesQuery = supabase
+      .from('scouted_properties')
+      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
+      .eq('is_active', true)
+      .not('source_url', 'is', null)
+      .neq('source_url', 'https://www.homeless.co.il')
+      .eq('features', {})  // Empty JSONB object
+      .order('id', { ascending: true })
+      .limit(effectiveBatchSize);
+
+    if (source_filter) {
+      emptyFeaturesQuery = emptyFeaturesQuery.eq('source', source_filter);
+    }
+    if (only_recent) {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      emptyFeaturesQuery = emptyFeaturesQuery.gte('created_at', thirtyMinAgo);
+    }
+    if (lastProcessedId) {
+      emptyFeaturesQuery = emptyFeaturesQuery.gt('id', lastProcessedId);
+    }
+
+    const { data: propertiesWithEmptyFeatures } = await emptyFeaturesQuery;
+
+    // Merge both lists, removing duplicates by ID
+    const seenIds = new Set<string>();
+    const properties: typeof propertiesWithNulls = [];
+    
+    for (const prop of propertiesWithNulls || []) {
+      if (!seenIds.has(prop.id)) {
+        seenIds.add(prop.id);
+        properties.push(prop);
+      }
+    }
+    for (const prop of propertiesWithEmptyFeatures || []) {
+      if (!seenIds.has(prop.id)) {
+        seenIds.add(prop.id);
+        properties.push(prop);
+      }
+    }
+
+    // Sort by ID to maintain consistent ordering
+    properties.sort((a, b) => a.id.localeCompare(b.id));
+
+    console.log(`📋 Batch: Found ${properties.length} properties to process (${propertiesWithNulls?.length || 0} with nulls, ${propertiesWithEmptyFeatures?.length || 0} with empty features)`);
 
     // If no more properties, mark as completed
-    if (!properties || properties.length === 0) {
+    if (properties.length === 0) {
       await supabase
         .from('backfill_progress')
         .update({ 
@@ -523,8 +593,8 @@ Deno.serve(async (req) => {
 
     console.log(`\n📈 Batch complete: ${successCount} updated, ${failCount} failed`);
 
-    // Check if there are more items
-    const { count: remainingCount } = await supabase
+    // Check if there are more items (both null fields and empty features)
+    const { count: remainingNullCount } = await supabase
       .from('scouted_properties')
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
@@ -533,7 +603,19 @@ Deno.serve(async (req) => {
       .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
       .gt('id', lastId || '');
 
-    const hasMore = (remainingCount || 0) > 0;
+    const { count: remainingEmptyFeaturesCount } = await supabase
+      .from('scouted_properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .not('source_url', 'is', null)
+      .neq('source_url', 'https://www.homeless.co.il')
+      .eq('features', {})
+      .gt('id', lastId || '');
+
+    // Approximate remaining (may have some overlap, but that's fine for progress display)
+    const remainingCount = Math.max(remainingNullCount || 0, remainingEmptyFeaturesCount || 0);
+
+    const hasMore = remainingCount > 0;
 
     if (hasMore) {
       // Trigger next batch via self-invocation
