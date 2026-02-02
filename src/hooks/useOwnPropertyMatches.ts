@@ -11,6 +11,7 @@ export interface OwnPropertyMatch {
   rooms: number | null;
   property_size: number | null;
   property_type: string | null;
+  isDismissed: boolean;
 }
 
 interface CustomerCriteria {
@@ -24,10 +25,21 @@ interface CustomerCriteria {
   property_type?: string | null;
 }
 
-export const useOwnPropertyMatches = (customer: CustomerCriteria) => {
+export const useOwnPropertyMatches = (customer: CustomerCriteria, includeDismissed: boolean = false) => {
   return useQuery({
-    queryKey: ['own-property-matches', customer.id],
+    queryKey: ['own-property-matches', customer.id, includeDismissed],
     queryFn: async (): Promise<OwnPropertyMatch[]> => {
+      // First, get dismissed property IDs for this lead
+      const { data: dismissedData } = await supabase
+        .from('dismissed_matches')
+        .select('property_id')
+        .eq('lead_id', customer.id)
+        .not('property_id', 'is', null);
+
+      const dismissedPropertyIds = new Set(
+        (dismissedData || []).map(d => d.property_id).filter(Boolean)
+      );
+
       let query = supabase
         .from('properties')
         .select('id, title, address, city, neighborhood, monthly_rent, rooms, property_size, property_type')
@@ -77,7 +89,17 @@ export const useOwnPropertyMatches = (customer: CustomerCriteria) => {
         });
       }
       
-      return results;
+      // Add isDismissed flag and filter if needed
+      const withDismissedFlag = results.map(p => ({
+        ...p,
+        isDismissed: dismissedPropertyIds.has(p.id),
+      }));
+
+      if (includeDismissed) {
+        return withDismissedFlag;
+      }
+      
+      return withDismissedFlag.filter(p => !p.isDismissed);
     },
     enabled: !!customer.id,
     staleTime: 1000 * 60 * 5,
