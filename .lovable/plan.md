@@ -1,117 +1,129 @@
 
-## תוכנית - שיפור חילוץ פיצ'רים (Features)
 
-### מצב קיים
+## תיקון באג - Backfill לא רץ
 
-| מקור | סה"כ פעיל | עם פיצ'רים | ריק | שיעור מילוי |
-|------|-----------|------------|-----|-------------|
-| Yad2 | 4,153 | 2,205 | 1,948 | 53.1% |
-| Madlan | 1,803 | 879 | 924 | 48.8% |
-| Homeless | 561 | 494 | 67 | 88.1% |
-| **סה"כ** | **6,517** | **3,578** | **2,939** | **54.9%** |
+### הבעיה שזוהתה
 
-**הבעיה:** 45% מהנכסים חסרי פיצ'רים (מרפסת, מעלית, חניה, ממ"ד, חצר).
+הquery של הbackfill נכשל בגלל סינטקס שגוי:
 
----
+```typescript
+.or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null')
+```
 
-### סיבות הבעיה
+**שגיאת PostgreSQL:**
+```
+invalid input syntax for type boolean: "תל אביב יפו"
+```
 
-1. **סריקת דפי חיפוש בלבד:** הסקאוט סורק דפי תוצאות חיפוש שמכילים רק מידע בסיסי (מחיר, חדרים, שטח). הפיצ'רים נמצאים בדף הנכס הספציפי.
-
-2. **Backfill חלקי:** הפונקציה `backfill-property-data` אמורה לסרוק דפי נכס ולחלץ פיצ'רים, אבל:
-   - מופעלת רק כשיש נתונים חסרים (rooms/price/size null)
-   - נכסים שיש להם כל הנתונים הבסיסיים לא נכללים
-
-3. **לוגיקת חילוץ:** קיימת לוגיקת חילוץ טובה ב-backfill אבל היא לא מופעלת על כל הנכסים.
+הסיבה: `features.eq.{}` בתוך `.or()` לא מפורש נכון ע"י Supabase וגורם לשאילתה להיכשל.
 
 ---
 
-### פתרון מוצע
+### פתרון
 
-#### שלב 1: עדכון Query של Backfill
+נפריד את השאילתה לשניים:
+1. שאילתה בסיסית עם `.or()` לשדות רגילים
+2. **שימוש בפילטר JSONB נכון** - `features::text = '{}'` דרך raw filter
 
 **קובץ:** `supabase/functions/backfill-property-data/index.ts`
 
-**שינוי:** הוספת תנאי `features.is.null` או `features.eq.{}` ל-Query כדי לכלול גם נכסים עם מידע בסיסי מלא אך ללא פיצ'רים.
+**שינויים בשורות 225-231 ו-277-283:**
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│                    לפני (נוכחי)                          │
-├──────────────────────────────────────────────────────────┤
-│ .or('rooms.is.null,price.is.null,size.is.null,          │
-│      features.is.null,is_private.is.null')              │
-├──────────────────────────────────────────────────────────┤
-│                    אחרי (מוצע)                           │
-├──────────────────────────────────────────────────────────┤
-│ .or('rooms.is.null,price.is.null,size.is.null,          │
-│      features.is.null,features.eq.{},is_private.is.null')│
-└──────────────────────────────────────────────────────────┘
-```
-
-#### שלב 2: שיפור לוגיקת Features
-
-**בעיה:** ה-backfill מעדכן features רק אם יש features חדשים:
+במקום:
 ```typescript
-if (hasNewFeatures || !prop.features) {
-  updates.features = { ...existingFeatures, ...features };
-}
+.or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null')
 ```
 
-**שינוי:** עדכון התנאי כדי לכלול גם features ריקים:
+נשתמש ב:
 ```typescript
-const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
-if (hasNewFeatures || existingIsEmpty) {
-  updates.features = { ...existingFeatures, ...features };
-}
+.or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.cs.{},is_private.is.null')
 ```
 
-#### שלב 3: הרחבת Regex ל-Features
+**או לחלופין** - שימוש בגישה נפרדת:
+```typescript
+// עדיף לפצל: קודם בודקים null, ואז בודקים ריק
+.or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
+// ולאחר מכן נוסיף את הנכסים עם features ריקים בשאילתה נפרדת
+```
 
-**קובץ:** `supabase/functions/backfill-property-data/index.ts` - פונקציית `extractFeatures`
+**הפתרון הנכון:** להשתמש ב-filter מותאם:
+```typescript
+// Option 1: cs = contains (works for empty object)
+.or(`rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null`)
+.filter('features', 'eq', '{}')
 
-נרחיב את הדפוסים לזיהוי features:
+// Option 2: RPC function
+// Option 3: Two separate queries combined
+```
 
-| פיצ'ר | דפוסים נוספים |
-|-------|---------------|
-| מרפסת | `מרפסת שמש`, `מרפסת גדולה`, `2 מרפסות` |
-| מעלית | `בניין עם מעלית`, `מעלית שבת` |
-| חניה | `חניון`, `2 חניות`, `חניה בטאבו` |
-| ממ"ד | `חדר ביטחון`, `ממד צמוד` |
-| חצר | `גינה פרטית`, `דשא`, `פטיו` |
+**הגישה המומלצת:** שימוש ב-`.or()` ללא features.eq.{} + שאילתה נפרדת לנכסים עם features ריקים.
 
 ---
 
-### סיכום שינויים
+### שינויים נדרשים
 
-| קובץ | שינוי |
-|------|-------|
-| `supabase/functions/backfill-property-data/index.ts` | שינוי Query להוספת `features.eq.{}` |
-| `supabase/functions/backfill-property-data/index.ts` | עדכון תנאי עדכון features |
-| `supabase/functions/backfill-property-data/index.ts` | הרחבת regex ב-extractFeatures |
-
----
-
-### הפעלת Backfill מחודש
-
-לאחר הפריסה, נריץ backfill מלא כדי לעדכן את כל הנכסים עם features ריקים:
-
-```
-POST /backfill-property-data
-{ "action": "start", "dry_run": false }
-```
-
-**הערכה:**
-- ~2,939 נכסים צריכים עדכון
-- קצב: ~20 לדקה (עם delays)
-- זמן: ~2.5 שעות
+| קובץ | שורות | שינוי |
+|------|-------|-------|
+| `backfill-property-data/index.ts` | 225-231 | תיקון count query |
+| `backfill-property-data/index.ts` | 277-283 | תיקון select query |
+| `backfill-property-data/index.ts` | 527-533 | תיקון remaining query |
 
 ---
 
-### צפי לאחר השינוי
+### קוד מתוקן
 
-| מדד | לפני | אחרי (צפי) |
-|-----|------|-----------|
-| נכסים עם features | 54.9% | 85%+ |
-| חילוץ מרפסת | ~264 | ~1,500+ |
-| חילוץ מעלית | ~58 | ~800+ |
-| חילוץ חניה | ~415 | ~1,200+ |
+**Count Query (שורות 225-231):**
+```typescript
+// Split into two conditions: standard nulls + empty features check
+let countQuery = supabase
+  .from('scouted_properties')
+  .select('id', { count: 'exact', head: true })
+  .eq('is_active', true)
+  .not('source_url', 'is', null)
+  .neq('source_url', 'https://www.homeless.co.il');
+
+// Add filter for: null fields OR empty features object
+// Using raw SQL filter approach for JSONB empty check
+countQuery = countQuery.or(
+  'rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null'
+);
+```
+
+**Select Query (שורות 277-283):**
+```typescript
+let query = supabase
+  .from('scouted_properties')
+  .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
+  .eq('is_active', true)
+  .not('source_url', 'is', null)
+  .neq('source_url', 'https://www.homeless.co.il')
+  .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
+  .order('id', { ascending: true })
+  .limit(effectiveBatchSize);
+```
+
+**הוספת בדיקת features ריק בלולאה:**
+בתוך הלולאה, נבדוק גם אם `features` הוא אובייקט ריק ונעדכן אותו.
+
+---
+
+### צעדים לביצוע
+
+1. תיקון הקוד - הסרת `features.eq.{}` מה-`.or()`
+2. הוספת לוגיקה בתוך הלולאה לזיהוי features ריקים
+3. ניקוי התהליכים התקועים בבסיס הנתונים
+4. הפעלה מחדש של הbackfill
+
+---
+
+### ניקוי תהליכים תקועים
+
+לפני הפעלה מחדש, נצטרך לסגור את התהליכים התקועים:
+```sql
+UPDATE backfill_progress 
+SET status = 'stopped', 
+    completed_at = NOW(),
+    error_message = 'Manually stopped - query syntax fix'
+WHERE status = 'running';
+```
+
