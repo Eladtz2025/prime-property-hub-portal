@@ -5,6 +5,38 @@
 
 import { normalizeCityName, isInvalidAddress } from "./broker-detection.ts";
 
+// ==================== Cross-Source Duplicate Detection ====================
+
+/**
+ * Find cross-source duplicate by address, city, and rooms
+ * Returns the existing property ID if a duplicate from a different source exists
+ */
+async function findCrossSourceDuplicate(
+  supabase: any,
+  property: ScrapedProperty
+): Promise<string | null> {
+  // Need address with building number, city, and rooms to check
+  const hasValidAddress = property.address && /\d+/.test(property.address);
+  if (!hasValidAddress || !property.city || property.rooms === undefined) {
+    return null;
+  }
+
+  const normalizedCity = normalizeCityName(property.city);
+  
+  const { data: existing } = await supabase
+    .from('scouted_properties')
+    .select('id, source, source_url')
+    .eq('city', normalizedCity)
+    .eq('address', property.address)
+    .eq('rooms', property.rooms)
+    .eq('is_active', true)
+    .neq('source', property.source)
+    .limit(1)
+    .maybeSingle();
+
+  return existing?.id || null;
+}
+
 // ==================== Interface ====================
 
 export interface ScrapedProperty {
@@ -175,6 +207,21 @@ export async function saveProperty(
       .eq('id', existingByUrl.id);
 
     return { isNew: false };
+  }
+
+  // Check for cross-source duplicates (same property from different source)
+  const crossSourceDuplicateId = await findCrossSourceDuplicate(supabase, property);
+  if (crossSourceDuplicateId) {
+    console.log(`🔄 Cross-source duplicate found: ${property.source_url} matches existing ID ${crossSourceDuplicateId}`);
+    // Update the existing property with new info if available, but don't create new record
+    await supabase
+      .from('scouted_properties')
+      .update({
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', crossSourceDuplicateId);
+    return { isNew: false, skipped: true };
   }
 
   // Insert new property
