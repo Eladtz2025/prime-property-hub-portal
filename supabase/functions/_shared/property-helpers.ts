@@ -3,7 +3,7 @@
  * Consolidates duplicated code from scout-yad2, scout-madlan, scout-homeless
  */
 
-import { normalizeCityName } from "./broker-detection.ts";
+import { normalizeCityName, isInvalidAddress } from "./broker-detection.ts";
 
 // ==================== Interface ====================
 
@@ -70,6 +70,11 @@ export function isValidSourceUrl(url: string, source: string): boolean {
   return true; // Unknown sources pass through
 }
 
+// ==================== Configuration ====================
+
+const MIN_RENT_PRICE = 3000;  // Minimum rent price (filters parking spots, storage)
+const MIN_SALE_PRICE = 100000; // Minimum sale price
+
 // ==================== Save Property ====================
 
 /**
@@ -88,6 +93,21 @@ export async function saveProperty(
   
   if (normalizedCity && !isTelAviv) {
     console.log(`🚫 Skipping non-Tel Aviv property: ${normalizedCity}`);
+    return { isNew: false, skipped: true };
+  }
+  
+  // Filter out low-price listings (parking spots, storage, etc.)
+  if (property.price) {
+    const minPrice = property.property_type === 'rent' ? MIN_RENT_PRICE : MIN_SALE_PRICE;
+    if (property.price < minPrice) {
+      console.log(`🚫 Skipping low-price property: ${property.price} ₪ (min: ${minPrice})`);
+      return { isNew: false, skipped: true };
+    }
+  }
+  
+  // Filter out addresses that contain broker/agency names
+  if (isInvalidAddress(property.address)) {
+    console.log(`🚫 Skipping property with invalid address (broker name): ${property.address}`);
     return { isNew: false, skipped: true };
   }
   
