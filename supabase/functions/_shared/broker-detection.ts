@@ -61,6 +61,51 @@ export function detectBroker(title: string, description: string, rawData?: Recor
 }
 
 /**
+ * Broker/agency names that should NOT appear in address fields
+ * These are known brokerage firms that sometimes get scraped as addresses
+ */
+const ADDRESS_BLACKLIST_PATTERNS = [
+  // Hebrew broker names
+  /קונקורד/i,
+  /מונרוב/i,
+  /זירו\s*(מתווכים|תיווך)?/i,
+  /הומי\s*(נדלן)?/i,
+  /פאר\s*תיווך/i,
+  /טל\s*נכסים/i,
+  /חברה\s*חדשה/i,
+  /rs\s*נדל/i,
+  /אנגלו\s*סכסון/i,
+  /רימקס/i,
+  /קולדוול/i,
+  // English broker names
+  /concord/i,
+  /monrov/i,
+  /zero\s*broker/i,
+  /homy/i,
+  /anglo\s*saxon/i,
+  /remax/i,
+  /re\/max/i,
+  /century\s*21?/i,
+  /coldwell/i,
+  // Property type keywords (not valid addresses)
+  /^גג\/?$/,
+  /^דירה$/,
+  /^פנטהאוז$/,
+  /^סטודיו$/,
+];
+
+/**
+ * Check if an address contains broker/agency names (invalid address)
+ * Returns true if the address is invalid and should be rejected
+ */
+export function isInvalidAddress(address: string | undefined | null): boolean {
+  if (!address) return false;
+  
+  const addressLower = address.trim();
+  return ADDRESS_BLACKLIST_PATTERNS.some(pattern => pattern.test(addressLower));
+}
+
+/**
  * Normalize city names for consistent storage
  */
 export function normalizeCityName(city: string | undefined): string | undefined {
