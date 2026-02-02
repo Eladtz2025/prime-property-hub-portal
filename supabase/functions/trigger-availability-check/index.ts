@@ -11,6 +11,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Maximum batches per run - send 1 batch at a time, fire and forget
 const MAX_BATCHES_PER_RUN = 1;
+const DELAY_BETWEEN_BATCHES_MS = 500; // Delay between triggering batches
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
