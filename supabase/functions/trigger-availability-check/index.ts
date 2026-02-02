@@ -11,7 +11,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Maximum batches per run to avoid timeout (Edge Function limit is 60s)
 const MAX_BATCHES_PER_RUN = 2;
-const DELAY_BETWEEN_BATCHES_MS = 30000; // 30 seconds between batches to let Firecrawl finish
+const DELAY_BETWEEN_BATCHES_MS = 500; // Short delay between triggering batches (they run in parallel)
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -134,13 +134,19 @@ serve(async (req) => {
       }
     }
 
-    // If there are remaining batches, trigger self with remaining IDs
+    // If there are remaining batches, wait for current batches to finish then trigger self
     const remainingBatches = batches.slice(batchesToProcess);
     if (remainingBatches.length > 0) {
       const remainingIds = remainingBatches.flat();
+      
+      // Wait for the last batch to complete before triggering self
+      // Each batch of 50 takes ~50 seconds with Firecrawl, so wait 55 seconds
+      console.log(`⏳ Waiting 55 seconds for current batches to complete before self-trigger...`);
+      await sleep(55000);
+      
       console.log(`🔄 ${remainingBatches.length} batches remaining (${remainingIds.length} properties). Triggering self-continuation...`);
       
-      // Fire and forget self-trigger
+      // Fire and forget self-trigger (no await to avoid timeout)
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
         method: 'POST',
         headers: {
