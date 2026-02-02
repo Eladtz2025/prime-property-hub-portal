@@ -3277,6 +3277,7 @@ export type Database = {
       get_customer_matches: {
         Args: { customer_uuid: string }
         Returns: {
+          address: string
           city: string
           duplicate_group_id: string
           id: string
@@ -3284,7 +3285,9 @@ export type Database = {
           match_priority: number
           match_reasons: string[]
           match_score: number
+          neighborhood: string
           price: number
+          property_type: string
           rooms: number
           size: number
           source: string
