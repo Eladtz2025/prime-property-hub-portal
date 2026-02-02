@@ -318,11 +318,22 @@ export const CustomerMatchesCell = ({
                           {/* Match Reasons */}
                           {match.matchReasons && match.matchReasons.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
-                              {match.matchReasons.slice(0, 3).map((reason, idx) => (
-                                <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-muted rounded">
-                                  ✓ {reason}
-                                </span>
-                              ))}
+                              {match.matchReasons.slice(0, 4).map((reason, idx) => {
+                                const isRequired = reason.includes('(חובה)');
+                                const displayText = reason.replace(' (חובה)', '').replace(' ✓', '');
+                                return (
+                                  <span 
+                                    key={idx} 
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                      isRequired 
+                                        ? 'bg-primary/20 text-primary font-medium' 
+                                        : 'bg-muted'
+                                    }`}
+                                  >
+                                    {isRequired ? '⭐' : '✓'} {displayText}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                           
