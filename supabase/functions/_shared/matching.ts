@@ -335,7 +335,7 @@ export async function calculateMatch(
     if (property.features?.elevator !== true) {
       return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - לא צוין שיש בנכס'], priority: 0 };
     }
-    reasons.push('יש מעלית ✓');
+    reasons.push('יש מעלית (חובה) ✓');
   } else if (lead.elevator_required && property.features?.elevator === true) {
     reasons.push('יש מעלית ✓');
   }
@@ -345,7 +345,7 @@ export async function calculateMatch(
     if (property.features?.parking !== true) {
       return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - לא צוין שיש בנכס'], priority: 0 };
     }
-    reasons.push('יש חניה ✓');
+    reasons.push('יש חניה (חובה) ✓');
   } else if (lead.parking_required && property.features?.parking === true) {
     reasons.push('יש חניה ✓');
   }
@@ -373,7 +373,7 @@ export async function calculateMatch(
         return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - לא צוין שיש בנכס`], priority: 0 };
       }
       
-      // Add what was found
+      // Add what was found - mark as required since outdoor_space_any is a must-have
       const foundOutdoor = outdoorOptions.filter(opt => property.features?.[opt] === true);
       const foundText = foundOutdoor.map(opt => {
         if (opt === 'balcony') return 'מרפסת';
@@ -381,7 +381,7 @@ export async function calculateMatch(
         if (opt === 'roof') return 'גג';
         return opt;
       }).join(' / ');
-      reasons.push(`יש ${foundText} ✓`);
+      reasons.push(`יש ${foundText} (חובה) ✓`);
     }
   } else {
     // AND mode: each feature is checked individually
@@ -389,7 +389,7 @@ export async function calculateMatch(
       if (property.features?.balcony !== true) {
         return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - לא צוין שיש בנכס'], priority: 0 };
       }
-      reasons.push('יש מרפסת ✓');
+      reasons.push('יש מרפסת (חובה) ✓');
     } else if (lead.balcony_required && property.features?.balcony === true) {
       reasons.push('יש מרפסת ✓');
     }
@@ -398,7 +398,7 @@ export async function calculateMatch(
       if (property.features?.yard !== true) {
         return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - לא צוין שיש בנכס'], priority: 0 };
       }
-      reasons.push('יש חצר ✓');
+      reasons.push('יש חצר (חובה) ✓');
     } else if (lead.yard_required && property.features?.yard === true) {
       reasons.push('יש חצר ✓');
     }
@@ -407,7 +407,7 @@ export async function calculateMatch(
       if (property.features?.roof !== true) {
         return { lead, matchScore: 0, matchReasons: ['נדרש גג - לא צוין שיש בנכס'], priority: 0 };
       }
-      reasons.push('יש גג ✓');
+      reasons.push('יש גג (חובה) ✓');
     } else if (lead.roof_required && property.features?.roof === true) {
       reasons.push('יש גג ✓');
     }
@@ -418,7 +418,7 @@ export async function calculateMatch(
     if (property.features?.pets !== true && property.features?.allows_pets !== true) {
       return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'], priority: 0 };
     }
-    reasons.push('מאפשר חיות מחמד ✓');
+    reasons.push('מאפשר חיות מחמד (חובה) ✓');
   } else if (lead.pets === true && (property.features?.pets === true || property.features?.allows_pets === true)) {
     reasons.push('מאפשר חיות מחמד ✓');
   }
@@ -428,7 +428,7 @@ export async function calculateMatch(
     if (property.features?.mamad !== true) {
       return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - לא צוין שיש בנכס'], priority: 0 };
     }
-    reasons.push('יש ממ"ד ✓');
+    reasons.push('יש ממ"ד (חובה) ✓');
   } else if (lead.mamad_required && property.features?.mamad === true) {
     reasons.push('יש ממ"ד ✓');
   }
@@ -441,13 +441,13 @@ export async function calculateMatch(
       if (propertyFurnished !== 'fully_furnished') {
         return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
       }
-      reasons.push('מרוהטת מלא ✓');
+      reasons.push('מרוהטת מלא (חובה) ✓');
     } else if (lead.furnished_required === 'partially_furnished') {
       // Accept fully or partially furnished
       if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished') {
         return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'], priority: 0 };
       }
-      reasons.push('מרוהטת ✓');
+      reasons.push('מרוהטת (חובה) ✓');
     }
   } else if (lead.furnished_required && property.features?.furnished) {
     const furnishedLabel = property.features.furnished === 'fully_furnished' ? 'מרוהטת מלא' : 'מרוהטת חלקית';
