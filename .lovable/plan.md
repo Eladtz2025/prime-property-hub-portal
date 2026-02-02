@@ -1,97 +1,137 @@
 
-# תיקון: חזרה לארכיטקטורה המקורית עם שיפור קטן
+# הוספת אפשרות להסתיר נכס מתוצאות ההתאמה של לקוח
 
-## מה עבד בהרצה המקורית
+## סקירה
 
-ההרצה הראשונה **עבדה** והצליחה לבדוק ~1,040 נכסים עם batch_size=50. הבעיה הייתה רק שהייתה **עומס יתר** כי שלחנו 5 batches במקביל.
+כאשר מוחקים נכס מתוצאות הלקוח, הוא לא יופיע יותר - גם אם אלגוריתם ההתאמה ירוץ שוב.
 
-## מה שבר את זה
+## איך זה יעבוד
 
-השינויים שעשיתי:
-1. הורדתי batch_size מ-50 ל-20 ❌
-2. הוספתי `await sleep(55000)` - **חוסם את ה-Edge Function!** ❌
-3. זה גרם ל-504 timeouts בגלל שה-trigger חיכה יותר מ-60 שניות
+| פעולה | תוצאה |
+|-------|-------|
+| לחיצה על כפתור X ליד נכס | הנכס נעלם מהתוצאות מיידית |
+| הרצת התאמה מחדש | הנכס **לא** חוזר |
+| אפשרות לראות נכסים מוסתרים | לחיצה על "הצג מוסתרים" בדיאלוג |
 
-## הפתרון הפשוט
+---
 
-להחזיר את הלוגיקה המקורית עם שינוי אחד קטן:
+## שינויים טכניים
 
-| הגדרה | לפני (עבד) | עכשיו (שבור) | תיקון |
-|-------|------------|--------------|-------|
-| batch_size | 50 | 20 | **50** |
-| MAX_BATCHES_PER_RUN | 5 | 2 | **1** |
-| DELAY_BETWEEN_BATCHES | 200ms | 500ms | **0** (לא רלוונטי) |
-| sleep before self-trigger | 0 | 55 שניות! | **0** |
+### 1. יצירת טבלה חדשה: `dismissed_matches`
 
-### למה 1 batch בכל פעם?
+```sql
+CREATE TABLE dismissed_matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id UUID NOT NULL REFERENCES contact_leads(id) ON DELETE CASCADE,
+  property_id UUID, -- לנכסים שלנו (properties)
+  scouted_property_id UUID, -- לנכסים נסרקים (scouted_properties)
+  dismissed_by UUID REFERENCES auth.users(id),
+  dismissed_at TIMESTAMPTZ DEFAULT now(),
+  reason TEXT, -- אופציונלי: סיבת ההסתרה
+  
+  -- constraint: חייב להיות אחד מהם
+  CONSTRAINT at_least_one_property CHECK (
+    property_id IS NOT NULL OR scouted_property_id IS NOT NULL
+  ),
+  -- unique per lead + property combination
+  UNIQUE(lead_id, property_id),
+  UNIQUE(lead_id, scouted_property_id)
+);
+```
 
-- `trigger-availability-check` שולח batch אחד ל-`check-property-availability`
-- **Fire and forget** - לא מחכה לתשובה
-- מיד עושה self-trigger עם שאר הנכסים
-- כל batch רץ **באופן עצמאי** - אם אחד נתקע, השאר ממשיכים
-- אין עומס על Firecrawl כי יש 150ms delay בין כל בקשה ב-check
+RLS Policies:
+- משתמשים מאומתים יכולים להוסיף/לראות/למחוק את ההסתרות
 
-### תהליך:
+### 2. עדכון פונקציה: `get_customer_matches`
 
-```text
-Trigger #1: שולח batch של 50 נכסים → self-trigger מיידי
-     ↓
-Trigger #2: שולח batch של 50 נכסים → self-trigger מיידי
-     ↓
-Trigger #3: שולח batch של 50 נכסים → self-trigger מיידי
-     ↓
-... (118 פעמים סה"כ ל-5,900 נכסים)
-     ↓
-כל ה-batches רצים במקביל, כל אחד לוקח ~60 שניות
+שינוי ב-WHERE clause:
+```sql
+WHERE match_data->>'lead_id' = customer_uuid::TEXT
+  AND sp.is_active = true
+  AND NOT EXISTS (
+    SELECT 1 FROM dismissed_matches dm
+    WHERE dm.lead_id = customer_uuid
+      AND dm.scouted_property_id = sp.id
+  )
+```
+
+### 3. עדכון קומפוננטה: CustomerMatchesCell.tsx
+
+**הוספות:**
+- כפתור X אדום בפינה של כל כרטיס נכס
+- Dialog אישור לפני הסתרה
+- פונקציה `handleDismissMatch` לשמירה ב-DB
+- רענון אוטומטי של הרשימה אחרי הסתרה
+- כפתור "הצג מוסתרים" (toggle) בראש הדיאלוג
+
+### 4. עדכון hook: useOwnPropertyMatches.ts
+
+הוספת NOT EXISTS על `dismissed_matches` גם לנכסים שלנו.
+
+---
+
+## UI שינויים
+
+**לפני:**
+```
+┌────────────────────────┐
+│ תיווך   פרטי     80%  │
+│ להשכרה בהרצליה        │
+│ תל אביב | 3 חד' | 80מ"ר │
+│ ₪8,500                 │
+│ ✓ מחיר   ✓ חדרים      │
+│ [צפה] [💬]            │
+└────────────────────────┘
+```
+
+**אחרי:**
+```
+┌────────────────────────┐
+│ תיווך   פרטי     80% X│  ← כפתור מחיקה אדום
+│ להשכרה בהרצליה        │
+│ תל אביב | 3 חד' | 80מ"ר │
+│ ₪8,500                 │
+│ ✓ מחיר   ✓ חדרים      │
+│ [צפה] [💬]            │
+└────────────────────────┘
+```
+
+**כפתור הצג/הסתר מוסתרים:**
+```
+┌─────────────────────────────────┐
+│ דירות שהותאמו לישראל           │
+│ ☐ הצג מוסתרים (3)              │  ← toggle
+├─────────────────────────────────┤
 ```
 
 ---
 
-## שינויים נדרשים
+## קבצים לעריכה
 
-### 1. החזרת batch_size ל-50 (SQL)
+| קובץ | שינוי |
+|------|-------|
+| `supabase/migrations/` | יצירת טבלה + עדכון פונקציה |
+| `src/components/customers/CustomerMatchesCell.tsx` | כפתור X, logic הסתרה |
+| `src/hooks/useCustomerMatches.ts` | invalidate cache אחרי הסתרה |
+| `src/hooks/useOwnPropertyMatches.ts` | פילטור נכסים מוסתרים |
+| `src/integrations/supabase/types.ts` | יתעדכן אוטומטית |
 
-```sql
-UPDATE scout_settings 
-SET setting_value = '50' 
-WHERE category = 'availability' AND setting_key = 'batch_size';
-```
+---
 
-### 2. שינוי trigger-availability-check
+## זרימת העבודה
 
-```typescript
-// Maximum batches per run - שולחים 1 בכל פעם
-const MAX_BATCHES_PER_RUN = 1;
-
-// בלי delay - fire and forget מיידי
-// מוחקים את ה-await sleep(55000)!
-```
-
-שורות לשנות:
-- שורה 13: `MAX_BATCHES_PER_RUN = 2` → `MAX_BATCHES_PER_RUN = 1`
-- שורות 142-145: למחוק את ה-`await sleep(55000)` וההודעה לפניו
+1. משתמש לוחץ על X
+2. Dialog: "להסתיר את הנכס הזה מהתוצאות של ישראל?"
+3. [ביטול] [אישור]
+4. Insert ל-`dismissed_matches`
+5. Invalidate query cache
+6. הנכס נעלם מהרשימה
 
 ---
 
 ## יתרונות
 
-1. **פשוט** - חזרה ללוגיקה שעבדה
-2. **מהיר** - כל ה-batches נשלחים מהר
-3. **עמיד** - אם batch נכשל, השאר ממשיכים
-4. **לא חוסם** - trigger-availability-check מסיים תוך שנייה
-
-## זמן ריצה צפוי
-
-- 5,900 נכסים ÷ 50 = 118 batches
-- כל batch = ~50-60 שניות (50 נכסים × 1 שנייה לFirecrawl)
-- כולם רצים **במקביל** אז סך הכל ~60 שניות!
-- (בפועל קצת יותר בגלל עומס על Firecrawl, אבל עדיין מהיר)
-
-## מעקב אוטומטי
-
-אחרי ההרצה, אוכל לבדוק כל כמה דקות:
-```sql
-SELECT COUNT(*) FILTER (WHERE is_active = false AND status = 'inactive') FROM scouted_properties
-```
-
-ולהריץ שוב אם צריך.
+- **פשוט**: כפתור אחד
+- **הפיך**: אפשר לשחזר דרך "הצג מוסתרים"
+- **עמיד**: לא מושפע מהרצות התאמה עתידיות
+- **תומך בשניהם**: גם נכסים שלנו וגם נסרקים
