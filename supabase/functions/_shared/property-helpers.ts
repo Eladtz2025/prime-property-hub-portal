@@ -152,10 +152,35 @@ export async function saveProperty(
     }
   }
   
-  // Upsert the property (without duplicate alerts - removed)
-  const { data: upsertResult, error: upsertError } = await supabase
+  // Check for existing property by source_url (more reliable than source_id)
+  const { data: existingByUrl } = await supabase
     .from('scouted_properties')
-    .upsert({
+    .select('id')
+    .eq('source_url', property.source_url)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (existingByUrl) {
+    // Update existing property with latest data
+    const { error: updateError } = await supabase
+      .from('scouted_properties')
+      .update({
+        price: property.price,
+        title: property.title,
+        features: property.features || {},
+        is_private: property.is_private,
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existingByUrl.id);
+
+    return { isNew: false };
+  }
+
+  // Insert new property
+  const { data: insertResult, error: insertError } = await supabase
+    .from('scouted_properties')
+    .insert({
       source: property.source,
       source_url: property.source_url,
       source_id: property.source_id,
@@ -179,14 +204,11 @@ export async function saveProperty(
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
       last_seen_at: new Date().toISOString()
-    }, {
-      onConflict: 'source,source_id',
-      ignoreDuplicates: true
     })
     .select('id')
     .single();
 
-  return { isNew: !upsertError && !!upsertResult };
+  return { isNew: !insertError && !!insertResult };
 }
 
 // ==================== Date Parsing ====================

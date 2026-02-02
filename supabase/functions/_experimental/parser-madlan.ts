@@ -492,7 +492,7 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   
   return {
     source: 'madlan',
-    source_id: `madlan_${sourceId}`,
+    source_id: sourceId,  // Use raw listing ID without prefix - generateSourceId already adds source prefix
     source_url: sourceUrl,
     title,
     city,
