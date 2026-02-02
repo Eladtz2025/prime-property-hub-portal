@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
         .eq('is_active', true)
         .not('source_url', 'is', null)
         .neq('source_url', 'https://www.homeless.co.il')
-        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null');
+        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null');
 
       // Apply source filter if specified
       if (source_filter) {
@@ -280,7 +280,7 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
+      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,features.eq.{},is_private.is.null')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -440,10 +440,11 @@ Deno.serve(async (req) => {
         if (!prop.floor && extracted.floor !== undefined) updates.floor = extracted.floor;
         if (!prop.neighborhood && extracted.neighborhood) updates.neighborhood = extracted.neighborhood;
         
-        // Merge features - keep existing, add new
+        // Merge features - keep existing, add new (also update if features is empty object)
         const existingFeatures = prop.features || {};
+        const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
         const hasNewFeatures = Object.keys(features).some(key => features[key as keyof PropertyFeatures] === true);
-        if (hasNewFeatures || !prop.features) {
+        if (hasNewFeatures || existingIsEmpty) {
           updates.features = { ...existingFeatures, ...features };
         }
 
@@ -733,42 +734,76 @@ function extractFeatures(markdown: string): PropertyFeatures {
     return false;
   };
 
-  // Balcony - positive context patterns
+  // Balcony - positive context patterns (expanded)
   if (hasFeature(
-    [/יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, /מרפסת\s*(שמש|גדולה|מרווחת|יפה)/i, /\bמרפסת\b.*מ"ר/i],
+    [
+      /יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, 
+      /מרפסת\s*(שמש|גדולה|מרווחת|יפה|קטנה|רחבה)/i, 
+      /\bמרפסת\b.*מ"ר/i,
+      /\d+\s*מרפס[תו]ת/i,  // "2 מרפסות"
+      /מרפסות/i,           // plural
+      /\bמרפסת\b/          // simple mention (fallback)
+    ],
     [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i]
   )) {
     features.balcony = true;
   }
 
-  // Yard/Garden - specific patterns
+  // Yard/Garden - specific patterns (expanded)
   if (hasFeature(
-    [/יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה)/i, /גן\s*פרטי/i, /דירת\s*גן/i],
+    [
+      /יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, 
+      /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה|משותפת)/i, 
+      /גן\s*פרטי/i, /דירת\s*גן/i,
+      /גינה\s*פרטית/i,     // explicit private garden
+      /\bדשא\b/i,          // lawn
+      /\bפטיו\b/i,         // patio
+      /\bחצר\b/            // simple mention (fallback)
+    ],
     [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i]
   )) {
     features.yard = true;
   }
 
-  // Elevator - context patterns
+  // Elevator - context patterns (expanded)
   if (hasFeature(
-    [/יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, /בניין\s*עם\s*מעלית/i, /\bמעלית\b/],
-    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i]
+    [
+      /יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, 
+      /בניין\s*עם\s*מעלית/i, 
+      /מעלית\s*שבת/i,      // Shabbat elevator
+      /\d+\s*מעליות/i,     // "2 מעליות"
+      /\bמעלית\b/          // simple mention (fallback)
+    ],
+    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i]
   )) {
     features.elevator = true;
   }
 
-  // Parking - specific context
+  // Parking - specific context (expanded)
   if (hasFeature(
-    [/יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, /חניה\s*(פרטית|בטאבו|בבניין|בחניון)/i, /מקום\s*חניה/i, /חנייה/],
+    [
+      /יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, 
+      /חניה\s*(פרטית|בטאבו|בבניין|בחניון|מקורה|תת\s*קרקעית)/i, 
+      /מקום\s*חניה/i, /חנייה/,
+      /\d+\s*חניות/i,      // "2 חניות"
+      /חניון/i,            // parking garage
+      /\bחניה\b/           // simple mention (fallback)
+    ],
     [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i]
   )) {
     features.parking = true;
   }
 
-  // Mamad (safe room) - specific patterns (almost always contextual)
+  // Mamad (safe room) - specific patterns (expanded)
   if (hasFeature(
-    [/יש\s*ממ"?ד/i, /כולל\s*ממ"?ד/i, /עם\s*ממ"?ד/i, /\bממ"ד\b/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i],
-    [/אין\s*ממ"?ד/i, /ללא\s*ממ"?ד/i]
+    [
+      /יש\s*ממ"?ד/i, /כולל\s*ממ"?ד/i, /עם\s*ממ"?ד/i, 
+      /\bממ"ד\b/, /\bממד\b/, 
+      /מרחב\s*מוגן/i, /חדר\s*ביטחון/i,
+      /ממ"?ד\s*צמוד/i,     // attached mamad
+      /ממ"?ד\s*קומתי/i     // floor mamad
+    ],
+    [/אין\s*ממ"?ד/i, /ללא\s*ממ"?ד/i, /בלי\s*ממ"?ד/i]
   )) {
     features.mamad = true;
   }
