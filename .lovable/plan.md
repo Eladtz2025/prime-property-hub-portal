@@ -1,78 +1,63 @@
 
+## תוכנית - תצוגת כותרות אחידה בהתאמות
 
-## תוכנית ניקוי נתונים - 3 פעולות
+### בעיה מזוהה
+בדיאלוג ההתאמות מוצגת הכותרת המקורית מהמקור (`title`), לדוגמה:
+- "דירה 3 חדרים להשכרה בצפון חדש"
 
-### סיכום מה צריך למחוק
+בעוד שבטבלת הסקאוט מוצג פורמט אחיד:
+- "להשכרה בויצמן, צפון חדש"
 
-| קטגוריה | כמות | מקורות |
-|---------|------|--------|
-| מחיר מתחת ל-3,000 ₪ | 104 נכסים | Homeless, Madlan, Yad2 |
-| שמות מתווכים בכתובת | 26 נכסים | שמות כמו: MONROV, RS נדל"ן, זירו מתווכים, קונקורד, טל נכסים |
-| ערים שאינן תל אביב | 1 נכס | בת ים |
+### הפתרון
+לעדכן את `CustomerMatchesCell.tsx` כך שיבנה כותרת בפורמט אחיד:
 
-**סה"כ למחיקה: ~130 נכסים** (עם חפיפה אפשרית)
-
----
-
-### שלב 1: מחיקת נכסים מהמסד נתונים
-
-**פעולה א' - מחיקת מחירים נמוכים:**
-```sql
-DELETE FROM scouted_properties 
-WHERE price < 3000 AND property_type = 'rent';
+```
+{property_type === 'rent' ? 'להשכרה' : 'למכירה'} ב{address}, {neighborhood}
 ```
 
-**פעולה ב' - מחיקת כתובות עם שמות מתווכים:**
-```sql
-DELETE FROM scouted_properties 
-WHERE address ~* '(קונקורד|concord|monrov|מונרוב|זירו|zero.*broker|הומי|homy|פאר תיווך|טל נכסים|חברה חדשה|rs נדל|anglo.*saxon|רימקס|remax|re/max|century|קולדוול)';
+### שינוי טכני
+
+**קובץ:** `src/components/customers/CustomerMatchesCell.tsx`
+
+**שורה 304 - לפני:**
+```tsx
+<p className="font-medium truncate text-sm">{match.title || 'דירה ללא כותרת'}</p>
 ```
 
-**פעולה ג' - מחיקת נכסים מחוץ לתל אביב:**
-```sql
-DELETE FROM scouted_properties 
-WHERE city IS NOT NULL 
-  AND city NOT LIKE '%תל אביב%' 
-  AND city NOT LIKE '%תל-אביב%';
+**אחרי:**
+```tsx
+<p className="font-medium truncate text-sm">
+  {match.property_type === 'rent' ? 'להשכרה' : 'למכירה'}
+  {match.address ? ` ב${match.address.split(',')[0]?.trim()}` : ''}
+  {match.neighborhood ? `, ${match.neighborhood}` : ''}
+</p>
 ```
 
----
+### שינוי נוסף - הוספת שדות חסרים ל-Hook
 
-### שלב 2: עדכון הקוד למניעת הבעיות בעתיד
+כדי שהפורמט יעבוד, צריך לוודא שה-hook `useCustomerMatches` מביא גם `address` ו-`property_type`.
 
-**2.1 הוספת MIN_PRICE לקונפיגורציה:**
-- הוספת פרמטר `min_price: 3000` לקובץ הקונפיגורציה
-- עדכון ה-parsers (Yad2, Madlan, Homeless) לסנן לפני שמירה
+**קובץ:** `src/hooks/useCustomerMatches.ts`
 
-**2.2 בדיקת קוד ה-sanitization הקיים:**
-- קובץ `broker-detection.ts` כבר מכיל חלק מהמתווכים
-- צריך לוודא שהוא מופעל על שדה `address` ולא רק על שדות אחרים
-- אם כבר מתוקן - רק למחוק את הקיימים
-
-**2.3 סינון ערים:**
-- כבר קיים ב-`property-helpers.ts` סינון לתל אביב בלבד
-- צריך לבדוק למה בת ים עברה
+הממשק כבר כולל `source` אבל חסרים `address` ו-`property_type`. יש לוודא שהפונקציה `get_customer_matches` מחזירה גם שדות אלה.
 
 ---
 
-### שלב 3: אחרי הניקוי - סריקת LIVE של Homeless
+## בעיות נוספות שזוהו (לטיפול עתידי)
 
-לאחר השלמת הניקוי, אבצע סריקה חיה של Homeless כדי:
-1. לבדוק שה-URL החדש (עם `?inumber1=X&page=N`) עובד נכון
-2. לוודא שכל קונפיגורציה מושכת את השכונות הנכונות
-3. לבדוק את איכות החילוץ של כל השדות
+### 1. התאמות שגויות לפי שכונה
+נמצאו 2 נכסים שהותאמו לצפון חדש אבל נמצאים בשכונות אחרות:
+- אזורי חן ≠ צפון חדש
+- תל ברוך צפון ≠ צפון חדש
 
----
+**סיבה אפשרית:** לוגיקת ההתאמה משתמשת ב-neighborhood_groups או שמנגנון ההתאמה לא מדויק.
 
-### פרטים טכניים
+### 2. מודעות שהוסרו
+2 מתוך 9 נכסים כבר הוסרו מיד2. הלקוח רואה לינקים שבורים.
 
-**קבצים שייבדקו/יעודכנו:**
-- `supabase/functions/_shared/property-helpers.ts` - סינון מחיר מינימלי
-- `supabase/functions/_shared/broker-detection.ts` - רשימת מתווכים
-- `supabase/functions/scout-yad2/parser.ts` - sanitization
-- `supabase/functions/scout-madlan/parser.ts` - sanitization
-- `supabase/functions/scout-homeless/parser.ts` - sanitization
+**המלצה:** להוסיף מנגנון בדיקת זמינות (HTTP HEAD) שיסמן נכסים לא פעילים.
 
-**הערה חשובה:** 
-לפי ה-diff האחרון, כבר תיקנת את פורמט ה-URL של Homeless מ-path style ל-query string. הסריקה החיה תאמת שהתיקון עובד נכון.
+### 3. כפילויות במדלן
+אותו נכס מופיע פעמיים עם כתובות שונות.
 
+**זו כנראה בעיית duplicate_group_id** שלא מזהה את הכפילות הזו.
