@@ -10,8 +10,8 @@ const corsHeaders = {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Maximum batches per run to avoid timeout (Edge Function limit is 60s)
-const MAX_BATCHES_PER_RUN = 5;
-const DELAY_BETWEEN_BATCHES_MS = 200; // Fast dispatch since we're fire-and-forget
+const MAX_BATCHES_PER_RUN = 2;
+const DELAY_BETWEEN_BATCHES_MS = 30000; // 30 seconds between batches to let Firecrawl finish
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
