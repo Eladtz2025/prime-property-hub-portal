@@ -17,6 +17,7 @@ interface CustomerMatch {
   address: string | null;
   neighborhood: string | null;
   propertyType: string | null;
+  isDismissed: boolean;
 }
 
 export interface GroupedMatch {
@@ -24,13 +25,16 @@ export interface GroupedMatch {
   matches: CustomerMatch[];
 }
 
-export const useCustomerMatches = (customerId: string) => {
+export const useCustomerMatches = (customerId: string, includeDismissed: boolean = false) => {
   return useQuery({
-    queryKey: ['customer-matches', customerId],
+    queryKey: ['customer-matches', customerId, includeDismissed],
     queryFn: async (): Promise<GroupedMatch[]> => {
       // Use the optimized database function instead of fetching all properties
       const { data, error } = await supabase
-        .rpc('get_customer_matches', { customer_uuid: customerId });
+        .rpc('get_customer_matches', { 
+          customer_uuid: customerId,
+          include_dismissed: includeDismissed 
+        });
 
       if (error) {
         console.error('Error fetching customer matches:', error);
@@ -56,6 +60,7 @@ export const useCustomerMatches = (customerId: string) => {
         address: string | null;
         neighborhood: string | null;
         property_type: string | null;
+        is_dismissed?: boolean;
       }) => ({
         id: row.id,
         title: row.title,
@@ -72,6 +77,7 @@ export const useCustomerMatches = (customerId: string) => {
         address: row.address,
         neighborhood: row.neighborhood,
         propertyType: row.property_type,
+        isDismissed: row.is_dismissed || false,
       }));
 
       // Group matches by duplicate_group_id

@@ -675,6 +675,58 @@ export type Database = {
           },
         ]
       }
+      dismissed_matches: {
+        Row: {
+          dismissed_at: string | null
+          dismissed_by: string | null
+          id: string
+          lead_id: string
+          property_id: string | null
+          reason: string | null
+          scouted_property_id: string | null
+        }
+        Insert: {
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          id?: string
+          lead_id: string
+          property_id?: string | null
+          reason?: string | null
+          scouted_property_id?: string | null
+        }
+        Update: {
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          id?: string
+          lead_id?: string
+          property_id?: string | null
+          reason?: string | null
+          scouted_property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dismissed_matches_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "contact_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dismissed_matches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dismissed_matches_scouted_property_id_fkey"
+            columns: ["scouted_property_id"]
+            isOneToOne: false
+            referencedRelation: "scouted_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       duplicate_alerts: {
         Row: {
           created_at: string | null
@@ -3274,27 +3326,51 @@ export type Database = {
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
-      get_customer_matches: {
-        Args: { customer_uuid: string }
-        Returns: {
-          address: string
-          city: string
-          duplicate_group_id: string
-          id: string
-          is_private: boolean
-          match_priority: number
-          match_reasons: string[]
-          match_score: number
-          neighborhood: string
-          price: number
-          property_type: string
-          rooms: number
-          size: number
-          source: string
-          source_url: string
-          title: string
-        }[]
-      }
+      get_customer_matches:
+        | {
+            Args: { customer_uuid: string }
+            Returns: {
+              address: string
+              city: string
+              duplicate_group_id: string
+              id: string
+              is_private: boolean
+              match_priority: number
+              match_reasons: string[]
+              match_score: number
+              neighborhood: string
+              price: number
+              property_type: string
+              rooms: number
+              size: number
+              source: string
+              source_url: string
+              title: string
+            }[]
+          }
+        | {
+            Args: { customer_uuid: string; include_dismissed?: boolean }
+            Returns: {
+              address: string
+              city: string
+              duplicate_group_id: string
+              floor: number
+              id: string
+              is_dismissed: boolean
+              is_private: boolean
+              match_reasons: string[]
+              match_score: number
+              matched_at: string
+              neighborhood: string
+              price: number
+              property_type: string
+              rooms: number
+              size: number
+              source: string
+              source_url: string
+              title: string
+            }[]
+          }
       get_matches_by_hour: {
         Args: { end_date: string; start_date: string }
         Returns: {
