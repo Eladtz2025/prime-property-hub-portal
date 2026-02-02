@@ -461,7 +461,7 @@ Deno.serve(async (req) => {
 
         // Extract data
         const extracted = extractPropertyData(markdown, prop.source);
-        const features = extractFeatures(markdown);
+        const features = extractFeatures(markdown, prop.source);
         
         console.log(`📊 Extracted data:`, JSON.stringify(extracted));
         console.log(`🏷️ Extracted features:`, JSON.stringify(features));
@@ -792,11 +792,12 @@ function extractPropertyData(markdown: string, source: string): PropertyData {
  * 2. Uses context-aware patterns to reduce false positives
  * 3. Checks for negative patterns (e.g., "אין מרפסת", "ללא חניה")
  */
-function extractFeatures(markdown: string): PropertyFeatures {
+function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   const features: PropertyFeatures = {};
   
   // First, try to isolate the property description section
-  const text = isolatePropertyDescription(markdown);
+  // For Madlan: excludes "מפרט מלא" which shows ALL options (not just existing ones)
+  const text = isolatePropertyDescription(markdown, source);
   const lowerText = text.toLowerCase();
 
   // Helper to check for positive mention without negation
@@ -952,14 +953,48 @@ function extractFeatures(markdown: string): PropertyFeatures {
 /**
  * Try to isolate just the property description from full page markdown
  * This helps avoid matching features from navigation, filters, etc.
+ * 
+ * CRITICAL for Madlan: The "מפרט מלא" section lists ALL possible features
+ * (both existing and non-existing). The checkmarks (✓/✗) are visual only
+ * and don't appear in markdown. We must EXCLUDE this section entirely.
  */
-function isolatePropertyDescription(markdown: string): string {
+function isolatePropertyDescription(markdown: string, source?: string): string {
+  // CRITICAL: For Madlan, exclude "מפרט מלא" section completely
+  // This section shows ALL options with visual checkmarks that don't translate to markdown
+  // Only use "יתרונות הנכס" (advantages) and "תיאור הנכס" (description) sections
+  if (source === 'madlan') {
+    let text = '';
+    
+    // Extract "יתרונות הנכס" section - these are ACTUAL features that exist
+    const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
+    if (advantagesMatch) {
+      text += advantagesMatch[1] + '\n';
+    }
+    
+    // Extract "תיאור הנכס" section - free text description
+    const descriptionMatch = markdown.match(/תיאור הנכס([\s\S]*?)(?:##|מפרט מלא|מידע נוסף|צור קשר|$)/i);
+    if (descriptionMatch) {
+      text += descriptionMatch[1] + '\n';
+    }
+    
+    // If we found meaningful content from these sections, use it
+    if (text.length > 50) {
+      console.log(`[Madlan] Using יתרונות/תיאור sections only (${text.length} chars), avoiding מפרט מלא`);
+      return text;
+    }
+    
+    // Fallback: remove "מפרט מלא" section entirely from the markdown
+    const cleaned = markdown.replace(/##?\s*מפרט מלא[\s\S]*?(?=##|מידע נוסף|צור קשר|$)/gi, '');
+    console.log(`[Madlan] Fallback: removed מפרט מלא section (${markdown.length} -> ${cleaned.length} chars)`);
+    return cleaned;
+  }
+
   // If markdown is short, it's probably already isolated
   if (markdown.length < 2000) {
     return markdown;
   }
 
-  // For Homeless pages, look for the main content section
+  // For Homeless/Yad2 pages, look for the main content section
   // Usually starts after the breadcrumb/header and ends before footer
   
   // Try to find description markers
