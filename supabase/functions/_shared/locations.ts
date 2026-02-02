@@ -39,14 +39,13 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'הצפון החדש - דרום', 
         'הצפון החדש החלק הצפוני', 
         'הצפון החדש החלק הדרומי',
-        'הצפון החדש סביבת כיכר המדינה',
-        'הצפון החדש סביבת כיכר',
-        'הצפון החדש - כיכר המדינה',
+        // REMOVED: 'הצפון החדש סביבת כיכר המדינה', 'הצפון החדש סביבת כיכר', 'הצפון החדש - כיכר המדינה'
+        // These caused false positives - matching כיכר המדינה to צפון_חדש
         'new north',
         'צפון החדש',
         'לואי מרשל',
         'louis marshall',
-        'יהודה המכבי, הצפון החדש - צפון',
+        'יהודה המכבי',
         'הצפון החדש צפון',
         'הצפון החדש דרום'
       ] 
@@ -371,16 +370,26 @@ export function matchNeighborhood(propertyNeighborhood: string, leadNeighborhood
     if (config) {
       const normalizedLabel = normalizeText(config.label);
       
-      // Check if property neighborhood matches the label
-      if (normalizedProperty.includes(normalizedLabel) || normalizedLabel.includes(normalizedProperty)) {
+      // Check if property neighborhood matches the label (stricter matching)
+      if (normalizedProperty === normalizedLabel ||
+          normalizedProperty.startsWith(normalizedLabel + ' ') ||
+          normalizedProperty.startsWith(normalizedLabel + ',') ||
+          normalizedLabel.startsWith(normalizedProperty + ' ') ||
+          normalizedLabel.startsWith(normalizedProperty + ',') ||
+          normalizedProperty.startsWith(normalizedLabel)) {
         return true;
       }
       
-      // Check if property neighborhood matches any alias (with normalization)
+      // Check if property neighborhood matches any alias (stricter matching)
       for (const alias of config.aliases) {
         const normalizedAlias = normalizeText(alias);
-        if (normalizedProperty.includes(normalizedAlias) ||
-            normalizedAlias.includes(normalizedProperty)) {
+        // Exact match or property starts with alias (not the other way around!)
+        if (normalizedProperty === normalizedAlias ||
+            normalizedProperty.startsWith(normalizedAlias + ' ') ||
+            normalizedProperty.startsWith(normalizedAlias + ',') ||
+            normalizedAlias.startsWith(normalizedProperty + ' ') ||
+            normalizedAlias.startsWith(normalizedProperty + ',') ||
+            normalizedProperty.startsWith(normalizedAlias)) {
           return true;
         }
       }
