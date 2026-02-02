@@ -1,137 +1,63 @@
 
-# הוספת אפשרות להסתיר נכס מתוצאות ההתאמה של לקוח
 
-## סקירה
+# תיקון בדיקת לינקים שבורים
 
-כאשר מוחקים נכס מתוצאות הלקוח, הוא לא יופיע יותר - גם אם אלגוריתם ההתאמה ירוץ שוב.
+## בעיות שזוהו
 
-## איך זה יעבוד
+### 1. שגיאת קומפילציה - משתנה לא מוגדר
+בקובץ `trigger-availability-check/index.ts` שורה 132:
+```typescript
+await sleep(DELAY_BETWEEN_BATCHES_MS);  // ❌ לא מוגדר!
+```
+צריך להיות:
+```typescript
+await sleep(availabilitySettings.delay_between_batches_ms);  // ✅
+```
 
-| פעולה | תוצאה |
-|-------|-------|
-| לחיצה על כפתור X ליד נכס | הנכס נעלם מהתוצאות מיידית |
-| הרצת התאמה מחדש | הנכס **לא** חוזר |
-| אפשרות לראות נכסים מוסתרים | לחיצה על "הצג מוסתרים" בדיאלוג |
+### 2. batch_size עדיין 20 במקום 50
+המיגרציה הקודמת לא הופעלה או נדרסה. צריך לעדכן שוב.
 
 ---
 
-## שינויים טכניים
+## שינויים נדרשים
 
-### 1. יצירת טבלה חדשה: `dismissed_matches`
+### תיקון 1: trigger-availability-check/index.ts
+שורה 132 - החלפת המשתנה הלא קיים:
+```typescript
+// לפני:
+await sleep(DELAY_BETWEEN_BATCHES_MS);
 
+// אחרי:
+await sleep(availabilitySettings.delay_between_batches_ms || 500);
+```
+
+### תיקון 2: עדכון batch_size ל-50
 ```sql
-CREATE TABLE dismissed_matches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id UUID NOT NULL REFERENCES contact_leads(id) ON DELETE CASCADE,
-  property_id UUID, -- לנכסים שלנו (properties)
-  scouted_property_id UUID, -- לנכסים נסרקים (scouted_properties)
-  dismissed_by UUID REFERENCES auth.users(id),
-  dismissed_at TIMESTAMPTZ DEFAULT now(),
-  reason TEXT, -- אופציונלי: סיבת ההסתרה
-  
-  -- constraint: חייב להיות אחד מהם
-  CONSTRAINT at_least_one_property CHECK (
-    property_id IS NOT NULL OR scouted_property_id IS NOT NULL
-  ),
-  -- unique per lead + property combination
-  UNIQUE(lead_id, property_id),
-  UNIQUE(lead_id, scouted_property_id)
-);
+UPDATE scout_settings 
+SET setting_value = '50' 
+WHERE category = 'availability' AND setting_key = 'batch_size';
 ```
 
-RLS Policies:
-- משתמשים מאומתים יכולים להוסיף/לראות/למחוק את ההסתרות
+---
 
-### 2. עדכון פונקציה: `get_customer_matches`
+## אחרי התיקון
 
-שינוי ב-WHERE clause:
+להפעיל מחדש את הבדיקה:
+```bash
+POST /trigger-availability-check
+```
+
+זה יריץ את הסריקה על כל 5,879 הנכסים הפעילים.
+
+---
+
+## מעקב
+
+אחרי הפעלה, נוכל לבדוק התקדמות:
 ```sql
-WHERE match_data->>'lead_id' = customer_uuid::TEXT
-  AND sp.is_active = true
-  AND NOT EXISTS (
-    SELECT 1 FROM dismissed_matches dm
-    WHERE dm.lead_id = customer_uuid
-      AND dm.scouted_property_id = sp.id
-  )
+SELECT 
+  COUNT(*) FILTER (WHERE is_active = true) as still_active,
+  COUNT(*) FILTER (WHERE status = 'inactive') as marked_inactive
+FROM scouted_properties
 ```
 
-### 3. עדכון קומפוננטה: CustomerMatchesCell.tsx
-
-**הוספות:**
-- כפתור X אדום בפינה של כל כרטיס נכס
-- Dialog אישור לפני הסתרה
-- פונקציה `handleDismissMatch` לשמירה ב-DB
-- רענון אוטומטי של הרשימה אחרי הסתרה
-- כפתור "הצג מוסתרים" (toggle) בראש הדיאלוג
-
-### 4. עדכון hook: useOwnPropertyMatches.ts
-
-הוספת NOT EXISTS על `dismissed_matches` גם לנכסים שלנו.
-
----
-
-## UI שינויים
-
-**לפני:**
-```
-┌────────────────────────┐
-│ תיווך   פרטי     80%  │
-│ להשכרה בהרצליה        │
-│ תל אביב | 3 חד' | 80מ"ר │
-│ ₪8,500                 │
-│ ✓ מחיר   ✓ חדרים      │
-│ [צפה] [💬]            │
-└────────────────────────┘
-```
-
-**אחרי:**
-```
-┌────────────────────────┐
-│ תיווך   פרטי     80% X│  ← כפתור מחיקה אדום
-│ להשכרה בהרצליה        │
-│ תל אביב | 3 חד' | 80מ"ר │
-│ ₪8,500                 │
-│ ✓ מחיר   ✓ חדרים      │
-│ [צפה] [💬]            │
-└────────────────────────┘
-```
-
-**כפתור הצג/הסתר מוסתרים:**
-```
-┌─────────────────────────────────┐
-│ דירות שהותאמו לישראל           │
-│ ☐ הצג מוסתרים (3)              │  ← toggle
-├─────────────────────────────────┤
-```
-
----
-
-## קבצים לעריכה
-
-| קובץ | שינוי |
-|------|-------|
-| `supabase/migrations/` | יצירת טבלה + עדכון פונקציה |
-| `src/components/customers/CustomerMatchesCell.tsx` | כפתור X, logic הסתרה |
-| `src/hooks/useCustomerMatches.ts` | invalidate cache אחרי הסתרה |
-| `src/hooks/useOwnPropertyMatches.ts` | פילטור נכסים מוסתרים |
-| `src/integrations/supabase/types.ts` | יתעדכן אוטומטית |
-
----
-
-## זרימת העבודה
-
-1. משתמש לוחץ על X
-2. Dialog: "להסתיר את הנכס הזה מהתוצאות של ישראל?"
-3. [ביטול] [אישור]
-4. Insert ל-`dismissed_matches`
-5. Invalidate query cache
-6. הנכס נעלם מהרשימה
-
----
-
-## יתרונות
-
-- **פשוט**: כפתור אחד
-- **הפיך**: אפשר לשחזר דרך "הצג מוסתרים"
-- **עמיד**: לא מושפע מהרצות התאמה עתידיות
-- **תומך בשניהם**: גם נכסים שלנו וגם נסרקים
