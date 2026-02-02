@@ -1,114 +1,78 @@
 
 
-# תיקון URLs של Homeless - פורמט שגוי ב-Pagination
+## תוכנית ניקוי נתונים - 3 פעולות
 
-## הבעיה שזוהתה
+### סיכום מה צריך למחוק
 
-הסריקה של הומלס (ריצת "ירקון השכרה") מחזירה **0 נכסים** בדפים 2-8 כי ה-URL שנבנה שגוי.
+| קטגוריה | כמות | מקורות |
+|---------|------|--------|
+| מחיר מתחת ל-3,000 ₪ | 104 נכסים | Homeless, Madlan, Yad2 |
+| שמות מתווכים בכתובת | 26 נכסים | שמות כמו: MONROV, RS נדל"ן, זירו מתווכים, קונקורד, טל נכסים |
+| ערים שאינן תל אביב | 1 נכס | בת ים |
 
-### לוגים:
-```
-🟣 Homeless page 1: [NO-AI] Parsed 14 properties ✓
-🟣 Homeless page 2: [NO-AI] Parsed 0 properties ❌
-🟣 Homeless page 3: [NO-AI] Parsed 0 properties ❌
-...
-🟣 Homeless page 8: [NO-AI] Parsed 0 properties ❌
-```
-
-### הסיבה:
-
-| URL שנבנה (שגוי) | תוצאה |
-|-----------------|-------|
-| `/rent/inumber1=150,page=2` | מחזיר **דף הבית** של הומלס - אין נכסים |
-
-| URL נכון | תוצאה |
-|----------|-------|
-| `/rent/?inumber1=150&page=2` | מחזיר **דף חיפוש** עם טבלת נכסים |
+**סה"כ למחיקה: ~130 נכסים** (עם חפיפה אפשרית)
 
 ---
 
-## פרטים טכניים
+### שלב 1: מחיקת נכסים מהמסד נתונים
 
-### מיקום הבאג
-**קובץ:** `supabase/functions/_shared/url-builders.ts`
-**פונקציות מושפעות:** `buildSinglePageUrl()` ו-`buildSearchUrls()`
-
-### הקוד הנוכחי (שורות 193-223):
-
-```typescript
-// CRITICAL: Use path-style URL (/inumber1=X) NOT query string (?inumber1=X)
-// Homeless IGNORES query params and returns all of Israel with ?param format!
-if (config.neighborhoods?.length) {
-  const areaCodes = getHomelessAreaCodes(config.neighborhoods);
-  if (areaCodes.length >= 1) {
-    const pathType = type === 'rent' ? 'rent' : 'sale';
-    baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
-    ...
-  }
-}
-
-// For path-style URLs, pagination uses COMMA separator (not &)
-const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
+**פעולה א' - מחיקת מחירים נמוכים:**
+```sql
+DELETE FROM scouted_properties 
+WHERE price < 3000 AND property_type = 'rent';
 ```
 
-**הבעיה:** ההערה שגויה! הומלס **לא** מתעלם מ-query params. ה-URL הנכון הוא:
-```
-/rent/?inumber1=150&page=2
+**פעולה ב' - מחיקת כתובות עם שמות מתווכים:**
+```sql
+DELETE FROM scouted_properties 
+WHERE address ~* '(קונקורד|concord|monrov|מונרוב|זירו|zero.*broker|הומי|homy|פאר תיווך|טל נכסים|חברה חדשה|rs נדל|anglo.*saxon|רימקס|remax|re/max|century|קולדוול)';
 ```
 
-לא:
-```
-/rent/inumber1=150,page=2
+**פעולה ג' - מחיקת נכסים מחוץ לתל אביב:**
+```sql
+DELETE FROM scouted_properties 
+WHERE city IS NOT NULL 
+  AND city NOT LIKE '%תל אביב%' 
+  AND city NOT LIKE '%תל-אביב%';
 ```
 
 ---
 
-## התיקון הנדרש
+### שלב 2: עדכון הקוד למניעת הבעיות בעתיד
 
-### שינוי 1: `buildSinglePageUrl()` - שורות 193-223
+**2.1 הוספת MIN_PRICE לקונפיגורציה:**
+- הוספת פרמטר `min_price: 3000` לקובץ הקונפיגורציה
+- עדכון ה-parsers (Yad2, Madlan, Homeless) לסנן לפני שמירה
 
-**לפני:**
-```typescript
-baseUrl = `https://www.homeless.co.il/${pathType}/inumber1=${areaCodes[0]}`;
-...
-const pageUrl = page === 1 ? baseUrl : `${baseUrl},page=${page}`;
-```
+**2.2 בדיקת קוד ה-sanitization הקיים:**
+- קובץ `broker-detection.ts` כבר מכיל חלק מהמתווכים
+- צריך לוודא שהוא מופעל על שדה `address` ולא רק על שדות אחרים
+- אם כבר מתוקן - רק למחוק את הקיימים
 
-**אחרי:**
-```typescript
-baseUrl = `https://www.homeless.co.il/${pathType}/?inumber1=${areaCodes[0]}`;
-...
-const pageUrl = page === 1 ? baseUrl : `${baseUrl}&page=${page}`;
-```
-
-### שינוי 2: `buildSearchUrls()` - שורות 352-388
-
-אותו שינוי - להוסיף `?` אחרי `/rent/` ולהחליף פסיק ב-`&`.
+**2.3 סינון ערים:**
+- כבר קיים ב-`property-helpers.ts` סינון לתל אביב בלבד
+- צריך לבדוק למה בת ים עברה
 
 ---
 
-## סיכום השינויים
+### שלב 3: אחרי הניקוי - סריקת LIVE של Homeless
 
-| מיקום | לפני | אחרי |
-|-------|------|------|
-| baseUrl | `/rent/inumber1=X` | `/rent/?inumber1=X` |
-| pagination | `baseUrl,page=N` | `baseUrl&page=N` |
-
----
-
-## תוצאה צפויה
-
-| דף | לפני (0 נכסים) | אחרי (עובד) |
-|----|--------------|-------------|
-| 1 | `/rent/inumber1=150` → 14 נכסים | `/rent/?inumber1=150` → 14 נכסים |
-| 2 | `/rent/inumber1=150,page=2` → **0 נכסים** | `/rent/?inumber1=150&page=2` → נכסים |
-| 3 | `/rent/inumber1=150,page=3` → **0 נכסים** | `/rent/?inumber1=150&page=3` → נכסים |
+לאחר השלמת הניקוי, אבצע סריקה חיה של Homeless כדי:
+1. לבדוק שה-URL החדש (עם `?inumber1=X&page=N`) עובד נכון
+2. לוודא שכל קונפיגורציה מושכת את השכונות הנכונות
+3. לבדוק את איכות החילוץ של כל השדות
 
 ---
 
-## קובץ לעדכון
+### פרטים טכניים
 
-| קובץ | שינוי |
-|------|-------|
-| `supabase/functions/_shared/url-builders.ts` | תיקון פורמט URL ל-Homeless |
+**קבצים שייבדקו/יעודכנו:**
+- `supabase/functions/_shared/property-helpers.ts` - סינון מחיר מינימלי
+- `supabase/functions/_shared/broker-detection.ts` - רשימת מתווכים
+- `supabase/functions/scout-yad2/parser.ts` - sanitization
+- `supabase/functions/scout-madlan/parser.ts` - sanitization
+- `supabase/functions/scout-homeless/parser.ts` - sanitization
+
+**הערה חשובה:** 
+לפי ה-diff האחרון, כבר תיקנת את פורמט ה-URL של Homeless מ-path style ל-query string. הסריקה החיה תאמת שהתיקון עובד נכון.
 
