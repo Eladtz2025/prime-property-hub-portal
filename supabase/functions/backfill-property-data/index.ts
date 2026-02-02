@@ -100,7 +100,7 @@ interface PropertyFeatures {
   pets?: boolean;
 }
 
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 5;  // Reduced from 20 to avoid Edge Function timeout
 const TASK_NAME = 'data_completion';
 
 Deno.serve(async (req) => {
@@ -551,7 +551,15 @@ Deno.serve(async (req) => {
         successCount++;
         lastId = prop.id;
 
-        // Progress is updated at batch end to avoid too many DB calls
+        // Update last_processed_id incrementally to ensure progress is saved
+        // even if function times out mid-batch
+        await supabase
+          .from('backfill_progress')
+          .update({
+            last_processed_id: lastId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', progressId);
 
         // Delay between requests
         await new Promise(r => setTimeout(r, 1500));
@@ -618,19 +626,34 @@ Deno.serve(async (req) => {
     const hasMore = remainingCount > 0;
 
     if (hasMore) {
-      // Trigger next batch via self-invocation
+      // Trigger next batch via self-invocation - MUST await to ensure request is dispatched
       console.log(`🔄 ${remainingCount} items remaining, triggering next batch...`);
       
-      // Use EdgeRuntime.waitUntil for background continuation
       const continueUrl = `${supabaseUrl}/functions/v1/backfill-property-data`;
-      fetch(continueUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'continue', task_id: progressId, dry_run })
-      }).catch(err => console.error('Failed to trigger next batch:', err));
+      try {
+        // CRITICAL: await the fetch to ensure request is sent before function closes
+        const triggerResponse = await fetch(continueUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            action: 'continue', 
+            task_id: progressId, 
+            dry_run,
+            source_filter  // Pass through source filter
+          })
+        });
+        
+        if (!triggerResponse.ok) {
+          console.error(`Failed to trigger next batch: ${triggerResponse.status}`);
+        } else {
+          console.log(`✅ Next batch triggered successfully`);
+        }
+      } catch (err) {
+        console.error('Failed to trigger next batch:', err);
+      }
     } else {
       // Mark as completed
       await supabase
