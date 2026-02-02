@@ -129,7 +129,7 @@ serve(async (req) => {
 
       // Short delay between triggering batches
       if (i < batchesToProcess - 1) {
-        await sleep(DELAY_BETWEEN_BATCHES_MS);
+        await sleep(availabilitySettings.delay_between_batches_ms || 500);
       }
     }
 
