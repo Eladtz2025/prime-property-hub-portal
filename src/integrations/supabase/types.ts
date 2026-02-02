@@ -3326,51 +3326,29 @@ export type Database = {
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
-      get_customer_matches:
-        | {
-            Args: { customer_uuid: string }
-            Returns: {
-              address: string
-              city: string
-              duplicate_group_id: string
-              id: string
-              is_private: boolean
-              match_priority: number
-              match_reasons: string[]
-              match_score: number
-              neighborhood: string
-              price: number
-              property_type: string
-              rooms: number
-              size: number
-              source: string
-              source_url: string
-              title: string
-            }[]
-          }
-        | {
-            Args: { customer_uuid: string; include_dismissed?: boolean }
-            Returns: {
-              address: string
-              city: string
-              duplicate_group_id: string
-              floor: number
-              id: string
-              is_dismissed: boolean
-              is_private: boolean
-              match_reasons: string[]
-              match_score: number
-              matched_at: string
-              neighborhood: string
-              price: number
-              property_type: string
-              rooms: number
-              size: number
-              source: string
-              source_url: string
-              title: string
-            }[]
-          }
+      get_customer_matches: {
+        Args: { customer_uuid: string; include_dismissed?: boolean }
+        Returns: {
+          address: string
+          city: string
+          duplicate_group_id: string
+          floor: number
+          id: string
+          is_dismissed: boolean
+          is_private: boolean
+          match_reasons: string[]
+          match_score: number
+          matched_at: string
+          neighborhood: string
+          price: number
+          property_type: string
+          rooms: number
+          size: number
+          source: string
+          source_url: string
+          title: string
+        }[]
+      }
       get_matches_by_hour: {
         Args: { end_date: string; start_date: string }
         Returns: {
