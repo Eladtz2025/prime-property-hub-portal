@@ -178,6 +178,25 @@ export async function calculateMatch(
   // moved to a database trigger (update_lead_eligibility). match-batch now filters
   // by matching_status = 'eligible' before calling this function.
   
+  // ===== ADDRESS MUST BE A VALID STREET (not just neighborhood name) =====
+  const address = property.address?.trim();
+  const neighborhood = property.neighborhood?.trim();
+  
+  // Skip properties without a real street address
+  if (!address || address === '') {
+    return { lead, matchScore: 0, matchReasons: ['לנכס אין כתובת'], priority: 0 };
+  }
+  
+  // Skip generic "apartment" addresses
+  if (address.toLowerCase() === 'דירה' || address.toLowerCase() === 'apartment') {
+    return { lead, matchScore: 0, matchReasons: ['כתובת לא ספציפית'], priority: 0 };
+  }
+  
+  // Skip if address is just the neighborhood name (no real street)
+  if (neighborhood && address.toLowerCase() === neighborhood.toLowerCase()) {
+    return { lead, matchScore: 0, matchReasons: ['כתובת היא רק שם שכונה'], priority: 0 };
+  }
+  
   // ===== PROPERTY TYPE MUST MATCH =====
   const leadPropertyType = lead.property_type;
   const propertyType = property.property_type;
