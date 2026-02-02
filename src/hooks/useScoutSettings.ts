@@ -45,6 +45,7 @@ export interface ScoutSettings {
     delay_between_requests_ms: number;
     head_timeout_ms: number;
     get_timeout_ms: number;
+    use_firecrawl: boolean;
   };
   eligibility: {
     require_cities: boolean;
@@ -95,6 +96,7 @@ export const defaultSettings: ScoutSettings = {
     delay_between_requests_ms: 150,
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
+    use_firecrawl: true,
   },
   eligibility: {
     require_cities: true,

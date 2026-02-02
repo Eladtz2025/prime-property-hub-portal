@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCategorySettings } from "../_shared/settings.ts";
+import { scrapeWithRetry } from "../_shared/scraping.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,24 +10,167 @@ const corsHeaders = {
 
 // Indicators that a listing has been removed (Hebrew and English)
 const LISTING_REMOVED_INDICATORS = [
+  // Hebrew - general
   'המודעה הוסרה',
   'מודעה לא נמצאה',
   'הדף לא נמצא',
   'הנכס אינו זמין',
   'המודעה לא קיימת',
+  'הדף המבוקש לא נמצא',
+  'לא הצלחנו למצוא',
+  // English
   'listing not found',
   'item removed',
   'page not found',
   'this listing is no longer available',
-  'האתר בשיפוצים',
-  // Yad2 specific indicators
+  'listing has been removed',
+  'no longer exists',
+  // Yad2 specific
   'חיפשנו בכל מקום אבל אין לנו עמוד כזה',
   'אין לנו עמוד כזה',
   'הלינק לא תקין',
   'העמוד שחיפשת הוסר',
-  'listing has been removed',
-  'no longer exists',
+  'חיפשנו בכל מקום',
+  'אופס',
+  'האתר בשיפוצים',
+  // Madlan specific
+  'הנכס לא נמצא',
+  'הדירה אינה זמינה',
+  'הנכס הוסר',
 ];
+
+// Check if content indicates the listing was removed
+function isListingRemoved(content: string): boolean {
+  if (!content || content.length < 100) return false;
+  
+  const lowerContent = content.toLowerCase();
+  
+  for (const indicator of LISTING_REMOVED_INDICATORS) {
+    if (lowerContent.includes(indicator.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Check via Firecrawl for Yad2/Madlan (bypasses bot detection)
+async function checkWithFirecrawl(
+  url: string, 
+  source: string, 
+  firecrawlApiKey: string
+): Promise<{ isInactive: boolean; reason?: string }> {
+  try {
+    // Single attempt with lightweight scrape (no retries for availability check)
+    const result = await scrapeWithRetry(url, firecrawlApiKey, source, 1, 2000);
+    
+    if (!result) {
+      // Scrape completely failed - could be 404 or blocked
+      return { isInactive: false, reason: 'scrape_failed_keeping_active' };
+    }
+    
+    const markdown = result?.data?.markdown || result?.markdown || '';
+    const html = result?.data?.html || result?.html || '';
+    const combinedContent = markdown + ' ' + html;
+    
+    // Check for removed listing indicators
+    if (isListingRemoved(combinedContent)) {
+      return { isInactive: true, reason: 'listing_removed_indicator_found' };
+    }
+    
+    // Check for suspiciously short content (likely error page)
+    if (markdown.length < 200 && !markdown.includes('₪')) {
+      // Very short and no price - might be error page, but keep active to be safe
+      return { isInactive: false, reason: 'short_content_keeping_active' };
+    }
+    
+    return { isInactive: false };
+  } catch (error) {
+    console.error(`Firecrawl check error for ${url}:`, error);
+    return { isInactive: false, reason: 'error_keeping_active' };
+  }
+}
+
+// Check via direct fetch for other sources (Homeless, etc.)
+async function checkWithDirectFetch(
+  url: string,
+  headTimeoutMs: number,
+  getTimeoutMs: number
+): Promise<{ isInactive: boolean; reason?: string }> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), headTimeoutMs);
+
+    // First, try HEAD request
+    const headResponse = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      redirect: 'manual'
+    });
+
+    clearTimeout(timeoutId);
+
+    // Check HTTP status
+    if (headResponse.status === 404 || headResponse.status === 410) {
+      return { isInactive: true, reason: `http_status_${headResponse.status}` };
+    }
+    
+    // For redirects, check destination
+    if (headResponse.status === 301 || headResponse.status === 302) {
+      const location = headResponse.headers.get('location') || '';
+      const isRedirectToHome = 
+        location.endsWith('/') || 
+        (!location.includes('?') && !location.includes('/viewad') && 
+         !location.includes('/item/') && !location.includes('/property/'));
+      
+      if (isRedirectToHome) {
+        return { isInactive: true, reason: 'redirect_to_home' };
+      }
+    }
+    
+    // For 200 OK, do a GET request to check content
+    if (headResponse.status === 200) {
+      try {
+        const getController = new AbortController();
+        const getTimeoutId = setTimeout(() => getController.abort(), getTimeoutMs);
+
+        const getResponse = await fetch(url, {
+          method: 'GET',
+          signal: getController.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        clearTimeout(getTimeoutId);
+
+        if (getResponse.ok) {
+          const html = await getResponse.text();
+          
+          if (isListingRemoved(html)) {
+            return { isInactive: true, reason: 'listing_removed_indicator_found' };
+          }
+          
+          // Very short page without proper HTML - likely an error
+          if (html.length < 1000 && !html.includes('<!DOCTYPE')) {
+            return { isInactive: false, reason: 'suspicious_short_page_keeping_active' };
+          }
+        }
+      } catch {
+        // GET request failed, but HEAD was OK - keep as active
+        return { isInactive: false, reason: 'get_failed_head_ok' };
+      }
+    }
+    
+    return { isInactive: false };
+  } catch (error) {
+    // Request failed completely - keep as active (conservative approach)
+    return { isInactive: false, reason: 'fetch_error_keeping_active' };
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,11 +179,15 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   // Fetch availability settings from database
   const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
+  
+  // Check if Firecrawl should be used (default: true if API key exists)
+  const useFirecrawl = firecrawlApiKey && availabilitySettings.use_firecrawl !== false;
 
   try {
     let propertyIds: string[] = [];
@@ -96,7 +244,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`🔍 Checking ${properties.length} properties for availability...`);
+    console.log(`🔍 Checking ${properties.length} properties for availability (Firecrawl: ${useFirecrawl ? 'ON' : 'OFF'})...`);
 
     let checkedCount = 0;
     let inactiveCount = 0;
@@ -104,91 +252,33 @@ serve(async (req) => {
 
     for (const property of properties) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), availabilitySettings.head_timeout_ms);
-
-        // First, try HEAD request
-        const headResponse = await fetch(property.source_url, {
-          method: 'HEAD',
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; PropertyChecker/1.0)'
-          },
-          redirect: 'manual'
-        });
-
-        clearTimeout(timeoutId);
+        let result: { isInactive: boolean; reason?: string };
+        
+        // Use Firecrawl for Yad2 and Madlan (if enabled), direct fetch for others
+        const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan'].includes(property.source);
+        
+        if (shouldUseFirecrawl) {
+          result = await checkWithFirecrawl(property.source_url, property.source, firecrawlApiKey!);
+        } else {
+          result = await checkWithDirectFetch(
+            property.source_url, 
+            availabilitySettings.head_timeout_ms, 
+            availabilitySettings.get_timeout_ms
+          );
+        }
+        
         checkedCount++;
-
-        let isInactive = false;
-
-        // Check HTTP status
-        if (headResponse.status === 404 || headResponse.status === 410) {
-          isInactive = true;
-          console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (status ${headResponse.status})`);
-        } 
-        // For redirects, check destination
-        else if (headResponse.status === 301 || headResponse.status === 302) {
-          const location = headResponse.headers.get('location') || '';
-          const isRedirectToHome = 
-            location.endsWith('/') || 
-            (!location.includes('?') && !location.includes('/viewad') && !location.includes('/item/') && !location.includes('/property/'));
-          
-          if (isRedirectToHome) {
-            isInactive = true;
-            console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (redirect to home)`);
-          }
-        }
-        // For 200 OK, do a GET request to check content for "listing removed" messages
-        else if (headResponse.status === 200) {
-          try {
-            const getController = new AbortController();
-            const getTimeoutId = setTimeout(() => getController.abort(), availabilitySettings.get_timeout_ms);
-
-            const getResponse = await fetch(property.source_url, {
-              method: 'GET',
-              signal: getController.signal,
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              }
-            });
-
-            clearTimeout(getTimeoutId);
-
-            if (getResponse.ok) {
-              const html = await getResponse.text();
-              const htmlLower = html.toLowerCase();
-
-              // Check for "listing removed" indicators
-              const hasRemovedIndicator = LISTING_REMOVED_INDICATORS.some(
-                indicator => htmlLower.includes(indicator.toLowerCase())
-              );
-
-              // Also check if the page is suspiciously short (might be an error page)
-              const isSuspiciouslyShort = html.length < 1000;
-
-              if (hasRemovedIndicator) {
-                isInactive = true;
-                console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (listing removed message found)`);
-              } else if (isSuspiciouslyShort && !html.includes('<!DOCTYPE')) {
-                // Very short page without proper HTML - likely an error
-                console.log(`⚠️ Property ${property.id} - Suspicious short page (${html.length} chars), keeping active`);
-              }
-            }
-          } catch (getError) {
-            // GET request failed, but HEAD was OK - keep as active
-            console.log(`⚠️ Property ${property.id} - GET failed but HEAD OK, keeping active`);
-          }
-        }
-
-        if (isInactive) {
+        
+        if (result.isInactive) {
           inactiveIds.push(property.id);
           inactiveCount++;
+          console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (${result.reason})`);
+        } else if (result.reason) {
+          console.log(`✓ Property ${property.id} - ACTIVE (${result.reason})`);
         }
 
       } catch (error) {
-        // Request failed completely - keep as active (conservative approach)
-        console.log(`⚠️ Property ${property.id} - Error checking: ${error.message}`);
+        console.log(`⚠️ Property ${property.id} - Error checking: ${error instanceof Error ? error.message : 'Unknown'}`);
         checkedCount++;
       }
 
@@ -216,7 +306,8 @@ serve(async (req) => {
       success: true,
       checked: checkedCount,
       marked_inactive: inactiveCount,
-      inactive_ids: inactiveIds
+      inactive_ids: inactiveIds,
+      firecrawl_enabled: useFirecrawl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
