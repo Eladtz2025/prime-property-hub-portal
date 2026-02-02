@@ -301,7 +301,11 @@ export const CustomerMatchesCell = ({
                             </Badge>
                           </div>
                           
-                          <p className="font-medium truncate text-sm">{match.title || 'דירה ללא כותרת'}</p>
+                          <p className="font-medium truncate text-sm">
+                            {match.propertyType === 'rent' ? 'להשכרה' : 'למכירה'}
+                            {match.address ? ` ב${match.address.split(',')[0]?.trim()}` : ''}
+                            {match.neighborhood ? `, ${match.neighborhood}` : ''}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {match.city && <span>{match.city}</span>}
                             {match.rooms && <span> | {match.rooms} חד'</span>}

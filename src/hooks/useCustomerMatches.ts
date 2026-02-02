@@ -14,6 +14,9 @@ interface CustomerMatch {
   matchScore: number;
   matchReasons: string[];
   duplicateGroupId: string | null;
+  address: string | null;
+  neighborhood: string | null;
+  propertyType: string | null;
 }
 
 export interface GroupedMatch {
@@ -50,6 +53,9 @@ export const useCustomerMatches = (customerId: string) => {
         match_score: number;
         match_reasons: string[] | null;
         duplicate_group_id: string | null;
+        address: string | null;
+        neighborhood: string | null;
+        property_type: string | null;
       }) => ({
         id: row.id,
         title: row.title,
@@ -63,6 +69,9 @@ export const useCustomerMatches = (customerId: string) => {
         matchScore: row.match_score || 0,
         matchReasons: row.match_reasons || [],
         duplicateGroupId: row.duplicate_group_id,
+        address: row.address,
+        neighborhood: row.neighborhood,
+        propertyType: row.property_type,
       }));
 
       // Group matches by duplicate_group_id
