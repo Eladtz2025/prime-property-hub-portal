@@ -1,172 +1,124 @@
 
-## תוכנית תיקון - בעיות התאמות שגויות
 
-### בעיות שזוהו בבדיקה מקיפה
+## תיקון כפילויות חוצות מקורות (Cross-Source Duplicates)
+
+### בעיות שזוהו
 
 | בעיה | היקף | דוגמה |
 |------|------|-------|
-| **1. התאמת שכונות רפויה מדי** | 51+ לקוחות מושפעים | "כיכר המדינה" מותאם ל-"צפון_חדש" כי alias מכיל substring |
-| **2. שם ברוקר בשדה כתובת** | 63 נכסים | `LEAD שיווק נדל"ן`, `גולדין נכסים` בשדה address |
-| **3. is_private שגוי** | 3 נכסים עם ברוקר בכתובת סומנו כפרטי | `אבן שהם נכסים` → is_private=true |
-| **4. נכסים ללא שכונה עם התאמות** | 2 התאמות לזיו | נכסים עם neighborhood=null שהותאמו לפי רחוב |
+| **כפילויות חוצות מקורות** | 352 זוגות | דירה ב"בארי" מופיעה גם ביד2 וגם במדלן |
+| **לקוח רואה כפילויות** | 59 נכסים כפולים עם התאמות | Ziv Yogev רואה את אותה דירה פעמיים |
+| **is_private שונה לאותו נכס** | ~100+ | יד2: פרטי, מדלן: לא ידוע |
+| **שכונה שונה לאותו נכס** | ~100+ | יד2: "מרכז העיר", מדלן: "צפון ישן" |
 
 ---
 
-### פירוט בעיה #1: לוגיקת Substring רפויה מדי
+### דוגמה קונקרטית - דירה ב"קליי"
 
-**הקוד הנוכחי (locations.ts:382-384):**
-```typescript
-if (normalizedProperty.includes(normalizedAlias) ||
-    normalizedAlias.includes(normalizedProperty)) {
-  return true;
-}
-```
+| מקור | ID | שכונה | פרטי? | לקוחות מותאמים |
+|------|-----|-------|------|----------------|
+| **Yad2** | 145e72ce... | צפון חדש | false | Ziv, Shaul, Eli, Itay, סימונה |
+| **Madlan** | b7fd81ac... | צפון חדש | null | Ziv, Shaul, Eli, Itay, סימונה |
 
-**הבעיה:**
-- ליד בחר: `צפון_חדש`
-- Config של צפון_חדש כולל alias: `"הצפון החדש - כיכר המדינה"`
-- נכס עם neighborhood: `"כיכר המדינה"`
-- הבדיקה: `"הצפון החדש - כיכר המדינה".includes("כיכר המדינה")` = **TRUE** ← שגוי!
-
-**תוצאה:** 51 התאמות שגויות של "כיכר המדינה" ללקוחות שביקשו רק "צפון_חדש"
+**הלקוח רואה את אותה דירה פעמיים!**
 
 ---
 
-### פתרון מוצע
+### פתרון מוצע - 2 חלקים
 
-#### תיקון 1: שינוי לוגיקת התאמת שכונות (locations.ts)
+#### חלק 1: ניקוי כפילויות קיימות (Migration)
 
-במקום `includes` דו-כיווני, לבדוק:
-1. **התאמה מדויקת** (לאחר נורמליזציה)
-2. **Prefix match** - הנכס מתחיל עם ה-alias (לא הפוך!)
-3. **הסרת alias בעייתי** מ-צפון_חדש config
+SQL לאיחוד כפילויות חוצות מקורות - שמירת הרשומה עם המידע העשיר יותר:
 
-**קובץ:** `supabase/functions/_shared/locations.ts`
-
-**שינוי בפונקציה `matchNeighborhood` (שורות 380-386):**
-
-```typescript
-// לפני - רופף מדי
-if (normalizedProperty.includes(normalizedAlias) ||
-    normalizedAlias.includes(normalizedProperty)) {
-  return true;
-}
-
-// אחרי - יותר מחמיר
-// התאמה מדויקת או נכס מתחיל עם ה-alias
-if (normalizedProperty === normalizedAlias ||
-    normalizedProperty.startsWith(normalizedAlias + ' ') ||
-    normalizedProperty.startsWith(normalizedAlias + ',') ||
-    normalizedAlias.startsWith(normalizedProperty + ' ') ||
-    normalizedAlias.startsWith(normalizedProperty + ',') ||
-    // Property is a specific sub-area of the alias
-    normalizedProperty.startsWith(normalizedAlias)) {
-  return true;
-}
-```
-
-**וגם שינוי בבדיקת label (שורות 374-377):**
-```typescript
-// לפני
-if (normalizedProperty.includes(normalizedLabel) || normalizedLabel.includes(normalizedProperty)) {
-  return true;
-}
-
-// אחרי - יותר מחמיר
-if (normalizedProperty === normalizedLabel ||
-    normalizedProperty.startsWith(normalizedLabel) ||
-    normalizedLabel.startsWith(normalizedProperty)) {
-  return true;
-}
-```
-
----
-
-#### תיקון 2: הסרת alias בעייתי מ-צפון_חדש (locations.ts)
-
-ה-alias `"הצפון החדש - כיכר המדינה"` גורם לבעיות כי הוא מכיל "כיכר המדינה" שהיא שכונה נפרדת.
-
-**קובץ:** `supabase/functions/_shared/locations.ts` (שורות 36-52)
-
-**לפני:**
-```typescript
-{ 
-  value: 'צפון_חדש', 
-  label: 'צפון חדש', 
-  aliases: [
-    'הצפון החדש', 
-    'הצפון החדש - צפון', 
-    'הצפון החדש - דרום', 
-    'הצפון החדש החלק הצפוני', 
-    'הצפון החדש החלק הדרומי',
-    'הצפון החדש סביבת כיכר המדינה',  // ← בעייתי
-    'הצפון החדש סביבת כיכר',          // ← בעייתי
-    'הצפון החדש - כיכר המדינה',       // ← בעייתי
-    ...
-  ] 
-},
-```
-
-**אחרי:**
-```typescript
-{ 
-  value: 'צפון_חדש', 
-  label: 'צפון חדש', 
-  aliases: [
-    'הצפון החדש', 
-    'הצפון החדש - צפון', 
-    'הצפון החדש - דרום', 
-    'הצפון החדש החלק הצפוני', 
-    'הצפון החדש החלק הדרומי',
-    // REMOVED: aliases containing "כיכר המדינה" - causes false positives
-    'new north',
-    'צפון החדש',
-    'לואי מרשל',
-    ...
-  ] 
-},
-```
-
-**הערה:** הaliases שהוסרו יטופלו ע"י שכונת `כיכר_המדינה` הנפרדת.
-
----
-
-#### תיקון 3: ניקוי נכסים עם שם ברוקר בכתובת (Migration)
-
-**SQL:**
 ```sql
--- Fix address field containing broker names
+-- Step 1: Identify cross-source duplicates and mark older ones as inactive
+WITH cross_source_duplicates AS (
+  SELECT 
+    a.id as keep_id,
+    b.id as deactivate_id,
+    a.source as keep_source,
+    b.source as deactivate_source,
+    -- Keep the one with more features data
+    CASE 
+      WHEN jsonb_typeof(a.features) = 'object' AND 
+           (SELECT COUNT(*) FROM jsonb_object_keys(COALESCE(a.features, '{}'::jsonb))) >
+           (SELECT COUNT(*) FROM jsonb_object_keys(COALESCE(b.features, '{}'::jsonb)))
+      THEN a.id
+      ELSE b.id
+    END as best_id
+  FROM scouted_properties a
+  JOIN scouted_properties b ON 
+    a.city = b.city AND
+    a.address = b.address AND
+    a.rooms = b.rooms AND
+    ABS(COALESCE(a.price, 0) - COALESCE(b.price, 0)) < 500
+  WHERE a.is_active = true 
+    AND b.is_active = true
+    AND a.source != b.source  -- Different sources
+    AND a.id < b.id  -- Avoid duplicate pairs
+    AND a.address IS NOT NULL
+    AND a.address != ''
+)
 UPDATE scouted_properties
-SET 
-  address = NULL,
-  is_private = false
-WHERE is_active = true
-  AND (
-    address LIKE '%שיווק%' OR 
-    address LIKE '%נדל"ן%' OR 
-    address LIKE '%נכסים%' OR
-    address LIKE '%גולדין%' OR
-    address LIKE '%LEAD%'
-  );
+SET is_active = false, status = 'duplicate_cross_source'
+WHERE id IN (
+  SELECT 
+    CASE WHEN keep_id = best_id THEN deactivate_id ELSE keep_id END
+  FROM cross_source_duplicates
+);
 ```
 
----
+#### חלק 2: מניעת כפילויות עתידיות (property-helpers.ts)
 
-#### תיקון 4: חישוב התאמות מחדש
+שינוי ב-upsert logic לבדוק כפילויות **לפי כתובת** גם כשהמקור שונה:
 
-אחרי התיקונים, צריך להפעיל matching מחדש לכל הנכסים והלקוחות.
+**קובץ:** `supabase/functions/_shared/property-helpers.ts`
+
+לפני ה-insert, בדיקה אם קיים נכס דומה ממקור אחר:
+
+```typescript
+// Check for cross-source duplicates before inserting
+async function findCrossSourceDuplicate(
+  supabase: any,
+  property: ScoutedPropertyInput
+): Promise<string | null> {
+  if (!property.address || !property.city || !property.rooms) {
+    return null;
+  }
+
+  const { data: existing } = await supabase
+    .from('scouted_properties')
+    .select('id, source, source_url')
+    .eq('city', property.city)
+    .eq('address', property.address)
+    .eq('rooms', property.rooms)
+    .eq('is_active', true)
+    .neq('source', property.source)  // Different source
+    .limit(1)
+    .maybeSingle();
+
+  return existing?.id || null;
+}
+
+// In saveScoutedProperties function - before insert:
+const crossSourceDuplicate = await findCrossSourceDuplicate(supabase, property);
+if (crossSourceDuplicate) {
+  console.log(`[property-helpers] Cross-source duplicate found: ${crossSourceDuplicate}`);
+  // Update existing instead of creating new
+  duplicateCount++;
+  continue; // Skip this property
+}
+```
 
 ---
 
 ### סיכום השינויים
 
-| קובץ | שורות | שינוי |
-|------|-------|-------|
-| `locations.ts` | 374-377 | החלפת `includes` ב-`startsWith` לlabel matching |
-| `locations.ts` | 380-386 | החלפת `includes` ב-`startsWith` לalias matching |
-| `locations.ts` | 36-52 | הסרת aliases בעייתיים מ-צפון_חדש |
-| Migration SQL | - | ניקוי שדות address עם שמות ברוקרים |
-| Edge function call | - | הפעלת trigger-matching מחדש |
+| קובץ | שינוי |
+|------|-------|
+| Migration SQL | השבתת ~350 כפילויות חוצות מקורות |
+| `property-helpers.ts` | בדיקת כפילויות לפי כתובת (לא רק source_url) |
+| Edge function call | הפעלת trigger-matching מחדש |
 
 ---
 
@@ -174,12 +126,18 @@ WHERE is_active = true
 
 | מצב | לפני | אחרי |
 |-----|------|------|
-| התאמות שגויות של כיכר המדינה לצפון_חדש | 51 | 0 |
-| נכסים עם שם ברוקר בכתובת | 63 | 0 |
-| התאמות לזיו יוגב | 86 | ~76 (ללא שגויות) |
+| כפילויות חוצות מקורות | 352 | 0 |
+| נכסים כפולים עם התאמות | 59 | 0 |
+| לקוח רואה כפילויות | כן | לא |
 
 ---
 
-### חשוב
+### הערה חשובה
 
-התיקון העיקרי הוא בלוגיקת ה-matching - הבדיקה הנוכחית `alias.includes(property)` רופפת מדי וגורמת להתאמות שגויות. הפתרון הוא לעבור ל-`startsWith` שמחמיר יותר.
+הלוגיקה של **outdoor space** ו-**balcony mandatory** עובדת נכון! הבעיה שדיווחת עליה (לקוח עם דרישת מרפסת/גג/חצר שרואה נכסים בלי) כנראה נובעת מ:
+
+1. **הלקוח סימן flexible=true** (כמו Ziv Yogev) - אז זה תקין
+2. **או שזו כפילות** - אותו נכס מופיע פעמיים עם מידע שונה
+
+הבדיקות שעשיתי מראות שכל הלקוחות עם דרישות **חובה** (flexible=false) מקבלים רק נכסים תואמים.
+
