@@ -1,60 +1,97 @@
 
-# תיקון פשוט: הפחתת עומס על Firecrawl
+# תיקון: חזרה לארכיטקטורה המקורית עם שיפור קטן
 
-## הבעיה שזוהתה
+## מה עבד בהרצה המקורית
 
-המערכת **עובדת** - כל 5,888 הנכסים נשלחו לבדיקה. אבל יש הרבה **timeouts** מ-Firecrawl כי שולחים יותר מדי בקשות במקביל:
+ההרצה הראשונה **עבדה** והצליחה לבדוק ~1,040 נכסים עם batch_size=50. הבעיה הייתה רק שהייתה **עומס יתר** כי שלחנו 5 batches במקביל.
 
-| הגדרה נוכחית | ערך | תוצאה |
-|--------------|-----|-------|
-| MAX_BATCHES_PER_RUN | 5 | 5 batches במקביל |
-| DELAY_BETWEEN_BATCHES_MS | 200ms | כמעט ללא השהיה |
-| **סה"כ** | **~250 בקשות** | **עומס על Firecrawl** |
+## מה שבר את זה
+
+השינויים שעשיתי:
+1. הורדתי batch_size מ-50 ל-20 ❌
+2. הוספתי `await sleep(55000)` - **חוסם את ה-Edge Function!** ❌
+3. זה גרם ל-504 timeouts בגלל שה-trigger חיכה יותר מ-60 שניות
+
+## הפתרון הפשוט
+
+להחזיר את הלוגיקה המקורית עם שינוי אחד קטן:
+
+| הגדרה | לפני (עבד) | עכשיו (שבור) | תיקון |
+|-------|------------|--------------|-------|
+| batch_size | 50 | 20 | **50** |
+| MAX_BATCHES_PER_RUN | 5 | 2 | **1** |
+| DELAY_BETWEEN_BATCHES | 200ms | 500ms | **0** (לא רלוונטי) |
+| sleep before self-trigger | 0 | 55 שניות! | **0** |
+
+### למה 1 batch בכל פעם?
+
+- `trigger-availability-check` שולח batch אחד ל-`check-property-availability`
+- **Fire and forget** - לא מחכה לתשובה
+- מיד עושה self-trigger עם שאר הנכסים
+- כל batch רץ **באופן עצמאי** - אם אחד נתקע, השאר ממשיכים
+- אין עומס על Firecrawl כי יש 150ms delay בין כל בקשה ב-check
+
+### תהליך:
+
+```text
+Trigger #1: שולח batch של 50 נכסים → self-trigger מיידי
+     ↓
+Trigger #2: שולח batch של 50 נכסים → self-trigger מיידי
+     ↓
+Trigger #3: שולח batch של 50 נכסים → self-trigger מיידי
+     ↓
+... (118 פעמים סה"כ ל-5,900 נכסים)
+     ↓
+כל ה-batches רצים במקביל, כל אחד לוקח ~60 שניות
+```
 
 ---
 
-## הפתרון
+## שינויים נדרשים
 
-שינוי שני ערכים בקובץ `trigger-availability-check/index.ts`:
+### 1. החזרת batch_size ל-50 (SQL)
 
-```text
-שורה 13: MAX_BATCHES_PER_RUN = 5  →  MAX_BATCHES_PER_RUN = 2
-שורה 14: DELAY_BETWEEN_BATCHES_MS = 200  →  DELAY_BETWEEN_BATCHES_MS = 30000
+```sql
+UPDATE scout_settings 
+SET setting_value = '50' 
+WHERE category = 'availability' AND setting_key = 'batch_size';
 ```
 
-### מה זה עושה:
-- כל הרצה שולחת רק **2 batches** (100 נכסים)
-- השהיה של **30 שניות** בין הבatches
-- ה-batch הראשון מספיק לסיים לפני שהשני מתחיל
-- המשך אוטומטי (self-trigger) לשאר הנכסים
+### 2. שינוי trigger-availability-check
 
-### חישוב זמן ריצה:
-- 5,888 נכסים ÷ 100 (לכל הרצה) = ~59 הרצות
-- כל הרצה = ~45 שניות (2 batches × 30s + overhead)
-- **סה"כ:** ~45 דקות לכל הנכסים (במקום שניות עם timeouts)
+```typescript
+// Maximum batches per run - שולחים 1 בכל פעם
+const MAX_BATCHES_PER_RUN = 1;
+
+// בלי delay - fire and forget מיידי
+// מוחקים את ה-await sleep(55000)!
+```
+
+שורות לשנות:
+- שורה 13: `MAX_BATCHES_PER_RUN = 2` → `MAX_BATCHES_PER_RUN = 1`
+- שורות 142-145: למחוק את ה-`await sleep(55000)` וההודעה לפניו
 
 ---
 
 ## יתרונות
 
-| מדד | לפני | אחרי |
-|-----|------|------|
-| Timeouts | הרבה (~90%) | מעט (~5%) |
-| נכסים שנבדקים באמת | ~10% | ~95%+ |
-| עומס על Firecrawl | גבוה מאוד | סביר |
-| זמן כולל | מהיר אבל לא עובד | 45 דקות ועובד |
+1. **פשוט** - חזרה ללוגיקה שעבדה
+2. **מהיר** - כל ה-batches נשלחים מהר
+3. **עמיד** - אם batch נכשל, השאר ממשיכים
+4. **לא חוסם** - trigger-availability-check מסיים תוך שנייה
 
----
+## זמן ריצה צפוי
 
-## שלבי יישום
+- 5,900 נכסים ÷ 50 = 118 batches
+- כל batch = ~50-60 שניות (50 נכסים × 1 שנייה לFirecrawl)
+- כולם רצים **במקביל** אז סך הכל ~60 שניות!
+- (בפועל קצת יותר בגלל עומס על Firecrawl, אבל עדיין מהיר)
 
-1. **שינוי הקוד** - עדכון 2 קבועים בקובץ
-2. **deploy** - אוטומטי
-3. **הפעלה מחדש** - trigger-availability-check
-4. **מעקב** - בדיקה שיש פחות timeouts ויותר נכסים מזוהים
+## מעקב אוטומטי
 
----
+אחרי ההרצה, אוכל לבדוק כל כמה דקות:
+```sql
+SELECT COUNT(*) FILTER (WHERE is_active = false AND status = 'inactive') FROM scouted_properties
+```
 
-## לאחר האישור
-
-אריץ את הבדיקה מחדש על כל הנכסים ונראה שהפעם מזוהים יותר לינקים שבורים בלי timeouts.
+ולהריץ שוב אם צריך.
