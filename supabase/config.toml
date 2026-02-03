@@ -134,3 +134,6 @@ verify_jwt = false
 
 [functions.backfill-property-data]
 verify_jwt = false
+
+[functions.cleanup-duplicates]
+verify_jwt = false
