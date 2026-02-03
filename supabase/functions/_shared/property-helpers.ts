@@ -5,6 +5,52 @@
 
 import { normalizeCityName, isInvalidAddress } from "./broker-detection.ts";
 
+// ==================== Listing ID Extraction ====================
+
+/**
+ * Extract listing ID from URL based on source
+ * Used to identify same-source duplicates with different tracking parameters
+ */
+export function extractListingId(url: string, source: string): string | null {
+  if (!url) return null;
+  
+  if (source === 'yad2') {
+    // /item/abc123 or /item/abc123?... → abc123
+    const match = url.match(/\/item\/([a-zA-Z0-9]+)/);
+    return match ? match[1] : null;
+  }
+  
+  if (source === 'madlan') {
+    // /listings/ABC123 → ABC123
+    const match = url.match(/\/listings?\/([a-zA-Z0-9]+)/i);
+    return match ? match[1] : null;
+  }
+  
+  if (source === 'homeless') {
+    // viewad,12345 or adid=12345 → 12345
+    const match = url.match(/(?:viewad[,\/]|adid=)(\d+)/i);
+    return match ? match[1] : null;
+  }
+  
+  return null;
+}
+
+/**
+ * Normalize source URL by removing tracking parameters
+ * Keeps the clean URL for storage
+ */
+export function normalizeSourceUrl(url: string, source: string): string {
+  if (!url) return url;
+  
+  if (source === 'yad2') {
+    // Remove query parameters from yad2 URLs
+    return url.split('?')[0];
+  }
+  
+  // Other sources - keep as is for now
+  return url;
+}
+
 // ==================== Cross-Source Duplicate Detection ====================
 
 /**
@@ -35,6 +81,43 @@ async function findCrossSourceDuplicate(
     .maybeSingle();
 
   return existing?.id || null;
+}
+
+// ==================== Same-Source Duplicate Detection ====================
+
+/**
+ * Find same-source duplicate by listing ID
+ * Returns the existing property if a duplicate from the same source exists
+ */
+async function findSameSourceDuplicate(
+  supabase: any,
+  property: ScrapedProperty
+): Promise<{ id: string; source_url: string } | null> {
+  const listingId = extractListingId(property.source_url, property.source);
+  
+  if (!listingId) {
+    // Fallback to exact URL match
+    const { data: existing } = await supabase
+      .from('scouted_properties')
+      .select('id, source_url')
+      .eq('source_url', property.source_url)
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    return existing || null;
+  }
+  
+  // Check for existing property with same listing ID from same source
+  const { data: existing } = await supabase
+    .from('scouted_properties')
+    .select('id, source_url')
+    .eq('source', property.source)
+    .ilike('source_url', `%${listingId}%`)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle();
+  
+  return existing || null;
 }
 
 // ==================== Interface ====================
@@ -184,16 +267,12 @@ export async function saveProperty(
     }
   }
   
-  // Check for existing property by source_url (more reliable than source_id)
-  const { data: existingByUrl } = await supabase
-    .from('scouted_properties')
-    .select('id')
-    .eq('source_url', property.source_url)
-    .eq('is_active', true)
-    .maybeSingle();
+  // Check for same-source duplicates by listing ID (handles tracking parameters)
+  const existingSameSource = await findSameSourceDuplicate(supabase, property);
 
-  if (existingByUrl) {
+  if (existingSameSource) {
     // Update existing property with latest data
+    console.log(`🔄 Same-source duplicate found: ${property.source_url} matches ${existingSameSource.source_url}`);
     const { error: updateError } = await supabase
       .from('scouted_properties')
       .update({
@@ -204,7 +283,7 @@ export async function saveProperty(
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', existingByUrl.id);
+      .eq('id', existingSameSource.id);
 
     return { isNew: false };
   }
@@ -224,12 +303,15 @@ export async function saveProperty(
     return { isNew: false, skipped: true };
   }
 
+  // Normalize source URL before saving (remove tracking parameters)
+  const normalizedSourceUrl = normalizeSourceUrl(property.source_url, property.source);
+
   // Insert new property
   const { data: insertResult, error: insertError } = await supabase
     .from('scouted_properties')
     .insert({
       source: property.source,
-      source_url: property.source_url,
+      source_url: normalizedSourceUrl,
       source_id: property.source_id,
       title: property.title,
       city: normalizedCity,
