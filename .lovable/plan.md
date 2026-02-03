@@ -1,63 +1,101 @@
 
+# תיקון ארכיטקטורת בדיקת לינקים שבורים - Sequential Processing
 
-# תיקון בדיקת לינקים שבורים
+## הבעיה הנוכחית
 
-## בעיות שזוהו
+הפונקציה `trigger-availability-check` משתמשת ב-**fire-and-forget**:
+- שולחת batch ל-`check-property-availability` בלי לחכות לתשובה
+- מיד אחרי זה עושה self-trigger עם כל הנכסים הנותרים
+- התוצאה: 118 batches נשלחים כמעט במקביל → Firecrawl קורס מ-timeouts
 
-### 1. שגיאת קומפילציה - משתנה לא מוגדר
-בקובץ `trigger-availability-check/index.ts` שורה 132:
-```typescript
-await sleep(DELAY_BETWEEN_BATCHES_MS);  // ❌ לא מוגדר!
+## הפתרון: Sequential Processing
+
+שינוי הזרימה כך שכל batch יסתיים לפני שמתחיל הבא:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    trigger-availability-check                │
+├─────────────────────────────────────────────────────────────┤
+│  1. קבל רשימת property_ids (או טען מ-DB)                    │
+│  2. חלק ל-batches של 50                                      │
+│  3. שלח batch ראשון ל-check-property-availability            │
+│  4. await! - חכה לתשובה                                      │
+│  5. אם יש עוד batches → self-trigger עם הנותרים             │
+│  6. החזר תשובה                                               │
+└─────────────────────────────────────────────────────────────┘
 ```
-צריך להיות:
-```typescript
-await sleep(availabilitySettings.delay_between_batches_ms);  // ✅
-```
-
-### 2. batch_size עדיין 20 במקום 50
-המיגרציה הקודמת לא הופעלה או נדרסה. צריך לעדכן שוב.
-
----
 
 ## שינויים נדרשים
 
-### תיקון 1: trigger-availability-check/index.ts
-שורה 132 - החלפת המשתנה הלא קיים:
+### קובץ: `supabase/functions/trigger-availability-check/index.ts`
+
+**שינוי 1: שורות 104-134** - במקום fire-and-forget, לעשות await לבדיקת הנכסים
+
+לפני (fire-and-forget):
 ```typescript
-// לפני:
-await sleep(DELAY_BETWEEN_BATCHES_MS);
-
-// אחרי:
-await sleep(availabilitySettings.delay_between_batches_ms || 500);
+fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+  ...
+}).then(response => { ... });  // לא ממתינים!
 ```
 
-### תיקון 2: עדכון batch_size ל-50
-```sql
-UPDATE scout_settings 
-SET setting_value = '50' 
-WHERE category = 'availability' AND setting_key = 'batch_size';
+אחרי (sequential):
+```typescript
+const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+  ...
+});
+const result = await response.json();
+console.log(`✅ Batch completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
 ```
 
----
+**שינוי 2: שורות 136-160** - self-trigger נשאר fire-and-forget (כדי לא לחסום)
 
-## אחרי התיקון
+ה-self-trigger לעצמו יישאר fire-and-forget כי:
+- זו הדרך היחידה להמשיך את התהליך בלי timeout
+- כל ריצה תטפל ב-batch אחד בלבד
+- הריצה הבאה תתחיל רק אחרי שהנוכחית סיימה
 
-להפעיל מחדש את הבדיקה:
-```bash
-POST /trigger-availability-check
+**שינוי 3: הוספת timeout protection**
+
+```typescript
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 50000); // 50s timeout
+
+try {
+  const response = await fetch(url, { signal: controller.signal, ... });
+  // ...
+} finally {
+  clearTimeout(timeoutId);
+}
 ```
 
-זה יריץ את הסריקה על כל 5,879 הנכסים הפעילים.
+## זרימה חדשה
 
----
-
-## מעקב
-
-אחרי הפעלה, נוכל לבדוק התקדמות:
-```sql
-SELECT 
-  COUNT(*) FILTER (WHERE is_active = true) as still_active,
-  COUNT(*) FILTER (WHERE status = 'inactive') as marked_inactive
-FROM scouted_properties
+```text
+ריצה 1:  [batch 1 - 50 נכסים] → await → self-trigger(5827 נותרים)
+ריצה 2:  [batch 2 - 50 נכסים] → await → self-trigger(5777 נותרים)
+ריצה 3:  [batch 3 - 50 נכסים] → await → self-trigger(5727 נותרים)
+...
+ריצה 118: [batch 118 - 27 נכסים] → await → סיום!
 ```
+
+## יתרונות
+
+| היבט | לפני | אחרי |
+|------|------|------|
+| עומס על Firecrawl | 118 batches במקביל | batch אחד בכל פעם |
+| Timeouts | רבים | אפס (כל batch מסתיים ב-50s) |
+| שליטה | אין | מלאה - לוגים ברורים לכל batch |
+| אמינות | נמוכה | גבוהה |
+
+## זמן ריצה משוער
+
+- 50 נכסים × ~2 שניות לנכס = ~100 שניות לbatch
+- 118 batches = ~3.3 שעות לסריקה מלאה
+- אבל: התהליך יסתיים בהצלחה במקום לקרוס
+
+## קבצים לעריכה
+
+| קובץ | שינוי |
+|------|-------|
+| `supabase/functions/trigger-availability-check/index.ts` | שינוי מ-fire-and-forget ל-await |
 
