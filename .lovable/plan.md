@@ -1,4 +1,5 @@
 
+
 # תיקון ארכיטקטורת בדיקת לינקים שבורים - Sequential Processing
 
 ## הבעיה הנוכחית
@@ -23,49 +24,6 @@
 │  5. אם יש עוד batches → self-trigger עם הנותרים             │
 │  6. החזר תשובה                                               │
 └─────────────────────────────────────────────────────────────┘
-```
-
-## שינויים נדרשים
-
-### קובץ: `supabase/functions/trigger-availability-check/index.ts`
-
-**שינוי 1: שורות 104-134** - במקום fire-and-forget, לעשות await לבדיקת הנכסים
-
-לפני (fire-and-forget):
-```typescript
-fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-  ...
-}).then(response => { ... });  // לא ממתינים!
-```
-
-אחרי (sequential):
-```typescript
-const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-  ...
-});
-const result = await response.json();
-console.log(`✅ Batch completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
-```
-
-**שינוי 2: שורות 136-160** - self-trigger נשאר fire-and-forget (כדי לא לחסום)
-
-ה-self-trigger לעצמו יישאר fire-and-forget כי:
-- זו הדרך היחידה להמשיך את התהליך בלי timeout
-- כל ריצה תטפל ב-batch אחד בלבד
-- הריצה הבאה תתחיל רק אחרי שהנוכחית סיימה
-
-**שינוי 3: הוספת timeout protection**
-
-```typescript
-const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 50000); // 50s timeout
-
-try {
-  const response = await fetch(url, { signal: controller.signal, ... });
-  // ...
-} finally {
-  clearTimeout(timeoutId);
-}
 ```
 
 ## זרימה חדשה
@@ -93,9 +51,66 @@ try {
 - 118 batches = ~3.3 שעות לסריקה מלאה
 - אבל: התהליך יסתיים בהצלחה במקום לקרוס
 
-## קבצים לעריכה
+---
 
-| קובץ | שינוי |
-|------|-------|
-| `supabase/functions/trigger-availability-check/index.ts` | שינוי מ-fire-and-forget ל-await |
+## פרטים טכניים
+
+### קובץ לעריכה
+`supabase/functions/trigger-availability-check/index.ts`
+
+### שינוי 1: הוספת timeout protection בתחילת הפונקציה
+
+```typescript
+const BATCH_TIMEOUT_MS = 50000; // 50 seconds timeout for batch processing
+```
+
+### שינוי 2: שורות 97-118 - במקום fire-and-forget, לעשות await עם timeout
+
+**לפני (fire-and-forget):**
+```typescript
+fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+  ...
+}).then(response => { ... });  // לא ממתינים!
+```
+
+**אחרי (sequential עם timeout):**
+```typescript
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
+
+try {
+  const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+    method: 'POST',
+    signal: controller.signal,
+    headers: {
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ property_ids: batch })
+  });
+  
+  clearTimeout(timeoutId);
+  
+  if (response.ok) {
+    const result = await response.json();
+    console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
+  } else {
+    console.error(`❌ Batch ${i + 1} returned error: ${response.status}`);
+  }
+} catch (error) {
+  clearTimeout(timeoutId);
+  if (error.name === 'AbortError') {
+    console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms`);
+  } else {
+    console.error(`❌ Batch ${i + 1} error:`, error.message);
+  }
+}
+```
+
+### שינוי 3: self-trigger נשאר fire-and-forget
+
+ה-self-trigger לעצמו יישאר fire-and-forget כי:
+- זו הדרך היחידה להמשיך את התהליך בלי timeout של Edge Function
+- כל ריצה תטפל ב-batch אחד בלבד
+- הריצה הבאה תתחיל רק אחרי שהנוכחית סיימה
 
