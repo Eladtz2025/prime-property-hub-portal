@@ -270,9 +270,19 @@ serve(async (req) => {
         checkedCount++;
         
         if (result.isInactive) {
-          inactiveIds.push(property.id);
-          inactiveCount++;
-          console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (${result.reason})`);
+          // Immediate update - don't wait until the end (prevents timeout data loss)
+          const { error: updateError } = await supabase
+            .from('scouted_properties')
+            .update({ is_active: false, status: 'inactive' })
+            .eq('id', property.id);
+          
+          if (!updateError) {
+            inactiveIds.push(property.id);
+            inactiveCount++;
+            console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (${result.reason}) [SAVED]`);
+          } else {
+            console.error(`❌ Property ${property.id} - Failed to save: ${updateError.message}`);
+          }
         } else if (result.reason) {
           console.log(`✓ Property ${property.id} - ACTIVE (${result.reason})`);
         }
@@ -286,21 +296,8 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, availabilitySettings.delay_between_requests_ms));
     }
 
-    // Update inactive properties
-    if (inactiveIds.length > 0) {
-      const { error: updateError } = await supabase
-        .from('scouted_properties')
-        .update({ is_active: false, status: 'inactive' })
-        .in('id', inactiveIds);
-
-      if (updateError) {
-        console.error('❌ Error updating inactive properties:', updateError);
-      } else {
-        console.log(`✅ Marked ${inactiveIds.length} properties as inactive`);
-      }
-    }
-
-    console.log(`✅ Availability check complete: ${checkedCount} checked, ${inactiveCount} marked inactive`);
+    // Summary log (updates already happened immediately above)
+    console.log(`✅ Availability check complete: ${checkedCount} checked, ${inactiveCount} marked inactive (immediate updates)`);
 
     return new Response(JSON.stringify({
       success: true,
