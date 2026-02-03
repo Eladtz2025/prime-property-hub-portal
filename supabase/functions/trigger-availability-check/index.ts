@@ -9,8 +9,11 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Maximum batches per run - send 1 batch at a time, fire and forget
+// Maximum batches per run - process 1 batch sequentially, then self-trigger for next
 const MAX_BATCHES_PER_RUN = 1;
+
+// Timeout for batch processing (50 seconds - leaves margin before Edge Function timeout)
+const BATCH_TIMEOUT_MS = 50000;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -101,33 +104,48 @@ serve(async (req) => {
     const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
     let triggeredCount = 0;
 
-    // Trigger limited batches - FIRE AND FORGET
+    // Process batches SEQUENTIALLY - await each batch before continuing
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
       
-      console.log(`🚀 Triggering batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
+      console.log(`🚀 Processing batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
       
-      // Fire and forget - don't await the response
-      fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ property_ids: batch })
-      }).then(response => {
-        if (!response.ok) {
-          console.error(`❌ Batch ${i + 1} returned error status: ${response.status}`);
+      // Create abort controller for timeout protection
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
+      
+      try {
+        // AWAIT the response - sequential processing
+        const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ property_ids: batch })
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} marked inactive`);
         } else {
-          console.log(`✅ Batch ${i + 1} triggered successfully`);
+          console.error(`❌ Batch ${i + 1} returned error status: ${response.status}`);
         }
-      }).catch(error => {
-        console.error(`❌ Error triggering batch ${i + 1}:`, error.message);
-      });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms - continuing to next batch`);
+        } else {
+          console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
 
       triggeredCount++;
 
-      // Short delay between triggering batches
+      // Short delay between batches
       if (i < batchesToProcess - 1) {
         await sleep(availabilitySettings.delay_between_batches_ms || 500);
       }
