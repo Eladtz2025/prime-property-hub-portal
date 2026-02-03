@@ -1,116 +1,58 @@
 
+# תיקון בעיית ה-Timeout בבדיקת זמינות
 
-# תיקון ארכיטקטורת בדיקת לינקים שבורים - Sequential Processing
+## הבעיה שנמצאה
+הזיהוי של נכסים לא פעילים **עובד מצוין** - ראינו בלוגים נכסים שזוהו. אבל הם **לא נשמרים ב-DB** כי:
 
-## הבעיה הנוכחית
+1. `trigger-availability-check` שולח batch ל-`check-property-availability` ומחכה לתשובה
+2. אם עוברות 50 שניות - ה-trigger עושה abort וממשיך הלאה
+3. אבל ה-`check-property-availability` עדיין רץ ברקע!
+4. הבעיה: ה-UPDATE קורה רק בסוף הבדיקה (אחרי כל 50 הנכסים), ולפעמים לא מספיק זמן
 
-הפונקציה `trigger-availability-check` משתמשת ב-**fire-and-forget**:
-- שולחת batch ל-`check-property-availability` בלי לחכות לתשובה
-- מיד אחרי זה עושה self-trigger עם כל הנכסים הנותרים
-- התוצאה: 118 batches נשלחים כמעט במקביל → Firecrawl קורס מ-timeouts
+## הפתרון המומלץ
+**לעדכן כל נכס מיד כשמזוהה כ-inactive** במקום לאסוף הכל ולעדכן בסוף.
 
-## הפתרון: Sequential Processing
+### שינוי ב-`check-property-availability/index.ts`
 
-שינוי הזרימה כך שכל batch יסתיים לפני שמתחיל הבא:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    trigger-availability-check                │
-├─────────────────────────────────────────────────────────────┤
-│  1. קבל רשימת property_ids (או טען מ-DB)                    │
-│  2. חלק ל-batches של 50                                      │
-│  3. שלח batch ראשון ל-check-property-availability            │
-│  4. await! - חכה לתשובה                                      │
-│  5. אם יש עוד batches → self-trigger עם הנותרים             │
-│  6. החזר תשובה                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## זרימה חדשה
-
-```text
-ריצה 1:  [batch 1 - 50 נכסים] → await → self-trigger(5827 נותרים)
-ריצה 2:  [batch 2 - 50 נכסים] → await → self-trigger(5777 נותרים)
-ריצה 3:  [batch 3 - 50 נכסים] → await → self-trigger(5727 נותרים)
-...
-ריצה 118: [batch 118 - 27 נכסים] → await → סיום!
-```
-
-## יתרונות
-
-| היבט | לפני | אחרי |
-|------|------|------|
-| עומס על Firecrawl | 118 batches במקביל | batch אחד בכל פעם |
-| Timeouts | רבים | אפס (כל batch מסתיים ב-50s) |
-| שליטה | אין | מלאה - לוגים ברורים לכל batch |
-| אמינות | נמוכה | גבוהה |
-
-## זמן ריצה משוער
-
-- 50 נכסים × ~2 שניות לנכס = ~100 שניות לbatch
-- 118 batches = ~3.3 שעות לסריקה מלאה
-- אבל: התהליך יסתיים בהצלחה במקום לקרוס
-
----
-
-## פרטים טכניים
-
-### קובץ לעריכה
-`supabase/functions/trigger-availability-check/index.ts`
-
-### שינוי 1: הוספת timeout protection בתחילת הפונקציה
-
+במקום:
 ```typescript
-const BATCH_TIMEOUT_MS = 50000; // 50 seconds timeout for batch processing
+if (result.isInactive) {
+  inactiveIds.push(property.id);
+  inactiveCount++;
+  console.log(`❌ Property ${property.id} - INACTIVE`);
+}
+// ... ובסוף ...
+if (inactiveIds.length > 0) {
+  await supabase.update(...).in('id', inactiveIds);
+}
 ```
 
-### שינוי 2: שורות 97-118 - במקום fire-and-forget, לעשות await עם timeout
-
-**לפני (fire-and-forget):**
+נשנה ל:
 ```typescript
-fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-  ...
-}).then(response => { ... });  // לא ממתינים!
-```
-
-**אחרי (sequential עם timeout):**
-```typescript
-const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
-
-try {
-  const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
-    method: 'POST',
-    signal: controller.signal,
-    headers: {
-      'Authorization': `Bearer ${supabaseServiceKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ property_ids: batch })
-  });
+if (result.isInactive) {
+  // עדכון מיידי - לא מחכה לסוף
+  const { error } = await supabase
+    .from('scouted_properties')
+    .update({ is_active: false, status: 'inactive' })
+    .eq('id', property.id);
   
-  clearTimeout(timeoutId);
-  
-  if (response.ok) {
-    const result = await response.json();
-    console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
-  } else {
-    console.error(`❌ Batch ${i + 1} returned error: ${response.status}`);
-  }
-} catch (error) {
-  clearTimeout(timeoutId);
-  if (error.name === 'AbortError') {
-    console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms`);
-  } else {
-    console.error(`❌ Batch ${i + 1} error:`, error.message);
+  if (!error) {
+    inactiveCount++;
+    console.log(`❌ Property ${property.id} - INACTIVE (saved)`);
   }
 }
 ```
 
-### שינוי 3: self-trigger נשאר fire-and-forget
+## יתרונות
+- כל נכס שמזוהה נשמר מיד - לא משנה אם יש timeout
+- גם אם ה-batch נקטע באמצע, מה שנבדק כבר נשמר
+- יותר אמין ועמיד
 
-ה-self-trigger לעצמו יישאר fire-and-forget כי:
-- זו הדרך היחידה להמשיך את התהליך בלי timeout של Edge Function
-- כל ריצה תטפל ב-batch אחד בלבד
-- הריצה הבאה תתחיל רק אחרי שהנוכחית סיימה
+## חסרונות קלים
+- יותר קריאות לDB (אחת לכל נכס inactive במקום אחת בסוף)
+- אבל בממוצע יש מעט inactive לכל batch, אז זה זניח
 
+## קבצים לעדכון
+| קובץ | שינוי |
+|------|-------|
+| `supabase/functions/check-property-availability/index.ts` | עדכון מיידי של כל נכס inactive |
