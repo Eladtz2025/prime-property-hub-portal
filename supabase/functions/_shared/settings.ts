@@ -42,6 +42,11 @@ export interface ScoutSettings {
     delay_between_requests_ms: number;
     head_timeout_ms: number;
     get_timeout_ms: number;
+    daily_limit: number;
+    recheck_interval_days: number;
+    firecrawl_max_retries: number;
+    firecrawl_retry_delay_ms: number;
+    use_firecrawl: boolean;
   };
 }
 
@@ -77,12 +82,17 @@ export const defaultSettings: ScoutSettings = {
     max_properties_per_config: 500,
   },
   availability: {
-    min_days_before_check: 3,
-    batch_size: 100,
-    delay_between_batches_ms: 1500,
-    delay_between_requests_ms: 150,
+    min_days_before_check: 2,
+    batch_size: 25,
+    delay_between_batches_ms: 1000,
+    delay_between_requests_ms: 300,
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
+    daily_limit: 1200,
+    recheck_interval_days: 7,
+    firecrawl_max_retries: 3,
+    firecrawl_retry_delay_ms: 2000,
+    use_firecrawl: true,
   },
 };
 
