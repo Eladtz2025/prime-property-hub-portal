@@ -533,13 +533,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
         query = query.eq('source', filters.source);
       }
     }
-    // Owner type filter (private vs broker)
-    if (filters.ownerType !== 'all') {
-      if (filters.ownerType === 'private') {
-        query = query.eq('is_private', true);
-      } else if (filters.ownerType === 'broker') {
-        query = query.or('is_private.eq.false,is_private.is.null');
-      }
+    // Owner type filter (private vs broker vs unknown)
+    if (filters.ownerType === 'private') {
+      query = query.eq('is_private', true);
+    } else if (filters.ownerType === 'broker') {
+      query = query.eq('is_private', false);
+    } else if (filters.ownerType === 'unknown') {
+      query = query.is('is_private', null);
     }
     if (filters.roomsMin) {
       query = query.gte('rooms', parseFloat(filters.roomsMin));
@@ -1318,9 +1318,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
                           <SelectValue placeholder="כולם" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">מפרסמים</SelectItem>
+                          <SelectItem value="all">הכל</SelectItem>
                           <SelectItem value="private">פרטי</SelectItem>
                           <SelectItem value="broker">תיווך</SelectItem>
+                          <SelectItem value="unknown">לא ידוע</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1511,9 +1512,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
                 <SelectValue placeholder="פרטי/תיווך" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">מפרסמים</SelectItem>
+                <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="private">פרטי</SelectItem>
                 <SelectItem value="broker">תיווך</SelectItem>
+                <SelectItem value="unknown">לא ידוע</SelectItem>
               </SelectContent>
             </Select>
 
