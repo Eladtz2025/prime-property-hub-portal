@@ -474,7 +474,12 @@ Deno.serve(async (req) => {
           console.log(`🗑️ Property ${prop.id} blacklisted (${blacklistCheck.real_city}), marking inactive`);
           await supabase
             .from('scouted_properties')
-            .update({ is_active: false })
+            .update({ 
+              is_active: false,
+              status: 'inactive',
+              availability_checked_at: new Date().toISOString(),
+              availability_check_reason: `blacklisted_location_${blacklistCheck.real_city}`
+            })
             .eq('id', prop.id);
           
           successCount++;
@@ -491,7 +496,12 @@ Deno.serve(async (req) => {
             console.log(`🗑️ Property ${prop.id} is in ${finalCity}, marking as inactive`);
             await supabase
               .from('scouted_properties')
-              .update({ is_active: false })
+              .update({ 
+                is_active: false,
+                status: 'inactive',
+                availability_checked_at: new Date().toISOString(),
+                availability_check_reason: `non_ta_city_${finalCity}`
+              })
               .eq('id', prop.id);
             
             successCount++;
