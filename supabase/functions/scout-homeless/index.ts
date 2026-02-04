@@ -37,7 +37,7 @@ serve(async (req) => {
   const maxPages = body.max_pages as number | undefined;
 
   // Validate required parameters
-  if (!page || !runId || !configId) {
+  if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Missing required params: page, run_id, config_id' 
