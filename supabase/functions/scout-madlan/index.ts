@@ -85,7 +85,7 @@ serve(async (req) => {
   const startPage = body.start_page as number || 1;  // Default to 1 - simplified approach
 
   // Validate required parameters
-  if (!page || !runId || !configId) {
+  if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Missing required params: page, run_id, config_id' 

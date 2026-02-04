@@ -58,11 +58,11 @@ export async function updatePageStatus(
   if (!run?.page_stats) return;
 
   const pageStats = [...run.page_stats];
-  const pageIndex = page - 1;
-  
-  if (pageIndex >= 0 && pageIndex < pageStats.length) {
-    pageStats[pageIndex] = {
-      ...pageStats[pageIndex],
+  const idx = pageStats.findIndex(p => p.page === page);
+
+  if (idx !== -1) {
+    pageStats[idx] = {
+      ...pageStats[idx],
       ...updates
     };
 
@@ -70,6 +70,8 @@ export async function updatePageStatus(
       .from('scout_runs')
       .update({ page_stats: pageStats })
       .eq('id', runId);
+  } else {
+    console.warn(`[updatePageStatus] Page ${page} not found in page_stats for run ${runId}`);
   }
 }
 
