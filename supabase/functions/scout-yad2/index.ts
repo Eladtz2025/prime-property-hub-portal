@@ -36,7 +36,8 @@ serve(async (req) => {
   const maxPages = body.max_pages as number | undefined;
 
   // Validate required parameters
-  if (!page || !runId || !configId) {
+  // Fix: use == null to allow page === 0 (though unlikely)
+  if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Missing required params: page, run_id, config_id' 
@@ -153,8 +154,27 @@ serve(async (req) => {
     }
 
     // Extract properties with NON-AI parser
-    const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
-    const parseResult = parseYad2Markdown(markdown, propertyTypeForParsing);
+    // Reject 'both' - each config must specify rent OR sale explicitly
+    if (config.property_type === 'both') {
+      const errorMsg = 'property_type "both" is not supported - create separate configs for rent and sale';
+      console.error(`❌ Yad2 page ${page}: ${errorMsg}`);
+      await updatePageStatus(supabase, runId, page, { 
+        status: 'failed', 
+        error: errorMsg,
+        duration_ms: Date.now() - pageStartTime
+      });
+      
+      if (maxPages) {
+        await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      }
+      
+      return new Response(JSON.stringify({ success: false, error: errorMsg }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale');
     const extractedProperties = parseResult.properties;
 
     console.log(`🟠 Yad2 page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
@@ -167,6 +187,9 @@ serve(async (req) => {
     }
 
     // Save raw HTML/Markdown sample for parser debugging (any successful page with content)
+    // TODO: Currently uses onConflict: 'source' which overwrites samples.
+    // To preserve samples per URL, need to verify DB constraints support (source,url) unique index.
+    // If DB migration is approved, change to: onConflict: 'source,url' + add run_id, page, captured_at columns
     if (markdown.length > 1000) {
       try {
         await supabase.from('debug_scrape_samples').upsert({
@@ -183,13 +206,16 @@ serve(async (req) => {
       }
     }
 
-    // Save properties and count new ones
+    // Save properties with limited concurrency (5 parallel) instead of serial loop
+    const SAVE_CONCURRENCY = 5;
     let pageNew = 0;
-    for (const property of extractedProperties) {
-      const result = await saveProperty(supabase, property);
-      if (result.isNew) {
-        pageNew++;
-      }
+    
+    for (let i = 0; i < extractedProperties.length; i += SAVE_CONCURRENCY) {
+      const batch = extractedProperties.slice(i, i + SAVE_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(property => saveProperty(supabase, property))
+      );
+      pageNew += results.filter(r => r.isNew).length;
     }
 
     const duration = Date.now() - pageStartTime;
