@@ -9,11 +9,11 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Maximum batches per run - process 1 batch sequentially, then self-trigger for next
-const MAX_BATCHES_PER_RUN = 1;
+// Maximum batches per run - process sequentially, then self-trigger for next
+const MAX_BATCHES_PER_RUN = 10;
 
-// Timeout for batch processing (50 seconds - leaves margin before Edge Function timeout)
-const BATCH_TIMEOUT_MS = 50000;
+// Timeout for batch processing (80 seconds - leaves margin before Edge Function timeout)
+const BATCH_TIMEOUT_MS = 80000;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,93 +29,101 @@ serve(async (req) => {
     console.log('🔍 Starting availability check orchestration...');
 
     // Fetch availability settings from database
-    const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
-    const batchSize = availabilitySettings.batch_size;
+    const settings = await fetchCategorySettings(supabase, 'availability');
+    const batchSize = settings.batch_size;
+    const dailyLimit = settings.daily_limit;
+    const recheckIntervalDays = settings.recheck_interval_days;
+    const minDaysBeforeCheck = settings.min_days_before_check;
 
-    console.log(`⚙️ Settings: batchSize=${batchSize}, maxBatchesPerRun=${MAX_BATCHES_PER_RUN}`);
+    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, recheckDays=${recheckIntervalDays}`);
 
-    // Check if we received property_ids from a previous self-trigger
-    let propertyIds: string[] = [];
+    // Track how many we've processed in this run chain
+    let processedInChain = 0;
     try {
       const body = await req.json();
-      if (body.property_ids && Array.isArray(body.property_ids) && body.property_ids.length > 0) {
-        propertyIds = body.property_ids;
-        console.log(`📋 Received ${propertyIds.length} property IDs from self-trigger (continuation)`);
+      if (body.processed_count && typeof body.processed_count === 'number') {
+        processedInChain = body.processed_count;
+        console.log(`📋 Continuation run: already processed ${processedInChain} properties`);
       }
     } catch {
-      // No body - this is a fresh run, fetch all properties
+      // Fresh run - no body
     }
 
-    let allProperties: { id: string }[] = [];
-
-    if (propertyIds.length > 0) {
-      // Use the provided IDs (continuation run)
-      allProperties = propertyIds.map(id => ({ id }));
-    } else {
-      // Fresh run: Fetch ALL active property IDs using pagination
-      const PAGE_SIZE = 1000;
-      let page = 0;
-      let hasMore = true;
-
-      while (hasMore) {
-        const { data: properties, error: fetchError } = await supabase
-          .from('scouted_properties')
-          .select('id')
-          .in('status', ['matched', 'new'])
-          .or('is_active.is.null,is_active.eq.true')
-          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-        if (fetchError) throw fetchError;
-
-        if (properties && properties.length > 0) {
-          allProperties = [...allProperties, ...properties];
-          page++;
-          hasMore = properties.length === PAGE_SIZE;
-          console.log(`📄 Fetched page ${page}: ${properties.length} properties (total so far: ${allProperties.length})`);
-        } else {
-          hasMore = false;
-        }
-      }
-    }
-
-    if (allProperties.length === 0) {
-      console.log('✅ No properties to check');
+    // Check if we've hit daily limit
+    if (processedInChain >= dailyLimit) {
+      console.log(`✅ Daily limit reached (${dailyLimit}). Stopping.`);
       return new Response(JSON.stringify({
         success: true,
-        message: 'No properties to check',
-        total_properties: 0,
-        batches_triggered: 0
+        message: 'Daily limit reached',
+        total_processed: processedInChain,
+        daily_limit: dailyLimit
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`📊 Processing ${allProperties.length} properties`);
+    // Calculate cutoff dates
+    const minDaysAgo = new Date();
+    minDaysAgo.setDate(minDaysAgo.getDate() - minDaysBeforeCheck);
 
-    // Split into batches using configurable batch size
+    const recheckCutoff = new Date();
+    recheckCutoff.setDate(recheckCutoff.getDate() - recheckIntervalDays);
+
+    // Remaining quota for this chain
+    const remainingQuota = dailyLimit - processedInChain;
+    const fetchLimit = Math.min(remainingQuota, batchSize * MAX_BATCHES_PER_RUN);
+
+    console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
+
+    // Build the query with proper PostgREST filter
+    // Using a single .or() with combined conditions for availability_checked_at
+    const { data: properties, error: fetchError } = await supabase
+      .from('scouted_properties')
+      .select('id')
+      .eq('is_active', true)
+      .in('status', ['matched', 'new'])
+      .lt('first_seen_at', minDaysAgo.toISOString())
+      .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
+      .order('first_seen_at', { ascending: true })
+      .limit(fetchLimit);
+
+    if (fetchError) throw fetchError;
+
+    if (!properties || properties.length === 0) {
+      console.log('✅ No properties need checking');
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'No properties need checking',
+        total_processed: processedInChain,
+        properties_found: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`📦 Found ${properties.length} properties to check`);
+
+    // Split into batches
     const batches: string[][] = [];
-    for (let i = 0; i < allProperties.length; i += batchSize) {
-      batches.push(allProperties.slice(i, i + batchSize).map(p => p.id));
+    for (let i = 0; i < properties.length; i += batchSize) {
+      batches.push(properties.slice(i, i + batchSize).map(p => p.id));
     }
 
     console.log(`📦 Split into ${batches.length} batches of up to ${batchSize} properties`);
 
-    // Only process MAX_BATCHES_PER_RUN batches in this run
+    // Process batches sequentially
     const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
-    let triggeredCount = 0;
+    let processedThisRun = 0;
 
-    // Process batches SEQUENTIALLY - await each batch before continuing
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
       
       console.log(`🚀 Processing batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
       
-      // Create abort controller for timeout protection
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
       
       try {
-        // AWAIT the response - sequential processing
         const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability`, {
           method: 'POST',
           signal: controller.signal,
@@ -130,62 +138,54 @@ serve(async (req) => {
         
         if (response.ok) {
           const result = await response.json();
-          console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} marked inactive`);
+          console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
+          processedThisRun += result.checked || batch.length;
         } else {
-          console.error(`❌ Batch ${i + 1} returned error status: ${response.status}`);
+          console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
+          processedThisRun += batch.length; // Count as processed even if failed
         }
       } catch (error) {
         clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
-          console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms - continuing to next batch`);
+          console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms`);
         } else {
-          console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown error');
+          console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown');
         }
+        processedThisRun += batch.length; // Count as processed
       }
 
-      triggeredCount++;
-
-      // Short delay between batches
+      // Delay between batches
       if (i < batchesToProcess - 1) {
-        await sleep(availabilitySettings.delay_between_batches_ms || 500);
+        await sleep(settings.delay_between_batches_ms);
       }
     }
 
-    // If there are remaining batches, immediately trigger self (fire and forget)
-    const remainingBatches = batches.slice(batchesToProcess);
-    if (remainingBatches.length > 0) {
-      const remainingIds = remainingBatches.flat();
+    const totalProcessed = processedInChain + processedThisRun;
+    const remainingBatches = batches.length - batchesToProcess;
+
+    // Check if we should continue (more batches and under daily limit)
+    if (remainingBatches > 0 && totalProcessed < dailyLimit) {
+      console.log(`🔄 ${remainingBatches} batches remaining. Self-triggering continuation...`);
       
-      console.log(`🔄 ${remainingBatches.length} batches remaining (${remainingIds.length} properties). Triggering self-continuation...`);
-      
-      // Fire and forget self-trigger (no await to avoid timeout)
+      // Fire and forget self-trigger
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ property_ids: remainingIds })
-      }).then(response => {
-        if (!response.ok) {
-          console.error(`❌ Self-trigger returned error status: ${response.status}`);
-        } else {
-          console.log(`✅ Self-trigger dispatched for ${remainingIds.length} remaining properties`);
-        }
-      }).catch(error => {
-        console.error(`❌ Error in self-trigger:`, error.message);
-      });
+        body: JSON.stringify({ processed_count: totalProcessed })
+      }).catch(err => console.error('Self-trigger error:', err.message));
     }
 
-    console.log(`✅ Orchestration run complete: ${triggeredCount} batches triggered, ${remainingBatches.length} batches remaining`);
+    console.log(`✅ Run complete: ${processedThisRun} processed this run, ${totalProcessed} total`);
 
     return new Response(JSON.stringify({
       success: true,
-      total_properties: allProperties.length,
-      batches_triggered: triggeredCount,
-      total_batches: batches.length,
-      remaining_batches: remainingBatches.length,
-      will_continue: remainingBatches.length > 0
+      processed_this_run: processedThisRun,
+      total_processed: totalProcessed,
+      daily_limit: dailyLimit,
+      will_continue: remainingBatches > 0 && totalProcessed < dailyLimit
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

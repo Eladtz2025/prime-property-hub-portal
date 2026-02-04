@@ -54,41 +54,64 @@ function isListingRemoved(content: string): boolean {
   return false;
 }
 
-// Check via Firecrawl for Yad2/Madlan (bypasses bot detection)
+// Check via Firecrawl for Yad2/Madlan (bypasses bot detection) with retry logic
 async function checkWithFirecrawl(
   url: string, 
   source: string, 
-  firecrawlApiKey: string
-): Promise<{ isInactive: boolean; reason?: string }> {
-  try {
-    // Single attempt with lightweight scrape (no retries for availability check)
-    const result = await scrapeWithRetry(url, firecrawlApiKey, source, 1, 2000);
-    
-    if (!result) {
-      // Scrape completely failed - could be 404 or blocked
-      return { isInactive: false, reason: 'scrape_failed_keeping_active' };
+  firecrawlApiKey: string,
+  maxRetries: number,
+  retryDelayMs: number
+): Promise<{ isInactive: boolean; reason: string }> {
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await scrapeWithRetry(url, firecrawlApiKey, source, 1, 3000);
+      
+      if (result) {
+        const markdown = result?.data?.markdown || result?.markdown || '';
+        const html = result?.data?.html || result?.html || '';
+        const combinedContent = markdown + ' ' + html;
+        
+        // Check for removed listing indicators
+        if (isListingRemoved(combinedContent)) {
+          return { isInactive: true, reason: 'listing_removed_indicator_found' };
+        }
+        
+        // Check for suspiciously short content (likely error page)
+        if (markdown.length < 200 && !markdown.includes('₪')) {
+          return { isInactive: false, reason: 'short_content_keeping_active' };
+        }
+        
+        return { isInactive: false, reason: 'content_ok' };
+      }
+      
+      // Scrape returned null - might be proxy error, retry
+      if (attempt < maxRetries) {
+        const delay = retryDelayMs * attempt;
+        console.log(`⚠️ Firecrawl attempt ${attempt} failed for ${url}, retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const isProxyError = errorMsg.includes('TUNNEL') || 
+                          errorMsg.includes('PROXY') || 
+                          errorMsg.includes('ERR_');
+      
+      if (isProxyError && attempt < maxRetries) {
+        const delay = retryDelayMs * attempt;
+        console.log(`⚠️ Proxy error on attempt ${attempt} for ${url}: ${errorMsg}, retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      
+      console.error(`Firecrawl error for ${url}:`, errorMsg);
     }
-    
-    const markdown = result?.data?.markdown || result?.markdown || '';
-    const html = result?.data?.html || result?.html || '';
-    const combinedContent = markdown + ' ' + html;
-    
-    // Check for removed listing indicators
-    if (isListingRemoved(combinedContent)) {
-      return { isInactive: true, reason: 'listing_removed_indicator_found' };
-    }
-    
-    // Check for suspiciously short content (likely error page)
-    if (markdown.length < 200 && !markdown.includes('₪')) {
-      // Very short and no price - might be error page, but keep active to be safe
-      return { isInactive: false, reason: 'short_content_keeping_active' };
-    }
-    
-    return { isInactive: false };
-  } catch (error) {
-    console.error(`Firecrawl check error for ${url}:`, error);
-    return { isInactive: false, reason: 'error_keeping_active' };
   }
+  
+  // All retries failed - keep active but record the failure
+  return { isInactive: false, reason: 'firecrawl_failed_after_retries' };
 }
 
 // Check via direct fetch for other sources (Homeless, etc.)
@@ -96,7 +119,7 @@ async function checkWithDirectFetch(
   url: string,
   headTimeoutMs: number,
   getTimeoutMs: number
-): Promise<{ isInactive: boolean; reason?: string }> {
+): Promise<{ isInactive: boolean; reason: string }> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), headTimeoutMs);
@@ -159,13 +182,15 @@ async function checkWithDirectFetch(
             return { isInactive: false, reason: 'suspicious_short_page_keeping_active' };
           }
         }
+        
+        return { isInactive: false, reason: 'content_ok' };
       } catch {
         // GET request failed, but HEAD was OK - keep as active
         return { isInactive: false, reason: 'get_failed_head_ok' };
       }
     }
     
-    return { isInactive: false };
+    return { isInactive: false, reason: 'head_status_ok' };
   } catch (error) {
     // Request failed completely - keep as active (conservative approach)
     return { isInactive: false, reason: 'fetch_error_keeping_active' };
@@ -184,59 +209,29 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   // Fetch availability settings from database
-  const availabilitySettings = await fetchCategorySettings(supabase, 'availability');
+  const settings = await fetchCategorySettings(supabase, 'availability');
   
-  // Check if Firecrawl should be used (default: true if API key exists)
-  const useFirecrawl = firecrawlApiKey && availabilitySettings.use_firecrawl !== false;
+  // Check if Firecrawl should be used
+  const useFirecrawl = firecrawlApiKey && settings.use_firecrawl !== false;
 
   try {
     let propertyIds: string[] = [];
     
-    // Try to get property IDs from request body
+    // Get property IDs from request body
     try {
       const body = await req.json();
       if (body.property_ids && Array.isArray(body.property_ids) && body.property_ids.length > 0) {
         propertyIds = body.property_ids;
-        console.log(`📋 Received ${propertyIds.length} property IDs from orchestrator`);
+        console.log(`📋 Received ${propertyIds.length} property IDs`);
       }
     } catch {
-      // No body or invalid JSON - will fetch own batch
+      // No body or invalid JSON
     }
 
-    let properties;
-
-    if (propertyIds.length > 0) {
-      // Fetch properties by the provided IDs
-      const { data, error } = await supabase
-        .from('scouted_properties')
-        .select('id, source_url, source, title')
-        .in('id', propertyIds);
-
-      if (error) throw error;
-      properties = data;
-    } else {
-      // Fallback: Fetch own batch (backward compatible for cron job)
-      console.log('📋 No property IDs provided, fetching own batch...');
-      
-      const daysAgo = new Date();
-      daysAgo.setDate(daysAgo.getDate() - availabilitySettings.min_days_before_check);
-
-      const { data, error } = await supabase
-        .from('scouted_properties')
-        .select('id, source_url, source, title')
-        .in('status', ['matched', 'new'])
-        .or('is_active.is.null,is_active.eq.true')
-        .lt('first_seen_at', daysAgo.toISOString())
-        .limit(availabilitySettings.batch_size);
-
-      if (error) throw error;
-      properties = data;
-    }
-
-    if (!properties || properties.length === 0) {
+    if (propertyIds.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        message: 'No properties to check',
+        message: 'No property IDs provided',
         checked: 0,
         marked_inactive: 0
       }), {
@@ -244,7 +239,26 @@ serve(async (req) => {
       });
     }
 
-    console.log(`🔍 Checking ${properties.length} properties for availability (Firecrawl: ${useFirecrawl ? 'ON' : 'OFF'})...`);
+    // Fetch properties by the provided IDs
+    const { data: properties, error } = await supabase
+      .from('scouted_properties')
+      .select('id, source_url, source, title')
+      .in('id', propertyIds);
+
+    if (error) throw error;
+
+    if (!properties || properties.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'No properties found',
+        checked: 0,
+        marked_inactive: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`🔍 Checking ${properties.length} properties (Firecrawl: ${useFirecrawl ? 'ON' : 'OFF'})...`);
 
     let checkedCount = 0;
     let inactiveCount = 0;
@@ -252,52 +266,75 @@ serve(async (req) => {
 
     for (const property of properties) {
       try {
-        let result: { isInactive: boolean; reason?: string };
+        let result: { isInactive: boolean; reason: string };
         
         // Use Firecrawl for Yad2 and Madlan (if enabled), direct fetch for others
         const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan'].includes(property.source);
         
         if (shouldUseFirecrawl) {
-          result = await checkWithFirecrawl(property.source_url, property.source, firecrawlApiKey!);
+          result = await checkWithFirecrawl(
+            property.source_url, 
+            property.source, 
+            firecrawlApiKey!,
+            settings.firecrawl_max_retries,
+            settings.firecrawl_retry_delay_ms
+          );
         } else {
           result = await checkWithDirectFetch(
             property.source_url, 
-            availabilitySettings.head_timeout_ms, 
-            availabilitySettings.get_timeout_ms
+            settings.head_timeout_ms, 
+            settings.get_timeout_ms
           );
         }
         
         checkedCount++;
         
+        // Always update availability_checked_at
+        const updateData: Record<string, any> = {
+          availability_checked_at: new Date().toISOString(),
+          availability_check_reason: result.reason
+        };
+        
         if (result.isInactive) {
-          // Immediate update - don't wait until the end (prevents timeout data loss)
-          const { error: updateError } = await supabase
-            .from('scouted_properties')
-            .update({ is_active: false, status: 'inactive' })
-            .eq('id', property.id);
-          
-          if (!updateError) {
-            inactiveIds.push(property.id);
-            inactiveCount++;
-            console.log(`❌ Property ${property.id} (${property.title}) - INACTIVE (${result.reason}) [SAVED]`);
-          } else {
-            console.error(`❌ Property ${property.id} - Failed to save: ${updateError.message}`);
-          }
-        } else if (result.reason) {
-          console.log(`✓ Property ${property.id} - ACTIVE (${result.reason})`);
+          updateData.is_active = false;
+          updateData.status = 'inactive';
+          inactiveIds.push(property.id);
+          inactiveCount++;
+          console.log(`❌ ${property.id} - INACTIVE (${result.reason})`);
+        } else {
+          console.log(`✓ ${property.id} - ACTIVE (${result.reason})`);
+        }
+        
+        // Immediate update
+        const { error: updateError } = await supabase
+          .from('scouted_properties')
+          .update(updateData)
+          .eq('id', property.id);
+        
+        if (updateError) {
+          console.error(`Failed to update ${property.id}: ${updateError.message}`);
         }
 
       } catch (error) {
-        console.log(`⚠️ Property ${property.id} - Error checking: ${error instanceof Error ? error.message : 'Unknown'}`);
+        console.log(`⚠️ ${property.id} - Error: ${error instanceof Error ? error.message : 'Unknown'}`);
+        
+        // Still update checked_at even on error
+        await supabase
+          .from('scouted_properties')
+          .update({
+            availability_checked_at: new Date().toISOString(),
+            availability_check_reason: 'check_error'
+          })
+          .eq('id', property.id);
+        
         checkedCount++;
       }
 
-      // Configurable delay between requests
-      await new Promise(resolve => setTimeout(resolve, availabilitySettings.delay_between_requests_ms));
+      // Delay between requests
+      await new Promise(resolve => setTimeout(resolve, settings.delay_between_requests_ms));
     }
 
-    // Summary log (updates already happened immediately above)
-    console.log(`✅ Availability check complete: ${checkedCount} checked, ${inactiveCount} marked inactive (immediate updates)`);
+    console.log(`✅ Done: ${checkedCount} checked, ${inactiveCount} inactive`);
 
     return new Response(JSON.stringify({
       success: true,

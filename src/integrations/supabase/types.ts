@@ -2705,6 +2705,8 @@ export type Database = {
       scouted_properties: {
         Row: {
           address: string | null
+          availability_check_reason: string | null
+          availability_checked_at: string | null
           city: string | null
           created_at: string
           description: string | null
@@ -2738,6 +2740,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          availability_check_reason?: string | null
+          availability_checked_at?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
@@ -2771,6 +2775,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          availability_check_reason?: string | null
+          availability_checked_at?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
