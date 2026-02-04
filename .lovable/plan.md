@@ -1,120 +1,68 @@
 
-# ניקוי ומניעת כפילויות - תוכנית מקיפה
+# ניקוי קוד זיהוי תיווך בפרסר - הסרה מלאה
 
-## סיכום הבעיה
-יש 60+ נכסים כפולים מאותו מקור עם אותו listing ID, אבל URL שונה (בגלל tracking parameters כמו `?opened-from=feed`). המערכת הנוכחית בודקת כפילויות לפי URL מלא ולא לפי listing ID.
+## הבעיה
 
-## הפתרון - שני חלקים
+בקובץ `supabase/functions/_experimental/parser-yad2.ts` יש קוד מת (שורות 258-285) שמנסה לזהות תיווך אבל **לא עובד** כי המילה "תיווך" לא מופיעה בדף הרשימה.
 
-### חלק 1: ניקוי מיידי - Edge Function חדשה
+## מה יימחק
 
-**קובץ חדש:** `supabase/functions/cleanup-duplicates/index.ts`
+שורות 258-285 - כל הבלוק הזה:
 
-לוגיקת הניקוי:
-```text
-1. מצא נכסים עם אותו source + source_id (או listing ID מה-URL)
-2. לכל קבוצה, השאר את הנכס הראשון (לפי created_at)
-3. מחק את השאר
-4. נקה את duplicate_group_id אם נשאר רק נכס אחד בקבוצה
-```
-
-תכונות:
-- מצב `dry_run` (ברירת מחדל) - מראה מה יימחק בלי למחוק
-- מצב `execute` - מבצע את המחיקה בפועל
-- לוג מפורט של כל פעולה
-
-### חלק 2: מניעת כפילויות עתידיות
-
-**עדכון:** `supabase/functions/_shared/property-helpers.ts`
-
-שינויים:
-1. **הוספת פונקציה `extractListingId`** - חילוץ ה-listing ID מה-URL בלי tracking parameters
-2. **שינוי הבדיקה ב-`saveProperty`** - בדיקה לפי `source + listing_id` במקום `source_url` מלא
-3. **נרמול URL לפני שמירה** - הסרת query parameters מיותרים
-
-```text
-לפני:
-  בדיקה: source_url = "https://yad2.co.il/item/abc?opened-from=feed"
-  ← לא מוצא את "https://yad2.co.il/item/abc" הקיים
-
-אחרי:
-  בדיקה: source + listing_id = "yad2" + "abc"
-  ← מוצא את הנכס הקיים ומעדכן אותו
-```
-
-## קבצים לעדכון
-
-| קובץ | פעולה | תיאור |
-|------|-------|-------|
-| `supabase/functions/cleanup-duplicates/index.ts` | **חדש** | ניקוי כפילויות קיימות |
-| `supabase/functions/_shared/property-helpers.ts` | עדכון | מניעת כפילויות עתידיות |
-| `supabase/config.toml` | עדכון | הוספת הגדרת הפונקציה החדשה |
-
-## פרטים טכניים
-
-### פונקציית חילוץ Listing ID:
 ```typescript
-function extractListingId(url: string, source: string): string | null {
-  if (source === 'yad2') {
-    // /item/abc123 or /item/abc123?... → abc123
-    const match = url.match(/\/item\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : null;
-  }
-  if (source === 'madlan') {
-    // /listings/ABC123 → ABC123
-    const match = url.match(/\/listings?\/([a-zA-Z0-9]+)/i);
-    return match ? match[1] : null;
-  }
-  if (source === 'homeless') {
-    // viewad,12345 or adid=12345 → 12345
-    const match = url.match(/(?:viewad[,\/]|adid=)(\d+)/i);
-    return match ? match[1] : null;
-  }
-  return null;
-}
+// ============================================
+// BROKER DETECTION - Yad2
+// Based on user screenshots:
+// - Broker: Shows "תיווך:" label + 7-digit license number
+// - Private: No such markers
+// ============================================
+
+// Check for explicit "תיווך" label with license number
+// Don't use plain \d{7} as it catches phone numbers (050-1234567)
+const hasTivuchLabel = /תיווך:?/.test(block);
+
+// Check for license number ONLY when it appears with broker-related keywords
+// Plain 7-digit check catches Israeli phone suffixes - causes false positives
+const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(block);
+const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(block);
+const hasLicenseNumber = hasTivuchWithLicense || hasExplicitLicense;
+
+// Check for "בבלעדיות" (exclusivity - broker indicator)
+const hasExclusivity = /בבלעדיות/.test(block);
+
+// Check for known broker brand names
+const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
+const blockLower = block.toLowerCase();
+const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
+
+// SIMPLE RULE: "תיווך" OR license number OR exclusivity OR known brand = broker
+// Otherwise = private
+const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity || hasBrokerBrand;
 ```
 
-### לוגיקת בדיקה משופרת:
+## מה יישאר במקום
+
+הערה קצרה + null:
+
 ```typescript
-// במקום בדיקה לפי source_url מלא
-const listingId = extractListingId(property.source_url, property.source);
-
-if (listingId) {
-  // בדוק אם יש כבר נכס עם אותו listing ID מאותו מקור
-  const { data: existing } = await supabase
-    .from('scouted_properties')
-    .select('id')
-    .eq('source', property.source)
-    .ilike('source_url', `%${listingId}%`)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle();
-    
-  if (existing) {
-    // עדכן את הקיים במקום ליצור חדש
-    return { isNew: false };
-  }
-}
+// Broker detection happens in backfill (individual property pages)
+// Search results don't contain the "תיווך" keyword
 ```
 
-## אופן הפעלה
+## עדכון נוסף
 
-1. **ניקוי ראשוני (dry run):**
-```bash
-curl -X POST .../cleanup-duplicates
-# מחזיר רשימה של נכסים שיימחקו
-```
+שורה 317 תשתנה:
+- **לפני:** `is_private: !isBroker,`
+- **אחרי:** `is_private: null,`
 
-2. **ניקוי בפועל:**
-```bash
-curl -X POST .../cleanup-duplicates -d '{"execute": true}'
-# מוחק את הכפילויות
-```
+## קובץ לעדכון
 
-3. **אחרי הניקוי** - הסריקות הבאות כבר לא ייצרו כפילויות חדשות
+| קובץ | פעולה |
+|------|-------|
+| `supabase/functions/_experimental/parser-yad2.ts` | הסרת שורות 258-285, עדכון שורה 317 |
 
-## תוצאה צפויה
+## תוצאה
 
-- **מחיקת ~60 נכסים** כפולים קיימים
-- **מניעה מלאה** של כפילויות עתידיות מאותו מקור
-- **שימור כפילויות cross-source** (yad2+madlan) כגיבוי
+- קוד נקי יותר (28 שורות פחות)
+- `is_private` יהיה `null` (לא ידוע) במקום ערך שגוי
+- הזיהוי האמיתי יתבצע ב-backfill כשנכנסים לדף הנכס
