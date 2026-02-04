@@ -61,7 +61,7 @@ serve(async (req) => {
         const { data: properties, error: fetchError } = await supabase
           .from('scouted_properties')
           .select('id')
-          .eq('status', 'matched')
+          .in('status', ['matched', 'new'])
           .or('is_active.is.null,is_active.eq.true')
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
