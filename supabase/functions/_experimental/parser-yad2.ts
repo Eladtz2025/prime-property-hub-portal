@@ -255,34 +255,8 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
   }
   
-  // ============================================
-  // BROKER DETECTION - Yad2
-  // Based on user screenshots:
-  // - Broker: Shows "תיווך:" label + 7-digit license number
-  // - Private: No such markers
-  // ============================================
-  
-  // Check for explicit "תיווך" label with license number
-  // Don't use plain \d{7} as it catches phone numbers (050-1234567)
-  const hasTivuchLabel = /תיווך:?/.test(block);
-  
-  // Check for license number ONLY when it appears with broker-related keywords
-  // Plain 7-digit check catches Israeli phone suffixes - causes false positives
-  const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(block);
-  const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(block);
-  const hasLicenseNumber = hasTivuchWithLicense || hasExplicitLicense;
-  
-  // Check for "בבלעדיות" (exclusivity - broker indicator)
-  const hasExclusivity = /בבלעדיות/.test(block);
-  
-  // Check for known broker brand names
-  const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
-  const blockLower = block.toLowerCase();
-  const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
-  
-  // SIMPLE RULE: "תיווך" OR license number OR exclusivity OR known brand = broker
-  // Otherwise = private
-  const isBroker = hasTivuchLabel || hasLicenseNumber || hasExclusivity || hasBrokerBrand;
+  // Broker detection happens in backfill (individual property pages)
+  // Search results don't contain the "תיווך" keyword
   
   // Extract features from the entire block
   const features = extractFeatures(block);
@@ -314,7 +288,7 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     size,
     floor,
     property_type: propertyType,
-    is_private: !isBroker,
+    is_private: null,
     entry_date: null,
     features,
     raw_text: block.substring(0, 500)
