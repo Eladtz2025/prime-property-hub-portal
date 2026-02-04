@@ -303,10 +303,15 @@ export async function calculateMatch(
                             neighborhoodSource === 'street_lookup' ? ' (לפי רחוב)' : '';
   reasons.push(`שכונה מועדפת: ${neighborhoodToMatch}${neighborhoodNote} ✓`);
   
-  // ===== PRICE MUST BE IN RANGE (with dynamic flexibility) =====
+  // ===== NO PRICE - CANNOT MATCH TO BUDGET =====
+  if ((!property.price || property.price <= 0) && lead.budget_max) {
+    return { lead, matchScore: 0, matchReasons: ['מחיר לא צוין - לא ניתן להתאים לתקציב'], priority: 0 };
+  }
+  
+  // ===== PRICE MUST BE IN RANGE (strict - no flexibility) =====
   if (property.price && lead.budget_max) {
     const propType = propertyType || 'rent';
-    const flexibility = getPriceFlexibility(lead.budget_max, propType, settings);
+    const flexibility = 0; // No price flexibility - strict budget matching
     
     // Calculate allowed range with symmetric flexibility
     const minBudget = lead.budget_min || 0;
