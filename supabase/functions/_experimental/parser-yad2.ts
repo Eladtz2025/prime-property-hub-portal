@@ -116,7 +116,8 @@ export function parseYad2Markdown(
     }
   }
   
-  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${properties.filter(p => p.is_private).length} private)`);
+  const stats = calculateStats(properties);
+  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${stats.private_count} private, ${stats.broker_count} broker, ${stats.unknown_count} unknown)`);
   
   return {
     success: true,
@@ -141,33 +142,60 @@ export async function parseYad2Html(
 // Block Detection
 // ============================================
 
+/**
+ * Check if a block is a valid property listing
+ */
+function isValidPropertyBlock(block: string): boolean {
+  // Must contain a Yad2 realestate/item URL
+  if (!block.includes('yad2.co.il/realestate/item/')) {
+    return false;
+  }
+  
+  // Skip invalid URL patterns (projects, search pages, yad1)
+  if (
+    block.includes('/yad1/') || 
+    block.includes('/project/') ||
+    block.includes('forsale?') ||
+    block.includes('forrent?') ||
+    block.includes('/yad1/project/')
+  ) {
+    return false;
+  }
+  
+  // Must have price indicator or rooms
+  if (!block.includes('₪') && !block.includes('חדרים')) {
+    return false;
+  }
+  
+  return true;
+}
+
 function findYad2Blocks(markdown: string): string[] {
   const blocks: string[] = [];
   
-  // Pattern for Yad2 listing blocks - they start with "- [![" and contain /realestate/item/
-  // Each block is a list item with the full property info
-  const listItemPattern = /- \[!\[[^\]]*\]\([^\)]+\)\\[\s\S]*?\]\(https:\/\/www\.yad2\.co\.il\/realestate\/item\/[^\)]+\)/g;
+  // Split by newlines (NOT spaces!) and accumulate list items
+  const lines = markdown.split('\n');
+  let currentBlock = '';
+  let inBlock = false;
   
-  let match;
-  while ((match = listItemPattern.exec(markdown)) !== null) {
-    const block = match[0];
-    
-    // Skip blocks with invalid URL patterns (projects, search pages, yad1)
-    // These lead to 404 errors or generic search pages
-    if (
-      block.includes('/yad1/') || 
-      block.includes('/project/') ||
-      block.includes('forsale?') ||
-      block.includes('forrent?') ||
-      block.includes('/yad1/project/')
-    ) {
-      continue;
+  for (const line of lines) {
+    // New list item starts a new block (line starts with "- ")
+    if (line.startsWith('- ')) {
+      // Save previous block if valid
+      if (currentBlock && isValidPropertyBlock(currentBlock)) {
+        blocks.push(currentBlock.trim());
+      }
+      currentBlock = line;
+      inBlock = true;
+    } else if (inBlock) {
+      // Continue current block - append line
+      currentBlock += '\n' + line;
     }
-    
-    // Must have price indicator
-    if (block.includes('₪') || block.includes('חדרים')) {
-      blocks.push(block);
-    }
+  }
+  
+  // Don't forget the last block
+  if (currentBlock && isValidPropertyBlock(currentBlock)) {
+    blocks.push(currentBlock.trim());
   }
   
   return blocks;
@@ -188,14 +216,49 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   // Remove RTL markers for easier parsing
   const cleanedBlock = block
     .replace(/[\u200F\u200E‎‏]/g, '') // RTL/LTR markers
-    .replace(/\\{2,}/g, '\\'); // Normalize backslashes
+    .replace(/\\{2,}/g, ' '); // Normalize backslashes to spaces
   
   // Extract price - look for ₪ followed by number
   const priceMatch = cleanedBlock.match(/₪\s*([\d,]+)/);
   const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : null;
   
-  // Extract the bold section which contains main details
-  // Format: **AddressType, Neighborhood, CityX חדרים • קומה Y • Z מ״ר**
+  // ============================================
+  // Best-effort broker detection from SERP block
+  // ============================================
+  // Take 80-120 chars window BEFORE the ₪ symbol and run detectBroker on it
+  let isPrivate: boolean | null = null;
+  
+  const shekelIndex = cleanedBlock.indexOf('₪');
+  if (shekelIndex > 0) {
+    // Take 100 chars before ₪ (or less if not available)
+    const windowStart = Math.max(0, shekelIndex - 100);
+    const textBeforePrice = cleanedBlock.substring(windowStart, shekelIndex);
+    
+    // Check for broker indicators in the text window before price
+    if (detectBroker(textBeforePrice, '')) {
+      isPrivate = false;
+    }
+  }
+  
+  // Check for private indicators after the bold section (tags like "מידי", "ללא תיווך")
+  if (isPrivate === null) {
+    const boldEndIndex = cleanedBlock.lastIndexOf('**');
+    if (boldEndIndex > 0) {
+      const afterBold = cleanedBlock.substring(boldEndIndex);
+      if (/מפרטי|ללא\s*תיווך|בעל\s*הדירה|פרטי/i.test(afterBold)) {
+        isPrivate = true;
+      }
+    }
+  }
+  
+  // Fallback: check entire block for broker keywords
+  if (isPrivate === null && detectBroker(cleanedBlock, '')) {
+    isPrivate = false;
+  }
+  
+  // ============================================
+  // Extract property details
+  // ============================================
   const boldMatch = cleanedBlock.match(/\*\*([^*]+)\*\*/);
   
   let rooms: number | null = null;
@@ -204,7 +267,7 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   let address: string | null = null;
   let neighborhood: string | null = null;
   let neighborhoodValue: string | null = null;
-  let city: string = 'תל אביב יפו';
+  let city: string | null = null; // No default - extract from content
   
   if (boldMatch) {
     const details = boldMatch[1];
@@ -234,14 +297,13 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
     
     // Extract neighborhood
-    const neighborhoodInfo = extractNeighborhood(details, city);
+    const neighborhoodInfo = extractNeighborhood(details, city || '');
     if (neighborhoodInfo) {
       neighborhood = neighborhoodInfo.label;
       neighborhoodValue = neighborhoodInfo.value;
     }
     
     // Extract address - first part before "דירה" or "דירת גן" etc.
-    // Details format: "Address + Type, Neighborhood, CityX חדרים..."
     const addressPattern = /^([^,]+?)(?:דירה|דירת גן|גג\/פנטהאוז|סטודיו|פנטהאוז)/;
     const addressMatch = details.match(addressPattern);
     if (addressMatch) {
@@ -254,9 +316,6 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
       }
     }
   }
-  
-  // Broker detection happens in backfill (individual property pages)
-  // Search results don't contain the "תיווך" keyword
   
   // Extract features from the entire block
   const features = extractFeatures(block);
@@ -271,7 +330,7 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     return null;
   }
   
-  // Build title
+  // Build title (handle null city/neighborhood)
   const title = buildTitle(propertyType, rooms, neighborhood || city);
   
   return {
@@ -288,7 +347,7 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     size,
     floor,
     property_type: propertyType,
-    is_private: null,
+    is_private: isPrivate,
     entry_date: null,
     features,
     raw_text: block.substring(0, 500)
@@ -350,7 +409,7 @@ function cleanYad2Content(markdown: string): string {
 // Helper Functions
 // ============================================
 
-function buildTitle(propertyType: string, rooms: number | null, location: string): string {
+function buildTitle(propertyType: string, rooms: number | null, location: string | null): string {
   const typeLabel = propertyType === 'rent' ? 'להשכרה' : 'למכירה';
   const roomsLabel = rooms ? `${rooms} חדרים` : '';
   
@@ -373,8 +432,10 @@ function calculateStats(properties: ParsedProperty[]): ParserResult['stats'] {
     with_address: properties.filter(p => p.address !== null).length,
     with_size: properties.filter(p => p.size !== null).length,
     with_floor: properties.filter(p => p.floor !== null).length,
-    private_count: properties.filter(p => p.is_private).length,
-    broker_count: properties.filter(p => !p.is_private).length,
+    // Fix: explicit checks to avoid null being counted as broker
+    private_count: properties.filter(p => p.is_private === true).length,
+    broker_count: properties.filter(p => p.is_private === false).length,
+    unknown_count: properties.filter(p => p.is_private === null).length,
   };
 }
 
