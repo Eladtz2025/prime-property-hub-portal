@@ -223,10 +223,10 @@ serve(async (req) => {
           }
         }
       } else {
-        // No matches, just mark as processed
+        // No matches: clear leads and keep as 'new' (NOT 'matched')
         await supabase
           .from('scouted_properties')
-          .update({ status: 'matched', matched_leads: [] })
+          .update({ status: 'new', matched_leads: [] })
           .eq('id', property.id);
       }
     }

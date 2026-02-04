@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff } from "lucide-react";
+import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
 import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { useDismissMatch, useRestoreMatch } from "@/hooks/useDismissedMatches";
@@ -42,6 +42,7 @@ export const CustomerMatchesCell = ({
   const { toast } = useToast();
   const [isMatching, setIsMatching] = useState(false);
   const [showDismissed, setShowDismissed] = useState(false);
+  const [expandedDuplicateGroups, setExpandedDuplicateGroups] = useState<Record<string, boolean>>({});
   
   const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId, showDismissed);
   const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
@@ -287,36 +288,59 @@ export const CustomerMatchesCell = ({
               <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים נסרקים</p>
             ) : (
               <div className="space-y-3">
-                {scoutedMatchGroups.map((group) => (
-                  <div 
-                    key={group.groupId || group.matches[0]?.id} 
-                    className={group.matches.length > 1 
-                      ? "border-2 border-warning rounded-lg p-3 bg-warning/10" 
-                      : ""
-                    }
-                  >
-                    {group.matches.length > 1 && (
-                      <div className="text-xs text-warning font-medium mb-2 flex items-center gap-1">
-                        <Copy className="h-3 w-3" />
-                        {group.matches.length} כפילויות - אותה דירה ממקורות שונים
+                {scoutedMatchGroups.map((group, groupIndex) => {
+                  const groupKey = group.groupId || group.matches[0]?.id || `group-${groupIndex}`;
+                  const hasDuplicates = group.matches.length > 1;
+                  const isExpanded = !!expandedDuplicateGroups[groupKey];
+                  const matchesToRender = hasDuplicates && !isExpanded 
+                    ? group.matches.slice(0, 1) 
+                    : group.matches;
+
+                  return (
+                    <div 
+                      key={groupKey} 
+                      className={hasDuplicates ? "border-2 border-warning rounded-lg p-3 bg-warning/10" : ""}
+                    >
+                      {hasDuplicates && (
+                        <div className="text-xs text-warning font-medium mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Copy className="h-3 w-3" />
+                            {group.matches.length} כפילויות - אותה דירה ממקורות שונים
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-warning hover:text-warning hover:bg-warning/20"
+                            onClick={() => setExpandedDuplicateGroups(prev => ({
+                              ...prev,
+                              [groupKey]: !isExpanded
+                            }))}
+                          >
+                            {isExpanded ? (
+                              <>הסתר <ChevronUp className="h-3 w-3 mr-1" /></>
+                            ) : (
+                              <>הצג הכל <ChevronDown className="h-3 w-3 mr-1" /></>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                      <div className={hasDuplicates ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
+                        {matchesToRender.map((match) => (
+                          <ScoutedPropertyCard
+                            key={match.id}
+                            match={match}
+                            customerName={customerName}
+                            customerPhone={customerPhone}
+                            onDismiss={handleDismissScoutedProperty}
+                            onRestore={handleRestoreScoutedProperty}
+                            onSendWhatsApp={handleSendWhatsAppScouted}
+                            isLoading={dismissMatch.isPending || restoreMatch.isPending}
+                          />
+                        ))}
                       </div>
-                    )}
-                    <div className={group.matches.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
-                      {group.matches.map((match) => (
-                        <ScoutedPropertyCard
-                          key={match.id}
-                          match={match}
-                          customerName={customerName}
-                          customerPhone={customerPhone}
-                          onDismiss={handleDismissScoutedProperty}
-                          onRestore={handleRestoreScoutedProperty}
-                          onSendWhatsApp={handleSendWhatsAppScouted}
-                          isLoading={dismissMatch.isPending || restoreMatch.isPending}
-                        />
-                      ))}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
