@@ -1101,9 +1101,44 @@ function detectBrokerFromMarkdown(markdown: string, source: string): boolean | n
     return null; // Can't determine from markdown
   }
   
-  // YAD2: Check for תיווך label with license
+  // YAD2: Check for explicit labels and license info
   if (source === 'yad2') {
-    // Look for תיווך: with license number (not plain 7 digits)
+    // === STEP 1: EXPLICIT LABELS (appear near price on Yad2 pages) ===
+    // These are the most reliable indicators - red labels on the page
+    
+    // Private indicators (explicit labels)
+    if (/מפרטי/.test(markdown)) {
+      console.log('[yad2] classified private: keyword מפרטי');
+      return true; // Private
+    }
+    if (/ללא\s*תיווך/.test(markdown)) {
+      console.log('[yad2] classified private: keyword ללא תיווך');
+      return true; // Private
+    }
+    if (/לא\s*למתווכים/.test(markdown)) {
+      console.log('[yad2] classified private: keyword לא למתווכים');
+      return true; // Private
+    }
+    if (/בעל\s*הדירה/.test(markdown)) {
+      console.log('[yad2] classified private: keyword בעל הדירה');
+      return true; // Private
+    }
+    
+    // Broker indicators (explicit labels)
+    if (/מתיווך/.test(markdown)) {
+      console.log('[yad2] classified broker: keyword מתיווך');
+      return false; // Broker
+    }
+    if (/משרד\s*תיווך/.test(markdown)) {
+      console.log('[yad2] classified broker: keyword משרד תיווך');
+      return false; // Broker
+    }
+    if (/מתווכ/.test(markdown)) {
+      console.log('[yad2] classified broker: keyword מתווכ*');
+      return false; // Broker
+    }
+    
+    // === STEP 2: FALLBACK - License/brand checks ===
     const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(markdown);
     const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(markdown);
     const hasExclusivity = /בבלעדיות/.test(markdown);
@@ -1113,26 +1148,28 @@ function detectBrokerFromMarkdown(markdown: string, source: string): boolean | n
     const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
     
     if (hasTivuchWithLicense || hasExplicitLicense || hasExclusivity || hasBrokerBrand) {
-      console.log(`🔍 Yad2 broker: tivuch+license=${hasTivuchWithLicense}, license=${hasExplicitLicense}, exclusivity=${hasExclusivity}, brand=${hasBrokerBrand}`);
+      console.log(`[yad2] classified broker: tivuch+license=${hasTivuchWithLicense}, license=${hasExplicitLicense}, exclusivity=${hasExclusivity}, brand=${hasBrokerBrand}`);
       return false; // Broker
     }
     
-    // Yad2 default: if no broker indicators, it's private
-    return true;
+    // === STEP 3: NO CLEAR INDICATOR - DON'T GUESS ===
+    console.log('[yad2] no clear indicator found, returning null');
+    return null; // Can't determine - don't guess
   }
   
-  // HOMELESS: Check for agency name
+  // HOMELESS: Check for agency/agent name
   if (source === 'homeless') {
     const hasAgencyName = /שם הסוכנות/.test(markdown);
     const hasAgentName = /שם הסוכן/.test(markdown);
     
     if (hasAgencyName || hasAgentName) {
-      console.log(`🔍 Homeless broker: agency=${hasAgencyName}, agent=${hasAgentName}`);
+      console.log(`[homeless] classified broker: agency=${hasAgencyName}, agent=${hasAgentName}`);
       return false; // Broker
     }
     
-    // Homeless default: if no broker indicators, it's private
-    return true;
+    // No clear indicator - don't guess
+    console.log('[homeless] no clear indicator found, returning null');
+    return null; // Can't determine - don't guess
   }
   
   // Fallback for unknown sources: check for generic broker indicators
