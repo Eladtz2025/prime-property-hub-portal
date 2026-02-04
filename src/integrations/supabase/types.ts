@@ -3375,6 +3375,10 @@ export type Database = {
           properties_found: number
         }[]
       }
+      increment_scout_run_stats: {
+        Args: { p_found: number; p_new: number; p_run_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
