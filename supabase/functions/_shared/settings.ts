@@ -47,6 +47,8 @@ export interface ScoutSettings {
     firecrawl_max_retries: number;
     firecrawl_retry_delay_ms: number;
     use_firecrawl: boolean;
+    concurrency_limit: number;
+    per_property_timeout_ms: number;
   };
 }
 
@@ -93,6 +95,8 @@ export const defaultSettings: ScoutSettings = {
     firecrawl_max_retries: 3,
     firecrawl_retry_delay_ms: 2000,
     use_firecrawl: true,
+    concurrency_limit: 4,
+    per_property_timeout_ms: 25000,
   },
 };
 

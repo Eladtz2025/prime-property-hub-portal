@@ -8,6 +8,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Type for property from DB
+interface PropertyToCheck {
+  id: string;
+  source_url: string;
+  source: string;
+  title: string;
+}
+
+// Type for check result
+interface CheckResult {
+  id: string;
+  isInactive: boolean;
+  reason: string;
+  error?: boolean;
+}
+
 // Indicators that a listing has been removed (Hebrew and English)
 const LISTING_REMOVED_INDICATORS = [
   // Hebrew - general
@@ -197,6 +213,94 @@ async function checkWithDirectFetch(
   }
 }
 
+// Check a single property with timeout protection
+async function checkSinglePropertyWithTimeout(
+  property: PropertyToCheck,
+  useFirecrawl: boolean,
+  firecrawlApiKey: string | undefined,
+  settings: any,
+  timeoutMs: number
+): Promise<CheckResult> {
+  const timeoutPromise = new Promise<never>((_, reject) => 
+    setTimeout(() => reject(new Error('PROPERTY_TIMEOUT')), timeoutMs)
+  );
+  
+  const checkPromise = (async (): Promise<CheckResult> => {
+    const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan'].includes(property.source);
+    
+    let result: { isInactive: boolean; reason: string };
+    
+    if (shouldUseFirecrawl) {
+      result = await checkWithFirecrawl(
+        property.source_url, 
+        property.source, 
+        firecrawlApiKey!,
+        settings.firecrawl_max_retries,
+        settings.firecrawl_retry_delay_ms
+      );
+    } else {
+      result = await checkWithDirectFetch(
+        property.source_url, 
+        settings.head_timeout_ms, 
+        settings.get_timeout_ms
+      );
+    }
+    
+    return { id: property.id, ...result };
+  })();
+  
+  try {
+    return await Promise.race([checkPromise, timeoutPromise]);
+  } catch (error) {
+    const reason = error instanceof Error && error.message === 'PROPERTY_TIMEOUT' 
+      ? 'per_property_timeout' 
+      : 'check_error';
+    return { id: property.id, isInactive: false, reason, error: true };
+  }
+}
+
+// Process properties in parallel with concurrency limit
+async function processPropertiesInParallel(
+  properties: PropertyToCheck[],
+  concurrencyLimit: number,
+  useFirecrawl: boolean,
+  firecrawlApiKey: string | undefined,
+  settings: any
+): Promise<CheckResult[]> {
+  const results: CheckResult[] = [];
+  const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
+  
+  // Process in chunks based on concurrency limit
+  for (let i = 0; i < properties.length; i += concurrencyLimit) {
+    const chunk = properties.slice(i, i + concurrencyLimit);
+    
+    console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}: ${chunk.length} properties in parallel...`);
+    
+    const chunkPromises = chunk.map(prop => 
+      checkSinglePropertyWithTimeout(
+        prop,
+        useFirecrawl,
+        firecrawlApiKey,
+        settings,
+        perPropertyTimeout
+      )
+    );
+    
+    const chunkResults = await Promise.allSettled(chunkPromises);
+    
+    for (const result of chunkResults) {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+      } else {
+        // This shouldn't happen since we catch errors in checkSinglePropertyWithTimeout
+        console.error('Unexpected promise rejection:', result.reason);
+      }
+    }
+  }
+  
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -260,36 +364,41 @@ serve(async (req) => {
 
     console.log(`🔍 Checking ${properties.length} properties (Firecrawl: ${useFirecrawl ? 'ON' : 'OFF'})...`);
 
+    // Get concurrency settings
+    const concurrencyLimit = settings.concurrency_limit || 4;
+    console.log(`⚡ Concurrency: ${concurrencyLimit}, Per-property timeout: ${settings.per_property_timeout_ms || 25000}ms`);
+
+    // Process all properties with parallel execution
+    const results = await processPropertiesInParallel(
+      properties,
+      concurrencyLimit,
+      useFirecrawl,
+      firecrawlApiKey,
+      settings
+    );
+
+    // Update database for each result
     let checkedCount = 0;
     let inactiveCount = 0;
+    let errorCount = 0;
     const inactiveIds: string[] = [];
 
-    for (const property of properties) {
+    for (const result of results) {
+      checkedCount++;
+      
+      if (result.error) {
+        errorCount++;
+        console.log(`⚠️ ${result.id} - Error/Timeout (${result.reason})`);
+      } else if (result.isInactive) {
+        inactiveCount++;
+        inactiveIds.push(result.id);
+        console.log(`❌ ${result.id} - INACTIVE (${result.reason})`);
+      } else {
+        console.log(`✓ ${result.id} - ACTIVE (${result.reason})`);
+      }
+      
+      // Update database
       try {
-        let result: { isInactive: boolean; reason: string };
-        
-        // Use Firecrawl for Yad2 and Madlan (if enabled), direct fetch for others
-        const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan'].includes(property.source);
-        
-        if (shouldUseFirecrawl) {
-          result = await checkWithFirecrawl(
-            property.source_url, 
-            property.source, 
-            firecrawlApiKey!,
-            settings.firecrawl_max_retries,
-            settings.firecrawl_retry_delay_ms
-          );
-        } else {
-          result = await checkWithDirectFetch(
-            property.source_url, 
-            settings.head_timeout_ms, 
-            settings.get_timeout_ms
-          );
-        }
-        
-        checkedCount++;
-        
-        // Always update availability_checked_at
         const updateData: Record<string, any> = {
           availability_checked_at: new Date().toISOString(),
           availability_check_reason: result.reason
@@ -298,48 +407,28 @@ serve(async (req) => {
         if (result.isInactive) {
           updateData.is_active = false;
           updateData.status = 'inactive';
-          inactiveIds.push(property.id);
-          inactiveCount++;
-          console.log(`❌ ${property.id} - INACTIVE (${result.reason})`);
-        } else {
-          console.log(`✓ ${property.id} - ACTIVE (${result.reason})`);
         }
         
-        // Immediate update
         const { error: updateError } = await supabase
           .from('scouted_properties')
           .update(updateData)
-          .eq('id', property.id);
+          .eq('id', result.id);
         
         if (updateError) {
-          console.error(`Failed to update ${property.id}: ${updateError.message}`);
+          console.error(`Failed to update ${result.id}: ${updateError.message}`);
         }
-
-      } catch (error) {
-        console.log(`⚠️ ${property.id} - Error: ${error instanceof Error ? error.message : 'Unknown'}`);
-        
-        // Still update checked_at even on error
-        await supabase
-          .from('scouted_properties')
-          .update({
-            availability_checked_at: new Date().toISOString(),
-            availability_check_reason: 'check_error'
-          })
-          .eq('id', property.id);
-        
-        checkedCount++;
+      } catch (dbError) {
+        console.error(`DB update error for ${result.id}:`, dbError);
       }
-
-      // Delay between requests
-      await new Promise(resolve => setTimeout(resolve, settings.delay_between_requests_ms));
     }
 
-    console.log(`✅ Done: ${checkedCount} checked, ${inactiveCount} inactive`);
+    console.log(`✅ Done: ${checkedCount} checked, ${inactiveCount} inactive, ${errorCount} errors/timeouts`);
 
     return new Response(JSON.stringify({
       success: true,
       checked: checkedCount,
       marked_inactive: inactiveCount,
+      errors: errorCount,
       inactive_ids: inactiveIds,
       firecrawl_enabled: useFirecrawl
     }), {

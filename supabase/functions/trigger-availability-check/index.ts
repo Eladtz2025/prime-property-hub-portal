@@ -12,8 +12,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Maximum batches per run - process sequentially, then self-trigger for next
 const MAX_BATCHES_PER_RUN = 10;
 
-// Timeout for batch processing (80 seconds - leaves margin before Edge Function timeout)
-const BATCH_TIMEOUT_MS = 80000;
+// Timeout for batch processing (110 seconds - leaves margin before Edge Function timeout)
+const BATCH_TIMEOUT_MS = 110000;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -114,6 +114,8 @@ serve(async (req) => {
     // Process batches sequentially
     const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
     let processedThisRun = 0;
+    let inactiveThisRun = 0;
+    let failedBatches: string[][] = [];
 
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
@@ -140,9 +142,12 @@ serve(async (req) => {
           const result = await response.json();
           console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
           processedThisRun += result.checked || batch.length;
+          inactiveThisRun += result.marked_inactive || 0;
         } else {
           console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
-          processedThisRun += batch.length; // Count as processed even if failed
+          // Don't count failed batch as processed - add to retry queue
+          failedBatches.push(batch);
+          console.log(`🔄 Batch ${i + 1} added to retry queue`);
         }
       } catch (error) {
         clearTimeout(timeoutId);
@@ -151,7 +156,9 @@ serve(async (req) => {
         } else {
           console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown');
         }
-        processedThisRun += batch.length; // Count as processed
+        // Don't count failed batch as processed - add to retry queue
+        failedBatches.push(batch);
+        console.log(`🔄 Batch ${i + 1} added to retry queue`);
       }
 
       // Delay between batches
@@ -162,10 +169,25 @@ serve(async (req) => {
 
     const totalProcessed = processedInChain + processedThisRun;
     const remainingBatches = batches.length - batchesToProcess;
+    const totalFailedIds = failedBatches.flat().length;
 
-    // Check if we should continue (more batches and under daily limit)
-    if (remainingBatches > 0 && totalProcessed < dailyLimit) {
-      console.log(`🔄 ${remainingBatches} batches remaining. Self-triggering continuation...`);
+    // Log detailed summary
+    console.log(`📊 RUN SUMMARY:`);
+    console.log(`   - Properties in queue: ${properties.length}`);
+    console.log(`   - Batches attempted: ${batchesToProcess}`);
+    console.log(`   - Batches failed/timeout: ${failedBatches.length}`);
+    console.log(`   - Processed this run: ${processedThisRun}`);
+    console.log(`   - Inactive marked: ${inactiveThisRun}`);
+    console.log(`   - Total in chain: ${totalProcessed}`);
+    console.log(`   - Remaining batches: ${remainingBatches}`);
+    console.log(`   - Failed IDs for retry: ${totalFailedIds}`);
+    console.log(`   - Daily limit remaining: ${dailyLimit - totalProcessed}`);
+
+    // Check if we should continue (more batches OR failed batches need retry, and under daily limit)
+    const shouldContinue = (remainingBatches > 0 || failedBatches.length > 0) && totalProcessed < dailyLimit;
+    
+    if (shouldContinue) {
+      console.log(`🔄 Continuing: ${remainingBatches} remaining + ${failedBatches.length} failed batches. Self-triggering...`);
       
       // Fire and forget self-trigger
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
@@ -174,7 +196,10 @@ serve(async (req) => {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ processed_count: totalProcessed })
+        body: JSON.stringify({ 
+          processed_count: totalProcessed,
+          retry_ids: failedBatches.flat() // Pass failed IDs for retry
+        })
       }).catch(err => console.error('Self-trigger error:', err.message));
     }
 
@@ -184,8 +209,11 @@ serve(async (req) => {
       success: true,
       processed_this_run: processedThisRun,
       total_processed: totalProcessed,
+      inactive_this_run: inactiveThisRun,
+      failed_batches: failedBatches.length,
+      failed_ids_count: totalFailedIds,
       daily_limit: dailyLimit,
-      will_continue: remainingBatches > 0 && totalProcessed < dailyLimit
+      will_continue: shouldContinue
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
