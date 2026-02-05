@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCategorySettings } from "../_shared/settings.ts";
-import { scrapeWithRetry } from "../_shared/scraping.ts";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -179,6 +178,79 @@ async function saveDebugSample(
   }
 }
 
+/**
+ * Scrape for availability check with onlyMainContent: false
+ * This ensures we capture 404/error page content
+ */
+async function scrapeForAvailabilityCheck(
+  url: string, 
+  firecrawlApiKey: string, 
+  source: string,
+  timeoutMs: number = 20000
+): Promise<any> {
+  const waitForMs = source === 'yad2' ? 5000 : 3000;
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        formats: ['markdown', 'html'],
+        onlyMainContent: false,  // KEY: Include ALL content including error messages
+        waitFor: waitForMs,
+        proxy: source === 'yad2' ? 'stealth' : 'auto',
+        location: { country: 'IL', languages: ['he'] }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      return await response.json();
+    }
+    console.warn(`Firecrawl returned ${response.status} for ${url}`);
+    return null;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`Firecrawl timeout (${timeoutMs}ms) for ${url}`);
+    } else {
+      console.warn(`Firecrawl error for ${url}:`, error);
+    }
+    return null;
+  }
+}
+
+/**
+ * Debug logging for Yad2 - only on content_ok or suspicious results
+ */
+function logDebugInfo(
+  url: string,
+  markdown: string,
+  html: string,
+  metadata: any,
+  combinedContent: string,
+  reason: string
+) {
+  console.log(`\n🔍 DEBUG for ${url} (${reason}):`);
+  console.log(`   markdown.length: ${markdown.length}`);
+  console.log(`   html.length: ${html.length}`);
+  console.log(`   metadata keys: ${Object.keys(metadata).join(', ')}`);
+  console.log(`   metadata.sourceURL: ${metadata.sourceURL || 'N/A'}`);
+  console.log(`   metadata.url: ${metadata.url || 'N/A'}`);
+  console.log(`   metadata.statusCode: ${metadata.statusCode || 'N/A'}`);
+  console.log(`   First 300 chars: ${combinedContent.substring(0, 300).replace(/\n/g, ' ')}`);
+  console.log(`   === END DEBUG ===\n`);
+}
+
 // Check via Firecrawl for Yad2/Madlan (bypasses bot detection) with retry logic
 async function checkWithFirecrawl(
   url: string, 
@@ -191,13 +263,19 @@ async function checkWithFirecrawl(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const result = await scrapeWithRetry(url, firecrawlApiKey, source, 1, 3000);
+      const result = await scrapeForAvailabilityCheck(url, firecrawlApiKey, source);
       
       if (result) {
         const markdown = result?.data?.markdown || result?.markdown || '';
         const html = result?.data?.html || result?.html || '';
         const metadata = result?.data?.metadata || result?.metadata || {};
         const combinedContent = markdown + ' ' + html;
+        
+        // === Check 0: HTTP status code from metadata ===
+        if (metadata.statusCode === 404 || metadata.statusCode === 410) {
+          console.log(`⚠️ HTTP ${metadata.statusCode} detected from metadata for ${url}`);
+          return { isInactive: true, reason: `http_${metadata.statusCode}` };
+        }
         
         // === Check 1: Detect redirect via Firecrawl metadata ===
         const redirectCheck = isRedirectDetected(url, metadata, source);
@@ -220,11 +298,19 @@ async function checkWithFirecrawl(
         
         if (markdown.length < 500 && !hasPropertyIndicators) {
           console.log(`⚠️ Suspicious: short (${markdown.length} chars) + no property indicators`);
+          // Debug log for suspicious Yad2 results
+          if (source === 'yad2') {
+            logDebugInfo(url, markdown, html, metadata, combinedContent, 'suspicious_short');
+          }
           return { isInactive: true, reason: 'homepage_or_error_detected' };
         }
         
         // === Check 4: Very short content without price - keep active ===
         if (markdown.length < 200 && !combinedContent.includes('₪')) {
+          // Debug log for Yad2 short content
+          if (source === 'yad2') {
+            logDebugInfo(url, markdown, html, metadata, combinedContent, 'short_no_price');
+          }
           return { isInactive: false, reason: 'short_content_keeping_active' };
         }
         
@@ -232,6 +318,8 @@ async function checkWithFirecrawl(
         if (source === 'yad2' && supabase) {
           // Fire and forget - don't await, don't block
           saveDebugSample(supabase, url, source, markdown, metadata);
+          // Debug log for content_ok on Yad2
+          logDebugInfo(url, markdown, html, metadata, combinedContent, 'content_ok');
         }
         
         return { isInactive: false, reason: 'content_ok' };
