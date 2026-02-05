@@ -67,6 +67,8 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
       .from('scouted_properties')
       .select('id, city, neighborhood, address, price, rooms, size, floor, property_type, title, description, is_private, source, source_url, features, matched_leads')
       .eq('is_active', true)
+      .not('price', 'is', null)
+      .gt('price', 0)
       .or('duplicate_group_id.is.null,is_primary_listing.eq.true')
       .range(from, from + PAGE_SIZE - 1);
 
@@ -226,6 +228,8 @@ serve(async (req) => {
         .from('scouted_properties')
         .select('id')
         .eq('is_active', true)
+        .not('price', 'is', null)
+        .gt('price', 0)
         .or('duplicate_group_id.is.null,is_primary_listing.eq.true')
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
