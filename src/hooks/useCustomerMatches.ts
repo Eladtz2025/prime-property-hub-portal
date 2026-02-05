@@ -18,6 +18,7 @@ interface CustomerMatch {
   neighborhood: string | null;
   propertyType: string | null;
   isDismissed: boolean;
+  duplicatesCount: number;
 }
 
 export interface GroupedMatch {
@@ -61,6 +62,7 @@ export const useCustomerMatches = (customerId: string, includeDismissed: boolean
         neighborhood: string | null;
         property_type: string | null;
         is_dismissed?: boolean;
+        duplicates_count?: number;
       }) => ({
         id: row.id,
         title: row.title,
@@ -78,6 +80,7 @@ export const useCustomerMatches = (customerId: string, includeDismissed: boolean
         neighborhood: row.neighborhood,
         propertyType: row.property_type,
         isDismissed: row.is_dismissed || false,
+        duplicatesCount: row.duplicates_count || 1,
       }));
 
       // Group matches by duplicate_group_id
