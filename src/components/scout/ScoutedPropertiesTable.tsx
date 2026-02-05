@@ -2211,6 +2211,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
+            ) : (duplicatesInGroup?.length || 0) <= 1 ? (
+              <p className="text-center text-muted-foreground py-4">
+                אין מודעות נוספות בקבוצה זו
+              </p>
             ) : duplicatesInGroup?.map((dup, idx) => (
               <div 
                 key={dup.id} 

@@ -419,7 +419,11 @@ export const CustomerMatchesCell = ({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {duplicatesInGroup.map((dup) => (
+            {duplicatesInGroup.length <= 1 ? (
+              <p className="text-center text-muted-foreground py-4">
+                אין מודעות נוספות בקבוצה זו
+              </p>
+            ) : duplicatesInGroup.map((dup) => (
               <div 
                 key={dup.id} 
                 className={`p-3 border rounded-lg flex items-center justify-between gap-2 ${
