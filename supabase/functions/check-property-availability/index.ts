@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCategorySettings } from "../_shared/settings.ts";
 import { scrapeWithRetry } from "../_shared/scraping.ts";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,7 @@ interface CheckResult {
   error?: boolean;
 }
 
-// Indicators that a listing has been removed (Hebrew and English)
+// Indicators that a listing has been removed (Hebrew and English) 
 const LISTING_REMOVED_INDICATORS = [
   // Hebrew - general
   'המודעה הוסרה',
@@ -55,9 +56,11 @@ const LISTING_REMOVED_INDICATORS = [
   'הנכס הוסר',
 ];
 
-// Check if content indicates the listing was removed
+// Check if content indicates the listing was removed  
 function isListingRemoved(content: string): boolean {
-  if (!content || content.length < 100) return false;
+  // Note: Removed length < 100 check - short 404/error pages
+  // should still be checked for removal indicators
+  if (!content) return false;
   
   const lowerContent = content.toLowerCase();
   
@@ -70,13 +73,120 @@ function isListingRemoved(content: string): boolean {
   return false;
 }
 
+/**
+ * Check if Firecrawl metadata indicates a redirect away from item page
+ * Uses sourceURL/finalURL from metadata rather than content matching
+ */
+function isRedirectDetected(
+  originalUrl: string, 
+  metadata: any, 
+  source: string
+): { isRedirect: boolean; reason?: string } {
+  if (!metadata) return { isRedirect: false };
+  
+  // Get final URL from Firecrawl metadata
+  const finalUrl = metadata.sourceURL || metadata.url || metadata.finalURL;
+  if (!finalUrl) return { isRedirect: false };
+  
+  try {
+    const originalPath = new URL(originalUrl).pathname;
+    const finalPath = new URL(finalUrl).pathname;
+    
+    // For Yad2: check if still on /realestate/item/ path
+    if (source === 'yad2') {
+      const originalHasItem = originalPath.includes('/realestate/item/') || 
+                             originalPath.includes('/item/');
+      const finalHasItem = finalPath.includes('/realestate/item/') || 
+                           finalPath.includes('/item/');
+      
+      // Original was item page but final is not = redirect
+      if (originalHasItem && !finalHasItem) {
+        console.log(`⚠️ Yad2 redirect detected: ${originalPath} → ${finalPath}`);
+        return { isRedirect: true, reason: 'yad2_redirect_to_non_item' };
+      }
+      
+      // Check if redirected to homepage
+      if (finalPath === '/' || finalPath === '/realestate' || 
+          finalPath === '/realestate/') {
+        console.log(`⚠️ Yad2 redirect to homepage: ${finalPath}`);
+        return { isRedirect: true, reason: 'yad2_redirect_to_homepage' };
+      }
+    }
+    
+    // For Madlan: similar logic
+    if (source === 'madlan') {
+      const originalHasProperty = originalPath.includes('/property/') || 
+                                  originalPath.includes('/listing/');
+      const finalHasProperty = finalPath.includes('/property/') || 
+                               finalPath.includes('/listing/');
+      
+      if (originalHasProperty && !finalHasProperty) {
+        return { isRedirect: true, reason: 'madlan_redirect_to_non_property' };
+      }
+    }
+  } catch (urlError) {
+    console.warn(`URL parsing error for redirect check: ${urlError}`);
+  }
+  
+  return { isRedirect: false };
+}
+
+/**
+ * Save debug sample for availability checks (non-critical, won't fail the check)
+ */
+async function saveDebugSample(
+  supabase: SupabaseClient,
+  url: string,
+  source: string,
+  markdown: string,
+  metadata: any
+): Promise<void> {
+  try {
+    // Prepare metadata as JSON string to append to markdown
+    const metadataStr = metadata ? JSON.stringify({
+      sourceURL: metadata.sourceURL,
+      finalURL: metadata.finalURL,
+      url: metadata.url,
+      title: metadata.title,
+      statusCode: metadata.statusCode
+    }, null, 2) : '';
+    
+    // Combine markdown snippet + metadata
+    const debugContent = [
+      `--- DEBUG SAMPLE ---`,
+      `URL: ${url}`,
+      `Timestamp: ${new Date().toISOString()}`,
+      `Markdown length: ${markdown?.length || 0}`,
+      `---`,
+      markdown?.substring(0, 5000) || '(no content)',
+      `--- METADATA ---`,
+      metadataStr
+    ].join('\n');
+    
+    await supabase.from('debug_scrape_samples').insert({
+      source: 'yad2_availability',  // Constant source
+      url: url,
+      markdown: debugContent,
+      html: null,
+      properties_found: 0
+    });
+    
+    console.log(`📝 Saved debug sample for ${url} (${markdown?.length || 0} chars)`);
+  } catch (debugErr: any) {
+    // Non-critical - table might not exist or no permissions
+    // Just log to console, don't fail the check
+    console.log(`📝 Debug sample not saved (${debugErr?.message || 'unknown error'}) - continuing`);
+  }
+}
+
 // Check via Firecrawl for Yad2/Madlan (bypasses bot detection) with retry logic
 async function checkWithFirecrawl(
   url: string, 
   source: string, 
   firecrawlApiKey: string,
   maxRetries: number,
-  retryDelayMs: number
+  retryDelayMs: number,
+  supabase?: SupabaseClient
 ): Promise<{ isInactive: boolean; reason: string }> {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -86,14 +196,21 @@ async function checkWithFirecrawl(
       if (result) {
         const markdown = result?.data?.markdown || result?.markdown || '';
         const html = result?.data?.html || result?.html || '';
+        const metadata = result?.data?.metadata || result?.metadata || {};
         const combinedContent = markdown + ' ' + html;
         
-        // Check for removed listing indicators
+        // === Check 1: Detect redirect via Firecrawl metadata ===
+        const redirectCheck = isRedirectDetected(url, metadata, source);
+        if (redirectCheck.isRedirect) {
+          return { isInactive: true, reason: redirectCheck.reason! };
+        }
+        
+        // === Check 2: Removed listing indicators ===
         if (isListingRemoved(combinedContent)) {
           return { isInactive: true, reason: 'listing_removed_indicator_found' };
         }
         
-        // Check for homepage/error page: short content without property indicators
+        // === Check 3: Homepage/error page detection ===
         const hasPropertyIndicators = 
           combinedContent.includes('₪') || 
           combinedContent.includes('חדרים') ||
@@ -101,15 +218,20 @@ async function checkWithFirecrawl(
           combinedContent.includes('מטר') ||
           combinedContent.includes('קומה');
         
-        // Short content without property indicators = likely homepage or error
         if (markdown.length < 500 && !hasPropertyIndicators) {
           console.log(`⚠️ Suspicious: short (${markdown.length} chars) + no property indicators`);
           return { isInactive: true, reason: 'homepage_or_error_detected' };
         }
         
-        // Very short content without price - keep active but flag
+        // === Check 4: Very short content without price - keep active ===
         if (markdown.length < 200 && !combinedContent.includes('₪')) {
           return { isInactive: false, reason: 'short_content_keeping_active' };
+        }
+        
+        // === Save debug sample for Yad2 (non-critical) ===
+        if (source === 'yad2' && supabase) {
+          // Fire and forget - don't await, don't block
+          saveDebugSample(supabase, url, source, markdown, metadata);
         }
         
         return { isInactive: false, reason: 'content_ok' };
@@ -233,7 +355,8 @@ async function checkSinglePropertyWithTimeout(
   useFirecrawl: boolean,
   firecrawlApiKey: string | undefined,
   settings: any,
-  timeoutMs: number
+  timeoutMs: number,
+  supabase?: SupabaseClient
 ): Promise<CheckResult> {
   const timeoutPromise = new Promise<never>((_, reject) => 
     setTimeout(() => reject(new Error('PROPERTY_TIMEOUT')), timeoutMs)
@@ -250,7 +373,8 @@ async function checkSinglePropertyWithTimeout(
         property.source, 
         firecrawlApiKey!,
         settings.firecrawl_max_retries,
-        settings.firecrawl_retry_delay_ms
+        settings.firecrawl_retry_delay_ms,
+        supabase
       );
     } else {
       result = await checkWithDirectFetch(
@@ -279,7 +403,8 @@ async function processPropertiesInParallel(
   concurrencyLimit: number,
   useFirecrawl: boolean,
   firecrawlApiKey: string | undefined,
-  settings: any
+  settings: any,
+  supabase?: SupabaseClient
 ): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
   const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
@@ -296,7 +421,8 @@ async function processPropertiesInParallel(
         useFirecrawl,
         firecrawlApiKey,
         settings,
-        perPropertyTimeout
+        perPropertyTimeout,
+        supabase
       )
     );
     
@@ -388,7 +514,8 @@ serve(async (req) => {
       concurrencyLimit,
       useFirecrawl,
       firecrawlApiKey,
-      settings
+      settings,
+      supabase
     );
 
     // Update database for each result
