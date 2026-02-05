@@ -21,6 +21,9 @@ import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 
+// Track which property is being checked for availability
+type CheckingPropertyId = string | null;
+
 interface ScoutedProperty {
   id: string;
   source: string;
@@ -271,6 +274,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<ScoutedProperty | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
+  // Check availability states
+  const [checkingPropertyId, setCheckingPropertyId] = useState<CheckingPropertyId>(null);
+  const [checkUrlDialogOpen, setCheckUrlDialogOpen] = useState(false);
+  const [urlToCheck, setUrlToCheck] = useState('');
+
   // New filter states
   const [roomsMin, setRoomsMin] = useState<string>('');
   const [roomsMax, setRoomsMax] = useState<string>('');
@@ -407,6 +415,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('is_active', false);
 
+      // Pending first check count (availability_checked_at is null)
+      const { count: pendingCheckCount } = await supabase
+        .from('scouted_properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .is('availability_checked_at', null);
+
       return {
         total: totalCount || 0,
         today: todayCount || 0,
@@ -414,7 +429,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
         week: weekCount || 0,
         bySources: sourceCounts,
         lastScanBySources,
-        inactive: inactiveCount || 0
+        inactive: inactiveCount || 0,
+        pendingCheck: pendingCheckCount || 0
       };
     }
   });
@@ -728,6 +744,73 @@ export const ScoutedPropertiesTable: React.FC = () => {
     },
     onError: () => {
       toast.error('שגיאה במחיקת הנכס');
+    }
+  });
+
+  // Check availability mutation
+  const checkAvailabilityMutation = useMutation({
+    mutationFn: async (propertyId: string) => {
+      setCheckingPropertyId(propertyId);
+      const { data, error } = await supabase.functions.invoke('check-property-availability', {
+        body: { property_ids: [propertyId] }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      
+      if (data.marked_inactive > 0) {
+        toast.error(`הנכס סומן כלא פעיל (${data.reasons?.[0] || 'הוסר מהמקור'})`);
+      } else {
+        toast.success(`הנכס נבדק ונמצא פעיל`);
+      }
+      setCheckingPropertyId(null);
+    },
+    onError: (error) => {
+      console.error('Availability check error:', error);
+      toast.error('שגיאה בבדיקת זמינות');
+      setCheckingPropertyId(null);
+    }
+  });
+
+  // Check by URL mutation
+  const checkByUrlMutation = useMutation({
+    mutationFn: async (url: string) => {
+      // 1. Find property by URL
+      const { data: property, error: findError } = await supabase
+        .from('scouted_properties')
+        .select('id, title, source')
+        .eq('source_url', url)
+        .single();
+      
+      if (findError || !property) {
+        throw new Error('לא נמצא נכס עם URL זה במאגר');
+      }
+      
+      // 2. Check availability
+      const { data, error } = await supabase.functions.invoke('check-property-availability', {
+        body: { property_ids: [property.id] }
+      });
+      if (error) throw error;
+      
+      return { property, result: data };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['scouted-properties-stats'] });
+      setCheckUrlDialogOpen(false);
+      setUrlToCheck('');
+      
+      if (data.result.marked_inactive > 0) {
+        toast.error(`"${data.property.title || 'נכס'}" סומן כלא פעיל`);
+      } else {
+        toast.success(`"${data.property.title || 'נכס'}" נמצא פעיל`);
+      }
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'שגיאה בבדיקה');
     }
   });
 
@@ -1155,6 +1238,54 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </p>
             </SheetContent>
           </Sheet>
+
+          {/* Check URL Dialog Button */}
+          <Dialog open={checkUrlDialogOpen} onOpenChange={setCheckUrlDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-sm gap-1.5">
+                <Search className="h-3.5 w-3.5" />
+                בדוק URL
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>בדיקת זמינות לפי URL</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="הדבק URL של נכס מיד2/מדלן/הומלס..."
+                  value={urlToCheck}
+                  onChange={(e) => setUrlToCheck(e.target.value)}
+                  dir="ltr"
+                />
+                <Button 
+                  onClick={() => checkByUrlMutation.mutate(urlToCheck)}
+                  disabled={!urlToCheck || checkByUrlMutation.isPending}
+                  className="w-full"
+                >
+                  {checkByUrlMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  ) : (
+                    <Search className="h-4 w-4 ml-2" />
+                  )}
+                  בדוק זמינות
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Pending Check Count */}
+          {(stats?.pendingCheck || 0) > 0 && (
+            <>
+              <div className="h-5 w-px bg-border" />
+              <div className="flex items-center gap-1.5 text-sm">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-amber-600">
+                  ממתינים לבדיקה: <span className="font-bold">{stats?.pendingCheck?.toLocaleString()}</span>
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1730,6 +1861,19 @@ export const ScoutedPropertiesTable: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => checkAvailabilityMutation.mutate(property.id)}
+                          disabled={checkingPropertyId === property.id}
+                          title="בדוק זמינות עכשיו"
+                        >
+                          {checkingPropertyId === property.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             if (confirm('האם אתה בטוח שברצונך למחוק את הנכס לצמיתות?')) {
                               deleteMutation.mutate(property.id);
@@ -1834,6 +1978,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
                       disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => checkAvailabilityMutation.mutate(property.id)}
+                      disabled={checkingPropertyId === property.id}
+                      title="בדוק זמינות"
+                    >
+                      {checkingPropertyId === property.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </div>
                   
