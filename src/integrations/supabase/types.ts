@@ -3306,6 +3306,7 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: Json
       }
+      cleanup_orphan_duplicate_groups: { Args: never; Returns: number }
       detect_duplicates_batch: {
         Args: { batch_size?: number }
         Returns: {
