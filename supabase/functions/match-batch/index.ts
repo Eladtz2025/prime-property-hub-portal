@@ -54,7 +54,8 @@ serve(async (req) => {
     const { data: properties, error: propError } = await supabase
       .from('scouted_properties')
       .select('*')
-      .in('id', property_ids);
+      .in('id', property_ids)
+      .or('duplicate_group_id.is.null,is_primary_listing.eq.true');
 
     if (propError) throw propError;
 
@@ -170,29 +171,23 @@ serve(async (req) => {
           })
           .eq('id', property.id);
 
-        // If property belongs to a duplicate group, update all properties in the group
+        // If property belongs to a duplicate group, sync match data to all members (WITHOUT triggering WhatsApp)
+        // This ensures the group has consistent data, but WhatsApp is only sent for the winner (above)
         if (property.duplicate_group_id) {
-          const { data: duplicateProperties } = await supabase
+          // Sync data to losers in the group (they won't be processed for WhatsApp since they're filtered out)
+          await supabase
             .from('scouted_properties')
-            .select('id')
+            .update({
+              matched_leads: matchedLeadsData,
+              status: 'matched'
+            })
             .eq('duplicate_group_id', property.duplicate_group_id)
             .neq('id', property.id);
-
-          if (duplicateProperties && duplicateProperties.length > 0) {
-            for (const dup of duplicateProperties) {
-              await supabase
-                .from('scouted_properties')
-                .update({
-                  matched_leads: matchedLeadsData,
-                  status: 'matched'
-                })
-                .eq('id', dup.id);
-            }
-            console.log(`Synced matches to ${duplicateProperties.length} duplicates in group ${property.duplicate_group_id}`);
-          }
+          
+          console.log(`Synced matches to duplicates in group ${property.duplicate_group_id} (data only, no WhatsApp)`);
         }
 
-        // Send WhatsApp to matched leads (if enabled)
+        // Send WhatsApp to matched leads (if enabled) - ONLY for winners (losers are already filtered out)
         if (send_whatsapp && greenApiInstance && greenApiToken) {
           for (const match of matches.slice(0, 5)) {
             const message = buildWhatsAppMessage(property as ScoutedProperty, match);

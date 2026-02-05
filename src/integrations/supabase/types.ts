@@ -3338,13 +3338,12 @@ export type Database = {
           address: string
           city: string
           duplicate_group_id: string
-          floor: number
+          duplicates_count: number
           id: string
           is_dismissed: boolean
           is_private: boolean
           match_reasons: string[]
           match_score: number
-          matched_at: string
           neighborhood: string
           price: number
           property_type: string

@@ -3,13 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
 import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { useDismissMatch, useRestoreMatch } from "@/hooks/useDismissedMatches";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 import { ScoutedPropertyCard, OwnPropertyCard } from "./PropertyMatchCard";
 
 interface CustomerMatchesCellProps {
@@ -43,6 +45,11 @@ export const CustomerMatchesCell = ({
   const [isMatching, setIsMatching] = useState(false);
   const [showDismissed, setShowDismissed] = useState(false);
   const [expandedDuplicateGroups, setExpandedDuplicateGroups] = useState<Record<string, boolean>>({});
+  const [duplicatesDialogOpen, setDuplicatesDialogOpen] = useState(false);
+  const [selectedDuplicateGroup, setSelectedDuplicateGroup] = useState<{
+    groupId: string;
+    winnerId: string;
+  } | null>(null);
   
   const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId, showDismissed);
   const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
@@ -58,6 +65,42 @@ export const CustomerMatchesCell = ({
 
   const dismissMatch = useDismissMatch();
   const restoreMatch = useRestoreMatch();
+
+  // Query for fetching all properties in a duplicate group
+  const { data: duplicatesInGroup = [] } = useQuery({
+    queryKey: ['duplicate-group-matches', selectedDuplicateGroup?.groupId],
+    queryFn: async () => {
+      if (!selectedDuplicateGroup?.groupId) return [];
+      const { data } = await supabase
+        .from('scouted_properties')
+        .select('id, source, source_url, price, is_private, updated_at, address, title, is_primary_listing')
+        .eq('duplicate_group_id', selectedDuplicateGroup.groupId)
+        .eq('is_active', true)
+        .order('is_primary_listing', { ascending: false })
+        .order('price', { ascending: true, nullsFirst: false });
+      return data || [];
+    },
+    enabled: !!selectedDuplicateGroup?.groupId && duplicatesDialogOpen
+  });
+
+  const getSourceBadge = useCallback((source: string) => {
+    const sourceColors: Record<string, string> = {
+      'yad2': 'bg-orange-100 text-orange-800',
+      'madlan': 'bg-blue-100 text-blue-800',
+      'homeless': 'bg-purple-100 text-purple-800',
+      'facebook': 'bg-indigo-100 text-indigo-800',
+    };
+    return (
+      <Badge variant="outline" className={`text-[10px] ${sourceColors[source] || 'bg-gray-100 text-gray-800'}`}>
+        {source}
+      </Badge>
+    );
+  }, []);
+
+  const handleOpenDuplicatesDialog = useCallback((groupId: string, winnerId: string) => {
+    setSelectedDuplicateGroup({ groupId, winnerId });
+    setDuplicatesDialogOpen(true);
+  }, []);
 
   const handleMatchLead = async () => {
     setIsMatching(true);
@@ -195,6 +238,7 @@ export const CustomerMatchesCell = ({
   }
 
   return (
+    <>
     <Dialog>
       <div className="flex items-center gap-1">
         <DialogTrigger asChild>
@@ -305,8 +349,25 @@ export const CustomerMatchesCell = ({
                         <div className="text-xs text-warning font-medium mb-2 flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <Copy className="h-3 w-3" />
-                            {group.matches.length} כפילויות - אותה דירה ממקורות שונים
+                            {group.matches[0]?.duplicatesCount || group.matches.length} כפילויות - אותה דירה ממקורות שונים
                           </div>
+                          {group.matches[0]?.duplicateGroupId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDuplicatesDialog(
+                                  group.matches[0].duplicateGroupId!,
+                                  group.matches[0].id
+                                );
+                              }}
+                            >
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                              הצג את כל המודעות
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -347,5 +408,57 @@ export const CustomerMatchesCell = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+      {/* Duplicates Dialog */}
+      <Dialog open={duplicatesDialogOpen} onOpenChange={setDuplicatesDialogOpen}>
+        <DialogContent className="max-w-md z-[60]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-4 w-4" />
+              מודעות זהות ({duplicatesInGroup.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {duplicatesInGroup.map((dup) => (
+              <div 
+                key={dup.id} 
+                className={`p-3 border rounded-lg flex items-center justify-between gap-2 ${
+                  dup.is_primary_listing ? "bg-primary/5 border-primary/30" : ""
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {getSourceBadge(dup.source)}
+                    {dup.is_private === true && (
+                      <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700">פרטי</Badge>
+                    )}
+                    {dup.is_private === false && (
+                      <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700">תיווך</Badge>
+                    )}
+                    {dup.is_primary_listing && (
+                      <Badge className="text-[10px] bg-primary">מנצח</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm mt-1 truncate" title={dup.title || dup.address || ''}>
+                    {dup.title || dup.address || 'ללא כותרת'}
+                  </p>
+                  <p className="text-sm font-medium">
+                    {dup.price ? `₪${dup.price.toLocaleString()}` : 'ללא מחיר'}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => window.open(dup.source_url, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
