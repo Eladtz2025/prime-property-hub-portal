@@ -24,35 +24,51 @@ interface CheckResult {
   error?: boolean;
 }
 
-// Indicators that a listing has been removed (Hebrew and English) 
+// Indicators that a listing has been removed (Hebrew and English)
+// IMPORTANT: These are checked FIRST (Indicator-first approach)
 const LISTING_REMOVED_INDICATORS = [
-  // Hebrew - general
-  'המודעה הוסרה',
+  // === Yad2 specific ===
+  'חיפשנו בכל מקום אבל אין לנו עמוד כזה',
+  'העמוד שחיפשת הוסר',
+  'הלינק לא תקין',
   'מודעה לא נמצאה',
+  'המודעה הוסרה',
+  'אין לנו עמוד כזה',
+  'חיפשנו בכל מקום',
+  'אופס',
+  'האתר בשיפוצים',
+  
+  // === Homeless specific ===
+  'נראה שתקלה זו כבר טופלה',
+  'טופלה וסגרה',
+  'לפניכם חיפושים נוספים',
+  'מודעות רלוונטיות',
+  'המודעה לא נמצאה',
+  'דף הבית של הומלס',
+  
+  // === Madlan specific ===
+  'הנכס לא נמצא',
+  'הדירה אינה זמינה',
+  'הנכס הוסר',
+  'לא נמצאו תוצאות',
+  'הנכס כבר נמכר',
+  'הנכס כבר הושכר',
+  
+  // === Hebrew general ===
   'הדף לא נמצא',
   'הנכס אינו זמין',
   'המודעה לא קיימת',
   'הדף המבוקש לא נמצא',
   'לא הצלחנו למצוא',
-  // English
+  
+  // === English ===
   'listing not found',
   'item removed',
   'page not found',
   'this listing is no longer available',
   'listing has been removed',
   'no longer exists',
-  // Yad2 specific
-  'חיפשנו בכל מקום אבל אין לנו עמוד כזה',
-  'אין לנו עמוד כזה',
-  'הלינק לא תקין',
-  'העמוד שחיפשת הוסר',
-  'חיפשנו בכל מקום',
-  'אופס',
-  'האתר בשיפוצים',
-  // Madlan specific
-  'הנכס לא נמצא',
-  'הדירה אינה זמינה',
-  'הנכס הוסר',
+  'no longer available'
 ];
 
 // Check if content indicates the listing was removed  
@@ -251,7 +267,8 @@ function logDebugInfo(
   console.log(`   === END DEBUG ===\n`);
 }
 
-// Check via Firecrawl for Yad2/Madlan (bypasses bot detection) with retry logic
+// Check via Firecrawl for Yad2/Madlan/Homeless (bypasses bot detection) with retry logic
+// Uses INDICATOR-FIRST approach: check removal indicators before anything else
 async function checkWithFirecrawl(
   url: string, 
   source: string, 
@@ -271,24 +288,26 @@ async function checkWithFirecrawl(
         const metadata = result?.data?.metadata || result?.metadata || {};
         const combinedContent = markdown + ' ' + html;
         
-        // === Check 0: HTTP status code from metadata ===
+        // === INDICATOR-FIRST: Check removal indicators BEFORE anything else ===
+        // This is the most reliable check - look for explicit "listing removed" text
+        if (isListingRemoved(combinedContent)) {
+          console.log(`🚫 Removal indicator found for ${url}`);
+          return { isInactive: true, reason: 'listing_removed_indicator' };
+        }
+        
+        // === Check 2: HTTP status code backup ===
         if (metadata.statusCode === 404 || metadata.statusCode === 410) {
           console.log(`⚠️ HTTP ${metadata.statusCode} detected from metadata for ${url}`);
           return { isInactive: true, reason: `http_${metadata.statusCode}` };
         }
         
-        // === Check 1: Detect redirect via Firecrawl metadata ===
+        // === Check 3: Detect redirect via Firecrawl metadata ===
         const redirectCheck = isRedirectDetected(url, metadata, source);
         if (redirectCheck.isRedirect) {
           return { isInactive: true, reason: redirectCheck.reason! };
         }
         
-        // === Check 2: Removed listing indicators ===
-        if (isListingRemoved(combinedContent)) {
-          return { isInactive: true, reason: 'listing_removed_indicator_found' };
-        }
-        
-        // === Check 3: Homepage/error page detection ===
+        // === Check 4: Has property indicators → definitely active ===
         const hasPropertyIndicators = 
           combinedContent.includes('₪') || 
           combinedContent.includes('חדרים') ||
@@ -296,33 +315,29 @@ async function checkWithFirecrawl(
           combinedContent.includes('מטר') ||
           combinedContent.includes('קומה');
         
-        if (markdown.length < 500 && !hasPropertyIndicators) {
-          console.log(`⚠️ Suspicious: short (${markdown.length} chars) + no property indicators`);
-          // Debug log for suspicious Yad2 results
-          if (source === 'yad2') {
-            logDebugInfo(url, markdown, html, metadata, combinedContent, 'suspicious_short');
+        if (hasPropertyIndicators) {
+          // Save debug sample for Yad2 (non-critical)
+          if (source === 'yad2' && supabase) {
+            saveDebugSample(supabase, url, source, markdown, metadata);
+            logDebugInfo(url, markdown, html, metadata, combinedContent, 'content_ok');
           }
-          return { isInactive: true, reason: 'homepage_or_error_detected' };
+          return { isInactive: false, reason: 'content_ok' };
         }
         
-        // === Check 4: Very short content without price - keep active ===
-        if (markdown.length < 200 && !combinedContent.includes('₪')) {
-          // Debug log for Yad2 short content
+        // === Check 5: Short content without property indicators ===
+        // This is a fallback - page might be captcha/block or error page
+        if (markdown.length < 500) {
+          console.log(`⚠️ Short content (${markdown.length} chars) without property indicators for ${url}`);
           if (source === 'yad2') {
-            logDebugInfo(url, markdown, html, metadata, combinedContent, 'short_no_price');
+            logDebugInfo(url, markdown, html, metadata, combinedContent, 'empty_or_error_page');
           }
-          return { isInactive: false, reason: 'short_content_keeping_active' };
+          // Mark with clear reason for monitoring false positives
+          return { isInactive: true, reason: 'empty_or_error_page' };
         }
         
-        // === Save debug sample for Yad2 (non-critical) ===
-        if (source === 'yad2' && supabase) {
-          // Fire and forget - don't await, don't block
-          saveDebugSample(supabase, url, source, markdown, metadata);
-          // Debug log for content_ok on Yad2
-          logDebugInfo(url, markdown, html, metadata, combinedContent, 'content_ok');
-        }
-        
-        return { isInactive: false, reason: 'content_ok' };
+        // === Default: Long content but no property indicators - suspicious but keep active ===
+        console.log(`⚠️ Long content (${markdown.length} chars) but no indicators for ${url} - keeping active`);
+        return { isInactive: false, reason: 'no_indicators_keeping_active' };
       }
       
       // Scrape returned null - might be proxy error, retry
@@ -451,7 +466,8 @@ async function checkSinglePropertyWithTimeout(
   );
   
   const checkPromise = (async (): Promise<CheckResult> => {
-    const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan'].includes(property.source);
+    // Use Firecrawl for yad2, madlan, AND homeless (to capture removal indicators)
+    const shouldUseFirecrawl = useFirecrawl && ['yad2', 'madlan', 'homeless'].includes(property.source);
     
     let result: { isInactive: boolean; reason: string };
     
