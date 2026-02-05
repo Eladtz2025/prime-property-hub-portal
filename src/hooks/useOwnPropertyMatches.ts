@@ -43,7 +43,9 @@ export const useOwnPropertyMatches = (customer: CustomerCriteria, includeDismiss
       let query = supabase
         .from('properties')
         .select('id, title, address, city, neighborhood, monthly_rent, rooms, property_size, property_type')
-        .eq('available', true);
+        .eq('available', true)
+        .not('monthly_rent', 'is', null)
+        .gt('monthly_rent', 0);
 
       // Filter by property type (rental vs sale)
       if (customer.property_type === 'rental') {

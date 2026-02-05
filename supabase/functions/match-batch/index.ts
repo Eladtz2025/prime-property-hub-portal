@@ -55,6 +55,8 @@ serve(async (req) => {
       .from('scouted_properties')
       .select('*')
       .in('id', property_ids)
+      .not('price', 'is', null)
+      .gt('price', 0)
       .or('duplicate_group_id.is.null,is_primary_listing.eq.true');
 
     if (propError) throw propError;
