@@ -1,12 +1,13 @@
+// Edge Function: check-property-availability v2.0
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
 import { 
   isListingRemoved, 
   isRedirectDetected, 
   hasPropertyIndicators 
 } from "../_shared/availability-indicators.ts";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Removed unused import SupabaseClient
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

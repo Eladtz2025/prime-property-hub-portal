@@ -1,7 +1,7 @@
 // Shared settings utilities for Edge Functions
 // Fetches configurable settings from the scout_settings table
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 export interface ScoutSettings {
   duplicates: {
