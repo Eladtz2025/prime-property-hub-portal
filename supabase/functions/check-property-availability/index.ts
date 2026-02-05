@@ -93,8 +93,22 @@ async function checkWithFirecrawl(
           return { isInactive: true, reason: 'listing_removed_indicator_found' };
         }
         
-        // Check for suspiciously short content (likely error page)
-        if (markdown.length < 200 && !markdown.includes('₪')) {
+        // Check for homepage/error page: short content without property indicators
+        const hasPropertyIndicators = 
+          combinedContent.includes('₪') || 
+          combinedContent.includes('חדרים') ||
+          combinedContent.includes('מ"ר') ||
+          combinedContent.includes('מטר') ||
+          combinedContent.includes('קומה');
+        
+        // Short content without property indicators = likely homepage or error
+        if (markdown.length < 500 && !hasPropertyIndicators) {
+          console.log(`⚠️ Suspicious: short (${markdown.length} chars) + no property indicators`);
+          return { isInactive: true, reason: 'homepage_or_error_detected' };
+        }
+        
+        // Very short content without price - keep active but flag
+        if (markdown.length < 200 && !combinedContent.includes('₪')) {
           return { isInactive: false, reason: 'short_content_keeping_active' };
         }
         

@@ -311,7 +311,14 @@ export async function calculateMatch(
   // ===== PRICE MUST BE IN RANGE (strict - no flexibility) =====
   if (property.price && lead.budget_max) {
     const propType = propertyType || 'rent';
-    const flexibility = 0; // No price flexibility - strict budget matching
+    // Use dynamic price flexibility from admin settings
+    const flexibility = getPriceFlexibility(property.price, propType, {
+      rent_flex_low_threshold: settings.rent_flex_low_threshold,
+      rent_flex_low_percent: settings.rent_flex_low_percent,
+      rent_flex_mid_threshold: settings.rent_flex_mid_threshold,
+      rent_flex_mid_percent: settings.rent_flex_mid_percent,
+      rent_flex_high_percent: settings.rent_flex_high_percent,
+    });
     
     // Calculate allowed range with symmetric flexibility
     const minBudget = lead.budget_min || 0;
