@@ -9,11 +9,8 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Maximum batches per run - process sequentially, then self-trigger for next
-const MAX_BATCHES_PER_RUN = 10;
-
-// Maximum retries per property before giving up
-const MAX_RETRIES_PER_PROPERTY = 3;
+// Maximum batches per run - cron will trigger next run
+const MAX_BATCHES_PER_RUN = 3;
 
 // Timeout for batch processing (110 seconds - leaves margin before Edge Function timeout)
 const BATCH_TIMEOUT_MS = 110000;
@@ -29,7 +26,7 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    console.log('🔍 Starting availability check orchestration...');
+    console.log('🔍 Starting availability check (cron-based)...');
 
     // Fetch availability settings from database
     const settings = await fetchCategorySettings(supabase, 'availability');
@@ -40,37 +37,25 @@ serve(async (req) => {
 
     console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, recheckDays=${recheckIntervalDays}`);
 
-    // Track how many we've processed in this run chain
-    let processedInChain = 0;
-    let retryIds: string[] = [];
-    let retryCountMap: Record<string, number> = {};
+    // Check how many we've processed today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    try {
-      const body = await req.json();
-      if (body.processed_count && typeof body.processed_count === 'number') {
-        processedInChain = body.processed_count;
-        console.log(`📋 Continuation run: already processed ${processedInChain} properties`);
-      }
-      // Handle retry_ids from previous failed batches
-      if (body.retry_ids && Array.isArray(body.retry_ids) && body.retry_ids.length > 0) {
-        retryIds = body.retry_ids;
-        console.log(`🔄 Received ${retryIds.length} retry IDs from previous run`);
-      }
-      // Handle retry counts map
-      if (body.retry_counts && typeof body.retry_counts === 'object') {
-        retryCountMap = body.retry_counts;
-      }
-    } catch {
-      // Fresh run - no body
-    }
+    const { count: todayCount } = await supabase
+      .from('scouted_properties')
+      .select('*', { count: 'exact', head: true })
+      .gte('availability_checked_at', today.toISOString());
+
+    const processedToday = todayCount || 0;
+    console.log(`📊 Already processed today: ${processedToday}/${dailyLimit}`);
 
     // Check if we've hit daily limit
-    if (processedInChain >= dailyLimit) {
+    if (processedToday >= dailyLimit) {
       console.log(`✅ Daily limit reached (${dailyLimit}). Stopping.`);
       return new Response(JSON.stringify({
         success: true,
         message: 'Daily limit reached',
-        total_processed: processedInChain,
+        processed_today: processedToday,
         daily_limit: dailyLimit
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -84,63 +69,33 @@ serve(async (req) => {
     const recheckCutoff = new Date();
     recheckCutoff.setDate(recheckCutoff.getDate() - recheckIntervalDays);
 
-    // Remaining quota for this chain
-    const remainingQuota = dailyLimit - processedInChain;
+    // Remaining quota for today
+    const remainingQuota = dailyLimit - processedToday;
     const fetchLimit = Math.min(remainingQuota, batchSize * MAX_BATCHES_PER_RUN);
-
-    // Filter out properties that exceeded max retries
-    const validRetryIds = retryIds.filter(id => {
-      const count = retryCountMap[id] || 0;
-      if (count >= MAX_RETRIES_PER_PROPERTY) {
-        console.log(`⛔ Property ${id} exceeded max retries (${count}), skipping permanently`);
-        return false;
-      }
-      return true;
-    });
-    
-    // Determine how many retry IDs we can process this run
-    const retryIdsToProcess = validRetryIds.slice(0, fetchLimit);
-    const remainingRetryIds = validRetryIds.slice(fetchLimit);
-    
-    if (remainingRetryIds.length > 0) {
-      console.log(`📋 ${remainingRetryIds.length} retry IDs will be passed to next run`);
-    }
 
     console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
 
-    let propertyIds: string[] = [];
+    // Fetch properties that need checking
+    const { data: properties, error: fetchError } = await supabase
+      .from('scouted_properties')
+      .select('id')
+      .eq('is_active', true)
+      .in('status', ['matched', 'new'])
+      .lt('first_seen_at', minDaysAgo.toISOString())
+      .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
+      .order('first_seen_at', { ascending: true })
+      .limit(fetchLimit);
 
-    // PRIORITY 1: Process retry IDs first
-    if (retryIdsToProcess.length > 0) {
-      console.log(`🔄 Processing ${retryIdsToProcess.length} retry IDs first...`);
-      propertyIds = retryIdsToProcess;
-    } else {
-      // PRIORITY 2: Fetch new properties from DB
-      const newFetchLimit = fetchLimit - retryIdsToProcess.length;
-      
-      if (newFetchLimit > 0) {
-        const { data: properties, error: fetchError } = await supabase
-          .from('scouted_properties')
-          .select('id')
-          .eq('is_active', true)
-          .in('status', ['matched', 'new'])
-          .lt('first_seen_at', minDaysAgo.toISOString())
-          .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
-          .order('first_seen_at', { ascending: true })
-          .limit(newFetchLimit);
+    if (fetchError) throw fetchError;
+    
+    const propertyIds = properties?.map(p => p.id) || [];
 
-        if (fetchError) throw fetchError;
-        
-        propertyIds = properties?.map(p => p.id) || [];
-      }
-    }
-
-    if (propertyIds.length === 0 && remainingRetryIds.length === 0) {
+    if (propertyIds.length === 0) {
       console.log('✅ No properties need checking');
       return new Response(JSON.stringify({
         success: true,
         message: 'No properties need checking',
-        total_processed: processedInChain,
+        processed_today: processedToday,
         properties_found: 0
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -157,11 +112,11 @@ serve(async (req) => {
 
     console.log(`📦 Split into ${batches.length} batches of up to ${batchSize} properties`);
 
-    // Process batches sequentially
+    // Process batches sequentially (max 3 per run)
     const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
     let processedThisRun = 0;
     let inactiveThisRun = 0;
-    let failedBatches: string[][] = [];
+    let failedBatches = 0;
 
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
@@ -191,12 +146,7 @@ serve(async (req) => {
           inactiveThisRun += result.marked_inactive || 0;
         } else {
           console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
-          failedBatches.push(batch);
-          // Increment retry count for failed IDs
-          for (const id of batch) {
-            retryCountMap[id] = (retryCountMap[id] || 0) + 1;
-          }
-          console.log(`🔄 Batch ${i + 1} added to retry queue (${batch.length} IDs)`);
+          failedBatches++;
         }
       } catch (error) {
         clearTimeout(timeoutId);
@@ -205,12 +155,7 @@ serve(async (req) => {
         } else {
           console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown');
         }
-        failedBatches.push(batch);
-        // Increment retry count for failed IDs
-        for (const id of batch) {
-          retryCountMap[id] = (retryCountMap[id] || 0) + 1;
-        }
-        console.log(`🔄 Batch ${i + 1} added to retry queue (${batch.length} IDs)`);
+        failedBatches++;
       }
 
       // Delay between batches
@@ -219,63 +164,35 @@ serve(async (req) => {
       }
     }
 
-    const totalProcessed = processedInChain + processedThisRun;
     const remainingBatches = batches.length - batchesToProcess;
-    
-    // Combine: remaining retry IDs that weren't processed + newly failed IDs
-    const allRetryIds = [...remainingRetryIds, ...failedBatches.flat()];
-    const totalFailedIds = allRetryIds.length;
 
-    // Log detailed summary
+    // Log summary
     console.log(`📊 RUN SUMMARY:`);
-    console.log(`   - Properties in queue: ${properties.length}`);
+    console.log(`   - Properties in queue: ${propertyIds.length}`);
     console.log(`   - Batches attempted: ${batchesToProcess}`);
-    console.log(`   - Batches failed/timeout: ${failedBatches.length}`);
+    console.log(`   - Batches failed: ${failedBatches}`);
     console.log(`   - Processed this run: ${processedThisRun}`);
     console.log(`   - Inactive marked: ${inactiveThisRun}`);
-    console.log(`   - Total in chain: ${totalProcessed}`);
     console.log(`   - Remaining batches: ${remainingBatches}`);
-    console.log(`   - Retry IDs for next run: ${totalFailedIds}`);
-    console.log(`   - Daily limit remaining: ${dailyLimit - totalProcessed}`);
+    console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
 
-    // Check if we should continue (more batches OR retry IDs, and under daily limit)
-    const shouldContinue = (remainingBatches > 0 || allRetryIds.length > 0) && totalProcessed < dailyLimit;
-    
-    if (shouldContinue) {
-      console.log(`🔄 Continuing: ${remainingBatches} remaining + ${allRetryIds.length} retry IDs. Self-triggering...`);
-      
-      // Fire and forget self-trigger
-      fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          processed_count: totalProcessed,
-          retry_ids: allRetryIds,
-          retry_counts: retryCountMap
-        })
-      }).catch(err => console.error('Self-trigger error:', err.message));
-    }
-
-    console.log(`✅ Run complete: ${processedThisRun} processed this run, ${totalProcessed} total`);
+    console.log(`✅ Run complete: ${processedThisRun} processed`);
 
     return new Response(JSON.stringify({
       success: true,
       processed_this_run: processedThisRun,
-      total_processed: totalProcessed,
+      processed_today: processedToday + processedThisRun,
       inactive_this_run: inactiveThisRun,
-      failed_batches: failedBatches.length,
-      failed_ids_count: totalFailedIds,
+      failed_batches: failedBatches,
+      remaining_in_queue: remainingBatches > 0 ? remainingBatches * batchSize : 0,
       daily_limit: dailyLimit,
-      will_continue: shouldContinue
+      next_run: remainingBatches > 0 ? 'cron will continue in 10 minutes' : 'backlog cleared'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('❌ Availability check orchestration error:', error);
+    console.error('❌ Availability check error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
