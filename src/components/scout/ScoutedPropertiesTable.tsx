@@ -45,6 +45,8 @@ interface ScoutedProperty {
   description: string | null;
   is_active?: boolean;
   is_private?: boolean | null;
+  duplicate_group_id?: string | null;
+  is_primary_listing?: boolean | null;
 }
 
 const PAGE_SIZE = 20;
@@ -482,6 +484,27 @@ export const ScoutedPropertiesTable: React.FC = () => {
   // State for duplicates sheet
   const [duplicatesSheetOpen, setDuplicatesSheetOpen] = useState(false);
 
+  // State for duplicates group dialog
+  const [duplicatesDialogOpen, setDuplicatesDialogOpen] = useState(false);
+  const [selectedDuplicateGroup, setSelectedDuplicateGroup] = useState<string | null>(null);
+
+  // Query for duplicates in selected group (lazy loaded)
+  const { data: duplicatesInGroup, isLoading: loadingDuplicates } = useQuery({
+    queryKey: ['duplicate-group', selectedDuplicateGroup],
+    queryFn: async () => {
+      if (!selectedDuplicateGroup) return [];
+      const { data } = await supabase
+        .from('scouted_properties')
+        .select('id, source, source_url, price, is_private, updated_at, address, is_primary_listing')
+        .eq('duplicate_group_id', selectedDuplicateGroup)
+        .eq('is_active', true)
+        .order('is_primary_listing', { ascending: false, nullsFirst: false })
+        .order('price', { ascending: true, nullsFirst: false });
+      return data || [];
+    },
+    enabled: !!selectedDuplicateGroup && duplicatesDialogOpen
+  });
+
   // Format price helper
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -521,6 +544,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const applyFilters = (query: any, filters: NonNullable<typeof appliedFilters>) => {
     // Always filter for active properties only
     query = query.eq('is_active', true);
+    
+    // Hide duplicate losers - only show primary listings or non-duplicates
+    query = query.or('duplicate_group_id.is.null,is_primary_listing.eq.true');
     
     // Always filter for Tel Aviv
     query = query.ilike('city', '%תל אביב%');
@@ -1871,6 +1897,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
                             <RefreshCw className="h-4 w-4" />
                           )}
                         </Button>
+                        {property.duplicate_group_id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedDuplicateGroup(property.duplicate_group_id!);
+                              setDuplicatesDialogOpen(true);
+                            }}
+                            title="מודעות נוספות באותה דירה"
+                            className="text-amber-600 hover:text-amber-700"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -2154,6 +2194,61 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicates Group Dialog */}
+      <Dialog open={duplicatesDialogOpen} onOpenChange={setDuplicatesDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5 text-amber-600" />
+              מודעות זהות ({duplicatesInGroup?.length || 0})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {loadingDuplicates ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : duplicatesInGroup?.map((dup, idx) => (
+              <div 
+                key={dup.id} 
+                className={cn(
+                  "p-3 border rounded-lg flex items-center justify-between gap-2",
+                  idx === 0 && "bg-primary/5 border-primary/30"
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {getSourceBadge(dup.source)}
+                    {dup.is_private === true && (
+                      <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">פרטי</Badge>
+                    )}
+                    {dup.is_private === false && (
+                      <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700 border-orange-300">תיווך</Badge>
+                    )}
+                    {idx === 0 && (
+                      <Badge className="text-[10px] bg-primary">מנצח</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm mt-1">
+                    {dup.price ? `₪${dup.price.toLocaleString()}` : 'ללא מחיר'}
+                  </p>
+                  {dup.address && (
+                    <p className="text-xs text-muted-foreground truncate">{dup.address}</p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(dup.source_url, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </>
