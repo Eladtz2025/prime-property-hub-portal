@@ -3384,6 +3384,10 @@ export type Database = {
         Args: { p_found: number; p_new: number; p_run_id: string }
         Returns: undefined
       }
+      normalize_address_for_matching: {
+        Args: { addr: string }
+        Returns: string
+      }
       recompute_duplicate_winners: {
         Args: never
         Returns: {
