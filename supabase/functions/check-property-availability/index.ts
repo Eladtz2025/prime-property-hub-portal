@@ -610,6 +610,7 @@ serve(async (req) => {
     let checkedCount = 0;
     let inactiveCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
     const inactiveIds: string[] = [];
 
     for (const result of results) {
@@ -634,21 +635,42 @@ serve(async (req) => {
         };
         
         if (result.isInactive) {
+          // Inactive: update unconditionally (marking as inactive is always valid)
           updateData.is_active = false;
           updateData.status = 'inactive';
-        }
-        
-        const { error: updateError } = await supabase
-          .from('scouted_properties')
-          .update(updateData)
-          .eq('id', result.id);
-        
-        if (updateError) {
-          console.error(`Failed to update ${result.id}: ${updateError.message}`);
+          
+          const { error: updateError } = await supabase
+            .from('scouted_properties')
+            .update(updateData)
+            .eq('id', result.id);
+          
+          if (updateError) {
+            console.error(`Failed to update ${result.id}: ${updateError.message}`);
+          }
+        } else {
+          // Active (content_ok): only update if still active (guard against race condition)
+          const { data: updateResult, error: updateError } = await supabase
+            .from('scouted_properties')
+            .update(updateData)
+            .eq('id', result.id)
+            .eq('is_active', true)  // Guard: only update if still active
+            .select('id');
+          
+          if (updateError) {
+            console.error(`Failed to update ${result.id}: ${updateError.message}`);
+          } else if (!updateResult || updateResult.length === 0) {
+            // No rows updated = property was already inactive
+            skippedCount++;
+            console.log(`⏭️ ${result.id} - Skipped (already inactive by another process)`);
+          }
         }
       } catch (dbError) {
         console.error(`DB update error for ${result.id}:`, dbError);
       }
+    }
+
+    if (skippedCount > 0) {
+      console.log(`📊 Skipped ${skippedCount} properties that were already inactive`);
     }
 
     console.log(`✅ Done: ${checkedCount} checked, ${inactiveCount} inactive, ${errorCount} errors/timeouts`);

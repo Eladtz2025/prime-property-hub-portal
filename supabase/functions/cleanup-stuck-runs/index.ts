@@ -404,12 +404,55 @@ serve(async (req) => {
       console.log('✅ No stuck personal scout runs found');
     }
 
+    // === CLEANUP STUCK AVAILABILITY CHECK RUNS ===
+    console.log('\n🔍 Checking for stuck availability check runs...');
+    let availabilityCleaned = 0;
+
+    const fifteenMinutesAgo = new Date(now - 15 * 60 * 1000).toISOString();
+    const { data: stuckAvailability, error: availabilityError } = await supabase
+      .from('availability_check_runs')
+      .select('*')
+      .eq('status', 'running')
+      .lt('started_at', fifteenMinutesAgo);
+
+    if (availabilityError) {
+      console.error('❌ Error fetching availability runs:', availabilityError);
+    } else if (stuckAvailability && stuckAvailability.length > 0) {
+      for (const run of stuckAvailability) {
+        const ageMinutes = (now - new Date(run.started_at).getTime()) / 60000;
+        console.log(`   ⏰ AVAILABILITY RUN STUCK: ${run.id} - ${ageMinutes.toFixed(1)} min old`);
+        
+        const { error: updateError } = await supabase
+          .from('availability_check_runs')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: `Cleanup: stuck for ${ageMinutes.toFixed(0)} minutes`
+          })
+          .eq('id', run.id);
+        
+        if (!updateError) {
+          availabilityCleaned++;
+          console.log(`   ✅ Availability run marked as failed`);
+          cleanupDetails.push({
+            type: 'availability_check',
+            id: run.id,
+            action: 'marked_failed',
+            ageMinutes: ageMinutes.toFixed(1)
+          });
+        }
+      }
+    } else {
+      console.log('✅ No stuck availability check runs found');
+    }
+
     console.log('\n' + '='.repeat(60));
     console.log('🧹 CLEANUP COMPLETE');
     console.log(`   Pages timed out: ${pagesTimedOut}`);
     console.log(`   Runs force-completed: ${runsForceCompleted}`);
     console.log(`   Backfills cleaned: ${backfillsCleaned}`);
     console.log(`   Personal scouts cleaned: ${personalScoutsCleaned}`);
+    console.log(`   Availability runs cleaned: ${availabilityCleaned}`);
     console.log('='.repeat(60));
 
     return new Response(
@@ -419,6 +462,7 @@ serve(async (req) => {
         runsForceCompleted,
         backfillsCleaned,
         personalScoutsCleaned,
+        availabilityCleaned,
         details: cleanupDetails,
         settings: { pageTimeoutMinutes, runTimeoutMinutes }
       }),

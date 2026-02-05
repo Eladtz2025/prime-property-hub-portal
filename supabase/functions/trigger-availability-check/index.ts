@@ -25,8 +25,49 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  let runId: string | null = null;
+
   try {
     console.log('🔍 Starting availability check (cron-based)...');
+
+    // === LOCK CHECK: Prevent parallel runs ===
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: runningCheck } = await supabase
+      .from('availability_check_runs')
+      .select('id, started_at')
+      .eq('status', 'running')
+      .gt('started_at', tenMinutesAgo)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (runningCheck) {
+      const runAge = (Date.now() - new Date(runningCheck.started_at).getTime()) / 1000;
+      console.log(`⏳ Already running: ${runningCheck.id} (${runAge.toFixed(0)}s ago). Skipping.`);
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Already running',
+        running_since: runningCheck.started_at,
+        run_id: runningCheck.id
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create new run record (claim the lock)
+    const { data: newRun, error: insertError } = await supabase
+      .from('availability_check_runs')
+      .insert({ status: 'running' })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      console.error('❌ Failed to create run record:', insertError);
+      throw insertError;
+    }
+
+    runId = newRun.id;
+    console.log(`🔒 Created run lock: ${runId}`);
 
     // Fetch availability settings from database
     const settings = await fetchCategorySettings(supabase, 'availability');
@@ -52,6 +93,11 @@ serve(async (req) => {
     // Check if we've hit daily limit
     if (processedToday >= dailyLimit) {
       console.log(`✅ Daily limit reached (${dailyLimit}). Stopping.`);
+      // Release lock
+      await supabase
+        .from('availability_check_runs')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), properties_checked: 0 })
+        .eq('id', runId);
       return new Response(JSON.stringify({
         success: true,
         message: 'Daily limit reached',
@@ -176,10 +222,22 @@ serve(async (req) => {
     console.log(`   - Remaining batches: ${remainingBatches}`);
     console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
 
-    console.log(`✅ Run complete: ${processedThisRun} processed`);
+    // Release lock - mark as completed
+    await supabase
+      .from('availability_check_runs')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        properties_checked: processedThisRun,
+        inactive_marked: inactiveThisRun
+      })
+      .eq('id', runId);
+
+    console.log(`✅ Run complete: ${processedThisRun} processed, lock released`);
 
     return new Response(JSON.stringify({
       success: true,
+      run_id: runId,
       processed_this_run: processedThisRun,
       processed_today: processedToday + processedThisRun,
       inactive_this_run: inactiveThisRun,
@@ -193,6 +251,19 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Availability check error:', error);
+    
+    // Release lock on error
+    if (runId) {
+      await supabase
+        .from('availability_check_runs')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: error instanceof Error ? error.message : 'Unknown error'
+        })
+        .eq('id', runId);
+    }
+    
     return new Response(JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
