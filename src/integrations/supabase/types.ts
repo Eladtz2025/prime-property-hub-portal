@@ -137,6 +137,36 @@ export type Database = {
           },
         ]
       }
+      availability_check_runs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          inactive_marked: number | null
+          properties_checked: number | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          inactive_marked?: number | null
+          properties_checked?: number | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          inactive_marked?: number | null
+          properties_checked?: number | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       backfill_progress: {
         Row: {
           completed_at: string | null
