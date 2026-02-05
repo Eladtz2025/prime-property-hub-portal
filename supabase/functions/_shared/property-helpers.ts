@@ -36,19 +36,52 @@ export function extractListingId(url: string, source: string): string | null {
 }
 
 /**
- * Normalize source URL by removing tracking parameters
- * Keeps the clean URL for storage
+ * Normalize source URL by removing tracking/pagination parameters
+ * Keeps the clean URL for storage and deduplication
  */
 export function normalizeSourceUrl(url: string, source: string): string {
   if (!url) return url;
   
-  if (source === 'yad2') {
-    // Remove query parameters from yad2 URLs
+  try {
+    const parsed = new URL(url);
+    
+    // Remove common tracking/pagination params for all sources
+    const paramsToRemove = [
+      'opened-from', 'utm_source', 'utm_medium', 'utm_campaign',
+      'page', 'pagination', 'ref', 'fbclid', 'gclid'
+    ];
+    
+    paramsToRemove.forEach(param => parsed.searchParams.delete(param));
+    
+    if (source === 'yad2') {
+      // Yad2: remove all query params (clean item URL)
+      return `${parsed.origin}${parsed.pathname}`;
+    }
+    
+    if (source === 'madlan') {
+      // Madlan: remove all query params for listing pages
+      if (parsed.pathname.includes('/listings/')) {
+        return `${parsed.origin}${parsed.pathname}`;
+      }
+    }
+    
+    if (source === 'homeless') {
+      // Homeless: keep only adid param
+      const adid = parsed.searchParams.get('adid');
+      if (adid) {
+        return `${parsed.origin}${parsed.pathname}?adid=${adid}`;
+      }
+    }
+    
+    // Return URL with cleaned params
+    const remainingParams = parsed.searchParams.toString();
+    return remainingParams 
+      ? `${parsed.origin}${parsed.pathname}?${remainingParams}`
+      : `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    // If URL parsing fails, fallback to simple split
     return url.split('?')[0];
   }
-  
-  // Other sources - keep as is for now
-  return url;
 }
 
 // ==================== Cross-Source Duplicate Detection ====================
@@ -200,6 +233,13 @@ export async function saveProperty(
   supabase: any, 
   property: ScrapedProperty
 ): Promise<{ isNew: boolean; skipped?: boolean }> {
+  
+  // === FIRST: Validate source URL (skip search pages, invalid URLs) ===
+  if (!isValidSourceUrl(property.source_url, property.source)) {
+    console.log(`🚫 Skipping invalid URL (search page or non-listing): ${property.source_url}`);
+    return { isNew: false, skipped: true };
+  }
+  
   const normalizedCity = normalizeCityName(property.city);
   
   // Validate Tel Aviv only - skip non-Tel Aviv properties entirely
@@ -306,10 +346,10 @@ export async function saveProperty(
   // Normalize source URL before saving (remove tracking parameters)
   const normalizedSourceUrl = normalizeSourceUrl(property.source_url, property.source);
 
-  // Insert new property
-  const { data: insertResult, error: insertError } = await supabase
+  // UPSERT: Insert new property or update if (source, source_url) already exists
+  const { data: upsertResult, error: upsertError } = await supabase
     .from('scouted_properties')
-    .insert({
+    .upsert({
       source: property.source,
       source_url: normalizedSourceUrl,
       source_id: property.source_id,
@@ -333,11 +373,19 @@ export async function saveProperty(
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
       last_seen_at: new Date().toISOString()
+    }, {
+      onConflict: 'source,source_url',
+      ignoreDuplicates: false  // Update existing records
     })
     .select('id')
     .single();
 
-  return { isNew: !insertError && !!insertResult };
+  if (upsertError) {
+    console.log(`⚠️ Upsert error for ${normalizedSourceUrl}: ${upsertError.message}`);
+    return { isNew: false };
+  }
+
+  return { isNew: !!upsertResult };
 }
 
 // ==================== Date Parsing ====================
