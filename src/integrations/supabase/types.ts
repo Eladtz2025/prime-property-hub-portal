@@ -3385,6 +3385,13 @@ export type Database = {
         Args: { p_found: number; p_new: number; p_run_id: string }
         Returns: undefined
       }
+      recompute_duplicate_winners: {
+        Args: never
+        Returns: {
+          groups_updated: number
+          properties_updated: number
+        }[]
+      }
     }
     Enums: {
       app_role:
