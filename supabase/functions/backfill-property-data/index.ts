@@ -170,13 +170,13 @@ Deno.serve(async (req) => {
     if (action === 'status') {
       const { data: progress } = await supabase
         .from('backfill_progress')
-        .select('*')
+        .select('*, summary_data')
         .eq('task_name', TASK_NAME)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
       
-      return new Response(JSON.stringify({ success: true, progress }), {
+      return new Response(JSON.stringify({ success: true, progress, summary: progress?.summary_data || {} }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -468,6 +468,28 @@ Deno.serve(async (req) => {
     let failCount = 0;
     let lastId = lastProcessedId;
 
+    // Detailed batch statistics for reporting
+    const batchStats = {
+      total_processed: 0,
+      address_attempted_upgrade: 0,   // how many we tried to upgrade
+      address_upgraded: 0,            // street → street+number success
+      address_no_number_in_source: 0, // page didn't have a house number
+      address_street_mismatch: 0,     // extracted street didn't match existing
+      address_validation_failed: 0,   // failed isValidAddressForUpdate
+      address_already_has_number: 0,  // address already had a number
+      address_set_from_scratch: 0,    // no address existed, set new one
+      address_no_address: 0,          // no address in DB and none found on page
+      features_updated: 0,
+      broker_classified: 0,
+      fields_updated: { rooms: 0, price: 0, size: 0, city: 0, floor: 0, neighborhood: 0 },
+      blacklisted: 0,
+      non_ta_deactivated: 0,
+      scrape_failed: 0,
+      no_content: 0,
+      no_new_data: 0,
+      update_db_error: 0,
+    };
+
     for (const prop of properties) {
       try {
         // Check if task was stopped
@@ -484,6 +506,7 @@ Deno.serve(async (req) => {
 
         if (!prop.source_url || !prop.source_url.includes('http')) {
           failCount++;
+          batchStats.total_processed++;
           lastId = prop.id;
           continue;
         }
@@ -509,6 +532,8 @@ Deno.serve(async (req) => {
           const errorText = await scrapeResponse.text();
           console.log(`❌ Scrape failed: ${errorText}`);
           failCount++;
+          batchStats.scrape_failed++;
+          batchStats.total_processed++;
           lastId = prop.id;
           continue;
         }
@@ -519,6 +544,8 @@ Deno.serve(async (req) => {
         if (!markdown || markdown.length < 100) {
           console.log(`❌ No content scraped`);
           failCount++;
+          batchStats.no_content++;
+          batchStats.total_processed++;
           lastId = prop.id;
           continue;
         }
@@ -547,6 +574,8 @@ Deno.serve(async (req) => {
             .eq('id', prop.id);
           
           successCount++;
+          batchStats.blacklisted++;
+          batchStats.total_processed++;
           lastId = prop.id;
           continue;
         }
@@ -569,6 +598,8 @@ Deno.serve(async (req) => {
               .eq('id', prop.id);
             
             successCount++;
+            batchStats.non_ta_deactivated++;
+            batchStats.total_processed++;
             lastId = prop.id;
             continue;
           }
@@ -577,35 +608,51 @@ Deno.serve(async (req) => {
         // Prepare update object with only missing fields
         const updates: Record<string, any> = {};
         
-        if (!prop.rooms && extracted.rooms) updates.rooms = extracted.rooms;
-        if (!prop.price && extracted.price) updates.price = extracted.price;
-        if (!prop.size && extracted.size) updates.size = extracted.size;
-        if (!prop.city && extracted.city) updates.city = extracted.city;
-        if (!prop.floor && extracted.floor !== undefined) updates.floor = extracted.floor;
-        if (!prop.neighborhood && extracted.neighborhood) updates.neighborhood = extracted.neighborhood;
+        if (!prop.rooms && extracted.rooms) { updates.rooms = extracted.rooms; batchStats.fields_updated.rooms++; }
+        if (!prop.price && extracted.price) { updates.price = extracted.price; batchStats.fields_updated.price++; }
+        if (!prop.size && extracted.size) { updates.size = extracted.size; batchStats.fields_updated.size++; }
+        if (!prop.city && extracted.city) { updates.city = extracted.city; batchStats.fields_updated.city++; }
+        if (!prop.floor && extracted.floor !== undefined) { updates.floor = extracted.floor; batchStats.fields_updated.floor++; }
+        if (!prop.neighborhood && extracted.neighborhood) { updates.neighborhood = extracted.neighborhood; batchStats.fields_updated.neighborhood++; }
         
         // Address enrichment: upgrade "street only" → "street + house number"
         // SAFETY: Only upgrade if current address lacks a number AND new one has a valid number
         if (prop.address && !hasHouseNumber(prop.address)) {
+          batchStats.address_attempted_upgrade++;
           const pageAddress = extractAddressFromPage(markdown, prop.source);
           if (pageAddress && pageAddress.houseNumber >= 1 && pageAddress.houseNumber <= 999) {
-            // Verify the extracted street relates to the existing address (don't replace with something different)
-            const existingNorm = prop.address.replace(/[\s'".\-\/]+/g, ' ').trim();
-            const newStreetNorm = pageAddress.street.replace(/[\s'".\-\/]+/g, ' ').trim();
-            if (newStreetNorm.includes(existingNorm) || existingNorm.includes(newStreetNorm)) {
-              updates.address = pageAddress.fullAddress;
-              console.log(`📍 Address upgraded: "${prop.address}" → "${pageAddress.fullAddress}"`);
+            if (!isValidAddressForUpdate(pageAddress.fullAddress)) {
+              console.log(`⚠️ Address validation failed: "${pageAddress.fullAddress}" - skipping`);
+              batchStats.address_validation_failed++;
             } else {
-              console.log(`⚠️ Address street mismatch: existing="${prop.address}", extracted="${pageAddress.fullAddress}" - skipping`);
+              // Verify the extracted street relates to the existing address (don't replace with something different)
+              const existingNorm = prop.address.replace(/[\s'".\-\/]+/g, ' ').trim();
+              const newStreetNorm = pageAddress.street.replace(/[\s'".\-\/]+/g, ' ').trim();
+              if (newStreetNorm.includes(existingNorm) || existingNorm.includes(newStreetNorm)) {
+                updates.address = pageAddress.fullAddress;
+                updates.duplicate_check_possible = true;
+                batchStats.address_upgraded++;
+                console.log(`📍 Address upgraded: "${prop.address}" → "${pageAddress.fullAddress}"`);
+              } else {
+                batchStats.address_street_mismatch++;
+                console.log(`⚠️ Address street mismatch: existing="${prop.address}", extracted="${pageAddress.fullAddress}" - skipping`);
+              }
             }
+          } else {
+            batchStats.address_no_number_in_source++;
           }
         } else if (!prop.address) {
           // No address at all - try to extract one from page
           const pageAddress = extractAddressFromPage(markdown, prop.source);
           if (pageAddress) {
             updates.address = pageAddress.fullAddress;
+            batchStats.address_set_from_scratch++;
             console.log(`📍 Address set from page: "${pageAddress.fullAddress}"`);
+          } else {
+            batchStats.address_no_address++;
           }
+        } else {
+          batchStats.address_already_has_number++;
         }
         
         // Merge features - keep existing, add new (also update if features is empty object)
@@ -614,6 +661,7 @@ Deno.serve(async (req) => {
         const hasNewFeatures = Object.keys(features).some(key => features[key as keyof PropertyFeatures] === true);
         if (hasNewFeatures || existingIsEmpty) {
           updates.features = { ...existingFeatures, ...features };
+          batchStats.features_updated++;
         }
 
         // Detect broker/private classification from markdown
@@ -621,12 +669,15 @@ Deno.serve(async (req) => {
           const isPrivate = detectBrokerFromMarkdown(markdown, prop.source);
           if (isPrivate !== null) {
             updates.is_private = isPrivate;
+            batchStats.broker_classified++;
             console.log(`🏷️ Classified as: ${isPrivate ? 'פרטי' : 'תיווך'}`);
           }
         }
 
         if (Object.keys(updates).length === 0) {
           console.log(`⏭️ No new data to update`);
+          batchStats.no_new_data++;
+          batchStats.total_processed++;
           lastId = prop.id;
           continue;
         }
@@ -640,6 +691,8 @@ Deno.serve(async (req) => {
           if (updateError) {
             console.log(`❌ Update failed:`, updateError);
             failCount++;
+            batchStats.update_db_error++;
+            batchStats.total_processed++;
             lastId = prop.id;
             continue;
           }
@@ -647,6 +700,7 @@ Deno.serve(async (req) => {
 
         console.log(`✅ Updated with:`, JSON.stringify(updates));
         successCount++;
+        batchStats.total_processed++;
         lastId = prop.id;
 
         // Update last_processed_id incrementally to ensure progress is saved
@@ -665,14 +719,15 @@ Deno.serve(async (req) => {
       } catch (propError) {
         console.error(`Error processing ${prop.id}:`, propError);
         failCount++;
+        batchStats.total_processed++;
         lastId = prop.id;
       }
     }
 
-    // Update progress with batch results
+    // Update progress with batch results + summary_data
     const { data: currentProgress } = await supabase
       .from('backfill_progress')
-      .select('processed_items, successful_items, failed_items, status')
+      .select('processed_items, successful_items, failed_items, status, summary_data')
       .eq('id', progressId)
       .single();
 
@@ -686,6 +741,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Merge batch stats with existing summary_data (cumulative)
+    const existingSummary = (currentProgress?.summary_data as Record<string, any>) || {};
+    const mergedSummary: Record<string, any> = {};
+    const numericKeys = [
+      'total_processed', 'address_attempted_upgrade', 'address_upgraded',
+      'address_no_number_in_source', 'address_street_mismatch', 'address_validation_failed',
+      'address_already_has_number', 'address_set_from_scratch', 'address_no_address',
+      'features_updated', 'broker_classified', 'blacklisted', 'non_ta_deactivated',
+      'scrape_failed', 'no_content', 'no_new_data', 'update_db_error'
+    ];
+    for (const key of numericKeys) {
+      mergedSummary[key] = (existingSummary[key] || 0) + (batchStats[key as keyof typeof batchStats] as number || 0);
+    }
+    // Merge fields_updated sub-object
+    const existingFields = existingSummary.fields_updated || {};
+    mergedSummary.fields_updated = {
+      rooms: (existingFields.rooms || 0) + batchStats.fields_updated.rooms,
+      price: (existingFields.price || 0) + batchStats.fields_updated.price,
+      size: (existingFields.size || 0) + batchStats.fields_updated.size,
+      city: (existingFields.city || 0) + batchStats.fields_updated.city,
+      floor: (existingFields.floor || 0) + batchStats.fields_updated.floor,
+      neighborhood: (existingFields.neighborhood || 0) + batchStats.fields_updated.neighborhood,
+    };
+
     await supabase
       .from('backfill_progress')
       .update({
@@ -693,11 +772,28 @@ Deno.serve(async (req) => {
         successful_items: (currentProgress?.successful_items || 0) + successCount,
         failed_items: (currentProgress?.failed_items || 0) + failCount,
         last_processed_id: lastId,
+        summary_data: mergedSummary,
         updated_at: new Date().toISOString()
       })
       .eq('id', progressId);
 
-    console.log(`\n📈 Batch complete: ${successCount} updated, ${failCount} failed`);
+    // Batch address report log
+    console.log(`\n📊 Batch Address Report:
+  🏠 upgraded (street→street+num): ${batchStats.address_upgraded}
+  🔍 attempted upgrade: ${batchStats.address_attempted_upgrade}
+  ❌ no number in source page: ${batchStats.address_no_number_in_source}
+  ⚠️ street mismatch (skipped): ${batchStats.address_street_mismatch}
+  🚫 validation failed: ${batchStats.address_validation_failed}
+  ✅ already has number: ${batchStats.address_already_has_number}
+  🆕 set from scratch: ${batchStats.address_set_from_scratch}`);
+    
+    console.log(`📊 Batch Field Report:
+  🏷️ broker classified: ${batchStats.broker_classified}
+  🏷️ features updated: ${batchStats.features_updated}
+  📋 fields: rooms=${batchStats.fields_updated.rooms} price=${batchStats.fields_updated.price} size=${batchStats.fields_updated.size} floor=${batchStats.fields_updated.floor}
+  🗑️ blacklisted: ${batchStats.blacklisted} | non-TA: ${batchStats.non_ta_deactivated}
+  ⏭️ no new data: ${batchStats.no_new_data} | scrape_failed: ${batchStats.scrape_failed}
+  📈 Batch total: ${successCount} updated, ${failCount} failed`);
 
     // Check if there are more items (null fields, empty features, address enrichment)
     const { count: remainingNullCount } = await supabase
@@ -771,17 +867,25 @@ Deno.serve(async (req) => {
         console.error('Failed to trigger next batch:', err);
       }
     } else {
-      // Mark as completed
+      // Mark as completed with final summary
       await supabase
         .from('backfill_progress')
         .update({ 
           status: 'completed',
           completed_at: new Date().toISOString(),
+          summary_data: mergedSummary,
           updated_at: new Date().toISOString()
         })
         .eq('id', progressId);
       
-      console.log('✅ Backfill completed!');
+      console.log(`🏁 BACKFILL COMPLETE - Final Summary:
+  Total processed: ${mergedSummary.total_processed}
+  Address upgraded: ${mergedSummary.address_upgraded} / ${mergedSummary.address_attempted_upgrade} attempted
+  No number in source: ${mergedSummary.address_no_number_in_source}
+  Street mismatch: ${mergedSummary.address_street_mismatch}
+  Features updated: ${mergedSummary.features_updated}
+  Broker classified: ${mergedSummary.broker_classified}
+  Fields: rooms=${mergedSummary.fields_updated?.rooms} price=${mergedSummary.fields_updated?.price} size=${mergedSummary.fields_updated?.size}`);
     }
 
     return new Response(JSON.stringify({
@@ -791,7 +895,16 @@ Deno.serve(async (req) => {
       batch_updated: successCount,
       batch_failed: failCount,
       has_more: hasMore,
-      remaining: remainingCount || 0
+      remaining: remainingCount || 0,
+      address_stats: {
+        attempted_upgrade: batchStats.address_attempted_upgrade,
+        upgraded: batchStats.address_upgraded,
+        no_number_in_source: batchStats.address_no_number_in_source,
+        street_mismatch: batchStats.address_street_mismatch,
+        validation_failed: batchStats.address_validation_failed,
+        already_has_number: batchStats.address_already_has_number,
+        set_from_scratch: batchStats.address_set_from_scratch,
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
