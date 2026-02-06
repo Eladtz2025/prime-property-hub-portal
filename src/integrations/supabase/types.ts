@@ -179,6 +179,7 @@ export type Database = {
           started_at: string | null
           status: string | null
           successful_items: number | null
+          summary_data: Json | null
           task_name: string
           total_items: number | null
           updated_at: string | null
@@ -194,6 +195,7 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           successful_items?: number | null
+          summary_data?: Json | null
           task_name: string
           total_items?: number | null
           updated_at?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           successful_items?: number | null
+          summary_data?: Json | null
           task_name?: string
           total_items?: number | null
           updated_at?: string | null
