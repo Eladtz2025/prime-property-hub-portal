@@ -13,8 +13,8 @@ function extractListingId(url: string, source: string): string | null {
   if (!url) return null;
   
   if (source === 'yad2') {
-    // /item/abc123 or /item/abc123?... → abc123
-    const match = url.match(/\/item\/([a-zA-Z0-9]+)/);
+    // /realestate/item/abc123 or /realestate/item/tel-aviv-area/abc123
+    const match = url.match(/\/realestate\/item\/(?:[^\/]+\/)?([a-zA-Z0-9]+)/i);
     return match ? match[1] : null;
   }
   
