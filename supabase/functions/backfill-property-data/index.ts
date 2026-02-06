@@ -99,9 +99,34 @@ interface PropertyFeatures {
   accessible?: boolean;
   pets?: boolean;
 }
-
 const BATCH_SIZE = 5;  // Reduced from 20 to avoid Edge Function timeout
 const TASK_NAME = 'data_completion';
+
+// ============================================
+// Address Enrichment Helpers
+// ============================================
+
+/** Check if address already contains a house number (1-3 digits) */
+function hasHouseNumber(address: string | null): boolean {
+  if (!address) return false;
+  return /\d{1,3}/.test(address);
+}
+
+/** Patterns indicating an invalid address (broker names, offices) */
+const INVALID_ADDRESS_UPDATE_PATTERNS = [
+  /נדל"?ן/i, /רימקס|re\/?max/i, /אנגלו\s*סכסון/i, /century\s*21/i,
+  /קולדוול/i, /הומלנד/i, /Properties/i, /HomeMe/i, /Premium/i,
+  /משרד\s*תיווך/i, /סוכנות/i, /Relocation/i, /REAL\s*ESTATE/i,
+  /FRANCHI/i, /בית\s*ממכר/i, /ניהול\s*נכסים/i,
+];
+
+/** Validate that extracted address is safe to use */
+function isValidAddressForUpdate(address: string): boolean {
+  if (!address || address.length < 3) return false;
+  if (INVALID_ADDRESS_UPDATE_PATTERNS.some(p => p.test(address))) return false;
+  if (!/[\u0590-\u05FF]/.test(address)) return false;
+  return true;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -356,7 +381,40 @@ Deno.serve(async (req) => {
 
     const { data: propertiesWithEmptyFeatures } = await emptyFeaturesQuery;
 
-    // Merge both lists, removing duplicates by ID
+    // Third query: Properties needing address enrichment (address without house number)
+    // PostgREST can't do regex, so we fetch candidates and filter in code
+    let addressEnrichQuery = supabase
+      .from('scouted_properties')
+      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
+      .eq('is_active', true)
+      .not('source_url', 'is', null)
+      .neq('source_url', 'https://www.homeless.co.il')
+      .not('address', 'is', null)
+      // Target properties that already have core data (won't be caught by main query)
+      .not('rooms', 'is', null)
+      .not('price', 'is', null)
+      .order('id', { ascending: true })
+      .limit(effectiveBatchSize * 5); // Fetch more since we filter in code
+
+    if (source_filter) {
+      addressEnrichQuery = addressEnrichQuery.eq('source', source_filter);
+    }
+    if (only_recent) {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      addressEnrichQuery = addressEnrichQuery.gte('created_at', thirtyMinAgo);
+    }
+    if (lastProcessedId) {
+      addressEnrichQuery = addressEnrichQuery.gt('id', lastProcessedId);
+    }
+
+    const { data: addressEnrichData } = await addressEnrichQuery;
+
+    // Filter: only properties whose address lacks a house number
+    const propertiesNeedingAddress = (addressEnrichData || [])
+      .filter(p => !hasHouseNumber(p.address))
+      .slice(0, effectiveBatchSize);
+
+    // Merge all three lists, removing duplicates by ID
     const seenIds = new Set<string>();
     const properties: typeof propertiesWithNulls = [];
     
@@ -372,11 +430,17 @@ Deno.serve(async (req) => {
         properties.push(prop);
       }
     }
+    for (const prop of propertiesNeedingAddress) {
+      if (!seenIds.has(prop.id)) {
+        seenIds.add(prop.id);
+        properties.push(prop);
+      }
+    }
 
     // Sort by ID to maintain consistent ordering
     properties.sort((a, b) => a.id.localeCompare(b.id));
 
-    console.log(`📋 Batch: Found ${properties.length} properties to process (${propertiesWithNulls?.length || 0} with nulls, ${propertiesWithEmptyFeatures?.length || 0} with empty features)`);
+    console.log(`📋 Batch: Found ${properties.length} properties to process (${propertiesWithNulls?.length || 0} with nulls, ${propertiesWithEmptyFeatures?.length || 0} with empty features, ${propertiesNeedingAddress.length} needing address)`);
 
     // If no more properties, mark as completed
     if (properties.length === 0) {
@@ -520,6 +584,30 @@ Deno.serve(async (req) => {
         if (!prop.floor && extracted.floor !== undefined) updates.floor = extracted.floor;
         if (!prop.neighborhood && extracted.neighborhood) updates.neighborhood = extracted.neighborhood;
         
+        // Address enrichment: upgrade "street only" → "street + house number"
+        // SAFETY: Only upgrade if current address lacks a number AND new one has a valid number
+        if (prop.address && !hasHouseNumber(prop.address)) {
+          const pageAddress = extractAddressFromPage(markdown, prop.source);
+          if (pageAddress && pageAddress.houseNumber >= 1 && pageAddress.houseNumber <= 999) {
+            // Verify the extracted street relates to the existing address (don't replace with something different)
+            const existingNorm = prop.address.replace(/[\s'".\-\/]+/g, ' ').trim();
+            const newStreetNorm = pageAddress.street.replace(/[\s'".\-\/]+/g, ' ').trim();
+            if (newStreetNorm.includes(existingNorm) || existingNorm.includes(newStreetNorm)) {
+              updates.address = pageAddress.fullAddress;
+              console.log(`📍 Address upgraded: "${prop.address}" → "${pageAddress.fullAddress}"`);
+            } else {
+              console.log(`⚠️ Address street mismatch: existing="${prop.address}", extracted="${pageAddress.fullAddress}" - skipping`);
+            }
+          }
+        } else if (!prop.address) {
+          // No address at all - try to extract one from page
+          const pageAddress = extractAddressFromPage(markdown, prop.source);
+          if (pageAddress) {
+            updates.address = pageAddress.fullAddress;
+            console.log(`📍 Address set from page: "${pageAddress.fullAddress}"`);
+          }
+        }
+        
         // Merge features - keep existing, add new (also update if features is empty object)
         const existingFeatures = prop.features || {};
         const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
@@ -611,7 +699,7 @@ Deno.serve(async (req) => {
 
     console.log(`\n📈 Batch complete: ${successCount} updated, ${failCount} failed`);
 
-    // Check if there are more items (both null fields and empty features)
+    // Check if there are more items (null fields, empty features, address enrichment)
     const { count: remainingNullCount } = await supabase
       .from('scouted_properties')
       .select('id', { count: 'exact', head: true })
@@ -630,8 +718,26 @@ Deno.serve(async (req) => {
       .eq('features', {})
       .gt('id', lastId || '');
 
+    // Check for remaining address enrichment candidates (sample-based, can't regex in PostgREST)
+    let remainingAddrQuery = supabase
+      .from('scouted_properties')
+      .select('id, address')
+      .eq('is_active', true)
+      .not('source_url', 'is', null)
+      .neq('source_url', 'https://www.homeless.co.il')
+      .not('address', 'is', null)
+      .not('rooms', 'is', null)
+      .not('price', 'is', null)
+      .gt('id', lastId || '')
+      .limit(30);
+    if (source_filter) {
+      remainingAddrQuery = remainingAddrQuery.eq('source', source_filter);
+    }
+    const { data: remainingAddrSample } = await remainingAddrQuery;
+    const hasRemainingAddressWork = (remainingAddrSample || []).some(p => !hasHouseNumber(p.address));
+
     // Approximate remaining (may have some overlap, but that's fine for progress display)
-    const remainingCount = Math.max(remainingNullCount || 0, remainingEmptyFeaturesCount || 0);
+    const remainingCount = Math.max(remainingNullCount || 0, remainingEmptyFeaturesCount || 0, hasRemainingAddressWork ? 1 : 0);
 
     const hasMore = remainingCount > 0;
 
@@ -815,6 +921,96 @@ function extractPropertyData(markdown: string, source: string): PropertyData {
   }
 
   return data;
+}
+
+// ============================================
+// Address Extraction from Individual Property Pages
+// ============================================
+
+/**
+ * Extract full address (street + house number) from individual property page markdown.
+ * Returns null if no reliable house number found.
+ */
+function extractAddressFromPage(
+  markdown: string,
+  source: string
+): { street: string; houseNumber: number; fullAddress: string } | null {
+  if (!markdown || markdown.length < 50) return null;
+  
+  if (source === 'yad2') {
+    return extractYad2PageAddress(markdown);
+  }
+  if (source === 'madlan') {
+    return extractMadlanPageAddress(markdown);
+  }
+  return null;
+}
+
+/**
+ * Yad2 individual page title formats:
+ * "# שדרות בן ציון 31 דירה, הצפון הישן - דרום, תל אביב יפו"
+ * "# ויצמן 82"
+ * "## ארלוזורוב 15 דירה, ..."
+ */
+function extractYad2PageAddress(
+  markdown: string
+): { street: string; houseNumber: number; fullAddress: string } | null {
+  const patterns = [
+    // Heading: # HebrewStreet Number PropertyType/comma
+    /^#{1,3}\s*([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})\s*(?:[,\s]*(?:דירה|דירת|גג|פנטהאוז|סטודיו|בית))/m,
+    // Heading: # HebrewStreet Number (end of line)
+    /^#{1,3}\s*([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})\s*$/m,
+    // Bold heading: **HebrewStreet Number**
+    /\*\*([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})\*\*/,
+    // "כתובת: HebrewStreet Number"
+    /כתובת[:\s]+([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})(?:\s|,|$)/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = markdown.match(pattern);
+    if (match) {
+      const street = match[1].trim();
+      const houseNumber = parseInt(match[2], 10);
+      if (houseNumber >= 1 && houseNumber <= 999 && street.length >= 2) {
+        const fullAddress = `${street} ${houseNumber}`;
+        if (isValidAddressForUpdate(fullAddress)) {
+          return { street, houseNumber, fullAddress };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Madlan individual page formats:
+ * "# דירה, ויצמן 82, צפון חדש, תל אביב יפו"
+ * "# דירה להשכרה, שלום עליכם 30, הצפון החדש"
+ */
+function extractMadlanPageAddress(
+  markdown: string
+): { street: string; houseNumber: number; fullAddress: string } | null {
+  const patterns = [
+    // After property type: "דירה, Street Number, ..."
+    /(?:דירה|דירת\s*גן|פנטהאוז|סטודיו|גג|קוטג'?|בית\s*פרטי)[^,]*,\s*([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})\s*(?:,|$)/m,
+    // Heading with street number
+    /^#{1,3}\s*.*?([\u0590-\u05FF][\u0590-\u05FF\s'".\-\/]*?)\s+(\d{1,3})\s*(?:,|$)/m,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = markdown.match(pattern);
+    if (match) {
+      const street = match[1].trim();
+      const houseNumber = parseInt(match[2], 10);
+      if (houseNumber >= 1 && houseNumber <= 999 && street.length >= 2) {
+        const fullAddress = `${street} ${houseNumber}`;
+        if (isValidAddressForUpdate(fullAddress)) {
+          return { street, houseNumber, fullAddress };
+        }
+      }
+    }
+  }
+  return null;
 }
 
 /**

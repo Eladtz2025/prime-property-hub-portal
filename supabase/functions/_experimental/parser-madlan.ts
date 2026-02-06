@@ -395,12 +395,13 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   }
   
   // Look for property type patterns like "דירה, כתובת, שכונה"
+  let typeAddress: string | null = null;
   for (const part of parts) {
     const typePattern = /^(דירה|דירת גג|פנטהאוז|סטודיו|גן|קוטג'?|בית פרטי)/;
     if (typePattern.test(part)) {
       const segments = part.split(',').map(s => s.trim());
       if (segments.length >= 2) {
-        address = cleanText(segments[1]);
+        typeAddress = cleanText(segments[1]);
       }
       // If we didn't find neighborhood from block, try from segments
       if (!neighborhood && segments.length >= 3) {
@@ -417,16 +418,27 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     }
   }
   
-  // Fallback: extract address from image alt text
-  if (!address) {
-    const altMatch = block.match(/\[!\[([^\]]+)\]/);
-    if (altMatch) {
-      const altText = altMatch[1];
-      const altParts = altText.split(',').map(p => p.trim());
-      if (altParts.length >= 1 && !altParts[0].includes('תל אביב')) {
-        address = cleanText(altParts[0]);
-      }
+  // Also check alt text for address (may contain house number)
+  let altAddress: string | null = null;
+  const altMatch = block.match(/\[!\[([^\]]+)\]/);
+  if (altMatch) {
+    const altText = altMatch[1];
+    const altParts = altText.split(',').map(p => p.trim());
+    if (altParts.length >= 1 && !altParts[0].includes('תל אביב')) {
+      altAddress = cleanText(altParts[0]);
     }
+  }
+  
+  // Prefer address WITH house number over one without
+  const typeHasNum = typeAddress && /\d{1,3}/.test(typeAddress);
+  const altHasNum = altAddress && /\d{1,3}/.test(altAddress);
+  
+  if (typeHasNum) {
+    address = typeAddress;
+  } else if (altHasNum) {
+    address = altAddress;
+  } else {
+    address = typeAddress || altAddress;
   }
   
   // If no neighborhood found from block patterns, try to detect from address

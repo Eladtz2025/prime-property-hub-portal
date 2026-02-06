@@ -306,14 +306,28 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     // Extract address - first part before "דירה" or "דירת גן" etc.
     const addressPattern = /^([^,]+?)(?:דירה|דירת גן|גג\/פנטהאוז|סטודיו|פנטהאוז)/;
     const addressMatch = details.match(addressPattern);
+    let boldAddress: string | null = null;
     if (addressMatch) {
-      address = cleanText(addressMatch[1]);
+      boldAddress = cleanText(addressMatch[1]);
+    }
+    
+    // Also check alt text for address (may contain house number)
+    let altAddress: string | null = null;
+    const altMatch = block.match(/\[!\[([^\]]+)\]/);
+    if (altMatch && !altMatch[1].includes('פרויקט')) {
+      altAddress = cleanText(altMatch[1]);
+    }
+    
+    // Prefer address WITH house number over one without
+    const boldHasNum = boldAddress && /\d{1,3}/.test(boldAddress);
+    const altHasNum = altAddress && /\d{1,3}/.test(altAddress);
+    
+    if (boldHasNum) {
+      address = boldAddress;
+    } else if (altHasNum) {
+      address = altAddress;
     } else {
-      // Fallback: try to get address from image alt text
-      const altMatch = block.match(/\[!\[([^\]]+)\]/);
-      if (altMatch && !altMatch[1].includes('פרויקט')) {
-        address = cleanText(altMatch[1]);
-      }
+      address = boldAddress || altAddress;
     }
   }
   
