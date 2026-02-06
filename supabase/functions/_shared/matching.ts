@@ -2,7 +2,7 @@
 // SIMPLIFIED: Binary match/no-match with dynamic price flexibility
 
 import { matchNeighborhood, extractStreetName, extractHouseNumber } from "./locations.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 // ===== INTERFACES =====
 
