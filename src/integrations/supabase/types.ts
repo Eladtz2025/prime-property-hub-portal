@@ -3351,6 +3351,7 @@ export type Database = {
           p_city: string
           p_exclude_id?: string
           p_floor: number
+          p_property_type?: string
           p_rooms: number
           p_size?: number
         }
