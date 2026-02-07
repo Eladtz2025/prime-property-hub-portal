@@ -234,7 +234,7 @@ serve(async (req) => {
     const parseResult = parseMadlanMarkdown(markdown, propertyTypeForParsing);
     const extractedProperties = parseResult.properties;
 
-    console.log(`🔵 Madlan page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
+    console.log(`🔵 Madlan page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties | private=${parseResult.stats.private_count} broker=${parseResult.stats.broker_count} unknown=${parseResult.stats.unknown_count ?? 0}`);
 
     if (extractedProperties.length === 0) {
       console.warn(`⚠️ Madlan page ${page}: 0 properties extracted`);
@@ -258,12 +258,15 @@ serve(async (req) => {
       }
     }
 
-    // Save properties and count new ones
+    // Save properties and count new/updated
     let pageNew = 0;
+    let pageUpdated = 0;
     for (const property of extractedProperties) {
       const result = await saveProperty(supabase, property);
       if (result.isNew) {
         pageNew++;
+      } else if (!result.skipped) {
+        pageUpdated++;
       }
     }
 
@@ -298,11 +301,19 @@ serve(async (req) => {
     // ALWAYS check if all pages are done and finalize (use actual page count)
     await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
 
+    // Log detailed stats for verification
+    const privateCount = extractedProperties.filter(p => p.is_private === true).length;
+    const brokerCount = extractedProperties.filter(p => p.is_private === false).length;
+    const unknownCount = extractedProperties.filter(p => p.is_private === null || p.is_private === undefined).length;
+    console.log(`📊 Madlan page ${page} DONE: inserted=${pageNew} updated=${pageUpdated} | is_private: private=${privateCount} broker=${brokerCount} unknown=${unknownCount} | ${duration}ms`);
+
     return new Response(JSON.stringify({
       success: true,
       page,
       found: extractedProperties.length,
       new: pageNew,
+      updated: pageUpdated,
+      is_private_stats: { private: privateCount, broker: brokerCount, unknown: unknownCount },
       duration_ms: duration,
       parser: 'no-ai',
       next_page: page < maxPages ? page + 1 : null
