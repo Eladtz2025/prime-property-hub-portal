@@ -88,8 +88,9 @@ export function parseMadlanMarkdown(
       with_address: properties.filter(p => p.address !== null).length,
       with_size: properties.filter(p => p.size !== null).length,
       with_floor: properties.filter(p => p.floor !== null).length,
-      private_count: properties.filter(p => p.is_private).length,
-      broker_count: properties.filter(p => !p.is_private).length,
+      private_count: properties.filter(p => p.is_private === true).length,
+      broker_count: properties.filter(p => p.is_private === false).length,
+      unknown_count: properties.filter(p => p.is_private === null).length,
     },
     errors
   };
@@ -454,42 +455,35 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   if (!price && !rooms && !address && !size) return null;
   
   // ============================================
-  // BROKER DETECTION - Madlan (INVERTED LOGIC)
-  // Default = BROKER (most Madlan listings are broker)
-  // Only mark as private if EXPLICIT private indicators exist
+  // BROKER DETECTION - Madlan (THREE-STATE)
+  // Default = null (unknown)
+  // false (broker) ONLY with strong broker indicators
+  // true (private) ONLY with strong private indicators
   // ============================================
   
-  // Check for EXPLICIT private indicators
+  let isPrivate: boolean | null = null;
+  
+  // Strong PRIVATE indicators
   const isExplicitlyPrivate = /ללא\s*(ה)?תיווך|לא\s*למתווכים|ללא\s*מתווכים/i.test(block);
   
-  // Check if this is Format A (fragmented block) or Format B (compact with \\)
-  const isCompactFormat = block.includes('\\\\');
-  
-  // Broker indicators (for Format A detection)
-  const hasTivuchLabel = /תיווך/.test(block);
-  const hasLicenseNumber = /\d{7,8}/.test(block); // Updated: 7-8 digits
-  const hasExclusivity = /בבלעדיות/.test(block);
-  const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
-  
-  const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
-  const blockLower = block.toLowerCase();
-  const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
-  
-  // INVERTED LOGIC:
-  // - Default = broker (is_private: false)
-  // - Private only if: explicit "no broker" text, OR Format A without any broker indicators
-  let isPrivate = false;
-  
   if (isExplicitlyPrivate) {
-    // Explicit "no broker" text = definitely private
     isPrivate = true;
-  } else if (!isCompactFormat && !hasTivuchLabel && !hasLicenseNumber && 
-             !hasExclusivity && !hasBrokerBrand && !hasAgentOfficeLink) {
-    // Format A without ANY broker indicators = likely private
-    isPrivate = true;
+  } else {
+    // Strong BROKER indicators (with context to avoid false positives)
+    const hasTivuchLabel = /תיווך/.test(block);
+    const hasLicenseWithContext = /(?:רישיון|ר\.?ת\.?|תיווך)\s*:?\s*\d{7,8}/.test(block);
+    const hasExclusivity = /בבלעדיות/.test(block);
+    const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
+    
+    const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
+    const blockLower = block.toLowerCase();
+    const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
+    
+    if (hasTivuchLabel || hasLicenseWithContext || hasExclusivity || hasAgentOfficeLink || hasBrokerBrand) {
+      isPrivate = false; // Confirmed broker
+    }
+    // else: stays null (unknown)
   }
-  // Format B (compact blocks) = default to broker (is_private: false)
-  // We can't determine from listing page, and statistically most are brokers
   
   // Extract features from the entire block
   const features = extractFeatures(block);

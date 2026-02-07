@@ -146,7 +146,8 @@ Deno.serve(async (req) => {
       source_filter,      // Filter by source (yad2, homeless, madlan)
       only_recent = false, // Only process properties from last 30 min
       batch_size,          // Override default batch size
-      auto_trigger = false // Flag for auto-triggered runs (after scout)
+      auto_trigger = false, // Flag for auto-triggered runs (after scout)
+      force_broker_reset = false // Reset unconfirmed broker values to null (manual only)
     } = await req.json().catch(() => ({}));
 
     // Handle stop action
@@ -481,6 +482,7 @@ Deno.serve(async (req) => {
       address_no_address: 0,          // no address in DB and none found on page
       features_updated: 0,
       broker_classified: 0,
+      broker_reset_to_unknown: 0,
       fields_updated: { rooms: 0, price: 0, size: 0, city: 0, floor: 0, neighborhood: 0 },
       blacklisted: 0,
       non_ta_deactivated: 0,
@@ -665,13 +667,26 @@ Deno.serve(async (req) => {
         }
 
         // Detect broker/private classification from markdown
-        if (prop.is_private === null || prop.is_private === undefined) {
+        // For Madlan: always re-evaluate (fix historical false-broker bias)
+        // For other sources: only classify when unknown
+        const shouldClassifyBroker = prop.source === 'madlan' 
+          || prop.is_private === null 
+          || prop.is_private === undefined;
+
+        if (shouldClassifyBroker) {
           const isPrivate = detectBrokerFromMarkdown(markdown, prop.source);
           if (isPrivate !== null) {
+            // Got a definitive answer → update
             updates.is_private = isPrivate;
             batchStats.broker_classified++;
             console.log(`🏷️ Classified as: ${isPrivate ? 'פרטי' : 'תיווך'}`);
+          } else if (force_broker_reset && prop.source === 'madlan' && prop.is_private === false) {
+            // Optional reset: force_broker_reset flag + Madlan + was false-broker → null
+            updates.is_private = null;
+            batchStats.broker_reset_to_unknown++;
+            console.log(`🏷️ Madlan: reset false-broker → unknown (force_broker_reset)`);
           }
+          // else: null result + no force_reset → keep existing value unchanged
         }
 
         if (Object.keys(updates).length === 0) {
@@ -854,7 +869,8 @@ Deno.serve(async (req) => {
             action: 'continue', 
             task_id: progressId, 
             dry_run,
-            source_filter  // Pass through source filter
+            source_filter,  // Pass through source filter
+            force_broker_reset  // Pass through reset flag
           })
         });
         
