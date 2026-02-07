@@ -11,19 +11,23 @@ const corsHeaders = {
  * Params:
  *   action: 'start' | 'continue' | 'stop' | 'status'
  *   source_filter: 'madlan' | 'yad2' | 'homeless' (required for start)
- *   max_items: number (optional, limits total items to process - for pilot runs)
- *   is_private_filter: boolean | null (optional, only process properties with this is_private value)
- *   force_broker_reset: boolean (default false, if true: null result + was false → set to null)
+ *   max_items: number (optional, limits total items to process)
+ *   is_private_filter: boolean | null (optional, filter by current state)
+ *                      omit to process ALL properties regardless of state
+ *   force_broker_reset: boolean (default false)
  *   batch_size: number (default 5)
  *   task_id: string (for continue/stop)
  *   dry_run: boolean (default false)
+ *     When true: AUDIT MODE - no DB changes, computes confusion
+ *     matrix and collects 30 examples per error type
+ *     When false: FIX MODE - updates is_private when evidence found
  */
 
-const TASK_NAME = 'reclassify_broker';
+const TASK_NAME_BASE = 'reclassify_broker';
 const DEFAULT_BATCH_SIZE = 5;
 
 // ============================================
-// Broker Detection (copied from backfill - kept in sync)
+// Broker Detection
 // ============================================
 
 function detectBrokerFromMarkdown(markdown: string, source: string): boolean | null {
@@ -85,7 +89,7 @@ function detectBrokerFromMarkdown(markdown: string, source: string): boolean | n
 /**
  * Extract the evidence snippet that triggered the classification
  */
-function extractEvidenceSnippet(markdown: string, source: string): string | null {
+function extractEvidenceSnippet(markdown: string, _source: string): string | null {
   if (!markdown) return null;
   
   const patterns: Array<{ regex: RegExp; label: string }> = [
@@ -110,7 +114,6 @@ function extractEvidenceSnippet(markdown: string, source: string): string | null
   for (const { regex, label } of patterns) {
     const match = markdown.match(regex);
     if (match) {
-      // Get surrounding context (30 chars before and after)
       const idx = match.index || 0;
       const start = Math.max(0, idx - 30);
       const end = Math.min(markdown.length, idx + match[0].length + 30);
@@ -121,6 +124,45 @@ function extractEvidenceSnippet(markdown: string, source: string): string | null
   
   return null;
 }
+
+// ============================================
+// Empty structures
+// ============================================
+
+function emptyConfusionMatrix() {
+  return {
+    correct_broker: 0,
+    correct_private: 0,
+    misclassified_as_broker: 0,
+    misclassified_as_private: 0,
+    unverifiable: 0,
+  };
+}
+
+function emptyTransitions() {
+  return {
+    false_to_true: 0,
+    false_to_null: 0,
+    true_to_false: 0,
+    null_to_false: 0,
+    null_to_true: 0,
+    unchanged: 0,
+  };
+}
+
+function emptyExamplesByType() {
+  return {
+    false_to_true: [] as any[],
+    false_to_null: [] as any[],
+    true_to_false: [] as any[],
+    null_to_false: [] as any[],
+    null_to_true: [] as any[],
+  };
+}
+
+// ============================================
+// Main handler
+// ============================================
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -138,11 +180,18 @@ Deno.serve(async (req) => {
       task_id,
       source_filter,
       max_items,
-      is_private_filter,     // null | true | false — filter input properties
+      is_private_filter,
       force_broker_reset = false,
       batch_size,
       dry_run = false,
     } = await req.json().catch(() => ({}));
+
+    // Effective dry_run — may be overridden by continue
+    let effectiveDryRun = dry_run;
+
+    // Task name: separate for audit so it doesn't block fix runs
+    const getTaskName = (isDry: boolean) =>
+      isDry ? `${TASK_NAME_BASE}_audit` : TASK_NAME_BASE;
 
     // === Stop ===
     if (action === 'stop' && task_id) {
@@ -158,13 +207,20 @@ Deno.serve(async (req) => {
 
     // === Status ===
     if (action === 'status') {
-      const { data: progress } = await supabase
+      const taskName = task_id ? undefined : getTaskName(effectiveDryRun);
+      let statusQuery = supabase
         .from('backfill_progress')
         .select('*')
-        .eq('task_name', TASK_NAME)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+
+      if (task_id) {
+        statusQuery = statusQuery.eq('id', task_id);
+      } else if (taskName) {
+        statusQuery = statusQuery.eq('task_name', taskName);
+      }
+
+      const { data: progress } = await statusQuery.single();
       return new Response(JSON.stringify({ success: true, progress }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -206,12 +262,15 @@ Deno.serve(async (req) => {
       effectiveSourceFilter = sd._source_filter ?? effectiveSourceFilter;
       effectiveIsPrivateFilter = sd._is_private_filter;
       effectiveForceBrokerReset = sd._force_broker_reset ?? effectiveForceBrokerReset;
+      effectiveDryRun = sd._dry_run ?? effectiveDryRun;
     } else {
+      const taskName = getTaskName(effectiveDryRun);
+
       // Check for stuck tasks
       const { data: existingTask } = await supabase
         .from('backfill_progress')
         .select('*')
-        .eq('task_name', TASK_NAME)
+        .eq('task_name', taskName)
         .eq('status', 'running')
         .single();
 
@@ -253,7 +312,7 @@ Deno.serve(async (req) => {
       const { data: newTask, error: insertError } = await supabase
         .from('backfill_progress')
         .insert({
-          task_name: TASK_NAME,
+          task_name: taskName,
           status: 'running',
           total_items: totalItems,
           processed_items: 0,
@@ -266,14 +325,10 @@ Deno.serve(async (req) => {
             _max_items: effectiveMaxItems,
             _is_private_filter: effectiveIsPrivateFilter,
             _force_broker_reset: effectiveForceBrokerReset,
-            transitions: {
-              false_to_true: 0,
-              false_to_null: 0,
-              true_to_false: 0,
-              null_to_false: 0,
-              null_to_true: 0,
-              unchanged: 0,
-            },
+            _dry_run: effectiveDryRun,
+            transitions: emptyTransitions(),
+            confusion_matrix: emptyConfusionMatrix(),
+            examples_by_type: emptyExamplesByType(),
             examples: [],
           }
         })
@@ -283,17 +338,17 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
       progressId = newTask.id;
 
-      const filterDesc = effectiveIsPrivateFilter === false ? ' (is_private=false only)' :
-                          effectiveIsPrivateFilter === true ? ' (is_private=true only)' :
-                          effectiveIsPrivateFilter === null ? ' (is_private=null only)' : '';
+      const modeLabel = effectiveDryRun ? 'AUDIT' : 'FIX';
+      const filterDesc = effectiveIsPrivateFilter === false ? ' (is_private=false)' :
+                          effectiveIsPrivateFilter === true ? ' (is_private=true)' :
+                          effectiveIsPrivateFilter === null ? ' (is_private=null)' : ' (all states)';
       const maxDesc = effectiveMaxItems ? ` max=${effectiveMaxItems}` : '';
-      console.log(`🚀 Reclassify started: source=${effectiveSourceFilter}${filterDesc}${maxDesc}, total=${totalItems}`);
+      console.log(`🚀 Reclassify [${modeLabel}] started: source=${effectiveSourceFilter}${filterDesc}${maxDesc}, total=${totalItems}`);
     }
 
     // === Fetch batch ===
     const effectiveBatchSize = batch_size || DEFAULT_BATCH_SIZE;
 
-    // Check how many we've already processed (for max_items enforcement)
     const { data: progressData } = await supabase
       .from('backfill_progress')
       .select('processed_items, summary_data')
@@ -346,30 +401,35 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }).eq('id', progressId);
-      console.log(`✅ Reclassify completed: no more items`);
 
-      // Final stats log
       const sd = (progressData?.summary_data as Record<string, any>) || {};
-      console.log(`📊 FINAL transitions:`, JSON.stringify(sd.transitions));
+      console.log(`✅ Reclassify completed: no more items`);
+      console.log(`📊 FINAL confusion: ${JSON.stringify(sd.confusion_matrix)}`);
+      console.log(`📊 FINAL transitions: ${JSON.stringify(sd.transitions)}`);
 
       return new Response(JSON.stringify({ success: true, status: 'completed', summary: sd }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`📋 Reclassify batch: ${properties.length} properties`);
+    console.log(`📋 Reclassify batch: ${properties.length} properties (dry_run=${effectiveDryRun})`);
 
     // === Process batch ===
     let successCount = 0;
     let failCount = 0;
     let lastId = lastProcessedId;
 
-    // Load existing summary for merging
     const existingSummary = (progressData?.summary_data as Record<string, any>) || {};
-    const transitions = { ...(existingSummary.transitions || {
-      false_to_true: 0, false_to_null: 0, true_to_false: 0,
-      null_to_false: 0, null_to_true: 0, unchanged: 0,
-    })};
+    const transitions = { ...emptyTransitions(), ...(existingSummary.transitions || {}) };
+    const confusion = { ...emptyConfusionMatrix(), ...(existingSummary.confusion_matrix || {}) };
+    const examplesByType: Record<string, any[]> = {
+      ...emptyExamplesByType(),
+      ...(existingSummary.examples_by_type || {}),
+    };
+    // Deep-copy arrays so we don't mutate frozen objects
+    for (const key of Object.keys(examplesByType)) {
+      examplesByType[key] = [...(examplesByType[key] || [])];
+    }
     const examples: Array<any> = [...(existingSummary.examples || [])];
 
     for (const prop of properties) {
@@ -391,9 +451,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        console.log(`🔍 Reclassify: ${prop.source_url} (current is_private=${prop.is_private})`);
+        console.log(`🔍 ${effectiveDryRun ? 'AUDIT' : 'FIX'}: ${prop.source_url} (current is_private=${prop.is_private})`);
 
-        // Scrape individual property page
+        // Scrape
         const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
@@ -432,26 +492,32 @@ Deno.serve(async (req) => {
         const newValue = detectBrokerFromMarkdown(markdown, prop.source);
         const evidence = extractEvidenceSnippet(markdown, prop.source);
 
-        // Determine transition
+        // --- Confusion matrix ---
+        if (newValue !== null) {
+          if (oldValue === false && newValue === false) confusion.correct_broker++;
+          else if (oldValue === true && newValue === true) confusion.correct_private++;
+          else if (oldValue === false && newValue === true) confusion.misclassified_as_broker++;
+          else if (oldValue === true && newValue === false) confusion.misclassified_as_private++;
+          // oldValue === null cases don't count as "correct" or "misclassified"
+        } else {
+          confusion.unverifiable++;
+        }
+
+        // --- Transition logic ---
         const oldKey = oldValue === true ? 'true' : oldValue === false ? 'false' : 'null';
         let actualNewValue = oldValue; // default: no change
         let transitionKey = 'unchanged';
 
         if (newValue !== null) {
-          // Got a definitive answer → override
           actualNewValue = newValue;
           const newKey = newValue === true ? 'true' : 'false';
           if (oldKey !== newKey) {
             transitionKey = `${oldKey}_to_${newKey}`;
-          } else {
-            transitionKey = 'unchanged';
           }
         } else if (effectiveForceBrokerReset && oldValue === false) {
-          // force_broker_reset: null result + was false → set to null
           actualNewValue = null;
           transitionKey = 'false_to_null';
         }
-        // else: null result, no force_reset → unchanged
 
         // Track transition
         if (transitions[transitionKey] !== undefined) {
@@ -461,25 +527,38 @@ Deno.serve(async (req) => {
         }
 
         // Log
-        const changeDesc = transitionKey === 'unchanged' 
+        const changeDesc = transitionKey === 'unchanged'
           ? `unchanged (${oldKey})`
           : `${oldKey} → ${actualNewValue === true ? 'true' : actualNewValue === false ? 'false' : 'null'}`;
         console.log(`  → ${changeDesc}${evidence ? ' | ' + evidence : ''}`);
 
-        // Save example (up to 30 max for reporting)
-        if (transitionKey !== 'unchanged' && examples.length < 30) {
-          examples.push({
+        // --- Save example per transition type (up to 30 per type) ---
+        if (transitionKey !== 'unchanged') {
+          const exampleEntry = {
             id: prop.id,
             source_url: prop.source_url,
             address: prop.address,
+            city: prop.city,
             old_is_private: oldValue,
             new_is_private: actualNewValue,
             evidence_snippet: evidence,
-          });
+          };
+
+          if (!examplesByType[transitionKey]) {
+            examplesByType[transitionKey] = [];
+          }
+          if (examplesByType[transitionKey].length < 30) {
+            examplesByType[transitionKey].push(exampleEntry);
+          }
+
+          // Flat list for backward compat (max 30)
+          if (examples.length < 30) {
+            examples.push(exampleEntry);
+          }
         }
 
-        // Update DB if changed
-        if (transitionKey !== 'unchanged' && !dry_run) {
+        // Update DB only if changed AND not dry_run
+        if (transitionKey !== 'unchanged' && !effectiveDryRun) {
           await supabase
             .from('scouted_properties')
             .update({ is_private: actualNewValue })
@@ -511,26 +590,29 @@ Deno.serve(async (req) => {
       _max_items: effectiveMaxItems,
       _is_private_filter: effectiveIsPrivateFilter,
       _force_broker_reset: effectiveForceBrokerReset,
+      _dry_run: effectiveDryRun,
       transitions,
+      confusion_matrix: confusion,
+      examples_by_type: examplesByType,
       examples,
     };
 
     await supabase.from('backfill_progress').update({
       processed_items: alreadyProcessed + properties.length,
-      successful_items: (progressData?.summary_data as any)?.successful_items_total || 0 + successCount,
-      failed_items: (progressData?.summary_data as any)?.failed_items_total || 0 + failCount,
+      successful_items: (existingSummary._successful_total || 0) + successCount,
+      failed_items: (existingSummary._failed_total || 0) + failCount,
       last_processed_id: lastId,
       summary_data: updatedSummary,
       updated_at: new Date().toISOString()
     }).eq('id', progressId);
 
+    console.log(`📊 Batch confusion: ${JSON.stringify(confusion)}`);
     console.log(`📊 Batch transitions: ${JSON.stringify(transitions)}`);
 
     // === Check if more to process ===
     const processedSoFar = alreadyProcessed + properties.length;
     const hitMaxItems = effectiveMaxItems && processedSoFar >= effectiveMaxItems;
 
-    // Quick remaining check
     let remainingQuery = supabase
       .from('scouted_properties')
       .select('id', { count: 'exact', head: true })
@@ -562,7 +644,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             action: 'continue',
             task_id: progressId,
-            dry_run,
+            dry_run: effectiveDryRun,
           }),
         });
       } catch (triggerError) {
@@ -577,8 +659,10 @@ Deno.serve(async (req) => {
 
       const reason = hitMaxItems ? 'max_items_reached' : 'all_processed';
       console.log(`✅ Reclassify completed: ${reason}. Total processed: ${processedSoFar}`);
+      console.log(`📊 FINAL confusion: ${JSON.stringify(confusion)}`);
       console.log(`📊 FINAL transitions: ${JSON.stringify(transitions)}`);
-      console.log(`📊 Examples (${examples.length}): ${JSON.stringify(examples.slice(0, 5))}`);
+      const exCounts = Object.entries(examplesByType).map(([k, v]) => `${k}=${(v as any[]).length}`).join(', ');
+      console.log(`📊 Examples per type: ${exCounts}`);
     }
 
     return new Response(JSON.stringify({
@@ -589,6 +673,8 @@ Deno.serve(async (req) => {
       batch_failed: failCount,
       has_more: hasMore,
       remaining: remainingCount || 0,
+      dry_run: effectiveDryRun,
+      confusion_matrix: confusion,
       transitions,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
