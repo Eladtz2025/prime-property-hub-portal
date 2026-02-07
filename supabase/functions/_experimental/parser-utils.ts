@@ -720,7 +720,7 @@ export interface ParsedProperty {
   size: number | null;
   floor: number | null;
   property_type: 'rent' | 'sale';
-  is_private: boolean;
+  is_private: boolean | null;
   entry_date: string | null;
   features?: PropertyFeatures;
   raw_text?: string; // For debugging
@@ -739,6 +739,7 @@ export interface ParserResult {
     with_floor: number;
     private_count: number;
     broker_count: number;
+    unknown_count?: number;
   };
   errors: string[];
 }
