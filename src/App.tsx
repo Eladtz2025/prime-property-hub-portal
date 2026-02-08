@@ -207,7 +207,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard"
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminDashboard />
                     </ProtectedRoute>
                   </Layout>
@@ -219,7 +219,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/properties" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="manager">
+                    <ProtectedRoute requiredRole="viewer">
                       <Properties />
                     </ProtectedRoute>
                   </Layout>
@@ -229,7 +229,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/customers" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminCustomers />
                     </ProtectedRoute>
                   </Layout>
@@ -247,7 +247,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/admin-control"
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminControl />
                     </ProtectedRoute>
                   </Layout>
@@ -257,7 +257,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/import-data"
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <ImportData />
                     </ProtectedRoute>
                   </Layout>
@@ -267,7 +267,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/import-from-storage" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <ImportFromStorage />
                     </ProtectedRoute>
                   </Layout>
@@ -277,7 +277,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/whatsapp" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <WhatsAppCenter />
                     </ProtectedRoute>
                   </Layout>
@@ -287,7 +287,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/all-features" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AllFeatures />
                     </ProtectedRoute>
                   </Layout>
@@ -297,7 +297,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/forms" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminForms />
                     </ProtectedRoute>
                   </Layout>
@@ -307,7 +307,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/price-offers" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminPriceOffers />
                     </ProtectedRoute>
                   </Layout>
@@ -317,7 +317,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/price-offers/create" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <PriceOfferBuilder />
                     </ProtectedRoute>
                   </Layout>
@@ -327,7 +327,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/price-offers/edit/:id" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <PriceOfferBuilder />
                     </ProtectedRoute>
                   </Layout>
@@ -337,7 +337,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/pitch-decks" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <Navigate to="/admin-dashboard/forms" replace />
                     </ProtectedRoute>
                   </Layout>
@@ -347,7 +347,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/pitch-decks/new" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <PitchDeckBuilder />
                     </ProtectedRoute>
                   </Layout>
@@ -357,7 +357,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/pitch-decks/:id" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <PitchDeckBuilder />
                     </ProtectedRoute>
                   </Layout>
@@ -369,7 +369,7 @@ const AppContent: React.FC = () => {
                 path="/admin/alerts" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminAlerts />
                     </ProtectedRoute>
                   </Layout>
@@ -379,7 +379,7 @@ const AppContent: React.FC = () => {
                 path="/admin/activity" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminActivity />
                     </ProtectedRoute>
                   </Layout>
@@ -389,7 +389,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/leads" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminLeads />
                     </ProtectedRoute>
                   </Layout>
@@ -399,7 +399,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/devops" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminDevOps />
                     </ProtectedRoute>
                   </Layout>
@@ -409,7 +409,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/photo-studio" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requiredRole="viewer">
                       <PhotoStudio />
                     </ProtectedRoute>
                   </Layout>
@@ -419,7 +419,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/property-scout" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="manager">
+                    <ProtectedRoute requiredRole="viewer">
                       <AdminPropertyScout />
                     </ProtectedRoute>
                   </Layout>
