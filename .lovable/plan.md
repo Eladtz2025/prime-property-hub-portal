@@ -1,43 +1,57 @@
 
+# תיקון גישת צופה (viewer) לכל העמודים
 
-# הוספת הרשאות צפייה מלאות לתפקיד "צופה" (viewer)
+## הבעיה
 
-## מצב נוכחי
+ה-`ProtectedRoute` משתמש בהיררכיית תפקידים (viewer=1, manager=2, admin=3) ולא בודק את טבלת `permissions`. כמעט כל הנתיבים מוגדרים עם `requiredRole="admin"` (רמה 3), אז הצופה (רמה 1) רואה "אין הרשאה" בכל עמוד.
 
-לתפקיד "צופה" יש כרגע הרשאות `read` רק ל-3 משאבים:
-- `alerts` (התראות)
-- `properties` (נכסים)
-- `reports` (דוחות)
+ההרשאות שהוספנו ל-DB בשלב הקודם (viewer → read) רלוונטיות רק להסתרת כפתורי עריכה/מחיקה ב-UI, אבל לא משפיעות על גישה לדפים עצמם.
 
-כלומר הצופה **לא יכול** לראות: משתמשים, טפסי תיווך, לוח בקרה, לקוחות (ומספרי טלפון), ועוד.
+## הפתרון
 
-## מה ייעשה
+לשנות את `requiredRole` בכל הנתיבים ב-`App.tsx` מ-`"admin"` ל-`"viewer"`, כדי שהצופה יוכל לגשת לכל העמודים. ההגנה על פעולות כתיבה כבר קיימת ב-2 רמות:
+1. **UI** -- כפתורי עריכה/מחיקה מוסתרים כשאין הרשאת update/delete (בדיקת `hasPermission`)
+2. **DB** -- RLS מונע כתיבה ברמת הדאטאבייס
 
-הוספת הרשאות `read` בלבד לצופה על **כל** המשאבים במערכת. לא יתווספו הרשאות create/update/delete -- כלומר הצופה יוכל לראות הכל אבל לא לשנות שום דבר.
+## שינויים
 
-## שינוי יחיד -- הוספת שורות לטבלת `permissions`
+### קובץ יחיד: `src/App.tsx`
 
-הרשאות `read` חדשות שיתווספו לצופה:
+שינוי `requiredRole` ב-**כל** הנתיבים שכרגע דורשים `"admin"` או `"manager"`:
 
-| משאב | תיאור |
-|------|--------|
-| `users` | צפייה בעמוד משתמשים |
-| `brokerage_forms` | צפייה בטפסי תיווך |
-| `contacts` | צפייה במספרי טלפון (במקום שמוצגים מוסתרים) |
-| `dashboard` | גישה ללוח בקרה ראשי וסקאוט נדלן |
+| נתיב | לפני | אחרי |
+|-------|-------|-------|
+| `/admin-dashboard` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/customers` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/properties` | `requiredRole="manager"` | `requiredRole="viewer"` |
+| `/admin-dashboard/admin-control` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/import-data` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/import-from-storage` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/whatsapp` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/all-features` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/forms` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/price-offers` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/price-offers/create` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/price-offers/edit/:id` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/pitch-decks` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/pitch-decks/new` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/pitch-decks/:id` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin/alerts` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin/activity` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/leads` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/devops` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/photo-studio` | `requiredRole="admin"` | `requiredRole="viewer"` |
+| `/admin-dashboard/property-scout` | `requiredRole="manager"` | `requiredRole="viewer"` |
 
-## פירוט טכני
+## מה לא משתנה
 
-Migration יחיד שמוסיף 4 שורות לטבלת permissions:
+- ההרשאות ב-DB (permissions) נשארות כפי שהן -- הצופה יראה את העמודים אבל כפתורי עריכה/מחיקה יישארו מוסתרים
+- RLS policies ב-DB מונעות כתיבה לא מורשית
+- הניווט (EnhancedTopNavigation) לא דורש שינוי -- הוא כבר מציג את כל הטאבים לכל משתמש מחובר
 
-```text
-INSERT INTO permissions (role, resource, action) VALUES
-  ('viewer', 'users', 'read'),
-  ('viewer', 'brokerage_forms', 'read'),
-  ('viewer', 'contacts', 'read'),
-  ('viewer', 'dashboard', 'read');
-```
+## סיכום
 
-- **ללא שינויי קוד** -- המערכת כבר בודקת הרשאות נכון: כפתורי עריכה/מחיקה מוסתרים כשאין הרשאת update/delete, ניווט מסונן לפי הרשאות
-- המערכת כבר מגינה ברמת ה-DB (RLS) על פעולות כתיבה -- הצופה לא יוכל לשנות נתונים גם אם ינסה
-
+- קובץ אחד לעדכון (`App.tsx`)
+- 21 שינויים של `requiredRole` מ-admin/manager ל-viewer
+- ללא שינויי DB
+- הצופה יוכל לנווט לכל עמוד, אבל לא יוכל לבצע שום פעולת כתיבה
