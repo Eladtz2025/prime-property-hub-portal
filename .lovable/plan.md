@@ -1,60 +1,78 @@
 
+# הוספת מספר טלפון שני ללקוחות
 
-# הוספת "תוספות לנכס" ללקוחות מכירה
+## מה ייעשה
 
-## הבעיה
+הוספת שדה "טלפון 2" אופציונלי בכל מקום שבו מוצג/נערך טלפון של לקוח -- מאפשר לשמור מספר נוסף לאיש קשר (בן/בת זוג, שותף וכו').
 
-כרגע הרכיב `PropertyRequirementsDropdown` (חניה, מרפסת, מעלית, חצר, גג, ממ"ד, ריהוט) מוצג **רק** ללקוחות השכרה. לקוחות מכירה לא רואים אפשרויות אלו, למרות שגם הם צריכים לציין דרישות פיזיות מהנכס.
+## שינויים נדרשים
 
-## הפתרון
+### 1. הוספת עמודה בדאטאבייס
+- הוספת עמודת `phone_2` מסוג `text`, nullable, לטבלת `contact_leads`
 
-להוסיף את ה-`PropertyRequirementsDropdown` גם בתוך חלק "פרטי רכישה" (`isSale`), ב-4 קבצים:
+### 2. עדכון הממשק (Customer interface)
+- **קובץ:** `src/hooks/useCustomerData.ts`
+- הוספת `phone_2: string | null` ל-interface של `Customer`
 
-### קובץ 1: `src/components/ExpandableCustomerRow.tsx` (טבלת דסקטופ)
+### 3. טופס הוספת לקוח חדש
+- **קובץ:** `src/components/AddCustomerModal.tsx`
+- הוספת שדה "טלפון 2" (input פשוט, ללא חובה ובלי country code selector -- רק שדה טקסט)
+- שמירת `phone_2` ב-insert ו-reset
 
-בתוך הסקשן `{isSale && (...)}` (שורה 717-761), להוסיף את ה-`PropertyRequirementsDropdown` אחרי השדות הקיימים (מטרת רכישה, הון עצמי, תקציב שיפוץ, נכס למכירה).
+### 4. טבלת דסקטופ (שורה מורחבת)
+- **קובץ:** `src/components/ExpandableCustomerRow.tsx`
+- הוספת שדה "טלפון 2" באזור העריכה, ליד שדה הטלפון הראשי
+- שמירת `phone_2` ב-update
+- הצגת טלפון 2 בשורה המצומצמת (אם קיים), עם אפשרות חיוג
 
-### קובץ 2: `src/components/CustomerMobileTable.tsx` (מובייל)
+### 5. מודאל עריכת לקוח
+- **קובץ:** `src/components/CustomerEditModal.tsx`
+- הוספת שדה "טלפון 2" ליד הטלפון הראשי
+- שמירת `phone_2` ב-update
 
-בתוך הסקשן `{isSale && (...)}` (שורה 637-668), להוסיף את ה-`PropertyRequirementsDropdown` אחרי הון עצמי.
+### 6. טבלת מובייל
+- **קובץ:** `src/components/CustomerMobileTable.tsx`
+- הוספת שדה "טלפון 2" בטופס העריכה
+- שמירת `phone_2` ב-update
 
-### קובץ 3: `src/components/CustomerEditModal.tsx` (מודאל עריכה)
-
-בתוך הסקשן `{isSale && (...)}` (שורה 520-670), להוסיף את ה-`PropertyRequirementsDropdown` אחרי פרטי עורך דין.
-
-### קובץ 4: `src/components/AddCustomerModal.tsx` (הוספת לקוח חדש)
-
-בתוך הסקשן `{isSale && (...)}` (שורה 664-813), להוסיף את ה-`PropertyRequirementsDropdown` אחרי פרטי עורך דין.
+### 7. דף פרטי לקוח (Sheet)
+- **קובץ:** `src/components/CustomerDetailSheet.tsx`
+- הצגת טלפון 2 באזור "פרטי קשר" (אם קיים), עם אפשרות חיוג
 
 ## פירוט טכני
 
-בכל הקבצים, הקוד שמתווסף זהה בעיקרון -- רכיב `PropertyRequirementsDropdown` עם אותם שדות שכבר קיימים בצד ההשכרה:
+### DB Migration
+```text
+ALTER TABLE contact_leads ADD COLUMN phone_2 text;
+```
+
+### Customer Interface
+```text
+phone_2: string | null;
+```
+
+### UI -- שדה הקלט
+שדה input פשוט ליד הטלפון הראשי, ללא validtion חובה אבל עם placeholder. ללא country code selector (כדי לשמור על פשטות -- המשתמש יכניס את המספר כמו שהוא):
 
 ```text
-<div className="space-y-2">
-  <Label>דרישות מהנכס:</Label>
-  <PropertyRequirementsDropdown
-    values={{
-      parking_required, parking_flexible,
-      balcony_required, balcony_flexible,
-      elevator_required, elevator_flexible,
-      yard_required, yard_flexible,
-      roof_required, roof_flexible,
-      outdoor_space_any,
-      mamad_required, mamad_flexible,
-      furnished_required, furnished_flexible,
-    }}
-    onChange={...}
+<div className="space-y-1">
+  <Label className="text-xs">טלפון 2</Label>
+  <Input
+    value={formData.phone_2 || ''}
+    onChange={(e) => setFormData({...formData, phone_2: e.target.value})}
+    placeholder="מספר נוסף (אופציונלי)"
+    className="h-8 text-sm"
   />
 </div>
 ```
 
-- לא נדרשים שינויי DB -- כל השדות כבר קיימים בטבלת `contact_leads`
-- הלוגיקה של `handleSaveForm` כבר שומרת את השדות האלה (שורות 243-253 ב-ExpandableCustomerRow) ללא תלות בסוג העסקה
-- ה-`PropertyRequirementsDropdown` כבר מיובא בכל הקבצים הרלוונטיים
+### Save Logic
+בכל הפונקציות של save/update, להוסיף:
+```text
+phone_2: formData.phone_2 || null,
+```
 
 ## סיכום
-
-- 4 קבצים לעדכון
-- ללא שינויי DB
-- הוספת רכיב קיים (PropertyRequirementsDropdown) לתוך סקשן "פרטי רכישה" שכבר קיים
+- 1 שינוי DB (עמודה חדשה)
+- 6 קבצים לעדכון
+- שדה אופציונלי, ללא validation חובה
