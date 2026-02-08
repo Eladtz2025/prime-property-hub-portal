@@ -66,6 +66,7 @@ import {
 import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hooks/useScoutSettings';
 import { LiveScanProgress } from './LiveScanProgress';
 import { ScheduleSummaryCard } from './ScheduleSummaryCard';
+import { BrokerClassificationDialog } from './BrokerClassificationDialog';
 
 // Scout Config types
 interface ScoutConfig {
@@ -270,7 +271,6 @@ export const UnifiedScoutSettings: React.FC = () => {
   const [isAvailabilityDialogOpen, setIsAvailabilityDialogOpen] = useState(false);
   const [isEligibilityDialogOpen, setIsEligibilityDialogOpen] = useState(false);
   const [isBrokerBackfillDialogOpen, setIsBrokerBackfillDialogOpen] = useState(false);
-  const [isBrokerBackfilling, setIsBrokerBackfilling] = useState(false);
   const [isRefreshingEligibility, setIsRefreshingEligibility] = useState(false);
   const [runningSource, setRunningSource] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -1292,17 +1292,9 @@ export const UnifiedScoutSettings: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="font-medium">תיקון סיווג תיווך/פרטי</h4>
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              עדכון סיווג לכל הנכסים הקיימים
-                            </p>
-                            {isBrokerBackfilling && (
-                              <div className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 mt-1">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                <span>מעבד...</span>
-                              </div>
-                            )}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            אימות ותיקון סיווג נכסים
+                          </p>
                         </div>
                       </div>
                       <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -1762,122 +1754,11 @@ export const UnifiedScoutSettings: React.FC = () => {
       </Dialog>
 
 
-      {/* Broker Classification Backfill Dialog */}
-      <Dialog open={isBrokerBackfillDialogOpen} onOpenChange={setIsBrokerBackfillDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-primary" />
-              תיקון סיווג תיווך/פרטי
-            </DialogTitle>
-            <DialogDescription>
-              עדכון סיווג לכל הנכסים הקיימים במאגר בהתבסס על תכונות המודעה המקורית
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-2">
-              <p><strong>מקורות נתמכים:</strong> יד2, מדלן, הומלס</p>
-              <p><strong>לוגיקת זיהוי:</strong></p>
-              <ul className="list-disc list-inside text-xs space-y-1 mr-2">
-                <li>תיווך: מילות מפתח (תיווך, סוכנות, משרד נדל"ן...)</li>
-                <li>תיווך: שם סוכנות חוזר לפני המחיר (יד2)</li>
-                <li>פרטי: מחיר מופיע מיד אחרי הפרדה (יד2)</li>
-                <li>פרטי: תווית "פרטי" מופיעה (מדלן)</li>
-              </ul>
-            </div>
-
-            {/* Scrape from source toggle */}
-            <div className="flex items-center justify-between py-3 border rounded-lg px-3 bg-orange-50 dark:bg-orange-950/30">
-              <div>
-                <Label className="text-sm font-medium">גירוד מחדש מהמקור</Label>
-                <p className="text-xs text-muted-foreground">
-                  מוריד את הדף המקורי מחדש (איטי יותר, מדויק יותר)
-                </p>
-              </div>
-              <Switch
-                id="scrape-from-source"
-                checked={settings?.brokerBackfill?.scrapeFromSource ?? false}
-                onCheckedChange={(checked) => handleBooleanChange('brokerBackfill', 'scrapeFromSource', checked)}
-              />
-            </div>
-
-            {settings?.brokerBackfill?.scrapeFromSource && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-                  <div className="text-xs">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">שים לב: צריכת קרדיטים</p>
-                    <p className="text-yellow-700 dark:text-yellow-300 mt-1">
-                      אפשרות זו תצרוך כ-7,500 קרדיטים של Firecrawl ותיקח כ-3 שעות להשלמה.
-                      התהליך ירוץ ברקע ויעדכן את כל הנכסים.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isBrokerBackfilling && (
-              <div className="flex items-center gap-2 text-sm text-indigo-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>מעבד נכסים ברקע...</span>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button 
-                onClick={async () => {
-                  setIsBrokerBackfilling(true);
-                  
-                  try {
-                    const { data, error } = await supabase.functions.invoke('reclassify-broker', {
-                      body: { 
-                        action: 'start',
-                        source_filter: 'yad2',
-                        dry_run: false,
-                        batch_size: 10,
-                      }
-                    });
-                    if (error) throw error;
-                    
-                    toast.success(`התהליך הופעל ברקע (task: ${data?.task_id?.substring(0, 8)}). ניתן לסגור את החלון.`);
-                    setIsBrokerBackfillDialogOpen(false);
-                    queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
-                  } catch (err) {
-                    console.error('Broker reclassify error:', err);
-                    toast.error('שגיאה בעדכון הסיווג');
-                  } finally {
-                    setIsBrokerBackfilling(false);
-                  }
-                }}
-                disabled={isBrokerBackfilling}
-                className="flex-1"
-              >
-                {isBrokerBackfilling ? (
-                  <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                    מעבד...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 ml-2" />
-                    הפעל עדכון סיווג
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => setIsBrokerBackfillDialogOpen(false)}
-              >
-                ביטול
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              התהליך ירוץ ברקע ויבדוק מחדש את סיווג תיווך/פרטי של הנכסים מול דפי המקור.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Broker Classification Dialog - new component */}
+      <BrokerClassificationDialog 
+        open={isBrokerBackfillDialogOpen} 
+        onOpenChange={setIsBrokerBackfillDialogOpen} 
+      />
     </div>
   );
 };
