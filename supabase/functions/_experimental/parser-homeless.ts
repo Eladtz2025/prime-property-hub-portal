@@ -305,30 +305,33 @@ export async function parseHomelessHtml(
       
       // ============================================
       // BROKER DETECTION - Homeless
-      // Based on user screenshots:
-      // - Broker: Shows "שם הסוכנות:" with agency name
-      // - Private: Only "איש קשר:" with first name (no agency)
+      // Priority 1: URL pattern (highest reliability)
+      // Priority 2: Text-based detection (SERP row keywords)
       // ============================================
-      
-      // Check for "שם הסוכנות" field (explicit agency name indicator)
+
+      // PRIORITY 1: URL pattern (definitive)
+      let urlBasedBroker: boolean | null = null;
+      if (sourceUrl) {
+        if (/(?:sale|rent)tivuch/i.test(sourceUrl)) {
+          urlBasedBroker = true; // is broker
+        } else if (/\/(sale|rent)\//i.test(sourceUrl)) {
+          urlBasedBroker = false; // is private
+        }
+      }
+
+      // PRIORITY 2: Text-based detection (existing logic)
       const hasAgencyName = /שם הסוכנות/.test(fullRowText);
-      
-      // Check for "תיווך" or "סוכנות" labels
       const hasAgencyField = /תיווך|סוכנות/.test(fullRowText);
-      
-      // Check for 7-digit license number (Israeli broker license)
       const hasLicenseNumber = /\d{7}/.test(fullRowText);
-      
-      // Check for known broker brand names
       const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
       const fullRowLower = fullRowText.toLowerCase();
       const hasBrokerBrand = BROKER_BRANDS.some(brand => 
         fullRowLower.includes(brand.toLowerCase())
       );
-      
-      // SIMPLE RULE: Agency name, license, or known brand = broker
-      // Otherwise = private
-      const isBroker = hasAgencyName || hasAgencyField || hasLicenseNumber || hasBrokerBrand;
+      const textBasedBroker = hasAgencyName || hasAgencyField || hasLicenseNumber || hasBrokerBrand;
+
+      // URL overrides text (Tivuch URL = broker even if no text signals)
+      const isBroker = urlBasedBroker !== null ? urlBasedBroker : textBasedBroker;
 
       const property: ParsedProperty = {
         source: 'homeless',

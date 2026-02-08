@@ -395,8 +395,36 @@ Deno.serve(async (req) => {
 
         // Detect broker/private
         const oldValue = prop.is_private;
-        const newValue = detectBrokerFromMarkdown(markdown, prop.source);
-        const evidence = extractEvidenceSnippet(markdown, prop.source);
+        const sourceUrl = prop.source_url || '';
+
+        // === URL-based classification for Homeless (high reliability) ===
+        let newValue: boolean | null = null;
+        let auditReason: string | null = null;
+
+        if (prop.source === 'homeless' && sourceUrl) {
+          // Flexible regex: matches /SaleTivuch/ or /RentTivuch/ anywhere in path (case-insensitive)
+          if (/(?:sale|rent)tivuch/i.test(sourceUrl)) {
+            newValue = false; // Broker - URL is definitive
+            auditReason = 'url_pattern_broker';
+          } else if (/\/(sale|rent)\//i.test(sourceUrl)) {
+            newValue = true; // Private - URL is definitive
+            auditReason = 'url_pattern_private';
+          }
+        }
+
+        // Fallback to markdown analysis if URL didn't resolve
+        if (newValue === null) {
+          newValue = detectBrokerFromMarkdown(markdown, prop.source);
+          if (newValue !== null) {
+            auditReason = newValue === true ? 'markdown_private_keyword' : 'markdown_broker_keyword';
+          } else {
+            auditReason = 'no_signals_found';
+          }
+        }
+
+        const evidence = auditReason?.startsWith('url_pattern')
+          ? `[${auditReason}] ${sourceUrl}`
+          : extractEvidenceSnippet(markdown, prop.source);
 
         // --- Confusion matrix ---
         if (newValue !== null) {
@@ -448,6 +476,7 @@ Deno.serve(async (req) => {
             old_is_private: oldValue,
             new_is_private: actualNewValue,
             evidence_snippet: evidence,
+            audit_reason: auditReason,
           };
 
           if (!examplesByType[transitionKey]) {

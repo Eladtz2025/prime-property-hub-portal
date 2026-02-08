@@ -165,19 +165,58 @@ export function detectBrokerFromMarkdown(markdown: string, source: string): bool
     return null; // Can't determine - don't guess
   }
   
-  // HOMELESS: Check for agency/agent name
+  // HOMELESS: Broker precedence — check broker signals first, then private
   if (source === 'homeless') {
+    // === BROKER indicators (checked FIRST — precedence) ===
     const hasAgencyName = /שם הסוכנות/.test(markdown);
     const hasAgentName = /שם הסוכן/.test(markdown);
-    
     if (hasAgencyName || hasAgentName) {
       console.log(`[homeless] classified broker: agency=${hasAgencyName}, agent=${hasAgentName}`);
-      return false; // Broker
+      return false;
     }
-    
-    // No clear indicator - don't guess
+    if (/מתיווך/.test(markdown)) {
+      console.log('[homeless] classified broker: keyword מתיווך');
+      return false;
+    }
+    if (/מתווכ/.test(markdown)) {
+      console.log('[homeless] classified broker: keyword מתווכ*');
+      return false;
+    }
+    if (/משרד\s*תיווך/.test(markdown)) {
+      console.log('[homeless] classified broker: keyword משרד תיווך');
+      return false;
+    }
+    if (/בבלעדיות/.test(markdown)) {
+      console.log('[homeless] classified broker: keyword בבלעדיות');
+      return false;
+    }
+    // Known broker brands
+    const BROKER_BRANDS_HL = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21', 'קולדוול'];
+    if (BROKER_BRANDS_HL.some(b => textLower.includes(b.toLowerCase()))) {
+      console.log('[homeless] classified broker: brand match');
+      return false;
+    }
+
+    // === PRIVATE indicators (only if NO broker signals found) ===
+    if (/ללא\s*(ה)?תיווך/.test(markdown)) {
+      console.log('[homeless] classified private: keyword ללא תיווך');
+      return true;
+    }
+    if (/לא\s*למתווכים/.test(markdown)) {
+      console.log('[homeless] classified private: keyword לא למתווכים');
+      return true;
+    }
+    if (/מפרטי/.test(markdown)) {
+      console.log('[homeless] classified private: keyword מפרטי');
+      return true;
+    }
+    if (/בעל\s*הדירה/.test(markdown)) {
+      console.log('[homeless] classified private: keyword בעל הדירה');
+      return true;
+    }
+
     console.log('[homeless] no clear indicator found, returning null');
-    return null; // Can't determine - don't guess
+    return null;
   }
   
   // Fallback for unknown sources: check for generic broker indicators

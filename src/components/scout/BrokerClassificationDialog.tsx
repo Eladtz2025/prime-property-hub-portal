@@ -20,6 +20,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   UserCheck,
   Play,
   Square,
@@ -378,9 +384,25 @@ const ResultsSummary: React.FC<{
                 <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
                   {(data.examples as any[]).slice(0, 15).map((ex: any, i: number) => (
                     <div key={i} className="text-[11px] p-1.5 bg-background rounded border space-y-0.5">
-                      <div className="flex justify-between">
-                        <span className="font-medium truncate max-w-[200px]">{ex.address || 'ללא כתובת'}</span>
-                        <span className="text-muted-foreground">{ex.city}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium truncate max-w-[180px]">{ex.address || 'ללא כתובת'}</span>
+                        <div className="flex items-center gap-1">
+                          {ex.audit_reason && (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 cursor-help">
+                                    {ex.audit_reason}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs max-w-[250px]">
+                                  {formatAuditReason(ex.audit_reason)}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          <span className="text-muted-foreground">{ex.city}</span>
+                        </div>
                       </div>
                       <div className="flex gap-2 text-muted-foreground">
                         <span>{ex.old_is_private === true ? 'פרטי' : ex.old_is_private === false ? 'תיווך' : 'לא ידוע'}</span>
@@ -419,4 +441,15 @@ function formatTransitionKey(key: string): string {
     unchanged: 'ללא שינוי',
   };
   return map[key] || key;
+}
+
+function formatAuditReason(reason: string): string {
+  const map: Record<string, string> = {
+    url_pattern_broker: 'זוהה כתיווך לפי URL (SaleTivuch/RentTivuch)',
+    url_pattern_private: 'זוהה כפרטי לפי URL (/sale/ או /rent/)',
+    markdown_broker_keyword: 'זוהה כתיווך לפי מילות מפתח בדף המקור',
+    markdown_private_keyword: 'זוהה כפרטי לפי מילות מפתח בדף המקור',
+    no_signals_found: 'לא נמצאו סיגנלים ברורים לסיווג',
+  };
+  return map[reason] || reason;
 }
