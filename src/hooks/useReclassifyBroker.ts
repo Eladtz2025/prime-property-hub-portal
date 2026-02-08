@@ -54,7 +54,7 @@ export const useReclassifyBroker = () => {
   const taskName = brokerMode === 'audit' ? 'reclassify_broker_audit' : 'reclassify_broker';
 
   // Poll for progress
-  const { data: progress, refetch: refetchProgress } = useQuery({
+  const { data: progress } = useQuery({
     queryKey: ['reclassify-progress', taskName, currentTaskId],
     queryFn: async () => {
       if (currentTaskId) {
@@ -101,9 +101,10 @@ export const useReclassifyBroker = () => {
 
         // Check if we should advance to next source in sequential mode
         const queue = sequentialQueueRef.current;
-        if (progress.status === 'completed' && queue.length > 0 && !stoppedManuallyRef.current) {
+      if (progress.status === 'completed' && queue.length > 0 && !stoppedManuallyRef.current) {
           const nextSource = queue.shift()!;
-          // Start next source after a short delay
+          // Clear stale progress data before starting next source
+          queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
           setTimeout(() => startSingleSource(nextSource), 2000);
           return; // Don't set isRunning to false yet
         }
@@ -148,9 +149,11 @@ export const useReclassifyBroker = () => {
       if (error) throw error;
 
       if (data?.task_id) {
+        // Clear old progress query before setting new ID
+        queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
         setCurrentTaskId(data.task_id);
         setIsRunning(true);
-        refetchProgress();
+        // No refetchProgress() - React will auto-refetch when currentTaskId changes
       } else if (data?.message === 'Already running') {
         setCurrentTaskId(data.task_id);
         setIsRunning(true);
@@ -165,11 +168,12 @@ export const useReclassifyBroker = () => {
     } finally {
       setIsStarting(false);
     }
-  }, [brokerMode, brokerMaxItems, refetchProgress]);
+  }, [brokerMode, brokerMaxItems, queryClient]);
 
   const start = useCallback(async () => {
     setResults(null);
     setAllResults({});
+    queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
 
     if (brokerSource === 'all') {
       // Sequential: homeless → madlan → yad2
@@ -195,14 +199,13 @@ export const useReclassifyBroker = () => {
       });
       if (error) throw error;
       toast.info('נשלחה בקשת עצירה...');
-      refetchProgress();
     } catch (err) {
       console.error('Reclassify stop error:', err);
       toast.error('❌ שגיאה בעצירת התהליך');
     } finally {
       setIsStopping(false);
     }
-  }, [currentTaskId, refetchProgress]);
+  }, [currentTaskId]);
 
   const percentComplete = progress?.total_items && progress.total_items > 0
     ? Math.round(((progress.processed_items || 0) / progress.total_items) * 100)
