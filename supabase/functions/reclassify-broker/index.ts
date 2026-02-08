@@ -249,7 +249,8 @@ Deno.serve(async (req) => {
     }
 
     // === Fetch batch ===
-    const effectiveBatchSize = batch_size || DEFAULT_BATCH_SIZE;
+    // Clamp batch_size to prevent timeouts (each item does a Firecrawl scrape ~3-5s)
+    const effectiveBatchSize = Math.min(batch_size || DEFAULT_BATCH_SIZE, 10);
 
     const { data: progressData } = await supabase
       .from('backfill_progress')
@@ -319,6 +320,7 @@ Deno.serve(async (req) => {
     // === Process batch ===
     let successCount = 0;
     let failCount = 0;
+    let processedInBatch = 0;
     let lastId = lastProcessedId;
 
     const existingSummary = (progressData?.summary_data as Record<string, any>) || {};
@@ -469,10 +471,29 @@ Deno.serve(async (req) => {
 
         successCount++;
         lastId = prop.id;
+        processedInBatch++;
 
-        // Save progress incrementally
+        // Save progress incrementally (per-item) so UI shows real progress even on timeout
+        const incrementalSummary = {
+          ...existingSummary,
+          _source_filter: effectiveSourceFilter,
+          _max_items: effectiveMaxItems,
+          _is_private_filter: effectiveIsPrivateFilter,
+          _force_broker_reset: effectiveForceBrokerReset,
+          _dry_run: effectiveDryRun,
+          _successful_total: (existingSummary._successful_total || 0) + successCount,
+          _failed_total: (existingSummary._failed_total || 0) + failCount,
+          transitions,
+          confusion_matrix: confusion,
+          examples_by_type: examplesByType,
+          examples,
+        };
         await supabase.from('backfill_progress').update({
+          processed_items: alreadyProcessed + processedInBatch,
+          successful_items: (existingSummary._successful_total || 0) + successCount,
+          failed_items: (existingSummary._failed_total || 0) + failCount,
           last_processed_id: lastId,
+          summary_data: incrementalSummary,
           updated_at: new Date().toISOString()
         }).eq('id', progressId);
 
@@ -482,6 +503,15 @@ Deno.serve(async (req) => {
         console.error(`Error processing ${prop.id}:`, propError);
         failCount++;
         lastId = prop.id;
+        processedInBatch++;
+
+        // Also save progress on failure so we don't lose the count
+        await supabase.from('backfill_progress').update({
+          processed_items: alreadyProcessed + processedInBatch,
+          failed_items: (existingSummary._failed_total || 0) + failCount,
+          last_processed_id: lastId,
+          updated_at: new Date().toISOString()
+        }).eq('id', progressId).catch(() => {});
       }
     }
 
@@ -499,8 +529,9 @@ Deno.serve(async (req) => {
       examples,
     };
 
+    // Final batch update (mostly redundant now since we save per-item, but ensures consistency)
     await supabase.from('backfill_progress').update({
-      processed_items: alreadyProcessed + properties.length,
+      processed_items: alreadyProcessed + processedInBatch,
       successful_items: (existingSummary._successful_total || 0) + successCount,
       failed_items: (existingSummary._failed_total || 0) + failCount,
       last_processed_id: lastId,

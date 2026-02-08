@@ -34,7 +34,7 @@ export const useReclassifyBroker = () => {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [brokerSource, setBrokerSource] = useState<BrokerSource>('all');
   const [brokerMode, setBrokerMode] = useState<BrokerMode>('audit');
-  const [brokerBatchSize, setBrokerBatchSize] = useState(200);
+  const [brokerMaxItems, setBrokerMaxItems] = useState(200);
   const [runningSource, setRunningSource] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, any> | null>(null);
   const [allResults, setAllResults] = useState<Record<string, Record<string, any>>>({});
@@ -45,9 +45,9 @@ export const useReclassifyBroker = () => {
   const sequentialQueueRef = useRef<Array<'homeless' | 'madlan' | 'yad2'>>([]);
   const stoppedManuallyRef = useRef(false);
 
-  // Update batch size defaults when mode changes
+  // Update max items defaults when mode changes
   useEffect(() => {
-    setBrokerBatchSize(brokerMode === 'audit' ? 200 : 100);
+    setBrokerMaxItems(brokerMode === 'audit' ? 200 : 100);
   }, [brokerMode]);
 
   // Get the right task_name for polling
@@ -135,7 +135,8 @@ export const useReclassifyBroker = () => {
           action: 'start',
           source_filter: source,
           dry_run: brokerMode === 'audit',
-          batch_size: brokerBatchSize,
+          batch_size: 5,
+          max_items: brokerMaxItems,
         }
       });
 
@@ -159,7 +160,7 @@ export const useReclassifyBroker = () => {
     } finally {
       setIsStarting(false);
     }
-  }, [brokerMode, brokerBatchSize, refetchProgress]);
+  }, [brokerMode, brokerMaxItems, refetchProgress]);
 
   const start = useCallback(async () => {
     setResults(null);
@@ -217,8 +218,8 @@ export const useReclassifyBroker = () => {
     setBrokerSource,
     brokerMode,
     setBrokerMode,
-    brokerBatchSize,
-    setBrokerBatchSize,
+    brokerMaxItems,
+    setBrokerMaxItems,
     // Actions
     start,
     stop,

@@ -65,8 +65,8 @@ export const BrokerClassificationDialog: React.FC<BrokerClassificationDialogProp
     setBrokerSource,
     brokerMode,
     setBrokerMode,
-    brokerBatchSize,
-    setBrokerBatchSize,
+    brokerMaxItems,
+    setBrokerMaxItems,
     start,
     stop,
   } = useReclassifyBroker();
@@ -138,15 +138,15 @@ export const BrokerClassificationDialog: React.FC<BrokerClassificationDialogProp
               </Select>
             </div>
 
-            {/* Batch Size */}
+            {/* Max Items */}
             <div className="space-y-1.5">
-              <Label className="text-xs">גודל אצווה</Label>
+              <Label className="text-xs">מקסימום פריטים</Label>
               <Input
                 type="number"
                 min={5}
-                max={500}
-                value={brokerBatchSize}
-                onChange={(e) => setBrokerBatchSize(parseInt(e.target.value) || 5)}
+                max={10000}
+                value={brokerMaxItems}
+                onChange={(e) => setBrokerMaxItems(parseInt(e.target.value) || 5)}
                 disabled={isRunning}
                 className="h-9"
               />
