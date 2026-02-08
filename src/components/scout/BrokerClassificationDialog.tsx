@@ -291,63 +291,120 @@ const ResultsSummary: React.FC<{
         📊 תוצאות {isAudit ? 'AUDIT' : 'FIX'}
       </h4>
 
-      {Object.entries(displayResults).map(([source, data]) => (
-        <div key={source} className="space-y-2">
-          {hasMultiple && (
-            <Badge variant="outline" className="text-xs">
-              {SOURCE_LABELS[source] || source}
-            </Badge>
-          )}
+      {Object.entries(displayResults).map(([source, data]) => {
+        // Use row-level fields as fallback for totals
+        const processed = data?._successful_total ?? data?._processed_items ?? 0;
+        const succeeded = data?._successful_total ?? data?._successful_items ?? 0;
+        const failed = data?._failed_total ?? data?._failed_items ?? 0;
 
-          {/* Confusion Matrix */}
-          {data?.confusion_matrix && (
-            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-              <h5 className="text-xs font-medium text-muted-foreground">מטריצת דיוק</h5>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between p-1.5 bg-green-50 dark:bg-green-950/30 rounded">
-                  <span>✅ תיווך נכון</span>
-                  <span className="font-medium">{data.confusion_matrix.correct_broker || 0}</span>
-                </div>
-                <div className="flex justify-between p-1.5 bg-green-50 dark:bg-green-950/30 rounded">
-                  <span>✅ פרטי נכון</span>
-                  <span className="font-medium">{data.confusion_matrix.correct_private || 0}</span>
-                </div>
-                <div className="flex justify-between p-1.5 bg-red-50 dark:bg-red-950/30 rounded">
-                  <span>❌ סווג תיווך בטעות</span>
-                  <span className="font-medium">{data.confusion_matrix.misclassified_as_broker || 0}</span>
-                </div>
-                <div className="flex justify-between p-1.5 bg-red-50 dark:bg-red-950/30 rounded">
-                  <span>❌ סווג פרטי בטעות</span>
-                  <span className="font-medium">{data.confusion_matrix.misclassified_as_private || 0}</span>
-                </div>
+        return (
+          <div key={source} className="space-y-2">
+            {hasMultiple && (
+              <Badge variant="outline" className="text-xs">
+                {SOURCE_LABELS[source] || source}
+              </Badge>
+            )}
+
+            {/* Totals row */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="text-center p-1.5 bg-muted/30 rounded">
+                <div className="font-medium">{data?._processed_items ?? processed}</div>
+                <div className="text-muted-foreground">עובדו</div>
               </div>
-              <div className="flex justify-between p-1.5 bg-muted/50 rounded text-xs">
-                <span>⚠️ לא ניתן לאמת</span>
-                <span className="font-medium">{data.confusion_matrix.unverifiable || 0}</span>
+              <div className="text-center p-1.5 bg-green-50 dark:bg-green-950/30 rounded">
+                <div className="font-medium text-green-600">{succeeded}</div>
+                <div className="text-muted-foreground">הצלחה</div>
+              </div>
+              <div className="text-center p-1.5 bg-red-50 dark:bg-red-950/30 rounded">
+                <div className="font-medium text-red-600">{failed}</div>
+                <div className="text-muted-foreground">נכשלו</div>
               </div>
             </div>
-          )}
 
-          {/* Transitions */}
-          {data?.transitions && (
-            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-              <h5 className="text-xs font-medium text-muted-foreground">
-                {isAudit ? 'שינויים שיבוצעו (אם יעבור ל-FIX)' : 'שינויים שבוצעו'}
-              </h5>
-              <div className="grid grid-cols-2 gap-1.5 text-xs">
-                {Object.entries(data.transitions)
-                  .filter(([, count]) => (count as number) > 0)
-                  .map(([key, count]) => (
-                    <div key={key} className="flex justify-between p-1.5 bg-background rounded">
-                      <span className="text-muted-foreground">{formatTransitionKey(key)}</span>
-                      <span className="font-medium">{count as number}</span>
+            {/* Confusion Matrix */}
+            {data?.confusion_matrix && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <h5 className="text-xs font-medium text-muted-foreground">מטריצת דיוק</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between p-1.5 bg-green-50 dark:bg-green-950/30 rounded">
+                    <span>✅ תיווך נכון</span>
+                    <span className="font-medium">{data.confusion_matrix.correct_broker || 0}</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 bg-green-50 dark:bg-green-950/30 rounded">
+                    <span>✅ פרטי נכון</span>
+                    <span className="font-medium">{data.confusion_matrix.correct_private || 0}</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 bg-red-50 dark:bg-red-950/30 rounded">
+                    <span>❌ סווג תיווך בטעות</span>
+                    <span className="font-medium">{data.confusion_matrix.misclassified_as_broker || 0}</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 bg-red-50 dark:bg-red-950/30 rounded">
+                    <span>❌ סווג פרטי בטעות</span>
+                    <span className="font-medium">{data.confusion_matrix.misclassified_as_private || 0}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between p-1.5 bg-muted/50 rounded text-xs">
+                  <span>⚠️ לא ניתן לאמת</span>
+                  <span className="font-medium">{data.confusion_matrix.unverifiable || 0}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Transitions */}
+            {data?.transitions && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <h5 className="text-xs font-medium text-muted-foreground">
+                  {isAudit ? 'שינויים שיבוצעו (אם יעבור ל-FIX)' : 'שינויים שבוצעו'}
+                </h5>
+                <div className="grid grid-cols-2 gap-1.5 text-xs">
+                  {Object.entries(data.transitions)
+                    .filter(([, count]) => (count as number) > 0)
+                    .map(([key, count]) => (
+                      <div key={key} className="flex justify-between p-1.5 bg-background rounded">
+                        <span className="text-muted-foreground">{formatTransitionKey(key)}</span>
+                        <span className="font-medium">{count as number}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Examples */}
+            {data?.examples && (data.examples as any[]).length > 0 && (
+              <details className="bg-muted/30 rounded-lg p-3">
+                <summary className="text-xs font-medium text-muted-foreground cursor-pointer">
+                  📋 דוגמאות ({(data.examples as any[]).length})
+                </summary>
+                <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
+                  {(data.examples as any[]).slice(0, 15).map((ex: any, i: number) => (
+                    <div key={i} className="text-[11px] p-1.5 bg-background rounded border space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="font-medium truncate max-w-[200px]">{ex.address || 'ללא כתובת'}</span>
+                        <span className="text-muted-foreground">{ex.city}</span>
+                      </div>
+                      <div className="flex gap-2 text-muted-foreground">
+                        <span>{ex.old_is_private === true ? 'פרטי' : ex.old_is_private === false ? 'תיווך' : 'לא ידוע'}</span>
+                        <span>→</span>
+                        <span className="font-medium text-foreground">{ex.new_is_private === true ? 'פרטי' : ex.new_is_private === false ? 'תיווך' : 'לא ידוע'}</span>
+                      </div>
+                      {ex.evidence_snippet && (
+                        <div className="text-muted-foreground truncate" title={ex.evidence_snippet}>
+                          💡 {ex.evidence_snippet}
+                        </div>
+                      )}
+                      {ex.source_url && (
+                        <a href={ex.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">
+                          🔗 קישור
+                        </a>
+                      )}
                     </div>
                   ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
+                </div>
+              </details>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

@@ -89,10 +89,15 @@ export const useReclassifyBroker = () => {
       if (isRunning) {
         // Save results for this source
         const sourceName = runningSource || (progress.summary_data as any)?._source_filter || 'unknown';
-        if (progress.summary_data) {
-          setAllResults(prev => ({ ...prev, [sourceName]: progress.summary_data as Record<string, any> }));
-          setResults(progress.summary_data as Record<string, any>);
-        }
+        // Enrich summary_data with row-level fields as fallback
+        const enrichedResults: Record<string, any> = {
+          ...(progress.summary_data || {}),
+          _processed_items: progress.processed_items,
+          _successful_items: progress.successful_items,
+          _failed_items: progress.failed_items,
+        };
+        setAllResults(prev => ({ ...prev, [sourceName]: enrichedResults }));
+        setResults(enrichedResults);
 
         // Check if we should advance to next source in sequential mode
         const queue = sequentialQueueRef.current;

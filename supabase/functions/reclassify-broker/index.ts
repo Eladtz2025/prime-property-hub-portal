@@ -228,6 +228,8 @@ Deno.serve(async (req) => {
             _is_private_filter: effectiveIsPrivateFilter,
             _force_broker_reset: effectiveForceBrokerReset,
             _dry_run: effectiveDryRun,
+            _successful_total: 0,
+            _failed_total: 0,
             transitions: emptyTransitions(),
             confusion_matrix: emptyConfusionMatrix(),
             examples_by_type: emptyExamplesByType(),
@@ -506,10 +508,26 @@ Deno.serve(async (req) => {
         processedInBatch++;
 
         // Also save progress on failure so we don't lose the count
+        const failSummary = {
+          ...existingSummary,
+          _source_filter: effectiveSourceFilter,
+          _max_items: effectiveMaxItems,
+          _is_private_filter: effectiveIsPrivateFilter,
+          _force_broker_reset: effectiveForceBrokerReset,
+          _dry_run: effectiveDryRun,
+          _successful_total: (existingSummary._successful_total || 0) + successCount,
+          _failed_total: (existingSummary._failed_total || 0) + failCount,
+          transitions,
+          confusion_matrix: confusion,
+          examples_by_type: examplesByType,
+          examples,
+        };
         await supabase.from('backfill_progress').update({
           processed_items: alreadyProcessed + processedInBatch,
+          successful_items: (existingSummary._successful_total || 0) + successCount,
           failed_items: (existingSummary._failed_total || 0) + failCount,
           last_processed_id: lastId,
+          summary_data: failSummary,
           updated_at: new Date().toISOString()
         }).eq('id', progressId).catch(() => {});
       }
