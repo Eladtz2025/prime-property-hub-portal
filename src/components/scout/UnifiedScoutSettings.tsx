@@ -1827,34 +1827,26 @@ export const UnifiedScoutSettings: React.FC = () => {
               <Button 
                 onClick={async () => {
                   setIsBrokerBackfilling(true);
-                  const scrapeFromSource = settings?.brokerBackfill?.scrapeFromSource ?? false;
-                  const batchSize = scrapeFromSource ? 50 : 100;
                   
                   try {
-                    const { data, error } = await supabase.functions.invoke('backfill-broker-classification', {
+                    const { data, error } = await supabase.functions.invoke('reclassify-broker', {
                       body: { 
-                        batchSize, 
-                        dryRun: false, 
-                        scrapeFromSource,
-                        forceReset: true 
+                        action: 'start',
+                        source_filter: 'yad2',
+                        dry_run: false,
+                        batch_size: 10,
                       }
                     });
                     if (error) throw error;
                     
-                    if (scrapeFromSource) {
-                      toast.success('התהליך הופעל ברקע. ניתן לסגור את החלון.');
-                    } else {
-                      toast.success(`עודכנו ${data?.updated || 0} נכסים`);
-                    }
+                    toast.success(`התהליך הופעל ברקע (task: ${data?.task_id?.substring(0, 8)}). ניתן לסגור את החלון.`);
                     setIsBrokerBackfillDialogOpen(false);
                     queryClient.invalidateQueries({ queryKey: ['scouted-properties'] });
                   } catch (err) {
-                    console.error('Broker backfill error:', err);
+                    console.error('Broker reclassify error:', err);
                     toast.error('שגיאה בעדכון הסיווג');
                   } finally {
-                    if (!settings?.brokerBackfill?.scrapeFromSource) {
-                      setIsBrokerBackfilling(false);
-                    }
+                    setIsBrokerBackfilling(false);
                   }
                 }}
                 disabled={isBrokerBackfilling}
@@ -1868,7 +1860,7 @@ export const UnifiedScoutSettings: React.FC = () => {
                 ) : (
                   <>
                     <Play className="h-4 w-4 ml-2" />
-                    הפעל עדכון
+                    הפעל עדכון סיווג
                   </>
                 )}
               </Button>
@@ -1881,9 +1873,7 @@ export const UnifiedScoutSettings: React.FC = () => {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {settings?.brokerBackfill?.scrapeFromSource 
-                ? 'התהליך ירוץ ברקע ויעדכן את כל ~7,500 הנכסים. ניתן לעקוב בלוגים של Supabase.'
-                : 'התהליך ירוץ ברקע ויעדכן נכסים לפי ה-description הקיים.'}
+              התהליך ירוץ ברקע ויבדוק מחדש את סיווג תיווך/פרטי של הנכסים מול דפי המקור.
             </p>
           </div>
         </DialogContent>
