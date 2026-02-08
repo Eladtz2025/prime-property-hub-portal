@@ -1,77 +1,60 @@
 
 
-# תיקון טופס חתימת לקוח לדירה -- שתי בעיות
+# הוספת "תוספות לנכס" ללקוחות מכירה
 
-## בעיה 1: חתימת המתווך לא מופיעה ב-PDF
+## הבעיה
 
-### שורש הבעיה
+כרגע הרכיב `PropertyRequirementsDropdown` (חניה, מרפסת, מעלית, חצר, גג, ממ"ד, ריהוט) מוצג **רק** ללקוחות השכרה. לקוחות מכירה לא רואים אפשרויות אלו, למרות שגם הם צריכים לציין דרישות פיזיות מהנכס.
 
-כשלקוח חותם מרחוק (remote-sign mode), חתימת המתווך נשמרת ב-`tokenAgentSignature` (נטענת מה-token שנוצר מראש). אבל ה-PDF משתמש רק ב-`agentSignatureData` -- שזה המשתנה שמאוכלס רק כשהמתווך חותם ישירות בדף (mode = new).
+## הפתרון
 
-בקוד ה-PDF (שורה 719):
+להוסיף את ה-`PropertyRequirementsDropdown` גם בתוך חלק "פרטי רכישה" (`isSale`), ב-4 קבצים:
+
+### קובץ 1: `src/components/ExpandableCustomerRow.tsx` (טבלת דסקטופ)
+
+בתוך הסקשן `{isSale && (...)}` (שורה 717-761), להוסיף את ה-`PropertyRequirementsDropdown` אחרי השדות הקיימים (מטרת רכישה, הון עצמי, תקציב שיפוץ, נכס למכירה).
+
+### קובץ 2: `src/components/CustomerMobileTable.tsx` (מובייל)
+
+בתוך הסקשן `{isSale && (...)}` (שורה 637-668), להוסיף את ה-`PropertyRequirementsDropdown` אחרי הון עצמי.
+
+### קובץ 3: `src/components/CustomerEditModal.tsx` (מודאל עריכה)
+
+בתוך הסקשן `{isSale && (...)}` (שורה 520-670), להוסיף את ה-`PropertyRequirementsDropdown` אחרי פרטי עורך דין.
+
+### קובץ 4: `src/components/AddCustomerModal.tsx` (הוספת לקוח חדש)
+
+בתוך הסקשן `{isSale && (...)}` (שורה 664-813), להוסיף את ה-`PropertyRequirementsDropdown` אחרי פרטי עורך דין.
+
+## פירוט טכני
+
+בכל הקבצים, הקוד שמתווסף זהה בעיקרון -- רכיב `PropertyRequirementsDropdown` עם אותם שדות שכבר קיימים בצד ההשכרה:
+
 ```text
-${agentSignatureData ? `...agent signature img...` : ''}
+<div className="space-y-2">
+  <Label>דרישות מהנכס:</Label>
+  <PropertyRequirementsDropdown
+    values={{
+      parking_required, parking_flexible,
+      balcony_required, balcony_flexible,
+      elevator_required, elevator_flexible,
+      yard_required, yard_flexible,
+      roof_required, roof_flexible,
+      outdoor_space_any,
+      mamad_required, mamad_flexible,
+      furnished_required, furnished_flexible,
+    }}
+    onChange={...}
+  />
+</div>
 ```
 
-במצב remote-sign, ה-`agentSignatureData` הוא `null`, כי החתימה נשמרה ב-`tokenAgentSignature` ולא הועברה. לכן חתימת המתווך פשוט לא מוצגת.
+- לא נדרשים שינויי DB -- כל השדות כבר קיימים בטבלת `contact_leads`
+- הלוגיקה של `handleSaveForm` כבר שומרת את השדות האלה (שורות 243-253 ב-ExpandableCustomerRow) ללא תלות בסוג העסקה
+- ה-`PropertyRequirementsDropdown` כבר מיובא בכל הקבצים הרלוונטיים
 
-### הפתרון
+## סיכום
 
-בתוך `generatePDF`, להשתמש ב-`tokenAgentSignature` כ-fallback כשאין `agentSignatureData`:
-
-```text
-// Determine which agent signature to use
-const effectiveAgentSignature = agentSignatureData || tokenAgentSignature;
-```
-
-ואז בתבנית ה-HTML:
-
-```text
-${effectiveAgentSignature ? `
-  <div style="flex: 1; text-align: center;">
-    <img src="${effectiveAgentSignature}" ... />
-  </div>
-` : ''}
-```
-
-גם צריך להוסיף `tokenAgentSignature` לרשימת ה-dependencies של `useCallback`.
-
-**קובץ: `src/pages/BrokerageFormPage.tsx`**
-
----
-
-## בעיה 2: כפתור "סיום" מפנה לאפליקציית הניהול במקום לאתר
-
-### שורש הבעיה
-
-בשורה 878-882, כפתור "סיום" עושה:
-```text
-onClick={() => {
-  window.close();
-  navigate('/');
-}}
-```
-
-זה שולח את הלקוח ל-`/` שזה עמוד הבית של אפליקציית הניהול (הדשבורד). במקום זה, הלקוח צריך לעבור לאתר הציבורי.
-
-### הפתרון
-
-לשנות ל:
-```text
-onClick={() => {
-  window.close();
-  window.location.href = 'https://primepropertyai.lovable.app';
-}}
-```
-
-**קובץ: `src/pages/BrokerageFormPage.tsx`**
-
----
-
-## סיכום השינויים
-
-שינויים בקובץ אחד בלבד: `src/pages/BrokerageFormPage.tsx`
-
-1. **חתימת מתווך ב-PDF**: הוספת `effectiveAgentSignature = agentSignatureData || tokenAgentSignature` בתוך `generatePDF` והחלפת `agentSignatureData` ב-`effectiveAgentSignature` בתבנית ה-HTML + הוספת `tokenAgentSignature` ל-dependencies
-2. **כפתור סיום**: שינוי `navigate('/')` ל-`window.location.href = 'https://primepropertyai.lovable.app'` כך שהלקוח מופנה לאתר הציבורי
-
+- 4 קבצים לעדכון
+- ללא שינויי DB
+- הוספת רכיב קיים (PropertyRequirementsDropdown) לתוך סקשן "פרטי רכישה" שכבר קיים
