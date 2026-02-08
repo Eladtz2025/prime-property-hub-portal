@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { detectBrokerFromMarkdown, extractEvidenceSnippet } from '../_shared/broker-detection.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,105 +26,6 @@ const corsHeaders = {
 
 const TASK_NAME_BASE = 'reclassify_broker';
 const DEFAULT_BATCH_SIZE = 5;
-
-// ============================================
-// Broker Detection
-// ============================================
-
-function detectBrokerFromMarkdown(markdown: string, source: string): boolean | null {
-  if (!markdown) return null;
-  
-  const textLower = markdown.toLowerCase();
-  
-  if (source === 'madlan') {
-    const hasMativauch = /מתיווך/.test(markdown);
-    const hasLicenseWithContext = /(?:רישיון|ר\.?ת\.?|תיווך)\s*:?\s*\d{7,8}/.test(markdown);
-    const hasAgencyName = /שם הסוכנות/.test(markdown);
-    
-    if (hasMativauch || hasLicenseWithContext || hasAgencyName) {
-      return false; // Broker
-    }
-    
-    const isExplicitlyPrivate = /ללא\s*(ה)?תיווך|לא\s*למתווכים|ללא\s*מתווכים/i.test(markdown);
-    if (isExplicitlyPrivate) {
-      return true; // Private
-    }
-    
-    return null;
-  }
-  
-  if (source === 'yad2') {
-    if (/מפרטי/.test(markdown)) return true;
-    if (/ללא\s*תיווך/.test(markdown)) return true;
-    if (/לא\s*למתווכים/.test(markdown)) return true;
-    if (/בעל\s*הדירה/.test(markdown)) return true;
-    
-    if (/מתיווך/.test(markdown)) return false;
-    if (/משרד\s*תיווך/.test(markdown)) return false;
-    if (/מתווכ/.test(markdown)) return false;
-    
-    const hasTivuchWithLicense = /תיווך:?\s*\d{7}/.test(markdown);
-    const hasExplicitLicense = /(?:רישיון|ר\.?ת\.?)\s*:?\s*\d{7}/.test(markdown);
-    const hasExclusivity = /בבלעדיות/.test(markdown);
-    const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21', 'קולדוול'];
-    const hasBrokerBrand = BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()));
-    
-    if (hasTivuchWithLicense || hasExplicitLicense || hasExclusivity || hasBrokerBrand) {
-      return false;
-    }
-    
-    return null;
-  }
-  
-  if (source === 'homeless') {
-    if (/שם הסוכנות/.test(markdown) || /שם הסוכן/.test(markdown)) return false;
-    return null;
-  }
-  
-  const BROKER_BRANDS = ['רימקס', 're/max', 'remax', 'אנגלו סכסון', 'century 21', 'קולדוול'];
-  if (BROKER_BRANDS.some(brand => textLower.includes(brand.toLowerCase()))) return false;
-  
-  return null;
-}
-
-/**
- * Extract the evidence snippet that triggered the classification
- */
-function extractEvidenceSnippet(markdown: string, _source: string): string | null {
-  if (!markdown) return null;
-  
-  const patterns: Array<{ regex: RegExp; label: string }> = [
-    { regex: /מתיווך/, label: 'מתיווך' },
-    { regex: /(?:רישיון|ר\.?ת\.?|תיווך)\s*:?\s*\d{7,8}/, label: 'license' },
-    { regex: /שם הסוכנות/, label: 'שם הסוכנות' },
-    { regex: /ללא\s*(ה)?תיווך/, label: 'ללא תיווך' },
-    { regex: /לא\s*למתווכים/, label: 'לא למתווכים' },
-    { regex: /ללא\s*מתווכים/, label: 'ללא מתווכים' },
-    { regex: /מפרטי/, label: 'מפרטי' },
-    { regex: /בעל\s*הדירה/, label: 'בעל הדירה' },
-    { regex: /משרד\s*תיווך/, label: 'משרד תיווך' },
-    { regex: /מתווכ/, label: 'מתווכ*' },
-    { regex: /בבלעדיות/, label: 'בבלעדיות' },
-    { regex: /רימקס|re\/max|remax/i, label: 'brand:remax' },
-    { regex: /אנגלו\s*סכסון/i, label: 'brand:anglo-saxon' },
-    { regex: /century\s*21/i, label: 'brand:century21' },
-    { regex: /קולדוול/i, label: 'brand:coldwell' },
-    { regex: /שם הסוכן/, label: 'שם הסוכן' },
-  ];
-  
-  for (const { regex, label } of patterns) {
-    const match = markdown.match(regex);
-    if (match) {
-      const idx = match.index || 0;
-      const start = Math.max(0, idx - 30);
-      const end = Math.min(markdown.length, idx + match[0].length + 30);
-      const context = markdown.substring(start, end).replace(/\n/g, ' ').trim();
-      return `[${label}] ...${context}...`;
-    }
-  }
-  
-  return null;
-}
 
 // ============================================
 // Empty structures
