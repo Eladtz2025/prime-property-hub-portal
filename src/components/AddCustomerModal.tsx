@@ -41,6 +41,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     name: '',
     email: '',
     phone: '',
+    phone_2: '',
     message: '',
     status: 'new',
     priority: 'medium',
@@ -198,6 +199,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           name: formData.name,
           email: formData.email || null,
           phone: fullPhone,
+          phone_2: formData.phone_2 || null,
           message: formData.message || 'לקוח נוסף ידנית',
           status: formData.status,
           priority: formData.priority,
@@ -261,6 +263,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         name: '',
         email: '',
         phone: '',
+        phone_2: '',
         message: '',
         status: 'new',
         priority: 'medium',
@@ -383,6 +386,14 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>טלפון 2</Label>
+              <Input
+                value={formData.phone_2}
+                onChange={(e) => setFormData({ ...formData, phone_2: e.target.value })}
+                placeholder="מספר נוסף (אופציונלי)"
+              />
+            </div>
             <div>
               <Label>אימייל</Label>
               <Input

@@ -1,0 +1,1 @@
+ALTER TABLE contact_leads ADD COLUMN phone_2 text;

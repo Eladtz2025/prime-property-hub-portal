@@ -163,6 +163,7 @@ export const CustomerMobileTable = ({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          phone_2: formData.phone_2 || null,
           status: formData.status,
           priority: formData.priority,
           assigned_agent_id: formData.assigned_agent_id,
@@ -389,14 +390,25 @@ export const CustomerMobileTable = ({
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs">אימייל</Label>
-              <Input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="h-9"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">טלפון 2</Label>
+                <Input
+                  value={formData.phone_2 || ''}
+                  onChange={(e) => setFormData({ ...formData, phone_2: e.target.value })}
+                  placeholder="מספר נוסף (אופציונלי)"
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">אימייל</Label>
+                <Input
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="h-9"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
