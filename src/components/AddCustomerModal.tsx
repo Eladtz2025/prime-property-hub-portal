@@ -73,6 +73,10 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
     roof_required: false,
     roof_flexible: true,
     outdoor_space_any: false,
+    mamad_required: false,
+    mamad_flexible: true,
+    furnished_required: null as string | null,
+    furnished_flexible: true,
     pets_flexible: true,
     // Purchase-specific
     purchase_purpose: '' as string,
@@ -214,17 +218,21 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
           pets: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.pets : null,
           tenant_type: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.tenant_type || null : null,
           flexible_move_date: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.flexible_move_date : null,
-          parking_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.parking_required : null,
-          balcony_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.balcony_required : null,
-          elevator_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.elevator_required : null,
-          yard_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.yard_required : null,
-          roof_required: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.roof_required : null,
-          parking_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.parking_flexible : null,
-          balcony_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.balcony_flexible : null,
-          elevator_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.elevator_flexible : null,
-          yard_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.yard_flexible : null,
-          roof_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.roof_flexible : null,
-          outdoor_space_any: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.outdoor_space_any : null,
+          parking_required: formData.parking_required || null,
+          balcony_required: formData.balcony_required || null,
+          elevator_required: formData.elevator_required || null,
+          yard_required: formData.yard_required || null,
+          roof_required: formData.roof_required || null,
+          parking_flexible: formData.parking_flexible,
+          balcony_flexible: formData.balcony_flexible,
+          elevator_flexible: formData.elevator_flexible,
+          yard_flexible: formData.yard_flexible,
+          roof_flexible: formData.roof_flexible,
+          outdoor_space_any: formData.outdoor_space_any || null,
+          mamad_required: formData.mamad_required || null,
+          mamad_flexible: formData.mamad_flexible,
+          furnished_required: formData.furnished_required || null,
+          furnished_flexible: formData.furnished_flexible,
           pets_flexible: formData.property_type === 'rental' || formData.property_type === 'both' ? formData.pets_flexible : null,
           // Purchase-specific
           purchase_purpose: formData.property_type === 'sale' || formData.property_type === 'both' ? formData.purchase_purpose || null : null,
@@ -283,6 +291,10 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
         roof_required: false,
         roof_flexible: true,
         outdoor_space_any: false,
+        mamad_required: false,
+        mamad_flexible: true,
+        furnished_required: null,
+        furnished_flexible: true,
         pets_flexible: true,
         purchase_purpose: '',
         cash_available: null,
@@ -806,6 +818,48 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                     value={formData.lawyer_details}
                     onChange={(e) => setFormData({ ...formData, lawyer_details: e.target.value })}
                     placeholder="שם ומספר טלפון"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>דרישות מהנכס:</Label>
+                  <PropertyRequirementsDropdown
+                    values={{
+                      parking_required: formData.parking_required,
+                      parking_flexible: formData.parking_flexible,
+                      balcony_required: formData.balcony_required,
+                      balcony_flexible: formData.balcony_flexible,
+                      elevator_required: formData.elevator_required,
+                      elevator_flexible: formData.elevator_flexible,
+                      yard_required: formData.yard_required,
+                      yard_flexible: formData.yard_flexible,
+                      roof_required: formData.roof_required,
+                      roof_flexible: formData.roof_flexible,
+                      outdoor_space_any: formData.outdoor_space_any,
+                      mamad_required: formData.mamad_required,
+                      mamad_flexible: formData.mamad_flexible,
+                      furnished_required: formData.furnished_required,
+                      furnished_flexible: formData.furnished_flexible,
+                    }}
+                    onChange={(vals) => setFormData({
+                      ...formData,
+                      parking_required: vals.parking_required ?? false,
+                      parking_flexible: vals.parking_flexible ?? true,
+                      balcony_required: vals.balcony_required ?? false,
+                      balcony_flexible: vals.balcony_flexible ?? true,
+                      elevator_required: vals.elevator_required ?? false,
+                      elevator_flexible: vals.elevator_flexible ?? true,
+                      yard_required: vals.yard_required ?? false,
+                      yard_flexible: vals.yard_flexible ?? true,
+                      roof_required: vals.roof_required ?? false,
+                      roof_flexible: vals.roof_flexible ?? true,
+                      outdoor_space_any: vals.outdoor_space_any ?? false,
+                      mamad_required: vals.mamad_required ?? false,
+                      mamad_flexible: vals.mamad_flexible ?? true,
+                      furnished_required: vals.furnished_required,
+                      furnished_flexible: vals.furnished_flexible,
+                    })}
+                    className="w-full"
                   />
                 </div>
               </div>
