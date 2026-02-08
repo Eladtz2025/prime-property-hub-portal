@@ -1,84 +1,77 @@
 
-# תיקון באג: UI תקוע בזמן מעבר בין מקורות (Sequential Mode)
 
-## הבעיה
+# תיקון טופס חתימת לקוח לדירה -- שתי בעיות
 
-כשמריצים "הכל (סדרתי)" (homeless, madlan, yad2), ה-UI נתקע על הנתונים של המקור הראשון שהסתיים. בפועל התהליך עובד ברקע, אבל ה-UI לא מתעדכן כי הוא ממשיך לשאול על ה-task הישן.
+## בעיה 1: חתימת המתווך לא מופיעה ב-PDF
 
-## שורש הבעיה
+### שורש הבעיה
 
-ב-`useReclassifyBroker.ts`, כשמקור מסיים ומתחיל הבא:
+כשלקוח חותם מרחוק (remote-sign mode), חתימת המתווך נשמרת ב-`tokenAgentSignature` (נטענת מה-token שנוצר מראש). אבל ה-PDF משתמש רק ב-`agentSignatureData` -- שזה המשתנה שמאוכלס רק כשהמתווך חותם ישירות בדף (mode = new).
 
-1. `startSingleSource(nextSource)` נקרא אחרי 2 שניות
-2. הוא מקבל task_id חדש מה-Edge Function
-3. הוא קורא ל-`setCurrentTaskId(newId)` -- אבל זה עדכון state אסינכרוני
-4. הוא קורא ל-`refetchProgress()` -- אבל ה-query key עדיין מכיל את ה-ID הישן
-5. התוצאה: ה-polling ממשיך לשאול על ה-task שכבר הושלם
-
-## הפתרון
-
-### קובץ: `src/hooks/useReclassifyBroker.ts`
-
-**שינוי 1: להסיר את `refetchProgress()` מ-`startSingleSource`**
-
-במקום לקרוא `refetchProgress()` שמשתמש ב-query key הישן, פשוט לסמוך על React -- כשה-state `currentTaskId` מתעדכן, ה-query key משתנה אוטומטית ומפעיל query חדש.
-
-**שינוי 2: להוסיף `enabled` שתלוי ב-`isRunning`**
-
-ה-query כבר מוגדר עם `refetchInterval: isRunning ? 4000 : false`, אבל צריך לוודא שה-query מתחיל לרוץ מיד כשה-task ID משתנה.
-
-**שינוי 3: לנקות את ה-progress הישן בזמן מעבר**
-
-להוסיף `queryClient.removeQueries` לפני התחלת מקור חדש, כדי שה-UI לא יציג את הנתונים הישנים.
-
-## פירוט טכני
-
-ב-`startSingleSource` (שורה 130):
-
+בקוד ה-PDF (שורה 719):
 ```text
-לפני:
-  if (data?.task_id) {
-    setCurrentTaskId(data.task_id);
-    setIsRunning(true);
-    refetchProgress();
-  }
-
-אחרי:
-  if (data?.task_id) {
-    // Clear old progress query before setting new ID
-    queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
-    setCurrentTaskId(data.task_id);
-    setIsRunning(true);
-    // No refetchProgress() - React will auto-refetch when currentTaskId changes
-  }
+${agentSignatureData ? `...agent signature img...` : ''}
 ```
 
-ב-useEffect של completion (שורה 104-108), להוסיף ניקוי:
+במצב remote-sign, ה-`agentSignatureData` הוא `null`, כי החתימה נשמרה ב-`tokenAgentSignature` ולא הועברה. לכן חתימת המתווך פשוט לא מוצגת.
+
+### הפתרון
+
+בתוך `generatePDF`, להשתמש ב-`tokenAgentSignature` כ-fallback כשאין `agentSignatureData`:
 
 ```text
-if (progress.status === 'completed' && queue.length > 0 && !stoppedManuallyRef.current) {
-  const nextSource = queue.shift()!;
-  // Clear stale progress data before starting next source
-  queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
-  setTimeout(() => startSingleSource(nextSource), 2000);
-  return;
-}
+// Determine which agent signature to use
+const effectiveAgentSignature = agentSignatureData || tokenAgentSignature;
 ```
 
-גם ב-`start` (שורה 170), לנקות queries ישנים בתחילת ריצה חדשה:
+ואז בתבנית ה-HTML:
 
 ```text
-const start = useCallback(async () => {
-  setResults(null);
-  setAllResults({});
-  queryClient.removeQueries({ queryKey: ['reclassify-progress'] });
-  ...
+${effectiveAgentSignature ? `
+  <div style="flex: 1; text-align: center;">
+    <img src="${effectiveAgentSignature}" ... />
+  </div>
+` : ''}
 ```
 
-## סיכום
+גם צריך להוסיף `tokenAgentSignature` לרשימת ה-dependencies של `useCallback`.
 
-שינוי בקובץ אחד בלבד: `src/hooks/useReclassifyBroker.ts`
+**קובץ: `src/pages/BrokerageFormPage.tsx`**
 
-1. הסרת `refetchProgress()` מ-`startSingleSource` -- מונע polling עם query key ישן
-2. הוספת `queryClient.removeQueries` בנקודות המעבר -- מנקה נתונים ישנים
-3. React ידאג לבד לבצע query חדש כשה-`currentTaskId` משתנה
+---
+
+## בעיה 2: כפתור "סיום" מפנה לאפליקציית הניהול במקום לאתר
+
+### שורש הבעיה
+
+בשורה 878-882, כפתור "סיום" עושה:
+```text
+onClick={() => {
+  window.close();
+  navigate('/');
+}}
+```
+
+זה שולח את הלקוח ל-`/` שזה עמוד הבית של אפליקציית הניהול (הדשבורד). במקום זה, הלקוח צריך לעבור לאתר הציבורי.
+
+### הפתרון
+
+לשנות ל:
+```text
+onClick={() => {
+  window.close();
+  window.location.href = 'https://primepropertyai.lovable.app';
+}}
+```
+
+**קובץ: `src/pages/BrokerageFormPage.tsx`**
+
+---
+
+## סיכום השינויים
+
+שינויים בקובץ אחד בלבד: `src/pages/BrokerageFormPage.tsx`
+
+1. **חתימת מתווך ב-PDF**: הוספת `effectiveAgentSignature = agentSignatureData || tokenAgentSignature` בתוך `generatePDF` והחלפת `agentSignatureData` ב-`effectiveAgentSignature` בתבנית ה-HTML + הוספת `tokenAgentSignature` ל-dependencies
+2. **כפתור סיום**: שינוי `navigate('/')` ל-`window.location.href = 'https://primepropertyai.lovable.app'` כך שהלקוח מופנה לאתר הציבורי
+
