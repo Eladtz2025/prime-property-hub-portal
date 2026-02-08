@@ -716,10 +716,10 @@ const BrokerageFormPage = () => {
       
       <!-- Signatures -->
       <div style="display: flex; gap: 40px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-        ${agentSignatureData ? `
+        ${(agentSignatureData || tokenAgentSignature) ? `
           <div style="flex: 1; text-align: center;">
             <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #1e40af;">${t.agentSignature}</p>
-            <img src="${agentSignatureData}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
+            <img src="${agentSignatureData || tokenAgentSignature}" style="max-width: 180px; height: auto; border: 1px solid #d1d5db; border-radius: 8px; background: white; padding: 4px;" />
             <p style="font-size: 11px; color: #666; margin-top: 4px;">${currentBrokerDetails?.full_name || ''}</p>
           </div>
         ` : ''}
@@ -803,7 +803,7 @@ const BrokerageFormPage = () => {
     } finally {
       document.body.removeChild(container);
     }
-  }, [t, mode, brokerDetails, profile, formDate, feeTypeRental, feeTypeSale, properties, clientName, clientId, clientPhone, clientAddress, specialTerms, agentSignatureData, clientSignatureData, language]);
+  }, [t, mode, brokerDetails, profile, formDate, feeTypeRental, feeTypeSale, properties, clientName, clientId, clientPhone, clientAddress, specialTerms, agentSignatureData, clientSignatureData, tokenAgentSignature, language]);
 
   // Download PDF function
   const downloadPDF = useCallback(async () => {
@@ -878,7 +878,7 @@ const BrokerageFormPage = () => {
             <Button 
               onClick={() => {
                 window.close();
-                navigate('/');
+                window.location.href = 'https://primepropertyai.lovable.app';
               }} 
               variant="ghost"
               className="w-full"
