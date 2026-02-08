@@ -25,6 +25,7 @@ interface CustomerMatch {
   rooms: number | null;
   size: number | null;
   matchScore: number;
+  source_url: string;
 }
 
 interface GroupedMatch {
@@ -76,11 +77,11 @@ export function MobileMatchesSheet({
     window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
   };
 
-  const handleViewProperty = (propertyId: string, isOwn: boolean) => {
+  const handleViewProperty = (propertyId: string, isOwn: boolean, sourceUrl?: string) => {
     if (isOwn) {
-      window.open(`/properties/${propertyId}`, '_blank');
-    } else {
-      window.open(`/admin-dashboard/property-scout?property=${propertyId}`, '_blank');
+      window.open(`/admin-dashboard?property=${propertyId}`, '_blank');
+    } else if (sourceUrl) {
+      window.open(sourceUrl, '_blank');
     }
   };
 
@@ -229,7 +230,7 @@ export function MobileMatchesSheet({
                             size="sm"
                             variant="outline"
                             className="h-8 flex-1 text-xs gap-1"
-                            onClick={() => handleViewProperty(match.id, false)}
+                            onClick={() => handleViewProperty(match.id, false, match.source_url)}
                           >
                             <ExternalLink className="h-3 w-3" />
                             צפה
