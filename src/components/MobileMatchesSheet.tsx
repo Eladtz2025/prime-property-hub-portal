@@ -80,7 +80,7 @@ export function MobileMatchesSheet({
     if (isOwn) {
       window.open(`/properties/${propertyId}`, '_blank');
     } else {
-      window.open(`/admin/property-scout?property=${propertyId}`, '_blank');
+      window.open(`/admin-dashboard/property-scout?property=${propertyId}`, '_blank');
     }
   };
 
