@@ -124,6 +124,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
           name: formData.name,
           email: formData.email,
           phone: fullPhone,
+          phone_2: formData.phone_2 || null,
           status: formData.status,
           priority: formData.priority,
           assigned_agent_id: formData.assigned_agent_id,
@@ -266,6 +267,14 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                   <span>{errors.phone}</span>
                 </p>
               )}
+            </div>
+            <div className="space-y-1">
+              <Label>טלפון 2</Label>
+              <Input
+                value={formData.phone_2 || ''}
+                onChange={(e) => setFormData({ ...formData, phone_2: e.target.value })}
+                placeholder="מספר נוסף (אופציונלי)"
+              />
             </div>
             <div>
               <Label>סטטוס</Label>

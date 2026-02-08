@@ -221,6 +221,7 @@ export const ExpandableCustomerRow = ({
           name: formData.name,
           email: formData.email,
           phone: fullPhone,
+          phone_2: formData.phone_2 || null,
           status: formData.status,
           priority: formData.priority,
           assigned_agent_id: formData.assigned_agent_id,
@@ -492,6 +493,18 @@ export const ExpandableCustomerRow = ({
                       </p>
                     )}
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">טלפון 2</Label>
+                    <Input
+                      value={formData.phone_2 || ''}
+                      onChange={(e) => setFormData({ ...formData, phone_2: e.target.value })}
+                      placeholder="מספר נוסף (אופציונלי)"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
                     <Label className="text-xs">סוג עסקה</Label>
                     <Select value={formData.property_type || 'rental'} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>

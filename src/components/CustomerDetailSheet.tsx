@@ -206,6 +206,16 @@ export const CustomerDetailSheet = ({
                   <span className="text-sm">{customer.phone}</span>
                 </button>
               )}
+              {customer.phone_2 && (
+                <a 
+                  href={`tel:${customer.phone_2}`}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-right"
+                >
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{customer.phone_2}</span>
+                  <span className="text-xs text-muted-foreground">(טלפון 2)</span>
+                </a>
+              )}
               <button 
                 onClick={handleEmail}
                 className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-right"

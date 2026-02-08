@@ -472,6 +472,7 @@ export type Database = {
           pets: boolean | null
           pets_flexible: boolean | null
           phone: string
+          phone_2: string | null
           preferred_cities: string[] | null
           preferred_neighborhoods: string[] | null
           priority: string | null
@@ -533,6 +534,7 @@ export type Database = {
           pets?: boolean | null
           pets_flexible?: boolean | null
           phone: string
+          phone_2?: string | null
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null
@@ -594,6 +596,7 @@ export type Database = {
           pets?: boolean | null
           pets_flexible?: boolean | null
           phone?: string
+          phone_2?: string | null
           preferred_cities?: string[] | null
           preferred_neighborhoods?: string[] | null
           priority?: string | null
