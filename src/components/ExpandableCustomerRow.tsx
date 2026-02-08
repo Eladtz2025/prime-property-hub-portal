@@ -754,8 +754,50 @@ export const ExpandableCustomerRow = ({
                       </div>
                       <div className="flex items-center gap-2 pt-5">
                         <Checkbox id={`sell-${customer.id}`} checked={!!formData.property_to_sell} onCheckedChange={(c) => setFormData({ ...formData, property_to_sell: !!c })} />
-                        <Label htmlFor={`sell-${customer.id}`} className="text-xs cursor-pointer">נכס למכירה</Label>
+                      <Label htmlFor={`sell-${customer.id}`} className="text-xs cursor-pointer">נכס למכירה</Label>
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">דרישות מהנכס:</Label>
+                      <PropertyRequirementsDropdown
+                        values={{
+                          parking_required: formData.parking_required,
+                          parking_flexible: formData.parking_flexible,
+                          balcony_required: formData.balcony_required,
+                          balcony_flexible: formData.balcony_flexible,
+                          elevator_required: formData.elevator_required,
+                          elevator_flexible: formData.elevator_flexible,
+                          yard_required: formData.yard_required,
+                          yard_flexible: formData.yard_flexible,
+                          roof_required: formData.roof_required,
+                          roof_flexible: formData.roof_flexible,
+                          outdoor_space_any: formData.outdoor_space_any,
+                          mamad_required: formData.mamad_required,
+                          mamad_flexible: formData.mamad_flexible,
+                          furnished_required: formData.furnished_required,
+                          furnished_flexible: formData.furnished_flexible,
+                        }}
+                        onChange={(vals) => setFormData({
+                          ...formData,
+                          parking_required: vals.parking_required,
+                          parking_flexible: vals.parking_flexible,
+                          balcony_required: vals.balcony_required,
+                          balcony_flexible: vals.balcony_flexible,
+                          elevator_required: vals.elevator_required,
+                          elevator_flexible: vals.elevator_flexible,
+                          yard_required: vals.yard_required,
+                          yard_flexible: vals.yard_flexible,
+                          roof_required: vals.roof_required,
+                          roof_flexible: vals.roof_flexible,
+                          outdoor_space_any: vals.outdoor_space_any,
+                          mamad_required: vals.mamad_required,
+                          mamad_flexible: vals.mamad_flexible,
+                          furnished_required: vals.furnished_required,
+                          furnished_flexible: vals.furnished_flexible,
+                        })}
+                        compact
+                        className="w-full"
+                      />
                     </div>
                   </div>
                 )}

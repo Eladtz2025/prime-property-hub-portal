@@ -664,6 +664,48 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                     placeholder="שם ומספר טלפון"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>דרישות מהנכס:</Label>
+                  <PropertyRequirementsDropdown
+                    values={{
+                      parking_required: formData.parking_required,
+                      parking_flexible: formData.parking_flexible,
+                      balcony_required: formData.balcony_required,
+                      balcony_flexible: formData.balcony_flexible,
+                      elevator_required: formData.elevator_required,
+                      elevator_flexible: formData.elevator_flexible,
+                      yard_required: formData.yard_required,
+                      yard_flexible: formData.yard_flexible,
+                      roof_required: formData.roof_required,
+                      roof_flexible: formData.roof_flexible,
+                      outdoor_space_any: formData.outdoor_space_any,
+                      mamad_required: formData.mamad_required,
+                      mamad_flexible: formData.mamad_flexible,
+                      furnished_required: formData.furnished_required,
+                      furnished_flexible: formData.furnished_flexible,
+                    }}
+                    onChange={(vals) => setFormData({
+                      ...formData,
+                      parking_required: vals.parking_required,
+                      parking_flexible: vals.parking_flexible,
+                      balcony_required: vals.balcony_required,
+                      balcony_flexible: vals.balcony_flexible,
+                      elevator_required: vals.elevator_required,
+                      elevator_flexible: vals.elevator_flexible,
+                      yard_required: vals.yard_required,
+                      yard_flexible: vals.yard_flexible,
+                      roof_required: vals.roof_required,
+                      roof_flexible: vals.roof_flexible,
+                      outdoor_space_any: vals.outdoor_space_any,
+                      mamad_required: vals.mamad_required,
+                      mamad_flexible: vals.mamad_flexible,
+                      furnished_required: vals.furnished_required,
+                      furnished_flexible: vals.furnished_flexible,
+                    })}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </>
           )}
