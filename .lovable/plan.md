@@ -1,37 +1,76 @@
 
 
-# תיקון ניווט "צפה בדירות שהותאמו ללקוחות" במובייל
+# תיקון כפתור "צפה" במובייל -- התנהגות זהה לדסקטופ
 
 ## הבעיה
 
-ב-`MobileMatchesSheet.tsx` (שורה 83), כשלוחצים "צפה" על דירה נסרקת שהותאמה ללקוח, הניווט מפנה ל:
+כפתור "צפה" במובייל (MobileMatchesSheet) לא מתנהג כמו בדסקטופ (PropertyMatchCard):
+
+| סוג נכס | דסקטופ (נכון) | מובייל (שגוי) |
+|---|---|---|
+| **נסרק (Scout)** | פותח את ה-source_url -- האתר המקורי (Yad2, Homeless וכו') | פותח דף פנימי באפליקציה |
+| **שלנו (Own)** | פותח `/admin-dashboard?property=ID` | פותח `/properties/ID` (לא קיים -- "דף בבנייה") |
+
+## מה צריך לתקן
+
+### 1. הוספת `source_url` לממשק CustomerMatch במובייל
+
+ב-`MobileMatchesSheet.tsx`, ה-interface של `CustomerMatch` חסר את השדה `source_url`. הנתון כבר קיים בהוק (`useCustomerMatches.ts` מחזיר `source_url`), אבל ה-interface במובייל לא כולל אותו.
+
+**קובץ: `src/components/MobileMatchesSheet.tsx`**
+
+הוספת `source_url` ל-interface:
 
 ```text
-/admin/property-scout?property=...
+interface CustomerMatch {
+  id: string;
+  title: string | null;
+  city: string | null;
+  price: number | null;
+  rooms: number | null;
+  size: number | null;
+  matchScore: number;
+  source_url: string;   // <-- חדש
+}
 ```
 
-אבל ה-route הנכון באפליקציה הוא:
+### 2. תיקון פונקציית handleViewProperty
+
+שינוי הפונקציה כך שתתנהג בדיוק כמו בדסקטופ:
+
+- **נכסים נסרקים**: פתיחת `source_url` (האתר המקורי)
+- **נכסים שלנו**: פתיחת `/admin-dashboard?property=ID`
+
+הפונקציה תקבל גם `sourceUrl` כפרמטר:
 
 ```text
-/admin-dashboard/property-scout
+לפני:
+  handleViewProperty(propertyId, isOwn: boolean)
+
+אחרי:
+  handleViewProperty(propertyId, isOwn: boolean, sourceUrl?: string)
 ```
 
-ה-URL השגוי לא מתאים לשום route ב-App.tsx, ולכן נופל ל-NotFound שמציג "דף בבנייה".
-
-## שינוי נדרש
-
-### קובץ: `src/components/MobileMatchesSheet.tsx`
-
-**שורה 83** -- תיקון ה-URL:
+לוגיקה חדשה:
 
 ```text
-לפני:  /admin/property-scout?property=${propertyId}
-אחרי:  /admin-dashboard/property-scout?property=${propertyId}
+if (isOwn) {
+  window.open(`/admin-dashboard?property=${propertyId}`, '_blank');
+} else if (sourceUrl) {
+  window.open(sourceUrl, '_blank');
+}
 ```
 
-זה תיקון של שורה אחת בלבד. שאר הקובץ נשאר ללא שינוי.
+### 3. עדכון הקריאות לפונקציה
 
-## הערה נוספת
+- **נכסים שלנו** (בטאב "נכסים שלנו"): `handleViewProperty(property.id, true)` -- ללא שינוי בקריאה, אבל הנתיב בפנים ישתנה ל-`/admin-dashboard?property=ID`
+- **נכסים נסרקים** (בטאב "נסרקים"): `handleViewProperty(match.id, false, match.source_url)` -- הוספת `match.source_url`
 
-גם הקישור ל-"נכסים שלנו" (שורה 81) מפנה ל-`/properties/${propertyId}` שגם הוא לא route קיים באפליקציה. אם תרצה, אפשר לתקן גם אותו בהמשך.
+## סיכום
+
+שינוי בקובץ אחד בלבד: `src/components/MobileMatchesSheet.tsx`
+
+1. הוספת `source_url: string` ל-interface של `CustomerMatch`
+2. שינוי `handleViewProperty` לפתוח source_url לנסרקים ו-`/admin-dashboard?property=ID` לשלנו
+3. העברת `match.source_url` בקריאה מהטאב של נכסים נסרקים
 
