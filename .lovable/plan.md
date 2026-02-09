@@ -1,144 +1,61 @@
 
-# שילוב פרויקטים חדשים בתוך טאב הנכסים הקיים
 
-## הרעיון
+# הוספת שדות פרויקט בטופס עריכה ותיקון hook הנתונים
 
-במקום ליצור עמוד אדמין נפרד וטבלה נפרדת, נוסיף סוג נכס חדש **"פרויקט"** (`project`) למערכת הנכסים הקיימת. ככה תוכל להוסיף פרויקט בדיוק כמו שמוסיפים דירה להשכרה או למכירה -- מאותו כפתור "הוסף נכס", עם אותו flow.
+## מה חסר כרגע
 
-## מה ישתנה
+הטופס של הוספת נכס (`AddPropertyModal`) כבר עובד עם שדות פרויקט, אבל יש 2 מקומות שעדיין חסרים:
 
-### 1. דאטאבייס -- עמודות חדשות בטבלת `properties`
+### 1. טופס עריכת נכס (`PropertyEditRow.tsx`)
+כשעורכים נכס מסוג "פרויקט", הטופס מציג שדות רגילים (חדרים, קומה, מ"ר) במקום שדות ייעודיים (טווח חדרים, טווח שטח, יח"ד, סטטוס פרויקט). צריך שכשסוג הנכס הוא `project`, השדות יתחלפו בדיוק כמו בטופס ההוספה.
 
-הוספת שדות ספציפיים לפרויקטים (כל השדות אופציונליים):
+### 2. Hook הנתונים (`useSupabasePropertyData.ts`)
+ה-hook שטוען ושומר נכסים חסר שני דברים:
+- **טעינה**: פונקציית `transformSupabaseProperty` לא ממפה את השדות החדשים (`rooms_range`, `size_range`, `units_count`, `has_storage`, `project_status`)
+- **שמירה**: המוטציה `addPropertyMutation` לא שומרת את השדות החדשים לדאטאבייס
 
-| שדה | סוג | תיאור |
-|-----|------|--------|
-| `rooms_range` | text | טווח חדרים, למשל "3-5" |
-| `size_range` | text | טווח שטח, למשל "80-140" |
-| `units_count` | integer | מספר יחידות דיור |
-| `has_storage` | boolean | מחסן |
-| `project_status` | text | סטטוס פרויקט: pre_sale / under_construction / ready |
+## שינויים
 
-שדות קיימים שכבר מתאימים לפרויקט ולא דורשים שינוי:
-- `neighborhood` / `neighborhood_en` -- שכונה
-- `title` / `title_en` -- שם הפרויקט
-- `description` / `description_en` -- תיאור
-- `parking`, `elevator`, `balcony`, `mamad`, `yard` -- תכונות
-- `building_floors` -- קומות
-- `show_on_website` -- הצג באתר
-- `city` -- עיר
+### קובץ 1: `src/components/PropertyEditRow.tsx`
 
-### 2. הוספת סוג "פרויקט" בטופס הוספת נכס
+בשורת מפרט הנכס (שורות 578-690 בערך), נוסיף תנאי:
+- כשסוג הנכס הוא `project` -- מציגים:
+  - **טווח חדרים** (input טקסט, למשל "3-5")
+  - **טווח שטח** (input טקסט, למשל "80-140")
+  - **קומות בבניין** (כבר קיים)
+  - **מספר יח"ד** (input מספרי)
+  - **סטטוס פרויקט** (select: טרום מכירה / בבנייה / אכלוס מיידי)
+  - **מחסן** (checkbox, מתווסף לפופאפ התוספות)
+- כשסוג הנכס אחר -- נשאר כמו היום (חדרים, רחצה, קומה, מ"ר)
 
-**קובץ: `src/components/AddPropertyModal.tsx`**
+בנוסף, נסתיר שדות לא רלוונטיים לפרויקט:
+- שכ"ד, תאריכי חוזה, ארנונה, ועד בית
+- שם שוכר, טלפון שוכר
 
-- הוספת `project` לרשימת סוגי הנכס (ליד "השכרה", "מכירה", "ניהול")
-- כאשר נבחר "פרויקט" -- הטופס משתנה:
-  - במקום "כתובת" --> הכתובת תהיה שם השכונה (או שנשאיר כתובת כשדה פנימי בלבד)
-  - מופיעים שדות ייעודיים: טווח חדרים, טווח שטח, מספר יחידות, סטטוס פרויקט
-  - שדות לא רלוונטיים מוסתרים (דייר, שכר דירה, תאריכי חוזה)
-  - שדות "בעלים" נשארים -- כי זה היזם/קבלן (פנימי, לא מוצג באתר)
+### קובץ 2: `src/hooks/useSupabasePropertyData.ts`
 
-### 3. עדכון סוגי הנכס ב-TypeScript
-
-**קובץ: `src/types/property.ts`**
-
+**פונקציית `transformSupabaseProperty`** -- הוספת מיפוי:
 ```text
-property_type?: 'rental' | 'sale' | 'management' | 'project';
+roomsRange: dbProperty.rooms_range || undefined,
+sizeRange: dbProperty.size_range || undefined,
+unitsCount: dbProperty.units_count || undefined,
+hasStorage: dbProperty.has_storage || false,
+projectStatus: dbProperty.project_status || undefined,
 ```
 
-### 4. עדכון הצגה בטבלת הנכסים
-
-**קובץ: `src/pages/Properties.tsx`**
-
-- הוספת צבע ותווית לסוג "פרויקט" (למשל badge כתום-זהוב)
-- הצגת `rooms_range` ו-`size_range` במקום `rooms` ו-`property_size` כשסוג הנכס הוא פרויקט
-- הצגת badge סטטוס פרויקט (טרום מכירה / בבנייה / מוכן)
-
-### 5. עדכון העמוד הציבורי -- פרויקטים חדשים
-
-**קבצים: `src/pages/he/NewDevelopments.tsx` + `src/pages/en/NewDevelopments.tsx`**
-
-- החלפת הנתונים ה-hardcoded בשאילתה מ-Supabase: שליפת כל הנכסים מסוג `project` עם `show_on_website = true`
-- קיבוץ לפי שכונה (neighborhood)
-
-### 6. כרטיס פרויקט פרימיום חדש (לאתר הציבורי)
-
-**קובץ חדש: `src/components/NewDevelopmentCard.tsx`**
-
-כרטיס בעיצוב לוקס-מינימליסטי **בלי תמונות**:
-- רקע gradient אלגנטי (כהה עם נגיעות זהב)
-- שם הפרויקט בפונט Playfair Display
-- שם שכונה
-- אייקונים: טווח חדרים, טווח שטח, קומות
-- Badges תכונות: חניה, מעלית, ממ"ד, מחסן
-- Badge סטטוס: "טרום מכירה" / "בבנייה" / "אכלוס מיידי"
-- כפתור "לקבלת מידע" --> הופך לטופס פנייה (flip card כמו הקיים)
-
-### 7. עדכון מודאל עריכת נכס
-
-**קובץ: `src/components/PropertyEditRow.tsx`** (או `PropertyEditModal`)
-
-- הצגת השדות הייעודיים לפרויקט כשסוג הנכס הוא project
-- אפשרות לערוך טווח חדרים, טווח שטח, מספר יחידות, סטטוס פרויקט
-
-## פירוט טכני
-
-### DB Migration
-
+**מוטציית `addPropertyMutation`** -- הוספת שדות ל-insert:
 ```text
-ALTER TABLE properties 
-  ADD COLUMN rooms_range text,
-  ADD COLUMN size_range text,
-  ADD COLUMN units_count integer,
-  ADD COLUMN has_storage boolean DEFAULT false,
-  ADD COLUMN project_status text DEFAULT 'under_construction';
+rooms_range: newProperty.roomsRange || null,
+size_range: newProperty.sizeRange || null,
+units_count: newProperty.unitsCount || null,
+has_storage: newProperty.hasStorage || false,
+project_status: newProperty.projectStatus || null,
 ```
-
-### עיצוב כרטיס הפרויקט באתר (ללא תמונות)
-
-```text
-+--------------------------------------+
-|  gradient: dark charcoal --> gold     |
-|                                      |
-|  [Badge: טרום מכירה]                 |
-|                                      |
-|   שם הפרויקט                         |
-|   ━━━━━━━ קו זהב ━━━━━━━            |
-|   פלורנטין, תל אביב                  |
-|                                      |
-|   3-5 חדרים  |  80-140 מ"ר           |
-|   8 קומות    |  24 יח"ד              |
-|                                      |
-|   [חניה] [מעלית] [ממ"ד] [מחסן]       |
-|                                      |
-|   תיאור קצר של הפרויקט...            |
-|                                      |
-|   [ לקבלת מידע → ]                   |
-+--------------------------------------+
-```
-
-### flow הוספת פרויקט באדמין
-
-1. לוחצים "הוסף נכס"
-2. בוחרים סוג: **פרויקט**
-3. הטופס משתנה ומציג:
-   - שם פרויקט (title / title_en)
-   - שכונה (neighborhood / neighborhood_en)
-   - עיר
-   - תיאור (description / description_en)
-   - טווח חדרים, טווח שטח, קומות, יחידות דיור
-   - תכונות: חניה, מעלית, מרפסת, ממ"ד, מחסן
-   - סטטוס פרויקט
-   - הצג באתר (toggle)
-   - בעלים (= היזם, פנימי בלבד)
-4. כתובת -- שדה חובה קיים, נרשום את שם השכונה בלבד (לא כתובת מדויקת)
-5. הפרויקט מופיע בטבלת הנכסים עם badge "פרויקט"
 
 ## סיכום
 
-- 1 migration (5 עמודות חדשות לטבלת properties)
-- 1 קובץ חדש (כרטיס פרויקט פרימיום לאתר)
-- ~6 קבצים לעדכון (types, AddPropertyModal, Properties page, PropertyEditRow, NewDevelopments HE+EN)
-- ללא טבלה חדשה -- הכל בתוך המערכת הקיימת
-- ניהול פרויקטים מאותו מקום בדיוק כמו דירות
+- 2 קבצים לעדכון
+- PropertyEditRow: הצגה מותנית של שדות פרויקט vs שדות רגילים
+- useSupabasePropertyData: השלמת מיפוי טעינה + שמירה של 5 שדות חדשים
+- אין שינויי DB -- העמודות כבר נוצרו ב-migration הקודם
+
