@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Building2, Maximize2, Layers, Home, Car, ArrowUpDown, Shield, Package } from "lucide-react";
 import { PublicProjectUnit, PublicUnitsTable, getUnitsSummary } from "@/components/PublicUnitsTable";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface NewDevelopmentCardProps {
   id: string;
@@ -26,6 +27,7 @@ interface NewDevelopmentCardProps {
   projectStatus?: string;
   language?: "he" | "en";
   units?: PublicProjectUnit[];
+  imageUrl?: string;
 }
 
 const statusLabels = {
@@ -62,7 +64,7 @@ const formLabels = {
 export const NewDevelopmentCard = ({
   id, name, neighborhood, city, description, roomsRange, sizeRange,
   buildingFloors, unitsCount, parking, elevator, balcony, mamad, hasStorage,
-  projectStatus, language = "he", units = [],
+  projectStatus, language = "he", units = [], imageUrl,
 }: NewDevelopmentCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "", email: "", message: "" });
@@ -112,6 +114,16 @@ export const NewDevelopmentCard = ({
       <div className={`relative w-full transition-all duration-700 transform-style-3d ${isFlipped ? "rotate-y-180" : ""}`}>
         {/* Front Side */}
         <div onClick={() => setIsFlipped(true)} className="backface-hidden cursor-pointer overflow-hidden rounded-lg">
+          {/* Image */}
+          {imageUrl && (
+            <div className="aspect-video w-full overflow-hidden">
+              <OptimizedImage
+                src={imageUrl}
+                alt={name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            </div>
+          )}
           <div className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] relative">
             <div className="absolute inset-0 bg-gradient-to-t from-[#c8a45a]/10 via-transparent to-[#c8a45a]/5" />
             <div className="relative flex flex-col p-6 text-white">
