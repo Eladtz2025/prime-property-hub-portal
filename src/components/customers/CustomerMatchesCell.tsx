@@ -1,18 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Home, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
-import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { useDismissMatch, useRestoreMatch } from "@/hooks/useDismissedMatches";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { ScoutedPropertyCard, OwnPropertyCard } from "./PropertyMatchCard";
+import { ScoutedPropertyCard } from "./PropertyMatchCard";
 
 interface CustomerMatchesCellProps {
   customerId: string;
@@ -51,17 +49,28 @@ export const CustomerMatchesCell = ({
     winnerId: string;
   } | null>(null);
   
-  const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId, showDismissed);
-  const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
-    id: customerId,
-    budget_min: budgetMin,
-    budget_max: budgetMax,
-    rooms_min: roomsMin,
-    rooms_max: roomsMax,
-    preferred_cities: preferredCities,
-    preferred_neighborhoods: preferredNeighborhoods,
-    property_type: propertyType
-  }, showDismissed);
+  const { data: scoutedMatchGroups = [], isLoading } = useCustomerMatches(customerId, showDismissed);
+
+  // Sort groups: private first, then unknown, then brokerage
+  const sortedMatchGroups = useMemo(() => {
+    const getPrivacyOrder = (isPrivate: boolean | null) => {
+      if (isPrivate === true) return 0;
+      if (isPrivate === null) return 1;
+      return 2; // false = brokerage
+    };
+    return [...scoutedMatchGroups].map(group => ({
+      ...group,
+      matches: [...group.matches].sort((a, b) => getPrivacyOrder(a.is_private) - getPrivacyOrder(b.is_private)),
+    })).sort((a, b) => {
+      const aPrivacy = getPrivacyOrder(a.matches[0]?.is_private);
+      const bPrivacy = getPrivacyOrder(b.matches[0]?.is_private);
+      if (aPrivacy !== bPrivacy) return aPrivacy - bPrivacy;
+      // Within same privacy level, keep score-based order
+      const aScore = Math.max(...a.matches.map(m => m.matchScore));
+      const bScore = Math.max(...b.matches.map(m => m.matchScore));
+      return bScore - aScore;
+    });
+  }, [scoutedMatchGroups]);
 
   const dismissMatch = useDismissMatch();
   const restoreMatch = useRestoreMatch();
@@ -122,16 +131,8 @@ export const CustomerMatchesCell = ({
     dismissMatch.mutate({ leadId: customerId, scoutedPropertyId: propertyId });
   };
 
-  const handleDismissOwnProperty = (propertyId: string) => {
-    dismissMatch.mutate({ leadId: customerId, propertyId });
-  };
-
   const handleRestoreScoutedProperty = (propertyId: string) => {
     restoreMatch.mutate({ leadId: customerId, scoutedPropertyId: propertyId });
-  };
-
-  const handleRestoreOwnProperty = (propertyId: string) => {
-    restoreMatch.mutate({ leadId: customerId, propertyId });
   };
 
   const handleSendWhatsAppScouted = (property: { title: string | null; city: string | null; price: number | null; rooms: number | null; size: number | null; source_url: string }) => {
@@ -149,23 +150,9 @@ export const CustomerMatchesCell = ({
     window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
   };
 
-  const handleSendWhatsAppOwn = (property: { title: string | null; address: string; city: string; rooms: number | null; property_size: number | null; monthly_rent: number | null }) => {
-    if (!customerPhone) return;
-    
-    const message = encodeURIComponent(
-      `שלום ${customerName}!\n\n` +
-      `מצאתי דירה שיכולה להתאים לך:\n` +
-      `📍 ${property.city}, ${property.address}\n` +
-      `🏠 ${property.rooms ? `${property.rooms} חדרים` : ''} ${property.property_size ? `| ${property.property_size} מ"ר` : ''}\n` +
-      `💰 ${property.monthly_rent ? `₪${property.monthly_rent.toLocaleString()}` : ''}\n\n` +
-      `אשמח לתאם צפייה, מה אומר/ת?`
-    );
-    window.open(`https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${message}`, '_blank');
-  };
 
   const hasCities = preferredCities && preferredCities.length > 0;
   const hasNeighborhoods = preferredNeighborhoods && preferredNeighborhoods.length > 0;
-  const isLoading = isLoadingScouted || isLoadingOwn;
 
   if (isLoading) {
     return <span className="text-muted-foreground text-sm">...</span>;
@@ -208,16 +195,12 @@ export const CustomerMatchesCell = ({
   }
 
   // Count only non-dismissed matches for display
-  const activeScoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => 
+  const totalActiveMatches = scoutedMatchGroups.reduce((acc, group) => 
     acc + group.matches.filter(m => !m.isDismissed).length, 0);
-  const activeOwnMatchCount = ownMatches.filter(m => !m.isDismissed).length;
-  const totalActiveMatches = activeScoutedMatchCount + activeOwnMatchCount;
 
   // Count dismissed for toggle label
-  const dismissedScoutedCount = scoutedMatchGroups.reduce((acc, group) => 
+  const totalDismissedCount = scoutedMatchGroups.reduce((acc, group) => 
     acc + group.matches.filter(m => m.isDismissed).length, 0);
-  const dismissedOwnCount = ownMatches.filter(m => m.isDismissed).length;
-  const totalDismissedCount = dismissedScoutedCount + dismissedOwnCount;
 
   if (totalActiveMatches === 0 && !showDismissed) {
     return (
@@ -243,16 +226,10 @@ export const CustomerMatchesCell = ({
       <div className="flex items-center gap-1">
         <DialogTrigger asChild>
           <div className="flex items-center gap-1 cursor-pointer">
-            {activeOwnMatchCount > 0 && (
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-accent/50 text-accent-foreground hover:bg-accent">
-                <Building2 className="h-3 w-3" />
-                {activeOwnMatchCount}
-              </Button>
-            )}
-            {activeScoutedMatchCount > 0 && (
+            {totalActiveMatches > 0 && (
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-primary/10 text-primary hover:bg-primary/20">
                 <Home className="h-3 w-3" />
-                {activeScoutedMatchCount}
+                {totalActiveMatches}
               </Button>
             )}
             {totalActiveMatches === 0 && totalDismissedCount > 0 && (
@@ -294,118 +271,84 @@ export const CustomerMatchesCell = ({
           </div>
         </DialogHeader>
         
-        <Tabs defaultValue={activeOwnMatchCount > 0 ? "own" : "scouted"} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 shrink-0">
-            <TabsTrigger value="own" className="gap-2">
-              <Building2 className="h-4 w-4" />
-              נכסים שלנו ({showDismissed ? ownMatches.length : activeOwnMatchCount})
-            </TabsTrigger>
-            <TabsTrigger value="scouted" className="gap-2">
-              <Home className="h-4 w-4" />
-              נכסים נסרקים ({showDismissed ? scoutedMatchGroups.reduce((acc, g) => acc + g.matches.length, 0) : activeScoutedMatchCount})
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="own" className="flex-1 overflow-y-auto mt-4">
-            {ownMatches.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים שלנו</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {ownMatches.map((match) => (
-                  <OwnPropertyCard
-                    key={match.id}
-                    match={match}
-                    customerName={customerName}
-                    customerPhone={customerPhone}
-                    onDismiss={handleDismissOwnProperty}
-                    onRestore={handleRestoreOwnProperty}
-                    onSendWhatsApp={handleSendWhatsAppOwn}
-                    isLoading={dismissMatch.isPending || restoreMatch.isPending}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="scouted" className="flex-1 overflow-y-auto mt-4">
-            {scoutedMatchGroups.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות מנכסים נסרקים</p>
-            ) : (
-              <div className="space-y-3">
-                {scoutedMatchGroups.map((group, groupIndex) => {
-                  const groupKey = group.groupId || group.matches[0]?.id || `group-${groupIndex}`;
-                  const hasDuplicates = group.matches.length > 1;
-                  const isExpanded = !!expandedDuplicateGroups[groupKey];
-                  const matchesToRender = hasDuplicates && !isExpanded 
-                    ? group.matches.slice(0, 1) 
-                    : group.matches;
+        <div className="flex-1 overflow-y-auto mt-4">
+          {sortedMatchGroups.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">לא נמצאו התאמות</p>
+          ) : (
+            <div className="space-y-3">
+              {sortedMatchGroups.map((group, groupIndex) => {
+                const groupKey = group.groupId || group.matches[0]?.id || `group-${groupIndex}`;
+                const hasDuplicates = group.matches.length > 1;
+                const isExpanded = !!expandedDuplicateGroups[groupKey];
+                const matchesToRender = hasDuplicates && !isExpanded 
+                  ? group.matches.slice(0, 1) 
+                  : group.matches;
 
-                  return (
-                    <div 
-                      key={groupKey} 
-                      className={hasDuplicates ? "border-2 border-warning rounded-lg p-3 bg-warning/10" : ""}
-                    >
-                      {hasDuplicates && (
-                        <div className="text-xs text-warning font-medium mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Copy className="h-3 w-3" />
-                            {group.matches[0]?.duplicatesCount || group.matches.length} כפילויות - אותה דירה ממקורות שונים
-                          </div>
-                          {group.matches[0]?.duplicateGroupId && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDuplicatesDialog(
-                                  group.matches[0].duplicateGroupId!,
-                                  group.matches[0].id
-                                );
-                              }}
-                            >
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                              הצג את כל המודעות
-                            </Button>
-                          )}
+                return (
+                  <div 
+                    key={groupKey} 
+                    className={hasDuplicates ? "border-2 border-warning rounded-lg p-3 bg-warning/10" : ""}
+                  >
+                    {hasDuplicates && (
+                      <div className="text-xs text-warning font-medium mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Copy className="h-3 w-3" />
+                          {group.matches[0]?.duplicatesCount || group.matches.length} כפילויות - אותה דירה ממקורות שונים
+                        </div>
+                        {group.matches[0]?.duplicateGroupId && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs text-warning hover:text-warning hover:bg-warning/20"
-                            onClick={() => setExpandedDuplicateGroups(prev => ({
-                              ...prev,
-                              [groupKey]: !isExpanded
-                            }))}
+                            className="h-6 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDuplicatesDialog(
+                                group.matches[0].duplicateGroupId!,
+                                group.matches[0].id
+                              );
+                            }}
                           >
-                            {isExpanded ? (
-                              <>הסתר <ChevronUp className="h-3 w-3 mr-1" /></>
-                            ) : (
-                              <>הצג הכל <ChevronDown className="h-3 w-3 mr-1" /></>
-                            )}
+                            <ExternalLink className="h-3 w-3 ml-1" />
+                            הצג את כל המודעות
                           </Button>
-                        </div>
-                      )}
-                      <div className={hasDuplicates ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
-                        {matchesToRender.map((match) => (
-                          <ScoutedPropertyCard
-                            key={match.id}
-                            match={match}
-                            customerName={customerName}
-                            customerPhone={customerPhone}
-                            onDismiss={handleDismissScoutedProperty}
-                            onRestore={handleRestoreScoutedProperty}
-                            onSendWhatsApp={handleSendWhatsAppScouted}
-                            isLoading={dismissMatch.isPending || restoreMatch.isPending}
-                          />
-                        ))}
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-warning hover:text-warning hover:bg-warning/20"
+                          onClick={() => setExpandedDuplicateGroups(prev => ({
+                            ...prev,
+                            [groupKey]: !isExpanded
+                          }))}
+                        >
+                          {isExpanded ? (
+                            <>הסתר <ChevronUp className="h-3 w-3 mr-1" /></>
+                          ) : (
+                            <>הצג הכל <ChevronDown className="h-3 w-3 mr-1" /></>
+                          )}
+                        </Button>
                       </div>
+                    )}
+                    <div className={hasDuplicates ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
+                      {matchesToRender.map((match) => (
+                        <ScoutedPropertyCard
+                          key={match.id}
+                          match={match}
+                          customerName={customerName}
+                          customerPhone={customerPhone}
+                          onDismiss={handleDismissScoutedProperty}
+                          onRestore={handleRestoreScoutedProperty}
+                          onSendWhatsApp={handleSendWhatsAppScouted}
+                          isLoading={dismissMatch.isPending || restoreMatch.isPending}
+                        />
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
 

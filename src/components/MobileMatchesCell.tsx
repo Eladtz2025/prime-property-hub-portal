@@ -1,5 +1,4 @@
 import { useCustomerMatches } from "@/hooks/useCustomerMatches";
-import { useOwnPropertyMatches } from "@/hooks/useOwnPropertyMatches";
 import { X } from "lucide-react";
 
 interface MobileMatchesCellProps {
@@ -12,7 +11,6 @@ interface MobileMatchesCellProps {
   roomsMax?: number | null;
   propertyType?: string | null;
   onMatchesClick?: (data: {
-    ownMatches: any[];
     scoutedMatchGroups: any[];
   }) => void;
 }
@@ -20,28 +18,11 @@ interface MobileMatchesCellProps {
 export function MobileMatchesCell({
   customerId,
   preferredNeighborhoods,
-  preferredCities,
-  budgetMin,
-  budgetMax,
-  roomsMin,
-  roomsMax,
-  propertyType,
   onMatchesClick,
 }: MobileMatchesCellProps) {
-  const { data: scoutedMatchGroups = [], isLoading: isLoadingScouted } = useCustomerMatches(customerId);
-  const { data: ownMatches = [], isLoading: isLoadingOwn } = useOwnPropertyMatches({
-    id: customerId,
-    budget_min: budgetMin,
-    budget_max: budgetMax,
-    rooms_min: roomsMin,
-    rooms_max: roomsMax,
-    preferred_cities: preferredCities,
-    preferred_neighborhoods: preferredNeighborhoods,
-    property_type: propertyType,
-  });
+  const { data: scoutedMatchGroups = [], isLoading } = useCustomerMatches(customerId);
 
   const hasNeighborhoods = preferredNeighborhoods && preferredNeighborhoods.length > 0;
-  const isLoading = isLoadingScouted || isLoadingOwn;
 
   if (isLoading) {
     return <span className="text-[10px] text-muted-foreground">...</span>;
@@ -51,8 +32,7 @@ export function MobileMatchesCell({
     return <X className="h-3 w-3 text-red-500 mx-auto" />;
   }
 
-  const scoutedMatchCount = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
-  const totalMatches = scoutedMatchCount + ownMatches.length;
+  const totalMatches = scoutedMatchGroups.reduce((acc, group) => acc + group.matches.length, 0);
 
   if (totalMatches === 0) {
     return <span className="text-[10px] text-muted-foreground">0</span>;
@@ -60,7 +40,7 @@ export function MobileMatchesCell({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onMatchesClick?.({ ownMatches, scoutedMatchGroups });
+    onMatchesClick?.({ scoutedMatchGroups });
   };
 
   return (
