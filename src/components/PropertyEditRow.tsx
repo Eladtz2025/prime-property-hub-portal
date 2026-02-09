@@ -19,6 +19,7 @@ import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PropertyDocuments } from './PropertyDocuments';
+import { ProjectUnitsTable } from './ProjectUnitsTable';
 
 interface PropertyEditRowProps {
   property: Property;
@@ -68,6 +69,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
       unitsCount: (property as any).units_count || '',
       hasStorage: (property as any).has_storage || false,
       projectStatus: (property as any).project_status || 'under_construction',
+      trackingUrl: (property as any).tracking_url || (property as any).trackingUrl || '',
       title_en: '',
       description_en: '',
       neighborhood_en: ''
@@ -262,6 +264,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           units_count: (formData as any).unitsCount || null,
           has_storage: (formData as any).hasStorage || false,
           project_status: (formData as any).property_type === 'project' ? ((formData as any).projectStatus || 'under_construction') : null,
+          tracking_url: (formData as any).property_type === 'project' ? ((formData as any).trackingUrl || null) : null,
           updated_at: new Date().toISOString(),
         };
 
@@ -640,6 +643,19 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                           </SelectContent>
                         </Select>
                       </div>
+                      {/* Tracking URL */}
+                      <div className="min-w-[160px] col-span-2">
+                        <Label htmlFor="trackingUrl" className="text-xs">🔗 URL מעקב</Label>
+                        <Input
+                          id="trackingUrl"
+                          type="url"
+                          placeholder="https://..."
+                          className="h-8 text-sm"
+                          value={(formData as any).trackingUrl || ''}
+                          onChange={(e) => handleInputChange('trackingUrl' as any, e.target.value)}
+                          dir="ltr"
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
@@ -1014,8 +1030,16 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       className="text-sm"
                     />
                   </div>
-                  <PropertyDocuments propertyId={formData.id} />
+                   <PropertyDocuments propertyId={formData.id} />
                 </div>
+
+                {/* Project Units Table - shown only for project type with tracking URL */}
+                {(formData as any).property_type === 'project' && (formData as any).trackingUrl && (
+                  <ProjectUnitsTable 
+                    propertyId={formData.id} 
+                    trackingUrl={(formData as any).trackingUrl} 
+                  />
+                )}
               </div>
             </TabsContent>
 

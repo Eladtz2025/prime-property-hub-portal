@@ -90,6 +90,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     unitsCount: '',
     hasStorage: false,
     projectStatus: 'under_construction' as 'pre_sale' | 'under_construction' | 'ready',
+    trackingUrl: '',
     
     // Notes
     notes: ''
@@ -232,6 +233,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         unitsCount: formData.unitsCount ? parseInt(formData.unitsCount) : undefined,
         hasStorage: formData.hasStorage,
         projectStatus: formData.property_type === 'project' ? formData.projectStatus : undefined,
+        trackingUrl: formData.property_type === 'project' ? (formData.trackingUrl || undefined) : undefined,
         
         // Notes
         notes: formData.notes || undefined,
@@ -325,6 +327,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         unitsCount: '',
         hasStorage: false,
         projectStatus: 'under_construction',
+        trackingUrl: '',
         notes: ''
       });
       setUploadedImages([]);
@@ -505,6 +508,22 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
+
+                    {/* Tracking URL for automatic scanning */}
+                    <div>
+                      <Label htmlFor="trackingUrl">🔗 קישור למעקב אוטומטי</Label>
+                      <Input
+                        id="trackingUrl"
+                        type="url"
+                        value={formData.trackingUrl}
+                        onChange={(e) => handleInputChange('trackingUrl', e.target.value)}
+                        placeholder="https://www.example.co.il/project/..."
+                        dir="ltr"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        קישור לעמוד הפרויקט באתר חיצוני -- המערכת תסרוק אוטומטית ותעדכן יחידות
+                      </p>
                     </div>
 
                     {/* Checkboxes for project */}

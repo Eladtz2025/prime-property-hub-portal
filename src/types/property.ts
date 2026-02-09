@@ -51,6 +51,7 @@ export interface Property {
   hasStorage?: boolean;
   projectStatus?: 'pre_sale' | 'under_construction' | 'ready';
   assignedUserId?: string;
+  trackingUrl?: string;
   assignedAgent?: {
     id: string;
     full_name: string;
