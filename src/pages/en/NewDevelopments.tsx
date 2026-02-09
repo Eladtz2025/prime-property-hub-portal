@@ -8,6 +8,19 @@ import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/component
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { PublicProjectUnit } from "@/components/PublicUnitsTable";
+
+const cityTranslations: Record<string, string> = {
+  "תל אביב-יפו": "Tel Aviv",
+  "תל אביב": "Tel Aviv",
+  "ירושלים": "Jerusalem",
+  "חיפה": "Haifa",
+  "הרצליה": "Herzliya",
+  "רמת גן": "Ramat Gan",
+  "נתניה": "Netanya",
+};
+
+const translateCity = (city: string): string => cityTranslations[city] || city;
 
 const NewDevelopments = () => {
   const { data: projects = [], isLoading } = useQuery({
@@ -23,6 +36,21 @@ const NewDevelopments = () => {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  const { data: allUnits = [] } = useQuery({
+    queryKey: ["project-units-en", projects.map(p => p.id)],
+    queryFn: async () => {
+      const projectIds = projects.map(p => p.id);
+      const { data, error } = await supabase
+        .from("project_units")
+        .select("id, property_id, rooms, size, floor, price, unit_type, status")
+        .in("property_id", projectIds)
+        .order("floor", { ascending: true });
+      if (error) throw error;
+      return (data || []) as (PublicProjectUnit & { property_id: string })[];
+    },
+    enabled: projects.length > 0,
   });
 
   const { data: allImages = [] } = useQuery({
@@ -43,6 +71,14 @@ const NewDevelopments = () => {
   // Get main image per project
   const imageByProject = allImages.reduce<Record<string, string>>((acc, img) => {
     if (!acc[img.property_id] || img.is_main) acc[img.property_id] = img.image_url;
+    return acc;
+  }, {});
+
+  // Group units by project
+  const unitsByProject = allUnits.reduce<Record<string, PublicProjectUnit[]>>((acc, unit) => {
+    const pid = (unit as any).property_id;
+    if (!acc[pid]) acc[pid] = [];
+    acc[pid].push(unit);
     return acc;
   }, {});
 
@@ -104,7 +140,7 @@ const NewDevelopments = () => {
                     id={project.id}
                     name={project.title_en || project.title || project.address}
                     neighborhood={project.neighborhood_en || project.neighborhood || ''}
-                    city={project.city}
+                    city={translateCity(project.city || '')}
                     description={project.description_en || project.description || undefined}
                     roomsRange={project.rooms_range || undefined}
                     sizeRange={project.size_range || undefined}
@@ -117,6 +153,7 @@ const NewDevelopments = () => {
                     hasStorage={project.has_storage || false}
                     projectStatus={project.project_status || undefined}
                     language="en"
+                    units={unitsByProject[project.id] || []}
                     imageUrl={imageByProject[project.id]}
                   />
                 ))}
