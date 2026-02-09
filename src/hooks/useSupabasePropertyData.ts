@@ -54,6 +54,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
     assignedUserId: dbProperty.assigned_user_id || undefined,
+    trackingUrl: dbProperty.tracking_url || undefined,
     assignedAgent: dbProperty.assigned_agent ? {
       id: dbProperty.assigned_agent.id,
       full_name: dbProperty.assigned_agent.full_name,
@@ -185,6 +186,7 @@ export const useSupabasePropertyData = () => {
             units_count: updatedProperty.unitsCount || null,
             has_storage: updatedProperty.hasStorage || false,
             project_status: updatedProperty.projectStatus || null,
+            tracking_url: updatedProperty.trackingUrl || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProperty.id);
@@ -259,6 +261,7 @@ export const useSupabasePropertyData = () => {
             units_count: newProperty.unitsCount || null,
             has_storage: newProperty.hasStorage || false,
             project_status: newProperty.projectStatus || null,
+            tracking_url: (newProperty as any).trackingUrl || null,
           });
 
         if (propertyError) {

@@ -2023,6 +2023,118 @@ export type Database = {
         }
         Relationships: []
       }
+      project_scan_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          property_id: string
+          scanned_at: string
+          status: string
+          units_added: number | null
+          units_changed: number | null
+          units_found: number | null
+          units_removed: number | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          property_id: string
+          scanned_at?: string
+          status?: string
+          units_added?: number | null
+          units_changed?: number | null
+          units_found?: number | null
+          units_removed?: number | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          property_id?: string
+          scanned_at?: string
+          status?: string
+          units_added?: number | null
+          units_changed?: number | null
+          units_found?: number | null
+          units_removed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_scan_logs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_units: {
+        Row: {
+          created_at: string
+          first_seen_at: string
+          floor: number | null
+          id: string
+          last_seen_at: string
+          price: number | null
+          price_history: Json
+          property_id: string
+          raw_text: string | null
+          removed_at: string | null
+          rooms: number | null
+          size: number | null
+          status: string
+          unit_identifier: string
+          unit_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string
+          floor?: number | null
+          id?: string
+          last_seen_at?: string
+          price?: number | null
+          price_history?: Json
+          property_id: string
+          raw_text?: string | null
+          removed_at?: string | null
+          rooms?: number | null
+          size?: number | null
+          status?: string
+          unit_identifier: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string
+          floor?: number | null
+          id?: string
+          last_seen_at?: string
+          price?: number | null
+          price_history?: Json
+          property_id?: string
+          raw_text?: string | null
+          removed_at?: string | null
+          rooms?: number | null
+          size?: number | null
+          status?: string
+          unit_identifier?: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           acquisition_cost: number | null
@@ -2074,6 +2186,7 @@ export type Database = {
           status: string
           title: string | null
           title_en: string | null
+          tracking_url: string | null
           units_count: number | null
           updated_at: string
           yard: boolean | null
@@ -2128,6 +2241,7 @@ export type Database = {
           status?: string
           title?: string | null
           title_en?: string | null
+          tracking_url?: string | null
           units_count?: number | null
           updated_at?: string
           yard?: boolean | null
@@ -2182,6 +2296,7 @@ export type Database = {
           status?: string
           title?: string | null
           title_en?: string | null
+          tracking_url?: string | null
           units_count?: number | null
           updated_at?: string
           yard?: boolean | null

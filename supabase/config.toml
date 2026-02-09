@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.cleanup-duplicates]
 verify_jwt = false
+
+[functions.scout-project]
+verify_jwt = false
