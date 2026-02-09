@@ -40,11 +40,32 @@ const NewDevelopments = () => {
     enabled: projects.length > 0,
   });
 
+  const { data: allImages = [] } = useQuery({
+    queryKey: ["project-images-he", projects.map(p => p.id)],
+    queryFn: async () => {
+      const projectIds = projects.map(p => p.id);
+      const { data, error } = await supabase
+        .from("property_images")
+        .select("property_id, image_url, is_main, order_index")
+        .in("property_id", projectIds)
+        .order("order_index", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: projects.length > 0,
+  });
+
   // Group units by property_id
   const unitsByProject = allUnits.reduce<Record<string, PublicProjectUnit[]>>((acc, unit) => {
     const pid = (unit as any).property_id;
     if (!acc[pid]) acc[pid] = [];
     acc[pid].push(unit);
+    return acc;
+  }, {});
+
+  // Get main image per project
+  const imageByProject = allImages.reduce<Record<string, string>>((acc, img) => {
+    if (!acc[img.property_id] || img.is_main) acc[img.property_id] = img.image_url;
     return acc;
   }, {});
 
@@ -120,6 +141,7 @@ const NewDevelopments = () => {
                     projectStatus={project.project_status || undefined}
                     language="he"
                     units={unitsByProject[project.id] || []}
+                    imageUrl={imageByProject[project.id]}
                   />
                 ))}
               </div>

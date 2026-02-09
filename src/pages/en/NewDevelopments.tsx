@@ -25,6 +25,27 @@ const NewDevelopments = () => {
     },
   });
 
+  const { data: allImages = [] } = useQuery({
+    queryKey: ["project-images-en", projects.map(p => p.id)],
+    queryFn: async () => {
+      const projectIds = projects.map(p => p.id);
+      const { data, error } = await supabase
+        .from("property_images")
+        .select("property_id, image_url, is_main, order_index")
+        .in("property_id", projectIds)
+        .order("order_index", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: projects.length > 0,
+  });
+
+  // Get main image per project
+  const imageByProject = allImages.reduce<Record<string, string>>((acc, img) => {
+    if (!acc[img.property_id] || img.is_main) acc[img.property_id] = img.image_url;
+    return acc;
+  }, {});
+
   // Group by neighborhood (English)
   const grouped = projects.reduce<Record<string, typeof projects>>((acc, project) => {
     const key = project.neighborhood_en || project.neighborhood || project.city || "Other";
@@ -96,6 +117,7 @@ const NewDevelopments = () => {
                     hasStorage={project.has_storage || false}
                     projectStatus={project.project_status || undefined}
                     language="en"
+                    imageUrl={imageByProject[project.id]}
                   />
                 ))}
               </div>
