@@ -45,6 +45,11 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     featured: dbProperty.featured || false,
     showManagementBadge: dbProperty.show_management_badge !== false,
     notes: dbProperty.notes || undefined,
+    roomsRange: dbProperty.rooms_range || undefined,
+    sizeRange: dbProperty.size_range || undefined,
+    unitsCount: dbProperty.units_count || undefined,
+    hasStorage: dbProperty.has_storage || false,
+    projectStatus: dbProperty.project_status || undefined,
     lastUpdated: dbProperty.updated_at,
     createdAt: dbProperty.created_at,
     property_type: dbProperty.property_type || 'rental',
@@ -175,6 +180,11 @@ export const useSupabasePropertyData = () => {
             featured: (updatedProperty as any).featured || false,
             show_management_badge: (updatedProperty as any).showManagementBadge !== false,
             notes: updatedProperty.notes,
+            rooms_range: updatedProperty.roomsRange || null,
+            size_range: updatedProperty.sizeRange || null,
+            units_count: updatedProperty.unitsCount || null,
+            has_storage: updatedProperty.hasStorage || false,
+            project_status: updatedProperty.projectStatus || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProperty.id);
@@ -244,6 +254,11 @@ export const useSupabasePropertyData = () => {
             current_market_value: (newProperty as any).currentMarketValue || null,
             featured: (newProperty as any).featured || false,
             assigned_user_id: (newProperty as any).assigned_user_id || (newProperty as any).assignedUserId || null,
+            rooms_range: newProperty.roomsRange || null,
+            size_range: newProperty.sizeRange || null,
+            units_count: newProperty.unitsCount || null,
+            has_storage: newProperty.hasStorage || false,
+            project_status: newProperty.projectStatus || null,
           });
 
         if (propertyError) {
