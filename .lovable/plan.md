@@ -1,77 +1,55 @@
 
 
-# הצגת פרטי יחידות בכרטיסיית פרויקט
+# הפעלת סריקה אוטומטית בעת הוספת פרויקט עם URL
 
 ## מה ישתנה
 
-הכרטיסייה תציג טבלה מפורטת של כל היחידות מ-`project_units`, כולל סטטוס זמינות בזמן אמת.
+ברגע שמזינים `tracking_url` לפרויקט חדש (או מעדכנים URL קיים), המערכת תפעיל סריקה אוטומטית מיד -- בלי לחכות ל-cron.
+
+## איפה לשנות
+
+הפרויקטים נוצרים/מתעדכנים דרך הקומפוננטות הקיימות של ניהול נכסים (AddPropertyModal / PropertyEditRow). צריך להוסיף קריאה ל-Edge Function `scout-project` מיד אחרי שמירת הנכס עם tracking_url.
 
 ## שינויים
 
-### 1. דף הפרויקטים (`NewDevelopments.tsx`)
-- שליפת יחידות מ-`project_units` לכל פרויקט (query נוסף או join)
-- העברת רשימת היחידות כ-prop ל-`NewDevelopmentCard`
+### 1. יצירת hook חדש: `src/hooks/useAutoScanProject.ts`
 
-### 2. כרטיסיית הפרויקט (`NewDevelopmentCard.tsx`)
-- הוספת prop חדש `units` (מערך היחידות)
-- **בצד הקדמי** של הכרטיס: הצגת סיכום -- כמה יחידות סה"כ, כמה זמינות, טווח מחירים
-- **בצד האחורי** (במקום או מעל הטופס): טבלת יחידות מפורטת עם:
-  - קומה, חדרים, גודל, סוג (דירת גן/פנטהאוז), מחיר
-  - סטטוס מקודד בצבע: ירוק = זמין, אדום = נמכר, כתום = שמור
-- טופס הפנייה יישאר מתחת לטבלה
+Hook פשוט שמקבל `property_id` ומפעיל סריקה:
 
-### 3. עדכון ה-Edge Function (`scout-project/index.ts`)
-- שינוי `units_count` כך שיציג סה"כ יחידות (לא רק זמינות)
-- הוספת שדה `available_count` ל-properties (או חישוב בצד הלקוח)
-
-## פרטים טכניים
-
-### מבנה ה-prop החדש
 ```text
-interface ProjectUnit {
-  id: string;
-  rooms: number | null;
-  size: number | null;
-  floor: number | null;
-  price: number | null;
-  unit_type: string | null;
-  status: string;  // 'available' | 'sold' | 'reserved'
+- מקבל property_id
+- קורא ל-supabase.functions.invoke('scout-project', { body: { property_id } })
+- מציג toast הצלחה/כשלון
+- לא חוסם את ה-UI (רץ ברקע)
+```
+
+### 2. עדכון טופס הוספת פרויקט
+
+במקום שבו הנכס נשמר בהצלחה ויש לו `tracking_url`, להוסיף קריאה אוטומטית:
+
+```text
+// אחרי שמירה מוצלחת של נכס עם tracking_url:
+if (trackingUrl) {
+  supabase.functions.invoke('scout-project', { 
+    body: { property_id: newPropertyId } 
+  });
+  toast("סריקה אוטומטית הופעלה...");
 }
 ```
 
-### שליפת הנתונים
-ב-`NewDevelopments.tsx` נוסיף query שני שמביא את כל היחידות לכל הפרויקטים:
-```text
-const { data: allUnits } = useQuery({
-  queryKey: ["project-units-he"],
-  queryFn: async () => {
-    const projectIds = projects.map(p => p.id);
-    const { data } = await supabase
-      .from("project_units")
-      .select("*")
-      .in("property_id", projectIds)
-      .order("floor", { ascending: true });
-    return data || [];
-  },
-  enabled: projects.length > 0,
-});
-```
+### 3. עדכון טופס עריכת פרויקט
 
-### עיצוב טבלת היחידות בכרטיס
-- שורות קומפקטיות עם טקסט קטן
-- סטטוס "זמין" בירוק בולט, "נמכר" באדום מעומעם עם קו חוצה על המחיר
-- מחירים בפורמט ישראלי (1,000,000 ש"ח)
-
-### עדכון units_count ב-Edge Function
-שינוי שורות 221-226 כך ש-`units_count` יכיל את סה"כ היחידות (לא רק available):
-```text
-await supabase
-  .from('properties')
-  .update({ units_count: units.length })
-  .eq('id', propertyId);
-```
+אם משנים את ה-`tracking_url` (מוסיפים חדש או מעדכנים), להפעיל סריקה גם כאן.
 
 ## קבצים לשינוי
-1. `src/components/NewDevelopmentCard.tsx` -- הצגת יחידות
-2. `src/pages/he/NewDevelopments.tsx` -- שליפת יחידות
-3. `supabase/functions/scout-project/index.ts` -- עדכון units_count
+
+1. `src/hooks/useAutoScanProject.ts` -- hook חדש
+2. הקומפוננטה שמטפלת ביצירת פרויקט מעקב (Tracked Project) -- הוספת קריאה אחרי שמירה
+3. הקומפוננטה שמטפלת בעריכת נכס -- הוספת קריאה כשמשתנה tracking_url
+
+## התנהגות
+
+- הסריקה רצה **ברקע** -- לא חוסמת את ממשק המשתמש
+- מוצגת הודעת toast: "סריקה אוטומטית הופעלה" ואחרי סיום "סריקה הושלמה - נמצאו X יחידות"
+- אם הסריקה נכשלת, מוצגת הודעה אבל הנכס כבר נשמר
+
