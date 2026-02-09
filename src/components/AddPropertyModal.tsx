@@ -44,7 +44,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     // Basic property
     address: '',
     city: 'תל אביב-יפו',
-    property_type: 'rental' as 'rental' | 'sale' | 'management' | 'project',
+    property_type: 'rental' as 'rental' | 'sale' | 'management' | 'project' | 'tracked_project',
     title: '',
     description: '',
     status: 'vacant' as Property['status'],
@@ -136,7 +136,18 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     e.preventDefault();
     
     // Validation
-    if (!formData.address.trim() || !formData.city.trim() || !formData.ownerName.trim()) {
+    const isTrackedProject = formData.property_type === 'tracked_project';
+    
+    if (isTrackedProject) {
+      if (!formData.trackingUrl.trim() || !formData.city.trim()) {
+        toast({
+          title: "שגיאה",
+          description: "יש למלא קישור לעמוד הפרויקט ועיר",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else if (!formData.address.trim() || !formData.city.trim() || !formData.ownerName.trim()) {
       toast({
         title: "שגיאה",
         description: "יש למלא כתובת, עיר ושם בעלים",
@@ -181,31 +192,35 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     setIsSubmitting(true);
 
     try {
+      const actualPropertyType = isTrackedProject ? 'project' : formData.property_type;
+      
       const newProperty: Omit<Property, 'id'> & any = {
         // Basic
-        address: formData.address.trim(),
+        address: isTrackedProject ? (formData.address.trim() || formData.title.trim() || 'פרויקט מעקב') : formData.address.trim(),
         city: formData.city,
-        property_type: formData.property_type,
+        property_type: actualPropertyType,
         title: formData.title || undefined,
         description: formData.description || undefined,
-        status: formData.property_type === 'project' ? 'unknown' : formData.status,
+        status: (actualPropertyType === 'project') ? 'unknown' : formData.status,
         contactStatus: 'not_contacted' as const,
         contactAttempts: 0,
         
-        // Features
-        rooms: formData.rooms ? parseFloat(formData.rooms) : undefined,
-        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
-        propertySize: formData.propertySize ? parseFloat(formData.propertySize) : undefined,
-        floor: formData.floor ? parseInt(formData.floor) : undefined,
-        buildingFloors: formData.buildingFloors ? parseInt(formData.buildingFloors) : undefined,
-        parking: formData.parking,
-        elevator: formData.elevator,
-        balcony: formData.balcony,
-        yard: formData.yard,
-        balconyYardSize: (formData.balcony || formData.yard) && formData.balconyYardSize ? parseFloat(formData.balconyYardSize) : undefined,
+        // Features (skip for tracked projects)
+        ...(isTrackedProject ? {} : {
+          rooms: formData.rooms ? parseFloat(formData.rooms) : undefined,
+          bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+          propertySize: formData.propertySize ? parseFloat(formData.propertySize) : undefined,
+          floor: formData.floor ? parseInt(formData.floor) : undefined,
+          buildingFloors: formData.buildingFloors ? parseInt(formData.buildingFloors) : undefined,
+          parking: formData.parking,
+          elevator: formData.elevator,
+          balcony: formData.balcony,
+          yard: formData.yard,
+          balconyYardSize: (formData.balcony || formData.yard) && formData.balconyYardSize ? parseFloat(formData.balconyYardSize) : undefined,
+        }),
         
         // Owner
-        ownerName: formData.ownerName.trim(),
+        ownerName: isTrackedProject ? (formData.ownerName.trim() || 'יזם') : formData.ownerName.trim(),
         ownerPhone: formData.ownerPhone || undefined,
         ownerEmail: formData.ownerEmail || undefined,
         
@@ -228,12 +243,12 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         featured: formData.featured,
         
         // Project-specific
-        roomsRange: formData.roomsRange || undefined,
-        sizeRange: formData.sizeRange || undefined,
-        unitsCount: formData.unitsCount ? parseInt(formData.unitsCount) : undefined,
-        hasStorage: formData.hasStorage,
-        projectStatus: formData.property_type === 'project' ? formData.projectStatus : undefined,
-        trackingUrl: formData.property_type === 'project' ? (formData.trackingUrl || undefined) : undefined,
+        roomsRange: isTrackedProject ? undefined : (formData.roomsRange || undefined),
+        sizeRange: isTrackedProject ? undefined : (formData.sizeRange || undefined),
+        unitsCount: isTrackedProject ? undefined : (formData.unitsCount ? parseInt(formData.unitsCount) : undefined),
+        hasStorage: isTrackedProject ? false : formData.hasStorage,
+        projectStatus: (actualPropertyType === 'project' && !isTrackedProject) ? formData.projectStatus : undefined,
+        trackingUrl: (actualPropertyType === 'project' || isTrackedProject) ? (formData.trackingUrl || undefined) : undefined,
         
         // Notes
         notes: formData.notes || undefined,
@@ -378,6 +393,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         <SelectItem value="sale">מכירה</SelectItem>
                         <SelectItem value="management">ניהול נכסים</SelectItem>
                         <SelectItem value="project">פרויקט חדש</SelectItem>
+                        <SelectItem value="tracked_project">פרויקט מעקב</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -409,6 +425,51 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </div>
                 </div>
 
+                {/* Tracked Project: simplified form */}
+                {formData.property_type === 'tracked_project' ? (
+                  <>
+                    <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+                      <div>
+                        <Label htmlFor="trackingUrl" className="text-base font-semibold">🔗 קישור לעמוד הפרויקט (חובה)</Label>
+                        <Input
+                          id="trackingUrl"
+                          type="url"
+                          value={formData.trackingUrl}
+                          onChange={(e) => handleInputChange('trackingUrl', e.target.value)}
+                          placeholder="https://www.example.co.il/project/..."
+                          dir="ltr"
+                          required
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          המערכת תסרוק את העמוד ותחלץ את הדירות אוטומטית
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="title">שם הפרויקט</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        placeholder="פרויקט בוטיק בפלורנטין"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="notes">הערות</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => handleInputChange('notes', e.target.value)}
+                        placeholder="הערות נוספות..."
+                        rows={2}
+                      />
+                    </div>
+                  </>
+                ) : (
+                <>
                 {/* Row 2: Address */}
                 <div>
                   <Label htmlFor="address">
@@ -671,10 +732,13 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     </div>
                   </>
                 )}
+                </>
+                )}
               </AccordionContent>
             </AccordionItem>
 
-            {/* Owner Details */}
+            {/* Owner Details - hide for tracked projects */}
+            {formData.property_type !== 'tracked_project' && (
             <AccordionItem value="owner">
               <AccordionTrigger>👤 פרטי הבעלים</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
@@ -729,6 +793,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
               </AccordionContent>
             </AccordionItem>
+            )}
 
             {/* Agent Assignment */}
             <AccordionItem value="agent">
@@ -795,7 +860,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             )}
 
             {/* Rental/Sale Details - hide for projects */}
-            {formData.property_type !== 'project' && (
+            {formData.property_type !== 'project' && formData.property_type !== 'tracked_project' && (
             <AccordionItem value="rental-sale">
               <AccordionTrigger>
                 {formData.property_type === 'rental' ? '🔑 פרטי השכירות' : '💰 פרטי מכירה'}
@@ -931,7 +996,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               ביטול
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'שומר...' : 'הוסף נכס'}
+              {isSubmitting ? 'שומר...' : formData.property_type === 'tracked_project' ? 'הוסף פרויקט מעקב' : 'הוסף נכס'}
             </Button>
           </div>
         </form>
