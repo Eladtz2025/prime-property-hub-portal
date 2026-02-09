@@ -30,6 +30,17 @@ const UNITS_SCHEMA = {
         }
       },
       description: 'List of all residential units/apartments found on the page. Each row in a table or listing is a separate unit.'
+    },
+    project_images: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: 'Full absolute URL of a project render/hero image. Prefer large building exterior renders, not icons, logos or small thumbnails. Must start with http.' },
+          description: { type: 'string', description: 'Short description of the image' }
+        }
+      },
+      description: 'Extract up to 5 main project render/hero images showing the building exterior. Prefer large high-quality renders. Do NOT include logos, icons, favicons, or small UI elements. Return full absolute URLs only.'
     }
   }
 };
@@ -84,6 +95,62 @@ async function scrapeProjectPage(url: string): Promise<any> {
   }
 
   return data;
+}
+
+const EXCLUDED_IMAGE_KEYWORDS = ['logo', 'icon', 'favicon', 'sprite', 'placeholder', 'avatar', 'badge', 'arrow', 'btn', 'button'];
+
+function isValidProjectImage(url: string): boolean {
+  if (!url || !url.startsWith('http')) return false;
+  const lower = url.toLowerCase();
+  return !EXCLUDED_IMAGE_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+async function saveProjectImages(propertyId: string, images: any[]): Promise<void> {
+  if (!images || images.length === 0) return;
+
+  // Check if images already exist for this property
+  const { data: existing, error: checkError } = await supabase
+    .from('property_images')
+    .select('id')
+    .eq('property_id', propertyId)
+    .limit(1);
+
+  if (checkError) {
+    console.error(`Failed to check existing images for ${propertyId}:`, checkError.message);
+    return;
+  }
+
+  // Don't overwrite existing images (manually uploaded)
+  if (existing && existing.length > 0) {
+    console.log(`Property ${propertyId} already has images, skipping`);
+    return;
+  }
+
+  const validImages = images.filter(img => isValidProjectImage(img?.url)).slice(0, 3);
+  if (validImages.length === 0) {
+    console.log(`No valid project images found for ${propertyId}`);
+    return;
+  }
+
+  console.log(`Saving ${validImages.length} project images for ${propertyId}`);
+
+  for (let i = 0; i < validImages.length; i++) {
+    const { error: insertError } = await supabase
+      .from('property_images')
+      .insert({
+        property_id: propertyId,
+        image_url: validImages[i].url,
+        alt_text: validImages[i].description || null,
+        is_main: i === 0,
+        order_index: i,
+        media_type: 'image',
+        show_on_website: true,
+      });
+
+    if (insertError) {
+      console.error(`Failed to save image ${i} for ${propertyId}:`, insertError.message);
+    }
+  }
 }
 
 async function processProject(propertyId: string, trackingUrl: string): Promise<{
@@ -223,6 +290,9 @@ async function processProject(propertyId: string, trackingUrl: string): Promise<
       .from('properties')
       .update({ units_count: units.length })
       .eq('id', propertyId);
+
+    // --- Extract and save project images ---
+    await saveProjectImages(propertyId, jsonData?.project_images || []);
 
     return stats;
 
