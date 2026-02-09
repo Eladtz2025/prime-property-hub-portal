@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/property';
 import { logger } from '@/utils/logger';
+import { triggerAutoScan } from '@/hooks/useAutoScanProject';
 
 const log = logger.component('useSupabasePropertyData');
 
@@ -287,6 +288,13 @@ export const useSupabasePropertyData = () => {
             log.error('Failed to insert tenant:', tenantError);
             // Continue anyway - property was created successfully
           }
+        }
+
+        // Trigger auto-scan if this is a project with a tracking URL
+        const trackingUrl = (newProperty as any).trackingUrl;
+        if (trackingUrl && newProperty.property_type === 'project') {
+          // Fire and forget — don't block the UI
+          triggerAutoScan(propertyId);
         }
 
         return { ...newProperty, id: propertyId };
