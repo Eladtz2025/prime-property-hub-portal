@@ -337,6 +337,7 @@ export const Properties: React.FC = memo(() => {
       case 'rental': return 'השכרה';
       case 'sale': return 'מכירה';
       case 'management': return 'ניהול';
+      case 'project': return 'פרויקט';
       default: return 'השכרה';
     }
   };
@@ -345,6 +346,7 @@ export const Properties: React.FC = memo(() => {
     switch (type) {
       case 'sale': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'management': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'project': return 'bg-amber-100 text-amber-800 border-amber-200';
       default: return 'bg-emerald-100 text-emerald-800 border-emerald-200'; // rental
     }
   };

@@ -63,6 +63,11 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
       assignedUserId: (property as any).assigned_user_id || (property as any).assignedUserId,
       co_brokerage_status: (property as any).co_brokerage_status || 'not_open',
       showOnWebsite: (property as any).show_on_website !== false,
+      roomsRange: (property as any).rooms_range || '',
+      sizeRange: (property as any).size_range || '',
+      unitsCount: (property as any).units_count || '',
+      hasStorage: (property as any).has_storage || false,
+      projectStatus: (property as any).project_status || 'under_construction',
       title_en: '',
       description_en: '',
       neighborhood_en: ''
@@ -212,9 +217,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
     try {
       setLoading(true);
       
-      const { error: propertyError } = await supabase
-        .from('properties')
-        .update({
+      const updateData: any = {
           address: formData.address,
           city: formData.city,
           neighborhood: (formData as any).neighborhood || null,
@@ -253,8 +256,18 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           show_management_badge: formData.showManagementBadge !== false,
           show_on_website: (formData as any).showOnWebsite !== false,
           neighborhood_en: (formData as any).neighborhood_en || null,
+          // Project-specific fields
+          rooms_range: (formData as any).roomsRange || null,
+          size_range: (formData as any).sizeRange || null,
+          units_count: (formData as any).unitsCount || null,
+          has_storage: (formData as any).hasStorage || false,
+          project_status: (formData as any).property_type === 'project' ? ((formData as any).projectStatus || 'under_construction') : null,
           updated_at: new Date().toISOString(),
-        })
+        };
+
+      const { error: propertyError } = await supabase
+        .from('properties')
+        .update(updateData)
         .eq('id', formData.id);
 
       if (propertyError) throw propertyError;
@@ -377,6 +390,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       <SelectItem value="rental">השכרה</SelectItem>
                       <SelectItem value="sale">מכירה</SelectItem>
                       <SelectItem value="management">ניהול</SelectItem>
+                      <SelectItem value="project">פרויקט</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
