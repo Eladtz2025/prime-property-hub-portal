@@ -575,60 +575,129 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   </div>
                 </div>
 
-                {/* Property specs: Rooms, Bath, Floor, Size + Features + Toggles */}
+                {/* Property specs: conditional for project vs regular */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 items-end" dir="rtl">
-                  <div className="min-w-[80px]">
-                    <Label htmlFor="rooms" className="text-xs">חדרים</Label>
-                    <Input
-                      id="rooms"
-                      type="number"
-                      step="0.5"
-                      className="text-center h-8 text-sm"
-                      value={formData.rooms || ''}
-                      onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
-                    />
-                  </div>
-                  <div className="min-w-[80px]">
-                    <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
-                    <Input
-                      id="bathrooms"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={(formData as any).bathrooms || ''}
-                      onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </div>
-                  <div className="min-w-[80px]">
-                    <Label htmlFor="floor" className="text-xs">קומה</Label>
-                    <Input
-                      id="floor"
-                      type="number"
-                      min="0"
-                      className="text-center h-8 text-sm"
-                      value={formData.floor === 0 ? '0' : (formData.floor || '')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleInputChange('floor', val === '' ? null : Number(val));
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-[80px]">
-                    <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
-                    <Input
-                      id="propertySize"
-                      type="number"
-                      className="text-center h-8 text-sm"
-                      value={formData.propertySize || ''}
-                      onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
-                    />
-                  </div>
+                  {(formData as any).property_type === 'project' ? (
+                    <>
+                      {/* Project-specific fields */}
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="roomsRange" className="text-xs">טווח חדרים</Label>
+                        <Input
+                          id="roomsRange"
+                          placeholder="3-5"
+                          className="text-center h-8 text-sm"
+                          value={(formData as any).roomsRange || ''}
+                          onChange={(e) => handleInputChange('roomsRange' as any, e.target.value)}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="sizeRange" className="text-xs">טווח שטח (מ"ר)</Label>
+                        <Input
+                          id="sizeRange"
+                          placeholder="80-140"
+                          className="text-center h-8 text-sm"
+                          value={(formData as any).sizeRange || ''}
+                          onChange={(e) => handleInputChange('sizeRange' as any, e.target.value)}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="buildingFloors" className="text-xs">קומות בבניין</Label>
+                        <Input
+                          id="buildingFloors"
+                          type="number"
+                          min="0"
+                          className="text-center h-8 text-sm"
+                          value={(formData as any).buildingFloors || ''}
+                          onChange={(e) => handleInputChange('buildingFloors' as any, e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="unitsCount" className="text-xs">מספר יח"ד</Label>
+                        <Input
+                          id="unitsCount"
+                          type="number"
+                          min="0"
+                          className="text-center h-8 text-sm"
+                          value={(formData as any).unitsCount || ''}
+                          onChange={(e) => handleInputChange('unitsCount' as any, e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label className="text-xs">סטטוס פרויקט</Label>
+                        <Select
+                          value={(formData as any).projectStatus || 'under_construction'}
+                          onValueChange={(value) => handleInputChange('projectStatus' as any, value)}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pre_sale">טרום מכירה</SelectItem>
+                            <SelectItem value="under_construction">בבנייה</SelectItem>
+                            <SelectItem value="ready">אכלוס מיידי</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Regular property fields */}
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="rooms" className="text-xs">חדרים</Label>
+                        <Input
+                          id="rooms"
+                          type="number"
+                          step="0.5"
+                          className="text-center h-8 text-sm"
+                          value={formData.rooms || ''}
+                          onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="bathrooms" className="text-xs">רחצה</Label>
+                        <Input
+                          id="bathrooms"
+                          type="number"
+                          min="0"
+                          className="text-center h-8 text-sm"
+                          value={(formData as any).bathrooms || ''}
+                          onChange={(e) => handleInputChange('bathrooms' as any, e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="floor" className="text-xs">קומה</Label>
+                        <Input
+                          id="floor"
+                          type="number"
+                          min="0"
+                          className="text-center h-8 text-sm"
+                          value={formData.floor === 0 ? '0' : (formData.floor || '')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleInputChange('floor', val === '' ? null : Number(val));
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-[80px]">
+                        <Label htmlFor="propertySize" className="text-xs">מ"ר</Label>
+                        <Input
+                          id="propertySize"
+                          type="number"
+                          className="text-center h-8 text-sm"
+                          value={formData.propertySize || ''}
+                          onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="min-w-[80px]">
                     <Label className="text-xs">תוספות</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-8 text-xs justify-start">
-                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard].filter(Boolean).length})
+                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard, (formData as any).hasStorage].filter(Boolean).length})
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-40 p-3" align="start">
@@ -673,6 +742,16 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                             />
                             <Label htmlFor="yard" className="text-sm cursor-pointer">חצר</Label>
                           </div>
+                          {(formData as any).property_type === 'project' && (
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="hasStorage"
+                                checked={(formData as any).hasStorage || false}
+                                onCheckedChange={(checked) => handleInputChange('hasStorage' as any, checked)}
+                              />
+                              <Label htmlFor="hasStorage" className="text-sm cursor-pointer">מחסן</Label>
+                            </div>
+                          )}
                           {(formData.balcony || formData.yard) && (
                             <div className="pt-2 border-t">
                               <Label className="text-xs">גודל מרפסת/חצר (מ"ר)</Label>
@@ -722,7 +801,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                   )}
                 </div>
 
-                {/* Status, Rent, Fees, Dates */}
+                {/* Status, Rent, Fees, Dates - hide rent/fees/dates for projects */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {/* Lease dates - only for rental and management */}
                   {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
@@ -749,26 +828,31 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
                       </div>
                     </>
                   )}
-                  <div>
-                    <Label htmlFor="buildingCommitteeFee" className="text-xs">ועד בית</Label>
-                    <Input
-                      id="buildingCommitteeFee"
-                      type="number"
-                      value={formData.buildingCommitteeFee || ''}
-                      onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="municipalTax" className="text-xs">ארנונה</Label>
-                    <Input
-                      id="municipalTax"
-                      type="number"
-                      value={formData.municipalTax || ''}
-                      onChange={(e) => handleInputChange('municipalTax', e.target.value ? Number(e.target.value) : null)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                  {/* Fees - hide for projects */}
+                  {(formData as any).property_type !== 'project' && (
+                    <>
+                      <div>
+                        <Label htmlFor="buildingCommitteeFee" className="text-xs">ועד בית</Label>
+                        <Input
+                          id="buildingCommitteeFee"
+                          type="number"
+                          value={formData.buildingCommitteeFee || ''}
+                          onChange={(e) => handleInputChange('buildingCommitteeFee', e.target.value ? Number(e.target.value) : null)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="municipalTax" className="text-xs">ארנונה</Label>
+                        <Input
+                          id="municipalTax"
+                          type="number"
+                          value={formData.municipalTax || ''}
+                          onChange={(e) => handleInputChange('municipalTax', e.target.value ? Number(e.target.value) : null)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
                   {/* Monthly rent - only for rental and management */}
                   {((formData as any).property_type === 'rental' || (formData as any).property_type === 'management') && (
                     <div>
