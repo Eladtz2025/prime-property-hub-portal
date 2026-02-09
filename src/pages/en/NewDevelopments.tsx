@@ -1,74 +1,37 @@
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
-import { FlippablePropertyCard } from "@/components/en/FlippablePropertyCard";
+import { NewDevelopmentCard } from "@/components/NewDevelopmentCard";
 import { Helmet } from "react-helmet";
 import FullScreenHero from "@/components/FullScreenHero";
 import { HreflangMeta } from "@/components/seo/HreflangMeta";
 import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const NewDevelopments = () => {
-  const telAvivDevelopments = [
-    {
-      title: "Rothschild Tower",
-      location: "Tel Aviv",
-      imageUrl: "/images/developments/telaviv-rothschild-tower.jpg",
-      type: "New Development",
-    },
-    {
-      title: "Neve Tzedek Residences",
-      location: "Tel Aviv",
-      imageUrl: "/images/developments/telaviv-neve-tzedek.jpg",
-      type: "New Development",
-    },
-    {
-      title: "Dizengoff Tower",
-      location: "Tel Aviv",
-      imageUrl: "/images/developments/telaviv-dizengoff-tower.jpg",
-      type: "New Development",
-    },
-  ];
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["public-projects-en"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("property_type", "project")
+        .eq("show_on_website", true)
+        .order("neighborhood_en", { ascending: true });
 
-  const florentinDevelopments = [
-    {
-      title: "Industrial Loft Florentin",
-      location: "Florentin",
-      imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
-      type: "New Development",
+      if (error) throw error;
+      return data || [];
     },
-    {
-      title: "Art Boutique Florentin",
-      location: "Florentin",
-      imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
-      type: "New Development",
-    },
-    {
-      title: "Gallery Studio",
-      location: "Florentin",
-      imageUrl: "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=800&q=80",
-      type: "New Development",
-    },
-  ];
+  });
 
-  const neveTzedekDevelopments = [
-    {
-      title: "Restored Historic Home",
-      location: "Neve Tzedek",
-      imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-      type: "New Development",
-    },
-    {
-      title: "Boutique Villa Neve Tzedek",
-      location: "Neve Tzedek",
-      imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
-      type: "New Development",
-    },
-    {
-      title: "Romantic Garden Apartment",
-      location: "Neve Tzedek",
-      imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
-      type: "New Development",
-    },
-  ];
+  // Group by neighborhood (English)
+  const grouped = projects.reduce<Record<string, typeof projects>>((acc, project) => {
+    const key = project.neighborhood_en || project.neighborhood || project.city || "Other";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(project);
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
@@ -96,64 +59,51 @@ const NewDevelopments = () => {
         minHeight="100vh"
       />
 
-      {/* Tel Aviv Developments */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              Tel Aviv
-            </h2>
-            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              Projects in the heart of the White City
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {telAvivDevelopments.map((dev, idx) => (
-              <FlippablePropertyCard key={idx} {...dev} />
-            ))}
-          </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </section>
-
-      {/* Florentin Developments */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              Florentin
-            </h2>
-            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              Urban, Creative, Young
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {florentinDevelopments.map((dev, idx) => (
-              <FlippablePropertyCard key={idx} {...dev} />
-            ))}
-          </div>
+      ) : Object.keys(grouped).length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-muted-foreground text-lg">New developments coming soon</p>
         </div>
-      </section>
+      ) : (
+        Object.entries(grouped).map(([neighborhood, neighborhoodProjects], idx) => (
+          <section key={neighborhood} className={`py-16 ${idx % 2 === 0 ? 'bg-muted/30' : 'bg-background'}`}>
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
+                  {neighborhood}
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {neighborhoodProjects.map((project) => (
+                  <NewDevelopmentCard
+                    key={project.id}
+                    id={project.id}
+                    name={project.title_en || project.title || project.address}
+                    neighborhood={project.neighborhood_en || project.neighborhood || ''}
+                    city={project.city}
+                    description={project.description_en || project.description || undefined}
+                    roomsRange={project.rooms_range || undefined}
+                    sizeRange={project.size_range || undefined}
+                    buildingFloors={project.building_floors || undefined}
+                    unitsCount={project.units_count || undefined}
+                    parking={project.parking || false}
+                    elevator={project.elevator || false}
+                    balcony={project.balcony || false}
+                    mamad={project.mamad || false}
+                    hasStorage={project.has_storage || false}
+                    projectStatus={project.project_status || undefined}
+                    language="en"
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        ))
+      )}
 
-      {/* Neve Tzedek Developments */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-2">
-              Neve Tzedek
-            </h2>
-            <p className="font-montserrat text-sm text-muted-foreground tracking-widest uppercase">
-              History, Luxury & Romance
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {neveTzedekDevelopments.map((dev, idx) => (
-              <FlippablePropertyCard key={idx} {...dev} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
       <EnglishFooter />
     </div>
   );

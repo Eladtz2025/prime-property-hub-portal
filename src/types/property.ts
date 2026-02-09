@@ -43,7 +43,13 @@ export interface Property {
   images?: PropertyImage[];
   lastUpdated?: string;
   createdAt?: string;
-  property_type?: 'rental' | 'sale' | 'management';
+  property_type?: 'rental' | 'sale' | 'management' | 'project';
+  // Project-specific fields
+  roomsRange?: string;
+  sizeRange?: string;
+  unitsCount?: number;
+  hasStorage?: boolean;
+  projectStatus?: 'pre_sale' | 'under_construction' | 'ready';
   assignedUserId?: string;
   assignedAgent?: {
     id: string;

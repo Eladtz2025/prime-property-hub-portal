@@ -2048,6 +2048,7 @@ export type Database = {
           elevator: boolean | null
           featured: boolean | null
           floor: number | null
+          has_storage: boolean | null
           id: string
           last_contact_date: string | null
           mamad: boolean | null
@@ -2060,16 +2061,20 @@ export type Database = {
           owner_name: string | null
           owner_phone: string | null
           parking: boolean | null
+          project_status: string | null
           property_number: number
           property_size: number | null
           property_type: string | null
           renovation_costs: number | null
           rooms: number | null
+          rooms_range: string | null
           show_management_badge: boolean | null
           show_on_website: boolean | null
+          size_range: string | null
           status: string
           title: string | null
           title_en: string | null
+          units_count: number | null
           updated_at: string
           yard: boolean | null
         }
@@ -2097,6 +2102,7 @@ export type Database = {
           elevator?: boolean | null
           featured?: boolean | null
           floor?: number | null
+          has_storage?: boolean | null
           id?: string
           last_contact_date?: string | null
           mamad?: boolean | null
@@ -2109,16 +2115,20 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null
+          project_status?: string | null
           property_number?: number
           property_size?: number | null
           property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
+          rooms_range?: string | null
           show_management_badge?: boolean | null
           show_on_website?: boolean | null
+          size_range?: string | null
           status?: string
           title?: string | null
           title_en?: string | null
+          units_count?: number | null
           updated_at?: string
           yard?: boolean | null
         }
@@ -2146,6 +2156,7 @@ export type Database = {
           elevator?: boolean | null
           featured?: boolean | null
           floor?: number | null
+          has_storage?: boolean | null
           id?: string
           last_contact_date?: string | null
           mamad?: boolean | null
@@ -2158,16 +2169,20 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean | null
+          project_status?: string | null
           property_number?: number
           property_size?: number | null
           property_type?: string | null
           renovation_costs?: number | null
           rooms?: number | null
+          rooms_range?: string | null
           show_management_badge?: boolean | null
           show_on_website?: boolean | null
+          size_range?: string | null
           status?: string
           title?: string | null
           title_en?: string | null
+          units_count?: number | null
           updated_at?: string
           yard?: boolean | null
         }
