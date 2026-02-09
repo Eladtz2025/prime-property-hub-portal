@@ -67,10 +67,10 @@ async function scrapeProjectPage(url: string): Promise<any> {
     },
     body: JSON.stringify({
       url,
-      formats: [
-        { type: 'json', schema: UNITS_SCHEMA },
-        'markdown'
-      ],
+      formats: ['extract', 'markdown'],
+      extract: {
+        schema: UNITS_SCHEMA,
+      },
       onlyMainContent: true,
       waitFor: 3000,
     }),
@@ -99,7 +99,7 @@ async function processProject(propertyId: string, trackingUrl: string): Promise<
     const scrapeResult = await scrapeProjectPage(trackingUrl);
     
     // Extract units from response
-    const jsonData = scrapeResult?.data?.json || scrapeResult?.json;
+    const jsonData = scrapeResult?.data?.extract || scrapeResult?.extract;
     const units = jsonData?.units || [];
     stats.units_found = units.length;
 
