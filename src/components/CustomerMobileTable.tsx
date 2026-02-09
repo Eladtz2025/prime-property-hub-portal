@@ -122,7 +122,6 @@ export const CustomerMobileTable = ({
   const [matchesData, setMatchesData] = useState<{
     customerName: string;
     customerPhone?: string;
-    ownMatches: any[];
     scoutedMatchGroups: any[];
   } | null>(null);
 
@@ -331,7 +330,6 @@ export const CustomerMobileTable = ({
                         setMatchesData({
                           customerName: customer.name,
                           customerPhone: customer.phone,
-                          ownMatches: data.ownMatches,
                           scoutedMatchGroups: data.scoutedMatchGroups,
                         });
                         setMatchesSheetOpen(true);
@@ -797,7 +795,6 @@ export const CustomerMobileTable = ({
           onOpenChange={setMatchesSheetOpen}
           customerName={matchesData.customerName}
           customerPhone={matchesData.customerPhone}
-          ownMatches={matchesData.ownMatches}
           scoutedMatchGroups={matchesData.scoutedMatchGroups}
         />
       )}
