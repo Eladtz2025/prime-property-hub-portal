@@ -1,41 +1,75 @@
 
-# תיקון: הפרויקט לא נשמר -- בעיית CHECK constraint בדאטאבייס
+# תיקון סריקת פרויקט - Firecrawl API format
 
-## הבעיה
+## מה מצאתי
 
-נמצאה שגיאה בלוגים של הדאטאבייס:
-```
-new row for relation "properties" violates check constraint "properties_property_type_check"
-```
+| בדיקה | תוצאה |
+|-------|-------|
+| פרויקט בדאטאבייס | נשמר (זלטופולסקי 27, תל אביב-יפו) |
+| טבלת project_units | קיימת, ריקה (מחכה לסריקה) |
+| סריקה אחרונה | נכשלה - "Bad Request" |
+| סיבת הכשלון | פורמט Firecrawl API שגוי |
 
-ה-CHECK constraint על עמודת `property_type` בטבלת `properties` מאפשר רק 3 ערכים:
-- `rental`
-- `sale`
-- `management`
+## הבאג
 
-**חסר `project`!** לכן כל ניסיון לשמור פרויקט (רגיל או מעקב) נכשל בשקט.
-
-## הפתרון
-
-### שלב 1: Migration לעדכון ה-constraint
-
-עדכון ה-CHECK constraint כך שיכלול גם `project`:
-
+שורות 68-76 ב-`scout-project/index.ts` שולחות:
 ```text
-ALTER TABLE properties DROP CONSTRAINT properties_property_type_check;
-ALTER TABLE properties ADD CONSTRAINT properties_property_type_check 
-  CHECK (property_type = ANY (ARRAY['rental', 'sale', 'management', 'project']));
+formats: [
+  { type: 'json', schema: UNITS_SCHEMA },   // לא חוקי!
+  'markdown'
+]
 ```
 
-### שלב 2: בדיקה
+Firecrawl API v1 מצפה ל-`formats` כמערך של מחרוזות בלבד. ה-schema צריך לעבור דרך אובייקט `extract` נפרד.
 
-לאחר העדכון:
-1. נוסיף פרויקט מעקב מחדש עם URL
-2. נוודא שנשמר בדאטאבייס
-3. נפעיל סריקה ידנית לבדוק שהכל עובד
+## התיקון
+
+### קובץ: `supabase/functions/scout-project/index.ts`
+
+**שינוי 1 - פורמט הבקשה** (שורות 68-76):
+```text
+// לפני (שגוי):
+body: JSON.stringify({
+  url,
+  formats: [
+    { type: 'json', schema: UNITS_SCHEMA },
+    'markdown'
+  ],
+  onlyMainContent: true,
+  waitFor: 3000,
+})
+
+// אחרי (תקין):
+body: JSON.stringify({
+  url,
+  formats: ['extract', 'markdown'],
+  extract: {
+    schema: UNITS_SCHEMA,
+  },
+  onlyMainContent: true,
+  waitFor: 3000,
+})
+```
+
+**שינוי 2 - חילוץ התוצאה** (שורה 102):
+```text
+// לפני:
+const jsonData = scrapeResult?.data?.json || scrapeResult?.json;
+
+// אחרי:
+const jsonData = scrapeResult?.data?.extract || scrapeResult?.extract;
+```
+
+### אחרי דיפלוי - בדיקה אוטומטית
+
+הפעלת הסריקה ידנית לפרויקט זלטופולסקי 27 ובדיקה ש:
+1. הסריקה מחזירה תוצאות (לא Bad Request)
+2. יחידות נכנסות ל-`project_units`
+3. `units_count` מתעדכן ב-`properties`
+4. לוג חדש ב-`project_scan_logs` עם status = completed
 
 ## סיכום
 
-- תיקון של שורה אחת בדאטאבייס (עדכון constraint)
-- לא נדרשים שינויי קוד
-- אחרי התיקון נוכל לבדוק את כל הזרימה מקצה לקצה
+- קובץ אחד לתיקון
+- 2 שינויים קטנים: פורמט בקשה + חילוץ תוצאה
+- אפעיל סריקה ידנית מיד אחרי הדיפלוי לוודא שהכל עובד
