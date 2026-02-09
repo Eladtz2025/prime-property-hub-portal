@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { PropertyDocuments } from './PropertyDocuments';
 import { ProjectUnitsTable } from './ProjectUnitsTable';
+import { triggerAutoScan } from '@/hooks/useAutoScanProject';
 
 interface PropertyEditRowProps {
   property: Property;
@@ -341,6 +342,17 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
             show_on_website: image.showOnWebsite ?? true,
           });
         }
+      }
+
+      // Check if tracking_url changed and trigger auto-scan
+      const oldTrackingUrl = (property as any).tracking_url || (property as any).trackingUrl || '';
+      const newTrackingUrl = (formData as any).trackingUrl || '';
+      if (
+        (formData as any).property_type === 'project' &&
+        newTrackingUrl &&
+        newTrackingUrl !== oldTrackingUrl
+      ) {
+        triggerAutoScan(formData.id);
       }
 
       toast({
