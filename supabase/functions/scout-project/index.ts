@@ -218,11 +218,10 @@ async function processProject(propertyId: string, trackingUrl: string): Promise<
       }
     }
 
-    // Update units_count on the property (count available only)
-    const availableCount = units.filter((u: any) => normalizeStatus(u.status) === 'available').length;
+    // Update units_count on the property (total units, not just available)
     await supabase
       .from('properties')
-      .update({ units_count: availableCount })
+      .update({ units_count: units.length })
       .eq('id', propertyId);
 
     return stats;
