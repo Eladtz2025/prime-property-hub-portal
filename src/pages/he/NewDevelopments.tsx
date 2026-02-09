@@ -8,6 +8,7 @@ import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/component
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { PublicProjectUnit } from "@/components/PublicUnitsTable";
 
 const NewDevelopments = () => {
   const { data: projects = [], isLoading } = useQuery({
@@ -19,13 +20,35 @@ const NewDevelopments = () => {
         .eq("property_type", "project")
         .eq("show_on_website", true)
         .order("neighborhood", { ascending: true });
-
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Group by neighborhood
+  const { data: allUnits = [] } = useQuery({
+    queryKey: ["project-units-he", projects.map(p => p.id)],
+    queryFn: async () => {
+      const projectIds = projects.map(p => p.id);
+      const { data, error } = await supabase
+        .from("project_units")
+        .select("id, property_id, rooms, size, floor, price, unit_type, status")
+        .in("property_id", projectIds)
+        .order("floor", { ascending: true });
+      if (error) throw error;
+      return (data || []) as (PublicProjectUnit & { property_id: string })[];
+    },
+    enabled: projects.length > 0,
+  });
+
+  // Group units by property_id
+  const unitsByProject = allUnits.reduce<Record<string, PublicProjectUnit[]>>((acc, unit) => {
+    const pid = (unit as any).property_id;
+    if (!acc[pid]) acc[pid] = [];
+    acc[pid].push(unit);
+    return acc;
+  }, {});
+
+  // Group projects by neighborhood
   const grouped = projects.reduce<Record<string, typeof projects>>((acc, project) => {
     const key = project.neighborhood || project.city || "אחר";
     if (!acc[key]) acc[key] = [];
@@ -96,6 +119,7 @@ const NewDevelopments = () => {
                     hasStorage={project.has_storage || false}
                     projectStatus={project.project_status || undefined}
                     language="he"
+                    units={unitsByProject[project.id] || []}
                   />
                 ))}
               </div>
