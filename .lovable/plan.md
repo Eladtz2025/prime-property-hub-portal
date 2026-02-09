@@ -1,57 +1,144 @@
 
-# תיקון גישת צופה (viewer) לכל העמודים
+# שילוב פרויקטים חדשים בתוך טאב הנכסים הקיים
 
-## הבעיה
+## הרעיון
 
-ה-`ProtectedRoute` משתמש בהיררכיית תפקידים (viewer=1, manager=2, admin=3) ולא בודק את טבלת `permissions`. כמעט כל הנתיבים מוגדרים עם `requiredRole="admin"` (רמה 3), אז הצופה (רמה 1) רואה "אין הרשאה" בכל עמוד.
+במקום ליצור עמוד אדמין נפרד וטבלה נפרדת, נוסיף סוג נכס חדש **"פרויקט"** (`project`) למערכת הנכסים הקיימת. ככה תוכל להוסיף פרויקט בדיוק כמו שמוסיפים דירה להשכרה או למכירה -- מאותו כפתור "הוסף נכס", עם אותו flow.
 
-ההרשאות שהוספנו ל-DB בשלב הקודם (viewer → read) רלוונטיות רק להסתרת כפתורי עריכה/מחיקה ב-UI, אבל לא משפיעות על גישה לדפים עצמם.
+## מה ישתנה
 
-## הפתרון
+### 1. דאטאבייס -- עמודות חדשות בטבלת `properties`
 
-לשנות את `requiredRole` בכל הנתיבים ב-`App.tsx` מ-`"admin"` ל-`"viewer"`, כדי שהצופה יוכל לגשת לכל העמודים. ההגנה על פעולות כתיבה כבר קיימת ב-2 רמות:
-1. **UI** -- כפתורי עריכה/מחיקה מוסתרים כשאין הרשאת update/delete (בדיקת `hasPermission`)
-2. **DB** -- RLS מונע כתיבה ברמת הדאטאבייס
+הוספת שדות ספציפיים לפרויקטים (כל השדות אופציונליים):
 
-## שינויים
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| `rooms_range` | text | טווח חדרים, למשל "3-5" |
+| `size_range` | text | טווח שטח, למשל "80-140" |
+| `units_count` | integer | מספר יחידות דיור |
+| `has_storage` | boolean | מחסן |
+| `project_status` | text | סטטוס פרויקט: pre_sale / under_construction / ready |
 
-### קובץ יחיד: `src/App.tsx`
+שדות קיימים שכבר מתאימים לפרויקט ולא דורשים שינוי:
+- `neighborhood` / `neighborhood_en` -- שכונה
+- `title` / `title_en` -- שם הפרויקט
+- `description` / `description_en` -- תיאור
+- `parking`, `elevator`, `balcony`, `mamad`, `yard` -- תכונות
+- `building_floors` -- קומות
+- `show_on_website` -- הצג באתר
+- `city` -- עיר
 
-שינוי `requiredRole` ב-**כל** הנתיבים שכרגע דורשים `"admin"` או `"manager"`:
+### 2. הוספת סוג "פרויקט" בטופס הוספת נכס
 
-| נתיב | לפני | אחרי |
-|-------|-------|-------|
-| `/admin-dashboard` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/customers` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/properties` | `requiredRole="manager"` | `requiredRole="viewer"` |
-| `/admin-dashboard/admin-control` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/import-data` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/import-from-storage` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/whatsapp` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/all-features` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/forms` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/price-offers` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/price-offers/create` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/price-offers/edit/:id` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/pitch-decks` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/pitch-decks/new` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/pitch-decks/:id` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin/alerts` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin/activity` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/leads` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/devops` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/photo-studio` | `requiredRole="admin"` | `requiredRole="viewer"` |
-| `/admin-dashboard/property-scout` | `requiredRole="manager"` | `requiredRole="viewer"` |
+**קובץ: `src/components/AddPropertyModal.tsx`**
 
-## מה לא משתנה
+- הוספת `project` לרשימת סוגי הנכס (ליד "השכרה", "מכירה", "ניהול")
+- כאשר נבחר "פרויקט" -- הטופס משתנה:
+  - במקום "כתובת" --> הכתובת תהיה שם השכונה (או שנשאיר כתובת כשדה פנימי בלבד)
+  - מופיעים שדות ייעודיים: טווח חדרים, טווח שטח, מספר יחידות, סטטוס פרויקט
+  - שדות לא רלוונטיים מוסתרים (דייר, שכר דירה, תאריכי חוזה)
+  - שדות "בעלים" נשארים -- כי זה היזם/קבלן (פנימי, לא מוצג באתר)
 
-- ההרשאות ב-DB (permissions) נשארות כפי שהן -- הצופה יראה את העמודים אבל כפתורי עריכה/מחיקה יישארו מוסתרים
-- RLS policies ב-DB מונעות כתיבה לא מורשית
-- הניווט (EnhancedTopNavigation) לא דורש שינוי -- הוא כבר מציג את כל הטאבים לכל משתמש מחובר
+### 3. עדכון סוגי הנכס ב-TypeScript
+
+**קובץ: `src/types/property.ts`**
+
+```text
+property_type?: 'rental' | 'sale' | 'management' | 'project';
+```
+
+### 4. עדכון הצגה בטבלת הנכסים
+
+**קובץ: `src/pages/Properties.tsx`**
+
+- הוספת צבע ותווית לסוג "פרויקט" (למשל badge כתום-זהוב)
+- הצגת `rooms_range` ו-`size_range` במקום `rooms` ו-`property_size` כשסוג הנכס הוא פרויקט
+- הצגת badge סטטוס פרויקט (טרום מכירה / בבנייה / מוכן)
+
+### 5. עדכון העמוד הציבורי -- פרויקטים חדשים
+
+**קבצים: `src/pages/he/NewDevelopments.tsx` + `src/pages/en/NewDevelopments.tsx`**
+
+- החלפת הנתונים ה-hardcoded בשאילתה מ-Supabase: שליפת כל הנכסים מסוג `project` עם `show_on_website = true`
+- קיבוץ לפי שכונה (neighborhood)
+
+### 6. כרטיס פרויקט פרימיום חדש (לאתר הציבורי)
+
+**קובץ חדש: `src/components/NewDevelopmentCard.tsx`**
+
+כרטיס בעיצוב לוקס-מינימליסטי **בלי תמונות**:
+- רקע gradient אלגנטי (כהה עם נגיעות זהב)
+- שם הפרויקט בפונט Playfair Display
+- שם שכונה
+- אייקונים: טווח חדרים, טווח שטח, קומות
+- Badges תכונות: חניה, מעלית, ממ"ד, מחסן
+- Badge סטטוס: "טרום מכירה" / "בבנייה" / "אכלוס מיידי"
+- כפתור "לקבלת מידע" --> הופך לטופס פנייה (flip card כמו הקיים)
+
+### 7. עדכון מודאל עריכת נכס
+
+**קובץ: `src/components/PropertyEditRow.tsx`** (או `PropertyEditModal`)
+
+- הצגת השדות הייעודיים לפרויקט כשסוג הנכס הוא project
+- אפשרות לערוך טווח חדרים, טווח שטח, מספר יחידות, סטטוס פרויקט
+
+## פירוט טכני
+
+### DB Migration
+
+```text
+ALTER TABLE properties 
+  ADD COLUMN rooms_range text,
+  ADD COLUMN size_range text,
+  ADD COLUMN units_count integer,
+  ADD COLUMN has_storage boolean DEFAULT false,
+  ADD COLUMN project_status text DEFAULT 'under_construction';
+```
+
+### עיצוב כרטיס הפרויקט באתר (ללא תמונות)
+
+```text
++--------------------------------------+
+|  gradient: dark charcoal --> gold     |
+|                                      |
+|  [Badge: טרום מכירה]                 |
+|                                      |
+|   שם הפרויקט                         |
+|   ━━━━━━━ קו זהב ━━━━━━━            |
+|   פלורנטין, תל אביב                  |
+|                                      |
+|   3-5 חדרים  |  80-140 מ"ר           |
+|   8 קומות    |  24 יח"ד              |
+|                                      |
+|   [חניה] [מעלית] [ממ"ד] [מחסן]       |
+|                                      |
+|   תיאור קצר של הפרויקט...            |
+|                                      |
+|   [ לקבלת מידע → ]                   |
++--------------------------------------+
+```
+
+### flow הוספת פרויקט באדמין
+
+1. לוחצים "הוסף נכס"
+2. בוחרים סוג: **פרויקט**
+3. הטופס משתנה ומציג:
+   - שם פרויקט (title / title_en)
+   - שכונה (neighborhood / neighborhood_en)
+   - עיר
+   - תיאור (description / description_en)
+   - טווח חדרים, טווח שטח, קומות, יחידות דיור
+   - תכונות: חניה, מעלית, מרפסת, ממ"ד, מחסן
+   - סטטוס פרויקט
+   - הצג באתר (toggle)
+   - בעלים (= היזם, פנימי בלבד)
+4. כתובת -- שדה חובה קיים, נרשום את שם השכונה בלבד (לא כתובת מדויקת)
+5. הפרויקט מופיע בטבלת הנכסים עם badge "פרויקט"
 
 ## סיכום
 
-- קובץ אחד לעדכון (`App.tsx`)
-- 21 שינויים של `requiredRole` מ-admin/manager ל-viewer
-- ללא שינויי DB
-- הצופה יוכל לנווט לכל עמוד, אבל לא יוכל לבצע שום פעולת כתיבה
+- 1 migration (5 עמודות חדשות לטבלת properties)
+- 1 קובץ חדש (כרטיס פרויקט פרימיום לאתר)
+- ~6 קבצים לעדכון (types, AddPropertyModal, Properties page, PropertyEditRow, NewDevelopments HE+EN)
+- ללא טבלה חדשה -- הכל בתוך המערכת הקיימת
+- ניהול פרויקטים מאותו מקום בדיוק כמו דירות
