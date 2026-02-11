@@ -144,6 +144,7 @@ export type Database = {
           id: string
           inactive_marked: number | null
           properties_checked: number | null
+          run_details: Json | null
           started_at: string
           status: string
         }
@@ -153,6 +154,7 @@ export type Database = {
           id?: string
           inactive_marked?: number | null
           properties_checked?: number | null
+          run_details?: Json | null
           started_at?: string
           status?: string
         }
@@ -162,6 +164,7 @@ export type Database = {
           id?: string
           inactive_marked?: number | null
           properties_checked?: number | null
+          run_details?: Json | null
           started_at?: string
           status?: string
         }

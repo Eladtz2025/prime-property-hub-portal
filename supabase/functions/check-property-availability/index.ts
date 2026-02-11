@@ -458,6 +458,7 @@ serve(async (req) => {
     let errorCount = 0;
     let skippedCount = 0;
     const inactiveIds: string[] = [];
+    const detailedResults: any[] = [];
 
     // Reasons that should NOT update availability_checked_at (property stays in queue for retry)
     const retryableReasons = new Set([
@@ -470,6 +471,17 @@ serve(async (req) => {
 
     for (const result of results) {
       checkedCount++;
+      
+      // Find matching property for details
+      const prop = properties.find(p => p.id === result.id);
+      detailedResults.push({
+        property_id: result.id,
+        source_url: prop?.source_url || null,
+        source: prop?.source || null,
+        address: prop?.title || null,
+        reason: result.reason,
+        is_inactive: result.isInactive,
+      });
       
       const isRetryable = result.error || retryableReasons.has(result.reason);
       
@@ -535,6 +547,7 @@ serve(async (req) => {
       marked_inactive: inactiveCount,
       errors: errorCount,
       inactive_ids: inactiveIds,
+      results: detailedResults,
       firecrawl_enabled: useFirecrawl,
       elapsed_ms: elapsed,
       global_timeout_hit: globalAbortController.signal.aborted
