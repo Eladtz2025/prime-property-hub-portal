@@ -1,4 +1,5 @@
-// Edge Function: check-property-availability v2.0
+// Edge Function: check-property-availability v3.0
+// Changes: Global timeout, HEAD-first before Firecrawl
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
@@ -7,7 +8,8 @@ import {
   isRedirectDetected, 
   hasPropertyIndicators 
 } from "../_shared/availability-indicators.ts";
-// Removed unused import SupabaseClient
+
+const GLOBAL_TIMEOUT_MS = 50000; // 50 seconds - safely under Edge Function limit
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,6 +28,54 @@ interface CheckResult {
   isInactive: boolean;
   reason: string;
   error?: boolean;
+}
+
+/**
+ * Quick HEAD check before Firecrawl - catches 404/410/redirects fast
+ */
+async function quickHeadCheck(
+  url: string,
+  source: string,
+  timeoutMs: number = 3000
+): Promise<{ isInactive: boolean; reason: string } | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      redirect: 'manual'
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.status === 404 || response.status === 410) {
+      console.log(`⚡ HEAD ${response.status} for ${url}`);
+      return { isInactive: true, reason: `head_http_${response.status}` };
+    }
+
+    if (response.status === 301 || response.status === 302) {
+      const location = response.headers.get('location') || '';
+      // For yad2: redirect away from /item/ means removed
+      if (source === 'yad2' && !location.includes('/item/')) {
+        return { isInactive: true, reason: 'head_redirect_away' };
+      }
+      // Generic: redirect to homepage
+      const isRedirectToHome = location.endsWith('/') || 
+        (!location.includes('?') && !location.includes('/viewad') && !location.includes('/item'));
+      if (isRedirectToHome) {
+        return { isInactive: true, reason: 'head_redirect_to_home' };
+      }
+    }
+
+    // HEAD didn't determine status - need Firecrawl
+    return null;
+  } catch {
+    // HEAD failed (timeout, network error) - proceed to Firecrawl
+    return null;
+  }
 }
 
 /**
@@ -99,36 +149,30 @@ async function checkWithFirecrawl(
         const metadata = result?.data?.metadata || result?.metadata || {};
         const combinedContent = markdown + ' ' + html;
         
-        // === INDICATOR-FIRST: Check removal indicators BEFORE anything else ===
         if (isListingRemoved(combinedContent)) {
           console.log(`🚫 Removal indicator found for ${url}`);
           return { isInactive: true, reason: 'listing_removed_indicator' };
         }
         
-        // === Check 2: HTTP status code backup ===
         if (metadata.statusCode === 404 || metadata.statusCode === 410) {
           console.log(`⚠️ HTTP ${metadata.statusCode} for ${url}`);
           return { isInactive: true, reason: `http_${metadata.statusCode}` };
         }
         
-        // === Check 3: Redirect detection ===
         const redirectCheck = isRedirectDetected(url, metadata, source);
         if (redirectCheck.isRedirect) {
           return { isInactive: true, reason: redirectCheck.reason! };
         }
         
-        // === Check 4: Has property indicators → definitely active ===
         if (hasPropertyIndicators(combinedContent)) {
           return { isInactive: false, reason: 'content_ok' };
         }
         
-        // === Check 5: Short content without indicators ===
         if (markdown.length < 500) {
           console.log(`⚠️ Short content (${markdown.length} chars) for ${url}`);
           return { isInactive: true, reason: 'empty_or_error_page' };
         }
         
-        // === Default: Long content but no indicators ===
         console.log(`⚠️ Long content but no indicators for ${url}`);
         return { isInactive: false, reason: 'no_indicators_keeping_active' };
       }
@@ -244,6 +288,12 @@ async function checkSingleProperty(
     let result: { isInactive: boolean; reason: string };
     
     if (shouldUseFirecrawl) {
+      // HEAD-first: quick check before expensive Firecrawl call
+      const headResult = await quickHeadCheck(property.source_url, property.source);
+      if (headResult) {
+        return { id: property.id, ...headResult };
+      }
+      
       result = await checkWithFirecrawl(
         property.source_url, 
         property.source, 
@@ -277,12 +327,19 @@ async function processPropertiesInParallel(
   concurrencyLimit: number,
   useFirecrawl: boolean,
   firecrawlApiKey: string | undefined,
-  settings: any
+  settings: any,
+  abortSignal: AbortSignal
 ): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
-  const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
+  const perPropertyTimeout = settings.per_property_timeout_ms || 15000;
   
   for (let i = 0; i < properties.length; i += concurrencyLimit) {
+    // Check global abort before each chunk
+    if (abortSignal.aborted) {
+      console.log(`⏱️ Global timeout reached, stopping after ${results.length} results`);
+      break;
+    }
+    
     const chunk = properties.slice(i, i + concurrencyLimit);
     console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
     
@@ -307,6 +364,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  const globalAbortController = new AbortController();
+  const globalTimeoutId = setTimeout(() => {
+    console.log(`⏱️ Global timeout (${GLOBAL_TIMEOUT_MS}ms) reached`);
+    globalAbortController.abort();
+  }, GLOBAL_TIMEOUT_MS);
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
@@ -329,6 +393,7 @@ serve(async (req) => {
     }
 
     if (propertyIds.length === 0) {
+      clearTimeout(globalTimeoutId);
       return new Response(JSON.stringify({
         success: true,
         message: 'No property IDs provided',
@@ -345,6 +410,7 @@ serve(async (req) => {
     if (error) throw error;
 
     if (!properties || properties.length === 0) {
+      clearTimeout(globalTimeoutId);
       return new Response(JSON.stringify({
         success: true,
         message: 'No properties found',
@@ -353,16 +419,19 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log(`🔍 Checking ${properties.length} properties`);
+    console.log(`🔍 Checking ${properties.length} properties (global timeout: ${GLOBAL_TIMEOUT_MS}ms)`);
 
-    const concurrencyLimit = settings.concurrency_limit || 4;
+    const concurrencyLimit = settings.concurrency_limit || 3;
     const results = await processPropertiesInParallel(
       properties,
       concurrencyLimit,
       useFirecrawl,
       firecrawlApiKey,
-      settings
+      settings,
+      globalAbortController.signal
     );
+
+    clearTimeout(globalTimeoutId);
 
     let checkedCount = 0;
     let inactiveCount = 0;
@@ -413,7 +482,8 @@ serve(async (req) => {
       }
     }
 
-    console.log(`✅ Done: ${checkedCount} checked, ${inactiveCount} inactive`);
+    const elapsed = Date.now() - startTime;
+    console.log(`✅ Done in ${elapsed}ms: ${checkedCount} checked, ${inactiveCount} inactive, ${errorCount} errors`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -421,10 +491,13 @@ serve(async (req) => {
       marked_inactive: inactiveCount,
       errors: errorCount,
       inactive_ids: inactiveIds,
-      firecrawl_enabled: useFirecrawl
+      firecrawl_enabled: useFirecrawl,
+      elapsed_ms: elapsed,
+      global_timeout_hit: globalAbortController.signal.aborted
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
+    clearTimeout(globalTimeoutId);
     console.error('❌ Error:', error);
     return new Response(JSON.stringify({
       success: false,
