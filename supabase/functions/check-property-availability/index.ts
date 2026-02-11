@@ -129,7 +129,8 @@ async function scrapeForAvailabilityCheck(
 }
 
 /**
- * Check via Firecrawl with INDICATOR-FIRST approach
+ * Check via Firecrawl with PROPERTY-INDICATORS-FIRST approach
+ * Changed from indicator-first to prevent false positives from temporary error pages
  */
 async function checkWithFirecrawl(
   url: string, 
@@ -149,28 +150,47 @@ async function checkWithFirecrawl(
         const metadata = result?.data?.metadata || result?.metadata || {};
         const combinedContent = markdown + ' ' + html;
         
-        if (isListingRemoved(combinedContent)) {
-          console.log(`🚫 Removal indicator found for ${url}`);
-          return { isInactive: true, reason: 'listing_removed_indicator' };
-        }
-        
+        // HTTP status codes are always reliable
         if (metadata.statusCode === 404 || metadata.statusCode === 410) {
           console.log(`⚠️ HTTP ${metadata.statusCode} for ${url}`);
           return { isInactive: true, reason: `http_${metadata.statusCode}` };
         }
         
+        // Redirect check is reliable
         const redirectCheck = isRedirectDetected(url, metadata, source);
         if (redirectCheck.isRedirect) {
           return { isInactive: true, reason: redirectCheck.reason! };
         }
         
-        if (hasPropertyIndicators(combinedContent)) {
+        const hasPropertyContent = hasPropertyIndicators(combinedContent);
+        const hasRemovalContent = isListingRemoved(combinedContent);
+        
+        // PROPERTY INDICATORS FIRST - if page has real property data, it's active
+        // This prevents false positives from temporary error pages or boilerplate text
+        if (hasPropertyContent) {
+          if (hasRemovalContent) {
+            console.log(`⚠️ Both property AND removal indicators found for ${url} - keeping active (property data wins)`);
+          }
           return { isInactive: false, reason: 'content_ok' };
         }
         
+        // No property indicators - now check for removal
+        if (hasRemovalContent) {
+          // Safety check: if content is very short, it might be a temporary block/error page
+          // Real removal pages on Yad2 are typically under 500 chars
+          // But we should also not trust very short pages that might be proxy errors
+          if (markdown.length < 200) {
+            console.log(`⚠️ Removal indicator found but very short content (${markdown.length} chars) for ${url} - treating as temporary error`);
+            // Don't mark as inactive - let it retry next cycle
+            return { isInactive: false, reason: 'short_removal_page_suspicious' };
+          }
+          console.log(`🚫 Removal indicator found (no property data) for ${url}`);
+          return { isInactive: true, reason: 'listing_removed_indicator' };
+        }
+        
         if (markdown.length < 500) {
-          console.log(`⚠️ Short content (${markdown.length} chars) for ${url}`);
-          return { isInactive: true, reason: 'empty_or_error_page' };
+          console.log(`⚠️ Short content (${markdown.length} chars), no indicators for ${url}`);
+          return { isInactive: false, reason: 'short_content_no_indicators' };
         }
         
         console.log(`⚠️ Long content but no indicators for ${url}`);
@@ -439,12 +459,36 @@ serve(async (req) => {
     let skippedCount = 0;
     const inactiveIds: string[] = [];
 
+    // Reasons that should NOT update availability_checked_at (property stays in queue for retry)
+    const retryableReasons = new Set([
+      'per_property_timeout', 
+      'firecrawl_failed_after_retries', 
+      'check_error',
+      'short_removal_page_suspicious',
+      'short_content_no_indicators'
+    ]);
+
     for (const result of results) {
       checkedCount++;
       
-      if (result.error) {
+      const isRetryable = result.error || retryableReasons.has(result.reason);
+      
+      if (isRetryable) {
         errorCount++;
-      } else if (result.isInactive) {
+        // DON'T update availability_checked_at - property stays in queue for retry
+        try {
+          await supabase
+            .from('scouted_properties')
+            .update({ availability_check_reason: result.reason })
+            .eq('id', result.id);
+          console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue`);
+        } catch (dbError) {
+          console.error(`DB update error for ${result.id}:`, dbError);
+        }
+        continue;
+      }
+      
+      if (result.isInactive) {
         inactiveCount++;
         inactiveIds.push(result.id);
         console.log(`❌ ${result.id} - INACTIVE (${result.reason})`);
