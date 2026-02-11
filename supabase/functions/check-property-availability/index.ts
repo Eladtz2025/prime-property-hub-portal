@@ -401,12 +401,16 @@ serve(async (req) => {
 
   try {
     let propertyIds: string[] = [];
+    let runId: string | null = null;
     
     try {
       const body = await req.json();
       if (body.property_ids && Array.isArray(body.property_ids)) {
         propertyIds = body.property_ids;
         console.log(`📋 Received ${propertyIds.length} property IDs`);
+      }
+      if (body.run_id) {
+        runId = body.run_id;
       }
     } catch {
       // No body
@@ -474,14 +478,28 @@ serve(async (req) => {
       
       // Find matching property for details
       const prop = properties.find(p => p.id === result.id);
-      detailedResults.push({
+      const detail = {
         property_id: result.id,
         source_url: prop?.source_url || null,
         source: prop?.source || null,
         address: prop?.title || null,
         reason: result.reason,
         is_inactive: result.isInactive,
-      });
+        checked_at: new Date().toISOString(),
+      };
+      detailedResults.push(detail);
+      
+      // Live update: append to run_details so UI can poll progress
+      if (runId) {
+        try {
+          await supabase.rpc('append_run_detail', {
+            p_run_id: runId,
+            p_detail: detail,
+          });
+        } catch (rpcErr) {
+          console.warn(`Failed to append run detail:`, rpcErr);
+        }
+      }
       
       const isRetryable = result.error || retryableReasons.has(result.reason);
       

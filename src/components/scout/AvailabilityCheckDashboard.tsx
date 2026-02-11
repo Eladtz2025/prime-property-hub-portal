@@ -18,11 +18,9 @@ import {
   Settings, Hourglass, Pencil, Save, X,
 } from 'lucide-react';
 import { useUpdateScoutSetting } from '@/hooks/useScoutSettings';
-import { AvailabilityStats } from './availability/AvailabilityStats';
 import { AvailabilityRunDetails } from './availability/AvailabilityRunDetails';
-import { AvailabilityTimeline } from './availability/AvailabilityTimeline';
 import { AvailabilityActions } from './availability/AvailabilityActions';
-import { AvailabilityLogs } from './availability/AvailabilityLogs';
+import { AvailabilityLiveFeed } from './availability/AvailabilityLiveFeed';
 import { Json } from '@/integrations/supabase/types';
 
 // ─── Types ───
@@ -269,11 +267,8 @@ export const AvailabilityCheckDashboard: React.FC = () => {
       {/* Quick Actions */}
       <AvailabilityActions />
 
-      {/* Stats Breakdown */}
-      <AvailabilityStats />
-
-      {/* Timeline */}
-      <AvailabilityTimeline />
+      {/* Live Feed - only shows when a run is active */}
+      <AvailabilityLiveFeed />
 
       {/* Run History */}
       <Collapsible open={runsOpen} onOpenChange={setRunsOpen}>
@@ -493,9 +488,6 @@ export const AvailabilityCheckDashboard: React.FC = () => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
-
-      {/* Logs */}
-      <AvailabilityLogs />
 
       {/* Settings (Editable) */}
       <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>

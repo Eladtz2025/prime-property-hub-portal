@@ -187,7 +187,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${supabaseServiceKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ property_ids: batch })
+          body: JSON.stringify({ property_ids: batch, run_id: runId })
         });
         
         clearTimeout(timeoutId);
