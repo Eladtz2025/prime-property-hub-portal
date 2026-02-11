@@ -122,6 +122,7 @@ serve(async (req) => {
     console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
 
     // Fetch properties that need checking
+    // Prioritize: unchecked properties first (NULL), then oldest checked
     const { data: properties, error: fetchError } = await supabase
       .from('scouted_properties')
       .select('id')
@@ -129,7 +130,7 @@ serve(async (req) => {
       .in('status', ['matched', 'new'])
       .lt('first_seen_at', minDaysAgo.toISOString())
       .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
-      .order('first_seen_at', { ascending: true })
+      .order('availability_checked_at', { ascending: true, nullsFirst: true })
       .limit(fetchLimit);
 
     if (fetchError) throw fetchError;
