@@ -138,6 +138,11 @@ serve(async (req) => {
 
     if (propertyIds.length === 0) {
       console.log('✅ No properties need checking');
+      // Release lock when no properties found
+      await supabase
+        .from('availability_check_runs')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), properties_checked: 0 })
+        .eq('id', runId);
       return new Response(JSON.stringify({
         success: true,
         message: 'No properties need checking',
