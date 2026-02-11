@@ -1,64 +1,97 @@
 
-# דשבורד ניהול בדיקות זמינות (Availability Check Dashboard)
+# שדרוג דשבורד בדיקות זמינות - תצוגה מלאה
 
-## מה ייבנה
-טאב חדש בעמוד Property Scout (`/admin-dashboard/property-scout`) שמציג ניהול מלא של מערכת בדיקות הזמינות:
+## מה יתווסף
 
-1. **היסטוריית ריצות** - טבלה של כל הריצות מ-`availability_check_runs` עם סטטוס, כמות נבדקים, כמות שסומנו כלא אקטיביים, שגיאות, ומשך
-2. **סטטיסטיקות נוכחיות** - כמה נכסים ממתינים, כמה נבדקו היום, כמה עם timeout, מכסה יומית
-3. **בחירת נכסים לבדיקה ידנית** - אפשרות לסמן נכסים ספציפיים ולהפעיל בדיקה עליהם
-4. **הגדרות** - תצוגת ההגדרות הנוכחיות (batch_size, daily_limit, recheck_interval_days וכו')
-5. **תוצאות אחרונות** - פירוט נכסים שנבדקו לאחרונה עם התוצאה שלהם (content_ok, listing_removed, timeout וכו')
+### 1. פירוט ריצות (Run Details Dialog)
+לחיצה על שורה בטבלת הריצות תפתח דיאלוג עם:
+- רשימת כל הנכסים שנבדקו בריצה הזו עם התוצאה של כל אחד
+- לינק לנכס המקורי
+- Badge צבעוני לתוצאה (content_ok, listing_removed, timeout וכו')
+- סיכום: כמה content_ok, כמה הוסרו, כמה timeout
 
-## מבנה UI
+**אתגר טכני**: טבלת `availability_check_runs` לא שומרת אילו נכסים נבדקו בכל ריצה. הפתרון: להוסיף שדה `checked_property_ids` (uuid[]) או `run_details` (jsonb) לטבלה, ולעדכן אותו ב-Edge Function בסיום כל ריצה.
 
-### טאב "בדיקות זמינות" בעמוד Property Scout (טאב רביעי)
+### 2. סטטיסטיקות מורחבות (Breakdown by Reason)
+בנוסף ל-4 הכרטיסים הנוכחיים, להוסיף:
+- **גרף Pie/Bar** של חלוקת התוצאות (content_ok vs listing_removed vs timeout vs no_indicators)
+- **Breakdown מלא**: כרטיס שמציג את כל הסטטוסים עם כמויות (כולל no_indicators_keeping_active שיש 1,051 כאלה)
+- **סטטיסטיקה לפי מקור**: כמה Yad2 / Madlan / Homeless מכל סטטוס
 
-**חלק עליון - כרטיסי סטטיסטיקה:**
-- ממתינים לבדיקה (availability_checked_at IS NULL)
-- נבדקו היום
-- סה"כ timeout
-- מכסה יומית (נותר/סה"כ)
-- ריצה אחרונה (מתי, סטטוס)
+### 3. לוגים בזמן אמת (Live Logs)
+סקשן חדש שמציג לוגים מתוך Edge Function:
+- שימוש ב-`supabase--edge-function-logs` API (או Supabase realtime) להצגת הלוגים האחרונים
+- סינון לפי רמה (info/warn/error)
+- כפתור רענון ידני
+- הצגת הודעות כמו "HEAD 404 for url", "Removal indicator found", "Property data wins" וכו'
 
-**חלק אמצעי - היסטוריית ריצות:**
-- טבלה עם: תאריך, סטטוס, נבדקו, סומנו לא-אקטיביים, שגיאה, משך
-- Badge צבעוני לסטטוס (completed=ירוק, running=כחול, failed=אדום)
-- בחירת טווח תאריכים
+### 4. טיימליין יומי (Daily Timeline)
+תצוגה ויזואלית של מתי רצו בדיקות במהלך היום:
+- ציר זמן אופקי (0:00-23:59)
+- נקודות/בלוקים צבעוניים לכל ריצה
+- ירוק = הושלם, כחול = רץ, אדום = נכשל
+- Hover מציג פרטים
 
-**חלק תחתון - תוצאות אחרונות + בדיקה ידנית:**
-- טבלת נכסים שנבדקו לאחרונה עם: כתובת, מקור, תוצאה, תאריך בדיקה
-- אפשרות סינון לפי תוצאה (content_ok, listing_removed, timeout)
-- Checkbox לבחירת נכסים + כפתור "בדוק עכשיו" להפעלת בדיקה ידנית
-- כפתור "בדוק את כל ה-timeout" - לאיפוס ובדיקה מחדש של כל נכסי ה-timeout
+### 5. הגדרות עריכה (Editable Settings)
+במקום רק תצוגת ההגדרות, להוסיף:
+- כפתור עריכה ליד כל הגדרה
+- Input לעריכה עם שמירה ב-DB
+- כפתור "איפוס לברירת מחדל"
+- שימוש ב-`useUpdateScoutSetting` הקיים
+
+### 6. כפתורי פעולה מהירה
+- **"בדוק את כל ה-Pending"** - שולח את כל הנכסים ללא בדיקה לבדיקה
+- **"אפס Timeouts"** - מאפס את availability_checked_at לכל נכסי ה-timeout
+- **"הפעל ריצה עכשיו"** - קורא ל-trigger-availability-check
+- **"בדוק URL ספציפי"** - Input לכתובת URL + כפתור בדיקה
+
+### 7. טבלת תוצאות משופרת
+- עמוד (Pagination) - במקום limit 100, להוסיף עמודים
+- עמודות נוספות: מחיר, חדרים, שכונה
+- סינון לפי מקור (Yad2/Madlan/Homeless)
+- חיפוש חופשי לפי כתובת/עיר
+- סימון נכסים "חשודים" (no_indicators) בצבע צהוב
 
 ## פירוט טכני
 
 ### קבצים חדשים
-1. `src/components/scout/AvailabilityCheckDashboard.tsx` - הקומפוננטה הראשית עם:
-   - שאילתות react-query לנתונים מ-`availability_check_runs` ו-`scouted_properties`
-   - כרטיסי סטטיסטיקה (ממתינים, נבדקו היום, timeouts, מכסה)
-   - טבלת ריצות עם סינון לפי תאריך
-   - טבלת תוצאות עם סינון לפי סוג תוצאה
-   - בחירת נכסים + הפעלת `check-property-availability` ידנית
-   - תצוגת הגדרות נוכחיות מ-`scout_settings`
+1. `src/components/scout/availability/AvailabilityStats.tsx` - כרטיסי סטטיסטיקה + breakdown
+2. `src/components/scout/availability/AvailabilityRunDetails.tsx` - דיאלוג פרטי ריצה
+3. `src/components/scout/availability/AvailabilityTimeline.tsx` - ציר זמן יומי
+4. `src/components/scout/availability/AvailabilityActions.tsx` - כפתורי פעולה מהירה
+5. `src/components/scout/availability/AvailabilityLogs.tsx` - תצוגת לוגים
 
 ### קבצים לעדכון
-2. `src/pages/AdminPropertyScout.tsx` - הוספת טאב רביעי "בדיקות זמינות" עם אייקון Shield/RefreshCw
+1. `src/components/scout/AvailabilityCheckDashboard.tsx` - שילוב כל התת-קומפוננטות, הוספת pagination וסינון
+2. `supabase/functions/trigger-availability-check/index.ts` - שמירת רשימת הנכסים שנבדקו (checked_property_ids)
+3. `supabase/functions/check-property-availability/index.ts` - החזרת תוצאות מפורטות יותר
 
-### שאילתות מרכזיות
-- ריצות: `SELECT * FROM availability_check_runs ORDER BY started_at DESC LIMIT 50`
-- ממתינים: `SELECT count(*) FROM scouted_properties WHERE is_active=true AND availability_checked_at IS NULL`
-- נבדקו היום: `SELECT count(*) FROM scouted_properties WHERE availability_checked_at >= today`
-- תוצאות אחרונות: `SELECT id, address, city, source, source_url, availability_check_reason, availability_checked_at FROM scouted_properties WHERE availability_checked_at IS NOT NULL ORDER BY availability_checked_at DESC LIMIT 50`
-- הגדרות: `SELECT * FROM scout_settings WHERE category = 'availability'`
+### מיגרציה
+הוספת עמודות לטבלת `availability_check_runs`:
+```sql
+ALTER TABLE availability_check_runs 
+ADD COLUMN IF NOT EXISTS run_details jsonb DEFAULT '[]'::jsonb;
+```
+ה-`run_details` ישמור מערך של `{ property_id, source_url, reason, is_inactive }` לכל נכס שנבדק בריצה.
 
-### בדיקה ידנית
-- שימוש בפונקציה הקיימת `check-property-availability` עם `property_ids`
-- הצגת תוצאות בזמן אמת עם toast notifications
-- רענון אוטומטי של הנתונים אחרי בדיקה
+### שאילתות חדשות
+- Breakdown לפי reason ומקור:
+```sql
+SELECT source, availability_check_reason, COUNT(*) 
+FROM scouted_properties 
+WHERE availability_check_reason IS NOT NULL 
+GROUP BY source, availability_check_reason;
+```
+- נכסים חשודים (no_indicators):
+```sql
+SELECT * FROM scouted_properties 
+WHERE availability_check_reason = 'no_indicators_keeping_active' 
+AND is_active = true;
+```
 
 ### דפוסי עיצוב
-- שימוש באותם דפוסים כמו `ScoutRunHistory` (Collapsible, Badge, Table)
-- RTL כמו שאר האפליקציה
-- refetchInterval לעדכון אוטומטי בזמן ריצה
+- שימוש ב-Recharts (כבר מותקן) לגרפים
+- Collapsible sections כמו שכבר קיים
+- Dialog לפירוט ריצות (כמו ScoutRunHistory)
+- RTL + Hebrew labels
+- refetchInterval לעדכון אוטומטי
