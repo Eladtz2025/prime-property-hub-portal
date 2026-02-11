@@ -1,97 +1,126 @@
 
-# שדרוג דשבורד בדיקות זמינות - תצוגה מלאה
+# דשבורד בדיקות זמינות - גרסה קומפקטית עם מעקב לייב
 
-## מה יתווסף
+## מה ישתנה
 
-### 1. פירוט ריצות (Run Details Dialog)
-לחיצה על שורה בטבלת הריצות תפתח דיאלוג עם:
-- רשימת כל הנכסים שנבדקו בריצה הזו עם התוצאה של כל אחד
-- לינק לנכס המקורי
-- Badge צבעוני לתוצאה (content_ok, listing_removed, timeout וכו')
-- סיכום: כמה content_ok, כמה הוסרו, כמה timeout
+### הסרה
+- `AvailabilityStats.tsx` (גרפי Pie/Bar) - יימחק
+- `AvailabilityTimeline.tsx` (ציר זמן Scatter) - יימחק  
+- `AvailabilityLogs.tsx` (placeholder ללוגים) - יימחק
 
-**אתגר טכני**: טבלת `availability_check_runs` לא שומרת אילו נכסים נבדקו בכל ריצה. הפתרון: להוסיף שדה `checked_property_ids` (uuid[]) או `run_details` (jsonb) לטבלה, ולעדכן אותו ב-Edge Function בסיום כל ריצה.
+### הוספה - מעקב לייב אחרי בדיקות
+הרעיון המרכזי: כשריצה פעילה (status=running), ה-Edge Function יעדכן את `run_details` ב-DB **אחרי כל נכס** (לא רק בסוף). ה-UI יעשה polling מהיר (כל 3 שניות) ויציג פיד לייב של מה שנבדק ומה התוצאה.
 
-### 2. סטטיסטיקות מורחבות (Breakdown by Reason)
-בנוסף ל-4 הכרטיסים הנוכחיים, להוסיף:
-- **גרף Pie/Bar** של חלוקת התוצאות (content_ok vs listing_removed vs timeout vs no_indicators)
-- **Breakdown מלא**: כרטיס שמציג את כל הסטטוסים עם כמויות (כולל no_indicators_keeping_active שיש 1,051 כאלה)
-- **סטטיסטיקה לפי מקור**: כמה Yad2 / Madlan / Homeless מכל סטטוס
+## מבנה UI חדש (קומפקטי)
 
-### 3. לוגים בזמן אמת (Live Logs)
-סקשן חדש שמציג לוגים מתוך Edge Function:
-- שימוש ב-`supabase--edge-function-logs` API (או Supabase realtime) להצגת הלוגים האחרונים
-- סינון לפי רמה (info/warn/error)
-- כפתור רענון ידני
-- הצגת הודעות כמו "HEAD 404 for url", "Removal indicator found", "Property data wins" וכו'
-
-### 4. טיימליין יומי (Daily Timeline)
-תצוגה ויזואלית של מתי רצו בדיקות במהלך היום:
-- ציר זמן אופקי (0:00-23:59)
-- נקודות/בלוקים צבעוניים לכל ריצה
-- ירוק = הושלם, כחול = רץ, אדום = נכשל
-- Hover מציג פרטים
-
-### 5. הגדרות עריכה (Editable Settings)
-במקום רק תצוגת ההגדרות, להוסיף:
-- כפתור עריכה ליד כל הגדרה
-- Input לעריכה עם שמירה ב-DB
-- כפתור "איפוס לברירת מחדל"
-- שימוש ב-`useUpdateScoutSetting` הקיים
-
-### 6. כפתורי פעולה מהירה
-- **"בדוק את כל ה-Pending"** - שולח את כל הנכסים ללא בדיקה לבדיקה
-- **"אפס Timeouts"** - מאפס את availability_checked_at לכל נכסי ה-timeout
-- **"הפעל ריצה עכשיו"** - קורא ל-trigger-availability-check
-- **"בדוק URL ספציפי"** - Input לכתובת URL + כפתור בדיקה
-
-### 7. טבלת תוצאות משופרת
-- עמוד (Pagination) - במקום limit 100, להוסיף עמודים
-- עמודות נוספות: מחיר, חדרים, שכונה
-- סינון לפי מקור (Yad2/Madlan/Homeless)
-- חיפוש חופשי לפי כתובת/עיר
-- סימון נכסים "חשודים" (no_indicators) בצבע צהוב
+```text
++--------------------------------------------------+
+| סטטיסטיקות (4 כרטיסים קטנים - נשאר כמו שיש)     |
++--------------------------------------------------+
+| פעולות: [הפעל ריצה] [אפס Timeouts] [בדוק URL]   |
++--------------------------------------------------+
+| בדיקה חיה (מופיע רק כשיש ריצה פעילה)             |
+| ┌──────────────────────────────────────────────┐  |
+| │ ● רץ כעת... 4/18 נכסים | 2 אקטיביים 1 הוסר │  |
+| │ ✓ רוטשילד 42, תל אביב (yad2) - אקטיבי       │  |
+| │ ✗ בן יהודה 15 (madlan) - הוסר                │  |
+| │ ⏳ בודק: דיזנגוף 99 (yad2)...               │  |
+| └──────────────────────────────────────────────┘  |
++--------------------------------------------------+
+| היסטוריית ריצות (טבלה קומפקטית - נשאר + קליק     |
+| לפירוט)                                          |
++--------------------------------------------------+
+| תוצאות אחרונות (טבלה עם סינון - נשאר)            |
++--------------------------------------------------+
+| הגדרות (collapsible - נשאר)                       |
++--------------------------------------------------+
+```
 
 ## פירוט טכני
 
-### קבצים חדשים
-1. `src/components/scout/availability/AvailabilityStats.tsx` - כרטיסי סטטיסטיקה + breakdown
-2. `src/components/scout/availability/AvailabilityRunDetails.tsx` - דיאלוג פרטי ריצה
-3. `src/components/scout/availability/AvailabilityTimeline.tsx` - ציר זמן יומי
-4. `src/components/scout/availability/AvailabilityActions.tsx` - כפתורי פעולה מהירה
-5. `src/components/scout/availability/AvailabilityLogs.tsx` - תצוגת לוגים
+### 1. Edge Function: עדכון run_details בזמן אמת
 
-### קבצים לעדכון
-1. `src/components/scout/AvailabilityCheckDashboard.tsx` - שילוב כל התת-קומפוננטות, הוספת pagination וסינון
-2. `supabase/functions/trigger-availability-check/index.ts` - שמירת רשימת הנכסים שנבדקו (checked_property_ids)
-3. `supabase/functions/check-property-availability/index.ts` - החזרת תוצאות מפורטות יותר
+**קובץ: `supabase/functions/check-property-availability/index.ts`**
 
-### מיגרציה
-הוספת עמודות לטבלת `availability_check_runs`:
-```sql
-ALTER TABLE availability_check_runs 
-ADD COLUMN IF NOT EXISTS run_details jsonb DEFAULT '[]'::jsonb;
-```
-ה-`run_details` ישמור מערך של `{ property_id, source_url, reason, is_inactive }` לכל נכס שנבדק בריצה.
+אחרי כל נכס שנבדק, לעדכן את ה-`run_details` של ה-run הפעיל. הפונקציה תקבל `run_id` כפרמטר נוסף מ-`trigger-availability-check`.
 
-### שאילתות חדשות
-- Breakdown לפי reason ומקור:
-```sql
-SELECT source, availability_check_reason, COUNT(*) 
-FROM scouted_properties 
-WHERE availability_check_reason IS NOT NULL 
-GROUP BY source, availability_check_reason;
-```
-- נכסים חשודים (no_indicators):
-```sql
-SELECT * FROM scouted_properties 
-WHERE availability_check_reason = 'no_indicators_keeping_active' 
-AND is_active = true;
+```typescript
+// After each property check result:
+if (runId) {
+  // Append to run_details using jsonb concatenation
+  await supabase.rpc('append_run_detail', {
+    p_run_id: runId,
+    p_detail: {
+      property_id: result.id,
+      source_url: prop?.source_url,
+      address: prop?.title,
+      source: prop?.source,
+      reason: result.reason,
+      is_inactive: result.isInactive,
+      checked_at: new Date().toISOString()
+    }
+  });
+}
 ```
 
-### דפוסי עיצוב
-- שימוש ב-Recharts (כבר מותקן) לגרפים
-- Collapsible sections כמו שכבר קיים
-- Dialog לפירוט ריצות (כמו ScoutRunHistory)
-- RTL + Hebrew labels
-- refetchInterval לעדכון אוטומטי
+**קובץ: `supabase/functions/trigger-availability-check/index.ts`**
+
+יעביר את ה-`run_id` ל-`check-property-availability`:
+```typescript
+body: JSON.stringify({ property_ids: batch, run_id: runId })
+```
+
+### 2. DB Function: append_run_detail
+
+מיגרציה חדשה - פונקציה שמוסיפה אלמנט ל-JSONB array בצורה אטומית:
+```sql
+CREATE OR REPLACE FUNCTION append_run_detail(p_run_id uuid, p_detail jsonb)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE availability_check_runs 
+  SET run_details = COALESCE(run_details, '[]'::jsonb) || jsonb_build_array(p_detail),
+      properties_checked = jsonb_array_length(COALESCE(run_details, '[]'::jsonb) || jsonb_build_array(p_detail))
+  WHERE id = p_run_id;
+END;
+$$;
+```
+
+### 3. קומפוננטת לייב חדשה: `AvailabilityLiveFeed.tsx`
+
+**מה עושה:**
+- כשאין ריצה פעילה: לא מוצגת
+- כשיש ריצה פעילה (status=running): מציגה פיד חי
+- Polling כל 3 שניות של `run_details` מהריצה הפעילה
+- מציגה Progress bar (X/Y נכסים)
+- רשימת נכסים שנבדקו עם תוצאות (גוללת למטה אוטומטית)
+- השורה האחרונה מהבהבת עם "בודק..." אם עדיין רץ
+
+**שאילתה:**
+```sql
+SELECT run_details, properties_checked, started_at 
+FROM availability_check_runs 
+WHERE status = 'running' 
+ORDER BY started_at DESC LIMIT 1
+```
+
+### 4. עדכון AvailabilityCheckDashboard.tsx
+
+- הסרת imports של AvailabilityStats, AvailabilityTimeline, AvailabilityLogs
+- הוספת AvailabilityLiveFeed בין הפעולות להיסטוריה
+- שאר הקומפוננטות נשארות (סטטיסטיקות, פעולות, היסטוריה, תוצאות, הגדרות)
+
+## קבצים
+
+### למחיקה
+- `src/components/scout/availability/AvailabilityStats.tsx`
+- `src/components/scout/availability/AvailabilityTimeline.tsx`
+- `src/components/scout/availability/AvailabilityLogs.tsx`
+
+### חדשים
+- `src/components/scout/availability/AvailabilityLiveFeed.tsx`
+
+### לעדכון
+- `src/components/scout/AvailabilityCheckDashboard.tsx` - הסרת גרפים, הוספת LiveFeed
+- `supabase/functions/check-property-availability/index.ts` - קבלת run_id + עדכון DB אחרי כל נכס
+- `supabase/functions/trigger-availability-check/index.ts` - העברת run_id לפונקציית הבדיקה
+- מיגרציה - פונקציית `append_run_detail`
