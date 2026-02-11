@@ -169,6 +169,7 @@ serve(async (req) => {
     let processedThisRun = 0;
     let inactiveThisRun = 0;
     let failedBatches = 0;
+    const allRunDetails: any[] = [];
 
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
@@ -196,6 +197,11 @@ serve(async (req) => {
           console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
           processedThisRun += result.checked || batch.length;
           inactiveThisRun += result.marked_inactive || 0;
+          
+          // Collect run details from batch results
+          if (result.results && Array.isArray(result.results)) {
+            allRunDetails.push(...result.results);
+          }
         } else {
           console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
           failedBatches++;
@@ -228,14 +234,15 @@ serve(async (req) => {
     console.log(`   - Remaining batches: ${remainingBatches}`);
     console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
 
-    // Release lock - mark as completed
+    // Release lock - mark as completed with run details
     await supabase
       .from('availability_check_runs')
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
         properties_checked: processedThisRun,
-        inactive_marked: inactiveThisRun
+        inactive_marked: inactiveThisRun,
+        run_details: allRunDetails
       })
       .eq('id', runId);
 
