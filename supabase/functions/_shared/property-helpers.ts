@@ -108,6 +108,7 @@ async function findCrossSourceDuplicate(
     .eq('city', normalizedCity)
     .eq('address', property.address)
     .eq('rooms', property.rooms)
+    .eq('property_type', property.property_type)
     .eq('is_active', true)
     .neq('source', property.source)
     .limit(1)

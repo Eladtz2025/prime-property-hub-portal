@@ -117,7 +117,8 @@ export function parseYad2Markdown(
   }
   
   const stats = calculateStats(properties);
-  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${stats.private_count} private, ${stats.broker_count} broker, ${stats.unknown_count} unknown)`);
+  const fallbackPrivate = stats.private_count - properties.filter(p => p.is_private === true && p.raw_text && /מפרטי|ללא\s*תיווך|בעל\s*הדירה|פרטי/i.test(p.raw_text || '')).length;
+  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${stats.private_count} private [${fallbackPrivate} fallback], ${stats.broker_count} broker)`);
   
   return {
     success: true,
@@ -254,6 +255,12 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   // Fallback: check entire block for broker keywords
   if (isPrivate === null && detectBroker(cleanedBlock, '')) {
     isPrivate = false;
+  }
+  
+  // Yad2 fallback: if no broker indicators found, assume private
+  // Rationale: Yad2 private listings simply lack broker markers
+  if (isPrivate === null) {
+    isPrivate = true;
   }
   
   // ============================================
