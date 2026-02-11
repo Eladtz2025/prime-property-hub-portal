@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History } from 'lucide-react';
+import { Search, Settings, History, Shield } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { UnifiedScoutSettings } from '@/components/scout/UnifiedScoutSettings';
 import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
+import { AvailabilityCheckDashboard } from '@/components/scout/AvailabilityCheckDashboard';
 
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
@@ -23,7 +24,11 @@ const AdminPropertyScout: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3" dir="ltr">
+          <TabsList className="grid w-full grid-cols-4" dir="ltr">
+            <TabsTrigger value="availability" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Shield className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm">בדיקות זמינות</span>
+            </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <History className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline text-xs sm:text-sm">היסטוריית ריצות</span>
@@ -48,6 +53,10 @@ const AdminPropertyScout: React.FC = () => {
 
           <TabsContent value="history" className="mt-6">
             <ScoutRunHistory />
+          </TabsContent>
+
+          <TabsContent value="availability" className="mt-6">
+            <AvailabilityCheckDashboard />
           </TabsContent>
         </Tabs>
       </div>
