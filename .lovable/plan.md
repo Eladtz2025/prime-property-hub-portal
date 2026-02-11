@@ -1,40 +1,64 @@
 
+# דשבורד ניהול בדיקות זמינות (Availability Check Dashboard)
 
-# תיקון: false-positive deactivation + timeout retry
+## מה ייבנה
+טאב חדש בעמוד Property Scout (`/admin-dashboard/property-scout`) שמציג ניהול מלא של מערכת בדיקות הזמינות:
 
-## בעיות שתוקנו
+1. **היסטוריית ריצות** - טבלה של כל הריצות מ-`availability_check_runs` עם סטטוס, כמות נבדקים, כמות שסומנו כלא אקטיביים, שגיאות, ומשך
+2. **סטטיסטיקות נוכחיות** - כמה נכסים ממתינים, כמה נבדקו היום, כמה עם timeout, מכסה יומית
+3. **בחירת נכסים לבדיקה ידנית** - אפשרות לסמן נכסים ספציפיים ולהפעיל בדיקה עליהם
+4. **הגדרות** - תצוגת ההגדרות הנוכחיות (batch_size, daily_limit, recheck_interval_days וכו')
+5. **תוצאות אחרונות** - פירוט נכסים שנבדקו לאחרונה עם התוצאה שלהם (content_ok, listing_removed, timeout וכו')
 
-### 1. False-positive deactivation (קריטי)
-**הבעיה:** הנכס `awc9nzvc` סומן כ-inactive למרות שהוא אקטיבי. הסיבה: Firecrawl קיבל דף שגיאה זמני מ-Yad2 (חסימת proxy), והמערכת זיהתה אינדיקטור הסרה ("חיפשנו בכל מקום") וסימנה מיד כ-inactive בלי לבדוק אם יש תוכן נכס אמיתי.
+## מבנה UI
 
-**הפתרון:** שינוי סדר הבדיקה ב-`checkWithFirecrawl`:
-- **לפני:** Removal indicators → Property indicators (indicator-first)
-- **אחרי:** HTTP status → Redirects → Property indicators → Removal indicators (property-first)
-- אם נמצאים גם removal indicators וגם property indicators, **property indicators מנצחים**
-- תוכן קצר מאוד (< 200 תווים) עם removal indicator → חשוד כשגיאה זמנית, לא מסמנים inactive
+### טאב "בדיקות זמינות" בעמוד Property Scout (טאב רביעי)
 
-### 2. Timeout properties נשארים בתור
-**הבעיה:** 484 נכסים שעשו timeout סומנו כ"נבדקו" (עודכן `availability_checked_at`) למרות שלא באמת נבדקו. הם לא נכנסו לתור שוב עד שעבר `recheck_interval_days`.
+**חלק עליון - כרטיסי סטטיסטיקה:**
+- ממתינים לבדיקה (availability_checked_at IS NULL)
+- נבדקו היום
+- סה"כ timeout
+- מכסה יומית (נותר/סה"כ)
+- ריצה אחרונה (מתי, סטטוס)
 
-**הפתרון:** תוצאות retryable (timeout, firecrawl failure, short suspicious pages) **לא מעדכנות** את `availability_checked_at`, כך שהנכס נשאר בתור לבדיקה חוזרת בריצה הבאה.
+**חלק אמצעי - היסטוריית ריצות:**
+- טבלה עם: תאריך, סטטוס, נבדקו, סומנו לא-אקטיביים, שגיאה, משך
+- Badge צבעוני לסטטוס (completed=ירוק, running=כחול, failed=אדום)
+- בחירת טווח תאריכים
 
-### 3. שחרור נעילה כשאין נכסים (תוקן קודם)
-הוספת `status: 'completed'` לפני return מוקדם.
+**חלק תחתון - תוצאות אחרונות + בדיקה ידנית:**
+- טבלת נכסים שנבדקו לאחרונה עם: כתובת, מקור, תוצאה, תאריך בדיקה
+- אפשרות סינון לפי תוצאה (content_ok, listing_removed, timeout)
+- Checkbox לבחירת נכסים + כפתור "בדוק עכשיו" להפעלת בדיקה ידנית
+- כפתור "בדוק את כל ה-timeout" - לאיפוס ובדיקה מחדש של כל נכסי ה-timeout
 
-### 4. תעדוף נכסים לא-נבדקים
-שינוי ב-`trigger-availability-check`: סדר לפי `availability_checked_at` עם `nullsFirst: true` כדי שנכסים שמעולם לא נבדקו (או שאופסו) ייבדקו ראשונים.
+## פירוט טכני
 
-## שינויים בקבצים
-1. `supabase/functions/check-property-availability/index.ts` - Property-first logic, retryable reasons don't update timestamp
-2. `supabase/functions/trigger-availability-check/index.ts` - nullsFirst ordering
-3. `supabase/functions/_shared/availability-indicators.ts` - ללא שינוי (האינדיקטורים עצמם נכונים)
+### קבצים חדשים
+1. `src/components/scout/AvailabilityCheckDashboard.tsx` - הקומפוננטה הראשית עם:
+   - שאילתות react-query לנתונים מ-`availability_check_runs` ו-`scouted_properties`
+   - כרטיסי סטטיסטיקה (ממתינים, נבדקו היום, timeouts, מכסה)
+   - טבלת ריצות עם סינון לפי תאריך
+   - טבלת תוצאות עם סינון לפי סוג תוצאה
+   - בחירת נכסים + הפעלת `check-property-availability` ידנית
+   - תצוגת הגדרות נוכחיות מ-`scout_settings`
 
-## איפוס DB
-- 484 נכסי timeout אופסו (`availability_checked_at = NULL`)
-- `awc9nzvc` הוחזר ל-active
-- סה"כ 485 נכסים בתור לבדיקה
+### קבצים לעדכון
+2. `src/pages/AdminPropertyScout.tsx` - הוספת טאב רביעי "בדיקות זמינות" עם אייקון Shield/RefreshCw
 
-## סטטוס
-- ✅ קוד נפרס
-- ✅ DB אופס
-- 485 נכסים ממתינים לבדיקה (ייבדקו תוך ~13 שעות עם batch_size=6)
+### שאילתות מרכזיות
+- ריצות: `SELECT * FROM availability_check_runs ORDER BY started_at DESC LIMIT 50`
+- ממתינים: `SELECT count(*) FROM scouted_properties WHERE is_active=true AND availability_checked_at IS NULL`
+- נבדקו היום: `SELECT count(*) FROM scouted_properties WHERE availability_checked_at >= today`
+- תוצאות אחרונות: `SELECT id, address, city, source, source_url, availability_check_reason, availability_checked_at FROM scouted_properties WHERE availability_checked_at IS NOT NULL ORDER BY availability_checked_at DESC LIMIT 50`
+- הגדרות: `SELECT * FROM scout_settings WHERE category = 'availability'`
+
+### בדיקה ידנית
+- שימוש בפונקציה הקיימת `check-property-availability` עם `property_ids`
+- הצגת תוצאות בזמן אמת עם toast notifications
+- רענון אוטומטי של הנתונים אחרי בדיקה
+
+### דפוסי עיצוב
+- שימוש באותם דפוסים כמו `ScoutRunHistory` (Collapsible, Badge, Table)
+- RTL כמו שאר האפליקציה
+- refetchInterval לעדכון אוטומטי בזמן ריצה
