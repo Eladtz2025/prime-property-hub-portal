@@ -3475,6 +3475,10 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: Json
       }
+      append_run_detail: {
+        Args: { p_detail: Json; p_run_id: string }
+        Returns: undefined
+      }
       cleanup_orphan_duplicate_groups: { Args: never; Returns: number }
       detect_duplicates_batch: {
         Args: { batch_size?: number }
