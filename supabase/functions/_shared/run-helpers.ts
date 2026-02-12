@@ -139,7 +139,74 @@ export async function checkAndFinalizeRun(
   // Check if all pages are done
   if (completedPages < maxPages) return;
 
-  // All pages done - finalize
+  // Check for failed/blocked pages that haven't been retried yet
+  const failedPages = pageStats.filter(p => 
+    (p.status === 'failed' || p.status === 'blocked') && (!p.retry_count || p.retry_count < 2)
+  );
+
+  if (failedPages.length > 0) {
+    // Retry failed pages before finalizing
+    console.log(`🔄 ${source} run ${runId}: ${failedPages.length} failed pages to retry`);
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (supabaseUrl && supabaseKey) {
+      for (const failedPage of failedPages) {
+        // Increment retry count
+        const idx = pageStats.findIndex(p => p.page === failedPage.page);
+        if (idx !== -1) {
+          pageStats[idx] = {
+            ...pageStats[idx],
+            status: 'pending' as const,
+            retry_count: (pageStats[idx].retry_count || 0) + 1,
+            error: undefined
+          };
+        }
+      }
+      
+      // Save updated page_stats with retry counts
+      await supabase
+        .from('scout_runs')
+        .update({ page_stats: pageStats })
+        .eq('id', runId);
+      
+      // Trigger the first failed page (it will chain to the next)
+      const firstRetry = failedPages[0];
+      console.log(`🔄 Retrying page ${firstRetry.page} (attempt ${(firstRetry.retry_count || 0) + 1})`);
+      
+      // Wait before retrying to give CAPTCHA time to clear
+      await new Promise(r => setTimeout(r, 15000));
+      
+      const configId = run.config_id;
+      const startPage = pageStats[0]?.page || 1;
+      
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/scout-${source}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`
+          },
+          body: JSON.stringify({
+            config_id: configId,
+            page: firstRetry.page,
+            run_id: runId,
+            max_pages: pageStats[pageStats.length - 1]?.page || maxPages,
+            start_page: startPage,
+            is_retry: true,
+            retry_pages: failedPages.slice(1).map(p => p.page) // remaining pages to retry
+          })
+        });
+      } catch (err) {
+        console.error(`❌ Failed to trigger retry for page ${firstRetry.page}:`, err);
+      }
+      
+      return; // Don't finalize yet - retries in progress
+    }
+  }
+
+  // All pages done (including retries) - finalize
   const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
   const finalStatus = hasErrors ? 'partial' : 'completed';
 

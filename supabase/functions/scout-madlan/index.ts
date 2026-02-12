@@ -33,6 +33,7 @@ function getActualMaxPages(pageStats: any[] | null, startPage: number, maxPages:
 
 /**
  * Trigger the next page in sequence (Madlan sequential mode)
+ * Retries up to 3 times with 5s delay if the trigger fails
  */
 async function triggerNextPage(
   supabaseUrl: string,
@@ -41,28 +42,45 @@ async function triggerNextPage(
   nextPage: number,
   runId: string,
   maxPages: number,
-  startPage: number
-): Promise<void> {
-  console.log(`📄 Madlan: triggering page ${nextPage}/${maxPages}`);
+  startPage: number,
+  isRetry: boolean = false,
+  retryPages: number[] = []
+): Promise<boolean> {
+  const MAX_TRIGGER_RETRIES = 3;
+  const TRIGGER_RETRY_DELAY = 5000; // 5s between retries
   
-  try {
-    await fetch(`${supabaseUrl}/functions/v1/scout-madlan`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseServiceKey}`
-      },
-      body: JSON.stringify({
-        config_id: configId,
-        page: nextPage,
-        run_id: runId,
-        max_pages: maxPages,
-        start_page: startPage
-      })
-    });
-  } catch (error) {
-    console.error(`Error triggering Madlan page ${nextPage}:`, error);
+  for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
+    console.log(`📄 Madlan: triggering page ${nextPage}/${maxPages} (attempt ${attempt}/${MAX_TRIGGER_RETRIES})${isRetry ? ' [RETRY]' : ''}`);
+    
+    try {
+      const resp = await fetch(`${supabaseUrl}/functions/v1/scout-madlan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`
+        },
+        body: JSON.stringify({
+          config_id: configId,
+          page: nextPage,
+          run_id: runId,
+          max_pages: maxPages,
+          start_page: startPage,
+          is_retry: isRetry,
+          retry_pages: retryPages
+        })
+      });
+      try { await resp.text(); } catch {} // consume body
+      return true;
+    } catch (error) {
+      console.error(`Error triggering Madlan page ${nextPage} (attempt ${attempt}):`, error);
+      if (attempt < MAX_TRIGGER_RETRIES) {
+        await new Promise(r => setTimeout(r, TRIGGER_RETRY_DELAY));
+      }
+    }
   }
+  
+  console.error(`❌ Failed to trigger page ${nextPage} after ${MAX_TRIGGER_RETRIES} attempts`);
+  return false;
 }
 
 serve(async (req) => {
@@ -82,7 +100,9 @@ serve(async (req) => {
   const runId = body.run_id as string | undefined;
   const configId = body.config_id as string | undefined;
   const maxPages = body.max_pages as number | undefined;
-  const startPage = body.start_page as number || 1;  // Default to 1 - simplified approach
+  const startPage = body.start_page as number || 1;
+  const isRetry = body.is_retry as boolean || false;
+  const retryPages = body.retry_pages as number[] || [];
 
   // Validate required parameters
   if (page == null || !runId || !configId) {
@@ -171,15 +191,20 @@ serve(async (req) => {
         duration_ms: Date.now() - pageStartTime
       });
       
-      // SEQUENTIAL MODE: Trigger next page even after block (with recovery delay)
-      if (maxPages && page < maxPages) {
-        const { data: runCheck } = await supabase
-          .from('scout_runs')
-          .select('status')
-          .eq('id', runId)
-          .single();
-        
-        if (runCheck?.status !== 'stopped') {
+      // Trigger next page even after block (with recovery delay)
+      const { data: runCheck } = await supabase
+        .from('scout_runs')
+        .select('status')
+        .eq('id', runId)
+        .single();
+      
+      if (runCheck?.status !== 'stopped') {
+        if (isRetry && retryPages.length > 0) {
+          const nextRetryPage = retryPages[0];
+          console.log(`⏳ Madlan: retry blocked, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before retry page ${nextRetryPage}`);
+          await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
+          await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextRetryPage, runId, maxPages, startPage, true, retryPages.slice(1));
+        } else if (!isRetry && maxPages && page < maxPages) {
           console.log(`⏳ Madlan: blocked, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before page ${page + 1}`);
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
@@ -206,15 +231,20 @@ serve(async (req) => {
         duration_ms: Date.now() - pageStartTime
       });
       
-      // SEQUENTIAL MODE: Trigger next page even after validation failure (with recovery delay)
-      if (maxPages && page < maxPages) {
-        const { data: runCheck } = await supabase
-          .from('scout_runs')
-          .select('status')
-          .eq('id', runId)
-          .single();
-        
-        if (runCheck?.status !== 'stopped') {
+      // Trigger next page even after validation failure (with recovery delay)
+      const { data: runCheck2 } = await supabase
+        .from('scout_runs')
+        .select('status')
+        .eq('id', runId)
+        .single();
+      
+      if (runCheck2?.status !== 'stopped') {
+        if (isRetry && retryPages.length > 0) {
+          const nextRetryPage = retryPages[0];
+          console.log(`⏳ Madlan: retry validation failed, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before retry page ${nextRetryPage}`);
+          await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
+          await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextRetryPage, runId, maxPages, startPage, true, retryPages.slice(1));
+        } else if (!isRetry && maxPages && page < maxPages) {
           console.log(`⏳ Madlan: validation failed, waiting ${MADLAN_CONFIG.RECOVERY_DELAY/1000}s before page ${page + 1}`);
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
@@ -283,15 +313,23 @@ serve(async (req) => {
     // Update run totals atomically
     await incrementRunStats(supabase, runId, extractedProperties.length, pageNew);
 
-    // SEQUENTIAL MODE: Trigger next page after success (with normal delay)
-    if (maxPages && page < maxPages) {
-      const { data: runCheck } = await supabase
-        .from('scout_runs')
-        .select('status')
-        .eq('id', runId)
-        .single();
-      
-      if (runCheck?.status !== 'stopped') {
+    // Determine next page to process
+    const { data: runCheck } = await supabase
+      .from('scout_runs')
+      .select('status')
+      .eq('id', runId)
+      .single();
+    
+    if (runCheck?.status !== 'stopped') {
+      if (isRetry && retryPages.length > 0) {
+        // RETRY MODE: trigger next retry page
+        const nextRetryPage = retryPages[0];
+        const remainingRetries = retryPages.slice(1);
+        console.log(`⏳ Madlan: retry success, waiting ${MADLAN_CONFIG.NEXT_PAGE_DELAY/1000}s before retry page ${nextRetryPage}`);
+        await new Promise(r => setTimeout(r, MADLAN_CONFIG.NEXT_PAGE_DELAY));
+        await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextRetryPage, runId, maxPages, startPage, true, retryPages.slice(1));
+      } else if (!isRetry && maxPages && page < maxPages) {
+        // SEQUENTIAL MODE: trigger next page
         console.log(`⏳ Madlan: success, waiting ${MADLAN_CONFIG.NEXT_PAGE_DELAY/1000}s before page ${page + 1}`);
         await new Promise(r => setTimeout(r, MADLAN_CONFIG.NEXT_PAGE_DELAY));
         await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
