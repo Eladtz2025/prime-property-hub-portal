@@ -132,12 +132,34 @@ export async function checkAndFinalizeRun(
   if (!run || run.status !== 'running') return;
 
   const pageStats: PageStat[] = run.page_stats || [];
-  const completedPages = pageStats.filter(p => 
+  const terminalPages = pageStats.filter(p => 
     p.status === 'completed' || p.status === 'failed' || p.status === 'blocked'
-  ).length;
-
-  // Check if all pages are done
-  if (completedPages < maxPages) return;
+  );
+  const completedPages = terminalPages.length;
+  
+  // Check for stuck "scraping" pages: if all OTHER pages are done but some are still "scraping",
+  // they likely crashed without updating status — mark them as failed
+  const scrapingPages = pageStats.filter(p => p.status === 'scraping');
+  if (scrapingPages.length > 0 && completedPages + scrapingPages.length >= maxPages) {
+    console.warn(`⚠️ ${source} run ${runId}: ${scrapingPages.length} pages stuck in 'scraping' — marking as failed`);
+    for (const stuckPage of scrapingPages) {
+      const idx = pageStats.findIndex(p => p.page === stuckPage.page);
+      if (idx !== -1) {
+        pageStats[idx] = {
+          ...pageStats[idx],
+          status: 'failed' as const,
+          error: 'stuck_in_scraping_status'
+        };
+      }
+    }
+    await supabase
+      .from('scout_runs')
+      .update({ page_stats: pageStats })
+      .eq('id', runId);
+    // Now all pages are in terminal state — continue to retry/finalize logic below
+  } else if (completedPages < maxPages) {
+    return;
+  }
 
   // Check for failed/blocked pages that haven't been retried yet
   const failedPages = pageStats.filter(p => 
