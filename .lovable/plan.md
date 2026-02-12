@@ -1,45 +1,107 @@
 
+# תיקון 4 בעיות במנוע ההתאמות
 
-# ניקוי התאמות + תיקון באגים
+## קובץ: `supabase/functions/_shared/matching.ts`
 
-## 1. ניקוי כל ההתאמות (SQL)
-איפוס `matched_leads` לכל הנכסים והחזרת סטטוס ל-`new`:
-```text
-UPDATE scouted_properties SET matched_leads = '[]', status = 'new' WHERE matched_leads IS NOT NULL AND matched_leads != '[]'::jsonb;
-```
+### 1. הוספת בדיקת קומה (floor_preference) — למכירה בלבד
 
-## 2. הוספת בדיקת גודל (size) למנוע ההתאמות
+הערכים האפשריים: `ground`, `low`, `mid`, `high`, `top`, `any`
 
-כרגע הקוד בודק חדרים אבל מתעלם לגמרי מ-`size_min` / `size_max` של הלקוח. צריך להוסיף בדיקה אחרי בדיקת החדרים (שורה 360 ב-matching.ts):
+מיפוי לקומות:
+- `ground` → קומה 0
+- `low` → קומות 1-3
+- `mid` → קומות 4-8
+- `high` → קומות 9-15
+- `top` → קומה 16+
+- `any` / null → לא בודק
 
-```text
-// ===== SIZE MUST BE IN RANGE =====
-if (property.size && property.size > 0) {
-  if (lead.size_min && property.size < lead.size_min) {
-    return fail: "נדרש מינימום X מ״ר, בנכס יש Y"
-  }
-  if (lead.size_max && property.size > lead.size_max) {
-    return fail: "נדרש מקסימום X מ״ר, בנכס יש Y"
-  }
-  reasons.push("X מ״ר ✓")
-}
-```
+הלוגיקה:
+- אם ללקוח אין `floor_preference` או שהוא `any` — הנכס מתאים
+- אם לנכס אין קומה (`floor` = null) — הנכס עדיין מתאים (לא נפסל)
+- אם לשניהם יש ערך — בודקים שהקומה נופלת בטווח הנכון
+- הבדיקה רלוונטית רק לנכסי מכירה
 
-## 3. תיקון נתוני אופיר
+מיקום: אחרי בדיקת size (שורה 371), לפני בדיקת features
 
-עדכון `preferred_cities` של אופיר מ-`["old/newnorth", "תל אביב יפו"]` ל-`["תל אביב יפו"]` (הסרת הערך הפסול).
+### 2. תיקון נכס בלי חדרים (rooms = null/0)
 
----
+כרגע: אם `property.rooms` הוא null/0, הבדיקה מדלגת ונכס עובר בלי לבדוק חדרים.
+
+תיקון:
+- **שכירות**: אם ללקוח יש דרישת חדרים (`rooms_min` או `rooms_max`) והנכס בלי חדרים — **נפסל**
+- **מכירה**: אם ללקוח יש דרישת חדרים והנכס בלי חדרים — **נפסל**
+- אם ללקוח **אין** דרישת חדרים — הנכס עובר
+
+### 3. תיקון נכס בלי גודל (size = null/0)
+
+כרגע: אם `property.size` הוא null/0, הבדיקה מדלגת.
+
+תיקון:
+- **מכירה**: אם ללקוח יש דרישת גודל (`size_min` או `size_max`) — הנכס **נפסל** (במכירה גודל הוא חובה)
+- **שכירות**: אם ללקוח יש דרישת גודל — הנכס **עדיין עובר** (מידע חסר לא פוסל)
+- אם ללקוח **אין** דרישת גודל — הנכס עובר
+
+### 4. Matching settings — cache ב-trigger-matching
+
+במקום שכל batch יקרא settings מהDB, ה-orchestrator (`trigger-matching`) יקרא פעם אחת ויעביר ב-body לכל batch. ה-`match-batch` ישתמש ב-settings מה-body אם קיימים, ויקרא מ-DB רק כ-fallback.
 
 ## פרטים טכניים
 
-### קובץ: `supabase/functions/_shared/matching.ts`
-- אחרי שורה 360 (סוף בדיקת חדרים): הוספת בלוק בדיקת size_min/size_max באותו פורמט בדיוק כמו בדיקת rooms
+### שינויים ב-`supabase/functions/_shared/matching.ts`:
 
-### SQL — 2 פעולות:
-1. איפוס כל ההתאמות (matched_leads = [], status = 'new')
-2. תיקון preferred_cities של אופיר
+**הוספת floor_preference ל-ContactLead interface** (שורה ~60):
+```text
+floor_preference: string | null; // ground/low/mid/high/top/any
+```
 
-### קובץ: `supabase/functions/_shared/matching.ts` — deploy
-אחרי השינוי צריך לעשות deploy ל-match-batch ו-trigger-matching כי הם משתמשים ב-matching.ts
+**תיקון בדיקת חדרים** (שורה 352):
+```text
+if (property.rooms && property.rooms > 0) {
+  // בדיקת טווח כרגיל...
+} else if (lead.rooms_min || lead.rooms_max) {
+  // נכס בלי חדרים אבל ללקוח יש דרישה — נפסל
+  return fail("לא צוינו חדרים בנכס");
+}
+```
 
+**תיקון בדיקת גודל** (שורה 362):
+```text
+if (property.size && property.size > 0) {
+  // בדיקת טווח כרגיל...
+} else if ((lead.size_min || lead.size_max) && property.property_type === 'sale') {
+  // מכירה: נכס בלי גודל עם דרישת גודל — נפסל
+  return fail("לא צוין גודל בנכס (מכירה)");
+}
+```
+
+**הוספת בלוק קומה** (אחרי size, לפני features):
+```text
+// ===== FLOOR PREFERENCE (sale only) =====
+if (property.property_type === 'sale' && lead.floor_preference && lead.floor_preference !== 'any') {
+  if (property.floor !== null && property.floor !== undefined) {
+    const ranges = { ground: [0,0], low: [1,3], mid: [4,8], high: [9,15], top: [16,100] };
+    const range = ranges[lead.floor_preference];
+    if (range && (property.floor < range[0] || property.floor > range[1])) {
+      return fail("קומה X לא מתאימה להעדפת קומה Y");
+    }
+    reasons.push("קומה X ✓");
+  }
+  // אם לנכס אין קומה — לא נפסל
+}
+```
+
+### שינויים ב-`supabase/functions/trigger-matching/index.ts`:
+- קריאת matchingSettings פעם אחת ב-orchestrator
+- העברת ה-settings כ-`matching_settings` ב-body לכל batch
+
+### שינויים ב-`supabase/functions/match-batch/index.ts`:
+- קבלת `matching_settings` מה-body
+- שימוש בהם אם קיימים, אחרת fallback לקריאה מ-DB
+
+### Deploy:
+- match-batch + trigger-matching (כי matching.ts משותף)
+
+### קבצים שישתנו:
+- `supabase/functions/_shared/matching.ts` — 4 שינויים
+- `supabase/functions/trigger-matching/index.ts` — העברת settings
+- `supabase/functions/match-batch/index.ts` — קבלת settings מ-body
