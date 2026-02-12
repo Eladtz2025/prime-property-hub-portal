@@ -237,6 +237,18 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   let isPrivate: boolean | null = null;
   let detectedAgency: string | null = null;
   
+  // False positive patterns - these appear between image and ₪ but are NOT agency names
+  const FALSE_POSITIVE_PATTERNS = [
+    /^ירד\s*ב/,           // "ירד ב-500" - price drop tag
+    /^עלה\s*ב/,           // "עלה ב-1,000" - price increase tag
+    /^חדש$/,              // "חדש" - new listing tag
+    /^עודכן$/,            // "עודכן" - updated tag
+    /^מקודם$/,            // "מקודם" - promoted tag
+    /^דחוף$/,             // "דחוף" - urgent tag
+    /^בלעדי$/,            // "בלעדי" - exclusive tag
+    /^[\d,.\-\s₪%]+$/,   // Only numbers/symbols - not a name
+  ];
+
   // Step 1: Structural detection - check text between image end and ₪
   const imgEndMatch = block.match(/\]\([^)]+\)/); // find end of ![alt](url)
   const shekelIndex = block.indexOf('₪');
@@ -257,12 +269,32 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
       const altMatch = block.match(/\[!\[([^\]]*)\]/);
       const altText = altMatch ? altMatch[1].trim() : '';
       
-      // If there's meaningful text that isn't just the alt text repeated
-      if (cleaned.length > 2 && cleaned !== altText) {
-        // This is agency name = broker
-        isPrivate = false;
-        detectedAgency = cleaned;
-        console.log(`[Yad2 Broker] Structural detection: agency="${cleaned.substring(0, 50)}"`);
+      // Skip if it's just the alt text repeated
+      if (cleaned.length > 3 && cleaned !== altText) {
+        // Check if this is a false positive (price tag, status tag, etc.)
+        const isFalsePositive = FALSE_POSITIVE_PATTERNS.some(p => p.test(cleaned));
+        
+        if (isFalsePositive) {
+          console.log(`[Yad2 Broker] Skipping false positive tag: "${cleaned.substring(0, 50)}"`);
+          // Don't set isPrivate - leave as null for backfill
+        } else {
+          // Check for double-name pattern: "Agency Name Agency Name" (strong broker signal)
+          const halfLen = Math.floor(cleaned.length / 2);
+          const firstHalf = cleaned.substring(0, halfLen).trim();
+          const secondHalf = cleaned.substring(halfLen).trim();
+          const isDoubleName = firstHalf.length > 3 && firstHalf === secondHalf;
+          
+          if (isDoubleName) {
+            isPrivate = false;
+            detectedAgency = firstHalf;
+            console.log(`[Yad2 Broker] Double-name agency: "${firstHalf}"`);
+          } else {
+            // Single text between image and ₪ - likely broker but could be tag
+            isPrivate = false;
+            detectedAgency = cleaned;
+            console.log(`[Yad2 Broker] Structural detection: agency="${cleaned.substring(0, 50)}"`);
+          }
+        }
       }
     }
   }
