@@ -91,6 +91,34 @@ const statusIcon = (s: FeedItem['status']) => {
 
 // ── Helpers ──
 
+/** Clean address to show just "street number, neighborhood" like the scout table */
+const STRIP_CITY_PATTERNS = [
+  /,?\s*תל[\s-]*אביב[\s-]*יפו/gi,
+  /,?\s*תל[\s-]*אביב/gi,
+  /,?\s*Tel\s*Aviv/gi,
+  /,?\s*Jaffa/gi,
+  /,?\s*יפו/gi,
+];
+
+const formatCleanAddress = (address?: string, neighborhood?: string): string => {
+  if (!address) return '?';
+  // Take first comma-separated part (street + number)
+  let street = address.split(',')[0]?.trim() || address;
+  // Remove "דירה X חדרים להשכרה/למכירה ב" prefix patterns
+  street = street.replace(/^דירה\s*\d*\s*חדרי?ם?\s*(להשכרה|למכירה)\s*ב?/i, '').trim();
+  street = street.replace(/^(להשכרה|למכירה)\s*ב?/i, '').trim();
+  // Remove "אזורי" prefix
+  street = street.replace(/^אזורי?\s*/i, '').trim();
+  // Strip city names
+  for (const p of STRIP_CITY_PATTERNS) {
+    street = street.replace(p, '').trim();
+  }
+  // Remove trailing commas
+  street = street.replace(/,\s*$/, '').trim();
+  if (!street) return neighborhood || '?';
+  return neighborhood ? `${street}, ${neighborhood}` : street;
+};
+
 const availReasonDetail = (reason: string, isInactive: boolean): { label: string; detail: string; status: FeedItem['status'] } => {
   if (isInactive) {
     if (reason.includes('redirect')) return { label: 'הוסר', detail: 'HEAD: 301 redirect — הפניה לעמוד ראשי', status: 'error' };
@@ -196,7 +224,7 @@ export const LiveMonitor: React.FC = () => {
     feedItems.push({
       type: 'availability',
       timestamp: d.checked_at || '',
-      primary: d.address || d.property_id?.slice(0, 8) || '?',
+      primary: formatCleanAddress(d.address, d.neighborhood) || d.property_id?.slice(0, 8) || '?',
       details: `${truncateUrl(d.source_url)} | ${detail} | ${label}`,
       source: d.source,
       status,
@@ -270,9 +298,7 @@ export const LiveMonitor: React.FC = () => {
         detailParts.push('שגיאת עדכון DB');
       }
 
-      const primaryText = item.address 
-        ? `${item.address}${item.neighborhood ? ', ' + item.neighborhood : ''}`
-        : '?';
+      const primaryText = formatCleanAddress(item.address, item.neighborhood);
 
       feedItems.push({
         type: 'backfill',
