@@ -90,21 +90,64 @@ export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfill = useBackfillProgress();
 
-  // Availability stats
+  // Availability stats (including recheck remaining)
   const { data: stats } = useQuery({
     queryKey: ['availability-stats'],
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes] = await Promise.all([
+      const recheckCutoff = new Date();
+      recheckCutoff.setDate(recheckCutoff.getDate() - 7);
+      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes, recheckRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('availability_checked_at', null),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('availability_check_reason', 'per_property_timeout').eq('is_active', true),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`),
       ]);
-      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0 };
+      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: recheckRes.count ?? 0 };
     },
     refetchInterval: 15000,
+  });
+
+  // Backfill remaining count
+  const { data: backfillRemaining } = useQuery({
+    queryKey: ['backfill-remaining'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .or('backfill_status.is.null,backfill_status.eq.failed');
+      return count ?? 0;
+    },
+    refetchInterval: 15000,
+  });
+
+  // Eligible leads count for matching
+  const { data: eligibleLeads } = useQuery({
+    queryKey: ['eligible-leads-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('contact_leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('matching_status', 'eligible');
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
+  // Active scan configs count
+  const { data: activeConfigs } = useQuery({
+    queryKey: ['active-configs-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('scout_configs')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
+      return count ?? 0;
+    },
+    refetchInterval: 60000,
   });
 
   // Last availability run
@@ -227,6 +270,7 @@ export const ChecksDashboard: React.FC = () => {
           metrics={[
             { label: 'מקור', value: lastScanRun?.source || '—' },
             { label: 'נמצאו', value: lastScanRun?.properties_found ?? 0 },
+            { label: 'configs פעילים', value: activeConfigs ?? 0 },
           ]}
           lastRun={formatLastRun(lastScanRun?.started_at, lastScanRun?.completed_at)}
           historyContent={<ScoutRunHistory />}
@@ -243,7 +287,7 @@ export const ChecksDashboard: React.FC = () => {
           status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
           statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
           metrics={[
-            { label: 'ממתינים', value: stats?.pending ?? 0 },
+            { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
             { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
             { label: 'Timeouts', value: stats?.timeouts ?? 0 },
           ]}
@@ -273,7 +317,7 @@ export const ChecksDashboard: React.FC = () => {
           status={dedupStats?.unresolved ? 'completed' : 'idle'}
           statusText={`${dedupStats?.unresolved ?? 0} לא טופלו`}
           metrics={[
-            { label: 'פתוחות', value: dedupStats?.unresolved ?? 0 },
+            { label: 'נותרו', value: dedupStats?.unresolved ?? 0 },
             { label: 'היום', value: dedupStats?.today ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
@@ -298,7 +342,7 @@ export const ChecksDashboard: React.FC = () => {
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
           statusText={isMatchRunning ? 'מחפש התאמות...' : matchStats ? `${matchStats.total_matches ?? 0} התאמות` : 'לא הופעל'}
           metrics={[
-            { label: 'לידים', value: matchStats?.leads_count ?? 0 },
+            { label: 'לידים eligible', value: eligibleLeads ?? 0 },
             { label: 'התאמות', value: matchStats?.total_matches ?? 0 },
           ]}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
@@ -324,7 +368,7 @@ export const ChecksDashboard: React.FC = () => {
           status={backfill.isRunning ? 'running' : backfill.progress?.status === 'completed' ? 'completed' : 'idle'}
           statusText={backfill.isRunning ? `${backfill.progress?.processed_items ?? 0}/${backfill.progress?.total_items ?? '?'}` : backfill.progress?.status === 'completed' ? 'הושלם' : 'לא הופעל'}
           metrics={[
-            { label: 'עובדו', value: backfill.progress?.processed_items ?? 0 },
+            { label: 'נותרו', value: backfillRemaining ?? 0 },
             { label: 'הצלחות', value: backfill.progress?.successful_items ?? 0 },
             { label: 'כשלונות', value: backfill.progress?.failed_items ?? 0 },
           ]}
