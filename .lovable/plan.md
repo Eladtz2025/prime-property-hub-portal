@@ -1,67 +1,46 @@
 
 
-# באג קריטי: אף נכס חדש לא נכנס מאז 6 בפברואר
+# הוספת סינון פרטי/תיווך לקונפיגורציות סקאוט - Yad2
 
-## מה הבעיה
+## מה ישתנה
 
-ה-upsert בפונקציית `saveProperty` נכשל **בשקט** עבור כל נכס חדש.
+### חלק 1: מיגרציה - הוספת עמודה
+הוספת עמודת `owner_type_filter` לטבלת `scout_configs`:
 
-הקוד משתמש ב:
+```sql
+ALTER TABLE scout_configs
+ADD COLUMN owner_type_filter TEXT DEFAULT NULL
+CHECK (owner_type_filter IS NULL OR owner_type_filter IN ('private', 'broker'));
+```
+
+- `NULL` = ללא סינון (קונפיגורציות קיימות)
+- `'private'` = רק פרטי
+- `'broker'` = רק תיווך
+
+### חלק 2: סינון בפארסר
+**קובץ:** `supabase/functions/_experimental/parser-yad2.ts`
+
+הפונקציה `parseYad2Markdown` תקבל פרמטר שלישי `ownerTypeFilter`. הסינון יתבצע בלולאה מיד אחרי פירסור כל בלוק:
+
 ```typescript
-onConflict: 'source,source_url'
+if (ownerTypeFilter === 'private' && parsed.is_private !== true) continue;
+if (ownerTypeFilter === 'broker' && parsed.is_private !== false) continue;
 ```
 
-אבל במסד הנתונים, האינדקס `scouted_properties_source_url_unique` הוא **partial index** (עם תנאי WHERE), ו-PostgreSQL לא מאפשר להשתמש ב-partial index עם ON CONFLICT. לכן כל upsert של נכס חדש נכשל עם:
+### חלק 3: העברת הפרמטר
+**קובץ:** `supabase/functions/scout-yad2/index.ts`
 
-> "there is no unique or exclusion constraint matching the ON CONFLICT specification"
+שינוי שורה אחת - העברת `config.owner_type_filter` לפארסר.
 
-הנכסים הקיימים עדיין מתעדכנים (דרך `findSameSourceDuplicate` שמוצא אותם לפי `source_id`), אבל שום נכס **חדש** לא נכנס מאז 6 בפברואר.
+### חלק 4: עדכון UI
+**קובץ:** `src/components/scout/UnifiedScoutSettings.tsx`
 
-## התיקון - שני חלקים
+הוספת dropdown "סוג מפרסם" לטופס יצירה/עריכה עם 3 אפשרויות: ללא סינון, פרטי בלבד, תיווך בלבד.
 
-### חלק 1: מיגרציה - ליצור UNIQUE CONSTRAINT רגיל
-
-להחליף את ה-partial index ב-constraint רגיל שתומך ב-ON CONFLICT:
-
-```sql
--- Drop the partial index that doesn't work with ON CONFLICT
-DROP INDEX IF EXISTS scouted_properties_source_url_unique;
-
--- Create a proper unique constraint
-ALTER TABLE scouted_properties
-ADD CONSTRAINT scouted_properties_source_source_url_unique
-UNIQUE (source, source_url);
-```
-
-### חלק 2: תיקון הקובץ הארכיוני (build error)
-
-שינוי שורה אחת ב-`supabase/functions/_archived/_personal-scout/parser-homeless.ts`:
-
-```diff
-- import { load as cheerioLoad } from "npm:cheerio@1.0.0";
-+ import { load as cheerioLoad } from "https://esm.sh/cheerio@1.0.0";
-```
-
-## למה שני החלקים נדרשים
-
-- בלי חלק 1: ה-upsert ימשיך להיכשל גם אחרי deploy
-- בלי חלק 2: ה-deploy נחסם ולכן גם תיקוני ה-PR הקודם (multi-URL, private fallback) לא באוויר
-
-## מה לא משתנה
-
-- שום לוגיקה בקוד לא משתנה
-- ה-saveProperty נשאר בדיוק כמו שהוא
-- רק ה-DB constraint מתוקן כדי שה-upsert יעבוד כמתוכנן
-
-## בדיקה אחרי התיקון
-
-אחרי deploy, להפעיל ריצת סקאוט ולבדוק:
-```sql
-SELECT id, source, new_properties, properties_found, started_at
-FROM scout_runs
-ORDER BY started_at DESC
-LIMIT 5;
-```
-
-`new_properties` צריך סוף סוף להיות גדול מ-0.
+## קבצים שישתנו
+1. מיגרציה חדשה
+2. `supabase/functions/_experimental/parser-yad2.ts` - פרמטר + סינון בלולאה
+3. `supabase/functions/scout-yad2/index.ts` - שורה אחת
+4. `src/components/scout/UnifiedScoutSettings.tsx` - dropdown בטופס
+5. `src/integrations/supabase/types.ts` - יתעדכן אוטומטית
 
