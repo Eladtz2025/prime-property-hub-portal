@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Shared property helper functions used by all scout functions
  * Consolidates duplicated code from scout-yad2, scout-madlan, scout-homeless
  */
@@ -21,8 +21,8 @@ export function extractListingId(url: string, source: string): string | null {
   }
   
   if (source === 'madlan') {
-    // /listings/ABC123 → ABC123
-    const match = url.match(/\/listings?\/([a-zA-Z0-9]+)/i);
+    // /listings/ABC123 or /listings/abc-123_xyz → listing slug/id
+    const match = url.match(/\/listings?\/([^\/\?#]+)/i);
     return match ? match[1] : null;
   }
   
@@ -93,7 +93,7 @@ export function normalizeSourceUrl(url: string, source: string): string {
 async function findCrossSourceDuplicate(
   supabase: any,
   property: ScrapedProperty
-): Promise<string | null> {
+): Promise<{ id: string; duplicate_group_id?: string | null } | null> {
   // Need address with building number, city, and rooms to check
   const hasValidAddress = property.address && /\d+/.test(property.address);
   if (!hasValidAddress || !property.city || property.rooms === undefined) {
@@ -104,7 +104,7 @@ async function findCrossSourceDuplicate(
   
   const { data: existing } = await supabase
     .from('scouted_properties')
-    .select('id, source, source_url')
+    .select('id, duplicate_group_id')
     .eq('city', normalizedCity)
     .eq('address', property.address)
     .eq('rooms', property.rooms)
@@ -114,7 +114,7 @@ async function findCrossSourceDuplicate(
     .limit(1)
     .maybeSingle();
 
-  return existing?.id || null;
+  return existing || null;
 }
 
 // ==================== Same-Source Duplicate Detection ====================
@@ -125,33 +125,34 @@ async function findCrossSourceDuplicate(
  */
 async function findSameSourceDuplicate(
   supabase: any,
-  property: ScrapedProperty
+  property: ScrapedProperty,
+  normalizedSourceUrl: string
 ): Promise<{ id: string; source_url: string } | null> {
-  const listingId = extractListingId(property.source_url, property.source);
-  
-  if (!listingId) {
-    // Fallback to exact URL match
-    const { data: existing } = await supabase
+  // 1) Most reliable: exact source + source_id
+  if (property.source_id) {
+    const { data: existingBySourceId } = await supabase
       .from('scouted_properties')
       .select('id, source_url')
-      .eq('source_url', property.source_url)
-      .eq('is_active', true)
+      .eq('source', property.source)
+      .eq('source_id', property.source_id)
+      .limit(1)
       .maybeSingle();
-    
-    return existing || null;
+
+    if (existingBySourceId) {
+      return existingBySourceId;
+    }
   }
-  
-  // Check for existing property with same listing ID from same source
-  const { data: existing } = await supabase
+
+  // 2) Exact source + normalized URL
+  const { data: existingByUrl } = await supabase
     .from('scouted_properties')
     .select('id, source_url')
     .eq('source', property.source)
-    .ilike('source_url', `%${listingId}%`)
-    .eq('is_active', true)
+    .eq('source_url', normalizedSourceUrl)
     .limit(1)
     .maybeSingle();
-  
-  return existing || null;
+
+  return existingByUrl || null;
 }
 
 // ==================== Interface ====================
@@ -210,10 +211,12 @@ export function isValidSourceUrl(url: string, source: string): boolean {
   
   // Homeless validation
   if (source === 'homeless') {
-    // Must be /viewad.aspx pattern with specific ID
-    if (!url.includes('/viewad.aspx')) return false;
-    if (!url.includes('adid=')) return false;
-    return true;
+    // Accept both:
+    // - /viewad.aspx?adid=12345
+    // - /viewad,12345 or /viewad,12345.aspx
+    const hasAspxPattern = /\/viewad\.aspx\?[^\s]*adid=\d+/i.test(url);
+    const hasCommaPattern = /\/viewad,\d+(?:\.aspx)?/i.test(url);
+    return hasAspxPattern || hasCommaPattern;
   }
   
   return true; // Unknown sources pass through
@@ -266,6 +269,9 @@ export async function saveProperty(
     console.log(`🚫 Skipping property with invalid address (broker name): ${property.address}`);
     return { isNew: false, skipped: true };
   }
+
+  // Normalize source URL before duplicate checks/saving
+  const normalizedSourceUrl = normalizeSourceUrl(property.source_url, property.source);
   
   // Duplicate detection - only if we have valid data for strict matching
   let duplicateGroupId: string | null = null;
@@ -308,44 +314,96 @@ export async function saveProperty(
     }
   }
   
-  // Check for same-source duplicates by listing ID (handles tracking parameters)
-  const existingSameSource = await findSameSourceDuplicate(supabase, property);
+  // Check for same-source duplicates (source+source_id OR exact normalized URL)
+  const existingSameSource = await findSameSourceDuplicate(supabase, property, normalizedSourceUrl);
 
   if (existingSameSource) {
-    // Update existing property with latest data
+    // Update existing property with latest data and reactivate if needed
     console.log(`🔄 Same-source duplicate found: ${property.source_url} matches ${existingSameSource.source_url}`);
     const { error: updateError } = await supabase
       .from('scouted_properties')
       .update({
+        source_url: normalizedSourceUrl,
+        source_id: property.source_id,
         price: property.price,
         title: property.title,
+        city: normalizedCity,
+        neighborhood: property.neighborhood,
+        address: property.address,
+        rooms: property.rooms,
+        size: property.size,
+        floor: property.floor,
+        description: property.description,
+        images: property.images || [],
         features: property.features || {},
+        raw_data: property.raw_data,
+        property_type: property.property_type,
         is_private: property.is_private,
+        status: 'new',
+        is_active: true,
+        availability_check_reason: null,
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', existingSameSource.id);
 
+    if (updateError) {
+      console.warn(`⚠️ Same-source update failed for ${normalizedSourceUrl}: ${updateError.message}`);
+    }
+
     return { isNew: false };
   }
 
   // Check for cross-source duplicates (same property from different source)
-  const crossSourceDuplicateId = await findCrossSourceDuplicate(supabase, property);
-  if (crossSourceDuplicateId) {
-    console.log(`🔄 Cross-source duplicate found: ${property.source_url} matches existing ID ${crossSourceDuplicateId}`);
-    // Update the existing property with new info if available, but don't create new record
-    await supabase
-      .from('scouted_properties')
-      .update({
-        last_seen_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', crossSourceDuplicateId);
-    return { isNew: false, skipped: true };
+  // Keep ingesting this listing, but attach it to the duplicate group.
+  const crossSourceDuplicate = await findCrossSourceDuplicate(supabase, property);
+  if (crossSourceDuplicate) {
+    const crossSourceGroupId = crossSourceDuplicate.duplicate_group_id || crossSourceDuplicate.id;
+    duplicateGroupId = duplicateGroupId || crossSourceGroupId;
+    isPrimaryListing = false;
+
+    console.log(`🔄 Cross-source duplicate found: ${property.source_url} matches existing ID ${crossSourceDuplicate.id}`);
+
+    // Ensure the existing listing is marked as primary group record if needed
+    if (!crossSourceDuplicate.duplicate_group_id) {
+      await supabase
+        .from('scouted_properties')
+        .update({
+          duplicate_group_id: crossSourceGroupId,
+          duplicate_detected_at: new Date().toISOString(),
+          is_primary_listing: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', crossSourceDuplicate.id);
+    }
   }
 
-  // Normalize source URL before saving (remove tracking parameters)
-  const normalizedSourceUrl = normalizeSourceUrl(property.source_url, property.source);
+  // Check if property already existed before upsert (for accurate new counter)
+  let existedBefore = false;
+
+  if (property.source_id) {
+    const { data: existingBySourceId } = await supabase
+      .from('scouted_properties')
+      .select('id')
+      .eq('source', property.source)
+      .eq('source_id', property.source_id)
+      .limit(1)
+      .maybeSingle();
+
+    existedBefore = !!existingBySourceId;
+  }
+
+  if (!existedBefore) {
+    const { data: existingByUrl } = await supabase
+      .from('scouted_properties')
+      .select('id')
+      .eq('source', property.source)
+      .eq('source_url', normalizedSourceUrl)
+      .limit(1)
+      .maybeSingle();
+
+    existedBefore = !!existingByUrl;
+  }
 
   // UPSERT: Insert new property or update if (source, source_url) already exists
   const { data: upsertResult, error: upsertError } = await supabase
@@ -369,6 +427,8 @@ export async function saveProperty(
       features: property.features || {},
       raw_data: property.raw_data,
       status: 'new',
+      is_active: true,
+      availability_check_reason: null,
       is_private: property.is_private,
       duplicate_group_id: duplicateGroupId,
       is_primary_listing: isPrimaryListing,
@@ -386,7 +446,7 @@ export async function saveProperty(
     return { isNew: false };
   }
 
-  return { isNew: !!upsertResult };
+  return { isNew: !existedBefore && !!upsertResult };
 }
 
 // ==================== Date Parsing ====================
@@ -424,3 +484,4 @@ export function parseHebrewDate(dateStr: string): string | null {
   
   return null;
 }
+
