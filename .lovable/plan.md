@@ -1,68 +1,47 @@
 
+# שיפור תצוגת המוניטור החי — 3 שינויים
 
-# שדרוג מעקב Backfill לייב - פרטי נכס בזמן אמת
+## 1. גודל קבוע עם גלילה
+הפיד יקבל גובה קבוע שמתאים ל-5 שורות (כ-300px) ולא ישתנה בגודלו. שורות חדשות ירדו למטה עם auto-scroll והמשתמש יוכל לגלול למעלה. המסך לא "יימתח ויחזור".
 
-## הבעיה
-כרגע ה-backfill שומר ב-DB רק **מונים מצטברים** (`summary_data`) — למשל "rooms(3), price(2), scrape_failed(1)".
-אין שום מידע **per-property**: איזו דירה נסרקת עכשיו, מאיזה מקור, מה נמצא, מה נכשל.
+- שינוי: `max-h-[400px]` ל-`h-[300px]` (גובה קבוע, לא max)
 
-## הפתרון — שני שינויים
+## 2. הגדלת הטקסט והפריסה
+כרגע הכל בגדלים זעירים (`text-[10px]`, `text-[11px]`) למרות שיש הרבה מקום ריק. השינוי:
 
-### 1. Edge Function: שמירת `recent_items` ב-`summary_data`
-בכל פעם שנכס מעובד (הצלחה או כשלון), נוסיף אותו למערך `recent_items` בתוך `summary_data` (JSONB שכבר קיים).
-נשמור רק את **10 האחרונים** (כדי לא לנפח את ה-JSONB).
+- **שם הנכס (primary)**: מ-`text-[11px]` ל-`text-sm` (14px), bold
+- **שורת פרטים (details)**: מ-`text-[10px]` ל-`text-xs` (12px)
+- **Timestamp**: מ-`text-[10px]` ל-`text-xs`
+- **Source badge**: מ-`text-[10px]` ל-`text-xs`
+- **אייקונים**: מ-`h-3 w-3` ל-`h-4 w-4`
+- **Padding**: מ-`px-3 pt-1.5 pb-0.5` ל-`px-4 py-2`
+- **שורת פרטים**: מ-`pb-1.5` ל-`pb-2`, padding-right מתאים
+- **Active processes bar**: הגדלת טקסט בהתאם
 
-כל item יכיל:
-- `address` — כתובת הנכס
-- `source` — yad2/madlan/homeless
-- `source_url` — לינק מלא
-- `status` — "ok" / "scrape_failed" / "no_content" / "no_new_data" / "blacklisted" / "update_error"
-- `fields_found` — מה נמצא בסריקה (למשל `["rooms", "price", "floor", "balcony"]`)
-- `fields_updated` — מה באמת עודכן (רק שדות שהיו חסרים)
-- `broker_result` — "private" / "broker" / null
-- `address_action` — "upgraded" / "set_new" / "mismatch" / null
-- `timestamp` — מתי עובד
-
-שמירה תתבצע **אחרי כל נכס** (לא רק בסוף הבאצ'), כי כבר יש update ל-`last_processed_id` אחרי כל item (שורה 724).
-
-### 2. LiveMonitor: הצגת `recent_items` כשורות נפרדות
-במקום שורה אחת מצטברת עבור backfill, נציג כל item מ-`recent_items` כשורה נפרדת בפיד:
-
-```
-15:45:10  [DB]  V  בן יהודה 30  |  YAD2  |  ₪8.5K  3ח׳
-         נמצאו: קומה, גודל, מרפסת, ממ"ד  |  עודכנו: קומה(3), גודל(85מ״ר)  |  סיווג: פרטי
-
-15:45:22  [DB]  X  רוטשילד 5  |  MDLN
-         Scrape failed: Firecrawl timeout
-
-15:45:35  [DB]  -  אלנבי 100  |  YAD2  |  ₪6K  2.5ח׳
-         נמצאו: מחיר, חדרים  |  ללא נתונים חדשים (כבר קיימים)
-
-15:45:48  [DB]  V  דיזנגוף 50  |  YAD2
-         כתובת שודרגה: "דיזנגוף" → "דיזנגוף 50"  |  תכונות: חניה, מעלית
-```
+## 3. שם הנכס כלינק קליקבילי
+כשיש `source_url`, שם הנכס (primary) יהיה לינק שפותח את דף הנכס בטאב חדש. כרגע הלינק הוא רק אייקון ExternalLink קטן בשורת הפרטים — נעביר את הקליקביליות לשם עצמו (עם underline on hover) ונשאיר גם את האייקון.
 
 ---
 
 ## פרטים טכניים
 
-### קבצים שישתנו:
+### קובץ: `src/components/scout/checks/LiveMonitor.tsx`
 
-#### 1. `supabase/functions/backfill-property-data/index.ts`
-**בתוך הלולאה (אחרי שורה 720)** — לפני ה-delay של 1500ms, נוסיף:
-- בניית אובייקט `recentItem` עם כל הפרטים של הנכס שעובד
-- שליפת `recent_items` הנוכחי מ-DB
-- הוספת ה-item החדש, חיתוך ל-10 אחרונים
-- שמירה חזרה ב-`summary_data.recent_items`
+**שינוי 1 — גובה קבוע:**
+- שורה 381: `max-h-[400px]` -> `h-[300px]`
 
-גם נוסיף `recentItem` עבור מקרי כשלון (scrape_failed, no_content, blacklisted) כדי שגם כשלונות יופיעו בפיד.
+**שינוי 2 — הגדלת טקסט ומרווחים:**
+- שורה 404: padding ראשי `px-3 pt-1.5 pb-0.5` -> `px-4 py-2 pb-1`
+- שורה 406: timestamp `text-[10px]` -> `text-xs`, width `w-[50px]` -> `w-[55px]`
+- שורה 413: type icon `h-3 w-3` -> `h-4 w-4`
+- שורות 84-88: status icons `h-3.5 w-3.5` -> `h-4 w-4`
+- שורה 419: primary text `text-[11px]` -> `text-sm font-semibold`
+- שורה 116: source badge `text-[10px]` -> `text-xs`
+- שורות 428-441: extra info `text-[10px]` -> `text-xs`
+- שורה 445: detail line padding `px-3 pb-1.5 pr-[74px]` -> `px-4 pb-2 pr-[80px]`
+- שורה 446: details text `text-[10px]` -> `text-xs`
+- שורה 457: external link icon `h-2.5 w-2.5` -> `h-3.5 w-3.5`
+- Active processes bar: `text-[11px]` -> `text-sm`, `text-[10px]` -> `text-xs`
 
-**אין שינויי DB** — משתמשים ב-JSONB שכבר קיים (`summary_data`).
-
-#### 2. `src/components/scout/checks/LiveMonitor.tsx`
-- הוספת interface `BackfillRecentItem` עם כל השדות
-- שליפת `recent_items` מ-`backfillRun.summary_data`
-- יצירת שורת FeedItem נפרדת לכל item עם:
-  - שורה ראשית: כתובת, מקור, מחיר, חדרים
-  - שורת פרטים: שדות שנמצאו, שדות שעודכנו, סיווג broker, שגיאות
-- הסרת השורה המצטברת הנוכחית (שורות 222-248) והחלפתה בלולאה על `recent_items`
+**שינוי 3 — שם קליקבילי:**
+- שורות 418-421: עטיפת ה-primary text ב-`<a>` כשיש `item.url`, עם `hover:underline hover:text-gray-100`
