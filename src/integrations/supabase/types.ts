@@ -2879,6 +2879,7 @@ export type Database = {
           address: string | null
           availability_check_reason: string | null
           availability_checked_at: string | null
+          backfill_status: string | null
           city: string | null
           created_at: string
           description: string | null
@@ -2914,6 +2915,7 @@ export type Database = {
           address?: string | null
           availability_check_reason?: string | null
           availability_checked_at?: string | null
+          backfill_status?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
@@ -2949,6 +2951,7 @@ export type Database = {
           address?: string | null
           availability_check_reason?: string | null
           availability_checked_at?: string | null
+          backfill_status?: string | null
           city?: string | null
           created_at?: string
           description?: string | null
