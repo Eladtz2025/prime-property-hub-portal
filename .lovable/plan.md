@@ -1,107 +1,87 @@
 
-# תיקון 4 בעיות במנוע ההתאמות
+# הוספת "נותרו לטיפול" על כרטיסיות הדשבורד
 
-## קובץ: `supabase/functions/_shared/matching.ts`
+## מה נעשה
 
-### 1. הוספת בדיקת קומה (floor_preference) — למכירה בלבד
+נוסיף לכל כרטיסיית תהליך (ProcessCard) מטריקה של "נותרו" — כמה פריטים עוד ממתינים לטיפול. זה ייתן תמונה מיידית בלי צורך לפתוח היסטוריה.
 
-הערכים האפשריים: `ground`, `low`, `mid`, `high`, `top`, `any`
+## הספירות לכל תהליך
 
-מיפוי לקומות:
-- `ground` → קומה 0
-- `low` → קומות 1-3
-- `mid` → קומות 4-8
-- `high` → קומות 9-15
-- `top` → קומה 16+
-- `any` / null → לא בודק
+### 1. השלמת נתונים (Backfill)
+שאילתה חדשה — ספירת נכסים עם `backfill_status IS NULL` או `= 'failed'`:
+```
+scouted_properties WHERE is_active = true AND (backfill_status IS NULL OR backfill_status = 'failed')
+```
 
-הלוגיקה:
-- אם ללקוח אין `floor_preference` או שהוא `any` — הנכס מתאים
-- אם לנכס אין קומה (`floor` = null) — הנכס עדיין מתאים (לא נפסל)
-- אם לשניהם יש ערך — בודקים שהקומה נופלת בטווח הנכון
-- הבדיקה רלוונטית רק לנכסי מכירה
+### 2. בדיקת זמינות (Availability)
+כבר קיימת ספירת `pending` (נכסים שלא נבדקו מעולם). נוסיף גם ספירת נכסים שעבר הזמן לבדיקה חוזרת (recheck) — לפי `recheck_interval_days` מהגדרות:
+```
+scouted_properties WHERE is_active = true AND (availability_checked_at IS NULL OR availability_checked_at < now() - interval)
+```
 
-מיקום: אחרי בדיקת size (שורה 371), לפני בדיקת features
+### 3. כפילויות (Dedup)
+כבר יש `unresolved` — זה המספר הרלוונטי. נשנה את שם המטריקה ל"נותרו" כדי שיהיה אחיד.
 
-### 2. תיקון נכס בלי חדרים (rooms = null/0)
+### 4. התאמות (Matching)
+ספירת לידים eligible שעדיין לא הותאמו (או שהנתונים השתנו מאז). בפועל — ספירת לידים עם `matching_status = 'eligible'`.
 
-כרגע: אם `property.rooms` הוא null/0, הבדיקה מדלגת ונכס עובר בלי לבדוק חדרים.
-
-תיקון:
-- **שכירות**: אם ללקוח יש דרישת חדרים (`rooms_min` או `rooms_max`) והנכס בלי חדרים — **נפסל**
-- **מכירה**: אם ללקוח יש דרישת חדרים והנכס בלי חדרים — **נפסל**
-- אם ללקוח **אין** דרישת חדרים — הנכס עובר
-
-### 3. תיקון נכס בלי גודל (size = null/0)
-
-כרגע: אם `property.size` הוא null/0, הבדיקה מדלגת.
-
-תיקון:
-- **מכירה**: אם ללקוח יש דרישת גודל (`size_min` או `size_max`) — הנכס **נפסל** (במכירה גודל הוא חובה)
-- **שכירות**: אם ללקוח יש דרישת גודל — הנכס **עדיין עובר** (מידע חסר לא פוסל)
-- אם ללקוח **אין** דרישת גודל — הנכס עובר
-
-### 4. Matching settings — cache ב-trigger-matching
-
-במקום שכל batch יקרא settings מהDB, ה-orchestrator (`trigger-matching`) יקרא פעם אחת ויעביר ב-body לכל batch. ה-`match-batch` ישתמש ב-settings מה-body אם קיימים, ויקרא מ-DB רק כ-fallback.
+### 5. סריקות (Scans)
+סריקות עובדות לפי configs ודפים — אין מושג של "נותרו X נכסים". נוסיף במקום זאת את מספר ה-configs הפעילים.
 
 ## פרטים טכניים
 
-### שינויים ב-`supabase/functions/_shared/matching.ts`:
+### קובץ: `src/components/scout/ChecksDashboard.tsx`
 
-**הוספת floor_preference ל-ContactLead interface** (שורה ~60):
-```text
-floor_preference: string | null; // ground/low/mid/high/top/any
+**שינוי 1** — הוספת שאילתת ספירה חדשה לנותרי backfill:
+```typescript
+const { data: backfillRemaining } = useQuery({
+  queryKey: ['backfill-remaining'],
+  queryFn: async () => {
+    const { count } = await supabase
+      .from('scouted_properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .or('backfill_status.is.null,backfill_status.eq.failed');
+    return count ?? 0;
+  },
+  refetchInterval: 15000,
+});
 ```
 
-**תיקון בדיקת חדרים** (שורה 352):
-```text
-if (property.rooms && property.rooms > 0) {
-  // בדיקת טווח כרגיל...
-} else if (lead.rooms_min || lead.rooms_max) {
-  // נכס בלי חדרים אבל ללקוח יש דרישה — נפסל
-  return fail("לא צוינו חדרים בנכס");
-}
+**שינוי 2** — הרחבת שאילתת availability stats קיימת: הוספת ספירת "eligible for recheck" (נכסים שעבר מספיק זמן מהבדיקה האחרונה):
+```typescript
+const recheckCutoff = new Date();
+recheckCutoff.setDate(recheckCutoff.getDate() - 7); // recheck_interval_days
+const recheckRes = await supabase
+  .from('scouted_properties')
+  .select('id', { count: 'exact', head: true })
+  .eq('is_active', true)
+  .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`);
 ```
 
-**תיקון בדיקת גודל** (שורה 362):
-```text
-if (property.size && property.size > 0) {
-  // בדיקת טווח כרגיל...
-} else if ((lead.size_min || lead.size_max) && property.property_type === 'sale') {
-  // מכירה: נכס בלי גודל עם דרישת גודל — נפסל
-  return fail("לא צוין גודל בנכס (מכירה)");
-}
+**שינוי 3** — הוספת ספירת לידים eligible:
+```typescript
+const { data: eligibleLeads } = useQuery({
+  queryKey: ['eligible-leads-count'],
+  queryFn: async () => {
+    const { count } = await supabase
+      .from('contact_leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('matching_status', 'eligible');
+    return count ?? 0;
+  },
+  refetchInterval: 30000,
+});
 ```
 
-**הוספת בלוק קומה** (אחרי size, לפני features):
-```text
-// ===== FLOOR PREFERENCE (sale only) =====
-if (property.property_type === 'sale' && lead.floor_preference && lead.floor_preference !== 'any') {
-  if (property.floor !== null && property.floor !== undefined) {
-    const ranges = { ground: [0,0], low: [1,3], mid: [4,8], high: [9,15], top: [16,100] };
-    const range = ranges[lead.floor_preference];
-    if (range && (property.floor < range[0] || property.floor > range[1])) {
-      return fail("קומה X לא מתאימה להעדפת קומה Y");
-    }
-    reasons.push("קומה X ✓");
-  }
-  // אם לנכס אין קומה — לא נפסל
-}
-```
+**שינוי 4** — הוספת מטריקת "נותרו" לכל ProcessCard:
 
-### שינויים ב-`supabase/functions/trigger-matching/index.ts`:
-- קריאת matchingSettings פעם אחת ב-orchestrator
-- העברת ה-settings כ-`matching_settings` ב-body לכל batch
+- **Backfill**: `{ label: 'נותרו', value: backfillRemaining ?? 0 }`
+- **Availability**: `{ label: 'נותרו', value: stats?.pendingRecheck ?? 0 }`
+- **Dedup**: כבר יש "פתוחות" — שם המטריקה מספיק
+- **Matching**: `{ label: 'לידים eligible', value: eligibleLeads ?? 0 }`
+- **Scans**: `{ label: 'configs פעילים', value: activeConfigs ?? 0 }` (ספירת scout_configs עם is_active=true)
 
-### שינויים ב-`supabase/functions/match-batch/index.ts`:
-- קבלת `matching_settings` מה-body
-- שימוש בהם אם קיימים, אחרת fallback לקריאה מ-DB
+### קובץ: `src/components/scout/checks/ProcessCard.tsx`
 
-### Deploy:
-- match-batch + trigger-matching (כי matching.ts משותף)
-
-### קבצים שישתנו:
-- `supabase/functions/_shared/matching.ts` — 4 שינויים
-- `supabase/functions/trigger-matching/index.ts` — העברת settings
-- `supabase/functions/match-batch/index.ts` — קבלת settings מ-body
+אין שינוי נדרש — ה-metrics array כבר תומך בהוספת מטריקות נוספות.
