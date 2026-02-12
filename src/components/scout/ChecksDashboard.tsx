@@ -20,20 +20,6 @@ import { BackfillStatus } from './checks/BackfillStatus';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 
-// Stats Card
-const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color?: string }> = ({ title, value, icon, color = '' }) => (
-  <Card>
-    <CardContent className="p-3 flex items-center gap-3">
-      <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${color || 'bg-muted'}`}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-muted-foreground truncate">{title}</p>
-        <p className="text-lg font-bold">{typeof value === 'number' ? value.toLocaleString('he-IL') : value}</p>
-      </div>
-    </CardContent>
-  </Card>
-);
 
 // Availability settings content for dialog
 const AvailabilitySettingsContent: React.FC = () => {
@@ -224,18 +210,6 @@ export const ChecksDashboard: React.FC = () => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-        <StatCard title="ממתינים לבדיקה" value={stats?.pending ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
-        <StatCard title="נבדקו היום" value={stats?.checkedToday ?? '—'} icon={<CheckCircle className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
-        <StatCard title="Timeouts" value={stats?.timeouts ?? '—'} icon={<Timer className="h-4 w-4 text-orange-600" />} color="bg-orange-100 dark:bg-orange-900/30" />
-        <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
-        <StatCard title="ריצה אחרונה" value={lastAvailRun ? (isAvailRunning ? 'רץ כעת...' : formatDuration(lastAvailRun.started_at, lastAvailRun.completed_at)) : '—'}
-          icon={isAvailRunning ? <Loader2 className="h-4 w-4 text-blue-600 animate-spin" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
-          color={isAvailRunning ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'} />
-        <StatCard title="כפילויות פתוחות" value={dedupStats?.unresolved ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
-        <StatCard title="התאמות אחרונות" value={matchStats?.total_matches ?? '—'} icon={<Users className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
-      </div>
 
       {/* Live Monitor */}
       <LiveMonitor />

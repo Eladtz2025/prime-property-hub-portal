@@ -1,24 +1,103 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Activity } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Search, Activity, Hourglass, CheckCircle, Timer, Database, Clock, Loader2, Copy, Users } from 'lucide-react';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ChecksDashboard } from '@/components/scout/ChecksDashboard';
+
+const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color?: string }> = ({ title, value, icon, color = '' }) => (
+  <Card>
+    <CardContent className="p-3 flex items-center gap-3">
+      <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${color || 'bg-muted'}`}>
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground truncate">{title}</p>
+        <p className="text-lg font-bold">{typeof value === 'number' ? value.toLocaleString('he-IL') : value}</p>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Availability stats
+  const { data: stats } = useQuery({
+    queryKey: ['availability-stats'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes] = await Promise.all([
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('availability_checked_at', null),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('availability_check_reason', 'per_property_timeout').eq('is_active', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      ]);
+      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0 };
+    },
+    refetchInterval: 15000,
+  });
+
+  // Last availability run
+  const { data: lastAvailRun } = useQuery({
+    queryKey: ['availability-last-run'],
+    queryFn: async () => {
+      const { data } = await supabase.from('availability_check_runs').select('started_at, completed_at, status').order('started_at', { ascending: false }).limit(1).maybeSingle();
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+
+  // Dedup stats
+  const { data: dedupStats } = useQuery({
+    queryKey: ['dedup-stats-summary'],
+    queryFn: async () => {
+      const [unresolvedRes] = await Promise.all([
+        supabase.from('duplicate_alerts').select('id', { count: 'exact', head: true }).eq('is_resolved', false),
+      ]);
+      return { unresolved: unresolvedRes.count ?? 0 };
+    },
+    refetchInterval: 30000,
+  });
+
+  // Matching stats
+  const { data: matchStats } = useQuery({
+    queryKey: ['matching-stats-summary'],
+    queryFn: async () => {
+      const { data } = await supabase.from('personal_scout_runs').select('total_matches').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
+  const isAvailRunning = lastAvailRun?.status === 'running';
+
+  const formatDuration = (started: string, completed: string | null) => {
+    if (!completed) return 'רץ...';
+    const secs = Math.round((new Date(completed).getTime() - new Date(started).getTime()) / 1000);
+    return secs < 60 ? `${secs} שניות` : `${Math.round(secs / 60)} דקות`;
+  };
+
   return (
     <ProtectedRoute requiredRole="manager">
-      <div className="container mx-auto px-4 py-6 space-y-6" dir="rtl">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" dir="ltr">
-            <Search className="h-6 w-6" />
-            Property Scout
-          </h1>
-          <p className="text-muted-foreground">
-            סריקה אוטומטית של אתרי נדל"ן והתאמה ללקוחות
-          </p>
+      <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
+        {/* Stats Cards - Always visible */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+          <StatCard title="ממתינים לבדיקה" value={stats?.pending ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
+          <StatCard title="נבדקו היום" value={stats?.checkedToday ?? '—'} icon={<CheckCircle className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
+          <StatCard title="Timeouts" value={stats?.timeouts ?? '—'} icon={<Timer className="h-4 w-4 text-orange-600" />} color="bg-orange-100 dark:bg-orange-900/30" />
+          <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
+          <StatCard title="ריצה אחרונה" value={lastAvailRun ? (isAvailRunning ? 'רץ כעת...' : formatDuration(lastAvailRun.started_at, lastAvailRun.completed_at)) : '—'}
+            icon={isAvailRunning ? <Loader2 className="h-4 w-4 text-blue-600 animate-spin" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
+            color={isAvailRunning ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'} />
+          <StatCard title="כפילויות פתוחות" value={dedupStats?.unresolved ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
+          <StatCard title="התאמות אחרונות" value={matchStats?.total_matches ?? '—'} icon={<Users className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
