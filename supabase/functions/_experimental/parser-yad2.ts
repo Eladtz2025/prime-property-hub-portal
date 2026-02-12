@@ -237,86 +237,34 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   let isPrivate: boolean | null = null;
   let detectedAgency: string | null = null;
   
-  // False positive patterns - these appear between image and ₪ but are NOT agency names
-  const FALSE_POSITIVE_PATTERNS = [
-    /^ירד\s*ב/,           // "ירד ב-500" - price drop tag
-    /^עלה\s*ב/,           // "עלה ב-1,000" - price increase tag
-    /^חדש$/,              // "חדש" - new listing tag
-    /^עודכן$/,            // "עודכן" - updated tag
-    /^מקודם$/,            // "מקודם" - promoted tag
-    /^דחוף$/,             // "דחוף" - urgent tag
-    /^בלעדי$/,            // "בלעדי" - exclusive tag
-    /^[\d,.\-\s₪%]+$/,   // Only numbers/symbols - not a name
-  ];
-
-  // Step 1: Structural detection - check text between image end and ₪
-  const imgEndMatch = block.match(/\]\([^)]+\)/); // find end of ![alt](url)
+  // Simple rule: text between image and ₪ = broker, no text = private
+  const imgEndMatch = block.match(/\]\([^)]+\)/);
   const shekelIndex = block.indexOf('₪');
   
   if (imgEndMatch && shekelIndex > 0) {
     const imgEndPos = block.indexOf(imgEndMatch[0]) + imgEndMatch[0].length;
     if (shekelIndex > imgEndPos) {
-      const textBetween = block.substring(imgEndPos, shekelIndex);
-      
-      // Clean: remove backslashes, RTL/LTR markers, newlines, whitespace
-      const cleaned = textBetween
-        .replace(/[\u200F\u200E‎‏]/g, '')
+      const textBetween = block.substring(imgEndPos, shekelIndex)
+        .replace(/[\u200F\u200E\u200B‎‏]/g, '')
         .replace(/\\/g, '')
         .replace(/\n/g, ' ')
         .trim();
       
-      // Also get the alt text to exclude it from comparison
+      // Get alt text to exclude from comparison
       const altMatch = block.match(/\[!\[([^\]]*)\]/);
       const altText = altMatch ? altMatch[1].trim() : '';
       
-      // Skip if it's just the alt text repeated
-      if (cleaned.length > 3 && cleaned !== altText) {
-        // Check if this is a false positive (price tag, status tag, etc.)
-        const isFalsePositive = FALSE_POSITIVE_PATTERNS.some(p => p.test(cleaned));
-        
-        if (isFalsePositive) {
-          console.log(`[Yad2 Broker] Skipping false positive tag: "${cleaned.substring(0, 50)}"`);
-          // Don't set isPrivate - leave as null for backfill
-        } else {
-          // Check for double-name pattern: "Agency Name Agency Name" (strong broker signal)
-          const halfLen = Math.floor(cleaned.length / 2);
-          const firstHalf = cleaned.substring(0, halfLen).trim();
-          const secondHalf = cleaned.substring(halfLen).trim();
-          const isDoubleName = firstHalf.length > 3 && firstHalf === secondHalf;
-          
-          if (isDoubleName) {
-            isPrivate = false;
-            detectedAgency = firstHalf;
-            console.log(`[Yad2 Broker] Double-name agency: "${firstHalf}"`);
-          } else {
-            // Single text between image and ₪ - likely broker but could be tag
-            isPrivate = false;
-            detectedAgency = cleaned;
-            console.log(`[Yad2 Broker] Structural detection: agency="${cleaned.substring(0, 50)}"`);
-          }
-        }
-      }
-    }
-  }
-  
-  // Step 2: Keyword-based broker detection as fallback
-  if (isPrivate === null && detectBroker(cleanedBlock, '')) {
-    isPrivate = false;
-  }
-  
-  // Step 3: Check for explicit private indicators after bold section
-  if (isPrivate === null) {
-    const boldEndIndex = cleanedBlock.lastIndexOf('**');
-    if (boldEndIndex > 0) {
-      const afterBold = cleanedBlock.substring(boldEndIndex);
-      if (/מפרטי|ללא\s*תיווך|בעל\s*הדירה|פרטי/i.test(afterBold)) {
+      if (textBetween.length > 2 && textBetween !== altText) {
+        // Text above price = broker
+        isPrivate = false;
+        detectedAgency = textBetween;
+        console.log(`[Yad2] Broker detected: "${textBetween.substring(0, 50)}"`);
+      } else {
+        // No text above price = private
         isPrivate = true;
       }
     }
   }
-  
-  // Step 4: No fallback to "private" - leave as null (unknown)
-  // The backfill process will check the individual listing page later
   
   // ============================================
   // Extract property details
