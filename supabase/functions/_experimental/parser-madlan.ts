@@ -500,8 +500,12 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   const hasTivuchLabel = /^תיווך$/m.test(block) || /\nתיווך\n/.test(block) || /\nתיווך$/.test(block);
   const hasExclusivity = /^בבלעדיות$/m.test(block) || /\nבבלעדיות\n/.test(block) || /\nבבלעדיות$/.test(block);
   const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
+  // "מתיווך" appears inline in some broker listings (means "from broker")
+  const hasMeTivuch = /מתיווך/.test(block);
+  // Agent image: a second [![ linking to realEstateAgent or realEstateOffice image
+  const hasAgentImage = /\[!\[\]\(https:\/\/images2\.madlan\.co\.il\/.*(?:realEstateAgent|realEstateOffice)/.test(block);
   
-  if (hasTivuchLabel || hasExclusivity || hasAgentOfficeLink) {
+  if (hasTivuchLabel || hasExclusivity || hasAgentOfficeLink || hasMeTivuch || hasAgentImage) {
     isPrivate = false; // Broker
   } else {
     isPrivate = true; // No broker label = Private
