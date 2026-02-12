@@ -7,14 +7,18 @@ import { parseYad2Markdown } from "../_experimental/parser-yad2.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Yad2 - SINGLE PAGE MODE ONLY
- * Each invocation handles exactly one page.
+ * Edge Function for scraping Yad2 - SEQUENTIAL MODE
+ * Each invocation handles one page, then triggers the next.
+ * After all pages complete, retries blocked pages automatically.
  * Uses NON-AI parser for cost-free extraction.
  */
 
 const YAD2_CONFIG = {
   SOURCE: 'yad2',
-  MAX_RETRIES: 2
+  MAX_RETRIES: 2,
+  PAGE_DELAY_MS: 15000,  // 15s delay before triggering next page
+  RETRY_DELAY_MS: 25000, // 25s delay for retried blocked pages
+  MAX_BLOCK_RETRIES: 2,  // Max times to retry a blocked page
 };
 
 serve(async (req) => {
@@ -34,6 +38,9 @@ serve(async (req) => {
   const runId = body.run_id as string | undefined;
   const configId = body.config_id as string | undefined;
   const maxPages = body.max_pages as number | undefined;
+  const startPage = body.start_page as number | undefined;
+  const isRetry = body.is_retry as boolean | undefined;
+  const retryPages = body.retry_pages as number[] | undefined; // For retry chains
 
   // Validate required parameters
   // Fix: use == null to allow page === 0 (though unlikely)
@@ -198,17 +205,28 @@ serve(async (req) => {
 
     const duration = Date.now() - pageStartTime;
 
-    // If ALL URLs failed/blocked, don't mark as completed
+    // If ALL URLs failed/blocked, mark as blocked
     if (totalFound === 0 && urlsFailed === urls.length) {
       console.error(`❌ Yad2 page ${page}: All ${urls.length} URL(s) failed or blocked`);
+      
+      // Get current retry count from page_stats
+      const { data: runData } = await supabase
+        .from('scout_runs')
+        .select('page_stats')
+        .eq('id', runId)
+        .single();
+      const currentRetryCount = runData?.page_stats?.find((p: any) => p.page === page)?.retry_count || 0;
+      
       await updatePageStatus(supabase, runId, page, { 
         status: 'blocked', 
         error: `all_urls_failed_or_blocked (${urlsFailed}/${urls.length})`,
-        duration_ms: duration
+        duration_ms: duration,
+        retry_count: isRetry ? currentRetryCount : 0
       });
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
-      }
+
+      // Chain to next page
+      await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
+
       return new Response(JSON.stringify({
         success: false,
         page,
@@ -232,12 +250,10 @@ serve(async (req) => {
     // Update run totals atomically
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    // Check if all pages are done and finalize
-    if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
-    }
-
     console.log(`✅ Yad2 page ${page}: Done | urls=${urls.length} | failed=${urlsFailed} | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+
+    // Chain to next page
+    await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
     return new Response(JSON.stringify({
       success: true,
@@ -261,8 +277,9 @@ serve(async (req) => {
       duration_ms: Date.now() - pageStartTime
     });
 
+    // Chain to next page even on error
     if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      await chainNextPage(supabaseUrl, supabaseServiceKey, createClient(supabaseUrl, supabaseServiceKey), configId!, page, runId, maxPages, startPage, isRetry, retryPages);
     }
 
     return new Response(JSON.stringify({
@@ -275,3 +292,96 @@ serve(async (req) => {
     });
   }
 });
+
+/**
+ * Determine and trigger the next page in the chain (normal or retry mode)
+ */
+async function chainNextPage(
+  supabaseUrl: string, supabaseKey: string, supabase: any,
+  configId: string, currentPage: number, runId: string, maxPages: number,
+  startPage?: number, isRetry?: boolean, retryPages?: number[]
+): Promise<void> {
+  if (isRetry && retryPages?.length) {
+    // In retry mode - find next page in retry list
+    const currentIdx = retryPages.indexOf(currentPage);
+    if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
+      const nextPage = retryPages[currentIdx + 1];
+      await triggerNextPage(supabaseUrl, supabaseKey, configId, nextPage, runId, maxPages, startPage, true, retryPages);
+    } else {
+      // All retry pages done - finalize
+      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+    }
+  } else if (currentPage < maxPages) {
+    // Normal mode - next sequential page
+    await triggerNextPage(supabaseUrl, supabaseKey, configId, currentPage + 1, runId, maxPages, startPage);
+  } else {
+    // Last page - check for blocked pages to retry
+    await handleRetryOrFinalize(supabase, supabaseUrl, supabaseKey, runId, maxPages, configId, startPage);
+  }
+}
+
+/**
+ * Trigger the next page with a delay
+ */
+async function triggerNextPage(
+  supabaseUrl: string, supabaseKey: string, configId: string,
+  nextPage: number, runId: string, maxPages: number,
+  startPage?: number, isRetry = false, retryPages?: number[]
+): Promise<void> {
+  const delay = isRetry ? YAD2_CONFIG.RETRY_DELAY_MS : YAD2_CONFIG.PAGE_DELAY_MS;
+  console.log(`⏳ Waiting ${delay / 1000}s before page ${nextPage}${isRetry ? ' (retry)' : ''}...`);
+  await new Promise(r => setTimeout(r, delay));
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  if (await isRunStopped(supabase, runId)) {
+    console.log(`🛑 Run ${runId} stopped, skipping page ${nextPage}`);
+    return;
+  }
+
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/scout-yad2`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+      body: JSON.stringify({
+        config_id: configId, page: nextPage, run_id: runId,
+        max_pages: maxPages, start_page: startPage,
+        is_retry: isRetry, retry_pages: retryPages
+      })
+    });
+    console.log(`📄 Triggered Yad2 page ${nextPage}`);
+  } catch (err) {
+    console.error(`❌ Failed to trigger page ${nextPage}:`, err);
+  }
+}
+
+/**
+ * After all pages done, retry blocked pages or finalize
+ */
+async function handleRetryOrFinalize(
+  supabase: any, supabaseUrl: string, supabaseKey: string,
+  runId: string, maxPages: number, configId: string, startPage?: number
+): Promise<void> {
+  const { data: run } = await supabase.from('scout_runs').select('page_stats').eq('id', runId).single();
+  if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); return; }
+
+  const blockedPages = (run.page_stats as any[]).filter(
+    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < YAD2_CONFIG.MAX_BLOCK_RETRIES
+  );
+
+  if (blockedPages.length === 0) {
+    await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+    return;
+  }
+
+  console.log(`🔄 Retrying ${blockedPages.length} blocked pages for run ${runId}`);
+  const updatedStats = (run.page_stats as any[]).map((p: any) => {
+    if (p.status === 'blocked' && (p.retry_count || 0) < YAD2_CONFIG.MAX_BLOCK_RETRIES) {
+      return { ...p, status: 'pending', error: undefined, retry_count: (p.retry_count || 0) + 1 };
+    }
+    return p;
+  });
+  await supabase.from('scout_runs').update({ page_stats: updatedStats }).eq('id', runId);
+
+  const retryPageNumbers = blockedPages.map((p: any) => p.page);
+  await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPageNumbers[0], runId, maxPages, startPage, true, retryPageNumbers);
+}
