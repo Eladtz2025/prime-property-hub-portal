@@ -1,39 +1,67 @@
 
 
-# תיקון: סינון תגיות מחיר מזיהוי תיווך מבני ביד2
+# פישוט: זיהוי תיווך/פרטי ביד2
 
-## הבעיה
+## הכלל הפשוט
 
-הזיהוי המבני תופס תגיות כמו "ירד ב-500" או "עלה ב-1,000" כשמות סוכנויות, כי הן טקסט שמופיע בין התמונה לסימן ₪. התוצאה: נכסים פרטיים מסומנים כתיווך ונפסלים.
+כמו שהראית בתמונה:
+- **יש טקסט מעל המחיר** (שם סוכנות) = תיווך (`is_private: false`)
+- **אין טקסט מעל המחיר** = פרטי (`is_private: true`)
 
-## השינויים
+זהו. בלי false positive patterns, בלי double-name detection, בלי סיבוכים.
+
+## מה משתנה
 
 ### קובץ: `supabase/functions/_experimental/parser-yad2.ts`
 
-**הוספת רשימת דפוסים לסינון (false positives):**
+**מחיקת כל הסיבוכים** (שורות 240-319) והחלפה בלוגיקה פשוטה:
 
+```typescript
+// Step 1: Structural detection - check text between image end and price
+const imgEndMatch = block.match(/\]\([^)]+\)/);
+const shekelIndex = block.indexOf('₪');
+
+if (imgEndMatch && shekelIndex > 0) {
+  const imgEndPos = block.indexOf(imgEndMatch[0]) + imgEndMatch[0].length;
+  if (shekelIndex > imgEndPos) {
+    const textBetween = block.substring(imgEndPos, shekelIndex)
+      .replace(/[\u200F\u200E\u200B‎‏]/g, '')
+      .replace(/\\/g, '')
+      .replace(/\n/g, ' ')
+      .trim();
+
+    // Get alt text to exclude from comparison
+    const altMatch = block.match(/\[!\[([^\]]*)\]/);
+    const altText = altMatch ? altMatch[1].trim() : '';
+
+    if (textBetween has meaningful text that isn't alt text) {
+      // Text above price = broker
+      isPrivate = false;
+      detectedAgency = cleaned text;
+    } else {
+      // No text above price = private
+      isPrivate = true;
+    }
+  }
+}
 ```
-ירד ב-X / עלה ב-X  -->  תגית מחיר, לא סוכנות
-חדש / עודכן / מקודם / דחוף  -->  תגית סטטוס
-טקסט קצר מ-4 תווים  -->  לא מספיק משמעותי
-```
 
-**עדכון הלוגיקה המבנית (Step 1) בפונקציית `parseYad2Block`:**
+**הסרת:**
+- רשימת `FALSE_POSITIVE_PATTERNS` (שורות 240-250) -- לא צריך
+- בדיקת double-name (שורות 281-296) -- לא צריך  
+- Step 2 keyword fallback (שורות 302-305) -- לא צריך בשלב SERP
+- Step 3 explicit private check (שורות 307-316) -- מיותר, הלוגיקה הפשוטה מכסה
+- Step 4 comment (שורות 318-319) -- לא רלוונטי
 
-1. חלץ טקסט בין תמונה ל-₪ (כמו היום)
-2. נקה backslashes, RTL markers, רווחים (כמו היום)
-3. **חדש**: בדוק אם הטקסט תואם דפוס false positive -- אם כן, התעלם ממנו
-4. **חדש**: בדוק אם שם סוכנות חוזר פעמיים ברצף (מבנה יד2 אופייני) -- broker חזק
-5. אם נשאר טקסט משמעותי (אחרי סינון) שאינו alt text -- broker
-6. אם אין טקסט כלל -- בדוק תגיות פרטי אחרי ה-bold, אחרת null
+**נשאר:**
+- חילוץ טקסט בין תמונה ל-₪ (המנגנון הבסיסי)
+- ניקוי RTL markers ו-backslashes
+- השוואה ל-alt text (כדי לא לטעות בטקסט חוזר)
 
-### סיכום
+## לוגיקה סופית
 
 | מצב | תוצאה |
 |-----|--------|
-| אין טקסט בין תמונה ל-₪ | null (לא ידוע) |
-| טקסט = "ירד ב-500" וכדומה | null (תג מחיר, לא סוכנות) |
-| טקסט = שם סוכנות (עם/בלי כפילות) | broker (false) |
-| תגית "מפרטי"/"ללא תיווך" אחרי bold | private (true) |
-| שום דבר לא תואם | null (backfill יבדוק) |
+| יש טקסט מעל המחיר (לא alt text) | broker (false) |
+| אין טקסט מעל המחיר | private (true) |
 
