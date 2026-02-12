@@ -102,9 +102,9 @@ export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfill = useBackfillProgress();
 
-  // Availability stats (including recheck remaining)
+  // Availability stats (unique key to avoid collision with global stats)
   const { data: stats } = useQuery({
-    queryKey: ['availability-stats'],
+    queryKey: ['dashboard-availability-detail'],
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -214,7 +214,8 @@ export const ChecksDashboard: React.FC = () => {
     },
     onSuccess: (data) => {
       toast.success(`בדיקת זמינות הופעלה: ${data?.message || ''}`);
-      queryClient.invalidateQueries({ queryKey: ['availability-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-availability-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['global-scout-stats'] });
     },
     onError: (err: any) => toast.error(err.message),
   });
