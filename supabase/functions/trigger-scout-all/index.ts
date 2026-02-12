@@ -16,6 +16,16 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Fire-and-forget cleanup of stuck runs before starting
+    fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
+
     // Get current time in Israel (HH:MM format)
     const israelTime = new Date().toLocaleTimeString('he-IL', { 
       timeZone: 'Asia/Jerusalem',
