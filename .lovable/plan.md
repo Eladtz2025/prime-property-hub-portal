@@ -1,67 +1,66 @@
 
+# תיקון: זיהוי ₪ הנכון + Boolean error
 
-# פישוט: זיהוי תיווך/פרטי ביד2
+## בעיה 1: תגית ירידת מחיר תופסת את ה-₪ הלא נכון
 
-## הכלל הפשוט
+במודעות עם "ירד ב-250,000 ₪", ה-₪ הראשון הוא בתגית ירידת המחיר (אחרי המספר), לא בשורת המחיר (לפני המספר).
 
-כמו שהראית בתמונה:
-- **יש טקסט מעל המחיר** (שם סוכנות) = תיווך (`is_private: false`)
-- **אין טקסט מעל המחיר** = פרטי (`is_private: true`)
+הקוד הנוכחי: `block.indexOf('₪')` -- מוצא את ה-₪ הראשון שהוא בתגית
 
-זהו. בלי false positive patterns, בלי double-name detection, בלי סיבוכים.
-
-## מה משתנה
+**תיקון**: במקום `indexOf('₪')`, צריך למצוא את ה-₪ שלפניו אין מספר (כלומר זה ₪ שמתחיל שורת מחיר, לא ₪ שמסיים תגית "ירד ב-XXX ₪"). או יותר פשוט: למצוא את הדפוס `₪\s*[\d,]` (₪ ואז מספר) ולהשתמש במיקום שלו.
 
 ### קובץ: `supabase/functions/_experimental/parser-yad2.ts`
 
-**מחיקת כל הסיבוכים** (שורות 240-319) והחלפה בלוגיקה פשוטה:
+שינוי שורות 241-242:
 
+**לפני:**
 ```typescript
-// Step 1: Structural detection - check text between image end and price
 const imgEndMatch = block.match(/\]\([^)]+\)/);
 const shekelIndex = block.indexOf('₪');
-
-if (imgEndMatch && shekelIndex > 0) {
-  const imgEndPos = block.indexOf(imgEndMatch[0]) + imgEndMatch[0].length;
-  if (shekelIndex > imgEndPos) {
-    const textBetween = block.substring(imgEndPos, shekelIndex)
-      .replace(/[\u200F\u200E\u200B‎‏]/g, '')
-      .replace(/\\/g, '')
-      .replace(/\n/g, ' ')
-      .trim();
-
-    // Get alt text to exclude from comparison
-    const altMatch = block.match(/\[!\[([^\]]*)\]/);
-    const altText = altMatch ? altMatch[1].trim() : '';
-
-    if (textBetween has meaningful text that isn't alt text) {
-      // Text above price = broker
-      isPrivate = false;
-      detectedAgency = cleaned text;
-    } else {
-      // No text above price = private
-      isPrivate = true;
-    }
-  }
-}
 ```
 
-**הסרת:**
-- רשימת `FALSE_POSITIVE_PATTERNS` (שורות 240-250) -- לא צריך
-- בדיקת double-name (שורות 281-296) -- לא צריך  
-- Step 2 keyword fallback (שורות 302-305) -- לא צריך בשלב SERP
-- Step 3 explicit private check (שורות 307-316) -- מיותר, הלוגיקה הפשוטה מכסה
-- Step 4 comment (שורות 318-319) -- לא רלוונטי
+**אחרי:**
+```typescript
+const imgEndMatch = block.match(/\]\([^)]+\)/);
+// Find the ACTUAL price ₪ (₪ followed by number), not price-drop tags (number followed by ₪)
+const priceLineMatch = block.match(/₪\s*[\d,]/);
+const shekelIndex = priceLineMatch ? block.indexOf(priceLineMatch[0]) : -1;
+```
 
-**נשאר:**
-- חילוץ טקסט בין תמונה ל-₪ (המנגנון הבסיסי)
-- ניקוי RTL markers ו-backslashes
-- השוואה ל-alt text (כדי לא לטעות בטקסט חוזר)
+בנוסף, הוספת ניקוי markdown images מתוך `textBetween` (שורות 247-251) כדי שתגיות כמו `![alt](url)` לא ייתפסו כשמות סוכנות:
 
-## לוגיקה סופית
+```typescript
+const textBetween = block.substring(imgEndPos, shekelIndex)
+  .replace(/[\u200F\u200E\u200B‎‏]/g, '')
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')  // Strip markdown images
+  .replace(/\\/g, '')
+  .replace(/\n/g, ' ')
+  .trim();
+```
 
-| מצב | תוצאה |
-|-----|--------|
-| יש טקסט מעל המחיר (לא alt text) | broker (false) |
-| אין טקסט מעל המחיר | private (true) |
+## בעיה 2: Boolean error - "תל אביב יפו" נכנס ל-is_private
 
+השגיאה `invalid input syntax for type boolean: "תל אביב יפו"` מופיעה בכל ה-upserts של המודעות הפרטיות. הפרסר מחזיר `is_private: true/false/null` -- לא string. צריך הגנה ב-`saveProperty`.
+
+### קובץ: `supabase/functions/_shared/property-helpers.ts`
+
+הוספת sanitization לפני ה-upsert (שורה 432):
+
+```typescript
+// Ensure is_private is strictly boolean or null (defensive check)
+const safeIsPrivate = property.is_private === true ? true 
+  : property.is_private === false ? false 
+  : null;
+```
+
+ואז בשני מקומות שמשתמשים ב-`is_private`:
+- שורה 341: `is_private: safeIsPrivate,` (update path)
+- שורה 432: `is_private: safeIsPrivate,` (upsert path)
+
+## סיכום
+
+| בעיה | תיקון |
+|------|-------|
+| "ירד ב-250,000 ₪" תופס ₪ ראשון | חיפוש `₪` שאחריו מספר (המחיר האמיתי) |
+| תגיות תמונה markdown נתפסות כסוכנות | strip `![...](...)` מ-textBetween |
+| "תל אביב יפו" ב-is_private boolean | defensive sanitization ב-saveProperty |
