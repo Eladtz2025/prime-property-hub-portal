@@ -1,66 +1,52 @@
 
-# תיקון: זיהוי ₪ הנכון + Boolean error
 
-## בעיה 1: תגית ירידת מחיר תופסת את ה-₪ הלא נכון
+# תיקון: Deploy + באג ירידת מחיר
 
-במודעות עם "ירד ב-250,000 ₪", ה-₪ הראשון הוא בתגית ירידת המחיר (אחרי המספר), לא בשורת המחיר (לפני המספר).
+## בעיה 1: ה-Edge Function לא מעודכנת
 
-הקוד הנוכחי: `block.indexOf('₪')` -- מוצא את ה-₪ הראשון שהוא בתגית
+ה-`safeIsPrivate` fix נמצא בקובץ `property-helpers.ts` אבל ה-deploy של `scout-yad2` לא כלל אותו.
 
-**תיקון**: במקום `indexOf('₪')`, צריך למצוא את ה-₪ שלפניו אין מספר (כלומר זה ₪ שמתחיל שורת מחיר, לא ₪ שמסיים תגית "ירד ב-XXX ₪"). או יותר פשוט: למצוא את הדפוס `₪\s*[\d,]` (₪ ואז מספר) ולהשתמש במיקום שלו.
+**תיקון**: Deploy מחדש את `scout-yad2` ולוודא שה-shared files נכללים.
+
+## בעיה 2: תגית "ירד ב-XXX ₪" בלי סוכנות מזוהה כתיווך
+
+הלוגים מראים:
+```
+[Yad2] Broker detected: "ירד ב-650,000 ₪"
+[Yad2] Broker detected: "ירד ב-300,000 ₪"
+[Yad2] Broker detected: "ירד ב-200,000 ₪"
+```
+
+אלה מודעות **פרטיות** עם תגית ירידת מחיר. הטקסט "ירד ב-650,000 ₪" נמצא בין התמונה למחיר, ולכן הלוגיקה הפשוטה שלנו חושבת שזה שם סוכנות.
+
+**תיקון**: אחרי חילוץ `textBetween`, צריך לנקות ממנו תגיות ירידת מחיר (regex: `ירד ב-[\d,]+\s*₪`). אם אחרי הניקוי לא נשאר טקסט משמעותי — זה פרטי.
 
 ### קובץ: `supabase/functions/_experimental/parser-yad2.ts`
 
-שינוי שורות 241-242:
-
-**לפני:**
-```typescript
-const imgEndMatch = block.match(/\]\([^)]+\)/);
-const shekelIndex = block.indexOf('₪');
-```
-
-**אחרי:**
-```typescript
-const imgEndMatch = block.match(/\]\([^)]+\)/);
-// Find the ACTUAL price ₪ (₪ followed by number), not price-drop tags (number followed by ₪)
-const priceLineMatch = block.match(/₪\s*[\d,]/);
-const shekelIndex = priceLineMatch ? block.indexOf(priceLineMatch[0]) : -1;
-```
-
-בנוסף, הוספת ניקוי markdown images מתוך `textBetween` (שורות 247-251) כדי שתגיות כמו `![alt](url)` לא ייתפסו כשמות סוכנות:
+בבלוק שמחשב את `textBetween` (שורות 247-253), הוספת ניקוי נוסף:
 
 ```typescript
 const textBetween = block.substring(imgEndPos, shekelIndex)
-  .replace(/[\u200F\u200E\u200B‎‏]/g, '')
+  .replace(/[\u200F\u200E\u200B]/g, '')
   .replace(/!\[[^\]]*\]\([^)]*\)/g, '')  // Strip markdown images
+  .replace(/ירד ב-?[\d,]+\s*₪/g, '')    // Strip price-drop tags
+  .replace(/בלעדי/g, '')                  // Strip "exclusive" tag
+  .replace(/חדש מקבלן/g, '')              // Strip "new from builder" tag
   .replace(/\\/g, '')
   .replace(/\n/g, ' ')
   .trim();
 ```
 
-## בעיה 2: Boolean error - "תל אביב יפו" נכנס ל-is_private
+הוספת `בלעדי` ו-`חדש מקבלן` כי אלה תגיות של הפלטפורמה, לא שמות סוכנות. אם אחרי הסרת כל התגיות נשאר טקסט — זה שם הסוכנות (תיווך). אם לא נשאר כלום — פרטי.
 
-השגיאה `invalid input syntax for type boolean: "תל אביב יפו"` מופיעה בכל ה-upserts של המודעות הפרטיות. הפרסר מחזיר `is_private: true/false/null` -- לא string. צריך הגנה ב-`saveProperty`.
+## בעיה 3: ה-boolean error עדיין קיים
 
-### קובץ: `supabase/functions/_shared/property-helpers.ts`
+למרות ש-`safeIsPrivate` בקוד, הפונקציה שרצה היא הגרסה הישנה. ה-deploy מחדש אמור לפתור את זה.
 
-הוספת sanitization לפני ה-upsert (שורה 432):
+## סיכום שינויים
 
-```typescript
-// Ensure is_private is strictly boolean or null (defensive check)
-const safeIsPrivate = property.is_private === true ? true 
-  : property.is_private === false ? false 
-  : null;
-```
-
-ואז בשני מקומות שמשתמשים ב-`is_private`:
-- שורה 341: `is_private: safeIsPrivate,` (update path)
-- שורה 432: `is_private: safeIsPrivate,` (upsert path)
-
-## סיכום
-
-| בעיה | תיקון |
+| קובץ | שינוי |
 |------|-------|
-| "ירד ב-250,000 ₪" תופס ₪ ראשון | חיפוש `₪` שאחריו מספר (המחיר האמיתי) |
-| תגיות תמונה markdown נתפסות כסוכנות | strip `![...](...)` מ-textBetween |
-| "תל אביב יפו" ב-is_private boolean | defensive sanitization ב-saveProperty |
+| `parser-yad2.ts` | strip "ירד ב-XXX ₪", "בלעדי", "חדש מקבלן" מ-textBetween |
+| `scout-yad2` | deploy מחדש כדי שכל השינויים יהיו פעילים |
+
