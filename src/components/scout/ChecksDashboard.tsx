@@ -19,6 +19,7 @@ import { MatchingStatus } from './checks/MatchingStatus';
 import { BackfillStatus } from './checks/BackfillStatus';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgress } from '@/hooks/useBackfillProgress';
+import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 
 
 // Availability settings content for dialog
@@ -250,7 +251,16 @@ export const ChecksDashboard: React.FC = () => {
           onRun={() => triggerAvailability.mutate()}
           isRunPending={triggerAvailability.isPending}
           historyContent={<AvailabilityHistorySection />}
-          settingsContent={<AvailabilitySettingsContent />}
+          settingsContent={
+            <div className="space-y-6">
+              <ScheduleTimeEditor
+                category="availability"
+                cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+                label="שעות ריצת בדיקת זמינות"
+              />
+              <AvailabilitySettingsContent />
+            </div>
+          }
           historyTitle="היסטוריית בדיקות זמינות"
           settingsTitle="הגדרות בדיקת זמינות"
         />
@@ -269,7 +279,15 @@ export const ChecksDashboard: React.FC = () => {
           onRun={() => triggerDedup.mutate()}
           isRunPending={triggerDedup.isPending}
           historyContent={<DeduplicationStatus />}
+          settingsContent={
+            <ScheduleTimeEditor
+              category="duplicates"
+              cronJobNames={[{ jobName: 'cleanup-orphan-duplicates-hourly', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+              label="שעות ריצת ניקוי כפילויות"
+            />
+          }
           historyTitle="כפילויות"
+          settingsTitle="הגדרות כפילויות"
         />
 
         {/* Matching */}
@@ -287,7 +305,15 @@ export const ChecksDashboard: React.FC = () => {
           onRun={() => triggerMatching.mutate()}
           isRunPending={triggerMatching.isPending}
           historyContent={<MatchingStatus />}
+          settingsContent={
+            <ScheduleTimeEditor
+              category="matching"
+              cronJobNames={[{ jobName: 'match-leads-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+              label="שעות ריצת התאמות"
+            />
+          }
           historyTitle="היסטוריית התאמות"
+          settingsTitle="הגדרות התאמות"
         />
 
         {/* Backfill */}
@@ -307,7 +333,15 @@ export const ChecksDashboard: React.FC = () => {
           isRunPending={backfill.isStarting}
           isStopPending={backfill.isStopping}
           historyContent={<BackfillStatus />}
+          settingsContent={
+            <ScheduleTimeEditor
+              category="backfill"
+              cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+              label="שעות ריצת השלמת נתונים"
+            />
+          }
           historyTitle="היסטוריית השלמת נתונים"
+          settingsTitle="הגדרות השלמת נתונים"
         />
       </div>
 

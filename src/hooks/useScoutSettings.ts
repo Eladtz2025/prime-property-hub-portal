@@ -15,6 +15,7 @@ export interface ScoutSettingRow {
 export interface ScoutSettings {
   duplicates: {
     price_diff_threshold: number;
+    schedule_times: string[];
   };
   matching: {
     max_matches_per_property: number;
@@ -46,6 +47,7 @@ export interface ScoutSettings {
     head_timeout_ms: number;
     get_timeout_ms: number;
     use_firecrawl: boolean;
+    schedule_times: string[];
   };
   eligibility: {
     require_cities: boolean;
@@ -68,6 +70,7 @@ export interface ScoutSettings {
 export const defaultSettings: ScoutSettings = {
   duplicates: {
     price_diff_threshold: 0.20,
+    schedule_times: ['00:00'],
   },
   matching: {
     max_matches_per_property: 20,
@@ -97,6 +100,7 @@ export const defaultSettings: ScoutSettings = {
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
     use_firecrawl: true,
+    schedule_times: ['05:00'],
   },
   eligibility: {
     require_cities: true,
