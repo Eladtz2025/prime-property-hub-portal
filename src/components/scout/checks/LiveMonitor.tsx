@@ -1,17 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
-  CheckCircle, XCircle, Clock, Loader2, AlertTriangle, Radio,
-  Search, Shield, Copy, Users, Database, Monitor,
+  CheckCircle, XCircle, Clock, Loader2, AlertTriangle,
+  Search, Shield, Database, Monitor, ExternalLink,
 } from 'lucide-react';
-import { Json } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
-// Types for different run sources
-interface RunDetail {
+// ── Types ──
+
+interface AvailDetail {
   property_id: string;
   source_url?: string;
   address?: string;
@@ -23,64 +22,102 @@ interface RunDetail {
   rooms?: number;
   neighborhood?: string;
   floor?: number;
-  fields_updated?: string[];
 }
 
-interface ActiveProcess {
-  type: 'availability' | 'backfill' | 'scan';
-  id: string;
-  started_at: string;
+interface PageStat {
+  page: number;
+  url: string;
+  found: number;
+  new: number;
+  duration_ms: number;
   status: string;
-  details: RunDetail[];
-  properties_checked?: number | null;
-  total_items?: number | null;
-  processed_items?: number | null;
+  error?: string;
+  retry_count?: number;
 }
 
-const processConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  availability: { icon: <Shield className="h-3 w-3" />, label: 'בדיקת זמינות', color: 'text-blue-400' },
-  backfill: { icon: <Database className="h-3 w-3" />, label: 'השלמת נתונים', color: 'text-emerald-400' },
-  scan: { icon: <Search className="h-3 w-3" />, label: 'סריקה', color: 'text-orange-400' },
-  dedup: { icon: <Copy className="h-3 w-3" />, label: 'כפילויות', color: 'text-purple-400' },
-  matching: { icon: <Users className="h-3 w-3" />, label: 'התאמות', color: 'text-pink-400' },
+interface BackfillSummary {
+  total_processed?: number;
+  fields_updated?: Record<string, number>;
+  scrape_failed?: number;
+  no_new_data?: number;
+  features_updated?: number;
+  broker_classified?: number;
+  no_content?: number;
+  update_db_error?: number;
+}
+
+// Unified feed item
+interface FeedItem {
+  type: 'availability' | 'scan' | 'backfill';
+  timestamp: string;
+  primary: string;
+  details: string;
+  source?: string;
+  status: 'ok' | 'error' | 'warning' | 'pending';
+  url?: string;
+  extra?: { price?: number; rooms?: number; floor?: number };
+}
+
+// ── Config ──
+
+const typeConfig = {
+  availability: { icon: Shield, label: 'זמינות', bgClass: 'bg-blue-950/30 border-r-2 border-r-blue-500/40' },
+  scan: { icon: Search, label: 'סריקה', bgClass: 'bg-orange-950/30 border-r-2 border-r-orange-500/40' },
+  backfill: { icon: Database, label: 'השלמה', bgClass: 'bg-emerald-950/30 border-r-2 border-r-emerald-500/40' },
 };
 
-const ResultIcon: React.FC<{ reason: string; isInactive: boolean }> = ({ reason, isInactive }) => {
-  if (isInactive) return <XCircle className="h-3 w-3 text-red-400 shrink-0" />;
-  if (reason === 'content_ok') return <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />;
-  if (reason.includes('timeout')) return <Clock className="h-3 w-3 text-orange-400 shrink-0" />;
-  if (reason.includes('updated') || reason.includes('completed')) return <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0" />;
-  return <AlertTriangle className="h-3 w-3 text-yellow-400 shrink-0" />;
-};
-
-const reasonLabel = (reason: string, isInactive: boolean): string => {
-  if (isInactive) {
-    if (reason.includes('removed') || reason.includes('listing')) return 'הוסר';
-    if (reason.includes('redirect')) return 'הפניה';
-    if (reason.includes('404') || reason.includes('410')) return `HTTP ${reason.match(/\d+/)?.[0] || ''}`;
-    return 'לא אקטיבי';
+const statusIcon = (s: FeedItem['status']) => {
+  switch (s) {
+    case 'ok': return <CheckCircle className="h-3.5 w-3.5 text-green-400" />;
+    case 'error': return <XCircle className="h-3.5 w-3.5 text-red-400" />;
+    case 'warning': return <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />;
+    case 'pending': return <Clock className="h-3.5 w-3.5 text-gray-500" />;
   }
-  if (reason === 'content_ok') return 'אקטיבי';
-  if (reason.includes('timeout')) return 'Timeout';
-  if (reason.includes('no_indicators')) return 'ללא אינדיקטורים';
-  if (reason.includes('suspicious')) return 'חשוד';
-  if (reason.includes('updated') || reason.includes('completed')) return 'הושלם';
-  return reason;
+};
+
+// ── Helpers ──
+
+const availReasonDetail = (reason: string, isInactive: boolean): { label: string; detail: string; status: FeedItem['status'] } => {
+  if (isInactive) {
+    if (reason.includes('redirect')) return { label: 'הוסר', detail: 'HEAD: 301 redirect — הפניה לעמוד ראשי', status: 'error' };
+    if (reason.includes('404')) return { label: 'HTTP 404', detail: 'HEAD: 404 Not Found — הדף לא קיים', status: 'error' };
+    if (reason.includes('410')) return { label: 'HTTP 410', detail: 'HEAD: 410 Gone — הדף הוסר לצמיתות', status: 'error' };
+    if (reason.includes('removed') || reason.includes('listing')) return { label: 'הוסר', detail: 'תוכן מוסר — אין נתוני נכס בדף', status: 'error' };
+    return { label: 'לא אקטיבי', detail: `סיבה: ${reason}`, status: 'error' };
+  }
+  if (reason === 'content_ok') return { label: 'אקטיבי', detail: 'תוכן תקין — מחיר/חדרים נמצאו בדף', status: 'ok' };
+  if (reason.includes('timeout')) return { label: 'Timeout', detail: 'Timeout אחרי 50s — חוזר לתור הבדיקה', status: 'warning' };
+  if (reason.includes('no_indicators')) return { label: 'ללא אינדיקטורים', detail: 'לא נמצאו סימני הסרה — נשאר אקטיבי', status: 'ok' };
+  if (reason.includes('suspicious')) return { label: 'חשוד', detail: 'תוכן חשוד — נדרשת בדיקה ידנית', status: 'warning' };
+  return { label: reason, detail: reason, status: 'ok' };
 };
 
 const sourceBadge = (source?: string) => {
-  switch (source?.toLowerCase()) {
-    case 'yad2': return <span className="text-orange-400 font-mono">YAD2</span>;
-    case 'madlan': return <span className="text-blue-400 font-mono">MDLN</span>;
-    case 'homeless': return <span className="text-purple-400 font-mono">HMLS</span>;
-    default: return null;
-  }
+  const map: Record<string, { text: string; cls: string }> = {
+    yad2: { text: 'YAD2', cls: 'text-orange-400' },
+    madlan: { text: 'MDLN', cls: 'text-blue-400' },
+    homeless: { text: 'HMLS', cls: 'text-purple-400' },
+  };
+  const s = map[source?.toLowerCase() || ''];
+  if (!s) return null;
+  return <span className={`${s.cls} font-mono text-[10px] font-bold`}>{s.text}</span>;
 };
+
+const truncateUrl = (url?: string) => {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    const path = u.pathname.length > 30 ? u.pathname.slice(0, 30) + '…' : u.pathname;
+    return u.hostname.replace('www.', '') + path;
+  } catch { return url.slice(0, 50); }
+};
+
+// ── Component ──
 
 export const LiveMonitor: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Availability active run
+  // Availability run
   const { data: availRun } = useQuery({
     queryKey: ['monitor-availability-run'],
     queryFn: async () => {
@@ -97,7 +134,7 @@ export const LiveMonitor: React.FC = () => {
     refetchInterval: 2000,
   });
 
-  // Backfill active run
+  // Backfill run
   const { data: backfillRun } = useQuery({
     queryKey: ['monitor-backfill-run'],
     queryFn: async () => {
@@ -115,13 +152,13 @@ export const LiveMonitor: React.FC = () => {
     refetchInterval: 2000,
   });
 
-  // Active scan runs
+  // Scan runs
   const { data: scanRuns } = useQuery({
     queryKey: ['monitor-scan-runs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('scout_runs')
-        .select('id, started_at, status, config_id, properties_found, new_properties')
+        .select('id, started_at, status, source, properties_found, new_properties, page_stats')
         .eq('status', 'running')
         .order('started_at', { ascending: false })
         .limit(3);
@@ -131,19 +168,94 @@ export const LiveMonitor: React.FC = () => {
     refetchInterval: 2000,
   });
 
-  // Build unified feed
-  const availDetails: RunDetail[] = availRun?.run_details
-    ? (Array.isArray(availRun.run_details) ? availRun.run_details as unknown as RunDetail[] : [])
+  // ── Build feed items ──
+
+  const feedItems: FeedItem[] = [];
+
+  // Availability details
+  const availDetails: AvailDetail[] = availRun?.run_details
+    ? (Array.isArray(availRun.run_details) ? availRun.run_details as unknown as AvailDetail[] : [])
     : [];
+
+  availDetails.forEach(d => {
+    const { label, detail, status } = availReasonDetail(d.reason, d.is_inactive);
+    feedItems.push({
+      type: 'availability',
+      timestamp: d.checked_at || '',
+      primary: d.address || d.property_id?.slice(0, 8) || '?',
+      details: `${truncateUrl(d.source_url)} | ${detail} | ${label}`,
+      source: d.source,
+      status,
+      url: d.source_url,
+      extra: { price: d.price, rooms: d.rooms, floor: d.floor },
+    });
+  });
+
+  // Scan page stats
+  scanRuns?.forEach(run => {
+    const pages = run.page_stats as unknown as PageStat[] | null;
+    if (!pages) return;
+    pages.filter(p => p.status !== 'pending').forEach(p => {
+      const isOk = p.status === 'completed';
+      const isBlocked = p.status === 'blocked';
+      const duration = p.duration_ms ? `${(p.duration_ms / 1000).toFixed(1)}s` : '';
+      
+      let detailParts: string[] = [];
+      if (p.url) detailParts.push(truncateUrl(p.url));
+      if (isOk) detailParts.push(`${p.found} נמצאו, ${p.new} חדשים`);
+      if (isBlocked && p.error) detailParts.push(`BLOCKED: ${p.error}`);
+      if (p.status === 'failed' && p.error) detailParts.push(`ERROR: ${p.error}`);
+      if (duration) detailParts.push(duration);
+      if (p.retry_count && p.retry_count > 0) detailParts.push(`ניסיון ${p.retry_count + 1}`);
+
+      feedItems.push({
+        type: 'scan',
+        timestamp: run.started_at,
+        primary: `עמ׳ ${p.page} — ${run.source || 'unknown'}`,
+        details: detailParts.join(' | '),
+        source: run.source,
+        status: isOk ? 'ok' : isBlocked ? 'error' : p.status === 'failed' ? 'error' : 'warning',
+      });
+    });
+  });
+
+  // Backfill summary (aggregate — not per-property)
+  if (backfillRun) {
+    const summary = backfillRun.summary_data as unknown as BackfillSummary | null;
+    if (summary && summary.total_processed) {
+      const fieldsStr = summary.fields_updated
+        ? Object.entries(summary.fields_updated)
+            .filter(([, v]) => v > 0)
+            .map(([k, v]) => `${k}(${v})`)
+            .join(', ')
+        : '';
+
+      const parts: string[] = [];
+      if (fieldsStr) parts.push(`שדות: ${fieldsStr}`);
+      if (summary.features_updated) parts.push(`תכונות: ${summary.features_updated}`);
+      if (summary.broker_classified) parts.push(`סיווג מתווך: ${summary.broker_classified}`);
+      if (summary.scrape_failed) parts.push(`כשלונות: ${summary.scrape_failed}`);
+      if (summary.no_new_data) parts.push(`ללא נתונים חדשים: ${summary.no_new_data}`);
+
+      feedItems.push({
+        type: 'backfill',
+        timestamp: backfillRun.updated_at || backfillRun.started_at || '',
+        primary: `השלמת נתונים — ${summary.total_processed} עובדו`,
+        details: parts.join(' | ') || 'מעבד...',
+        status: summary.scrape_failed && summary.scrape_failed > 10 ? 'warning' : 'ok',
+      });
+    }
+  }
+
+  // Sort by timestamp
+  feedItems.sort((a, b) => {
+    if (!a.timestamp || !b.timestamp) return 0;
+    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+  });
 
   const hasActivity = !!(availRun || backfillRun || (scanRuns && scanRuns.length > 0));
 
-  // Auto-scroll
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [availDetails.length, backfillRun?.processed_items]);
+  // ── Active processes header ──
 
   const activeProcesses: { type: string; label: string; elapsed: string; progress?: number }[] = [];
 
@@ -167,19 +279,28 @@ export const LiveMonitor: React.FC = () => {
     });
   }
 
-  if (scanRuns?.length) {
-    scanRuns.forEach(run => {
-      const elapsed = Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000);
-      activeProcesses.push({
-        type: 'scan',
-        label: `סריקה — ${run.properties_found ?? 0} נמצאו, ${run.new_properties ?? 0} חדשים`,
-        elapsed: elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`,
-      });
+  scanRuns?.forEach(run => {
+    const elapsed = Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000);
+    const pages = run.page_stats as unknown as PageStat[] | null;
+    const done = pages?.filter(p => p.status !== 'pending').length || 0;
+    const total = pages?.length || 0;
+    activeProcesses.push({
+      type: 'scan',
+      label: `סריקת ${run.source || '?'} — עמ׳ ${done}/${total} | ${run.properties_found ?? 0} נמצאו, ${run.new_properties ?? 0} חדשים`,
+      elapsed: elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`,
+      progress: total > 0 ? Math.round((done / total) * 100) : undefined,
     });
-  }
+  });
+
+  // Auto-scroll
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [feedItems.length]);
 
   return (
-    <div className="rounded-lg border border-border/50 bg-gray-950 dark:bg-gray-950 overflow-hidden">
+    <div className="rounded-lg border border-border/50 bg-gray-950 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-gray-900/80">
         <div className="flex items-center gap-2">
@@ -201,17 +322,16 @@ export const LiveMonitor: React.FC = () => {
       {activeProcesses.length > 0 && (
         <div className="px-3 py-2 space-y-1.5 border-b border-border/20 bg-gray-900/50">
           {activeProcesses.map((proc, i) => {
-            const cfg = processConfig[proc.type];
+            const cfg = typeConfig[proc.type as keyof typeof typeConfig];
+            const Icon = cfg?.icon || Monitor;
             return (
               <div key={i} className="flex items-center gap-2">
-                <div className={`flex items-center gap-1.5 ${cfg?.color || 'text-gray-400'}`}>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {cfg?.icon}
-                </div>
+                <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                <Icon className="h-3 w-3 text-gray-400" />
                 <span className="text-[11px] text-gray-300 flex-1 truncate">{proc.label}</span>
                 <span className="text-[10px] text-gray-500 font-mono">{proc.elapsed}</span>
                 {proc.progress !== undefined && (
-                  <div className="w-16">
+                  <div className="w-20">
                     <Progress value={proc.progress} className="h-1 [&>div]:bg-emerald-500" />
                   </div>
                 )}
@@ -224,11 +344,11 @@ export const LiveMonitor: React.FC = () => {
       {/* Feed */}
       <div
         ref={scrollRef}
-        className="max-h-[300px] overflow-y-auto scrollbar-thin"
+        className="max-h-[400px] overflow-y-auto scrollbar-thin"
         dir="rtl"
       >
-        {!hasActivity && availDetails.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-gray-600">
+        {feedItems.length === 0 ? (
+          <div className="flex items-center justify-center py-16 text-gray-600">
             <div className="text-center space-y-1">
               <Monitor className="h-6 w-6 mx-auto opacity-30" />
               <p className="text-xs">ממתין לפעילות...</p>
@@ -236,59 +356,90 @@ export const LiveMonitor: React.FC = () => {
           </div>
         ) : (
           <div className="divide-y divide-border/10">
-            {availDetails.map((detail, i) => (
-              <div
-                key={`avail-${detail.property_id}-${i}`}
-                className={`flex items-center gap-2 text-[11px] py-1.5 px-3 hover:bg-gray-800/50 transition-colors ${
-                  i === availDetails.length - 1 ? 'bg-gray-800/30' : ''
-                }`}
-              >
-                {/* Timestamp */}
-                <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[42px]">
-                  {detail.checked_at
-                    ? format(new Date(detail.checked_at), 'HH:mm:ss')
-                    : '--:--'}
-                </span>
+            {feedItems.map((item, i) => {
+              const cfg = typeConfig[item.type];
+              const Icon = cfg.icon;
+              const isLast = i === feedItems.length - 1;
 
-                {/* Type icon */}
-                <span className="text-blue-400 shrink-0">
-                  <Shield className="h-3 w-3" />
-                </span>
+              return (
+                <div
+                  key={`${item.type}-${i}`}
+                  className={`${cfg.bgClass} ${isLast ? 'animate-pulse-once' : ''} transition-colors hover:bg-gray-800/40`}
+                >
+                  {/* Primary line */}
+                  <div className="flex items-center gap-2 px-3 pt-1.5 pb-0.5">
+                    {/* Timestamp */}
+                    <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[50px]" dir="ltr">
+                      {item.timestamp
+                        ? format(new Date(item.timestamp), 'HH:mm:ss')
+                        : '--:--:--'}
+                    </span>
 
-                {/* Result */}
-                <ResultIcon reason={detail.reason} isInactive={detail.is_inactive} />
+                    {/* Type icon */}
+                    <Icon className="h-3 w-3 text-gray-500 shrink-0" />
 
-                {/* Address */}
-                <span className="truncate flex-1 min-w-0 text-gray-300">
-                  {detail.address || detail.property_id?.slice(0, 8)}
-                </span>
+                    {/* Status icon */}
+                    <span className="shrink-0">{statusIcon(item.status)}</span>
 
-                {/* Extra details */}
-                {detail.price && (
-                  <span className="text-gray-500 text-[10px] shrink-0">
-                    ₪{(detail.price / 1000).toFixed(0)}K
-                  </span>
-                )}
-                {detail.rooms && (
-                  <span className="text-gray-500 text-[10px] shrink-0">
-                    {detail.rooms}ח׳
-                  </span>
-                )}
+                    {/* Primary text */}
+                    <span className="text-[11px] text-gray-200 flex-1 truncate font-medium">
+                      {item.primary}
+                    </span>
 
-                {/* Source */}
-                <span className="text-[10px] shrink-0">
-                  {sourceBadge(detail.source)}
-                </span>
+                    {/* Source badge */}
+                    {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
 
-                {/* Reason label */}
-                <span className={`text-[10px] shrink-0 ${detail.is_inactive ? 'text-red-400' : 'text-gray-500'}`}>
-                  {reasonLabel(detail.reason, detail.is_inactive)}
-                </span>
-              </div>
-            ))}
+                    {/* Extra info */}
+                    {item.extra?.price && (
+                      <span className="text-[10px] text-gray-500 shrink-0">
+                        ₪{(item.extra.price / 1000).toFixed(0)}K
+                      </span>
+                    )}
+                    {item.extra?.rooms && (
+                      <span className="text-[10px] text-gray-500 shrink-0">
+                        {item.extra.rooms}ח׳
+                      </span>
+                    )}
+                    {item.extra?.floor !== undefined && item.extra.floor !== null && (
+                      <span className="text-[10px] text-gray-500 shrink-0">
+                        ק׳{item.extra.floor}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Detail line */}
+                  <div className="flex items-center gap-2 px-3 pb-1.5 pr-[74px]">
+                    <span className="text-[10px] text-gray-500 truncate">
+                      {item.details}
+                    </span>
+                    {item.url && (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-gray-600 hover:text-gray-400 transition-colors"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Footer summary */}
+      {feedItems.length > 0 && (
+        <div className="px-3 py-1.5 border-t border-border/20 bg-gray-900/50 flex items-center gap-3 text-[10px] text-gray-500">
+          <span>{feedItems.length} פעולות</span>
+          <span>✓ {feedItems.filter(f => f.status === 'ok').length}</span>
+          <span className="text-red-400/70">✗ {feedItems.filter(f => f.status === 'error').length}</span>
+          <span className="text-yellow-400/70">⚠ {feedItems.filter(f => f.status === 'warning').length}</span>
+        </div>
+      )}
     </div>
   );
 };
