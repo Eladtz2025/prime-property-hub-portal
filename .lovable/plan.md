@@ -1,52 +1,52 @@
 
 
-# תיקון: Deploy + באג ירידת מחיר
+# תיקון: "תל אביב יפו" נכנס לשדה boolean
 
-## בעיה 1: ה-Edge Function לא מעודכנת
+## שורש הבעיה
 
-ה-`safeIsPrivate` fix נמצא בקובץ `property-helpers.ts` אבל ה-deploy של `scout-yad2` לא כלל אותו.
+בקובץ `property-helpers.ts`, שורות 287-290:
 
-**תיקון**: Deploy מחדש את `scout-yad2` ולוודא שה-shared files נכללים.
-
-## בעיה 2: תגית "ירד ב-XXX ₪" בלי סוכנות מזוהה כתיווך
-
-הלוגים מראים:
-```
-[Yad2] Broker detected: "ירד ב-650,000 ₪"
-[Yad2] Broker detected: "ירד ב-300,000 ₪"
-[Yad2] Broker detected: "ירד ב-200,000 ₪"
+```text
+const canCheckDuplicates = hasValidAddress 
+    && property.rooms !== undefined 
+    && property.floor !== undefined 
+    && normalizedCity;
 ```
 
-אלה מודעות **פרטיות** עם תגית ירידת מחיר. הטקסט "ירד ב-650,000 ₪" נמצא בין התמונה למחיר, ולכן הלוגיקה הפשוטה שלנו חושבת שזה שם סוכנות.
+ב-JavaScript, ביטוי `&&` מחזיר את הערך האחרון אם כולם truthy. כלומר כש-`normalizedCity = "תל אביב יפו"`, הביטוי מחזיר את המחרוזת `"תל אביב יפו"` ולא `true`.
 
-**תיקון**: אחרי חילוץ `textBetween`, צריך לנקות ממנו תגיות ירידת מחיר (regex: `ירד ב-[\d,]+\s*₪`). אם אחרי הניקוי לא נשאר טקסט משמעותי — זה פרטי.
+הערך הזה מועבר לשדה `duplicate_check_possible` (שורה 428) שהוא עמודת `boolean` בדאטאבייס, ולכן Postgres זורק שגיאה:
 
-### קובץ: `supabase/functions/_experimental/parser-yad2.ts`
+```text
+invalid input syntax for type boolean: "תל אביב יפו"
+```
 
-בבלוק שמחשב את `textBetween` (שורות 247-253), הוספת ניקוי נוסף:
+## התיקון
+
+שורה אחת - להוסיף `!!` כדי להמיר את התוצאה ל-boolean:
 
 ```typescript
-const textBetween = block.substring(imgEndPos, shekelIndex)
-  .replace(/[\u200F\u200E\u200B]/g, '')
-  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')  // Strip markdown images
-  .replace(/ירד ב-?[\d,]+\s*₪/g, '')    // Strip price-drop tags
-  .replace(/בלעדי/g, '')                  // Strip "exclusive" tag
-  .replace(/חדש מקבלן/g, '')              // Strip "new from builder" tag
-  .replace(/\\/g, '')
-  .replace(/\n/g, ' ')
-  .trim();
+const canCheckDuplicates = !!(hasValidAddress 
+    && property.rooms !== undefined 
+    && property.floor !== undefined 
+    && normalizedCity);
 ```
 
-הוספת `בלעדי` ו-`חדש מקבלן` כי אלה תגיות של הפלטפורמה, לא שמות סוכנות. אם אחרי הסרת כל התגיות נשאר טקסט — זה שם הסוכנות (תיווך). אם לא נשאר כלום — פרטי.
+או לחלופין:
 
-## בעיה 3: ה-boolean error עדיין קיים
+```typescript
+const canCheckDuplicates = hasValidAddress 
+    && property.rooms !== undefined 
+    && property.floor !== undefined 
+    && !!normalizedCity;
+```
 
-למרות ש-`safeIsPrivate` בקוד, הפונקציה שרצה היא הגרסה הישנה. ה-deploy מחדש אמור לפתור את זה.
-
-## סיכום שינויים
+## קובץ לשינוי
 
 | קובץ | שינוי |
 |------|-------|
-| `parser-yad2.ts` | strip "ירד ב-XXX ₪", "בלעדי", "חדש מקבלן" מ-textBetween |
-| `scout-yad2` | deploy מחדש כדי שכל השינויים יהיו פעילים |
+| `supabase/functions/_shared/property-helpers.ts` | הוספת `!!` ל-`canCheckDuplicates` (שורה 287) |
 
+## אחרי התיקון
+
+צריך לעשות deploy ל-`scout-yad2` כדי שהשינוי יהיה פעיל, ואז להריץ שוב.
