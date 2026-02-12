@@ -155,7 +155,7 @@ serve(async (req) => {
       }
 
       // Parse with NON-AI parser
-      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale');
+      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
       // Structured log per URL

@@ -2707,6 +2707,7 @@ export type Database = {
           min_size: number | null
           name: string
           neighborhoods: string[] | null
+          owner_type_filter: string | null
           page_delay_seconds: number | null
           property_type: string
           schedule_times: string[] | null
@@ -2734,6 +2735,7 @@ export type Database = {
           min_size?: number | null
           name: string
           neighborhoods?: string[] | null
+          owner_type_filter?: string | null
           page_delay_seconds?: number | null
           property_type: string
           schedule_times?: string[] | null
@@ -2761,6 +2763,7 @@ export type Database = {
           min_size?: number | null
           name?: string
           neighborhoods?: string[] | null
+          owner_type_filter?: string | null
           page_delay_seconds?: number | null
           property_type?: string
           schedule_times?: string[] | null
