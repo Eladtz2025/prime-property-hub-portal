@@ -151,6 +151,18 @@ Deno.serve(async (req) => {
       force_broker_reset = false // Reset unconfirmed broker values to null (manual only)
     } = await req.json().catch(() => ({}));
 
+    // Fire-and-forget cleanup of stuck runs (only on start, not continue)
+    if (action === 'start') {
+      fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
+    }
+
     // Handle stop action
     if (action === 'stop' && task_id) {
       console.log(`🛑 Stopping task ${task_id}`);

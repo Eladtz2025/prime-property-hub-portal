@@ -52,29 +52,30 @@ export const ScheduleSummaryCard: React.FC = () => {
       type: 'scan', 
       isInterval: true 
     });
-    items.push({
-      time: '*/5', 
-      label: 'ניקוי ריצות תקועות', 
-      type: 'cleanup', 
-      isInterval: true 
-    });
 
     // 2. Add fixed-time jobs
-    // Availability check - 05:00 Israel (03:00 UTC)
+    // Duplicate cleanup - 00:00 Israel (22:00 UTC)
     items.push({ 
-      time: '05:00', 
-      label: 'בדיקת זמינות נכסים', 
-      type: 'availability' 
+      time: '00:00', 
+      label: 'ניקוי כפילויות', 
+      type: 'cleanup' 
     });
 
-    // Backfill - from settings
-    const backfillTimes = settings?.backfill?.schedule_times || ['03:00', '12:00'];
+    // Backfill - from settings (default 03:00 only)
+    const backfillTimes = settings?.backfill?.schedule_times || ['03:00'];
     backfillTimes.forEach(time => {
       items.push({ 
         time, 
-        label: 'עדכון תאריכי כניסה', 
+        label: 'השלמת נתונים (ממשיך עד סיום)', 
         type: 'backfill' 
       });
+    });
+
+    // Availability check - 05:00 Israel (03:00 UTC)
+    items.push({ 
+      time: '05:00', 
+      label: 'בדיקת זמינות (ממשיך עד סיום)', 
+      type: 'availability' 
     });
 
     // 3. Add matching schedule times from settings

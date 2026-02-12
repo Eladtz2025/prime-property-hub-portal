@@ -30,6 +30,16 @@ serve(async (req) => {
   try {
     console.log('🔍 Starting availability check (cron-based)...');
 
+    // Fire-and-forget cleanup of stuck runs before starting
+    fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
+
     // === LOCK CHECK: Prevent parallel runs ===
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { data: runningCheck } = await supabase
