@@ -64,13 +64,41 @@ Deno.serve(async (req) => {
 
       console.log(`Batch ${batchCount}: processed=${processed}, duplicates=${duplicates}, groups=${groups}, total=${totalProcessed}`);
 
+      // Read existing summary_data to preserve recent_batches
+      const { data: progressRow } = await supabase
+        .from('backfill_progress')
+        .select('summary_data')
+        .eq('task_name', TASK_NAME)
+        .maybeSingle();
+
+      const existingSummary = (progressRow?.summary_data as Record<string, unknown>) || {};
+      const recentBatches = Array.isArray(existingSummary.recent_batches)
+        ? [...(existingSummary.recent_batches as Array<Record<string, unknown>>)]
+        : [];
+
+      recentBatches.push({
+        batch: batchCount,
+        processed,
+        duplicates,
+        groups,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Keep only last 10
+      if (recentBatches.length > 10) recentBatches.splice(0, recentBatches.length - 10);
+
       // Update progress after each batch
       await supabase
         .from('backfill_progress')
         .update({
           processed_items: totalProcessed,
           successful_items: totalDuplicates,
-          summary_data: { duplicates_found: totalDuplicates, groups_created: totalGroups, batches: batchCount },
+          summary_data: {
+            duplicates_found: totalDuplicates,
+            groups_created: totalGroups,
+            batches: batchCount,
+            recent_batches: recentBatches,
+          },
           updated_at: new Date().toISOString(),
         })
         .eq('task_name', TASK_NAME);
@@ -84,7 +112,6 @@ Deno.serve(async (req) => {
       if (batchCount >= 10) {
         console.log(`Self-triggering after ${batchCount} batches (${totalProcessed} processed)`);
 
-        // Self-trigger
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
         const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
         fetch(`${supabaseUrl}/functions/v1/detect-duplicates`, {
@@ -107,6 +134,15 @@ Deno.serve(async (req) => {
     }
 
     // Done — mark complete
+    // Read final summary for recent_batches
+    const { data: finalRow } = await supabase
+      .from('backfill_progress')
+      .select('summary_data')
+      .eq('task_name', TASK_NAME)
+      .maybeSingle();
+
+    const finalSummary = (finalRow?.summary_data as Record<string, unknown>) || {};
+
     await supabase
       .from('backfill_progress')
       .update({
@@ -114,7 +150,12 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString(),
         processed_items: totalProcessed,
         successful_items: totalDuplicates,
-        summary_data: { duplicates_found: totalDuplicates, groups_created: totalGroups, batches: batchCount },
+        summary_data: {
+          ...finalSummary,
+          duplicates_found: totalDuplicates,
+          groups_created: totalGroups,
+          batches: batchCount,
+        },
         updated_at: new Date().toISOString(),
       })
       .eq('task_name', TASK_NAME);

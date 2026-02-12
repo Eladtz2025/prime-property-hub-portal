@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle, XCircle, Clock, Loader2, AlertTriangle,
-  Search, Shield, Database, Monitor, ExternalLink,
+  Search, Shield, Database, Monitor, ExternalLink, Copy, Users,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -52,17 +52,32 @@ interface BackfillRecentItem {
   neighborhood?: string;
   source?: string;
   source_url?: string;
-  status: string; // ok | scrape_failed | no_content | no_new_data | blacklisted | update_error
+  status: string;
   fields_found?: string[];
   fields_updated?: string[];
-  broker_result?: string | null; // private | broker | null
-  address_action?: string | null; // upgraded | set_new | mismatch | null
+  broker_result?: string | null;
+  address_action?: string | null;
+  timestamp: string;
+}
+
+interface DedupSummary {
+  duplicates_found?: number;
+  groups_created?: number;
+  batches?: number;
+  recent_batches?: DedupBatchItem[];
+}
+
+interface DedupBatchItem {
+  batch: number;
+  processed: number;
+  duplicates: number;
+  groups: number;
   timestamp: string;
 }
 
 // Unified feed item
 interface FeedItem {
-  type: 'availability' | 'scan' | 'backfill';
+  type: 'availability' | 'scan' | 'backfill' | 'dedup';
   timestamp: string;
   primary: string;
   details: string;
@@ -78,6 +93,25 @@ const typeConfig = {
   availability: { icon: Shield, label: 'זמינות', bgClass: 'bg-blue-950/30 border-r-2 border-r-blue-500/40' },
   scan: { icon: Search, label: 'סריקה', bgClass: 'bg-orange-950/30 border-r-2 border-r-orange-500/40' },
   backfill: { icon: Database, label: 'השלמה', bgClass: 'bg-emerald-950/30 border-r-2 border-r-emerald-500/40' },
+  dedup: { icon: Copy, label: 'כפילויות', bgClass: 'bg-purple-950/30 border-r-2 border-r-purple-500/40' },
+};
+
+/** Map task_name to display config */
+const taskNameConfig: Record<string, { label: string; icon: React.ElementType; feedType: FeedItem['type'] }> = {
+  'data_completion': { label: 'השלמת נתונים', icon: Database, feedType: 'backfill' },
+  'dedup-scan': { label: 'סריקת כפילויות', icon: Copy, feedType: 'dedup' },
+  'reclassify_broker': { label: 'סיווג מתווך', icon: Users, feedType: 'backfill' },
+  'backfill_broker_classification': { label: 'סיווג מתווך', icon: Users, feedType: 'backfill' },
+};
+
+/** Get config for a task_name, with fallback for auto-completion variants */
+const getTaskConfig = (taskName: string) => {
+  if (taskNameConfig[taskName]) return taskNameConfig[taskName];
+  if (taskName.startsWith('data_completion_auto_')) {
+    const source = taskName.replace('data_completion_auto_', '').toUpperCase();
+    return { label: `השלמה אוטו ${source}`, icon: Database, feedType: 'backfill' as FeedItem['type'] };
+  }
+  return { label: taskName, icon: Database, feedType: 'backfill' as FeedItem['type'] };
 };
 
 const statusIcon = (s: FeedItem['status']) => {
@@ -91,7 +125,6 @@ const statusIcon = (s: FeedItem['status']) => {
 
 // ── Helpers ──
 
-/** Clean address to show just "street number, neighborhood" like the scout table */
 const STRIP_CITY_PATTERNS = [
   /,?\s*תל[\s-]*אביב[\s-]*יפו/gi,
   /,?\s*תל[\s-]*אביב/gi,
@@ -102,18 +135,13 @@ const STRIP_CITY_PATTERNS = [
 
 const formatCleanAddress = (address?: string, neighborhood?: string): string => {
   if (!address) return '?';
-  // Take first comma-separated part (street + number)
   let street = address.split(',')[0]?.trim() || address;
-  // Remove "דירה X חדרים להשכרה/למכירה ב" prefix patterns
   street = street.replace(/^דירה\s*\d*\s*חדרי?ם?\s*(להשכרה|למכירה)\s*ב?/i, '').trim();
   street = street.replace(/^(להשכרה|למכירה)\s*ב?/i, '').trim();
-  // Remove "אזורי" prefix
   street = street.replace(/^אזורי?\s*/i, '').trim();
-  // Strip city names
   for (const p of STRIP_CITY_PATTERNS) {
     street = street.replace(p, '').trim();
   }
-  // Remove trailing commas
   street = street.replace(/,\s*$/, '').trim();
   if (!street) return neighborhood || '?';
   return neighborhood ? `${street}, ${neighborhood}` : street;
@@ -176,18 +204,15 @@ export const LiveMonitor: React.FC = () => {
     refetchInterval: 2000,
   });
 
-  // Backfill run
-  const { data: backfillRun } = useQuery({
-    queryKey: ['monitor-backfill-run'],
+  // ALL running backfill tasks (not just data_completion)
+  const { data: backfillRuns } = useQuery({
+    queryKey: ['monitor-backfill-runs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('backfill_progress')
         .select('*')
-        .eq('task_name', 'data_completion')
         .eq('status', 'running')
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('started_at', { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -261,56 +286,64 @@ export const LiveMonitor: React.FC = () => {
     });
   });
 
-  // Backfill per-property items from recent_items
-  if (backfillRun) {
-    const summary = backfillRun.summary_data as unknown as BackfillSummary | null;
-    const recentItems = summary?.recent_items || [];
-    
-    recentItems.forEach(item => {
-      const statusMap: Record<string, FeedItem['status']> = {
-        ok: 'ok',
-        no_new_data: 'warning',
-        scrape_failed: 'error',
-        no_content: 'error',
-        blacklisted: 'error',
-        update_error: 'error',
-      };
+  // Backfill per-task feed items
+  backfillRuns?.forEach(run => {
+    const taskCfg = getTaskConfig(run.task_name);
+    const summary = run.summary_data as unknown as (BackfillSummary & DedupSummary) | null;
 
-      // Build detail parts
-      const detailParts: string[] = [];
-      
-      if (item.status === 'ok') {
-        if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
-        if (item.fields_updated?.length) detailParts.push(`עודכנו: ${item.fields_updated.join(', ')}`);
-        if (item.broker_result) detailParts.push(`סיווג: ${item.broker_result === 'private' ? 'פרטי' : 'תיווך'}`);
-        if (item.address_action === 'upgraded') detailParts.push('כתובת שודרגה');
-        if (item.address_action === 'set_new') detailParts.push('כתובת חדשה');
-      } else if (item.status === 'no_new_data') {
-        if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
-        detailParts.push('ללא נתונים חדשים (כבר קיימים)');
-      } else if (item.status === 'scrape_failed') {
-        detailParts.push('Scrape failed');
-      } else if (item.status === 'no_content') {
-        detailParts.push('אין תוכן בדף');
-      } else if (item.status === 'blacklisted') {
-        detailParts.push('מיקום מחוץ לת"א — בוטל');
-      } else if (item.status === 'update_error') {
-        detailParts.push('שגיאת עדכון DB');
-      }
-
-      const primaryText = formatCleanAddress(item.address, item.neighborhood);
-
-      feedItems.push({
-        type: 'backfill',
-        timestamp: item.timestamp,
-        primary: primaryText,
-        details: detailParts.join(' | ') || item.status,
-        source: item.source,
-        status: statusMap[item.status] || 'warning',
-        url: item.source_url,
+    if (taskCfg.feedType === 'dedup') {
+      // Dedup: show recent_batches
+      const recentBatches = summary?.recent_batches || [];
+      recentBatches.forEach(batch => {
+        feedItems.push({
+          type: 'dedup',
+          timestamp: batch.timestamp,
+          primary: `Batch ${batch.batch} — כפילויות`,
+          details: `${batch.processed} נבדקו | ${batch.duplicates} כפילויות | ${batch.groups} קבוצות חדשות`,
+          status: batch.duplicates > 0 ? 'ok' : 'warning',
+        });
       });
-    });
-  }
+    } else {
+      // Regular backfill: show recent_items
+      const recentItems = summary?.recent_items || [];
+      recentItems.forEach(item => {
+        const statusMap: Record<string, FeedItem['status']> = {
+          ok: 'ok', no_new_data: 'warning', scrape_failed: 'error',
+          no_content: 'error', blacklisted: 'error', update_error: 'error',
+        };
+
+        const detailParts: string[] = [];
+        if (item.status === 'ok') {
+          if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
+          if (item.fields_updated?.length) detailParts.push(`עודכנו: ${item.fields_updated.join(', ')}`);
+          if (item.broker_result) detailParts.push(`סיווג: ${item.broker_result === 'private' ? 'פרטי' : 'תיווך'}`);
+          if (item.address_action === 'upgraded') detailParts.push('כתובת שודרגה');
+          if (item.address_action === 'set_new') detailParts.push('כתובת חדשה');
+        } else if (item.status === 'no_new_data') {
+          if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
+          detailParts.push('ללא נתונים חדשים (כבר קיימים)');
+        } else if (item.status === 'scrape_failed') {
+          detailParts.push('Scrape failed');
+        } else if (item.status === 'no_content') {
+          detailParts.push('אין תוכן בדף');
+        } else if (item.status === 'blacklisted') {
+          detailParts.push('מיקום מחוץ לת"א — בוטל');
+        } else if (item.status === 'update_error') {
+          detailParts.push('שגיאת עדכון DB');
+        }
+
+        feedItems.push({
+          type: 'backfill',
+          timestamp: item.timestamp,
+          primary: formatCleanAddress(item.address, item.neighborhood),
+          details: detailParts.join(' | ') || item.status,
+          source: item.source,
+          status: statusMap[item.status] || 'warning',
+          url: item.source_url,
+        });
+      });
+    }
+  });
 
   // Sort by timestamp
   feedItems.sort((a, b) => {
@@ -318,7 +351,7 @@ export const LiveMonitor: React.FC = () => {
     return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
   });
 
-  const hasActivity = !!(availRun || backfillRun || (scanRuns && scanRuns.length > 0));
+  const hasActivity = !!(availRun || (backfillRuns && backfillRuns.length > 0) || (scanRuns && scanRuns.length > 0));
 
   // ── Active processes header ──
 
@@ -333,16 +366,17 @@ export const LiveMonitor: React.FC = () => {
     });
   }
 
-  if (backfillRun) {
-    const elapsed = Math.round((Date.now() - new Date(backfillRun.started_at!).getTime()) / 1000);
-    const pct = backfillRun.total_items ? Math.round(((backfillRun.processed_items ?? 0) / backfillRun.total_items) * 100) : undefined;
+  backfillRuns?.forEach(run => {
+    const taskCfg = getTaskConfig(run.task_name);
+    const elapsed = Math.round((Date.now() - new Date(run.started_at!).getTime()) / 1000);
+    const pct = run.total_items ? Math.round(((run.processed_items ?? 0) / run.total_items) * 100) : undefined;
     activeProcesses.push({
-      type: 'backfill',
-      label: `השלמת נתונים — ${backfillRun.processed_items ?? 0}/${backfillRun.total_items ?? '?'}`,
+      type: taskCfg.feedType,
+      label: `${taskCfg.label} — ${run.processed_items ?? 0}/${run.total_items ?? '?'}`,
       elapsed: elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`,
       progress: pct,
     });
-  }
+  });
 
   scanRuns?.forEach(run => {
     const elapsed = Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000);
@@ -433,20 +467,13 @@ export const LiveMonitor: React.FC = () => {
                 >
                   {/* Primary line */}
                   <div className="flex items-center gap-2 px-4 py-2 pb-1">
-                    {/* Timestamp */}
                     <span className="text-xs text-gray-600 font-mono shrink-0 w-[55px]" dir="ltr">
                       {item.timestamp
                         ? format(new Date(item.timestamp), 'HH:mm:ss')
                         : '--:--:--'}
                     </span>
-
-                    {/* Type icon */}
                     <Icon className="h-4 w-4 text-gray-500 shrink-0" />
-
-                    {/* Status icon */}
                     <span className="shrink-0">{statusIcon(item.status)}</span>
-
-                    {/* Primary text - clickable link if url exists */}
                     {item.url ? (
                       <a
                         href={item.url}
@@ -462,11 +489,7 @@ export const LiveMonitor: React.FC = () => {
                         {item.primary}
                       </span>
                     )}
-
-                    {/* Source badge */}
                     {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
-
-                    {/* Extra info */}
                     {item.extra?.price && (
                       <span className="text-xs text-gray-500 shrink-0">
                         ₪{(item.extra.price / 1000).toFixed(0)}K
@@ -483,8 +506,7 @@ export const LiveMonitor: React.FC = () => {
                       </span>
                     )}
                   </div>
-
-                  {/* Detail line - inline after primary */}
+                  {/* Detail line */}
                   <div className="flex items-center gap-2 px-4 pb-2 pr-[80px]">
                     <span className="text-xs text-gray-500 truncate flex-1">
                       {item.details}
