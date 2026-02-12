@@ -44,6 +44,19 @@ interface BackfillSummary {
   broker_classified?: number;
   no_content?: number;
   update_db_error?: number;
+  recent_items?: BackfillRecentItem[];
+}
+
+interface BackfillRecentItem {
+  address?: string;
+  source?: string;
+  source_url?: string;
+  status: string; // ok | scrape_failed | no_content | no_new_data | blacklisted | update_error
+  fields_found?: string[];
+  fields_updated?: string[];
+  broker_result?: string | null; // private | broker | null
+  address_action?: string | null; // upgraded | set_new | mismatch | null
+  timestamp: string;
 }
 
 // Unified feed item
@@ -219,32 +232,53 @@ export const LiveMonitor: React.FC = () => {
     });
   });
 
-  // Backfill summary (aggregate — not per-property)
+  // Backfill per-property items from recent_items
   if (backfillRun) {
     const summary = backfillRun.summary_data as unknown as BackfillSummary | null;
-    if (summary && summary.total_processed) {
-      const fieldsStr = summary.fields_updated
-        ? Object.entries(summary.fields_updated)
-            .filter(([, v]) => v > 0)
-            .map(([k, v]) => `${k}(${v})`)
-            .join(', ')
-        : '';
+    const recentItems = summary?.recent_items || [];
+    
+    recentItems.forEach(item => {
+      const statusMap: Record<string, FeedItem['status']> = {
+        ok: 'ok',
+        no_new_data: 'warning',
+        scrape_failed: 'error',
+        no_content: 'error',
+        blacklisted: 'error',
+        update_error: 'error',
+      };
 
-      const parts: string[] = [];
-      if (fieldsStr) parts.push(`שדות: ${fieldsStr}`);
-      if (summary.features_updated) parts.push(`תכונות: ${summary.features_updated}`);
-      if (summary.broker_classified) parts.push(`סיווג מתווך: ${summary.broker_classified}`);
-      if (summary.scrape_failed) parts.push(`כשלונות: ${summary.scrape_failed}`);
-      if (summary.no_new_data) parts.push(`ללא נתונים חדשים: ${summary.no_new_data}`);
+      // Build detail parts
+      const detailParts: string[] = [];
+      
+      if (item.status === 'ok') {
+        if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
+        if (item.fields_updated?.length) detailParts.push(`עודכנו: ${item.fields_updated.join(', ')}`);
+        if (item.broker_result) detailParts.push(`סיווג: ${item.broker_result === 'private' ? 'פרטי' : 'תיווך'}`);
+        if (item.address_action === 'upgraded') detailParts.push('כתובת שודרגה');
+        if (item.address_action === 'set_new') detailParts.push('כתובת חדשה');
+      } else if (item.status === 'no_new_data') {
+        if (item.fields_found?.length) detailParts.push(`נמצאו: ${item.fields_found.join(', ')}`);
+        detailParts.push('ללא נתונים חדשים (כבר קיימים)');
+      } else if (item.status === 'scrape_failed') {
+        detailParts.push('Scrape failed');
+      } else if (item.status === 'no_content') {
+        detailParts.push('אין תוכן בדף');
+      } else if (item.status === 'blacklisted') {
+        detailParts.push('מיקום מחוץ לת"א — בוטל');
+      } else if (item.status === 'update_error') {
+        detailParts.push('שגיאת עדכון DB');
+      }
 
       feedItems.push({
         type: 'backfill',
-        timestamp: backfillRun.updated_at || backfillRun.started_at || '',
-        primary: `השלמת נתונים — ${summary.total_processed} עובדו`,
-        details: parts.join(' | ') || 'מעבד...',
-        status: summary.scrape_failed && summary.scrape_failed > 10 ? 'warning' : 'ok',
+        timestamp: item.timestamp,
+        primary: item.address || '?',
+        details: detailParts.join(' | ') || item.status,
+        source: item.source,
+        status: statusMap[item.status] || 'warning',
+        url: item.source_url,
       });
-    }
+    });
   }
 
   // Sort by timestamp

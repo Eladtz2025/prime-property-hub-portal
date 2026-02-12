@@ -470,17 +470,52 @@ Deno.serve(async (req) => {
     let failCount = 0;
     let lastId = lastProcessedId;
 
+    // Helper: save a recent_item to summary_data.recent_items (keeps last 10)
+    async function saveRecentItem(item: {
+      address?: string;
+      source?: string;
+      source_url?: string;
+      status: string;
+      fields_found?: string[];
+      fields_updated?: string[];
+      broker_result?: string | null;
+      address_action?: string | null;
+      timestamp: string;
+    }) {
+      try {
+        const { data: current } = await supabase
+          .from('backfill_progress')
+          .select('summary_data')
+          .eq('id', progressId)
+          .single();
+        
+        const summary = (current?.summary_data as Record<string, any>) || {};
+        const recentItems = Array.isArray(summary.recent_items) ? summary.recent_items : [];
+        recentItems.push(item);
+        // Keep only last 10
+        if (recentItems.length > 10) recentItems.splice(0, recentItems.length - 10);
+        summary.recent_items = recentItems;
+        
+        await supabase
+          .from('backfill_progress')
+          .update({ summary_data: summary, updated_at: new Date().toISOString() })
+          .eq('id', progressId);
+      } catch (e) {
+        console.error('Failed to save recent_item:', e);
+      }
+    }
+
     // Detailed batch statistics for reporting
     const batchStats = {
       total_processed: 0,
-      address_attempted_upgrade: 0,   // how many we tried to upgrade
-      address_upgraded: 0,            // street → street+number success
-      address_no_number_in_source: 0, // page didn't have a house number
-      address_street_mismatch: 0,     // extracted street didn't match existing
-      address_validation_failed: 0,   // failed isValidAddressForUpdate
-      address_already_has_number: 0,  // address already had a number
-      address_set_from_scratch: 0,    // no address existed, set new one
-      address_no_address: 0,          // no address in DB and none found on page
+      address_attempted_upgrade: 0,
+      address_upgraded: 0,
+      address_no_number_in_source: 0,
+      address_street_mismatch: 0,
+      address_validation_failed: 0,
+      address_already_has_number: 0,
+      address_set_from_scratch: 0,
+      address_no_address: 0,
       features_updated: 0,
       broker_classified: 0,
       broker_reset_to_unknown: 0,
@@ -538,6 +573,13 @@ Deno.serve(async (req) => {
           batchStats.scrape_failed++;
           batchStats.total_processed++;
           lastId = prop.id;
+          await saveRecentItem({
+            address: prop.address || prop.title,
+            source: prop.source,
+            source_url: prop.source_url,
+            status: 'scrape_failed',
+            timestamp: new Date().toISOString(),
+          });
           continue;
         }
 
@@ -550,6 +592,13 @@ Deno.serve(async (req) => {
           batchStats.no_content++;
           batchStats.total_processed++;
           lastId = prop.id;
+          await saveRecentItem({
+            address: prop.address || prop.title,
+            source: prop.source,
+            source_url: prop.source_url,
+            status: 'no_content',
+            timestamp: new Date().toISOString(),
+          });
           continue;
         }
 
@@ -580,6 +629,13 @@ Deno.serve(async (req) => {
           batchStats.blacklisted++;
           batchStats.total_processed++;
           lastId = prop.id;
+          await saveRecentItem({
+            address: prop.address || prop.title,
+            source: prop.source,
+            source_url: prop.source_url,
+            status: 'blacklisted',
+            timestamp: new Date().toISOString(),
+          });
           continue;
         }
         
@@ -604,6 +660,13 @@ Deno.serve(async (req) => {
             batchStats.non_ta_deactivated++;
             batchStats.total_processed++;
             lastId = prop.id;
+            await saveRecentItem({
+              address: prop.address || prop.title,
+              source: prop.source,
+              source_url: prop.source_url,
+              status: 'blacklisted',
+              timestamp: new Date().toISOString(),
+            });
             continue;
           }
         }
@@ -695,6 +758,14 @@ Deno.serve(async (req) => {
           batchStats.no_new_data++;
           batchStats.total_processed++;
           lastId = prop.id;
+          await saveRecentItem({
+            address: prop.address || prop.title,
+            source: prop.source,
+            source_url: prop.source_url,
+            status: 'no_new_data',
+            fields_found: Object.keys(extracted).filter(k => (extracted as any)[k] != null),
+            timestamp: new Date().toISOString(),
+          });
           continue;
         }
 
@@ -710,17 +781,33 @@ Deno.serve(async (req) => {
             batchStats.update_db_error++;
             batchStats.total_processed++;
             lastId = prop.id;
+            await saveRecentItem({
+              address: prop.address || prop.title,
+              source: prop.source,
+              source_url: prop.source_url,
+              status: 'update_error',
+              timestamp: new Date().toISOString(),
+            });
             continue;
           }
         }
+
+        // Build recent item for successful update
+        const fieldsFound = Object.keys(extracted).filter(k => (extracted as any)[k] != null);
+        const fieldsUpdated = Object.keys(updates).filter(k => !['features', 'is_private', 'duplicate_check_possible'].includes(k));
+        const brokerResult = updates.is_private !== undefined 
+          ? (updates.is_private === true ? 'private' : updates.is_private === false ? 'broker' : null)
+          : null;
+        const addressAction = updates.address 
+          ? (prop.address ? 'upgraded' : 'set_new')
+          : null;
 
         console.log(`✅ Updated with:`, JSON.stringify(updates));
         successCount++;
         batchStats.total_processed++;
         lastId = prop.id;
 
-        // Update last_processed_id incrementally to ensure progress is saved
-        // even if function times out mid-batch
+        // Update last_processed_id incrementally
         await supabase
           .from('backfill_progress')
           .update({
@@ -728,6 +815,18 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', progressId);
+
+        await saveRecentItem({
+          address: updates.address || prop.address || prop.title,
+          source: prop.source,
+          source_url: prop.source_url,
+          status: 'ok',
+          fields_found: fieldsFound,
+          fields_updated: fieldsUpdated,
+          broker_result: brokerResult,
+          address_action: addressAction,
+          timestamp: new Date().toISOString(),
+        });
 
         // Delay between requests
         await new Promise(r => setTimeout(r, 1500));
