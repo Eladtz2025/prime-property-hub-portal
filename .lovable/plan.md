@@ -1,32 +1,73 @@
 
-# תיקון מנגנון ההתאוששות האוטומטי לריצות סריקה
+# איחוד לדשבורד בדיקות מאוחד (2 טאבים בלבד)
 
-## הבעיה
-כשדף נכשל במהלך ריצה סדרתית (Yad2/Madlan), השרשרת נשברת והריצה נשארת תקועה בסטטוס "running" עד שה-cleanup cron רץ (פעמיים ביום בלבד). אין מנגנון מיידי שמזהה שהשרשרת נשברה ומתקן את זה.
+## מבנה חדש
 
-## הפתרון - שני שיפורים משלימים
+המבנה הנוכחי של 4 טאבים:
+**דירות שנמצאו | הגדרות | היסטוריית ריצות | בדיקות זמינות**
 
-### 1. הגנה חזקה יותר ב-triggerNextPage (scout-madlan + scout-yad2)
-כש-triggerNextPage נכשל גם אחרי כל ה-retries:
-- סמן את הדף הנוכחי כ-failed ב-page_stats
-- **קפוץ לדף הבא** במקום לעצור את כל השרשרת
-- אם גם הדף הבא לא עובד, המשך לדף שאחריו
-- כך השרשרת לעולם לא נשברת לגמרי
+יהפוך ל-**2 טאבים בלבד**:
+- **דירות שנמצאו** (נשאר כמו שהוא)
+- **דשבורד בדיקות** (מאחד את: בדיקות זמינות + היסטוריית ריצות + הגדרות)
 
-### 2. הגדלת תדירות ה-cleanup cron
-שינוי ה-cron מ-`30 7,12 * * *` (פעמיים ביום) ל-`*/15 5,6,7,8,9,10,11,12 * * *` (כל 15 דקות בחלון הסריקות 05:00-12:59 UTC). ככה גם אם כל שאר המנגנונים נכשלו, ריצה תקועה תנוקה תוך 15 דקות מקסימום.
+---
 
-## שינויים טכניים
+## מה יכלול "דשבורד בדיקות"
 
-### קובץ 1: `supabase/functions/scout-madlan/index.ts`
-- בפונקציית `triggerNextPage`: אם כל ה-retries נכשלו, במקום לעצור - סמן את הדף כ-failed וקרא שוב ל-`triggerNextPage` עם הדף הבא
-- הוסף counter למניעת לולאה אינסופית (מקסימום 3 דילוגים רצופים)
+עמוד אחד עשיר עם הסקציות הבאות מלמעלה למטה:
 
-### קובץ 2: `supabase/functions/scout-yad2/index.ts`  
-- אותו שיפור בדיוק כמו Madlan (שניהם עובדים בשרשרת סדרתית)
+### 1. כרטיסי סטטיסטיקה (שורה עליונה)
+הכרטיסים הקיימים מבדיקות זמינות (ממתינים, נבדקו היום, Timeouts, אקטיביים, ריצה אחרונה) + כרטיסים חדשים עבור כפילויות, התאמות, ו-Backfill.
 
-### קובץ 3: Cron Job Update (SQL)
-- עדכון תזמון ה-cron של `cleanup-stuck-runs` לכל 15 דקות בשעות הפעילות
+### 2. ריצה חיה (Live Feed)
+כשיש ריצה פעילה - פיד חי עם פרטי הנכס (מחיר, חדרים, מקור, כתובת, תוצאה). משודרג מהמצב הקיים.
 
-### קובץ 4: `supabase/functions/_shared/run-helpers.ts`
-- הוספת פונקציית עזר `skipToNextPage` שמסמנת דף כ-failed ומחזירה את הדף הבא לסריקה
+### 3. פעולות מהירות (Quick Actions)
+הפעל בדיקת זמינות, אפס Timeouts, בדוק URL, הפעל Dedup, הפעל Matching.
+
+### 4. טאבים פנימיים (Sub-Tabs)
+- **היסטוריית סריקות** - הקומפוננטה הקיימת של `ScoutRunHistory` (מקובצת לפי יום/שעה)
+- **בדיקות זמינות** - היסטוריית ריצות בדיקת זמינות + תוצאות אחרונות (מהדשבורד הקיים)
+- **כפילויות** - סטטוס ריצת dedup אחרונה, כמה כפילויות נמצאו
+- **התאמות** - סטטוס matching, כמה התאמות חדשות
+- **Backfill** - סטטוס backfill, כמה נכסים עודכנו
+
+כל סוג בדיקה מציג: ריצה אחרונה, היסטוריית 10 ריצות, כפתור "הפעל עכשיו".
+
+### 5. הגדרות (Collapsible בתחתית)
+`UnifiedScoutSettings` + הגדרות Availability כ-Collapsible sections.
+
+---
+
+## פרטים טכניים
+
+### קבצים שישתנו:
+
+1. **`src/pages/AdminPropertyScout.tsx`**
+   - הסרת טאבים: settings, history, availability
+   - 2 טאבים בלבד: properties + dashboard
+   - אייקון Activity לטאב "דשבורד בדיקות"
+
+2. **קומפוננטה חדשה: `src/components/scout/ChecksDashboard.tsx`**
+   - מאחדת את הכל בעמוד אחד
+   - כרטיסי סטטיסטיקה מורחבים (מ-`AvailabilityCheckDashboard`)
+   - Live Feed (מ-`AvailabilityLiveFeed`)
+   - Quick Actions (מ-`AvailabilityActions`)
+   - Sub-tabs פנימיים: כולל `ScoutRunHistory` כטאב פנימי
+   - הגדרות Collapsible בתחתית (כולל `UnifiedScoutSettings`)
+
+3. **קומפוננטות חדשות:**
+   - `src/components/scout/checks/ChecksSubTabs.tsx` - מנהל טאבים פנימיים
+   - `src/components/scout/checks/DeduplicationStatus.tsx` - סטטוס dedup
+   - `src/components/scout/checks/MatchingStatus.tsx` - סטטוס matching
+   - `src/components/scout/checks/BackfillStatus.tsx` - סטטוס backfill
+
+4. **`src/components/scout/availability/AvailabilityLiveFeed.tsx`** - שדרוג
+   - הצגת פרטים נוספים לכל נכס (מחיר, חדרים, קומה, שכונה)
+
+### מקורות נתונים (ללא שינויי DB):
+- **Dedup**: טבלת `duplicate_alerts`
+- **Matching**: טבלת `personal_scout_runs`
+- **Backfill**: טבלת `backfill_progress`
+- **Availability**: טבלת `availability_check_runs` (קיים)
+- **סריקות**: טבלת `scout_runs` (קיים - `ScoutRunHistory`)
