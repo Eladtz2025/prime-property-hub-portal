@@ -3498,6 +3498,7 @@ export type Database = {
           duplicates_found: number
           groups_created: number
           properties_processed: number
+          properties_skipped: number
         }[]
       }
       find_property_duplicate: {
@@ -3593,6 +3594,7 @@ export type Database = {
           properties_updated: number
         }[]
       }
+      reset_dedup_checked: { Args: never; Returns: undefined }
       update_cron_schedule: {
         Args: { p_job_name: string; p_new_schedule: string }
         Returns: undefined

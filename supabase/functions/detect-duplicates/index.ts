@@ -19,27 +19,90 @@ Deno.serve(async (req) => {
   const TASK_NAME = 'dedup-scan';
 
   try {
+    // Parse request body
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch { /* no body */ }
+
+    const isReset = body.reset === true;
+    const isContinuation = body.continuation === true;
+
+    // If reset requested (manual run), clear all dedup_checked_at
+    if (isReset && !isContinuation) {
+      console.log('Reset requested — clearing all dedup_checked_at');
+      const { error: resetErr } = await supabase.rpc('reset_dedup_checked');
+      if (resetErr) {
+        console.error('Reset failed:', resetErr.message);
+        throw resetErr;
+      }
+    }
+
     // Get total unchecked count for progress tracking
     const { count: totalUnchecked } = await supabase
       .from('scouted_properties')
       .select('id', { count: 'exact', head: true })
-      .is('dedup_checked_at', null);
+      .is('dedup_checked_at', null)
+      .eq('is_active', true);
+
+    // Get total active for context
+    const { count: totalActive } = await supabase
+      .from('scouted_properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true);
 
     // Upsert progress record
-    await supabase
-      .from('backfill_progress')
-      .upsert({
-        task_name: TASK_NAME,
-        status: 'running',
-        started_at: new Date().toISOString(),
-        total_items: totalUnchecked ?? 0,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'task_name' });
+    if (!isContinuation) {
+      await supabase
+        .from('backfill_progress')
+        .upsert({
+          task_name: TASK_NAME,
+          status: 'running',
+          started_at: new Date().toISOString(),
+          total_items: totalUnchecked ?? 0,
+          processed_items: 0,
+          successful_items: 0,
+          failed_items: 0,
+          summary_data: {
+            duplicates_found: 0,
+            groups_created: 0,
+            batches: 0,
+            skipped: 0,
+            total_active: totalActive ?? 0,
+            recent_batches: [],
+          },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'task_name' });
+    } else {
+      // Just update status to running in case
+      await supabase
+        .from('backfill_progress')
+        .update({ status: 'running', updated_at: new Date().toISOString() })
+        .eq('task_name', TASK_NAME);
+    }
 
     let totalProcessed = 0;
     let totalDuplicates = 0;
     let totalGroups = 0;
+    let totalSkipped = 0;
     let batchCount = 0;
+
+    // Read existing cumulative values if continuation
+    if (isContinuation) {
+      const { data: existing } = await supabase
+        .from('backfill_progress')
+        .select('processed_items, successful_items, summary_data')
+        .eq('task_name', TASK_NAME)
+        .maybeSingle();
+      if (existing) {
+        totalProcessed = existing.processed_items ?? 0;
+        totalDuplicates = existing.successful_items ?? 0;
+        const sd = existing.summary_data as Record<string, unknown> | null;
+        totalGroups = (sd?.groups_created as number) ?? 0;
+        totalSkipped = (sd?.skipped as number) ?? 0;
+        batchCount = (sd?.batches as number) ?? 0;
+      }
+    }
 
     // Loop: call RPC batch by batch until nothing left
     while (true) {
@@ -57,12 +120,14 @@ Deno.serve(async (req) => {
       const processed = result?.properties_processed ?? 0;
       const duplicates = result?.duplicates_found ?? 0;
       const groups = result?.groups_created ?? 0;
+      const skipped = result?.properties_skipped ?? 0;
 
       totalProcessed += processed;
       totalDuplicates += duplicates;
       totalGroups += groups;
+      totalSkipped += skipped;
 
-      console.log(`Batch ${batchCount}: processed=${processed}, duplicates=${duplicates}, groups=${groups}, total=${totalProcessed}`);
+      console.log(`Batch ${batchCount}: processed=${processed}, duplicates=${duplicates}, groups=${groups}, skipped=${skipped}, total=${totalProcessed}`);
 
       // Read existing summary_data to preserve recent_batches
       const { data: progressRow } = await supabase
@@ -81,6 +146,7 @@ Deno.serve(async (req) => {
         processed,
         duplicates,
         groups,
+        skipped,
         timestamp: new Date().toISOString(),
       });
 
@@ -93,10 +159,13 @@ Deno.serve(async (req) => {
         .update({
           processed_items: totalProcessed,
           successful_items: totalDuplicates,
+          failed_items: totalSkipped,
           summary_data: {
             duplicates_found: totalDuplicates,
             groups_created: totalGroups,
             batches: batchCount,
+            skipped: totalSkipped,
+            total_active: totalActive ?? 0,
             recent_batches: recentBatches,
           },
           updated_at: new Date().toISOString(),
@@ -128,13 +197,13 @@ Deno.serve(async (req) => {
           processed: totalProcessed,
           duplicates_found: totalDuplicates,
           groups_created: totalGroups,
+          skipped: totalSkipped,
           batches: batchCount,
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 
     // Done — mark complete
-    // Read final summary for recent_batches
     const { data: finalRow } = await supabase
       .from('backfill_progress')
       .select('summary_data')
@@ -150,23 +219,26 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString(),
         processed_items: totalProcessed,
         successful_items: totalDuplicates,
+        failed_items: totalSkipped,
         summary_data: {
           ...finalSummary,
           duplicates_found: totalDuplicates,
           groups_created: totalGroups,
           batches: batchCount,
+          skipped: totalSkipped,
         },
         updated_at: new Date().toISOString(),
       })
       .eq('task_name', TASK_NAME);
 
-    console.log(`Dedup scan complete: ${totalProcessed} processed, ${totalDuplicates} duplicates, ${totalGroups} new groups`);
+    console.log(`Dedup scan complete: ${totalProcessed} processed, ${totalDuplicates} duplicates, ${totalGroups} new groups, ${totalSkipped} skipped`);
 
     return new Response(JSON.stringify({
       status: 'completed',
       processed: totalProcessed,
       duplicates_found: totalDuplicates,
       groups_created: totalGroups,
+      skipped: totalSkipped,
       batches: batchCount,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

@@ -244,9 +244,11 @@ export const ChecksDashboard: React.FC = () => {
   });
 
   // Trigger dedup
-  const triggerDedup = useMutation({
+    const triggerDedup = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('detect-duplicates');
+      const { data, error } = await supabase.functions.invoke('detect-duplicates', {
+        body: { reset: true }
+      });
       if (error) throw error;
       return data;
     },
@@ -345,11 +347,11 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
           status={dedupStats?.unchecked ? 'completed' : 'idle'}
-          statusText={`${dedupStats?.groups ?? 0} קבוצות, ${dedupStats?.losers ?? 0} משניים`}
+          statusText={`${dedupStats?.unchecked ?? 0} לבדיקה | ${dedupStats?.groups ?? 0} קבוצות | ${dedupStats?.checkedToday ?? 0} נבדקו היום`}
           metrics={[
-            { label: 'נותרו', value: dedupStats?.unchecked ?? 0 },
+            { label: 'לבדיקה', value: dedupStats?.unchecked ?? 0 },
             { label: 'קבוצות', value: dedupStats?.groups ?? 0 },
-            { label: 'משניים', value: dedupStats?.losers ?? 0 },
+            { label: 'נבדקו היום', value: dedupStats?.checkedToday ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
           isRunPending={triggerDedup.isPending}
