@@ -81,10 +81,10 @@ const typeConfig = {
 
 const statusIcon = (s: FeedItem['status']) => {
   switch (s) {
-    case 'ok': return <CheckCircle className="h-3.5 w-3.5 text-green-400" />;
-    case 'error': return <XCircle className="h-3.5 w-3.5 text-red-400" />;
-    case 'warning': return <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />;
-    case 'pending': return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+    case 'ok': return <CheckCircle className="h-4 w-4 text-green-400" />;
+    case 'error': return <XCircle className="h-4 w-4 text-red-400" />;
+    case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
+    case 'pending': return <Clock className="h-4 w-4 text-gray-500" />;
   }
 };
 
@@ -113,7 +113,7 @@ const sourceBadge = (source?: string) => {
   };
   const s = map[source?.toLowerCase() || ''];
   if (!s) return null;
-  return <span className={`${s.cls} font-mono text-[10px] font-bold`}>{s.text}</span>;
+  return <span className={`${s.cls} font-mono text-xs font-bold`}>{s.text}</span>;
 };
 
 const truncateUrl = (url?: string) => {
@@ -362,8 +362,8 @@ export const LiveMonitor: React.FC = () => {
               <div key={i} className="flex items-center gap-2">
                 <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
                 <Icon className="h-3 w-3 text-gray-400" />
-                <span className="text-[11px] text-gray-300 flex-1 truncate">{proc.label}</span>
-                <span className="text-[10px] text-gray-500 font-mono">{proc.elapsed}</span>
+                <span className="text-sm text-gray-300 flex-1 truncate">{proc.label}</span>
+                <span className="text-xs text-gray-500 font-mono">{proc.elapsed}</span>
                 {proc.progress !== undefined && (
                   <div className="w-20">
                     <Progress value={proc.progress} className="h-1 [&>div]:bg-emerald-500" />
@@ -378,7 +378,7 @@ export const LiveMonitor: React.FC = () => {
       {/* Feed */}
       <div
         ref={scrollRef}
-        className="max-h-[400px] overflow-y-auto scrollbar-thin"
+        className="h-[300px] overflow-y-auto scrollbar-thin"
         dir="rtl"
       >
         {feedItems.length === 0 ? (
@@ -401,49 +401,61 @@ export const LiveMonitor: React.FC = () => {
                   className={`${cfg.bgClass} ${isLast ? 'animate-pulse-once' : ''} transition-colors hover:bg-gray-800/40`}
                 >
                   {/* Primary line */}
-                  <div className="flex items-center gap-2 px-3 pt-1.5 pb-0.5">
+                  <div className="flex items-center gap-2 px-4 py-2 pb-1">
                     {/* Timestamp */}
-                    <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[50px]" dir="ltr">
+                    <span className="text-xs text-gray-600 font-mono shrink-0 w-[55px]" dir="ltr">
                       {item.timestamp
                         ? format(new Date(item.timestamp), 'HH:mm:ss')
                         : '--:--:--'}
                     </span>
 
                     {/* Type icon */}
-                    <Icon className="h-3 w-3 text-gray-500 shrink-0" />
+                    <Icon className="h-4 w-4 text-gray-500 shrink-0" />
 
                     {/* Status icon */}
                     <span className="shrink-0">{statusIcon(item.status)}</span>
 
-                    {/* Primary text */}
-                    <span className="text-[11px] text-gray-200 flex-1 truncate font-medium">
-                      {item.primary}
-                    </span>
+                    {/* Primary text - clickable link if url exists */}
+                    {item.url ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-gray-200 flex-1 truncate font-semibold hover:underline hover:text-gray-100 transition-colors"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {item.primary}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-gray-200 flex-1 truncate font-semibold">
+                        {item.primary}
+                      </span>
+                    )}
 
                     {/* Source badge */}
                     {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
 
                     {/* Extra info */}
                     {item.extra?.price && (
-                      <span className="text-[10px] text-gray-500 shrink-0">
+                      <span className="text-xs text-gray-500 shrink-0">
                         ₪{(item.extra.price / 1000).toFixed(0)}K
                       </span>
                     )}
                     {item.extra?.rooms && (
-                      <span className="text-[10px] text-gray-500 shrink-0">
+                      <span className="text-xs text-gray-500 shrink-0">
                         {item.extra.rooms}ח׳
                       </span>
                     )}
                     {item.extra?.floor !== undefined && item.extra.floor !== null && (
-                      <span className="text-[10px] text-gray-500 shrink-0">
+                      <span className="text-xs text-gray-500 shrink-0">
                         ק׳{item.extra.floor}
                       </span>
                     )}
                   </div>
 
                   {/* Detail line */}
-                  <div className="flex items-center gap-2 px-3 pb-1.5 pr-[74px]">
-                    <span className="text-[10px] text-gray-500 truncate">
+                  <div className="flex items-center gap-2 px-4 pb-2 pr-[80px]">
+                    <span className="text-xs text-gray-500 truncate">
                       {item.details}
                     </span>
                     {item.url && (
@@ -454,7 +466,7 @@ export const LiveMonitor: React.FC = () => {
                         className="shrink-0 text-gray-600 hover:text-gray-400 transition-colors"
                         onClick={e => e.stopPropagation()}
                       >
-                        <ExternalLink className="h-2.5 w-2.5" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     )}
                   </div>
