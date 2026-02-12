@@ -140,3 +140,6 @@ verify_jwt = false
 
 [functions.scout-project]
 verify_jwt = false
+
+[functions.detect-duplicates]
+verify_jwt = false

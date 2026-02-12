@@ -182,17 +182,26 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 10000,
   });
 
-  // Dedup stats
+  // Dedup stats — read from scouted_properties, not duplicate_alerts
   const { data: dedupStats } = useQuery({
     queryKey: ['dedup-stats-summary'],
     queryFn: async () => {
-      const [unresolvedRes, todayRes] = await Promise.all([
-        supabase.from('duplicate_alerts').select('id', { count: 'exact', head: true }).eq('is_resolved', false),
-        supabase.from('duplicate_alerts').select('id', { count: 'exact', head: true }).gte('detected_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [uncheckedRes, groupsRes, losersRes, checkedTodayRes] = await Promise.all([
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).is('dedup_checked_at', null),
+        supabase.from('scouted_properties').select('duplicate_group_id', { count: 'exact', head: true }).not('duplicate_group_id', 'is', null),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('dedup_checked_at', today.toISOString()),
       ]);
-      return { unresolved: unresolvedRes.count ?? 0, today: todayRes.count ?? 0 };
+      return {
+        unchecked: uncheckedRes.count ?? 0,
+        groups: groupsRes.count ?? 0,
+        losers: losersRes.count ?? 0,
+        checkedToday: checkedTodayRes.count ?? 0,
+      };
     },
-    refetchInterval: 30000,
+    refetchInterval: 15000,
   });
 
   // Matching stats
@@ -335,11 +344,12 @@ export const ChecksDashboard: React.FC = () => {
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
-          status={dedupStats?.unresolved ? 'completed' : 'idle'}
-          statusText={`${dedupStats?.unresolved ?? 0} לא טופלו`}
+          status={dedupStats?.unchecked ? 'completed' : 'idle'}
+          statusText={`${dedupStats?.groups ?? 0} קבוצות, ${dedupStats?.losers ?? 0} משניים`}
           metrics={[
-            { label: 'נותרו', value: dedupStats?.unresolved ?? 0 },
-            { label: 'היום', value: dedupStats?.today ?? 0 },
+            { label: 'נותרו', value: dedupStats?.unchecked ?? 0 },
+            { label: 'קבוצות', value: dedupStats?.groups ?? 0 },
+            { label: 'משניים', value: dedupStats?.losers ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
           isRunPending={triggerDedup.isPending}
