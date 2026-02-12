@@ -438,6 +438,7 @@ export async function saveProperty(
       duplicate_group_id: duplicateGroupId,
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
+      dedup_checked_at: null,
       last_seen_at: new Date().toISOString()
     }, {
       onConflict: 'source,source_url',
