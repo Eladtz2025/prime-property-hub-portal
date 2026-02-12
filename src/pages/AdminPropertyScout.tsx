@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Settings, History, Shield } from 'lucide-react';
+import { Search, Activity } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
-import { UnifiedScoutSettings } from '@/components/scout/UnifiedScoutSettings';
-import { ScoutRunHistory } from '@/components/scout/ScoutRunHistory';
-import { AvailabilityCheckDashboard } from '@/components/scout/AvailabilityCheckDashboard';
+import { ChecksDashboard } from '@/components/scout/ChecksDashboard';
 
 const AdminPropertyScout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('properties');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
     <ProtectedRoute requiredRole="manager">
@@ -24,22 +22,14 @@ const AdminPropertyScout: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4" dir="ltr">
-            <TabsTrigger value="availability" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Shield className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">בדיקות זמינות</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <History className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">היסטוריית ריצות</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Settings className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">הגדרות</span>
+          <TabsList className="grid w-full grid-cols-2" dir="ltr">
+            <TabsTrigger value="dashboard" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
+              <Activity className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm">דשבורד בדיקות</span>
             </TabsTrigger>
             <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Search className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-xs sm:text-sm">דירות שנמצאו</span>
+              <span className="text-xs sm:text-sm">דירות שנמצאו</span>
             </TabsTrigger>
           </TabsList>
 
@@ -47,16 +37,8 @@ const AdminPropertyScout: React.FC = () => {
             <ScoutedPropertiesTable />
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-6">
-            <UnifiedScoutSettings />
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-6">
-            <ScoutRunHistory />
-          </TabsContent>
-
-          <TabsContent value="availability" className="mt-6">
-            <AvailabilityCheckDashboard />
+          <TabsContent value="dashboard" className="mt-6">
+            <ChecksDashboard />
           </TabsContent>
         </Tabs>
       </div>
