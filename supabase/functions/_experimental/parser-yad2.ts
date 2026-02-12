@@ -121,8 +121,7 @@ export function parseYad2Markdown(
   }
   
   const stats = calculateStats(properties);
-  const fallbackPrivate = stats.private_count - properties.filter(p => p.is_private === true && p.raw_text && /מפרטי|ללא\s*תיווך|בעל\s*הדירה|פרטי/i.test(p.raw_text || '')).length;
-  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${stats.private_count} private [${fallbackPrivate} fallback], ${stats.broker_count} broker)`);
+  console.log(`[parser-yad2] ✅ Parsed ${properties.length} properties (${stats.private_count} private, ${stats.broker_count} broker, ${stats.unknown_count} unknown)`);
   
   return {
     success: true,
@@ -228,24 +227,52 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : null;
   
   // ============================================
-  // Best-effort broker detection from SERP block
+  // Structural broker detection from SERP block
   // ============================================
-  // Take 80-120 chars window BEFORE the ₪ symbol and run detectBroker on it
-  let isPrivate: boolean | null = null;
+  // In Yad2 SERP, broker listings have agency name between image and ₪:
+  //   [![Address](IMG)\\ \\ AgencyName\\ \\ AgencyName₪ Price
+  // Private listings go directly from image to ₪:
+  //   [![Address](IMG)\\ \\ ₪ Price
   
-  const shekelIndex = cleanedBlock.indexOf('₪');
-  if (shekelIndex > 0) {
-    // Take 100 chars before ₪ (or less if not available)
-    const windowStart = Math.max(0, shekelIndex - 100);
-    const textBeforePrice = cleanedBlock.substring(windowStart, shekelIndex);
-    
-    // Check for broker indicators in the text window before price
-    if (detectBroker(textBeforePrice, '')) {
-      isPrivate = false;
+  let isPrivate: boolean | null = null;
+  let detectedAgency: string | null = null;
+  
+  // Step 1: Structural detection - check text between image end and ₪
+  const imgEndMatch = block.match(/\]\([^)]+\)/); // find end of ![alt](url)
+  const shekelIndex = block.indexOf('₪');
+  
+  if (imgEndMatch && shekelIndex > 0) {
+    const imgEndPos = block.indexOf(imgEndMatch[0]) + imgEndMatch[0].length;
+    if (shekelIndex > imgEndPos) {
+      const textBetween = block.substring(imgEndPos, shekelIndex);
+      
+      // Clean: remove backslashes, RTL/LTR markers, newlines, whitespace
+      const cleaned = textBetween
+        .replace(/[\u200F\u200E‎‏]/g, '')
+        .replace(/\\/g, '')
+        .replace(/\n/g, ' ')
+        .trim();
+      
+      // Also get the alt text to exclude it from comparison
+      const altMatch = block.match(/\[!\[([^\]]*)\]/);
+      const altText = altMatch ? altMatch[1].trim() : '';
+      
+      // If there's meaningful text that isn't just the alt text repeated
+      if (cleaned.length > 2 && cleaned !== altText) {
+        // This is agency name = broker
+        isPrivate = false;
+        detectedAgency = cleaned;
+        console.log(`[Yad2 Broker] Structural detection: agency="${cleaned.substring(0, 50)}"`);
+      }
     }
   }
   
-  // Check for private indicators after the bold section (tags like "מידי", "ללא תיווך")
+  // Step 2: Keyword-based broker detection as fallback
+  if (isPrivate === null && detectBroker(cleanedBlock, '')) {
+    isPrivate = false;
+  }
+  
+  // Step 3: Check for explicit private indicators after bold section
   if (isPrivate === null) {
     const boldEndIndex = cleanedBlock.lastIndexOf('**');
     if (boldEndIndex > 0) {
@@ -256,16 +283,8 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     }
   }
   
-  // Fallback: check entire block for broker keywords
-  if (isPrivate === null && detectBroker(cleanedBlock, '')) {
-    isPrivate = false;
-  }
-  
-  // Yad2 fallback: if no broker indicators found, assume private
-  // Rationale: Yad2 private listings simply lack broker markers
-  if (isPrivate === null) {
-    isPrivate = true;
-  }
+  // Step 4: No fallback to "private" - leave as null (unknown)
+  // The backfill process will check the individual listing page later
   
   // ============================================
   // Extract property details
@@ -375,7 +394,11 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
     is_private: isPrivate,
     entry_date: null,
     features,
-    raw_text: block.substring(0, 500)
+    raw_text: block.substring(0, 500),
+    raw_data: {
+      detected_agency: detectedAgency,
+      serp_block: block.substring(0, 800)
+    }
   };
 }
 
