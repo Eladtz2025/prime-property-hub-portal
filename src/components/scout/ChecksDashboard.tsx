@@ -65,7 +65,9 @@ const AvailabilitySettingsContent: React.FC = () => {
     firecrawl_max_retries: 'ניסיונות Firecrawl', firecrawl_retry_delay_ms: 'השהייה ניסיונות (ms)',
     get_timeout_ms: 'Timeout GET (ms)', head_timeout_ms: 'Timeout HEAD (ms)',
     min_days_before_check: 'ימים לפני בדיקה ראשונה', per_property_timeout_ms: 'Timeout לנכס (ms)',
-    recheck_interval_days: 'ימים בין בדיקות',
+    recheck_interval_days: 'ימים בין בדיקות (ישן)',
+    first_recheck_interval_days: 'ימים עד recheck ראשון',
+    recurring_recheck_interval_days: 'ימים בין rechecks חוזרים',
   };
 
   if (!availSettings?.length) return <div className="text-center py-6 text-muted-foreground">אין הגדרות</div>;
@@ -312,7 +314,7 @@ export const ChecksDashboard: React.FC = () => {
                 'שלב 1: בדיקת HEAD מהירה (3 שניות) — מזהה 404, הפניות, ושגיאות שרת.',
                 'שלב 2: Firecrawl — סריקת תוכן העמוד וחיפוש מידע על הנכס (מחיר, חדרים, כתובת).',
                 'אם נמצא מידע — הנכס נשאר אקטיבי. אם לא — מסומן כלא פעיל.',
-                'בדיקה חוזרת כל 7 ימים לכל נכס פעיל.',
+                'לוגיקת recheck חכמה: בדיקה ראשונה לכל נכס שמעולם לא נבדק (עדיפות עליונה), recheck ראשון אחרי 8 ימים, rechecks חוזרים כל 2 ימים.',
                 'מכסה יומית מוגדרת למניעת עומס.',
               ]} />
               <ScheduleTimeEditor
