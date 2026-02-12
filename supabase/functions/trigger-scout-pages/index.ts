@@ -135,12 +135,13 @@ Deno.serve(async (req) => {
 
     console.log(`📄 Created run ${runId} for ${source}: pages ${startPage}-${pagesToScan} (${totalPages} pages, delay: ${delayMs}ms)`);
 
-    // MADLAN: Sequential mode - trigger only first page, it will trigger the rest
-    if (source === 'madlan') {
-      console.log(`📄 Madlan sequential mode: triggering only page ${startPage}`);
+    // MADLAN and YAD2: Sequential mode - trigger only first page, it will chain the rest
+    if (source === 'madlan' || source === 'yad2') {
+      const targetFn = source === 'madlan' ? 'scout-madlan' : 'scout-yad2';
+      console.log(`📄 ${source} sequential mode: triggering only page ${startPage}`);
       
       try {
-        await fetch(`${supabaseUrl}/functions/v1/scout-madlan`, {
+        await fetch(`${supabaseUrl}/functions/v1/${targetFn}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -155,10 +156,9 @@ Deno.serve(async (req) => {
           })
         });
       } catch (error) {
-        console.error(`Error triggering Madlan page ${startPage}:`, error);
+        console.error(`Error triggering ${source} page ${startPage}:`, error);
       }
     } else {
-      // YAD2 and HOMELESS: Parallel mode with delays (existing logic)
       const triggerPromises: Promise<void>[] = [];
       
       for (let page = startPage; page <= pagesToScan; page++) {
