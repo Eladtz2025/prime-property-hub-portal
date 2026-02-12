@@ -57,6 +57,7 @@ export interface ContactLead {
   mamad_flexible: boolean;
   furnished_required: string | null; // 'fully_furnished' | 'partially_furnished'
   furnished_flexible: boolean;
+  floor_preference: string | null; // 'ground' | 'low' | 'mid' | 'high' | 'top' | 'any'
 }
 
 export interface MatchResult {
@@ -349,7 +350,7 @@ export async function calculateMatch(
   }
   
   // ===== ROOMS MUST BE IN RANGE =====
-  if (property.rooms) {
+  if (property.rooms && property.rooms > 0) {
     if (lead.rooms_min && property.rooms < lead.rooms_min) {
       return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.rooms_min} חדרים, בנכס יש ${property.rooms}`], priority: 0 };
     }
@@ -357,6 +358,9 @@ export async function calculateMatch(
       return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.rooms_max} חדרים, בנכס יש ${property.rooms}`], priority: 0 };
     }
     reasons.push(`${property.rooms} חדרים ✓`);
+  } else if (lead.rooms_min || lead.rooms_max) {
+    // Property has no rooms data but lead requires specific rooms — disqualify
+    return { lead, matchScore: 0, matchReasons: ['לא צוינו חדרים בנכס'], priority: 0 };
   }
   
   // ===== SIZE MUST BE IN RANGE =====
@@ -368,6 +372,30 @@ export async function calculateMatch(
       return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.size_max} מ״ר, בנכס יש ${property.size}`], priority: 0 };
     }
     reasons.push(`${property.size} מ״ר ✓`);
+  } else if ((lead.size_min || lead.size_max) && property.property_type === 'sale') {
+    // Sale properties without size data when lead requires size — disqualify
+    return { lead, matchScore: 0, matchReasons: ['לא צוין גודל בנכס (מכירה)'], priority: 0 };
+  }
+  
+  // ===== FLOOR PREFERENCE (sale only) =====
+  if (property.property_type === 'sale' && lead.floor_preference && lead.floor_preference !== 'any') {
+    if (property.floor !== null && property.floor !== undefined) {
+      const floorRanges: Record<string, [number, number]> = {
+        ground: [0, 0],
+        low: [1, 3],
+        mid: [4, 8],
+        high: [9, 15],
+        top: [16, 100],
+      };
+      const range = floorRanges[lead.floor_preference];
+      if (range && (property.floor < range[0] || property.floor > range[1])) {
+        const prefLabel: Record<string, string> = { ground: 'קרקע', low: 'נמוכה', mid: 'בינונית', high: 'גבוהה', top: 'עליונה' };
+        return { lead, matchScore: 0, matchReasons: [`קומה ${property.floor} לא מתאימה להעדפת קומה ${prefLabel[lead.floor_preference] || lead.floor_preference}`], priority: 0 };
+      }
+      const prefLabel: Record<string, string> = { ground: 'קרקע', low: 'נמוכה', mid: 'בינונית', high: 'גבוהה', top: 'עליונה' };
+      reasons.push(`קומה ${property.floor} (${prefLabel[lead.floor_preference] || lead.floor_preference}) ✓`);
+    }
+    // If property has no floor data — don't disqualify
   }
   
   // ===== FEATURE CHECKS (only if required AND not flexible) =====

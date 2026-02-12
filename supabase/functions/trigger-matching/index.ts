@@ -274,6 +274,20 @@ serve(async (req) => {
     // properties_found will be incremented by match-batch workers as they process batches
     console.log(`📊 Found ${allPropertyIds.length} properties to match`);
 
+    // Fetch matching settings once for all batches
+    const matchingDbSettings = await fetchCategorySettings(supabase, 'matching');
+    const matchingSettingsForBatches: MatchingSettings = {
+      entry_date_range_strict: matchingDbSettings.entry_date_range_strict ?? defaultMatchingSettings.entry_date_range_strict,
+      entry_date_range_flexible: matchingDbSettings.entry_date_range_flexible ?? defaultMatchingSettings.entry_date_range_flexible,
+      immediate_max_days: matchingDbSettings.immediate_max_days ?? defaultMatchingSettings.immediate_max_days,
+      rent_flex_low_threshold: matchingDbSettings.rent_flex_low_threshold ?? defaultMatchingSettings.rent_flex_low_threshold,
+      rent_flex_low_percent: matchingDbSettings.rent_flex_low_percent ?? defaultMatchingSettings.rent_flex_low_percent,
+      rent_flex_mid_threshold: matchingDbSettings.rent_flex_mid_threshold ?? defaultMatchingSettings.rent_flex_mid_threshold,
+      rent_flex_mid_percent: matchingDbSettings.rent_flex_mid_percent ?? defaultMatchingSettings.rent_flex_mid_percent,
+      rent_flex_high_percent: matchingDbSettings.rent_flex_high_percent ?? defaultMatchingSettings.rent_flex_high_percent,
+    };
+    console.log(`⚙️ Matching settings fetched once for all batches`);
+
     // Split into batches of 50 properties (reduced from 100 to prevent timeouts)
     const batchSize = 50;
     const batches: string[][] = [];
@@ -303,7 +317,8 @@ serve(async (req) => {
           run_id: trackingRunId,
           send_whatsapp: sendWhatsapp,
           batch_index: i + 1,
-          total_batches: batches.length
+          total_batches: batches.length,
+          matching_settings: matchingSettingsForBatches
         })
       }).then(response => {
         if (!response.ok) {
