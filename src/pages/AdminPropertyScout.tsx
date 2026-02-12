@@ -27,19 +27,29 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: React.Re
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Availability stats
+  // Global scout stats (unique queryKey to avoid collision with ChecksDashboard)
   const { data: stats } = useQuery({
-    queryKey: ['availability-stats'],
+    queryKey: ['global-scout-stats'],
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const [totalRes, pendingRes, checkedTodayRes, totalActiveRes] = await Promise.all([
+      const recheckCutoff = new Date();
+      recheckCutoff.setDate(recheckCutoff.getDate() - 7);
+      const [totalRes, totalActiveRes, pendingRecheckRes, checkedTodayRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('availability_checked_at', null),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
+          .gte('availability_checked_at', today.toISOString()),
       ]);
-      return { total: totalRes.count ?? 0, pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, totalActive: totalActiveRes.count ?? 0 };
+      return {
+        total: totalRes.count ?? 0,
+        totalActive: totalActiveRes.count ?? 0,
+        pendingRecheck: pendingRecheckRes.count ?? 0,
+        checkedToday: checkedTodayRes.count ?? 0,
+      };
     },
     refetchInterval: 15000,
   });
@@ -73,7 +83,7 @@ const AdminPropertyScout: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <StatCard title="סה״כ נכסים" value={stats?.total ?? '—'} icon={<LayoutGrid className="h-4 w-4 text-gray-600" />} color="bg-gray-100 dark:bg-gray-900/30" />
           <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
-          <StatCard title="ממתינים לבדיקה" value={stats?.pending ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
+          <StatCard title="ממתינים לבדיקה" value={stats?.pendingRecheck ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
           <StatCard title="נבדקו היום" value={stats?.checkedToday ?? '—'} icon={<CheckCircle className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
           <StatCard title="כפילויות פתוחות" value={dedupStats?.unresolved ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
           <StatCard title="התאמות אחרונות" value={matchStats?.total_matches ?? '—'} icon={<Users className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
