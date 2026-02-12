@@ -49,6 +49,7 @@ interface BackfillSummary {
 
 interface BackfillRecentItem {
   address?: string;
+  neighborhood?: string;
   source?: string;
   source_url?: string;
   status: string; // ok | scrape_failed | no_content | no_new_data | blacklisted | update_error
@@ -269,10 +270,14 @@ export const LiveMonitor: React.FC = () => {
         detailParts.push('שגיאת עדכון DB');
       }
 
+      const primaryText = item.address 
+        ? `${item.address}${item.neighborhood ? ', ' + item.neighborhood : ''}`
+        : '?';
+
       feedItems.push({
         type: 'backfill',
         timestamp: item.timestamp,
-        primary: item.address || '?',
+        primary: primaryText,
         details: detailParts.join(' | ') || item.status,
         source: item.source,
         status: statusMap[item.status] || 'warning',
@@ -453,22 +458,11 @@ export const LiveMonitor: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Detail line */}
+                  {/* Detail line - inline after primary */}
                   <div className="flex items-center gap-2 px-4 pb-2 pr-[80px]">
-                    <span className="text-xs text-gray-500 truncate">
+                    <span className="text-xs text-gray-500 truncate flex-1">
                       {item.details}
                     </span>
-                    {item.url && (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 text-gray-600 hover:text-gray-400 transition-colors"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
                   </div>
                 </div>
               );

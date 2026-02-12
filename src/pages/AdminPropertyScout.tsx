@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Activity, Hourglass, CheckCircle, Timer, Database, Clock, Loader2, Copy, Users } from 'lucide-react';
+import { Search, Activity, Hourglass, CheckCircle, Database, Copy, Users, LayoutGrid } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
@@ -33,25 +33,15 @@ const AdminPropertyScout: React.FC = () => {
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes] = await Promise.all([
+      const [totalRes, pendingRes, checkedTodayRes, totalActiveRes] = await Promise.all([
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('availability_checked_at', null),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('availability_check_reason', 'per_property_timeout').eq('is_active', true),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
-      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0 };
+      return { total: totalRes.count ?? 0, pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, totalActive: totalActiveRes.count ?? 0 };
     },
     refetchInterval: 15000,
-  });
-
-  // Last availability run
-  const { data: lastAvailRun } = useQuery({
-    queryKey: ['availability-last-run'],
-    queryFn: async () => {
-      const { data } = await supabase.from('availability_check_runs').select('started_at, completed_at, status').order('started_at', { ascending: false }).limit(1).maybeSingle();
-      return data;
-    },
-    refetchInterval: 10000,
   });
 
   // Dedup stats
@@ -76,26 +66,15 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 30000,
   });
 
-  const isAvailRunning = lastAvailRun?.status === 'running';
-
-  const formatDuration = (started: string, completed: string | null) => {
-    if (!completed) return 'רץ...';
-    const secs = Math.round((new Date(completed).getTime() - new Date(started).getTime()) / 1000);
-    return secs < 60 ? `${secs} שניות` : `${Math.round(secs / 60)} דקות`;
-  };
-
   return (
     <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
         {/* Stats Cards - Always visible */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <StatCard title="סה״כ נכסים" value={stats?.total ?? '—'} icon={<LayoutGrid className="h-4 w-4 text-gray-600" />} color="bg-gray-100 dark:bg-gray-900/30" />
+          <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
           <StatCard title="ממתינים לבדיקה" value={stats?.pending ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
           <StatCard title="נבדקו היום" value={stats?.checkedToday ?? '—'} icon={<CheckCircle className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
-          <StatCard title="Timeouts" value={stats?.timeouts ?? '—'} icon={<Timer className="h-4 w-4 text-orange-600" />} color="bg-orange-100 dark:bg-orange-900/30" />
-          <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
-          <StatCard title="ריצה אחרונה" value={lastAvailRun ? (isAvailRunning ? 'רץ כעת...' : formatDuration(lastAvailRun.started_at, lastAvailRun.completed_at)) : '—'}
-            icon={isAvailRunning ? <Loader2 className="h-4 w-4 text-blue-600 animate-spin" /> : <Clock className="h-4 w-4 text-muted-foreground" />}
-            color={isAvailRunning ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'} />
           <StatCard title="כפילויות פתוחות" value={dedupStats?.unresolved ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
           <StatCard title="התאמות אחרונות" value={matchStats?.total_matches ?? '—'} icon={<Users className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
         </div>
