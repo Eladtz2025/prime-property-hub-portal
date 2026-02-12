@@ -249,6 +249,9 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
       const textBetween = block.substring(imgEndPos, shekelIndex)
         .replace(/[\u200F\u200E\u200B‎‏]/g, '')
         .replace(/!\[[^\]]*\]\([^)]*\)/g, '')  // Strip markdown images
+        .replace(/ירד ב-?[\d,]+\s*₪/g, '')    // Strip price-drop tags
+        .replace(/בלעדי/g, '')                  // Strip "exclusive" tag
+        .replace(/חדש מקבלן/g, '')              // Strip "new from builder" tag
         .replace(/\\/g, '')
         .replace(/\n/g, ' ')
         .trim();
