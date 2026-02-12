@@ -290,6 +290,7 @@ export const UnifiedScoutSettings: React.FC = () => {
     wait_for_ms: '',
     schedule_time_1: '',
     schedule_time_2: '',
+    owner_type_filter: '',
   });
 
 
@@ -548,6 +549,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       wait_for_ms: '',
       schedule_time_1: '',
       schedule_time_2: '',
+      owner_type_filter: '',
     });
     setEditingConfig(null);
   };
@@ -576,6 +578,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       // Schedule times - use existing values OR source defaults
       schedule_time_1: configSchedule?.[0] ?? defaultSchedule[0],
       schedule_time_2: configSchedule?.[1] || '',
+      owner_type_filter: (config as any).owner_type_filter || '',
     });
     setIsDialogOpen(true);
   };
@@ -603,6 +606,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       page_delay_seconds: formData.page_delay_seconds ? parseInt(formData.page_delay_seconds) : null,
       wait_for_ms: formData.wait_for_ms ? parseInt(formData.wait_for_ms) : null,
       schedule_times: scheduleArray.length > 0 ? scheduleArray : null,
+      owner_type_filter: formData.owner_type_filter || null,
     };
 
     if (editingConfig) {
@@ -826,6 +830,26 @@ export const UnifiedScoutSettings: React.FC = () => {
                       />
                     </div>
                     
+                    {/* Owner Type Filter - only for Yad2 */}
+                    {formData.source === 'yad2' && (
+                      <div>
+                        <Label>סוג מפרסם</Label>
+                        <Select
+                          value={formData.owner_type_filter}
+                          onValueChange={(value) => setFormData({ ...formData, owner_type_filter: value === 'all' ? '' : value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="ללא סינון" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">ללא סינון</SelectItem>
+                            <SelectItem value="private">פרטי בלבד</SelectItem>
+                            <SelectItem value="broker">תיווך בלבד</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     {/* Technical Parameters Section */}
                     <div className="border-t pt-4 mt-2">
                       <Label className="text-sm font-medium text-muted-foreground mb-3 block">

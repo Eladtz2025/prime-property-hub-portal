@@ -89,7 +89,8 @@ function isValidAddress(address: string): boolean {
 
 export function parseYad2Markdown(
   markdown: string,
-  propertyType: 'rent' | 'sale'
+  propertyType: 'rent' | 'sale',
+  ownerTypeFilter?: 'private' | 'broker' | null
 ): ParserResult {
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
@@ -109,6 +110,9 @@ export function parseYad2Markdown(
     try {
       const parsed = parseYad2Block(blocks[i], propertyType, i);
       if (parsed) {
+        // Filter by owner type at the earliest stage
+        if (ownerTypeFilter === 'private' && parsed.is_private !== true) continue;
+        if (ownerTypeFilter === 'broker' && parsed.is_private !== false) continue;
         properties.push(parsed);
       }
     } catch (error) {
