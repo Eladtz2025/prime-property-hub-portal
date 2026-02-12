@@ -1,85 +1,122 @@
 
-# תיקון מערכת הכפילויות — Edge Function חדשה, סטטיסטיקות נכונות, ותמיכה בנכסים לא-אקטיביים
+# הוספת כל התהליכים למוניטור החי
 
-## מה לא עובד עכשיו
+## הבעיה
 
-1. **אין Edge Function לכפילויות** — כפתור "הרצה" קורא ל-`detect-duplicates` שלא קיים, אז לא קורה כלום
-2. **הסטטיסטיקות קוראות מטבלה ריקה** — `duplicate_alerts` מכילה 0 שורות. הנתונים האמיתיים נמצאים ב-`scouted_properties` (385 קבוצות, 587 נכסים בקבוצות)
-3. **ה-RPC הקיים (`detect_duplicates_batch`) לא משתמש ב-`dedup_checked_at`** — הוא מסנן לפי `duplicate_group_id IS NULL`, אז נכס שנבדק ולא נמצאה לו כפילות ייבדק שוב ושוב
+המוניטור מציג רק 3 תהליכים:
+- סריקות (מ-`scout_runs`)
+- זמינות (מ-`availability_check_runs`)
+- השלמת נתונים (מ-`backfill_progress` WHERE task_name = `data_completion` **בלבד**)
 
-## מה ייבנה
+תהליכים שלא מופיעים כלל:
+- כפילויות (`dedup-scan`)
+- סיווג מתווך (`reclassify_broker`)
+- השלמות אוטומטיות (`data_completion_auto_yad2`, `data_completion_auto_madlan`, `data_completion_auto_homeless`)
 
-### 1. Edge Function חדשה: `detect-duplicates`
+## הפתרון
 
-תעטוף את ה-RPC `detect_duplicates_batch` עם:
-- Self-triggering — רצה batch אחרי batch עד שנגמר, בדיוק כמו backfill
-- ללא הגבלת batch (ה-RPC עצמו מגביל ל-500 per call, אבל ה-Edge Function ממשיכה לקרוא עד שאין עוד)
-- דיווח progress לטבלת `backfill_progress` (task_name: `dedup-scan`)
-- ריצה ראשונה על **כל** הנכסים (אקטיביים + לא-אקטיביים) — כי `dedup_checked_at IS NULL` לכולם
+### שלב 1: LiveMonitor — שאילתה גנרית לכל backfill_progress
 
-### 2. עדכון RPC: `detect_duplicates_batch`
+במקום לשאול רק על `task_name = 'data_completion'`, נשאל על **כל** המשימות שרצות:
 
-- שינוי הפילטר מ-`duplicate_group_id IS NULL` ל-`dedup_checked_at IS NULL`
-- הסרת הפילטר `is_active = true` כדי לכלול גם נכסים לא-אקטיביים
-- אחרי בדיקת כל נכס — סימון `dedup_checked_at = now()` (גם אם לא נמצאה כפילות)
-- כשנמצאת כפילות בין אקטיבי ללא-אקטיבי — מקשר אותם לאותה קבוצה
+```text
+FROM backfill_progress
+WHERE status = 'running'
+ORDER BY started_at DESC
+```
 
-### 3. תיקון סטטיסטיקות בדשבורד
+כל משימה רצה תופיע כשורה נפרדת בסרגל התהליכים הפעילים (Active Processes) עם שם תצוגה בעברית, אייקון מתאים, ו-progress bar.
 
-הסטטיסטיקות יקראו מ-`scouted_properties` במקום מ-`duplicate_alerts`:
-- **נותרו** — `dedup_checked_at IS NULL` (כרגע 6,901)
-- **קבוצות** — `COUNT(DISTINCT duplicate_group_id)` (כרגע 385)
-- **Losers** — `is_primary_listing = false` (כרגע 204)
-- **נבדקו היום** — `dedup_checked_at >= today`
+### שלב 2: מיפוי שמות משימות לתצוגה
 
-### 4. איפוס בעדכון נכס
+| task_name | תווית | אייקון | סוג בפיד |
+|-----------|--------|--------|----------|
+| data_completion | השלמת נתונים | Database | backfill |
+| data_completion_auto_* | השלמה אוטו [source] | Database | backfill |
+| dedup-scan | סריקת כפילויות | Copy | dedup |
+| reclassify_broker | סיווג מתווך | Users | backfill |
+| backfill_broker_classification | סיווג מתווך (ישן) | Users | backfill |
 
-כשנכס מתעדכן (כתובת, מחיר, חדרים) — אוטומטית `dedup_checked_at = NULL` כדי שייבדק שוב. ייעשה ב-`saveProperty` (ב-_shared/property-helpers.ts).
+### שלב 3: עדכון Edge Function `detect-duplicates`
+
+כרגע ה-Edge Function כותב רק סטטיסטיקות מצטברות ל-`summary_data`:
+```json
+{ "duplicates_found": 15, "groups_created": 8, "batches": 3 }
+```
+
+נוסיף `recent_batches` — רשימה של 10 ה-batches האחרונים:
+```json
+{
+  "duplicates_found": 15,
+  "groups_created": 8,
+  "batches": 3,
+  "recent_batches": [
+    {
+      "batch": 3,
+      "processed": 500,
+      "duplicates": 5,
+      "groups": 2,
+      "timestamp": "2026-02-12T18:30:00Z"
+    }
+  ]
+}
+```
+
+### שלב 4: LiveMonitor — הצגת פיד כפילויות
+
+כל batch של כפילויות יוצג כשורה בפיד:
+- **Primary**: `Batch 3 — כפילויות`
+- **Details**: `500 נבדקו | 5 כפילויות | 2 קבוצות חדשות`
+- **Status**: ok (אם נמצאו כפילויות), warning (אם 0)
+
+צבע ואייקון: סגול (Copy icon) — `bg-purple-950/30 border-r-purple-500/40`
 
 ## פרטים טכניים
 
-### מיגרציה
+### LiveMonitor.tsx
 
-עדכון `detect_duplicates_batch` RPC:
-- החלפת `WHERE sp.duplicate_group_id IS NULL AND sp.is_active = true` ב-`WHERE sp.dedup_checked_at IS NULL`
-- הוספת `UPDATE SET dedup_checked_at = now()` לכל נכס שנבדק (גם אם לא נמצאה כפילות)
-- שמירת property_type filter
-
-### Edge Function: `supabase/functions/detect-duplicates/index.ts`
-
-```text
-1. יצירת/עדכון רשומה ב-backfill_progress (task_name: 'dedup-scan')
-2. קריאה ל-detect_duplicates_batch(500) ב-loop
-3. אחרי כל batch — עדכון progress (processed, duplicates_found)
-4. כשה-batch מחזיר 0 processed — סיום
-5. אם יש עוד — self-trigger (קריאה עצמית)
+1. שינוי שאילתת backfill מ:
+```typescript
+.eq('task_name', 'data_completion')
+```
+ל:
+```typescript
+.eq('status', 'running')
+// ללא סינון task_name — מחזיר את כל הרצים
 ```
 
-### ChecksDashboard.tsx
-
-החלפת שאילתת `dedup-stats-summary` מ-`duplicate_alerts` ל:
-```text
-- unchecked: COUNT WHERE dedup_checked_at IS NULL
-- groups: COUNT(DISTINCT duplicate_group_id) WHERE duplicate_group_id IS NOT NULL
-- losers: COUNT WHERE is_primary_listing = false AND duplicate_group_id IS NOT NULL
-- checkedToday: COUNT WHERE dedup_checked_at >= today
+2. הוספת typeConfig:
+```typescript
+dedup: { icon: Copy, label: 'כפילויות', bgClass: 'bg-purple-950/30 border-r-2 border-r-purple-500/40' }
 ```
 
-מטריקות הכרטיס:
-- "נותרו" = unchecked count
-- "קבוצות" = duplicate groups
-- "משניים" = losers count
+3. הוספת interface `DedupBatchItem` ולוגיקת בניית feed items מ-`recent_batches`
 
-### property-helpers.ts
+4. הוספת `taskNameToLabel` map לשמות תצוגה בעברית בסרגל Active Processes
 
-ב-`saveProperty`, באזור ה-upsert — הוספת `dedup_checked_at: null` כדי שנכס חדש/מעודכן ייכנס לתור הבדיקה.
+5. לולאה על כל הרצים (לא רק אחד) — כל אחד מקבל שורה בסרגל + feed items
+
+### detect-duplicates/index.ts
+
+עדכון `summary_data` בכל batch כדי לכלול `recent_batches` (שומר 10 אחרונים):
+```typescript
+const recentBatches = existingSummary?.recent_batches || [];
+recentBatches.push({
+  batch: batchCount,
+  processed,
+  duplicates,
+  groups,
+  timestamp: new Date().toISOString(),
+});
+// Keep only last 10
+if (recentBatches.length > 10) recentBatches.splice(0, recentBatches.length - 10);
+```
+
+צריך לקרוא את ה-summary_data הקיים לפני כל עדכון כדי לא לדרוס.
 
 ### קבצים שישתנו:
-- מיגרציה חדשה (עדכון RPC)
-- `supabase/functions/detect-duplicates/index.ts` (חדש)
-- `src/components/scout/ChecksDashboard.tsx`
-- `supabase/functions/_shared/property-helpers.ts`
-- `src/integrations/supabase/types.ts`
+- `src/components/scout/checks/LiveMonitor.tsx`
+- `supabase/functions/detect-duplicates/index.ts`
 
 ### Deploy:
 - detect-duplicates
