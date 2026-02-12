@@ -1,0 +1,1 @@
+UPDATE scout_runs SET status = 'stopped' WHERE id = 'a4b6fe07-7d80-4cf3-8b81-721aef644d43';

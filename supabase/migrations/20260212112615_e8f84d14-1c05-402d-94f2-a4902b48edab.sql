@@ -1,0 +1,1 @@
+UPDATE scout_configs SET max_pages = 8, owner_type_filter = 'private' WHERE id = '9e55cf4f-7283-4307-8814-341817d72f4a';

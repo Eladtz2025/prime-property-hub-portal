@@ -830,8 +830,8 @@ export const UnifiedScoutSettings: React.FC = () => {
                       />
                     </div>
                     
-                    {/* Owner Type Filter - only for Yad2 */}
-                    {formData.source === 'yad2' && (
+                    {/* Owner Type Filter - for Yad2 and Madlan */}
+                    {(formData.source === 'yad2' || formData.source === 'madlan') && (
                       <div>
                         <Label>סוג מפרסם</Label>
                         <Select
