@@ -1,43 +1,78 @@
 
+# הוספת אפשרות שינוי זמני ריצה ל-4 תהליכים
 
-# תיקון לוח הזמנים — 3 בעיות
+## מה משתנה
 
-## בעיות שנמצאו
+לכל אחד מ-4 התהליכים (כפילויות, בדיקת זמינות, השלמת נתונים, התאמות) יתווסף כפתור "הגדרות" שפותח דיאלוג קטן עם אפשרות לשנות את שעת הריצה. כשהמשתמש משנה שעה — גם ההגדרה ב-DB וגם ה-cron job מתעדכנים.
 
-1. **"סריקת נכסים כל 10 דק׳"** — פריט hardcoded שגוי. ה-cron רץ כל 5 דק׳ רק בשעה 23:00 IL, והזמנים מהקונפיגים כבר מוצגים. צריך להסיר.
-2. **התאמות** — הכרטיס לוקח שעות מ-scout_settings (שם רשום "01:00") אבל ה-cron רץ ב-23:00 IL. צריך להציג 23:00 ולעדכן ההגדרה.
-3. **השלמת נתונים** — ההגדרה עדיין מכילה [03:00, 12:00] אבל ה-cron עודכן ל-03:00 בלבד. צריך לעדכן ההגדרה.
+## הגישה
 
-## מה ישתנה
-
-### 1. הסרת הפריט המחזורי
-הסרת "סריקת נכסים (Cron) כל 10 דק׳" מ-ScheduleSummaryCard. הסריקות כבר מוצגות לפי הזמנים מהקונפיגים (23:00, 23:10 וכו׳). הקטגוריה "ריצות מחזוריות" תוסר לגמרי כי אין יותר פריטים מחזוריים — הכל ריצות קבועות.
-
-### 2. תיקון שעת התאמות
-במקום לקרוא את `settings.matching.schedule_times`, הכרטיס יציג 23:00 (השעה האמיתית של ה-cron). בנוסף, עדכון ההגדרה בטבלה מ-"01:00" ל-"23:00".
-
-### 3. תיקון הגדרת Backfill
-עדכון ההגדרה בטבלה מ-`[03:00, 12:00]` ל-`[03:00]` בלבד.
-
----
+1. **יצירת RPC בדאטאבייס** — פונקציית `update_cron_schedule` שמקבלת שם job וזמן cron חדש, ומעדכנת את `cron.job`.
+2. **הוספת הגדרות schedule_times ב-scout_settings** — לכפילויות ולבדיקת זמינות (חסרות כרגע).
+3. **קומפוננטת עריכת זמנים** — קומפוננטה קטנה `ScheduleTimeEditor` שמציגה את השעה הנוכחית ומאפשרת לשנות אותה, ואז שומרת ל-scout_settings + מעדכנת את ה-cron.
+4. **חיבור ל-ProcessCards** — הוספת `settingsContent` לכל אחד מ-4 הכרטיסים.
 
 ## פרטים טכניים
 
-### קובץ: `src/components/scout/ScheduleSummaryCard.tsx`
+### 1. מיגרציית SQL
 
-**הסרת הפריט המחזורי (שורות 48-54):**
-הסרת ה-push של `*/10` interval item.
-
-**הסרת העמודה הימנית של "ריצות מחזוריות" (שורות 215-233):**
-שינוי ה-grid ל-עמודה אחת בלבד (ריצות קבועות).
-
-**תיקון התאמות (שורות 82-89):**
-במקום `settings?.matching?.schedule_times` — hardcode `['23:00']` (זו השעה האמיתית של ה-cron).
-
-### SQL — עדכון 2 הגדרות
-
+**הוספת RPC:**
 ```text
-1. matching / schedule_times: ["01:00"] -> ["23:00"]
-2. backfill / schedule_times: [03:00, 12:00] -> ["03:00"]
+CREATE OR REPLACE FUNCTION update_cron_schedule(job_name TEXT, new_schedule TEXT)
+RETURNS void AS $$
+  UPDATE cron.job SET schedule = new_schedule WHERE jobname = job_name;
+$$ LANGUAGE sql SECURITY DEFINER;
 ```
 
+**הוספת הגדרות חסרות:**
+```text
+INSERT INTO scout_settings (category, setting_key, setting_value, description)
+VALUES 
+  ('duplicates', 'schedule_times', '["00:00"]', 'שעות ריצת ניקוי כפילויות (ישראל)'),
+  ('availability', 'schedule_times', '["05:00"]', 'שעות ריצת בדיקת זמינות (ישראל)');
+```
+
+### 2. קומפוננטה חדשה: `ScheduleTimeEditor`
+
+קובץ: `src/components/scout/checks/ScheduleTimeEditor.tsx`
+
+קומפוננטה שמקבלת:
+- `category` — קטגוריה ב-scout_settings (duplicates/availability/backfill/matching)
+- `cronJobName` — שם ה-cron job (cleanup-orphan-duplicates-hourly / availability-check-continuous / backfill-data-completion-job / match-leads-job)
+- `ilToUtcOffset` — הפרש שעות ישראל-UTC (כרגע 2)
+
+מציגה: שעה נוכחית (מ-scout_settings), שדה עריכה, כפתור שמירה.
+בשמירה: מעדכנת scout_settings + קוראת ל-RPC `update_cron_schedule` עם ה-cron החדש.
+
+### 3. מיפוי שעות לביטויי cron
+
+| תהליך | cron job name | המרת שעה IL לcron |
+|--------|---------------|-------------------|
+| כפילויות | cleanup-orphan-duplicates-hourly | `0 {IL-2} * * *` |
+| בדיקת זמינות | availability-check-continuous | `0 {IL-2} * * *` |
+| השלמת נתונים | backfill-data-completion-job | `0 {IL-2} * * *` |
+| התאמות | match-leads-job | `0 {IL-2} * * *` |
+
+### 4. שינויים ב-ChecksDashboard.tsx
+
+הוספת `settingsContent={<ScheduleTimeEditor ... />}` ל-4 הכרטיסים:
+
+- **כפילויות** (שורה 259): `settingsContent={<ScheduleTimeEditor category="duplicates" cronJobName="cleanup-orphan-duplicates-hourly" />}`
+- **בדיקת זמינות** (שורה 238): ה-settingsContent הקיים (`AvailabilitySettingsContent`) ישולב עם `ScheduleTimeEditor` — נעטוף שניהם ב-div
+- **השלמת נתונים** (שורה 294): `settingsContent={<ScheduleTimeEditor category="backfill" cronJobName="backfill-data-completion-job" />}`
+- **התאמות** (שורה 276): `settingsContent={<ScheduleTimeEditor category="matching" cronJobName="match-leads-job" />}`
+
+### 5. עדכון useScoutSettings
+
+הוספת `schedule_times` לממשק של `duplicates` ו-`availability` ב-`useScoutSettings.ts`.
+
+### 6. עדכון ScheduleSummaryCard
+
+במקום hardcode של שעות כפילויות ובדיקת זמינות — לקרוא מ-scout_settings כמו שכבר קורה עם backfill ו-matching.
+
+### קבצים שישתנו:
+- **SQL migration** — RPC + שורות חדשות ב-scout_settings
+- `src/components/scout/checks/ScheduleTimeEditor.tsx` (חדש)
+- `src/components/scout/ChecksDashboard.tsx`
+- `src/hooks/useScoutSettings.ts`
+- `src/components/scout/ScheduleSummaryCard.tsx`
