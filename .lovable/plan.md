@@ -1,52 +1,32 @@
 
+# תיקון מנגנון ההתאוששות האוטומטי לריצות סריקה
 
-# תיקון: "תל אביב יפו" נכנס לשדה boolean
+## הבעיה
+כשדף נכשל במהלך ריצה סדרתית (Yad2/Madlan), השרשרת נשברת והריצה נשארת תקועה בסטטוס "running" עד שה-cleanup cron רץ (פעמיים ביום בלבד). אין מנגנון מיידי שמזהה שהשרשרת נשברה ומתקן את זה.
 
-## שורש הבעיה
+## הפתרון - שני שיפורים משלימים
 
-בקובץ `property-helpers.ts`, שורות 287-290:
+### 1. הגנה חזקה יותר ב-triggerNextPage (scout-madlan + scout-yad2)
+כש-triggerNextPage נכשל גם אחרי כל ה-retries:
+- סמן את הדף הנוכחי כ-failed ב-page_stats
+- **קפוץ לדף הבא** במקום לעצור את כל השרשרת
+- אם גם הדף הבא לא עובד, המשך לדף שאחריו
+- כך השרשרת לעולם לא נשברת לגמרי
 
-```text
-const canCheckDuplicates = hasValidAddress 
-    && property.rooms !== undefined 
-    && property.floor !== undefined 
-    && normalizedCity;
-```
+### 2. הגדלת תדירות ה-cleanup cron
+שינוי ה-cron מ-`30 7,12 * * *` (פעמיים ביום) ל-`*/15 5,6,7,8,9,10,11,12 * * *` (כל 15 דקות בחלון הסריקות 05:00-12:59 UTC). ככה גם אם כל שאר המנגנונים נכשלו, ריצה תקועה תנוקה תוך 15 דקות מקסימום.
 
-ב-JavaScript, ביטוי `&&` מחזיר את הערך האחרון אם כולם truthy. כלומר כש-`normalizedCity = "תל אביב יפו"`, הביטוי מחזיר את המחרוזת `"תל אביב יפו"` ולא `true`.
+## שינויים טכניים
 
-הערך הזה מועבר לשדה `duplicate_check_possible` (שורה 428) שהוא עמודת `boolean` בדאטאבייס, ולכן Postgres זורק שגיאה:
+### קובץ 1: `supabase/functions/scout-madlan/index.ts`
+- בפונקציית `triggerNextPage`: אם כל ה-retries נכשלו, במקום לעצור - סמן את הדף כ-failed וקרא שוב ל-`triggerNextPage` עם הדף הבא
+- הוסף counter למניעת לולאה אינסופית (מקסימום 3 דילוגים רצופים)
 
-```text
-invalid input syntax for type boolean: "תל אביב יפו"
-```
+### קובץ 2: `supabase/functions/scout-yad2/index.ts`  
+- אותו שיפור בדיוק כמו Madlan (שניהם עובדים בשרשרת סדרתית)
 
-## התיקון
+### קובץ 3: Cron Job Update (SQL)
+- עדכון תזמון ה-cron של `cleanup-stuck-runs` לכל 15 דקות בשעות הפעילות
 
-שורה אחת - להוסיף `!!` כדי להמיר את התוצאה ל-boolean:
-
-```typescript
-const canCheckDuplicates = !!(hasValidAddress 
-    && property.rooms !== undefined 
-    && property.floor !== undefined 
-    && normalizedCity);
-```
-
-או לחלופין:
-
-```typescript
-const canCheckDuplicates = hasValidAddress 
-    && property.rooms !== undefined 
-    && property.floor !== undefined 
-    && !!normalizedCity;
-```
-
-## קובץ לשינוי
-
-| קובץ | שינוי |
-|------|-------|
-| `supabase/functions/_shared/property-helpers.ts` | הוספת `!!` ל-`canCheckDuplicates` (שורה 287) |
-
-## אחרי התיקון
-
-צריך לעשות deploy ל-`scout-yad2` כדי שהשינוי יהיה פעיל, ואז להריץ שוב.
+### קובץ 4: `supabase/functions/_shared/run-helpers.ts`
+- הוספת פונקציית עזר `skipToNextPage` שמסמנת דף כ-failed ומחזירה את הדף הבא לסריקה
