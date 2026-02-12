@@ -1,87 +1,96 @@
 
-# הוספת "נותרו לטיפול" על כרטיסיות הדשבורד
 
-## מה נעשה
+# שינוי לוגיקת כפילויות וזמינות
 
-נוסיף לכל כרטיסיית תהליך (ProcessCard) מטריקה של "נותרו" — כמה פריטים עוד ממתינים לטיפול. זה ייתן תמונה מיידית בלי צורך לפתוח היסטוריה.
+## 1. כפילויות — הוספת מעקב "נבדק/לא נבדק"
 
-## הספירות לכל תהליך
+### הבעיה הנוכחית
+בדיקת הכפילויות רצה על כל הנכסים בכל פעם מחדש — אין סימון של "כבר נבדק".
 
-### 1. השלמת נתונים (Backfill)
-שאילתה חדשה — ספירת נכסים עם `backfill_status IS NULL` או `= 'failed'`:
+### הפתרון
+בדיוק כמו שעשינו ב-backfill — נוסיף עמודת `dedup_checked_at` לטבלת `scouted_properties`:
+- `NULL` = טרם נבדק, צריך לעבור עליו
+- תאריך = נבדק, ה-RPC יטפל רק בנכסים חדשים
+
+### איך זה עובד:
+1. **ריצה ראשונה**: עובר על כל הנכסים שעדיין `dedup_checked_at IS NULL` — בbatch-ים
+2. **אחרי בדיקה**: כל נכס שנבדק מסומן עם `dedup_checked_at = now()`
+3. **ריצות הבאות**: רק נכסים חדשים (NULL) ייבדקו
+4. **נכס שהתעדכן** (כתובת השתנתה, מחיר השתנה): אפשר לאפס `dedup_checked_at = NULL` כדי שייבדק שוב
+
+### מטריקה בדשבורד:
+- "נותרו" = ספירת נכסים עם `dedup_checked_at IS NULL AND is_active = true`
+
+---
+
+## 2. זמינות — לוגיקת recheck חכמה
+
+### הבעיה הנוכחית
+כל הנכסים נבדקים מחדש כל 7 ימים — אותו קצב לכולם.
+
+### הפתרון
+מעבר ללוגיקת recheck דו-שלבית:
+- **בדיקה ראשונה**: כל נכס שמעולם לא נבדק (`availability_checked_at IS NULL`) — עדיפות עליונה
+- **Recheck ראשון**: 8 ימים אחרי הבדיקה הראשונה
+- **Recheck חוזר**: כל 2 ימים אחרי ה-recheck הראשון
+
+### איך ניישם:
+נוסיף עמודת `availability_check_count` (integer, default 0) לספירת כמה פעמים הנכס נבדק:
+- `check_count = 0` ו-`checked_at IS NULL` = מעולם לא נבדק → עדיפות ראשונה
+- `check_count = 1` = נבדק פעם אחת → recheck אחרי 8 ימים
+- `check_count >= 2` = נבדק יותר מפעם → recheck כל 2 ימים
+
+שאילתת השליפה ב-`trigger-availability-check` תשתנה:
+```text
+WHERE is_active = true
+AND (
+  availability_checked_at IS NULL                              -- מעולם לא נבדק
+  OR (check_count = 1 AND checked_at < now() - 8 days)        -- recheck ראשון
+  OR (check_count >= 2 AND checked_at < now() - 2 days)        -- rechecks חוזרים
+)
+ORDER BY availability_checked_at ASC NULLS FIRST
 ```
-scouted_properties WHERE is_active = true AND (backfill_status IS NULL OR backfill_status = 'failed')
-```
 
-### 2. בדיקת זמינות (Availability)
-כבר קיימת ספירת `pending` (נכסים שלא נבדקו מעולם). נוסיף גם ספירת נכסים שעבר הזמן לבדיקה חוזרת (recheck) — לפי `recheck_interval_days` מהגדרות:
-```
-scouted_properties WHERE is_active = true AND (availability_checked_at IS NULL OR availability_checked_at < now() - interval)
-```
+כל בדיקה מוצלחת מעדכנת: `availability_checked_at = now()` וגם `availability_check_count = check_count + 1`.
 
-### 3. כפילויות (Dedup)
-כבר יש `unresolved` — זה המספר הרלוונטי. נשנה את שם המטריקה ל"נותרו" כדי שיהיה אחיד.
+### הגדרות:
+נוסיף 2 הגדרות חדשות ב-`scout_settings` (קטגוריית availability):
+- `first_recheck_interval_days` = 8
+- `recurring_recheck_interval_days` = 2
 
-### 4. התאמות (Matching)
-ספירת לידים eligible שעדיין לא הותאמו (או שהנתונים השתנו מאז). בפועל — ספירת לידים עם `matching_status = 'eligible'`.
+כך שאפשר לשנות מהדשבורד בלי לגעת בקוד.
 
-### 5. סריקות (Scans)
-סריקות עובדות לפי configs ודפים — אין מושג של "נותרו X נכסים". נוסיף במקום זאת את מספר ה-configs הפעילים.
+---
 
 ## פרטים טכניים
 
-### קובץ: `src/components/scout/ChecksDashboard.tsx`
+### מיגרציה (שלב 1)
+- הוספת עמודת `dedup_checked_at` (timestamptz, nullable) ל-`scouted_properties`
+- הוספת עמודת `availability_check_count` (integer, default 0) ל-`scouted_properties`
+- אינדקס על `dedup_checked_at` עם `WHERE is_active = true`
+- סימון נכסים שכבר נבדקו בזמינות: `UPDATE SET availability_check_count = 1 WHERE availability_checked_at IS NOT NULL`
+- הוספת הגדרות חדשות ל-scout_settings
 
-**שינוי 1** — הוספת שאילתת ספירה חדשה לנותרי backfill:
-```typescript
-const { data: backfillRemaining } = useQuery({
-  queryKey: ['backfill-remaining'],
-  queryFn: async () => {
-    const { count } = await supabase
-      .from('scouted_properties')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .or('backfill_status.is.null,backfill_status.eq.failed');
-    return count ?? 0;
-  },
-  refetchInterval: 15000,
-});
-```
+### שינוי Edge Function: `trigger-availability-check/index.ts` (שלב 2)
+- שליפת הגדרות `first_recheck_interval_days` ו-`recurring_recheck_interval_days`
+- שינוי שאילתת השליפה ל-3 תנאים (NULL / count=1+8days / count>=2+2days)
+- לא ניתן לעשות OR מורכב עם supabase-js — נשתמש ב-RPC או view
 
-**שינוי 2** — הרחבת שאילתת availability stats קיימת: הוספת ספירת "eligible for recheck" (נכסים שעבר מספיק זמן מהבדיקה האחרונה):
-```typescript
-const recheckCutoff = new Date();
-recheckCutoff.setDate(recheckCutoff.getDate() - 7); // recheck_interval_days
-const recheckRes = await supabase
-  .from('scouted_properties')
-  .select('id', { count: 'exact', head: true })
-  .eq('is_active', true)
-  .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`);
-```
+### שינוי Edge Function: `check-property-availability/index.ts` (שלב 3)
+- בכל בדיקה מוצלחת (לא retryable): הוספת `availability_check_count` increment
 
-**שינוי 3** — הוספת ספירת לידים eligible:
-```typescript
-const { data: eligibleLeads } = useQuery({
-  queryKey: ['eligible-leads-count'],
-  queryFn: async () => {
-    const { count } = await supabase
-      .from('contact_leads')
-      .select('id', { count: 'exact', head: true })
-      .eq('matching_status', 'eligible');
-    return count ?? 0;
-  },
-  refetchInterval: 30000,
-});
-```
+### שינוי: `ChecksDashboard.tsx` (שלב 4)
+- עדכון מטריקת "נותרו" של כפילויות לספירת `dedup_checked_at IS NULL`
+- עדכון תיאור הלוגיקה של זמינות (8 ימים ראשונים, אח"כ כל 2 ימים)
+- עדכון תיאור הלוגיקה של כפילויות (ריצה ראשונה על הכל, אח"כ רק חדשים)
 
-**שינוי 4** — הוספת מטריקת "נותרו" לכל ProcessCard:
+### Deploy:
+- trigger-availability-check
+- check-property-availability
 
-- **Backfill**: `{ label: 'נותרו', value: backfillRemaining ?? 0 }`
-- **Availability**: `{ label: 'נותרו', value: stats?.pendingRecheck ?? 0 }`
-- **Dedup**: כבר יש "פתוחות" — שם המטריקה מספיק
-- **Matching**: `{ label: 'לידים eligible', value: eligibleLeads ?? 0 }`
-- **Scans**: `{ label: 'configs פעילים', value: activeConfigs ?? 0 }` (ספירת scout_configs עם is_active=true)
-
-### קובץ: `src/components/scout/checks/ProcessCard.tsx`
-
-אין שינוי נדרש — ה-metrics array כבר תומך בהוספת מטריקות נוספות.
+### קבצים שישתנו:
+- מיגרציה חדשה
+- `supabase/functions/trigger-availability-check/index.ts`
+- `supabase/functions/check-property-availability/index.ts`
+- `src/components/scout/ChecksDashboard.tsx`
+- `src/integrations/supabase/types.ts`
