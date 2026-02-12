@@ -204,14 +204,13 @@ Deno.serve(async (req) => {
       .single();
 
     let progressId: string;
-    let lastProcessedId: string | null = null;
 
     if (action === 'continue' && task_id) {
       // Continue existing task
       progressId = task_id;
       const { data: taskData } = await supabase
         .from('backfill_progress')
-        .select('last_processed_id, status')
+        .select('status')
         .eq('id', task_id)
         .single();
       
@@ -224,8 +223,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      
-      lastProcessedId = taskData?.last_processed_id || null;
     } else if (existingTask && action === 'start') {
       // Check if task is stuck (older than 10 minutes)
       const taskAge = Date.now() - new Date(existingTask.updated_at).getTime();
@@ -260,16 +257,14 @@ Deno.serve(async (req) => {
     
     // Create new task (moved outside else block to handle stuck task recovery)
     if (!progressId!) {
-      // Build count query with filters - now also includes is_private = null for broker classification
-      // NOTE: We check for empty features {} in the processing loop, not in the query
-      // because 'features.eq.{}' doesn't work correctly in Supabase .or() syntax
+      // Count properties needing backfill using the status column
       let countQuery = supabase
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
         .neq('source_url', 'https://www.homeless.co.il')
-        .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null');
+        .or('backfill_status.is.null,backfill_status.eq.failed');
 
       // Apply source filter if specified
       if (source_filter) {
@@ -282,29 +277,7 @@ Deno.serve(async (req) => {
         countQuery = countQuery.gte('created_at', thirtyMinAgo);
       }
 
-      const { count: nullFieldsCount } = await countQuery;
-
-      // Also count properties with empty features {}
-      let emptyFeaturesCountQuery = supabase
-        .from('scouted_properties')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_active', true)
-        .not('source_url', 'is', null)
-        .neq('source_url', 'https://www.homeless.co.il')
-        .eq('features', {});
-
-      if (source_filter) {
-        emptyFeaturesCountQuery = emptyFeaturesCountQuery.eq('source', source_filter);
-      }
-      if (only_recent) {
-        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-        emptyFeaturesCountQuery = emptyFeaturesCountQuery.gte('created_at', thirtyMinAgo);
-      }
-
-      const { count: emptyFeaturesCount } = await emptyFeaturesCountQuery;
-
-      // Total is approximate (some may overlap)
-      const totalCount = (nullFieldsCount || 0) + (emptyFeaturesCount || 0);
+      const { count: totalCount } = await countQuery;
 
       // For auto-triggers, use a different task name to avoid conflicts
       const taskName = auto_trigger ? `${TASK_NAME}_auto_${source_filter || 'all'}` : TASK_NAME;
@@ -336,15 +309,14 @@ Deno.serve(async (req) => {
     // Determine effective batch size
     const effectiveBatchSize = batch_size || BATCH_SIZE;
 
-    // Build properties query with same filters - now also includes is_private
-    // NOTE: We also fetch properties with empty features {} by checking in the loop
+    // Single query: fetch properties needing backfill
     let query = supabase
       .from('scouted_properties')
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
+      .or('backfill_status.is.null,backfill_status.eq.failed')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -359,102 +331,14 @@ Deno.serve(async (req) => {
       query = query.gte('created_at', thirtyMinAgo);
     }
 
-    if (lastProcessedId) {
-      query = query.gt('id', lastProcessedId);
-    }
-
-    const { data: propertiesWithNulls, error } = await query;
+    const { data: properties, error } = await query;
 
     if (error) {
       console.error('Error fetching properties:', error);
       throw error;
     }
 
-    // Also fetch properties with empty features {} that might not have other null fields
-    // This is a separate query because 'features.eq.{}' doesn't work in .or()
-    let emptyFeaturesQuery = supabase
-      .from('scouted_properties')
-      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
-      .eq('is_active', true)
-      .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
-      .eq('features', {})  // Empty JSONB object
-      .order('id', { ascending: true })
-      .limit(effectiveBatchSize);
-
-    if (source_filter) {
-      emptyFeaturesQuery = emptyFeaturesQuery.eq('source', source_filter);
-    }
-    if (only_recent) {
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      emptyFeaturesQuery = emptyFeaturesQuery.gte('created_at', thirtyMinAgo);
-    }
-    if (lastProcessedId) {
-      emptyFeaturesQuery = emptyFeaturesQuery.gt('id', lastProcessedId);
-    }
-
-    const { data: propertiesWithEmptyFeatures } = await emptyFeaturesQuery;
-
-    // Third query: Properties needing address enrichment (address without house number)
-    // PostgREST can't do regex, so we fetch candidates and filter in code
-    let addressEnrichQuery = supabase
-      .from('scouted_properties')
-      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
-      .eq('is_active', true)
-      .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
-      .not('address', 'is', null)
-      // Target properties that already have core data (won't be caught by main query)
-      .not('rooms', 'is', null)
-      .not('price', 'is', null)
-      .order('id', { ascending: true })
-      .limit(effectiveBatchSize * 5); // Fetch more since we filter in code
-
-    if (source_filter) {
-      addressEnrichQuery = addressEnrichQuery.eq('source', source_filter);
-    }
-    if (only_recent) {
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      addressEnrichQuery = addressEnrichQuery.gte('created_at', thirtyMinAgo);
-    }
-    if (lastProcessedId) {
-      addressEnrichQuery = addressEnrichQuery.gt('id', lastProcessedId);
-    }
-
-    const { data: addressEnrichData } = await addressEnrichQuery;
-
-    // Filter: only properties whose address lacks a house number
-    const propertiesNeedingAddress = (addressEnrichData || [])
-      .filter(p => !hasHouseNumber(p.address))
-      .slice(0, effectiveBatchSize);
-
-    // Merge all three lists, removing duplicates by ID
-    const seenIds = new Set<string>();
-    const properties: typeof propertiesWithNulls = [];
-    
-    for (const prop of propertiesWithNulls || []) {
-      if (!seenIds.has(prop.id)) {
-        seenIds.add(prop.id);
-        properties.push(prop);
-      }
-    }
-    for (const prop of propertiesWithEmptyFeatures || []) {
-      if (!seenIds.has(prop.id)) {
-        seenIds.add(prop.id);
-        properties.push(prop);
-      }
-    }
-    for (const prop of propertiesNeedingAddress) {
-      if (!seenIds.has(prop.id)) {
-        seenIds.add(prop.id);
-        properties.push(prop);
-      }
-    }
-
-    // Sort by ID to maintain consistent ordering
-    properties.sort((a, b) => a.id.localeCompare(b.id));
-
-    console.log(`📋 Batch: Found ${properties.length} properties to process (${propertiesWithNulls?.length || 0} with nulls, ${propertiesWithEmptyFeatures?.length || 0} with empty features, ${propertiesNeedingAddress.length} needing address)`);
+    console.log(`📋 Batch: Found ${properties?.length || 0} properties to process`);
 
     // If no more properties, mark as completed
     if (properties.length === 0) {
@@ -480,7 +364,6 @@ Deno.serve(async (req) => {
 
     let successCount = 0;
     let failCount = 0;
-    let lastId = lastProcessedId;
 
     // Helper: save a recent_item to summary_data.recent_items (keeps last 10)
     async function saveRecentItem(item: {
@@ -558,7 +441,8 @@ Deno.serve(async (req) => {
         if (!prop.source_url || !prop.source_url.includes('http')) {
           failCount++;
           batchStats.total_processed++;
-          lastId = prop.id;
+          // Mark as failed so we don't retry invalid URLs
+          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
           continue;
         }
 
@@ -585,7 +469,7 @@ Deno.serve(async (req) => {
           failCount++;
           batchStats.scrape_failed++;
           batchStats.total_processed++;
-          lastId = prop.id;
+          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -605,7 +489,7 @@ Deno.serve(async (req) => {
           failCount++;
           batchStats.no_content++;
           batchStats.total_processed++;
-          lastId = prop.id;
+          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -635,6 +519,7 @@ Deno.serve(async (req) => {
             .update({ 
               is_active: false,
               status: 'inactive',
+              backfill_status: 'not_needed',
               availability_checked_at: new Date().toISOString(),
               availability_check_reason: `blacklisted_location_${blacklistCheck.real_city}`
             })
@@ -643,7 +528,6 @@ Deno.serve(async (req) => {
           successCount++;
           batchStats.blacklisted++;
           batchStats.total_processed++;
-          lastId = prop.id;
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -667,6 +551,7 @@ Deno.serve(async (req) => {
               .update({ 
                 is_active: false,
                 status: 'inactive',
+                backfill_status: 'not_needed',
                 availability_checked_at: new Date().toISOString(),
                 availability_check_reason: `non_ta_city_${finalCity}`
               })
@@ -675,7 +560,6 @@ Deno.serve(async (req) => {
             successCount++;
             batchStats.non_ta_deactivated++;
             batchStats.total_processed++;
-            lastId = prop.id;
             await saveRecentItem({
               address: prop.address || prop.title,
               neighborhood: prop.neighborhood,
@@ -774,7 +658,8 @@ Deno.serve(async (req) => {
           console.log(`⏭️ No new data to update`);
           batchStats.no_new_data++;
           batchStats.total_processed++;
-          lastId = prop.id;
+          // Mark as not_needed — nothing to update, all data is present or source has nothing
+          await supabase.from('scouted_properties').update({ backfill_status: 'not_needed' }).eq('id', prop.id);
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -788,6 +673,8 @@ Deno.serve(async (req) => {
         }
 
         if (!dry_run) {
+          // Add backfill_status to the update
+          updates.backfill_status = 'completed';
           const { error: updateError } = await supabase
             .from('scouted_properties')
             .update(updates)
@@ -798,7 +685,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.update_db_error++;
             batchStats.total_processed++;
-            lastId = prop.id;
+            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
             await saveRecentItem({
               address: prop.address || prop.title,
               neighborhood: prop.neighborhood,
@@ -824,13 +711,11 @@ Deno.serve(async (req) => {
         console.log(`✅ Updated with:`, JSON.stringify(updates));
         successCount++;
         batchStats.total_processed++;
-        lastId = prop.id;
 
-        // Update last_processed_id incrementally
+        // Update progress incrementally
         await supabase
           .from('backfill_progress')
           .update({
-            last_processed_id: lastId,
             updated_at: new Date().toISOString()
           })
           .eq('id', progressId);
@@ -855,7 +740,7 @@ Deno.serve(async (req) => {
         console.error(`Error processing ${prop.id}:`, propError);
         failCount++;
         batchStats.total_processed++;
-        lastId = prop.id;
+        await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
       }
     }
 
@@ -906,7 +791,6 @@ Deno.serve(async (req) => {
         processed_items: (currentProgress?.processed_items || 0) + properties.length,
         successful_items: (currentProgress?.successful_items || 0) + successCount,
         failed_items: (currentProgress?.failed_items || 0) + failCount,
-        last_processed_id: lastId,
         summary_data: mergedSummary,
         updated_at: new Date().toISOString()
       })
@@ -930,47 +814,20 @@ Deno.serve(async (req) => {
   ⏭️ no new data: ${batchStats.no_new_data} | scrape_failed: ${batchStats.scrape_failed}
   📈 Batch total: ${successCount} updated, ${failCount} failed`);
 
-    // Check if there are more items (null fields, empty features, address enrichment)
-    const { count: remainingNullCount } = await supabase
+    // Check if there are more items needing backfill — single query
+    let remainingQuery = supabase
       .from('scouted_properties')
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('rooms.is.null,price.is.null,size.is.null,features.is.null,is_private.is.null')
-      .gt('id', lastId || '');
-
-    const { count: remainingEmptyFeaturesCount } = await supabase
-      .from('scouted_properties')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
-      .eq('features', {})
-      .gt('id', lastId || '');
-
-    // Check for remaining address enrichment candidates (sample-based, can't regex in PostgREST)
-    let remainingAddrQuery = supabase
-      .from('scouted_properties')
-      .select('id, address')
-      .eq('is_active', true)
-      .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
-      .not('address', 'is', null)
-      .not('rooms', 'is', null)
-      .not('price', 'is', null)
-      .gt('id', lastId || '')
-      .limit(30);
+      .or('backfill_status.is.null,backfill_status.eq.failed');
     if (source_filter) {
-      remainingAddrQuery = remainingAddrQuery.eq('source', source_filter);
+      remainingQuery = remainingQuery.eq('source', source_filter);
     }
-    const { data: remainingAddrSample } = await remainingAddrQuery;
-    const hasRemainingAddressWork = (remainingAddrSample || []).some(p => !hasHouseNumber(p.address));
+    const { count: remainingCount } = await remainingQuery;
 
-    // Approximate remaining (may have some overlap, but that's fine for progress display)
-    const remainingCount = Math.max(remainingNullCount || 0, remainingEmptyFeaturesCount || 0, hasRemainingAddressWork ? 1 : 0);
-
-    const hasMore = remainingCount > 0;
+    const hasMore = (remainingCount || 0) > 0;
 
     if (hasMore) {
       // Trigger next batch via self-invocation - MUST await to ensure request is dispatched
