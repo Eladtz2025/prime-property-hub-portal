@@ -231,7 +231,7 @@ serve(async (req) => {
 
     // Extract properties with NON-AI parser
     const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
-    const parseResult = parseMadlanMarkdown(markdown, propertyTypeForParsing);
+    const parseResult = parseMadlanMarkdown(markdown, propertyTypeForParsing, config.owner_type_filter);
     const extractedProperties = parseResult.properties;
 
     console.log(`🔵 Madlan page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties | private=${parseResult.stats.private_count} broker=${parseResult.stats.broker_count} unknown=${parseResult.stats.unknown_count ?? 0}`);

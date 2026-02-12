@@ -49,7 +49,8 @@ import {
 
 export function parseMadlanMarkdown(
   markdown: string,
-  propertyType: 'rent' | 'sale'
+  propertyType: 'rent' | 'sale',
+  ownerTypeFilter?: 'private' | 'broker' | null
 ): ParserResult {
   const properties: ParsedProperty[] = [];
   const errors: string[] = [];
@@ -69,6 +70,9 @@ export function parseMadlanMarkdown(
     try {
       const parsed = parsePropertyBlock(blocks[i], propertyType);
       if (parsed) {
+        // Filter by owner type at the earliest stage
+        if (ownerTypeFilter === 'private' && parsed.is_private !== true) continue;
+        if (ownerTypeFilter === 'broker' && parsed.is_private !== false) continue;
         properties.push(parsed);
       }
     } catch (error) {
@@ -455,34 +459,23 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   if (!price && !rooms && !address && !size) return null;
   
   // ============================================
-  // BROKER DETECTION - Madlan (THREE-STATE)
-  // Default = null (unknown)
-  // false (broker) ONLY with strong broker indicators
-  // true (private) ONLY with strong private indicators
+  // BROKER DETECTION - Madlan (SERP labels)
+  // Rule: "תיווך" or "בלעדיות" label = Broker
+  //        No label = Private
+  // This matches the visual layout on madlan.co.il
   // ============================================
   
   let isPrivate: boolean | null = null;
   
-  // Strong PRIVATE indicators
-  const isExplicitlyPrivate = /ללא\s*(ה)?תיווך|לא\s*למתווכים|ללא\s*מתווכים/i.test(block);
+  // Check for broker labels (appear as standalone text after property details)
+  const hasTivuchLabel = /^תיווך$/m.test(block) || /\nתיווך\n/.test(block) || /\nתיווך$/.test(block);
+  const hasExclusivity = /^בבלעדיות$/m.test(block) || /\nבבלעדיות\n/.test(block) || /\nבבלעדיות$/.test(block);
+  const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
   
-  if (isExplicitlyPrivate) {
-    isPrivate = true;
+  if (hasTivuchLabel || hasExclusivity || hasAgentOfficeLink) {
+    isPrivate = false; // Broker
   } else {
-    // Strong BROKER indicators (with context to avoid false positives)
-    const hasTivuchLabel = /תיווך/.test(block);
-    const hasLicenseWithContext = /(?:רישיון|ר\.?ת\.?|תיווך)\s*:?\s*\d{7,8}/.test(block);
-    const hasExclusivity = /בבלעדיות/.test(block);
-    const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
-    
-    const BROKER_BRANDS = ['רימקס', 'אנגלו סכסון', 're/max', 'remax', 'century 21', 'קולדוול'];
-    const blockLower = block.toLowerCase();
-    const hasBrokerBrand = BROKER_BRANDS.some(brand => blockLower.includes(brand.toLowerCase()));
-    
-    if (hasTivuchLabel || hasLicenseWithContext || hasExclusivity || hasAgentOfficeLink || hasBrokerBrand) {
-      isPrivate = false; // Confirmed broker
-    }
-    // else: stays null (unknown)
+    isPrivate = true; // No broker label = Private
   }
   
   // Extract features from the entire block
