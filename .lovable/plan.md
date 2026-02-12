@@ -1,90 +1,85 @@
 
+# תיקון מערכת הכפילויות — Edge Function חדשה, סטטיסטיקות נכונות, ותמיכה בנכסים לא-אקטיביים
 
-# תיקון נתונים בדף סקאוט נדל"ן
+## מה לא עובד עכשיו
 
-## הבעיה המרכזית
+1. **אין Edge Function לכפילויות** — כפתור "הרצה" קורא ל-`detect-duplicates` שלא קיים, אז לא קורה כלום
+2. **הסטטיסטיקות קוראות מטבלה ריקה** — `duplicate_alerts` מכילה 0 שורות. הנתונים האמיתיים נמצאים ב-`scouted_properties` (385 קבוצות, 587 נכסים בקבוצות)
+3. **ה-RPC הקיים (`detect_duplicates_batch`) לא משתמש ב-`dedup_checked_at`** — הוא מסנן לפי `duplicate_group_id IS NULL`, אז נכס שנבדק ולא נמצאה לו כפילות ייבדק שוב ושוב
 
-יש **התנגשות ב-queryKey** בין `AdminPropertyScout.tsx` ל-`ChecksDashboard.tsx` -- שניהם משתמשים ב-`queryKey: ['availability-stats']` אבל מחזירים **מבנה נתונים שונה**:
+## מה ייבנה
 
-- **AdminPropertyScout** מחזיר: `{ total, pending, checkedToday, totalActive }`
-- **ChecksDashboard** מחזיר: `{ pending, checkedToday, timeouts, totalActive, pendingRecheck }`
+### 1. Edge Function חדשה: `detect-duplicates`
 
-כש-React Query שומר את התוצאה של אחד, הוא דורס את השני. לכן "סה״כ נכסים" מציג "—" (כי ChecksDashboard דורס את ה-cache בלי שדה `total`).
+תעטוף את ה-RPC `detect_duplicates_batch` עם:
+- Self-triggering — רצה batch אחרי batch עד שנגמר, בדיוק כמו backfill
+- ללא הגבלת batch (ה-RPC עצמו מגביל ל-500 per call, אבל ה-Edge Function ממשיכה לקרוא עד שאין עוד)
+- דיווח progress לטבלת `backfill_progress` (task_name: `dedup-scan`)
+- ריצה ראשונה על **כל** הנכסים (אקטיביים + לא-אקטיביים) — כי `dedup_checked_at IS NULL` לכולם
 
-## כל הבעיות שזוהו
+### 2. עדכון RPC: `detect_duplicates_batch`
 
-| בעיה | מצב נוכחי | מצב נכון |
-|------|----------|----------|
-| סה״כ נכסים | מציג "—" | צריך להציג 6,901 |
-| ממתינים לבדיקה (כרטיס עליון) | 708 (רק לא נבדקו מעולם) | צריך להתאים ל"נותרו" בכרטיסית הזמינות (2,234) |
-| שאילתות כפולות | שני קומפוננטים עם אותו queryKey | לאחד לשאילתה אחת |
+- שינוי הפילטר מ-`duplicate_group_id IS NULL` ל-`dedup_checked_at IS NULL`
+- הסרת הפילטר `is_active = true` כדי לכלול גם נכסים לא-אקטיביים
+- אחרי בדיקת כל נכס — סימון `dedup_checked_at = now()` (גם אם לא נמצאה כפילות)
+- כשנמצאת כפילות בין אקטיבי ללא-אקטיבי — מקשר אותם לאותה קבוצה
 
-## הפתרון
+### 3. תיקון סטטיסטיקות בדשבורד
 
-### שלב 1: איחוד השאילתות
+הסטטיסטיקות יקראו מ-`scouted_properties` במקום מ-`duplicate_alerts`:
+- **נותרו** — `dedup_checked_at IS NULL` (כרגע 6,901)
+- **קבוצות** — `COUNT(DISTINCT duplicate_group_id)` (כרגע 385)
+- **Losers** — `is_primary_listing = false` (כרגע 204)
+- **נבדקו היום** — `dedup_checked_at >= today`
 
-נעביר את **כל** שאילתות הסטטיסטיקה הגלובליות לשאילתה אחת ב-`AdminPropertyScout.tsx` עם queryKey ייחודי (`['global-scout-stats']`), שתחזיר את כל הנתונים שצריך גם לכרטיסים העליונים וגם ל-ChecksDashboard.
+### 4. איפוס בעדכון נכס
 
-### שלב 2: תיקון AdminPropertyScout.tsx
-
-- שינוי ה-queryKey ל-`['global-scout-stats']`
-- הוספת שדה `total` (סה"כ נכסים) לשאילתה
-- שינוי "ממתינים לבדיקה" כך שיציג את הספירה הנכונה (כולל recheck) במקום רק "לא נבדקו מעולם"
-- העברת נתוני stats כ-props ל-ChecksDashboard כדי למנוע שאילתות כפולות
-
-### שלב 3: תיקון ChecksDashboard.tsx
-
-- הסרת שאילתת `availability-stats` הכפולה
-- קבלת הנתונים כ-props מהדף הראשי, או שימוש ב-queryKey שונה
-- וידוא שהנתונים בכרטיסיות התהליך תואמים לכרטיסים העליונים
+כשנכס מתעדכן (כתובת, מחיר, חדרים) — אוטומטית `dedup_checked_at = NULL` כדי שייבדק שוב. ייעשה ב-`saveProperty` (ב-_shared/property-helpers.ts).
 
 ## פרטים טכניים
 
-### AdminPropertyScout.tsx
+### מיגרציה
 
-החלפת השאילתה הקיימת בשאילתה מאוחדת:
+עדכון `detect_duplicates_batch` RPC:
+- החלפת `WHERE sp.duplicate_group_id IS NULL AND sp.is_active = true` ב-`WHERE sp.dedup_checked_at IS NULL`
+- הוספת `UPDATE SET dedup_checked_at = now()` לכל נכס שנבדק (גם אם לא נמצאה כפילות)
+- שמירת property_type filter
 
-```typescript
-const { data: stats } = useQuery({
-  queryKey: ['global-scout-stats'],
-  queryFn: async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const recheckCutoff = new Date();
-    recheckCutoff.setDate(recheckCutoff.getDate() - 7);
-    const [totalRes, totalActiveRes, pendingRecheckRes, checkedTodayRes] = await Promise.all([
-      supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
-      supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
-        .eq('is_active', true)
-        .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`),
-      supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
-        .gte('availability_checked_at', today.toISOString()),
-    ]);
-    return {
-      total: totalRes.count ?? 0,
-      totalActive: totalActiveRes.count ?? 0,
-      pendingRecheck: pendingRecheckRes.count ?? 0,
-      checkedToday: checkedTodayRes.count ?? 0,
-    };
-  },
-  refetchInterval: 15000,
-});
+### Edge Function: `supabase/functions/detect-duplicates/index.ts`
+
+```text
+1. יצירת/עדכון רשומה ב-backfill_progress (task_name: 'dedup-scan')
+2. קריאה ל-detect_duplicates_batch(500) ב-loop
+3. אחרי כל batch — עדכון progress (processed, duplicates_found)
+4. כשה-batch מחזיר 0 processed — סיום
+5. אם יש עוד — self-trigger (קריאה עצמית)
 ```
-
-הכרטיסים העליונים ישתנו:
-- "ממתינים לבדיקה" -> ישתמש ב-`stats.pendingRecheck` (2,234 במקום 708)
 
 ### ChecksDashboard.tsx
 
-החלפת שאילתת `availability-stats` ל-queryKey `['dashboard-availability-stats']` כדי למנוע התנגשות, או שימוש ב-`['global-scout-stats']` ושליפה משם.
-
-השאילתה הפנימית תישאר עם הפרטים הנוספים (timeouts וכו') אבל עם queryKey שונה:
-
-```typescript
-queryKey: ['dashboard-availability-detail']
+החלפת שאילתת `dedup-stats-summary` מ-`duplicate_alerts` ל:
+```text
+- unchecked: COUNT WHERE dedup_checked_at IS NULL
+- groups: COUNT(DISTINCT duplicate_group_id) WHERE duplicate_group_id IS NOT NULL
+- losers: COUNT WHERE is_primary_listing = false AND duplicate_group_id IS NOT NULL
+- checkedToday: COUNT WHERE dedup_checked_at >= today
 ```
 
+מטריקות הכרטיס:
+- "נותרו" = unchecked count
+- "קבוצות" = duplicate groups
+- "משניים" = losers count
+
+### property-helpers.ts
+
+ב-`saveProperty`, באזור ה-upsert — הוספת `dedup_checked_at: null` כדי שנכס חדש/מעודכן ייכנס לתור הבדיקה.
+
 ### קבצים שישתנו:
-- `src/pages/AdminPropertyScout.tsx`
+- מיגרציה חדשה (עדכון RPC)
+- `supabase/functions/detect-duplicates/index.ts` (חדש)
 - `src/components/scout/ChecksDashboard.tsx`
+- `supabase/functions/_shared/property-helpers.ts`
+- `src/integrations/supabase/types.ts`
+
+### Deploy:
+- detect-duplicates
