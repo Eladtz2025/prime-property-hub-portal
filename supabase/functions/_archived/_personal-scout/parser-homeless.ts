@@ -5,7 +5,7 @@
  * Uses text-based extraction for robustness against variable HTML layouts
  */
 
-import { load as cheerioLoad } from "npm:cheerio@1.0.0";
+import { load as cheerioLoad } from "https://esm.sh/cheerio@1.0.0";
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   extractPrice,
