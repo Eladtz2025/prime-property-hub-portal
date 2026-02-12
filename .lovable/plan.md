@@ -1,122 +1,110 @@
 
-# הוספת כל התהליכים למוניטור החי
 
-## הבעיה
+# תיקון מערכת הכפילויות — ריצה מחדש, סימון נכסים חסרי נתונים, ותצוגה נכונה
 
-המוניטור מציג רק 3 תהליכים:
-- סריקות (מ-`scout_runs`)
-- זמינות (מ-`availability_check_runs`)
-- השלמת נתונים (מ-`backfill_progress` WHERE task_name = `data_completion` **בלבד**)
+## מה לא עובד ולמה
 
-תהליכים שלא מופיעים כלל:
-- כפילויות (`dedup-scan`)
-- סיווג מתווך (`reclassify_broker`)
-- השלמות אוטומטיות (`data_completion_auto_yad2`, `data_completion_auto_madlan`, `data_completion_auto_homeless`)
+### בעיה 1: ה-RPC מחזיר 0 כי אין מה לבדוק
+מתוך 6,901 נכסים, **6,513 כבר נבדקו** (יש להם `dedup_checked_at`). מתוך 388 שנשארו:
+- 373 חסרי כתובת
+- 16 חסרי חדרים
+- = **0 נכסים** שעומדים בתנאי ה-RPC
+
+אז כש-Edge Function קוראת ל-`detect_duplicates_batch` — מקבלת 0, מסיימת מיד, ולא מופיע כלום במוניטור.
+
+### בעיה 2: אין מנגנון "הרצה מחדש"
+כשהמשתמש לוחץ "הרצה" הוא מצפה שהסריקה תרוץ מההתחלה על כל הנכסים. אבל ה-Edge Function רק ממשיכה מאיפה שנעצרה.
+
+### בעיה 3: נכסים חסרי נתונים נתקעים לנצח
+388 נכסים בלי כתובת/חדרים לעולם לא ייבדקו ולעולם לא יסומנו — נשארים ב"נותרו" לנצח.
+
+### בעיה 4: המטריקות לא ברורות
+המשתמש מצפה לראות "נכסים לבדיקה: 6,901" כשמתחילים מחדש, לא "קבוצות: 720, משניים: 463".
 
 ## הפתרון
 
-### שלב 1: LiveMonitor — שאילתה גנרית לכל backfill_progress
+### שלב 1: הוספת "הרצה מחדש" — איפוס כל ה-dedup_checked_at
 
-במקום לשאול רק על `task_name = 'data_completion'`, נשאל על **כל** המשימות שרצות:
+כשהמשתמש לוחץ "הרצה" ידנית, ה-Edge Function תאפס קודם את כל `dedup_checked_at` ל-NULL כדי לסרוק מההתחלה:
 
-```text
-FROM backfill_progress
-WHERE status = 'running'
-ORDER BY started_at DESC
-```
+- אם הבקשה מגיעה עם `{ reset: true }` (ברירת מחדל בהפעלה ידנית) — קריאה ל-RPC `reset_dedup_checked` שמעדכן את כל הנכסים
+- אם הבקשה מגיעה עם `{ continuation: true }` (self-trigger) — ממשיכה מאיפה שנעצרה
 
-כל משימה רצה תופיע כשורה נפרדת בסרגל התהליכים הפעילים (Active Processes) עם שם תצוגה בעברית, אייקון מתאים, ו-progress bar.
+### שלב 2: סימון נכסים חסרי נתונים כ"נבדקו"
 
-### שלב 2: מיפוי שמות משימות לתצוגה
+עדכון ה-RPC `detect_duplicates_batch`:
+- **לפני** הלולאה הראשית, סימון כל הנכסים שחסרי נתונים (בלי כתובת/חדרים/עיר/סוג) כ-`dedup_checked_at = NOW()` כדי שלא ייתקעו
+- החזרת מספר ה-"skipped" בנוסף ל-processed/duplicates/groups
 
-| task_name | תווית | אייקון | סוג בפיד |
-|-----------|--------|--------|----------|
-| data_completion | השלמת נתונים | Database | backfill |
-| data_completion_auto_* | השלמה אוטו [source] | Database | backfill |
-| dedup-scan | סריקת כפילויות | Copy | dedup |
-| reclassify_broker | סיווג מתווך | Users | backfill |
-| backfill_broker_classification | סיווג מתווך (ישן) | Users | backfill |
+### שלב 3: תיקון המטריקות בכרטיס הכפילויות
 
-### שלב 3: עדכון Edge Function `detect-duplicates`
+| מטריקה | לפני | אחרי |
+|---------|------|-------|
+| מטריקה 1 | "נותרו" (388) | "לבדיקה" — כמה צריך לבדוק (אחרי reset = 6,901) |
+| מטריקה 2 | "קבוצות" (720) | "קבוצות כפילויות" (720) |
+| מטריקה 3 | "משניים" (463) | "נבדקו היום" |
+| סטטוס | "720 קבוצות, 463 משניים" | "720 קבוצות | 463 משניים | 388 לבדיקה" |
 
-כרגע ה-Edge Function כותב רק סטטיסטיקות מצטברות ל-`summary_data`:
-```json
-{ "duplicates_found": 15, "groups_created": 8, "batches": 3 }
-```
+### שלב 4: הפעלה מהדשבורד עם reset
 
-נוסיף `recent_batches` — רשימה של 10 ה-batches האחרונים:
-```json
-{
-  "duplicates_found": 15,
-  "groups_created": 8,
-  "batches": 3,
-  "recent_batches": [
-    {
-      "batch": 3,
-      "processed": 500,
-      "duplicates": 5,
-      "groups": 2,
-      "timestamp": "2026-02-12T18:30:00Z"
-    }
-  ]
-}
-```
-
-### שלב 4: LiveMonitor — הצגת פיד כפילויות
-
-כל batch של כפילויות יוצג כשורה בפיד:
-- **Primary**: `Batch 3 — כפילויות`
-- **Details**: `500 נבדקו | 5 כפילויות | 2 קבוצות חדשות`
-- **Status**: ok (אם נמצאו כפילויות), warning (אם 0)
-
-צבע ואייקון: סגול (Copy icon) — `bg-purple-950/30 border-r-purple-500/40`
+כשלוחצים "הרצה" בכרטיס הכפילויות — שולחים `{ reset: true }` ל-Edge Function.
 
 ## פרטים טכניים
 
-### LiveMonitor.tsx
+### מיגרציה
 
-1. שינוי שאילתת backfill מ:
-```typescript
-.eq('task_name', 'data_completion')
-```
-ל:
-```typescript
-.eq('status', 'running')
-// ללא סינון task_name — מחזיר את כל הרצים
-```
-
-2. הוספת typeConfig:
-```typescript
-dedup: { icon: Copy, label: 'כפילויות', bgClass: 'bg-purple-950/30 border-r-2 border-r-purple-500/40' }
+1. RPC חדש `reset_dedup_checked`:
+```text
+CREATE OR REPLACE FUNCTION reset_dedup_checked()
+RETURNS void AS $$
+BEGIN
+  UPDATE scouted_properties SET dedup_checked_at = NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
-3. הוספת interface `DedupBatchItem` ולוגיקת בניית feed items מ-`recent_batches`
+2. עדכון `detect_duplicates_batch` — הוספת שלב ראשוני לסימון נכסים חסרי נתונים:
+```text
+-- Mark properties missing required fields as checked (skip)
+UPDATE scouted_properties
+SET dedup_checked_at = NOW()
+WHERE dedup_checked_at IS NULL
+  AND (address IS NULL OR address = '' OR rooms IS NULL OR city IS NULL OR property_type IS NULL);
+GET DIAGNOSTICS v_skipped = ROW_COUNT;
+```
 
-4. הוספת `taskNameToLabel` map לשמות תצוגה בעברית בסרגל Active Processes
-
-5. לולאה על כל הרצים (לא רק אחד) — כל אחד מקבל שורה בסרגל + feed items
+ושינוי ה-RETURN כך שיכלול גם `v_skipped`.
 
 ### detect-duplicates/index.ts
 
-עדכון `summary_data` בכל batch כדי לכלול `recent_batches` (שומר 10 אחרונים):
+- קריאת `body.reset` מהבקשה
+- אם `reset = true` — קריאה ל-`supabase.rpc('reset_dedup_checked')` לפני תחילת הלולאה
+- אם `continuation = true` — ממשיכה בלי reset
+- ב-self-trigger: שליחת `{ continuation: true }` (לא reset)
+
+### ChecksDashboard.tsx
+
+שינוי ה-`triggerDedup` כדי לשלוח `{ reset: true }`:
 ```typescript
-const recentBatches = existingSummary?.recent_batches || [];
-recentBatches.push({
-  batch: batchCount,
-  processed,
-  duplicates,
-  groups,
-  timestamp: new Date().toISOString(),
+await supabase.functions.invoke('detect-duplicates', {
+  body: { reset: true }
 });
-// Keep only last 10
-if (recentBatches.length > 10) recentBatches.splice(0, recentBatches.length - 10);
 ```
 
-צריך לקרוא את ה-summary_data הקיים לפני כל עדכון כדי לא לדרוס.
+שינוי המטריקות:
+```typescript
+metrics={[
+  { label: 'לבדיקה', value: dedupStats?.unchecked ?? 0 },
+  { label: 'קבוצות', value: dedupStats?.groups ?? 0 },
+  { label: 'נבדקו היום', value: dedupStats?.checkedToday ?? 0 },
+]}
+```
 
 ### קבצים שישתנו:
-- `src/components/scout/checks/LiveMonitor.tsx`
+- מיגרציה חדשה (RPC `reset_dedup_checked` + עדכון `detect_duplicates_batch`)
 - `supabase/functions/detect-duplicates/index.ts`
+- `src/components/scout/ChecksDashboard.tsx`
 
 ### Deploy:
 - detect-duplicates
+
