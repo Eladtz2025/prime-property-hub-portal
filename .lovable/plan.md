@@ -1,41 +1,49 @@
 
-# איחוד לדשבורד בדיקות מאוחד (2 טאבים בלבד)
 
-## מבנה חדש
+# עיצוב מחדש של דשבורד הבדיקות
 
-המבנה הנוכחי של 4 טאבים:
-**דירות שנמצאו | הגדרות | היסטוריית ריצות | בדיקות זמינות**
+## מבנה חדש - מלמעלה למטה
 
-יהפוך ל-**2 טאבים בלבד**:
-- **דירות שנמצאו** (נשאר כמו שהוא)
-- **דשבורד בדיקות** (מאחד את: בדיקות זמינות + היסטוריית ריצות + הגדרות)
+### 1. שורת סטטיסטיקה (נשארת כמו שהיא)
+7 כרטיסי סטטיסטיקה קומפקטיים בשורה עליונה - ללא שינוי.
 
----
+### 2. "מסך חי" (Live Monitor) - חדש
+אזור כהה (רקע כהה/שחור כמו טרמינל) שתופס את מרכז המסך ומציג בזמן אמת את כל מה שקורה במערכת:
 
-## מה יכלול "דשבורד בדיקות"
+- **כותרת**: "מוניטור חי" עם נורית ירוקה מהבהבת כשיש פעילות
+- **מצב ריצה**: כשיש ריצה פעילה (סריקה/זמינות/backfill/dedup/matching) - מוצגת שורה עליונה עם שם התהליך, progress bar, וזמן שעבר
+- **פיד מפורט**: כל פעולה מוצגת כשורה עם:
+  - Timestamp (שעה:דקה:שניה)
+  - סוג הפעולה (אייקון + צבע) - סריקה/זמינות/backfill/dedup/matching
+  - פרטי הנכס: כתובת, מחיר, חדרים, מקור
+  - תוצאה: מה נמצא/מה השתנה (למשל "הושלמו: קומה 3, מרפסת, ממ"ד" עבור backfill)
+  - סטטוס: V ירוק / X אדום
+- **Polling מהיר**: refetchInterval של 2 שניות (במקום 3) + auto-scroll חלק
+- **כשאין ריצה**: הודעה "אין פעילות כרגע" עם זמן הריצה הבאה המתוכננת
+- **גובה**: max-height קבוע (~300px) עם scroll פנימי
 
-עמוד אחד עשיר עם הסקציות הבאות מלמעלה למטה:
+### 3. כרטיסיות בדיקות (Process Cards) - חדש לגמרי
+במקום ה-sub-tabs הנוכחיים, 5 כרטיסיות בגריד (2-3 בשורה):
 
-### 1. כרטיסי סטטיסטיקה (שורה עליונה)
-הכרטיסים הקיימים מבדיקות זמינות (ממתינים, נבדקו היום, Timeouts, אקטיביים, ריצה אחרונה) + כרטיסים חדשים עבור כפילויות, התאמות, ו-Backfill.
+כל כרטיסיה מציגה:
+- **כותרת** + אייקון צבעוני (סריקות, זמינות, כפילויות, התאמות, Backfill)
+- **סטטוס**: נורית ירוקה/אדומה/כתומה + "רץ כעת" / "הושלם לפני X דקות" / "מתוכנן ב-..."
+- **מספרים מרכזיים**: 2-3 מדדים קצרים (למשל "172 נבדקו היום | 5 Timeouts" לזמינות)
+- **ריצה אחרונה**: תאריך, משך, תוצאה
+- **כפתורים בתחתית**:
+  - "הפעל" (Play) - להפעלה ידנית
+  - "היסטוריה" - פותח Dialog עם טבלת היסטוריה מלאה (מה שהיה ב-sub-tabs)
+  - "הגדרות" - פותח Dialog עם ההגדרות הרלוונטיות
 
-### 2. ריצה חיה (Live Feed)
-כשיש ריצה פעילה - פיד חי עם פרטי הנכס (מחיר, חדרים, מקור, כתובת, תוצאה). משודרג מהמצב הקיים.
+כרטיסיות ספציפיות:
+- **סריקות**: מציג מקורות פעילים, ריצה אחרונה, כפתור "היסטוריה" פותח את ScoutRunHistory בדיאלוג, כפתור "הגדרות" פותח את UnifiedScoutSettings בדיאלוג
+- **זמינות**: ממתינים/נבדקו/timeouts, כפתור "היסטוריה" פותח AvailabilityHistorySection בדיאלוג, כפתור "הגדרות" פותח הגדרות זמינות בדיאלוג
+- **כפילויות**: סה"כ/לא טופלו/היום, כפתור "היסטוריה" פותח DeduplicationStatus בדיאלוג
+- **התאמות**: לידים שנבדקו/התאמות, כפתור "היסטוריה" פותח MatchingStatus בדיאלוג
+- **Backfill**: עובדו/הצלחות/כשלונות, כפתור "היסטוריה" פותח BackfillStatus בדיאלוג
 
-### 3. פעולות מהירות (Quick Actions)
-הפעל בדיקת זמינות, אפס Timeouts, בדוק URL, הפעל Dedup, הפעל Matching.
-
-### 4. טאבים פנימיים (Sub-Tabs)
-- **היסטוריית סריקות** - הקומפוננטה הקיימת של `ScoutRunHistory` (מקובצת לפי יום/שעה)
-- **בדיקות זמינות** - היסטוריית ריצות בדיקת זמינות + תוצאות אחרונות (מהדשבורד הקיים)
-- **כפילויות** - סטטוס ריצת dedup אחרונה, כמה כפילויות נמצאו
-- **התאמות** - סטטוס matching, כמה התאמות חדשות
-- **Backfill** - סטטוס backfill, כמה נכסים עודכנו
-
-כל סוג בדיקה מציג: ריצה אחרונה, היסטוריית 10 ריצות, כפתור "הפעל עכשיו".
-
-### 5. הגדרות (Collapsible בתחתית)
-`UnifiedScoutSettings` + הגדרות Availability כ-Collapsible sections.
+### 4. פעולות מהירות
+נשאר כ-Collapsible בתחתית (כמו היום) - הפעל ריצה, אפס Timeouts, בדוק URL
 
 ---
 
@@ -43,31 +51,22 @@
 
 ### קבצים שישתנו:
 
-1. **`src/pages/AdminPropertyScout.tsx`**
-   - הסרת טאבים: settings, history, availability
-   - 2 טאבים בלבד: properties + dashboard
-   - אייקון Activity לטאב "דשבורד בדיקות"
+1. **`src/components/scout/ChecksDashboard.tsx`** - שכתוב מלא
+   - הסרת AvailabilityLiveFeed ו-ChecksSubTabs ו-Collapsible settings
+   - הוספת LiveMonitor + ProcessCards + Dialogs
+   - הסרת הגדרות Collapsible (עוברות לדיאלוגים בכרטיסיות)
 
-2. **קומפוננטה חדשה: `src/components/scout/ChecksDashboard.tsx`**
-   - מאחדת את הכל בעמוד אחד
-   - כרטיסי סטטיסטיקה מורחבים (מ-`AvailabilityCheckDashboard`)
-   - Live Feed (מ-`AvailabilityLiveFeed`)
-   - Quick Actions (מ-`AvailabilityActions`)
-   - Sub-tabs פנימיים: כולל `ScoutRunHistory` כטאב פנימי
-   - הגדרות Collapsible בתחתית (כולל `UnifiedScoutSettings`)
+2. **`src/components/scout/availability/AvailabilityLiveFeed.tsx`** - שכתוב ל-`LiveMonitor.tsx`
+   - רקע כהה, עיצוב טרמינל
+   - תמיכה בכל סוגי הריצות (לא רק availability)
+   - Polling כל 2 שניות
+   - הצגת פרטים מפורטים לכל נכס
 
-3. **קומפוננטות חדשות:**
-   - `src/components/scout/checks/ChecksSubTabs.tsx` - מנהל טאבים פנימיים
-   - `src/components/scout/checks/DeduplicationStatus.tsx` - סטטוס dedup
-   - `src/components/scout/checks/MatchingStatus.tsx` - סטטוס matching
-   - `src/components/scout/checks/BackfillStatus.tsx` - סטטוס backfill
+3. **קומפוננטה חדשה: `src/components/scout/checks/ProcessCard.tsx`**
+   - כרטיסיה גנרית עם כותרת, סטטוס, מספרים, כפתורי היסטוריה/הגדרות
+   - פותחת Dialog עם התוכן הרלוונטי
 
-4. **`src/components/scout/availability/AvailabilityLiveFeed.tsx`** - שדרוג
-   - הצגת פרטים נוספים לכל נכס (מחיר, חדרים, קומה, שכונה)
+4. **קומפוננטות קיימות נשארות** (DeduplicationStatus, MatchingStatus, BackfillStatus, AvailabilityHistorySection, ScoutRunHistory) - פשוט מוצגות בתוך Dialogs במקום sub-tabs
 
-### מקורות נתונים (ללא שינויי DB):
-- **Dedup**: טבלת `duplicate_alerts`
-- **Matching**: טבלת `personal_scout_runs`
-- **Backfill**: טבלת `backfill_progress`
-- **Availability**: טבלת `availability_check_runs` (קיים)
-- **סריקות**: טבלת `scout_runs` (קיים - `ScoutRunHistory`)
+### ללא שינויי DB
+כל המידע כבר קיים - רק שינוי בצורת ההצגה.
