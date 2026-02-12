@@ -45,15 +45,7 @@ export const ScheduleSummaryCard: React.FC = () => {
   const scheduleItems = React.useMemo(() => {
     const items: ScheduleItem[] = [];
 
-    // 1. Add interval-based cron jobs (always running)
-    items.push({ 
-      time: '*/10', 
-      label: 'סריקת נכסים (Cron)', 
-      type: 'scan', 
-      isInterval: true 
-    });
-
-    // 2. Add fixed-time jobs
+    // 1. Add fixed-time jobs
     // Duplicate cleanup - 00:00 Israel (22:00 UTC)
     items.push({ 
       time: '00:00', 
@@ -78,8 +70,8 @@ export const ScheduleSummaryCard: React.FC = () => {
       type: 'availability' 
     });
 
-    // 3. Add matching schedule times from settings
-    const matchingTimes = settings?.matching?.schedule_times || ['09:15', '18:15'];
+    // 3. Add matching schedule times - hardcoded to actual cron time
+    const matchingTimes = ['23:00'];
     matchingTimes.forEach(time => {
       items.push({ 
         time, 
@@ -187,49 +179,25 @@ export const ScheduleSummaryCard: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="py-2 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Fixed times - Compact */}
-          <div>
-            <h4 className="text-xs font-medium mb-2 text-muted-foreground">ריצות קבועות</h4>
-            <div className="space-y-1 max-h-[200px] overflow-y-auto">
-              {Object.entries(groupedByTime).map(([time, items]) => (
-                <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
-                  <span className="font-mono text-xs w-10 font-medium shrink-0">{time}</span>
-                  <div className="flex flex-wrap gap-1">
-                    {items.map((item, idx) => (
-                      <Badge 
-                        key={idx} 
-                        variant="outline" 
-                        className="text-[10px] h-5 px-1.5 flex items-center gap-0.5"
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
-                        {item.label}
-                      </Badge>
-                    ))}
-                  </div>
+        <div>
+          <div className="space-y-1 max-h-[250px] overflow-y-auto">
+            {Object.entries(groupedByTime).map(([time, items]) => (
+              <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
+                <span className="font-mono text-xs w-10 font-medium shrink-0">{time}</span>
+                <div className="flex flex-wrap gap-1">
+                  {items.map((item, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant="outline" 
+                      className="text-[10px] h-5 px-1.5 flex items-center gap-0.5"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
+                      {item.label}
+                    </Badge>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Interval - Compact */}
-          <div>
-            <h4 className="text-xs font-medium mb-2 text-muted-foreground">ריצות מחזוריות</h4>
-            <div className="space-y-1">
-              {intervalItems.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 py-1">
-                  <div className={`p-1 rounded ${getTypeColor(item.type)} text-white`}>
-                    {getTypeIcon(item.type)}
-                  </div>
-                  <span className="text-xs flex-1">{item.label}</span>
-                  <Badge variant="secondary" className="font-mono text-[10px] h-5">
-                    {item.time === '*/5' && 'כל 5 דק׳'}
-                    {item.time === '*/10' && 'כל 10 דק׳'}
-                    {item.time === '*/15' && 'כל 15 דק׳'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>

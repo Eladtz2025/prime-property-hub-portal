@@ -1,0 +1,2 @@
+UPDATE scout_settings SET setting_value = '["23:00"]' WHERE category = 'matching' AND setting_key = 'schedule_times';
+UPDATE scout_settings SET setting_value = '["03:00"]' WHERE category = 'backfill' AND setting_key = 'schedule_times';
