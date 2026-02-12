@@ -359,6 +359,17 @@ export async function calculateMatch(
     reasons.push(`${property.rooms} חדרים ✓`);
   }
   
+  // ===== SIZE MUST BE IN RANGE =====
+  if (property.size && property.size > 0) {
+    if (lead.size_min && property.size < lead.size_min) {
+      return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.size_min} מ״ר, בנכס יש ${property.size}`], priority: 0 };
+    }
+    if (lead.size_max && property.size > lead.size_max) {
+      return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.size_max} מ״ר, בנכס יש ${property.size}`], priority: 0 };
+    }
+    reasons.push(`${property.size} מ״ר ✓`);
+  }
+  
   // ===== FEATURE CHECKS (only if required AND not flexible) =====
   
   // Elevator
