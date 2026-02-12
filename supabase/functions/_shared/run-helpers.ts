@@ -11,7 +11,6 @@ export interface PageStat {
   new: number;
   duration_ms: number;
   error?: string;
-  retry_count?: number;
 }
 
 /**
@@ -137,45 +136,43 @@ export async function checkAndFinalizeRun(
   ).length;
 
   // Check if all pages are done
-  if (completedPages < maxPages) return;
+  if (completedPages >= maxPages) {
+    const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
+    const finalStatus = hasErrors ? 'partial' : 'completed';
 
-  // All pages done - finalize
-  const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
-  const finalStatus = hasErrors ? 'partial' : 'completed';
-
-  await supabase
-    .from('scout_runs')
-    .update({
-      status: finalStatus,
-      completed_at: new Date().toISOString()
-    })
-    .eq('id', runId);
-
-  // Update config last run
-  if (run.config_id) {
     await supabase
-      .from('scout_configs')
+      .from('scout_runs')
       .update({
-        last_run_at: new Date().toISOString(),
-        last_run_status: finalStatus,
-        last_run_results: { 
-          properties_found: run.properties_found || 0,
-          new_properties: run.new_properties || 0
-        }
+        status: finalStatus,
+        completed_at: new Date().toISOString()
       })
-      .eq('id', run.config_id);
-  }
+      .eq('id', runId);
 
-  console.log(`✅ ${source} run ${runId} finalized with status: ${finalStatus}`);
+    // Update config last run
+    if (run.config_id) {
+      await supabase
+        .from('scout_configs')
+        .update({
+          last_run_at: new Date().toISOString(),
+          last_run_status: finalStatus,
+          last_run_results: { 
+            properties_found: run.properties_found || 0,
+            new_properties: run.new_properties || 0
+          }
+        })
+        .eq('id', run.config_id);
+    }
 
-  // AUTO-BACKFILL: If new properties were found, trigger backfill for feature extraction
-  const newPropertiesCount = run.new_properties || 0;
-  if (newPropertiesCount > 0) {
-    console.log(`🔄 Triggering auto-backfill for ${newPropertiesCount} new properties from ${source}...`);
-    await triggerAutoBackfill(supabase, runId, source, newPropertiesCount);
+    console.log(`✅ ${source} run ${runId} finalized with status: ${finalStatus}`);
+
+    // AUTO-BACKFILL: If new properties were found, trigger backfill for feature extraction
+    const newPropertiesCount = run.new_properties || 0;
+    if (newPropertiesCount > 0) {
+      console.log(`🔄 Triggering auto-backfill for ${newPropertiesCount} new properties from ${source}...`);
+      await triggerAutoBackfill(supabase, runId, source, newPropertiesCount);
+    }
   }
 }
-
 
 /**
  * Trigger automatic backfill for new properties after a scout run
