@@ -1,47 +1,47 @@
 
-# שיפור תצוגת המוניטור החי — 3 שינויים
 
-## 1. גודל קבוע עם גלילה
-הפיד יקבל גובה קבוע שמתאים ל-5 שורות (כ-300px) ולא ישתנה בגודלו. שורות חדשות ירדו למטה עם auto-scroll והמשתמש יוכל לגלול למעלה. המסך לא "יימתח ויחזור".
+# שינויים בדשבורד — כרטיסיות + מוניטור חי
 
-- שינוי: `max-h-[400px]` ל-`h-[300px]` (גובה קבוע, לא max)
+## 1. כרטיסיות סטטיסטיקה — סדר חדש
 
-## 2. הגדלת הטקסט והפריסה
-כרגע הכל בגדלים זעירים (`text-[10px]`, `text-[11px]`) למרות שיש הרבה מקום ריק. השינוי:
+**הסרת 2 כרטיסיות:**
+- Timeouts
+- ריצה אחרונה
 
-- **שם הנכס (primary)**: מ-`text-[11px]` ל-`text-sm` (14px), bold
-- **שורת פרטים (details)**: מ-`text-[10px]` ל-`text-xs` (12px)
-- **Timestamp**: מ-`text-[10px]` ל-`text-xs`
-- **Source badge**: מ-`text-[10px]` ל-`text-xs`
-- **אייקונים**: מ-`h-3 w-3` ל-`h-4 w-4`
-- **Padding**: מ-`px-3 pt-1.5 pb-0.5` ל-`px-4 py-2`
-- **שורת פרטים**: מ-`pb-1.5` ל-`pb-2`, padding-right מתאים
-- **Active processes bar**: הגדלת טקסט בהתאם
+**הוספת כרטיסיה חדשה:** "סה״כ נכסים" — ספירת כל הנכסים בטבלה (כולל לא אקטיביים)
 
-## 3. שם הנכס כלינק קליקבילי
-כשיש `source_url`, שם הנכס (primary) יהיה לינק שפותח את דף הנכס בטאב חדש. כרגע הלינק הוא רק אייקון ExternalLink קטן בשורת הפרטים — נעביר את הקליקביליות לשם עצמו (עם underline on hover) ונשאיר גם את האייקון.
+**סדר חדש (6 כרטיסיות, מימין לשמאל):**
+1. סה״כ נכסים (חדש)
+2. סה״כ אקטיביים
+3. ממתינים לבדיקה
+4. נבדקו היום
+5. כפילויות פתוחות
+6. התאמות
+
+## 2. מוניטור חי — שינוי פריסת שורה
+
+**העברת פרטים לשורה אחת:** במקום שהפרטים (נמצאו: rooms, price...) יהיו בשורה נפרדת מתחת לכותרת, הם יופיעו באותה שורה — אחרי שם הנכס, במרכז/שמאל.
+
+**שם הנכס עם שכונה:** הכתובת תוצג כ-"רחוב מספר, שכונה" (למשל "דיזנגוף 50, צפון ישן") — בדיוק כמו בטבלת הסקאוט. זה דורש שה-Edge Function תשמור גם את ה-`neighborhood` ב-`recent_items`.
 
 ---
 
 ## פרטים טכניים
 
+### קובץ: `src/pages/AdminPropertyScout.tsx`
+- הוספת query חדש לספירת כלל הנכסים: `supabase.from('scouted_properties').select('id', { count: 'exact', head: true })`
+- הסרת query ה-`lastAvailRun` (שימש רק לכרטיסיית "ריצה אחרונה")
+- הסרת כרטיסיית Timeouts וריצה אחרונה
+- שינוי ה-grid ל-`lg:grid-cols-6`
+- סדר חדש: סה"כ נכסים, אקטיביים, ממתינים, נבדקו היום, כפילויות, התאמות
+
 ### קובץ: `src/components/scout/checks/LiveMonitor.tsx`
+- הוספת `neighborhood` ל-interfaces (`BackfillRecentItem`, `FeedItem`)
+- שינוי ה-`primary` של backfill items: `${item.address}${item.neighborhood ? ', ' + item.neighborhood : ''}`
+- מיזוג שתי השורות (primary + details) לשורה אחת: הכתובת + הפרטים (נמצאו/עודכנו) באותה שורה, עם flex-1 לכתובת ו-truncate לפרטים
+- הסרת ה-div הנפרד של "Detail line" (שורות 456-472)
 
-**שינוי 1 — גובה קבוע:**
-- שורה 381: `max-h-[400px]` -> `h-[300px]`
+### קובץ: `supabase/functions/backfill-property-data/index.ts`
+- הוספת `neighborhood` לכל קריאות `saveRecentItem` (כ-`prop.neighborhood`)
+- הוספת `neighborhood` ל-interface של `saveRecentItem`
 
-**שינוי 2 — הגדלת טקסט ומרווחים:**
-- שורה 404: padding ראשי `px-3 pt-1.5 pb-0.5` -> `px-4 py-2 pb-1`
-- שורה 406: timestamp `text-[10px]` -> `text-xs`, width `w-[50px]` -> `w-[55px]`
-- שורה 413: type icon `h-3 w-3` -> `h-4 w-4`
-- שורות 84-88: status icons `h-3.5 w-3.5` -> `h-4 w-4`
-- שורה 419: primary text `text-[11px]` -> `text-sm font-semibold`
-- שורה 116: source badge `text-[10px]` -> `text-xs`
-- שורות 428-441: extra info `text-[10px]` -> `text-xs`
-- שורה 445: detail line padding `px-3 pb-1.5 pr-[74px]` -> `px-4 pb-2 pr-[80px]`
-- שורה 446: details text `text-[10px]` -> `text-xs`
-- שורה 457: external link icon `h-2.5 w-2.5` -> `h-3.5 w-3.5`
-- Active processes bar: `text-[11px]` -> `text-sm`, `text-[10px]` -> `text-xs`
-
-**שינוי 3 — שם קליקבילי:**
-- שורות 418-421: עטיפת ה-primary text ב-`<a>` כשיש `item.url`, עם `hover:underline hover:text-gray-100`
