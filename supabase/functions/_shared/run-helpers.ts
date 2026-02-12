@@ -137,27 +137,37 @@ export async function checkAndFinalizeRun(
   );
   const completedPages = terminalPages.length;
   
-  // Check for stuck "scraping" pages: if all OTHER pages are done but some are still "scraping",
-  // they likely crashed without updating status — mark them as failed
+  // Check for stuck pages: scraping or pending pages with no active processing
   const scrapingPages = pageStats.filter(p => p.status === 'scraping');
+  const pendingPages = pageStats.filter(p => p.status === 'pending');
+  const activePages = scrapingPages.length; // pages currently being processed
+  
+  // Case 1: Some pages stuck in 'scraping' and all others are done — mark as failed
   if (scrapingPages.length > 0 && completedPages + scrapingPages.length >= maxPages) {
     console.warn(`⚠️ ${source} run ${runId}: ${scrapingPages.length} pages stuck in 'scraping' — marking as failed`);
     for (const stuckPage of scrapingPages) {
       const idx = pageStats.findIndex(p => p.page === stuckPage.page);
       if (idx !== -1) {
-        pageStats[idx] = {
-          ...pageStats[idx],
-          status: 'failed' as const,
-          error: 'stuck_in_scraping_status'
-        };
+        pageStats[idx] = { ...pageStats[idx], status: 'failed' as const, error: 'stuck_in_scraping_status' };
       }
     }
-    await supabase
-      .from('scout_runs')
-      .update({ page_stats: pageStats })
-      .eq('id', runId);
+    await supabase.from('scout_runs').update({ page_stats: pageStats }).eq('id', runId);
     // Now all pages are in terminal state — continue to retry/finalize logic below
-  } else if (completedPages < maxPages) {
+  } 
+  // Case 2: Broken chain — pages are pending but nothing is scraping (chain died)
+  else if (pendingPages.length > 0 && activePages === 0 && completedPages > 0) {
+    console.warn(`⚠️ ${source} run ${runId}: ${pendingPages.length} pages stuck in 'pending' (broken chain) — marking as failed`);
+    for (const stuckPage of pendingPages) {
+      const idx = pageStats.findIndex(p => p.page === stuckPage.page);
+      if (idx !== -1) {
+        pageStats[idx] = { ...pageStats[idx], status: 'failed' as const, error: 'broken_chain_never_triggered' };
+      }
+    }
+    await supabase.from('scout_runs').update({ page_stats: pageStats }).eq('id', runId);
+    // Continue to retry/finalize logic below
+  }
+  // Case 3: Still actively processing — not done yet
+  else if (completedPages < maxPages) {
     return;
   }
 
