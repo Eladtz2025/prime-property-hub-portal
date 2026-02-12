@@ -473,6 +473,7 @@ Deno.serve(async (req) => {
     // Helper: save a recent_item to summary_data.recent_items (keeps last 10)
     async function saveRecentItem(item: {
       address?: string;
+      neighborhood?: string;
       source?: string;
       source_url?: string;
       status: string;
@@ -575,6 +576,7 @@ Deno.serve(async (req) => {
           lastId = prop.id;
           await saveRecentItem({
             address: prop.address || prop.title,
+            neighborhood: prop.neighborhood,
             source: prop.source,
             source_url: prop.source_url,
             status: 'scrape_failed',
@@ -594,6 +596,7 @@ Deno.serve(async (req) => {
           lastId = prop.id;
           await saveRecentItem({
             address: prop.address || prop.title,
+            neighborhood: prop.neighborhood,
             source: prop.source,
             source_url: prop.source_url,
             status: 'no_content',
@@ -631,6 +634,7 @@ Deno.serve(async (req) => {
           lastId = prop.id;
           await saveRecentItem({
             address: prop.address || prop.title,
+            neighborhood: prop.neighborhood,
             source: prop.source,
             source_url: prop.source_url,
             status: 'blacklisted',
@@ -662,6 +666,7 @@ Deno.serve(async (req) => {
             lastId = prop.id;
             await saveRecentItem({
               address: prop.address || prop.title,
+              neighborhood: prop.neighborhood,
               source: prop.source,
               source_url: prop.source_url,
               status: 'blacklisted',
@@ -760,6 +765,7 @@ Deno.serve(async (req) => {
           lastId = prop.id;
           await saveRecentItem({
             address: prop.address || prop.title,
+            neighborhood: prop.neighborhood,
             source: prop.source,
             source_url: prop.source_url,
             status: 'no_new_data',
@@ -783,6 +789,7 @@ Deno.serve(async (req) => {
             lastId = prop.id;
             await saveRecentItem({
               address: prop.address || prop.title,
+              neighborhood: prop.neighborhood,
               source: prop.source,
               source_url: prop.source_url,
               status: 'update_error',
@@ -818,6 +825,7 @@ Deno.serve(async (req) => {
 
         await saveRecentItem({
           address: updates.address || prop.address || prop.title,
+          neighborhood: updates.neighborhood || prop.neighborhood,
           source: prop.source,
           source_url: prop.source_url,
           status: 'ok',
