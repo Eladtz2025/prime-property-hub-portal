@@ -284,10 +284,10 @@ export async function saveProperty(
   
   // Address must contain a building number to be eligible for duplicate detection
   const hasValidAddress = property.address && /\d+/.test(property.address);
-  const canCheckDuplicates = hasValidAddress 
+  const canCheckDuplicates = !!(hasValidAddress 
     && property.rooms !== undefined 
     && property.floor !== undefined 
-    && normalizedCity;
+    && normalizedCity);
   
   if (canCheckDuplicates) {
     const { data: duplicates } = await supabase
