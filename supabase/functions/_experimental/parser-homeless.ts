@@ -223,14 +223,46 @@ export async function parseHomelessHtml(
       
       // Extract link from row
       let sourceUrl = '';
-      const linkElement = $row.find('a[href*="homeless.co.il"]').first();
-      if (linkElement.length) {
-        sourceUrl = linkElement.attr('href') || '';
-      } else {
+
+      // 1) Prefer direct listing links
+      const viewadLink = $row.find('a[href*="viewad"]').first();
+      if (viewadLink.length) {
+        sourceUrl = viewadLink.attr('href') || '';
+      }
+
+      // 2) Fallback: any homeless domain link in row
+      if (!sourceUrl) {
+        const domainLink = $row.find('a[href*="homeless.co.il"]').first();
+        if (domainLink.length) {
+          sourceUrl = domainLink.attr('href') || '';
+        }
+      }
+
+      // 3) Fallback: first relative/absolute link
+      if (!sourceUrl) {
         const anyLink = $row.find('a').first().attr('href') || '';
         if (anyLink.includes('homeless') || anyLink.startsWith('/')) {
-          sourceUrl = anyLink.startsWith('http') ? anyLink : `https://www.homeless.co.il${anyLink}`;
+          sourceUrl = anyLink;
         }
+      }
+
+      // Normalize relative links
+      if (sourceUrl && sourceUrl.startsWith('/')) {
+        sourceUrl = `https://www.homeless.co.il${sourceUrl}`;
+      }
+
+      // 4) If link still isn't a listing URL, extract ad id from row HTML
+      if (!/viewad[,/]/i.test(sourceUrl)) {
+        const rowHtml = $row.html() || '';
+        const viewadMatch = rowHtml.match(/viewad[,/](\d+)/i);
+        if (viewadMatch) {
+          sourceUrl = `https://www.homeless.co.il/${propertyType === 'rent' ? 'rent' : 'sale'}/viewad,${viewadMatch[1]}.aspx`;
+        }
+      }
+
+      // 5) Last fallback: build deterministic listing URL from row numeric id
+      if (!sourceUrl && numericId) {
+        sourceUrl = `https://www.homeless.co.il/${propertyType === 'rent' ? 'rent' : 'sale'}/viewad,${numericId}.aspx`;
       }
       
       // Normalize city - try column first, then pattern matching
@@ -336,7 +368,7 @@ export async function parseHomelessHtml(
       const property: ParsedProperty = {
         source: 'homeless',
         source_id: generateSourceId('homeless', sourceUrl, index),
-        source_url: sourceUrl || `https://www.homeless.co.il/rent/ad/${numericId}`,
+        source_url: sourceUrl,
         title,
         city,
         neighborhood: neighborhood?.label || neighborhoodText || null,
