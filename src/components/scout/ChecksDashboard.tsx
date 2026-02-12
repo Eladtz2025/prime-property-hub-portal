@@ -22,6 +22,16 @@ import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 
 
+// Logic description component
+const LogicDescription: React.FC<{ lines: string[] }> = ({ lines }) => (
+  <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed border">
+    <p className="font-medium text-foreground mb-1.5 text-sm">איך זה עובד?</p>
+    <ul className="space-y-1 list-disc list-inside">
+      {lines.map((line, i) => <li key={i}>{line}</li>)}
+    </ul>
+  </div>
+);
+
 // Availability settings content for dialog
 const AvailabilitySettingsContent: React.FC = () => {
   const [editingKey, setEditingKey] = React.useState<string | null>(null);
@@ -297,6 +307,14 @@ export const ChecksDashboard: React.FC = () => {
           historyContent={<AvailabilityHistorySection />}
           settingsContent={
             <div className="space-y-6">
+              <LogicDescription lines={[
+                'בודקת האם דירות שנסרקו עדיין פעילות באתר המקור.',
+                'שלב 1: בדיקת HEAD מהירה (3 שניות) — מזהה 404, הפניות, ושגיאות שרת.',
+                'שלב 2: Firecrawl — סריקת תוכן העמוד וחיפוש מידע על הנכס (מחיר, חדרים, כתובת).',
+                'אם נמצא מידע — הנכס נשאר אקטיבי. אם לא — מסומן כלא פעיל.',
+                'בדיקה חוזרת כל 7 ימים לכל נכס פעיל.',
+                'מכסה יומית מוגדרת למניעת עומס.',
+              ]} />
               <ScheduleTimeEditor
                 category="availability"
                 cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
@@ -324,11 +342,22 @@ export const ChecksDashboard: React.FC = () => {
           isRunPending={triggerDedup.isPending}
           historyContent={<DeduplicationStatus />}
           settingsContent={
-            <ScheduleTimeEditor
-              category="duplicates"
-              cronJobNames={[{ jobName: 'cleanup-orphan-duplicates-hourly', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-              label="שעות ריצת ניקוי כפילויות"
-            />
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'מזהה דירות כפולות בין מקורות שונים (cross-source) — למשל אותה דירה ביד2 ובמדלן.',
+                'התאמה לפי: כתובת מלאה (כולל מספר בית), מספר חדרים (סטייה של ±0.5), ושטח (סטייה של ±20%).',
+                'הפרדה חובה לפי סוג עסקה — דירה להשכרה ודירה למכירה באותה כתובת לא ייחשבו ככפילות.',
+                'כל קבוצת כפילויות מקבלת "נכס ראשי" (Winner) לפי היררכיה: פרטי > מתווך → עדכון אחרון → מחיר נמוך → זמן יצירה ישן.',
+                'נכסים שאינם ראשיים (Losers) מוסתרים מהתצוגה הראשית ומההתאמות, אבל נגישים דרך "עוד מודעות".',
+                'כפילויות מאותו מקור נחסמות אוטומטית לפי source + source_url (Unique Constraint).',
+                'ניקוי אוטומטי מריץ recompute_duplicate_winners אחרי כל זיהוי.',
+              ]} />
+              <ScheduleTimeEditor
+                category="duplicates"
+                cronJobNames={[{ jobName: 'cleanup-orphan-duplicates-hourly', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+                label="שעות ריצת ניקוי כפילויות"
+              />
+            </div>
           }
           historyTitle="כפילויות"
           settingsTitle="הגדרות כפילויות"
@@ -350,11 +379,19 @@ export const ChecksDashboard: React.FC = () => {
           isRunPending={triggerMatching.isPending}
           historyContent={<MatchingStatus />}
           settingsContent={
-            <ScheduleTimeEditor
-              category="matching"
-              cronJobNames={[{ jobName: 'match-leads-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-              label="שעות ריצת התאמות"
-            />
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'מחפש התאמות בין לידים במצב "eligible" לבין נכסים פעילים (scouted_properties).',
+                'בודק התאמה לפי: עיר, שכונה, טווח מחיר, חדרים, גודל, קומה.',
+                'בודק גם דרישות נוספות: מעלית, חנייה, מרפסת, ממ"ד, גינה, גג — כולל גמישות אם הליד ציין.',
+                'תוצאות נשמרות ב-personal_scout_matches ומקושרות לליד ולריצה.',
+              ]} />
+              <ScheduleTimeEditor
+                category="matching"
+                cronJobNames={[{ jobName: 'match-leads-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+                label="שעות ריצת התאמות"
+              />
+            </div>
           }
           historyTitle="היסטוריית התאמות"
           settingsTitle="הגדרות התאמות"
@@ -378,11 +415,19 @@ export const ChecksDashboard: React.FC = () => {
           isStopPending={backfill.isStopping}
           historyContent={<BackfillStatus />}
           settingsContent={
-            <ScheduleTimeEditor
-              category="backfill"
-              cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-              label="שעות ריצת השלמת נתונים"
-            />
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'משלים נתונים חסרים לדירות שנסרקו באמצעות Firecrawl (סריקת עמוד המקור).',
+                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
+                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features (מרפסת, מעלית, חנייה, ממ"ד), ומספר בית.',
+                'כל נכס שהושלם בהצלחה מסומן completed. נכשלים מסומנים failed ויטופלו שוב בריצה הבאה.',
+              ]} />
+              <ScheduleTimeEditor
+                category="backfill"
+                cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+                label="שעות ריצת השלמת נתונים"
+              />
+            </div>
           }
           historyTitle="היסטוריית השלמת נתונים"
           settingsTitle="הגדרות השלמת נתונים"
