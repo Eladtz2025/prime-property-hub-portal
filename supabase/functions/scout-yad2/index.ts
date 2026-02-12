@@ -326,9 +326,14 @@ async function chainNextPage(
 async function triggerNextPage(
   supabaseUrl: string, supabaseKey: string, configId: string,
   nextPage: number, runId: string, maxPages: number,
-  startPage?: number, isRetry = false, retryPages?: number[]
+  startPage?: number, isRetry = false, retryPages?: number[],
+  _skipCount: number = 0
 ): Promise<void> {
+  const MAX_TRIGGER_RETRIES = 3;
+  const TRIGGER_RETRY_DELAY = 5000;
+  const MAX_CONSECUTIVE_SKIPS = 3;
   const delay = isRetry ? YAD2_CONFIG.RETRY_DELAY_MS : YAD2_CONFIG.PAGE_DELAY_MS;
+  
   console.log(`⏳ Waiting ${delay / 1000}s before page ${nextPage}${isRetry ? ' (retry)' : ''}...`);
   await new Promise(r => setTimeout(r, delay));
 
@@ -338,19 +343,56 @@ async function triggerNextPage(
     return;
   }
 
-  try {
-    await fetch(`${supabaseUrl}/functions/v1/scout-yad2`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-      body: JSON.stringify({
-        config_id: configId, page: nextPage, run_id: runId,
-        max_pages: maxPages, start_page: startPage,
-        is_retry: isRetry, retry_pages: retryPages
-      })
-    });
-    console.log(`📄 Triggered Yad2 page ${nextPage}`);
-  } catch (err) {
-    console.error(`❌ Failed to trigger page ${nextPage}:`, err);
+  let triggered = false;
+  for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
+    try {
+      console.log(`📄 Yad2: triggering page ${nextPage} (attempt ${attempt}/${MAX_TRIGGER_RETRIES})`);
+      await fetch(`${supabaseUrl}/functions/v1/scout-yad2`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({
+          config_id: configId, page: nextPage, run_id: runId,
+          max_pages: maxPages, start_page: startPage,
+          is_retry: isRetry, retry_pages: retryPages
+        })
+      });
+      console.log(`📄 Triggered Yad2 page ${nextPage}`);
+      triggered = true;
+      break;
+    } catch (err) {
+      console.error(`❌ Failed to trigger page ${nextPage} (attempt ${attempt}):`, err);
+      if (attempt < MAX_TRIGGER_RETRIES) {
+        await new Promise(r => setTimeout(r, TRIGGER_RETRY_DELAY));
+      }
+    }
+  }
+
+  // SKIP LOGIC: If trigger failed after all retries, skip to next page
+  if (!triggered) {
+    if (_skipCount < MAX_CONSECUTIVE_SKIPS) {
+      console.warn(`⏭️ Yad2: skipping page ${nextPage}, marking as failed (skip ${_skipCount + 1}/${MAX_CONSECUTIVE_SKIPS})`);
+      await updatePageStatus(supabase, runId, nextPage, {
+        status: 'failed',
+        error: `trigger_failed_after_${MAX_TRIGGER_RETRIES}_attempts`,
+        duration_ms: 0
+      });
+
+      if (isRetry && retryPages?.length) {
+        const currentIdx = retryPages.indexOf(nextPage);
+        if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
+          await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages, _skipCount + 1);
+        } else {
+          await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+        }
+      } else if (nextPage < maxPages) {
+        await triggerNextPage(supabaseUrl, supabaseKey, configId, nextPage + 1, runId, maxPages, startPage, false, undefined, _skipCount + 1);
+      } else {
+        await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      }
+    } else {
+      console.error(`❌ Yad2: ${MAX_CONSECUTIVE_SKIPS} consecutive skips reached, finalizing run`);
+      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+    }
   }
 }
 

@@ -44,10 +44,12 @@ async function triggerNextPage(
   maxPages: number,
   startPage: number,
   isRetry: boolean = false,
-  retryPages: number[] = []
+  retryPages: number[] = [],
+  _skipCount: number = 0
 ): Promise<boolean> {
   const MAX_TRIGGER_RETRIES = 3;
-  const TRIGGER_RETRY_DELAY = 5000; // 5s between retries
+  const TRIGGER_RETRY_DELAY = 5000;
+  const MAX_CONSECUTIVE_SKIPS = 3;
   
   for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
     console.log(`📄 Madlan: triggering page ${nextPage}/${maxPages} (attempt ${attempt}/${MAX_TRIGGER_RETRIES})${isRetry ? ' [RETRY]' : ''}`);
@@ -80,6 +82,33 @@ async function triggerNextPage(
   }
   
   console.error(`❌ Failed to trigger page ${nextPage} after ${MAX_TRIGGER_RETRIES} attempts`);
+  
+  // SKIP LOGIC: Mark failed page and try next one instead of breaking the chain
+  if (_skipCount < MAX_CONSECUTIVE_SKIPS) {
+    console.warn(`⏭️ Madlan: skipping page ${nextPage}, marking as failed (skip ${_skipCount + 1}/${MAX_CONSECUTIVE_SKIPS})`);
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    await updatePageStatus(supabase, runId, nextPage, {
+      status: 'failed',
+      error: `trigger_failed_after_${MAX_TRIGGER_RETRIES}_attempts`,
+      duration_ms: 0
+    });
+    
+    if (isRetry && retryPages.length > 0) {
+      const nextRetryPage = retryPages[0];
+      return triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextRetryPage, runId, maxPages, startPage, true, retryPages.slice(1), _skipCount + 1);
+    } else if (!isRetry && nextPage < maxPages) {
+      return triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextPage + 1, runId, maxPages, startPage, false, [], _skipCount + 1);
+    } else {
+      // No more pages to skip to - finalize
+      await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
+    }
+  } else {
+    console.error(`❌ Madlan: ${MAX_CONSECUTIVE_SKIPS} consecutive skips reached, stopping chain`);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
+  }
+  
   return false;
 }
 
