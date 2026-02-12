@@ -14,10 +14,10 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  WAIT_FOR_MS: 3000,        // Simplified: quick scrape works better
+  WAIT_FOR_MS: 5000,        // Allow page to stabilize
   MAX_RETRIES: 3,
-  NEXT_PAGE_DELAY: 5000,    // 5 seconds between pages - faster
-  RECOVERY_DELAY: 15000     // 15 seconds after a block
+  NEXT_PAGE_DELAY: 20000,   // 20s between pages to reduce CAPTCHA risk
+  RECOVERY_DELAY: 30000     // 30s cooldown after block
 };
 
 /**
