@@ -270,6 +270,11 @@ export async function saveProperty(
     return { isNew: false, skipped: true };
   }
 
+  // Ensure is_private is strictly boolean or null (defensive check)
+  const safeIsPrivate = property.is_private === true ? true 
+    : property.is_private === false ? false 
+    : null;
+
   // Normalize source URL before duplicate checks/saving
   const normalizedSourceUrl = normalizeSourceUrl(property.source_url, property.source);
   
@@ -338,7 +343,7 @@ export async function saveProperty(
         features: property.features || {},
         raw_data: property.raw_data,
         property_type: property.property_type,
-        is_private: property.is_private,
+        is_private: safeIsPrivate,
         status: 'new',
         is_active: true,
         availability_check_reason: null,
@@ -429,7 +434,7 @@ export async function saveProperty(
       status: 'new',
       is_active: true,
       availability_check_reason: null,
-      is_private: property.is_private,
+      is_private: safeIsPrivate,
       duplicate_group_id: duplicateGroupId,
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,

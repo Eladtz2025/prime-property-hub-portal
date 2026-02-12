@@ -239,13 +239,16 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   
   // Simple rule: text between image and ₪ = broker, no text = private
   const imgEndMatch = block.match(/\]\([^)]+\)/);
-  const shekelIndex = block.indexOf('₪');
+  // Find the ACTUAL price ₪ (₪ followed by number), not price-drop tags (number followed by ₪)
+  const priceLineMatch = block.match(/₪\s*[\d,]/);
+  const shekelIndex = priceLineMatch ? block.indexOf(priceLineMatch[0]) : -1;
   
   if (imgEndMatch && shekelIndex > 0) {
     const imgEndPos = block.indexOf(imgEndMatch[0]) + imgEndMatch[0].length;
     if (shekelIndex > imgEndPos) {
       const textBetween = block.substring(imgEndPos, shekelIndex)
         .replace(/[\u200F\u200E\u200B‎‏]/g, '')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')  // Strip markdown images
         .replace(/\\/g, '')
         .replace(/\n/g, ' ')
         .trim();
