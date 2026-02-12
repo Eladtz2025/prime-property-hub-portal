@@ -2877,11 +2877,13 @@ export type Database = {
       scouted_properties: {
         Row: {
           address: string | null
+          availability_check_count: number
           availability_check_reason: string | null
           availability_checked_at: string | null
           backfill_status: string | null
           city: string | null
           created_at: string
+          dedup_checked_at: string | null
           description: string | null
           duplicate_check_possible: boolean | null
           duplicate_detected_at: string | null
@@ -2913,11 +2915,13 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          availability_check_count?: number
           availability_check_reason?: string | null
           availability_checked_at?: string | null
           backfill_status?: string | null
           city?: string | null
           created_at?: string
+          dedup_checked_at?: string | null
           description?: string | null
           duplicate_check_possible?: boolean | null
           duplicate_detected_at?: string | null
@@ -2949,11 +2953,13 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          availability_check_count?: number
           availability_check_reason?: string | null
           availability_checked_at?: string | null
           backfill_status?: string | null
           city?: string | null
           created_at?: string
+          dedup_checked_at?: string | null
           description?: string | null
           duplicate_check_possible?: boolean | null
           duplicate_detected_at?: string | null
@@ -3540,6 +3546,17 @@ export type Database = {
         Returns: {
           hour_key: string
           match_count: number
+        }[]
+      }
+      get_properties_needing_availability_check: {
+        Args: {
+          p_fetch_limit?: number
+          p_first_recheck_days?: number
+          p_min_days_before_check?: number
+          p_recurring_recheck_days?: number
+        }
+        Returns: {
+          id: string
         }[]
       }
       has_role: {

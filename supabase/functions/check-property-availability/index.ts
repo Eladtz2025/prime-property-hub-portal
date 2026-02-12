@@ -525,9 +525,19 @@ serve(async (req) => {
       }
       
       try {
+        // Fetch current check_count to increment
+        const { data: currentProp } = await supabase
+          .from('scouted_properties')
+          .select('availability_check_count')
+          .eq('id', result.id)
+          .single();
+        
+        const currentCount = currentProp?.availability_check_count ?? 0;
+        
         const updateData: Record<string, any> = {
           availability_checked_at: new Date().toISOString(),
-          availability_check_reason: result.reason
+          availability_check_reason: result.reason,
+          availability_check_count: currentCount + 1,
         };
         
         if (result.isInactive) {

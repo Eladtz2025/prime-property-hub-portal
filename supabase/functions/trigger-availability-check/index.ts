@@ -83,10 +83,11 @@ serve(async (req) => {
     const settings = await fetchCategorySettings(supabase, 'availability');
     const batchSize = settings.batch_size;
     const dailyLimit = settings.daily_limit;
-    const recheckIntervalDays = settings.recheck_interval_days;
     const minDaysBeforeCheck = settings.min_days_before_check;
+    const firstRecheckDays = settings.first_recheck_interval_days || 8;
+    const recurringRecheckDays = settings.recurring_recheck_interval_days || 2;
 
-    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, recheckDays=${recheckIntervalDays}`);
+    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, firstRecheck=${firstRecheckDays}d, recurringRecheck=${recurringRecheckDays}d`);
 
     // Check how many we've processed today
     const today = new Date();
@@ -118,30 +119,20 @@ serve(async (req) => {
       });
     }
 
-    // Calculate cutoff dates
-    const minDaysAgo = new Date();
-    minDaysAgo.setDate(minDaysAgo.getDate() - minDaysBeforeCheck);
-
-    const recheckCutoff = new Date();
-    recheckCutoff.setDate(recheckCutoff.getDate() - recheckIntervalDays);
-
     // Remaining quota for today
     const remainingQuota = dailyLimit - processedToday;
     const fetchLimit = Math.min(remainingQuota, batchSize * MAX_BATCHES_PER_RUN);
 
     console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
 
-    // Fetch properties that need checking
-    // Prioritize: unchecked properties first (NULL), then oldest checked
+    // Fetch properties using smart recheck RPC
     const { data: properties, error: fetchError } = await supabase
-      .from('scouted_properties')
-      .select('id')
-      .eq('is_active', true)
-      .in('status', ['matched', 'new'])
-      .lt('first_seen_at', minDaysAgo.toISOString())
-      .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
-      .order('availability_checked_at', { ascending: true, nullsFirst: true })
-      .limit(fetchLimit);
+      .rpc('get_properties_needing_availability_check', {
+        p_first_recheck_days: firstRecheckDays,
+        p_recurring_recheck_days: recurringRecheckDays,
+        p_min_days_before_check: minDaysBeforeCheck,
+        p_fetch_limit: fetchLimit,
+      });
 
     if (fetchError) throw fetchError;
     

@@ -47,6 +47,8 @@ export interface ScoutSettings {
     head_timeout_ms: number;
     get_timeout_ms: number;
     use_firecrawl: boolean;
+    first_recheck_interval_days: number;
+    recurring_recheck_interval_days: number;
     schedule_times: string[];
   };
   eligibility: {
@@ -100,6 +102,8 @@ export const defaultSettings: ScoutSettings = {
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
     use_firecrawl: true,
+    first_recheck_interval_days: 8,
+    recurring_recheck_interval_days: 2,
     schedule_times: ['05:00'],
   },
   eligibility: {
