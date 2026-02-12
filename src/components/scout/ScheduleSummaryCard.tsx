@@ -45,39 +45,28 @@ export const ScheduleSummaryCard: React.FC = () => {
   const scheduleItems = React.useMemo(() => {
     const items: ScheduleItem[] = [];
 
-    // 1. Add fixed-time jobs
-    // Duplicate cleanup - 00:00 Israel (22:00 UTC)
-    items.push({ 
-      time: '00:00', 
-      label: 'ניקוי כפילויות', 
-      type: 'cleanup' 
+    // 1. Duplicate cleanup - from settings
+    const dedupTimes = settings?.duplicates?.schedule_times || ['00:00'];
+    dedupTimes.forEach(time => {
+      items.push({ time, label: 'ניקוי כפילויות', type: 'cleanup' });
     });
 
-    // Backfill - from settings (default 03:00 only)
+    // 2. Backfill - from settings
     const backfillTimes = settings?.backfill?.schedule_times || ['03:00'];
     backfillTimes.forEach(time => {
-      items.push({ 
-        time, 
-        label: 'השלמת נתונים (ממשיך עד סיום)', 
-        type: 'backfill' 
-      });
+      items.push({ time, label: 'השלמת נתונים (ממשיך עד סיום)', type: 'backfill' });
     });
 
-    // Availability check - 05:00 Israel (03:00 UTC)
-    items.push({ 
-      time: '05:00', 
-      label: 'בדיקת זמינות (ממשיך עד סיום)', 
-      type: 'availability' 
+    // 3. Availability - from settings
+    const availTimes = settings?.availability?.schedule_times || ['05:00'];
+    availTimes.forEach(time => {
+      items.push({ time, label: 'בדיקת זמינות (ממשיך עד סיום)', type: 'availability' });
     });
 
-    // 3. Add matching schedule times - hardcoded to actual cron time
-    const matchingTimes = ['23:00'];
+    // 4. Matching - from settings
+    const matchingTimes = settings?.matching?.schedule_times || ['23:00'];
     matchingTimes.forEach(time => {
-      items.push({ 
-        time, 
-        label: 'התאמה ללקוחות', 
-        type: 'matching' 
-      });
+      items.push({ time, label: 'התאמה ללקוחות', type: 'matching' });
     });
 
     // 4. Add scan times from active configs - with property_type

@@ -3573,6 +3573,10 @@ export type Database = {
           properties_updated: number
         }[]
       }
+      update_cron_schedule: {
+        Args: { p_job_name: string; p_new_schedule: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
