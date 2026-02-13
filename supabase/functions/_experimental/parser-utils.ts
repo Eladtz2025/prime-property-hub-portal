@@ -522,8 +522,8 @@ export function generateSourceId(source: string, url: string, index: number): st
     return `${source}-${madlanMatch[1]}`;
   }
   
-  // YAD2: /item/12345678 or /ad/12345678
-  const yad2Match = url.match(/(?:item|ad)\/(\d+)/i);
+  // YAD2: /item/abc123 or /ad/abc123 (alphanumeric IDs)
+  const yad2Match = url.match(/(?:item|ad)\/(?:[^\/]+\/)?([a-zA-Z0-9]+)/i);
   if (yad2Match) {
     return `${source}-${yad2Match[1]}`;
   }
