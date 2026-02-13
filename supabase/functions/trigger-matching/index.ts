@@ -172,31 +172,7 @@ serve(async (req) => {
       return await rematchSingleLead(leadId, supabase);
     }
 
-    // Fetch matching settings to check schedule
-    const matchingSettings = await fetchCategorySettings(supabase, 'matching');
-    const scheduleTimes: string[] = (matchingSettings as any).schedule_times || ['09:15', '18:15'];
-
-    // Get current Israel time (HH:MM format)
-    const now = new Date();
-    const israelTime = now.toLocaleTimeString('en-GB', { 
-      timeZone: 'Asia/Jerusalem', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-
-    // Check if current time is in the schedule (unless forced)
-    if (!isForced && !scheduleTimes.includes(israelTime)) {
-      console.log(`⏭️ Skipping matching - ${israelTime} not in schedule [${scheduleTimes.join(', ')}]`);
-      return new Response(JSON.stringify({
-        success: true,
-        skipped: true,
-        message: `Not scheduled for ${israelTime}`,
-        current_time: israelTime,
-        scheduled_times: scheduleTimes
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    console.log(`🎯 Starting matching orchestration at ${israelTime} (scheduled: [${scheduleTimes.join(', ')}])...`);
+    console.log(`🎯 Starting matching orchestration...`);
 
     // Create a tracking run for progress
     const { data: trackingRun, error: runError } = await supabase
