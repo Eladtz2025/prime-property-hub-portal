@@ -299,17 +299,21 @@ export const LiveMonitor: React.FC = () => {
     const summary = run.summary_data as unknown as (BackfillSummary & DedupSummary) | null;
 
     if (taskCfg.feedType === 'dedup') {
-      // Dedup: show recent_batches
+      // Dedup: single summary line instead of per-batch
       const recentBatches = summary?.recent_batches || [];
-      recentBatches.forEach(batch => {
+      if (recentBatches.length > 0) {
+        const lastBatch = recentBatches[recentBatches.length - 1];
+        const totalProcessed = run.processed_items ?? 0;
+        const totalDups = run.successful_items ?? 0;
+        const totalBatches = summary?.batches ?? recentBatches.length;
         feedItems.push({
           type: 'dedup',
-          timestamp: batch.timestamp,
-          primary: `Batch ${batch.batch} — כפילויות`,
-          details: `${batch.processed} נבדקו | ${batch.duplicates} כפילויות | ${batch.groups} קבוצות חדשות`,
-          status: batch.duplicates > 0 ? 'ok' : 'warning',
+          timestamp: lastBatch.timestamp,
+          primary: `סריקת כפילויות — באצ׳ ${lastBatch.batch}/${totalBatches}`,
+          details: `${totalProcessed.toLocaleString('he-IL')} נבדקו | ${totalDups.toLocaleString('he-IL')} כפילויות`,
+          status: run.status === 'completed' ? 'ok' : 'warning',
         });
-      });
+      }
     } else {
       // Regular backfill: show recent_items
       const recentItems = summary?.recent_items || [];

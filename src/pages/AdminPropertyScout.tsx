@@ -54,14 +54,16 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  // Dedup stats
+  // Dedup stats — count losers (non-primary duplicates)
   const { data: dedupStats } = useQuery({
-    queryKey: ['dedup-stats-summary'],
+    queryKey: ['dedup-stats-summary-global'],
     queryFn: async () => {
-      const [unresolvedRes] = await Promise.all([
-        supabase.from('duplicate_alerts').select('id', { count: 'exact', head: true }).eq('is_resolved', false),
-      ]);
-      return { unresolved: unresolvedRes.count ?? 0 };
+      const { count } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_primary_listing', false)
+        .not('duplicate_group_id', 'is', null);
+      return { losers: count ?? 0 };
     },
     refetchInterval: 30000,
   });
@@ -85,7 +87,7 @@ const AdminPropertyScout: React.FC = () => {
           <StatCard title="סה״כ אקטיביים" value={stats?.totalActive ?? '—'} icon={<Database className="h-4 w-4 text-blue-600" />} color="bg-blue-100 dark:bg-blue-900/30" />
           <StatCard title="ממתינים לבדיקה" value={stats?.pendingRecheck ?? '—'} icon={<Hourglass className="h-4 w-4 text-amber-600" />} color="bg-amber-100 dark:bg-amber-900/30" />
           <StatCard title="נבדקו היום" value={stats?.checkedToday ?? '—'} icon={<CheckCircle className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
-          <StatCard title="כפילויות פתוחות" value={dedupStats?.unresolved ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
+          <StatCard title="כפילויות" value={dedupStats?.losers ?? '—'} icon={<Copy className="h-4 w-4 text-purple-600" />} color="bg-purple-100 dark:bg-purple-900/30" />
           <StatCard title="התאמות אחרונות" value={matchStats?.total_matches ?? '—'} icon={<Users className="h-4 w-4 text-green-600" />} color="bg-green-100 dark:bg-green-900/30" />
         </div>
 
