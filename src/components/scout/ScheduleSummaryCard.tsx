@@ -18,6 +18,7 @@ import { useScoutSettings } from '@/hooks/useScoutSettings';
 
 interface ScheduleItem {
   time: string;
+  endTime?: string;
   label: string;
   type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup';
   isInterval?: boolean;
@@ -48,25 +49,25 @@ export const ScheduleSummaryCard: React.FC = () => {
     // 1. Duplicate cleanup - from settings
     const dedupTimes = settings?.duplicates?.schedule_times || ['00:00'];
     dedupTimes.forEach(time => {
-      items.push({ time, label: 'ניקוי כפילויות', type: 'cleanup' });
+      items.push({ time, endTime: settings?.duplicates?.schedule_end_time, label: 'ניקוי כפילויות', type: 'cleanup' });
     });
 
     // 2. Backfill - from settings
     const backfillTimes = settings?.backfill?.schedule_times || ['03:00'];
     backfillTimes.forEach(time => {
-      items.push({ time, label: 'השלמת נתונים (ממשיך עד סיום)', type: 'backfill' });
+      items.push({ time, endTime: settings?.backfill?.schedule_end_time, label: 'השלמת נתונים', type: 'backfill' });
     });
 
     // 3. Availability - from settings
     const availTimes = settings?.availability?.schedule_times || ['05:00'];
     availTimes.forEach(time => {
-      items.push({ time, label: 'בדיקת זמינות (ממשיך עד סיום)', type: 'availability' });
+      items.push({ time, endTime: settings?.availability?.schedule_end_time, label: 'בדיקת זמינות', type: 'availability' });
     });
 
     // 4. Matching - from settings
     const matchingTimes = settings?.matching?.schedule_times || ['23:00'];
     matchingTimes.forEach(time => {
-      items.push({ time, label: 'התאמה ללקוחות', type: 'matching' });
+      items.push({ time, endTime: settings?.matching?.schedule_end_time, label: 'התאמה ללקוחות', type: 'matching' });
     });
 
     // 4. Add scan times from active configs - with property_type
@@ -172,7 +173,9 @@ export const ScheduleSummaryCard: React.FC = () => {
           <div className="space-y-1 max-h-[250px] overflow-y-auto">
             {Object.entries(groupedByTime).map(([time, items]) => (
               <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
-                <span className="font-mono text-xs w-10 font-medium shrink-0">{time}</span>
+                <span className="font-mono text-xs w-24 font-medium shrink-0">
+                  {items[0]?.endTime ? `${time} - ${items[0].endTime}` : time}
+                </span>
                 <div className="flex flex-wrap gap-1">
                   {items.map((item, idx) => (
                     <Badge 
