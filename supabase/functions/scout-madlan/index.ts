@@ -14,10 +14,10 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  WAIT_FOR_MS: 5000,        // Allow page to stabilize
+  WAIT_FOR_MS: 10000,       // 10s - give SPA time to fully render before captcha triggers
   MAX_RETRIES: 3,
-  NEXT_PAGE_DELAY: 20000,   // 20s between pages to reduce CAPTCHA risk
-  RECOVERY_DELAY: 30000     // 30s cooldown after block
+  NEXT_PAGE_DELAY: 8000,    // 8s between pages (stealth proxy handles anti-bot)
+  RECOVERY_DELAY: 10000     // 10s cooldown after block (must stay under 60s edge fn limit)
 };
 
 /**
