@@ -1,0 +1,1 @@
+UPDATE scout_configs SET wait_for_ms = 15000, page_delay_seconds = 5 WHERE source = 'homeless';
