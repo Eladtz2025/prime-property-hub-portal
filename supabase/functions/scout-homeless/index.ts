@@ -15,7 +15,7 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 const HOMELESS_CONFIG = {
   SOURCE: 'homeless',
   WAIT_FOR_MS: 12000,
-  MAX_RETRIES: 1  // Single attempt to stay within edge function 60s limit
+  MAX_RETRIES: 2
 };
 
 serve(async (req) => {
@@ -29,14 +29,12 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Parse request body
   const body = await req.json().catch(() => ({}));
   const page = body.page as number | undefined;
   const runId = body.run_id as string | undefined;
   const configId = body.config_id as string | undefined;
   const maxPages = body.max_pages as number | undefined;
 
-  // Validate required parameters
   if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ 
       success: false, 
@@ -51,7 +49,6 @@ serve(async (req) => {
   console.log(`🟣 scout-homeless [NO-AI]: Page ${page} for run ${runId}`);
 
   try {
-    // Check if run was stopped
     if (await isRunStopped(supabase, runId)) {
       console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
       return new Response(JSON.stringify({ success: false, reason: 'stopped' }), {
@@ -59,7 +56,6 @@ serve(async (req) => {
       });
     }
 
-    // Get config
     const { data: config, error: configError } = await supabase
       .from('scout_configs')
       .select('*')
@@ -70,22 +66,14 @@ serve(async (req) => {
       throw new Error('Config not found');
     }
 
-    // Update page status to 'scraping'
     await updatePageStatus(supabase, runId, page, { status: 'scraping' });
 
-    // Build URL for this page
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { 
-        status: 'failed', 
-        error: 'Failed to build URL',
-        duration_ms: Date.now() - pageStartTime
+        status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime
       });
-      
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-      }
-      
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -95,18 +83,11 @@ serve(async (req) => {
     console.log(`🟣 Homeless page ${page}: Scraping ${url}`);
     await updatePageStatus(supabase, runId, page, { url });
 
-    // Check API keys
     if (!firecrawlApiKey) {
       await updatePageStatus(supabase, runId, page, { 
-        status: 'failed', 
-        error: 'FIRECRAWL_API_KEY not configured',
-        duration_ms: Date.now() - pageStartTime
+        status: 'failed', error: 'FIRECRAWL_API_KEY not configured', duration_ms: Date.now() - pageStartTime
       });
-      
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-      }
-      
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
       return new Response(JSON.stringify({ success: false, error: 'No API key' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -118,15 +99,9 @@ serve(async (req) => {
     if (!scrapeData) {
       console.error(`All retry attempts failed for Homeless page ${page}`);
       await updatePageStatus(supabase, runId, page, { 
-        status: 'blocked', 
-        error: 'Scrape failed - possible CAPTCHA',
-        duration_ms: Date.now() - pageStartTime
+        status: 'blocked', error: 'Scrape failed - possible CAPTCHA', duration_ms: Date.now() - pageStartTime
       });
-      
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-      }
-      
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
       return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -135,74 +110,48 @@ serve(async (req) => {
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
     const html = scrapeData.data?.html || scrapeData.html || '';
 
-    // Save debug sample for diagnosis
+    // Save debug sample
     await supabase.from('debug_scrape_samples').upsert({
-      source: 'homeless',
-      url: url,
-      html: html.substring(0, 50000),
-      markdown: markdown.substring(0, 10000),
-      properties_found: 0,
+      source: 'homeless', url, html: html.substring(0, 50000),
+      markdown: markdown.substring(0, 10000), properties_found: 0,
     }, { onConflict: 'source' }).then(() => console.log('Debug sample saved'));
 
     const validation = validateScrapedContent(markdown, html, 'homeless');
     if (!validation.valid) {
       console.error(`Homeless content validation failed: ${validation.reason}`);
       await updatePageStatus(supabase, runId, page, { 
-        status: 'blocked', 
-        error: validation.reason || 'Content validation failed',
-        duration_ms: Date.now() - pageStartTime
+        status: 'blocked', error: validation.reason || 'Content validation failed', duration_ms: Date.now() - pageStartTime
       });
-      
-      if (maxPages) {
-        await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-      }
-      
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
       return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Extract properties with NON-AI parser (uses HTML) + DB street lookup
+    // Extract properties with NON-AI parser
     const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
     const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase);
     const extractedProperties = parseResult.properties;
 
     console.log(`🟣 Homeless page ${page}: [NO-AI] Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
 
-    // Save properties and count new ones
     let pageNew = 0;
     for (const property of extractedProperties) {
       const result = await saveProperty(supabase, property);
-      if (result.isNew) {
-        pageNew++;
-      }
+      if (result.isNew) pageNew++;
     }
 
     const duration = Date.now() - pageStartTime;
 
-    // Update page stats with results
     await updatePageStatus(supabase, runId, page, { 
-      status: 'completed',
-      found: extractedProperties.length,
-      new: pageNew,
-      duration_ms: duration
+      status: 'completed', found: extractedProperties.length, new: pageNew, duration_ms: duration
     });
-
-    // Update run totals atomically
     await incrementRunStats(supabase, runId, extractedProperties.length, pageNew);
-
-    // Check if all pages are done and finalize
-    if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-    }
+    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
 
     return new Response(JSON.stringify({
-      success: true,
-      page,
-      found: extractedProperties.length,
-      new: pageNew,
-      duration_ms: duration,
-      parser: 'no-ai'
+      success: true, page, found: extractedProperties.length,
+      new: pageNew, duration_ms: duration, parser: 'no-ai'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -211,19 +160,13 @@ serve(async (req) => {
     console.error(`scout-homeless page ${page} error:`, error);
     
     await updatePageStatus(supabase, runId, page, { 
-      status: 'failed', 
-      error: error instanceof Error ? error.message : 'Unknown error',
+      status: 'failed', error: error instanceof Error ? error.message : 'Unknown error',
       duration_ms: Date.now() - pageStartTime
     });
-
-    if (maxPages) {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
-    }
+    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
 
     return new Response(JSON.stringify({
-      success: false,
-      page,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      success: false, page, error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
