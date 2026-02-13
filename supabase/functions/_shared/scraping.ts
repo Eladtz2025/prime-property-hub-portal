@@ -153,14 +153,11 @@ export async function scrapeWithRetry(
         }
       };
 
-      // For homeless, use stealth config with actions to solve Turnstile challenge
+      // For homeless, use stealth config with longer timeout for Turnstile
       if (source === 'homeless') {
-        // Override: remove custom headers that might trigger bot detection
         delete requestBody.headers;
-        // Use longer timeout to give Turnstile challenge time to auto-resolve
-        requestBody.timeout = 30000;
-        requestBody.waitFor = 12000;
-        // No click actions - Turnstile is iframe-based and can't be clicked via selectors
+        requestBody.timeout = 50000;
+        requestBody.waitFor = 20000;
       }
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
