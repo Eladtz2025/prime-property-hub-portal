@@ -1,67 +1,35 @@
 
+# הוספת פירוט כפילויות עם לינקים לדשבורד
 
-# תיקון False Positives בזיהוי כפילויות
+## מה יתווסף
 
-## הבעיה
+סקציה חדשה בתוך `DeduplicationStatus.tsx` שמציגה את **קבוצות הכפילויות** בצורה מפורטת:
 
-הלוגיקה הנוכחית ב-`detect_duplicates_batch` מתייחסת ל-`floor IS NULL` כ"מתאים לכל קומה". זה גורם לשרשרת שגויה: דירה ללא קומה מתאימה לדירה בקומה 5, שמצטרפת לאותה קבוצה עם דירה בקומה 4, ובסוף כל הדירות בבניין נמצאות באותה קבוצה למרות שהן שונות לחלוטין.
+### 1. טבלת קבוצות כפילויות (Expandable)
 
-דוגמה: "לב תל אביב" — 5 דירות עם מחירים בין 11.9M ל-18.5M, שטחים בין 163 ל-232 מ"ר, קומות שונות — כולן בקבוצה אחת.
+מתחת להיסטוריית הריצות, תתווסף טבלה של כל 244 הקבוצות (עם pagination של 20 לדף):
 
-## הפתרון
+| כתובת | קומה | חדרים | מחיר | נכסים בקבוצה | Winner |
+|--------|------|--------|------|-------------|--------|
+| פנקס | 9 | 4.5 | 25,000 | 7 | yad2.co.il/... |
 
-### 1. החמרת תנאי הקומה ב-SQL (Migration)
+- לחיצה על שורה תפתח (Collapsible) את כל הנכסים בקבוצה
+- כל נכס יציג: כתובת, מחיר, חדרים, קומה, מקור (yad2/madlan/homeless), ולינק ישיר (פותח בטאב חדש)
+- ה-Winner מסומן בירוק, ה-Losers באפור
+- הפרש מחיר מוצג כאחוז מול ה-Winner
 
-שינוי הלוגיקה מ:
-```text
-v_prop.floor IS NULL OR sp.floor IS NULL OR sp.floor = v_prop.floor
-```
-ל:
-```text
-sp.floor = v_prop.floor  (חובה התאמה מדויקת, NULL לא מתאים)
-```
+### 2. Query חדש
 
-בנוסף, החמרת תנאי המחיר — אם שני הנכסים בקבוצה עם מחירים שונים ביותר מ-30%, הם לא כפילויות:
-```text
-AND (sp.price IS NULL OR v_prop_price IS NULL 
-     OR ABS(sp.price - v_prop_price)::FLOAT / GREATEST(sp.price, v_prop_price) <= 0.30)
-```
+שאילתה שמביאה את כל הנכסים עם `duplicate_group_id IS NOT NULL`, מקובצים לפי הקבוצה, ממוינים לפי גודל הקבוצה (הגדולות קודם).
 
-### 2. איפוס קבוצות שגויות ו-dedup_checked_at
+### 3. פירוט טכני
 
-ניקוי כל ה-duplicate_group_id הקיימים ואיפוס dedup_checked_at כדי שכל הנכסים ייבדקו מחדש עם הלוגיקה המתוקנת.
+**קובץ שישתנה:** `src/components/scout/checks/DeduplicationStatus.tsx`
 
-### 3. עדכון `find_property_duplicate` בהתאם
-
-אותו שינוי גם בפונקציית החיפוש הבודדת (שמופעלת בזמן קליטת נכס חדש).
-
-## סדר ביצוע
-
-1. Migration עם הפונקציות המתוקנות + איפוס נתונים
-2. הרצה מחדש של סריקת כפילויות מהדשבורד
-
-## פרטים טכניים
-
-Migration SQL:
-```sql
--- 1. Update detect_duplicates_batch: require exact floor match + price tolerance
-CREATE OR REPLACE FUNCTION public.detect_duplicates_batch(batch_size integer DEFAULT 500)
-RETURNS TABLE(...) -- same signature
--- Changes:
---   Remove: v_prop.floor IS NULL OR sp.floor IS NULL OR
---   Add: sp.floor = v_prop.floor (exact match required)
---   Add: price tolerance <= 30%
-
--- 2. Update find_property_duplicate similarly
-CREATE OR REPLACE FUNCTION public.find_property_duplicate(...)
--- Same floor + price changes
-
--- 3. Reset all duplicate data for re-scan
-UPDATE scouted_properties SET 
-  duplicate_group_id = NULL, 
-  is_primary_listing = true, 
-  duplicate_detected_at = NULL, 
-  dedup_checked_at = NULL 
-WHERE duplicate_group_id IS NOT NULL OR dedup_checked_at IS NOT NULL;
-```
-
+**שינויים:**
+- הוספת query חדש `dedup-groups-detail` שמביא נכסים עם `duplicate_group_id IS NOT NULL` כולל שדות: `id, address, city, price, rooms, floor, source_url, is_primary_listing, duplicate_group_id, source`
+- קיבוץ בצד הקליינט לפי `duplicate_group_id`
+- הצגה ב-Collapsible/Accordion: כל קבוצה כשורה מסכמת, לחיצה פותחת את הפירוט
+- Pagination (20 קבוצות לדף) עם כפתורי הבא/קודם
+- לינקים ל-source_url נפתחים בטאב חדש עם אייקון ExternalLink
+- Badge צבעוני למקור (yad2 = כחול, madlan = ירוק, homeless = סגול)
