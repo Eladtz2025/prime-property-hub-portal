@@ -428,7 +428,7 @@ serve(async (req) => {
 
     const { data: properties, error } = await supabase
       .from('scouted_properties')
-      .select('id, source_url, source, title')
+      .select('id, source_url, source, title, address, neighborhood')
       .in('id', propertyIds);
 
     if (error) throw error;
@@ -482,7 +482,8 @@ serve(async (req) => {
         property_id: result.id,
         source_url: prop?.source_url || null,
         source: prop?.source || null,
-        address: prop?.title || null,
+        address: prop?.address || prop?.title || null,
+        neighborhood: prop?.neighborhood || null,
         reason: result.reason,
         is_inactive: result.isInactive,
         checked_at: new Date().toISOString(),
