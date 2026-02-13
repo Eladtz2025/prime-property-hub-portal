@@ -1,95 +1,95 @@
 
-# שיפור תצוגת סריקות במוניטור החי
+# תיקון תצוגת כפילויות בדשבורד
 
-## בעיות נוכחיות
-1. **מספר עמודים שגוי** - ההדר מציג "עמ' 3/3" במקום "עמ' 3/7" כי הוא סופר רק עמודים שהושלמו ולא את הסך הכולל מהקונפיגורציה
-2. **אין שם קונפיגורציה** - השאילתה לא מביאה את שם הקונפיגורציה ואת max_pages
-3. **כל דף = שורה נפרדת בפיד** - יוצר רעש ויזואלי עם החלפת אייקונים מהירה
-4. **סטטוס לא מדויק** - דפים עם 0 תוצאות מקבלים אייקון אזהרה גם כשאין באמת שגיאה
+## מה מצאתי
 
-## פתרון
+בדיקת הכפילויות **עצמה עובדת מצוין**: יש 1,135 קבוצות כפילויות עם 2,436 נכסים. המנוע הפנימי (RPC) תקין לחלוטין.
 
-### שינוי 1: שאילתת scan runs - הוספת join ל-scout_configs
+**הבעיות הן בתצוגה בלבד:**
+
+### בעיה 1: היסטוריה ריקה (DeduplicationStatus)
+הקומפוננטה שמוצגת ב"היסטוריה" שואלת את טבלת `duplicate_alerts` שיש בה **0 רשומות**. הנתונים האמיתיים נמצאים ב-`backfill_progress` (task_name = 'dedup-scan') וב-`scouted_properties.duplicate_group_id`.
+
+### בעיה 2: מספר קבוצות מנופח
+השאילתה סופרת כמה נכסים יש להם `duplicate_group_id` (2,436) במקום כמה קבוצות ייחודיות (1,135). צריך `COUNT(DISTINCT duplicate_group_id)`.
+
+### בעיה 3: סטטוס שגוי
+כשאין נכסים לבדיקה (unchecked = 0), הסטטוס מראה "idle" במקום "completed". צריך לבדוק גם אם יש ריצה אחרונה.
+
+### בעיה 4: פיד כפילויות במוניטור
+כמו הבעיה שתיקנו לסריקות — כל batch מופיע כשורה נפרדת במקום שורה מסכמת אחת.
+
+---
+
+## שינויים מתוכננים
+
+### קובץ 1: `src/components/scout/ChecksDashboard.tsx`
+
+**תיקון ספירת קבוצות** — שימוש ב-RPC או שינוי השאילתה:
+- במקום לספור שורות עם `duplicate_group_id IS NOT NULL`, להשתמש בשאילתה נפרדת שסופרת קבוצות ייחודיות
+- כיוון ש-supabase-js לא תומך ב-COUNT DISTINCT ישירות, נשתמש ב-RPC קטן או נביא את הנתון מ-backfill_progress
+
+**תיקון סטטוס הכרטיס** — הצגת "completed" כשהריצה האחרונה הסתיימה:
+- קריאת `backfill_progress` עבור `dedup-scan` לקבלת last run info
+- הצגת זמן ריצה אחרונה ותוצאות
+
+### קובץ 2: `src/components/scout/checks/DeduplicationStatus.tsx`
+
+**שכתוב מלא** — במקום לקרוא מ-`duplicate_alerts` (ריק), להציג:
+- סטטיסטיקות מ-`scouted_properties`: קבוצות ייחודיות, נכסים כפולים, losers, unchecked
+- היסטוריית ריצות מ-`backfill_progress` (task_name = 'dedup-scan')
+- תוצאות ריצה אחרונה: כמה נבדקו, כמה כפילויות נמצאו, כמה קבוצות חדשות
+
+### קובץ 3: `src/components/scout/checks/LiveMonitor.tsx`
+
+**איחוד שורות dedup בפיד** — כמו שעשינו לסריקות:
+- במקום שורה לכל batch, שורה מסכמת אחת לכל ריצת dedup
+- הצגת: "סריקת כפילויות — באצ' 12/13 | 5,551 נבדקו | 2,020 כפילויות"
+
+---
+
+## פירוט טכני
+
+### שינוי שאילתת dedupStats
 ```typescript
-// שורה ~226-236
-const { data: scanRuns } = useQuery({
-  queryKey: ['monitor-scan-runs'],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('scout_runs')
-      .select('id, started_at, status, source, config_id, properties_found, new_properties, page_stats, scout_configs(name, max_pages)')
-      .eq('status', 'running')
-      .order('started_at', { ascending: false })
-      .limit(3);
-    if (error) throw error;
-    return data;
-  },
-  refetchInterval: 2000,
-});
+// שאילתה חדשה שמביאה גם distinct groups וגם last run
+const [uncheckedRes, groupsDistinctRes, losersRes, checkedTodayRes, lastRunRes] = await Promise.all([
+  supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).is('dedup_checked_at', null),
+  supabase.rpc('count_duplicate_groups'),  // RPC חדש, או חלופה
+  supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null),
+  supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('dedup_checked_at', today.toISOString()),
+  supabase.from('backfill_progress').select('*').eq('task_name', 'dedup-scan').maybeSingle(),
+]);
 ```
 
-### שינוי 2: תיקון ההדר של סריקות (active processes bar)
-במקום `pages?.length` כסך עמודים, שימוש ב-`max_pages` מהקונפיגורציה:
-```typescript
-scanRuns?.forEach(run => {
-  const config = (run as any).scout_configs;
-  const maxPages = config?.max_pages || 8;
-  const pages = run.page_stats as unknown as PageStat[] | null;
-  const done = pages?.filter(p => ['completed','failed','blocked'].includes(p.status)).length || 0;
-  const configName = config?.name || run.source;
-  activeProcesses.push({
-    type: 'scan',
-    label: `סריקת ${configName} — עמ׳ ${done}/${maxPages} | ${run.properties_found ?? 0} נמצאו, ${run.new_properties ?? 0} חדשים`,
-    elapsed: ...,
-    progress: Math.round((done / maxPages) * 100),
-  });
-});
-```
+**חלופה ללא RPC:** להשתמש ב-summary_data מ-backfill_progress שכבר מכיל groups_created, או לחשב מצד הלקוח.
 
-### שינוי 3: שורת סריקה מאוחדת בפיד (במקום שורה לכל דף)
-במקום ליצור feed item לכל דף, ליצור **שורה אחת מסכמת** לכל ריצת סריקה + אופציונלית שורות רק לדפים עם שגיאות:
+### שכתוב DeduplicationStatus
+- הצגת 3 כרטיסי סטטיסטיקה: קבוצות כפילויות, נכסים כפולים (losers), ממתינים לבדיקה
+- טבלת היסטוריית ריצות מ-backfill_progress (כל הריצות שלdedup-scan)
+- תוצאות הריצה האחרונה כולל recent_batches
 
+### איחוד פיד LiveMonitor
 ```typescript
-scanRuns?.forEach(run => {
-  const config = (run as any).scout_configs;
-  const pages = run.page_stats as unknown as PageStat[] | null;
-  if (!pages || pages.length === 0) return;
-  
-  const maxPages = config?.max_pages || 8;
-  const completedPages = pages.filter(p => p.status === 'completed');
-  const failedPages = pages.filter(p => p.status === 'failed' || p.status === 'blocked');
-  const lastPage = pages[pages.length - 1];
-  const totalFound = pages.reduce((s, p) => s + (p.found || 0), 0);
-  const totalNew = pages.reduce((s, p) => s + (p.new || 0), 0);
-  
-  // שורה מסכמת אחת
-  feedItems.push({
-    type: 'scan',
-    timestamp: lastPage.timestamp || run.started_at,
-    primary: `סריקת ${config?.name || run.source} — עמ׳ ${pages.length}/${maxPages}`,
-    details: `${totalFound} נמצאו | ${totalNew} חדשים | ${completedPages.length} תקינים${failedPages.length > 0 ? ` | ${failedPages.length} נכשלו` : ''}`,
-    source: run.source,
-    status: failedPages.length > 0 ? 'warning' : 'ok',
-  });
-  
-  // שורות נפרדות רק לשגיאות
-  failedPages.forEach(p => {
+if (taskCfg.feedType === 'dedup') {
+  const recentBatches = summary?.recent_batches || [];
+  if (recentBatches.length > 0) {
+    const lastBatch = recentBatches[recentBatches.length - 1];
+    const totalProcessed = run.processed_items ?? 0;
+    const totalDups = run.successful_items ?? 0;
     feedItems.push({
-      type: 'scan',
-      timestamp: run.started_at,
-      primary: `עמ׳ ${p.page} — ${p.error || 'שגיאה'}`,
-      details: truncateUrl(p.url),
-      source: run.source,
-      status: 'error',
+      type: 'dedup',
+      timestamp: lastBatch.timestamp,
+      primary: `סריקת כפילויות — באצ׳ ${lastBatch.batch}`,
+      details: `${totalProcessed} נבדקו | ${totalDups} כפילויות`,
+      status: run.status === 'completed' ? 'ok' : 'warning',
     });
-  });
-});
+  }
+}
 ```
-
-## סיכום
 
 | קובץ | שינוי |
 |---|---|
-| `src/components/scout/checks/LiveMonitor.tsx` | 1. Join scout_configs בשאילתה 2. תיקון חישוב עמודים בהדר 3. מעבר לשורה מאוחדת לכל סריקה |
-
-התוצאה: הסריקה תוצג כשורה אחת שמתעדכנת בזמן אמת ("סריקת הומלס שכירות — עמ' 4/7 | 160 נמצאו | 0 חדשים") במקום 7 שורות נפרדות עם אייקונים מתחלפים.
+| `ChecksDashboard.tsx` | תיקון ספירת groups (distinct), הוספת last run, תיקון סטטוס |
+| `DeduplicationStatus.tsx` | שכתוב — מעבר מ-duplicate_alerts ל-backfill_progress + scouted_properties |
+| `LiveMonitor.tsx` | איחוד שורות dedup לשורה מסכמת אחת |
