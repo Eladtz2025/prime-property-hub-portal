@@ -182,23 +182,31 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 10000,
   });
 
-  // Dedup stats — read from scouted_properties, not duplicate_alerts
+  // Dedup stats — read from scouted_properties + backfill_progress for accurate counts
   const { data: dedupStats } = useQuery({
     queryKey: ['dedup-stats-summary'],
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const [uncheckedRes, groupsRes, losersRes, checkedTodayRes] = await Promise.all([
+      const [uncheckedRes, losersRes, checkedTodayRes, lastRunRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).is('dedup_checked_at', null),
-        supabase.from('scouted_properties').select('duplicate_group_id', { count: 'exact', head: true }).not('duplicate_group_id', 'is', null),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('dedup_checked_at', today.toISOString()),
+        supabase.from('backfill_progress').select('*').eq('task_name', 'dedup-scan').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
+      // Get distinct group count from last run summary, or count losers + groups heuristic
+      const summary = lastRunRes.data?.summary_data as any;
+      // Total duplicates found = losers count; groups = total_active properties with group - losers
+      // Better: use the successful_items from last run as total dups found
+      const totalDups = lastRunRes.data?.successful_items ?? 0;
       return {
         unchecked: uncheckedRes.count ?? 0,
-        groups: groupsRes.count ?? 0,
+        groups: losersRes.count ?? 0, // losers = non-primary duplicates (actual duplicates removed from view)
+        totalDups,
         losers: losersRes.count ?? 0,
         checkedToday: checkedTodayRes.count ?? 0,
+        lastRun: lastRunRes.data,
+        summary,
       };
     },
     refetchInterval: 15000,
@@ -346,11 +354,11 @@ export const ChecksDashboard: React.FC = () => {
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
-          status={dedupStats?.unchecked ? 'completed' : 'idle'}
-          statusText={`${dedupStats?.unchecked ?? 0} לבדיקה | ${dedupStats?.groups ?? 0} קבוצות | ${dedupStats?.checkedToday ?? 0} נבדקו היום`}
+          status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.unchecked ? 'idle' : 'idle'}
+          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : `${dedupStats?.losers ?? 0} כפילויות | ${dedupStats?.checkedToday ?? 0} נבדקו היום`}
           metrics={[
             { label: 'לבדיקה', value: dedupStats?.unchecked ?? 0 },
-            { label: 'קבוצות', value: dedupStats?.groups ?? 0 },
+            { label: 'כפילויות (losers)', value: dedupStats?.losers ?? 0 },
             { label: 'נבדקו היום', value: dedupStats?.checkedToday ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
