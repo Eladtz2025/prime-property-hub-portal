@@ -1,59 +1,78 @@
 
-# תיקון ריצת ההתאמות האוטומטית
 
-## מה מצאתי
+# תיקון בעיות התאמות לקוחות
 
-ההתאמות **עובדות מצוין** כשמפעילים ידנית (הרצתי עכשיו - 544 נכסים עם התאמות, 855 התאמות סה"כ). הבעיה היא שההפעלה האוטומטית לא עובדת.
+## סיכום הבעיות שנמצאו
 
-### שורש הבעיה: התנגשות בין Cron ל-schedule_times
+| בעיה | כמות | חומרה |
+|---|---|---|
+| נכסים לא אקטיביים עם התאמות שאריתיות | 23 | נמוכה |
+| כפילויות (non-primary) עם התאמות | 127 | בינונית |
+| נכסים פעילים ללא התאמות כלל | 4,179 | גבוהה |
+| לקוח עם נתוני ערים שגויים (Ofir) | 1 | בינונית |
+| אין trigger לניקוי התאמות בשינוי מחיר | - | גבוהה |
 
-הפונקציה `trigger-matching` מכילה **בדיקה כפולה מיותרת** של תזמון:
-1. ה-**Cron** קורא לפונקציה ב-21:00 UTC (23:00 ישראל)
-2. הפונקציה עצמה בודקת אם השעה נמצאת ב-`schedule_times` מהגדרות ה-DB
-3. `schedule_times` מוגדר כ-`["07:00"]`
-4. 23:00 לא שווה ל-07:00, אז הפונקציה עושה **skip** כל לילה
+## שינויים מתוכננים
 
-**תוצאה:** ההתאמות לא רצו אוטומטית כבר ימים (ריצות אחרונות היו ידניות/forced).
+### 1. ניקוי נתונים מיידי (SQL)
 
----
-
-## פתרון מוצע
-
-**הסרת בדיקת schedule_times מהפונקציה** - הפונקציה תסמוך רק על ה-Cron לתזמון. הלוגיקה הכפולה מיותרת ויוצרת סיכון להתנגשויות בדיוק כמו שקרה כאן.
-
-### שינוי ב-`supabase/functions/trigger-matching/index.ts`
-
-- הסרת שורות 176-197 (בדיקת `schedule_times` ודילוג)
-- הפונקציה תמיד תרוץ כשנקראת (בין אם מ-Cron או ידנית)
-- שמירה על `force` כפרמטר לתיעוד בלבד
-
-### עדכון Cron schedule
-
-- עדכון ה-Cron מ-`0 21 * * *` ל-`0 5 * * *` (07:00 ישראל) כדי להתאים ללוח הזמנים שהמשתמש הגדיר
-
----
-
-## פירוט טכני
-
-```typescript
-// הסרת הבלוק הזה (שורות 176-197):
-const matchingSettings = await fetchCategorySettings(supabase, 'matching');
-const scheduleTimes = (matchingSettings).schedule_times || ['09:15', '18:15'];
-const now = new Date();
-const israelTime = now.toLocaleTimeString('en-GB', { ... });
-if (!isForced && !scheduleTimes.includes(israelTime)) {
-  console.log('Skipping matching...');
-  return new Response(...);
-}
-```
-
-עדכון Cron:
+**א. ניקוי matched_leads מנכסים לא אקטיביים (23):**
 ```sql
-SELECT cron.schedule('match-leads-job', '0 5 * * *', ...);
+UPDATE scouted_properties SET matched_leads = '[]'::jsonb
+WHERE is_active = false AND matched_leads IS NOT NULL 
+  AND jsonb_array_length(matched_leads) > 0;
 ```
-(05:00 UTC = 07:00 ישראל)
 
-| שינוי | פירוט |
-|---|---|
-| `trigger-matching/index.ts` | הסרת בדיקת schedule_times |
-| `cron.job` | עדכון schedule ל-07:00 ישראל (05:00 UTC) |
+**ב. ניקוי matched_leads מכפילויות non-primary (127):**
+```sql
+UPDATE scouted_properties SET matched_leads = '[]'::jsonb
+WHERE is_primary_listing = false AND duplicate_group_id IS NOT NULL 
+  AND matched_leads IS NOT NULL AND jsonb_array_length(matched_leads) > 0;
+```
+
+**ג. תיקון נתוני ערים של Ofir:**
+```sql
+UPDATE contact_leads 
+SET preferred_cities = ARRAY['תל אביב יפו']
+WHERE id = 'e988ffb1-4a98-42c4-bb5f-a55ef090b3f8';
+```
+
+### 2. Trigger חדש: ניקוי התאמות בשינוי מחיר משמעותי (Migration)
+
+כשמחיר נכס משתנה ביותר מ-20%, ה-matched_leads הופכים ללא רלוונטיים כי חלק מהלידים כבר לא עומדים בטווח התקציב. הפתרון: trigger שמנקה את matched_leads ומחזיר את הסטטוס ל-new כדי שהנכס ייכנס מחדש לריצת ההתאמות הבאה.
+
+```sql
+CREATE OR REPLACE FUNCTION clean_matches_on_price_change()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.price IS NOT NULL AND NEW.price IS NOT NULL 
+     AND OLD.price > 0 AND NEW.price > 0
+     AND ABS(NEW.price - OLD.price)::float / OLD.price > 0.20 THEN
+    NEW.matched_leads = '[]'::jsonb;
+    NEW.status = 'new';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER clean_matches_on_price_change
+BEFORE UPDATE ON scouted_properties
+FOR EACH ROW
+WHEN (OLD.price IS DISTINCT FROM NEW.price)
+EXECUTE FUNCTION clean_matches_on_price_change();
+```
+
+### 3. הרצת re-matching מלא
+
+אחרי כל הניקויים, נפעיל ריצת התאמות מלאה (`trigger-matching` עם `force: true`) כדי שכל 4,179 הנכסים שכרגע ללא התאמות יקבלו התאמות מעודכנות ומדויקות.
+
+---
+
+## סדר ביצוע
+
+1. ניקוי נתוני Ofir (SQL insert tool)
+2. ניקוי matched_leads מנכסים לא אקטיביים וכפילויות (SQL insert tool)
+3. יצירת trigger לשינוי מחיר (migration)
+4. הפעלת re-matching מלא (edge function call)
+5. בדיקת תוצאות
+
