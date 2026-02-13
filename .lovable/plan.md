@@ -1,55 +1,68 @@
 
 
-# מיזוג קבוצות כפילויות מפוצלות
+# הוספת שעת סיום לתהליכים ארוכים
 
-## המצב
+## הרעיון
 
-הלוגיקה ב-`detect_duplicates_batch` כבר מתוקנת (exact floor match + 30% price tolerance), אבל נותרו **20+ קבוצות מפוצלות** מהסריקות הישנות. לדוגמה:
-- הירקון, קומה 2 -- 4 קבוצות נפרדות (!)
-- לב תל אביב, קומה 2 -- 3 קבוצות
-- לב תל אביב, קומה 3 -- 3 קבוצות
-- פנקס, קומה 9 -- 2 קבוצות
+במקום מנגנון תור מורכב, נוסיף לכל תהליך שדה "שעת סיום" ליד "שעת התחלה". התהליך יתחיל בשעה שנקבעה ויפסיק לשרשר את עצמו כשמגיע לשעת הסיום.
 
-כל קבוצה מציגה "מנצח" משלה, אז רואים שורות כפולות בטבלת הסקאוט.
+## שינויים
 
-## הפתרון
+### 1. הוספת הגדרה חדשה `schedule_end_time` לכל קטגוריה
 
-Migration אחד שמבצע:
+הוספת רשומות חדשות לטבלת `scout_settings`:
+- `backfill` / `schedule_end_time` = `"02:30"`
+- `duplicates` / `schedule_end_time` = `"04:30"`
+- `availability` / `schedule_end_time` = `"06:30"`
+- `matching` / `schedule_end_time` = `"08:30"`
 
-1. **מיזוג קבוצות מפוצלות** -- לכל כתובת+עיר+קומה שנמצאת ביותר מקבוצה אחת, העברת כל הנכסים לקבוצה אחת (`min(duplicate_group_id)`)
-2. **ניקוי קבוצות שנותרו עם נכס בודד** -- הרצת `cleanup_orphan_duplicate_groups()`
-3. **חישוב מנצחים מחדש** -- הרצת `recompute_duplicate_winners()` כדי שכל קבוצה מאוחדת תבחר מנצח אחד בלבד
+### 2. עדכון רכיב `ScheduleTimeEditor`
 
-## תוצאה צפויה
+הוספת שדה input נוסף מסוג `time` לשעת סיום, ליד שעות ההתחלה הקיימות. התצוגה תהיה:
 
-במקום לראות שורות כפולות בסקאוט (כמו 5 שורות של פנקס 25,000), תראה רק שורה אחת לכל דירה ייחודית.
-
-## פרטים טכניים
-
-קובץ חדש: `supabase/migrations/XXXX_merge_fragmented_groups.sql`
-
-```sql
--- Step 1: Merge fragmented groups (same address+city+floor in multiple groups)
-WITH fragmented AS (
-  SELECT address, city, floor,
-    array_agg(DISTINCT duplicate_group_id) as groups,
-    min(duplicate_group_id) as keep_group
-  FROM scouted_properties
-  WHERE duplicate_group_id IS NOT NULL AND is_active = true
-  GROUP BY address, city, floor
-  HAVING count(DISTINCT duplicate_group_id) > 1
-)
-UPDATE scouted_properties sp
-SET duplicate_group_id = f.keep_group
-FROM fragmented f
-WHERE sp.address = f.address AND sp.city = f.city
-  AND ((sp.floor IS NULL AND f.floor IS NULL) OR sp.floor = f.floor)
-  AND sp.duplicate_group_id = ANY(f.groups)
-  AND sp.duplicate_group_id != f.keep_group;
-
--- Step 2: Cleanup single-property groups
-SELECT cleanup_orphan_duplicate_groups();
-
--- Step 3: Recompute winners for all merged groups
-SELECT recompute_duplicate_winners();
+```text
+שעות ריצה: 03:00  עד  06:30  [שמור]
 ```
+
+השדה החדש ישמר ב-`scout_settings` עם `setting_key = 'schedule_end_time'`.
+
+### 3. עדכון ה-hooks והטיפוסים
+
+- `useScoutSettings.ts` -- הוספת `schedule_end_time?: string` לכל קטגוריה רלוונטית (backfill, availability, duplicates, matching)
+- `supabase/functions/_shared/settings.ts` -- הוספת ערכי ברירת מחדל
+
+### 4. עדכון Edge Functions שמשרשרים את עצמם
+
+בכל מקום שבודקים `hasMore` לפני self-chain, נוסיף בדיקה:
+
+```text
+if (hasMore && !isPastEndTime(endTime)) {
+  // trigger next batch
+} else if (isPastEndTime(endTime)) {
+  // mark as completed - "stopped: end time reached"
+}
+```
+
+הפונקציות שיעודכנו:
+- `backfill-property-data/index.ts` -- שורה 845
+- `trigger-availability-check/index.ts` -- שורה 254
+- `reclassify-broker/index.ts` -- שורה 616
+
+פונקציית עזר ב-`_shared/settings.ts`:
+
+```text
+function isPastEndTime(endTimeIL: string): boolean {
+  // המרה לשעון UTC והשוואה לשעה הנוכחית
+}
+```
+
+### 5. סדר ביצוע
+
+1. Migration להוספת 4 רשומות `schedule_end_time` ב-`scout_settings`
+2. עדכון `ScheduleTimeEditor` -- הוספת שדה שעת סיום
+3. עדכון `useScoutSettings` ו-`settings.ts` -- טיפוסים + ברירות מחדל
+4. עדכון 3 Edge Functions -- בדיקת שעת סיום לפני self-chain
+
+### תוצאה
+
+בהגדרות תראה ליד כל תהליך "משעה X עד שעה Y". אם תהליך עדיין רץ ומגיעה שעת הסיום -- הוא יסיים את הבאטצ' הנוכחי ויעצור, ומה שנשאר ימשיך למחרת.
