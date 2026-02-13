@@ -282,6 +282,19 @@ Deno.serve(async (req) => {
       // For auto-triggers, use a different task name to avoid conflicts
       const taskName = auto_trigger ? `${TASK_NAME}_auto_${source_filter || 'all'}` : TASK_NAME;
 
+      // Clean old completed/stopped/failed records to avoid UNIQUE constraint violation
+      const { error: deleteError } = await supabase
+        .from('backfill_progress')
+        .delete()
+        .eq('task_name', taskName)
+        .in('status', ['completed', 'stopped', 'failed']);
+      
+      if (deleteError) {
+        console.warn('⚠️ Failed to clean old backfill records:', deleteError.message);
+      } else {
+        console.log(`🧹 Cleaned old records for task_name: ${taskName}`);
+      }
+
       const { data: newTask, error: insertError } = await supabase
         .from('backfill_progress')
         .insert({

@@ -121,7 +121,7 @@ serve(async (req) => {
 
     // Remaining quota for today
     const remainingQuota = dailyLimit - processedToday;
-    const fetchLimit = Math.min(remainingQuota, batchSize * MAX_BATCHES_PER_RUN);
+    const fetchLimit = Math.min(remainingQuota, batchSize * (MAX_BATCHES_PER_RUN + 1)); // Fetch one extra batch to detect if more work remains
 
     console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
 
@@ -249,6 +249,22 @@ serve(async (req) => {
 
     console.log(`✅ Run complete: ${processedThisRun} processed, lock released`);
 
+    // Self-chain: if there are remaining items and daily quota left, trigger another run
+    const remainingDailyQuota = remainingQuota - processedThisRun;
+    if (remainingBatches > 0 && remainingDailyQuota > 0) {
+      console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
+      // Small delay before self-chain to avoid hammering
+      await sleep(3000);
+      fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ continue_run: true })
+      }).catch(err => console.error('⚠️ Self-chain failed:', err));
+    }
+
     return new Response(JSON.stringify({
       success: true,
       run_id: runId,
@@ -258,7 +274,8 @@ serve(async (req) => {
       failed_batches: failedBatches,
       remaining_in_queue: remainingBatches > 0 ? remainingBatches * batchSize : 0,
       daily_limit: dailyLimit,
-      next_run: remainingBatches > 0 ? 'cron will continue in 10 minutes' : 'backlog cleared'
+      self_chained: remainingBatches > 0 && remainingDailyQuota > 0,
+      next_run: remainingBatches > 0 && remainingDailyQuota > 0 ? 'self-chaining now' : remainingBatches > 0 ? 'daily limit reached' : 'backlog cleared'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
