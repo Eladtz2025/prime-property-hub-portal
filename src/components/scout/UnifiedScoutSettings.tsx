@@ -122,8 +122,8 @@ const SOURCE_TECHNICAL_PARAMS: Record<string, {
   },
   homeless: {
     getPages: (settings) => settings?.scraping?.homeless_pages ?? 5,
-    delaySeconds: 2,
-    waitForMs: 3000,
+    delaySeconds: 5,
+    waitForMs: 15000,
     schedule: ['08:00', '16:00', '22:00'],
   },
 };
@@ -707,7 +707,7 @@ export const UnifiedScoutSettings: React.FC = () => {
                       {editingConfig ? 'עריכת הגדרה' : 'הוספת הגדרה חדשה'}
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 mt-4">
+                  <div className="space-y-4 mt-4 max-h-[70vh] overflow-y-auto px-1">
                     <div>
                       <Label>שם ההגדרה</Label>
                       <Input
