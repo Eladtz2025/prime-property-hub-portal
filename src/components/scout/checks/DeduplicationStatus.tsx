@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Copy, CheckCircle, Clock, AlertTriangle, Layers } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, ExternalLink, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface DedupSummary {
   duplicates_found?: number;
@@ -17,7 +19,45 @@ interface DedupSummary {
   recent_batches?: { batch: number; processed: number; duplicates: number; groups: number; timestamp: string }[];
 }
 
+interface DupProperty {
+  id: string;
+  address: string | null;
+  city: string | null;
+  price: number | null;
+  rooms: number | null;
+  floor: number | null;
+  source_url: string | null;
+  is_primary_listing: boolean | null;
+  duplicate_group_id: string | null;
+  source: string | null;
+}
+
+interface DupGroup {
+  groupId: string;
+  properties: DupProperty[];
+  winner: DupProperty | null;
+}
+
+const GROUPS_PER_PAGE = 20;
+
+const getSourceBadge = (source: string | null) => {
+  if (!source) return null;
+  const s = source.toLowerCase();
+  if (s.includes('madlan')) return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]">Madlan</Badge>;
+  if (s.includes('yad2')) return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 text-[10px]">Yad2</Badge>;
+  if (s.includes('homeless')) return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 text-[10px]">Homeless</Badge>;
+  return <Badge className="bg-muted text-muted-foreground text-[10px]">{source}</Badge>;
+};
+
+const priceDiffPercent = (price: number | null, winnerPrice: number | null): string | null => {
+  if (!price || !winnerPrice || price === winnerPrice) return null;
+  const diff = ((price - winnerPrice) / winnerPrice) * 100;
+  return `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%`;
+};
+
 export const DeduplicationStatus: React.FC = () => {
+  const [page, setPage] = useState(1);
+
   // Dedup run history from backfill_progress
   const { data: runs } = useQuery({
     queryKey: ['dedup-run-history'],
@@ -49,6 +89,43 @@ export const DeduplicationStatus: React.FC = () => {
     },
     refetchInterval: 15000,
   });
+
+  // Duplicate groups detail
+  const { data: dupProperties } = useQuery({
+    queryKey: ['dedup-groups-detail'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scouted_properties')
+        .select('id, address, city, price, rooms, floor, source_url, is_primary_listing, duplicate_group_id, source')
+        .not('duplicate_group_id', 'is', null)
+        .order('duplicate_group_id');
+      if (error) throw error;
+      return data as DupProperty[];
+    },
+    refetchInterval: 30000,
+  });
+
+  // Group by duplicate_group_id
+  const groups: DupGroup[] = useMemo(() => {
+    if (!dupProperties) return [];
+    const map = new Map<string, DupProperty[]>();
+    for (const p of dupProperties) {
+      if (!p.duplicate_group_id) continue;
+      const arr = map.get(p.duplicate_group_id) || [];
+      arr.push(p);
+      map.set(p.duplicate_group_id, arr);
+    }
+    return Array.from(map.entries())
+      .map(([groupId, properties]) => ({
+        groupId,
+        properties,
+        winner: properties.find(p => p.is_primary_listing) || properties[0],
+      }))
+      .sort((a, b) => b.properties.length - a.properties.length);
+  }, [dupProperties]);
+
+  const totalPages = Math.ceil(groups.length / GROUPS_PER_PAGE);
+  const pagedGroups = groups.slice((page - 1) * GROUPS_PER_PAGE, page * GROUPS_PER_PAGE);
 
   const lastRun = runs?.[0];
   const lastSummary = lastRun?.summary_data as unknown as DedupSummary | null;
@@ -144,6 +221,84 @@ export const DeduplicationStatus: React.FC = () => {
       ) : (
         <div className="text-center py-6 text-muted-foreground text-sm">אין ריצות כפילויות</div>
       )}
+
+      {/* Duplicate Groups Detail */}
+      {groups.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">קבוצות כפילויות ({groups.length})</p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1 text-xs">
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <span className="text-muted-foreground">{page}/{totalPages}</span>
+                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            {pagedGroups.map(group => (
+              <DuplicateGroupRow key={group.groupId} group={group} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
+  );
+};
+
+const DuplicateGroupRow: React.FC<{ group: DupGroup }> = ({ group }) => {
+  const [open, setOpen] = useState(false);
+  const { winner, properties } = group;
+  const losers = properties.filter(p => p.id !== winner?.id);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardContent className="p-2.5 flex items-center gap-3 text-xs">
+            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+            <div className="flex-1 min-w-0 grid grid-cols-5 gap-2 items-center">
+              <span className="font-medium truncate col-span-2">{winner?.address || '—'}, {winner?.city || ''}</span>
+              <span>קומה {winner?.floor ?? '—'} · {winner?.rooms ?? '—'} ח׳</span>
+              <span className="font-medium">{winner?.price?.toLocaleString('he-IL') ?? '—'} ₪</span>
+              <span className="text-muted-foreground">{properties.length} נכסים</span>
+            </div>
+            {winner && getSourceBadge(winner.source)}
+          </CardContent>
+        </Card>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mr-6 border-r border-muted pr-3 space-y-1 py-1">
+          {properties.map(prop => {
+            const isWinner = prop.id === winner?.id;
+            const diff = priceDiffPercent(prop.price, winner?.price ?? null);
+            return (
+              <div
+                key={prop.id}
+                className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded ${isWinner ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800' : 'bg-muted/30'}`}
+              >
+                {isWinner && <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]">Winner</Badge>}
+                <span className="truncate flex-1">{prop.address || '—'}, {prop.city || ''}</span>
+                <span>ק׳ {prop.floor ?? '—'}</span>
+                <span>{prop.rooms ?? '—'} ח׳</span>
+                <span className="font-medium">{prop.price?.toLocaleString('he-IL') ?? '—'} ₪</span>
+                {diff && <span className="text-orange-600 dark:text-orange-400 text-[10px]">{diff}</span>}
+                {getSourceBadge(prop.source)}
+                {prop.source_url && (
+                  <a href={prop.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80" onClick={e => e.stopPropagation()}>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
