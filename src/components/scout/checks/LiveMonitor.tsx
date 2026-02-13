@@ -220,12 +220,12 @@ export const LiveMonitor: React.FC = () => {
   });
 
   // Scan runs
-  const { data: scanRuns } = useQuery({
+    const { data: scanRuns } = useQuery({
     queryKey: ['monitor-scan-runs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('scout_runs')
-        .select('id, started_at, status, source, properties_found, new_properties, page_stats')
+        .select('id, started_at, status, source, config_id, properties_found, new_properties, page_stats, scout_configs(name, max_pages)')
         .eq('status', 'running')
         .order('started_at', { ascending: false })
         .limit(3);
@@ -258,30 +258,37 @@ export const LiveMonitor: React.FC = () => {
     });
   });
 
-  // Scan page stats
+  // Scan: one summary line per run + error lines only
   scanRuns?.forEach(run => {
+    const config = (run as any).scout_configs;
     const pages = run.page_stats as unknown as PageStat[] | null;
-    if (!pages) return;
-    pages.filter(p => p.status !== 'pending').forEach(p => {
-      const isOk = p.status === 'completed';
-      const isBlocked = p.status === 'blocked';
-      const duration = p.duration_ms ? `${(p.duration_ms / 1000).toFixed(1)}s` : '';
-      
-      let detailParts: string[] = [];
-      if (p.url) detailParts.push(truncateUrl(p.url));
-      if (isOk) detailParts.push(`${p.found} נמצאו, ${p.new} חדשים`);
-      if (isBlocked && p.error) detailParts.push(`BLOCKED: ${p.error}`);
-      if (p.status === 'failed' && p.error) detailParts.push(`ERROR: ${p.error}`);
-      if (duration) detailParts.push(duration);
-      if (p.retry_count && p.retry_count > 0) detailParts.push(`ניסיון ${p.retry_count + 1}`);
+    if (!pages || pages.length === 0) return;
 
+    const maxPages = config?.max_pages || 8;
+    const completedPages = pages.filter(p => p.status === 'completed');
+    const failedPages = pages.filter(p => p.status === 'failed' || p.status === 'blocked');
+    const donePagesCount = pages.filter(p => ['completed', 'failed', 'blocked'].includes(p.status)).length;
+    const totalFound = pages.reduce((s, p) => s + (p.found || 0), 0);
+    const totalNew = pages.reduce((s, p) => s + (p.new || 0), 0);
+    const lastPage = pages[pages.length - 1];
+
+    feedItems.push({
+      type: 'scan',
+      timestamp: lastPage?.duration_ms ? run.started_at : run.started_at,
+      primary: `סריקת ${config?.name || run.source} — עמ׳ ${donePagesCount}/${maxPages}`,
+      details: `${totalFound} נמצאו | ${totalNew} חדשים | ${completedPages.length} תקינים${failedPages.length > 0 ? ` | ${failedPages.length} נכשלו` : ''}`,
+      source: run.source,
+      status: failedPages.length > 0 ? 'warning' : 'ok',
+    });
+
+    failedPages.forEach(p => {
       feedItems.push({
         type: 'scan',
         timestamp: run.started_at,
-        primary: `עמ׳ ${p.page} — ${run.source || 'unknown'}`,
-        details: detailParts.join(' | '),
+        primary: `עמ׳ ${p.page} — ${p.error || 'שגיאה'}`,
+        details: truncateUrl(p.url),
         source: run.source,
-        status: isOk ? 'ok' : isBlocked ? 'error' : p.status === 'failed' ? 'error' : 'warning',
+        status: 'error',
       });
     });
   });
@@ -379,15 +386,17 @@ export const LiveMonitor: React.FC = () => {
   });
 
   scanRuns?.forEach(run => {
+    const config = (run as any).scout_configs;
+    const maxPages = config?.max_pages || 8;
+    const configName = config?.name || run.source || '?';
     const elapsed = Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000);
     const pages = run.page_stats as unknown as PageStat[] | null;
-    const done = pages?.filter(p => p.status !== 'pending').length || 0;
-    const total = pages?.length || 0;
+    const done = pages?.filter(p => ['completed', 'failed', 'blocked'].includes(p.status)).length || 0;
     activeProcesses.push({
       type: 'scan',
-      label: `סריקת ${run.source || '?'} — עמ׳ ${done}/${total} | ${run.properties_found ?? 0} נמצאו, ${run.new_properties ?? 0} חדשים`,
+      label: `סריקת ${configName} — עמ׳ ${done}/${maxPages} | ${run.properties_found ?? 0} נמצאו, ${run.new_properties ?? 0} חדשים`,
       elapsed: elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`,
-      progress: total > 0 ? Math.round((done / total) * 100) : undefined,
+      progress: Math.round((done / maxPages) * 100),
     });
   });
 
