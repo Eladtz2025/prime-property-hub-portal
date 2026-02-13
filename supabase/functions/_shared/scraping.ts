@@ -153,11 +153,12 @@ export async function scrapeWithRetry(
         }
       };
 
-      // For homeless, use stealth config with longer timeout for Turnstile
+      // For homeless, simple stealth config
       if (source === 'homeless') {
         delete requestBody.headers;
-        requestBody.timeout = 50000;
-        requestBody.waitFor = 20000;
+        delete requestBody.location;
+        requestBody.timeout = 45000;
+        requestBody.waitFor = 15000;
       }
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
