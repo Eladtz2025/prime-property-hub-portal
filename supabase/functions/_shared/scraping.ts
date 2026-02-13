@@ -131,8 +131,8 @@ export async function scrapeWithRetry(
         formats: ['markdown', 'html'],
         onlyMainContent: source !== 'homeless',
         waitFor: waitForMs,
-        // Yad2 uses stealth proxy (5 credits), others use auto (1 credit)
-        proxy: source === 'yad2' ? 'stealth' : 'auto',
+        // Yad2 and Homeless use stealth proxy (5 credits) to bypass anti-bot, others use auto (1 credit)
+        proxy: (source === 'yad2' || source === 'homeless') ? 'stealth' : 'auto',
         // Request Israeli proxy for better results on Hebrew sites
         location: {
           country: 'IL',
@@ -153,11 +153,14 @@ export async function scrapeWithRetry(
         }
       };
 
-      // For homeless, use minimal config - let Firecrawl handle the challenge naturally
+      // For homeless, use stealth config with actions to solve Turnstile challenge
       if (source === 'homeless') {
         // Override: remove custom headers that might trigger bot detection
         delete requestBody.headers;
-        // No actions - keep it simple
+        // Use longer timeout to give Turnstile challenge time to auto-resolve
+        requestBody.timeout = 30000;
+        requestBody.waitFor = 12000;
+        // No click actions - Turnstile is iframe-based and can't be clicked via selectors
       }
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
