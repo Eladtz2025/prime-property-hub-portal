@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown, extractEvidenceSnippet } from '../_shared/broker-detection.ts';
+import { isPastEndTime, fetchCategorySettings } from '../_shared/settings.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -612,7 +613,16 @@ Deno.serve(async (req) => {
     const { count: remainingCount } = await remainingQuery;
     const hasMore = !hitMaxItems && (remainingCount || 0) > 0;
 
-    if (hasMore) {
+    // Check schedule end time before self-chaining
+    let endTimeReached = false;
+    try {
+      const backfillSettings = await fetchCategorySettings(supabase, 'backfill');
+      endTimeReached = isPastEndTime(backfillSettings.schedule_end_time);
+    } catch (e) {
+      console.warn('Failed to check end time:', e);
+    }
+
+    if (hasMore && !endTimeReached) {
       console.log(`🔄 ${remainingCount} remaining, triggering next batch...`);
       try {
         await fetch(`${supabaseUrl}/functions/v1/reclassify-broker`, {
@@ -630,6 +640,14 @@ Deno.serve(async (req) => {
       } catch (triggerError) {
         console.error('Failed to trigger next batch:', triggerError);
       }
+    } else if (endTimeReached && hasMore) {
+      console.log(`⏰ End time reached, stopping. ${remainingCount} items remaining for next run.`);
+      await supabase.from('backfill_progress').update({
+        status: 'stopped',
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        error_message: `End time reached, ${remainingCount} items remaining`
+      }).eq('id', progressId);
     } else {
       await supabase.from('backfill_progress').update({
         status: 'completed',
