@@ -47,14 +47,35 @@ export function validateScrapedContent(
     'captcha', 'אנחנו צריכים לוודא', 'verify you are human',
     'blocked', 'access denied', 'בקשתך נחסמה',
     'too many requests', 'יותר מדי בקשות', 'rate limit',
-    'cf-browser-verification', 'challenge-platform',
+    'cf-browser-verification',
     'please wait while we verify', 'checking your browser'
   ];
+  
+  // "challenge-platform" is a Cloudflare script present on many pages even when content loads fine.
+  // Only treat it as blocking if there's NO real property content alongside it.
+  const softBlockIndicators = ['challenge-platform'];
   
   const lowerContent = ((markdown || '') + (html || '')).toLowerCase();
   for (const indicator of blockIndicators) {
     if (lowerContent.includes(indicator.toLowerCase())) {
       return { valid: false, reason: `Blocked: detected "${indicator}"` };
+    }
+  }
+  
+  // For soft indicators, check if real content exists alongside them
+  for (const indicator of softBlockIndicators) {
+    if (lowerContent.includes(indicator.toLowerCase())) {
+      // Check if there's actual property content (prices, room counts, listing data)
+      const hasRealContent = lowerContent.includes('₪') || 
+        lowerContent.includes('חדרים') || 
+        lowerContent.includes('חד\'') ||
+        (html && (html.includes('<table') || html.includes('tbl_content') || html.includes('listing')));
+      
+      if (!hasRealContent) {
+        return { valid: false, reason: `Blocked: detected "${indicator}" with no property content` };
+      }
+      // If real content exists, it's just a Cloudflare tag on a valid page — continue
+      console.log(`Note: "${indicator}" detected but page has real property content — proceeding`);
     }
   }
   
@@ -94,8 +115,8 @@ export async function scrapeWithRetry(
   delayMs?: number
 ): Promise<any> {
   // Determine wait time based on source
-  // Madlan simplified: no complex delays, just quick scrape
-  const waitForMs = delayMs || (source === 'yad2' ? 5000 : 3000);
+  // Homeless needs longer wait to let Cloudflare challenge resolve
+  const waitForMs = delayMs || (source === 'homeless' ? 8000 : source === 'yad2' ? 5000 : 3000);
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -108,9 +129,9 @@ export async function scrapeWithRetry(
       const requestBody: Record<string, unknown> = {
         url,
         formats: ['markdown', 'html'],
-        onlyMainContent: true,
+        onlyMainContent: source !== 'homeless',
         waitFor: waitForMs,
-        // Yad2 uses stealth proxy (5 credits), Madlan uses auto (1 credit) - simplified approach works better
+        // Yad2 uses stealth proxy (5 credits), others use auto (1 credit)
         proxy: source === 'yad2' ? 'stealth' : 'auto',
         // Request Israeli proxy for better results on Hebrew sites
         location: {
@@ -131,7 +152,13 @@ export async function scrapeWithRetry(
           'Upgrade-Insecure-Requests': '1',
         }
       };
-      // No special actions for any source - simpler is better
+
+      // For homeless, use minimal config - let Firecrawl handle the challenge naturally
+      if (source === 'homeless') {
+        // Override: remove custom headers that might trigger bot detection
+        delete requestBody.headers;
+        // No actions - keep it simple
+      }
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',

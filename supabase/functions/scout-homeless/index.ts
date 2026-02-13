@@ -14,7 +14,7 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const HOMELESS_CONFIG = {
   SOURCE: 'homeless',
-  WAIT_FOR_MS: 3000,
+  WAIT_FOR_MS: 10000, // Longer wait to let Cloudflare JS challenge resolve
   MAX_RETRIES: 2
 };
 
@@ -134,6 +134,15 @@ serve(async (req) => {
 
     const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
     const html = scrapeData.data?.html || scrapeData.html || '';
+
+    // Save debug sample for diagnosis
+    await supabase.from('debug_scrape_samples').upsert({
+      source: 'homeless',
+      url: url,
+      html: html.substring(0, 50000),
+      markdown: markdown.substring(0, 10000),
+      properties_found: 0,
+    }, { onConflict: 'source' }).then(() => console.log('Debug sample saved'));
 
     const validation = validateScrapedContent(markdown, html, 'homeless');
     if (!validation.valid) {
