@@ -14,8 +14,8 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const HOMELESS_CONFIG = {
   SOURCE: 'homeless',
-  WAIT_FOR_MS: 10000, // Longer wait to let Cloudflare JS challenge resolve
-  MAX_RETRIES: 2
+  WAIT_FOR_MS: 12000,
+  MAX_RETRIES: 1  // Single attempt to stay within edge function 60s limit
 };
 
 serve(async (req) => {
