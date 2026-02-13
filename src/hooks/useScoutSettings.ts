@@ -136,6 +136,11 @@ function parseSettingValue(value: any, defaultValue: any): any {
     return defaultValue;
   }
   
+  // Strip extra quotes from string values like '"02:55"'
+  if (typeof value === 'string' && value.startsWith('"') && value.endsWith('"')) {
+    value = value.slice(1, -1);
+  }
+  
   // Handle array conversion (when value is JSON string)
   if (Array.isArray(defaultValue) && typeof value === 'string') {
     try {

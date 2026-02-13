@@ -63,7 +63,7 @@ export const ScheduleTimeEditor: React.FC<ScheduleTimeEditorProps> = ({
       if (params.newEndTime !== undefined) {
         const { error: endTimeError } = await supabase
           .from('scout_settings')
-          .update({ setting_value: JSON.stringify(params.newEndTime) })
+          .update({ setting_value: params.newEndTime })
           .eq('category', category)
           .eq('setting_key', 'schedule_end_time');
 
