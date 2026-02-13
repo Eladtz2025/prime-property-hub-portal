@@ -1,0 +1,1 @@
+UPDATE scout_runs SET status = 'failed', completed_at = now(), error_message = 'Manual cleanup - stuck run' WHERE id = '7ab7b224-4d37-4fb1-a7d8-4ff2413788ee' AND status = 'running';
