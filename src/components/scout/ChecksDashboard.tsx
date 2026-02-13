@@ -340,6 +340,7 @@ export const ChecksDashboard: React.FC = () => {
                 category="availability"
                 cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
                 label="שעות ריצת בדיקת זמינות"
+                showEndTime
               />
               <AvailabilitySettingsContent />
             </div>
@@ -378,6 +379,7 @@ export const ChecksDashboard: React.FC = () => {
                 category="duplicates"
                 cronJobNames={[{ jobName: 'cleanup-orphan-duplicates-hourly', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
                 label="שעות ריצת ניקוי כפילויות"
+                showEndTime
               />
             </div>
           }
@@ -412,6 +414,7 @@ export const ChecksDashboard: React.FC = () => {
                 category="matching"
                 cronJobNames={[{ jobName: 'match-leads-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
                 label="שעות ריצת התאמות"
+                showEndTime
               />
             </div>
           }
@@ -448,6 +451,7 @@ export const ChecksDashboard: React.FC = () => {
                 category="backfill"
                 cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
                 label="שעות ריצת השלמת נתונים"
+                showEndTime
               />
             </div>
           }

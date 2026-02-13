@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown } from '../_shared/broker-detection.ts';
+import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -842,7 +843,16 @@ Deno.serve(async (req) => {
 
     const hasMore = (remainingCount || 0) > 0;
 
-    if (hasMore) {
+    // Check schedule end time before self-chaining
+    let endTimeReached = false;
+    try {
+      const backfillSettings = await fetchCategorySettings(supabase, 'backfill');
+      endTimeReached = isPastEndTime(backfillSettings.schedule_end_time);
+    } catch (e) {
+      console.warn('Failed to check end time:', e);
+    }
+
+    if (hasMore && !endTimeReached) {
       // Trigger next batch via self-invocation - MUST await to ensure request is dispatched
       console.log(`🔄 ${remainingCount} items remaining, triggering next batch...`);
       
@@ -873,18 +883,25 @@ Deno.serve(async (req) => {
         console.error('Failed to trigger next batch:', err);
       }
     } else {
-      // Mark as completed with final summary
+      // Mark as completed/stopped with final summary
+      const stopReason = endTimeReached ? 'stopped' : 'completed';
+      const stopMessage = endTimeReached ? `End time reached, ${remainingCount || 0} items remaining` : undefined;
+      
       await supabase
         .from('backfill_progress')
         .update({ 
-          status: 'completed',
+          status: stopReason,
           completed_at: new Date().toISOString(),
           summary_data: mergedSummary,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...(stopMessage ? { error_message: stopMessage } : {})
         })
         .eq('id', progressId);
       
-      console.log(`🏁 BACKFILL COMPLETE - Final Summary:
+      if (endTimeReached) {
+        console.log(`⏰ End time reached, stopping. ${remainingCount || 0} items remaining for next run.`);
+      }
+      console.log(`🏁 BACKFILL ${stopReason.toUpperCase()} - Final Summary:
   Total processed: ${mergedSummary.total_processed}
   Address upgraded: ${mergedSummary.address_upgraded} / ${mergedSummary.address_attempted_upgrade} attempted
   No number in source: ${mergedSummary.address_no_number_in_source}

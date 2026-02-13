@@ -10,6 +10,7 @@ export interface ScoutSettings {
     require_same_floor: boolean;
     auto_create_alerts: boolean;
     min_price_diff_for_alert: number;
+    schedule_end_time: string;
   };
   matching: {
     min_score: number;
@@ -27,6 +28,7 @@ export interface ScoutSettings {
     rent_flex_high_percent: number;
     // Schedule settings
     schedule_times: string[];
+    schedule_end_time: string;
   };
   scraping: {
     yad2_pages: number;
@@ -51,6 +53,10 @@ export interface ScoutSettings {
     use_firecrawl: boolean;
     concurrency_limit: number;
     per_property_timeout_ms: number;
+    schedule_end_time: string;
+  };
+  backfill: {
+    schedule_end_time: string;
   };
 }
 
@@ -62,6 +68,7 @@ export const defaultSettings: ScoutSettings = {
     require_same_floor: false,
     auto_create_alerts: true,
     min_price_diff_for_alert: 5,
+    schedule_end_time: '04:30',
   },
   matching: {
     min_score: 60,
@@ -72,11 +79,12 @@ export const defaultSettings: ScoutSettings = {
     entry_date_range_flexible: 14,
     immediate_max_days: 30,
     rent_flex_low_threshold: 7000,
-  rent_flex_low_percent: 0.07,
+    rent_flex_low_percent: 0.07,
     rent_flex_mid_threshold: 15000,
-  rent_flex_mid_percent: 0.05,
-  rent_flex_high_percent: 0.03,
+    rent_flex_mid_percent: 0.05,
+    rent_flex_high_percent: 0.03,
     schedule_times: ['09:15', '18:15'],
+    schedule_end_time: '08:30',
   },
   scraping: {
     yad2_pages: 7,
@@ -101,6 +109,10 @@ export const defaultSettings: ScoutSettings = {
     use_firecrawl: true,
     concurrency_limit: 4,
     per_property_timeout_ms: 25000,
+    schedule_end_time: '06:30',
+  },
+  backfill: {
+    schedule_end_time: '02:30',
   },
 };
 
@@ -175,6 +187,9 @@ export async function fetchScoutSettings(
     } else if (category === 'availability' && setting_key in settings.availability) {
       const key = setting_key as keyof typeof settings.availability;
       (settings.availability as any)[key] = parseSettingValue(setting_value, defaultSettings.availability[key]);
+    } else if (category === 'backfill' && setting_key in settings.backfill) {
+      const key = setting_key as keyof typeof settings.backfill;
+      (settings.backfill as any)[key] = parseSettingValue(setting_value, defaultSettings.backfill[key]);
     }
   }
   
@@ -210,4 +225,33 @@ export async function fetchCategorySettings<T extends keyof ScoutSettings>(
   }
   
   return settings;
+}
+
+/**
+ * Israel UTC offset (using +2 as base for winter, +3 for summer)
+ */
+const IL_UTC_OFFSET = 2;
+
+/**
+ * Check if the current time (in Israel) has passed the given end time.
+ * Used by Edge Functions to stop self-chaining when the time window expires.
+ * 
+ * @param endTimeIL - End time in Israel timezone, format "HH:MM" (e.g. "06:30")
+ * @returns true if the current Israel time is past the end time
+ */
+export function isPastEndTime(endTimeIL: string): boolean {
+  if (!endTimeIL) return false;
+  
+  const [endH, endM] = endTimeIL.split(':').map(Number);
+  if (isNaN(endH) || isNaN(endM)) return false;
+  
+  const now = new Date();
+  // Convert current UTC time to Israel time
+  const israelHour = (now.getUTCHours() + IL_UTC_OFFSET) % 24;
+  const israelMinute = now.getUTCMinutes();
+  
+  const currentMinutes = israelHour * 60 + israelMinute;
+  const endMinutes = endH * 60 + endM;
+  
+  return currentMinutes >= endMinutes;
 }

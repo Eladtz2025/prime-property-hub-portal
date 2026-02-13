@@ -16,6 +16,7 @@ export interface ScoutSettings {
   duplicates: {
     price_diff_threshold: number;
     schedule_times: string[];
+    schedule_end_time?: string;
   };
   matching: {
     max_matches_per_property: number;
@@ -31,6 +32,7 @@ export interface ScoutSettings {
     rent_flex_high_percent: number;
     // Schedule settings
     schedule_times: string[];
+    schedule_end_time?: string;
   };
   scraping: {
     yad2_pages: number;
@@ -50,6 +52,7 @@ export interface ScoutSettings {
     first_recheck_interval_days: number;
     recurring_recheck_interval_days: number;
     schedule_times: string[];
+    schedule_end_time?: string;
   };
   eligibility: {
     require_cities: boolean;
@@ -62,6 +65,7 @@ export interface ScoutSettings {
     schedule_times: string[];
     batch_size: number;
     timeout_minutes: number;
+    schedule_end_time?: string;
   };
   brokerBackfill: {
     scrapeFromSource: boolean;
@@ -73,6 +77,7 @@ export const defaultSettings: ScoutSettings = {
   duplicates: {
     price_diff_threshold: 0.20,
     schedule_times: ['00:00'],
+    schedule_end_time: '04:30',
   },
   matching: {
     max_matches_per_property: 20,
@@ -86,6 +91,7 @@ export const defaultSettings: ScoutSettings = {
     rent_flex_mid_percent: 0.10,
     rent_flex_high_percent: 0.08,
     schedule_times: ['09:15', '18:15'],
+    schedule_end_time: '08:30',
   },
   scraping: {
     yad2_pages: 7,
@@ -105,6 +111,7 @@ export const defaultSettings: ScoutSettings = {
     first_recheck_interval_days: 8,
     recurring_recheck_interval_days: 2,
     schedule_times: ['05:00'],
+    schedule_end_time: '06:30',
   },
   eligibility: {
     require_cities: true,
@@ -117,6 +124,7 @@ export const defaultSettings: ScoutSettings = {
     schedule_times: ['03:00', '12:00'],
     batch_size: 30,
     timeout_minutes: 5,
+    schedule_end_time: '02:30',
   },
   brokerBackfill: {
     scrapeFromSource: false,

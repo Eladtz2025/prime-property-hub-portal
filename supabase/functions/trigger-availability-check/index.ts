@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { fetchCategorySettings } from "../_shared/settings.ts";
+import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -251,7 +251,16 @@ serve(async (req) => {
 
     // Self-chain: if there are remaining items and daily quota left, trigger another run
     const remainingDailyQuota = remainingQuota - processedThisRun;
-    if (remainingBatches > 0 && remainingDailyQuota > 0) {
+    // Check schedule end time before self-chaining
+    let endTimeReached = false;
+    try {
+      const availSettings = await fetchCategorySettings(supabase, 'availability');
+      endTimeReached = isPastEndTime(availSettings.schedule_end_time);
+    } catch (e) {
+      console.warn('Failed to check end time:', e);
+    }
+
+    if (remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached) {
       console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
       // Small delay before self-chain to avoid hammering
       await sleep(3000);
@@ -263,6 +272,8 @@ serve(async (req) => {
         },
         body: JSON.stringify({ continue_run: true })
       }).catch(err => console.error('⚠️ Self-chain failed:', err));
+    } else if (endTimeReached) {
+      console.log(`⏰ End time reached, stopping self-chain. ${remainingBatches} batches remaining.`);
     }
 
     return new Response(JSON.stringify({
