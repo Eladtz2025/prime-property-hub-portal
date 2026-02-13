@@ -131,8 +131,8 @@ export async function scrapeWithRetry(
         formats: ['markdown', 'html'],
         onlyMainContent: source !== 'homeless',
         waitFor: waitForMs,
-        // Yad2 and Homeless use stealth proxy (5 credits) to bypass anti-bot, others use auto (1 credit)
-        proxy: (source === 'yad2' || source === 'homeless') ? 'stealth' : 'auto',
+        // All Israeli property sites need stealth proxy (5 credits) to bypass anti-bot
+        proxy: 'stealth',
         // Request Israeli proxy for better results on Hebrew sites
         location: {
           country: 'IL',
