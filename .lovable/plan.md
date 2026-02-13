@@ -1,68 +1,25 @@
 
 
-# הוספת שעת סיום לתהליכים ארוכים
-
-## הרעיון
-
-במקום מנגנון תור מורכב, נוסיף לכל תהליך שדה "שעת סיום" ליד "שעת התחלה". התהליך יתחיל בשעה שנקבעה ויפסיק לשרשר את עצמו כשמגיע לשעת הסיום.
+# עדכון לוח זמנים יומי - הצגת שעת סיום והסרת "ממשיך עד סיום"
 
 ## שינויים
 
-### 1. הוספת הגדרה חדשה `schedule_end_time` לכל קטגוריה
+קובץ אחד: `src/components/scout/ScheduleSummaryCard.tsx`
 
-הוספת רשומות חדשות לטבלת `scout_settings`:
-- `backfill` / `schedule_end_time` = `"02:30"`
-- `duplicates` / `schedule_end_time` = `"04:30"`
-- `availability` / `schedule_end_time` = `"06:30"`
-- `matching` / `schedule_end_time` = `"08:30"`
-
-### 2. עדכון רכיב `ScheduleTimeEditor`
-
-הוספת שדה input נוסף מסוג `time` לשעת סיום, ליד שעות ההתחלה הקיימות. התצוגה תהיה:
+1. **הסרת הטקסט "(ממשיך עד סיום)"** מהלייבלים של השלמת נתונים ובדיקת זמינות
+2. **הוספת שעת סיום בעמודת הזמן** -- אם לתהליך יש `schedule_end_time`, יוצג כך:
 
 ```text
-שעות ריצה: 03:00  עד  06:30  [שמור]
+00:00 - 02:30   השלמת נתונים
+03:00 - 04:30   ניקוי כפילויות
+05:00 - 06:30   בדיקת זמינות
+07:00 - 08:30   התאמה ללקוחות
+23:00           יד2 השכרה
 ```
 
-השדה החדש ישמר ב-`scout_settings` עם `setting_key = 'schedule_end_time'`.
+### פרטים טכניים
 
-### 3. עדכון ה-hooks והטיפוסים
+- בבניית `scheduleItems`, כל פריט עם `schedule_end_time` יקבל שדה `endTime` חדש
+- בתצוגה, עמודת הזמן תציג `{time} - {endTime}` אם קיים `endTime`, אחרת רק `{time}`
+- הלייבלים ישתנו ל-"השלמת נתונים" ו-"בדיקת זמינות" (בלי הסוגריים)
 
-- `useScoutSettings.ts` -- הוספת `schedule_end_time?: string` לכל קטגוריה רלוונטית (backfill, availability, duplicates, matching)
-- `supabase/functions/_shared/settings.ts` -- הוספת ערכי ברירת מחדל
-
-### 4. עדכון Edge Functions שמשרשרים את עצמם
-
-בכל מקום שבודקים `hasMore` לפני self-chain, נוסיף בדיקה:
-
-```text
-if (hasMore && !isPastEndTime(endTime)) {
-  // trigger next batch
-} else if (isPastEndTime(endTime)) {
-  // mark as completed - "stopped: end time reached"
-}
-```
-
-הפונקציות שיעודכנו:
-- `backfill-property-data/index.ts` -- שורה 845
-- `trigger-availability-check/index.ts` -- שורה 254
-- `reclassify-broker/index.ts` -- שורה 616
-
-פונקציית עזר ב-`_shared/settings.ts`:
-
-```text
-function isPastEndTime(endTimeIL: string): boolean {
-  // המרה לשעון UTC והשוואה לשעה הנוכחית
-}
-```
-
-### 5. סדר ביצוע
-
-1. Migration להוספת 4 רשומות `schedule_end_time` ב-`scout_settings`
-2. עדכון `ScheduleTimeEditor` -- הוספת שדה שעת סיום
-3. עדכון `useScoutSettings` ו-`settings.ts` -- טיפוסים + ברירות מחדל
-4. עדכון 3 Edge Functions -- בדיקת שעת סיום לפני self-chain
-
-### תוצאה
-
-בהגדרות תראה ליד כל תהליך "משעה X עד שעה Y". אם תהליך עדיין רץ ומגיעה שעת הסיום -- הוא יסיים את הבאטצ' הנוכחי ויעצור, ומה שנשאר ימשיך למחרת.
