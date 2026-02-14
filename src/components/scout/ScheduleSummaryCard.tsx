@@ -128,8 +128,9 @@ export const ScheduleSummaryCard: React.FC = () => {
           .gte('started_at', since)
           .order('started_at', { ascending: false }),
         supabase
-          .from('personal_scout_runs')
-          .select('total_matches, leads_count, started_at, completed_at, status')
+          .from('scout_runs')
+          .select('source, properties_found, new_properties, started_at, completed_at, status')
+          .eq('source', 'matching')
           .gte('started_at', since)
           .order('started_at', { ascending: false }),
       ]);
@@ -190,12 +191,12 @@ export const ScheduleSummaryCard: React.FC = () => {
       matchRes.data?.forEach(run => {
         items.push({
           task: 'התאמה ללקוחות',
-          time: run.started_at ? formatTimeIL(run.started_at) : '—',
-          duration: run.started_at ? formatDuration(run.started_at, run.completed_at) : '—',
-          summary: `${(run.total_matches ?? 0).toLocaleString('he-IL')} התאמות, ${(run.leads_count ?? 0).toLocaleString('he-IL')} לידים`,
-          status: run.status ?? 'completed',
+          time: formatTimeIL(run.started_at),
+          duration: formatDuration(run.started_at, run.completed_at),
+          summary: `${(run.properties_found ?? 0).toLocaleString('he-IL')} נבדקו, ${(run.new_properties ?? 0).toLocaleString('he-IL')} התאמות`,
+          status: run.status,
           type: 'matching',
-          startedAt: run.started_at ? new Date(run.started_at) : new Date(),
+          startedAt: new Date(run.started_at),
         });
       });
 
