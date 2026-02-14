@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,11 @@ import {
   Search,
   Trash2,
   Home,
-  Tag
+  Tag,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  StopCircle
 } from 'lucide-react';
 import { useScoutSettings } from '@/hooks/useScoutSettings';
 
@@ -26,7 +30,45 @@ interface ScheduleItem {
   propertyType?: string;
 }
 
+interface RunItem {
+  task: string;
+  time: string;
+  duration: string;
+  summary: string;
+  status: string;
+  type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup';
+  propertyType?: string;
+  startedAt: Date;
+}
+
+const formatDuration = (startedAt: string, completedAt: string | null): string => {
+  if (!completedAt) return 'רץ...';
+  const start = new Date(startedAt).getTime();
+  const end = new Date(completedAt).getTime();
+  const diffMs = end - start;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffSec = Math.floor((diffMs % 60000) / 1000);
+  if (diffMin === 0) return diffSec > 0 ? `${diffSec} שנ׳` : '<1 שנ׳';
+  return `${diffMin} דק׳`;
+};
+
+const formatTimeIL = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' });
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'completed': return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+    case 'failed': return <XCircle className="h-3 w-3 text-red-500" />;
+    case 'running': return <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />;
+    case 'stopped': return <StopCircle className="h-3 w-3 text-yellow-500" />;
+    default: return <CheckCircle2 className="h-3 w-3 text-muted-foreground" />;
+  }
+};
+
 export const ScheduleSummaryCard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'schedule' | 'runs'>('schedule');
   const { data: settings } = useScoutSettings();
 
   // Fetch active scout configs with their schedule_times and property_type
@@ -40,6 +82,117 @@ export const ScheduleSummaryCard: React.FC = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch recent runs from all 4 tables (last 24h)
+  const { data: recentRuns } = useQuery({
+    queryKey: ['recent-runs-summary'],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const [scoutRunsRes, backfillRes, availRes, matchRes] = await Promise.all([
+        supabase
+          .from('scout_runs')
+          .select('source, properties_found, new_properties, started_at, completed_at, status, config_id')
+          .gte('started_at', since)
+          .neq('source', 'matching')
+          .order('started_at', { ascending: false }),
+        supabase
+          .from('backfill_progress')
+          .select('task_name, processed_items, successful_items, failed_items, started_at, completed_at, status')
+          .gte('started_at', since)
+          .order('started_at', { ascending: false }),
+        supabase
+          .from('availability_check_runs')
+          .select('properties_checked, inactive_marked, started_at, completed_at, status')
+          .gte('started_at', since)
+          .order('started_at', { ascending: false }),
+        supabase
+          .from('personal_scout_runs')
+          .select('total_matches, leads_count, started_at, completed_at, status')
+          .gte('started_at', since)
+          .order('started_at', { ascending: false }),
+      ]);
+
+      const items: RunItem[] = [];
+
+      // Scout runs (scans)
+      scoutRunsRes.data?.forEach(run => {
+        const sourceLabel = run.source === 'yad2' ? 'יד2' : run.source === 'madlan' ? 'מדלן' : 'הומלס';
+        // Try to find config to get property_type
+        const config = scoutConfigs?.find(c => c.id === run.config_id);
+        const propType = (config as any)?.property_type as string | undefined;
+        const typeLabel = propType === 'rent' ? 'השכרה' : 'מכירה';
+        
+        items.push({
+          task: `${sourceLabel} ${typeLabel}`,
+          time: formatTimeIL(run.started_at),
+          duration: formatDuration(run.started_at, run.completed_at),
+          summary: `${(run.properties_found ?? 0).toLocaleString('he-IL')} נמצאו, ${(run.new_properties ?? 0).toLocaleString('he-IL')} חדשים`,
+          status: run.status,
+          type: 'scan',
+          propertyType: propType,
+          startedAt: new Date(run.started_at),
+        });
+      });
+
+      // Backfill + dedup
+      backfillRes.data?.forEach(run => {
+        const isDuplicates = run.task_name?.includes('duplicate') || run.task_name?.includes('dedup');
+        const label = isDuplicates ? 'ניקוי כפילויות' : 'השלמת נתונים';
+        const type = isDuplicates ? 'cleanup' as const : 'backfill' as const;
+        
+        let summary: string;
+        if (isDuplicates) {
+          summary = `${(run.processed_items ?? 0).toLocaleString('he-IL')} נבדקו, ${(run.successful_items ?? 0).toLocaleString('he-IL')} כפילויות`;
+        } else {
+          summary = `${(run.processed_items ?? 0).toLocaleString('he-IL')} עובדו, ${(run.successful_items ?? 0).toLocaleString('he-IL')} הצליחו`;
+        }
+        if (run.status === 'stopped') summary += ' (נעצר)';
+
+        items.push({
+          task: label,
+          time: run.started_at ? formatTimeIL(run.started_at) : '—',
+          duration: run.started_at ? formatDuration(run.started_at, run.completed_at) : '—',
+          summary,
+          status: run.status ?? 'completed',
+          type,
+          startedAt: run.started_at ? new Date(run.started_at) : new Date(),
+        });
+      });
+
+      // Availability
+      availRes.data?.forEach(run => {
+        items.push({
+          task: 'בדיקת זמינות',
+          time: formatTimeIL(run.started_at),
+          duration: formatDuration(run.started_at, run.completed_at),
+          summary: `${(run.properties_checked ?? 0).toLocaleString('he-IL')} נבדקו, ${(run.inactive_marked ?? 0).toLocaleString('he-IL')} לא זמינים`,
+          status: run.status,
+          type: 'availability',
+          startedAt: new Date(run.started_at),
+        });
+      });
+
+      // Matching (personal_scout_runs)
+      matchRes.data?.forEach(run => {
+        items.push({
+          task: 'התאמה ללקוחות',
+          time: run.started_at ? formatTimeIL(run.started_at) : '—',
+          duration: run.started_at ? formatDuration(run.started_at, run.completed_at) : '—',
+          summary: `${(run.total_matches ?? 0).toLocaleString('he-IL')} התאמות, ${(run.leads_count ?? 0).toLocaleString('he-IL')} לידים`,
+          status: run.status ?? 'completed',
+          type: 'matching',
+          startedAt: run.started_at ? new Date(run.started_at) : new Date(),
+        });
+      });
+
+      // Sort by startedAt descending
+      items.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+      return items;
+    },
+    refetchInterval: 30000,
+    enabled: activeTab === 'runs',
   });
 
   // Build schedule items from real data only
@@ -70,7 +223,7 @@ export const ScheduleSummaryCard: React.FC = () => {
       items.push({ time, endTime: settings?.matching?.schedule_end_time, label: 'התאמה ללקוחות', type: 'matching' });
     });
 
-    // 4. Add scan times from active configs - with property_type
+    // 5. Add scan times from active configs - with property_type
     scoutConfigs?.forEach(config => {
       const times = (config as any).schedule_times as string[] | null;
       if (!times || times.length === 0) return;
@@ -95,7 +248,6 @@ export const ScheduleSummaryCard: React.FC = () => {
   }, [settings, scoutConfigs]);
 
   // Group by interval vs fixed time
-  const intervalItems = scheduleItems.filter(item => item.isInterval);
   const fixedItems = scheduleItems.filter(item => !item.isInterval);
 
   // Sort fixed items by time
@@ -125,31 +277,35 @@ export const ScheduleSummaryCard: React.FC = () => {
     }
   };
 
-  const getTypeIcon = (type: ScheduleItem['type']) => {
-    switch (type) {
-      case 'scan': return <Search className="h-3 w-3" />;
-      case 'matching': return <Target className="h-3 w-3" />;
-      case 'availability': return <Link className="h-3 w-3" />;
-      case 'backfill': return <CalendarIcon className="h-3 w-3" />;
-      case 'cleanup': return <Trash2 className="h-3 w-3" />;
-      default: return <Clock className="h-3 w-3" />;
-    }
-  };
-
-  const getPropertyTypeIcon = (propertyType?: string) => {
-    if (propertyType === 'rent') {
-      return <Home className="h-3 w-3" />;
-    }
-    return <Tag className="h-3 w-3" />;
-  };
-
   return (
     <Card className="mt-4">
       <CardHeader className="py-2.5 px-4">
         <CardTitle className="text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
-            לוח זמנים יומי
+            {/* Compact tab switcher */}
+            <div className="flex bg-muted rounded-md p-0.5 gap-0.5">
+              <button
+                onClick={() => setActiveTab('schedule')}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                  activeTab === 'schedule' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                זמנים
+              </button>
+              <button
+                onClick={() => setActiveTab('runs')}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                  activeTab === 'runs' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                ריצות
+              </button>
+            </div>
           </div>
           {/* Compact Legend as inline badges */}
           <div className="flex flex-wrap gap-1.5">
@@ -169,7 +325,7 @@ export const ScheduleSummaryCard: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="py-2 px-4">
-        <div>
+        {activeTab === 'schedule' ? (
           <div className="space-y-1 max-h-[250px] overflow-y-auto">
             {Object.entries(groupedByTime).map(([time, items]) => (
               <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
@@ -191,7 +347,26 @@ export const ScheduleSummaryCard: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-1 max-h-[250px] overflow-y-auto">
+            {!recentRuns || recentRuns.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">אין ריצות ב-24 שעות אחרונות</p>
+            ) : (
+              recentRuns.map((run, idx) => (
+                <div key={idx} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    {getStatusIcon(run.status)}
+                    <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(run.type, run.propertyType)}`} />
+                  </div>
+                  <span className="text-[11px] font-medium w-24 shrink-0 truncate">{run.task}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground w-11 shrink-0">{run.time}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground w-12 shrink-0">{run.duration}</span>
+                  <span className="text-[10px] text-muted-foreground truncate">{run.summary}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
