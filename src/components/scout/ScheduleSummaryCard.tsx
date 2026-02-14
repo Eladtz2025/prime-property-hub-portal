@@ -1,22 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
-  RefreshCw, 
-  Target, 
-  Link, 
-  Calendar as CalendarIcon,
-  Search,
-  Trash2,
-  Home,
-  Tag,
   CheckCircle2,
   XCircle,
   Loader2,
-  StopCircle
+  StopCircle,
+  Activity
 } from 'lucide-react';
 import { useScoutSettings } from '@/hooks/useScoutSettings';
 
@@ -67,11 +60,39 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+const getTypeColor = (type: ScheduleItem['type'], propertyType?: string) => {
+  if (type === 'scan') {
+    return propertyType === 'rent' ? 'bg-orange-400' : 'bg-orange-600';
+  }
+  switch (type) {
+    case 'matching': return 'bg-green-500';
+    case 'availability': return 'bg-blue-500';
+    case 'backfill': return 'bg-yellow-500';
+    case 'cleanup': return 'bg-gray-400';
+    default: return 'bg-gray-400';
+  }
+};
+
+const Legend = () => (
+  <div className="flex flex-wrap gap-1.5">
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+      <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />השכרה
+    </span>
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+      <span className="w-1.5 h-1.5 rounded-full bg-orange-600" />מכירה
+    </span>
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />התאמות
+    </span>
+    <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />זמינות
+    </span>
+  </div>
+);
+
 export const ScheduleSummaryCard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'runs'>('schedule');
   const { data: settings } = useScoutSettings();
 
-  // Fetch active scout configs with their schedule_times and property_type
   const { data: scoutConfigs } = useQuery({
     queryKey: ['scout-configs-schedules'],
     queryFn: async () => {
@@ -84,7 +105,6 @@ export const ScheduleSummaryCard: React.FC = () => {
     },
   });
 
-  // Fetch recent runs from all 4 tables (last 24h)
   const { data: recentRuns } = useQuery({
     queryKey: ['recent-runs-summary'],
     queryFn: async () => {
@@ -116,14 +136,11 @@ export const ScheduleSummaryCard: React.FC = () => {
 
       const items: RunItem[] = [];
 
-      // Scout runs (scans)
       scoutRunsRes.data?.forEach(run => {
         const sourceLabel = run.source === 'yad2' ? 'יד2' : run.source === 'madlan' ? 'מדלן' : 'הומלס';
-        // Try to find config to get property_type
         const config = scoutConfigs?.find(c => c.id === run.config_id);
         const propType = (config as any)?.property_type as string | undefined;
         const typeLabel = propType === 'rent' ? 'השכרה' : 'מכירה';
-        
         items.push({
           task: `${sourceLabel} ${typeLabel}`,
           time: formatTimeIL(run.started_at),
@@ -136,12 +153,10 @@ export const ScheduleSummaryCard: React.FC = () => {
         });
       });
 
-      // Backfill + dedup
       backfillRes.data?.forEach(run => {
         const isDuplicates = run.task_name?.includes('duplicate') || run.task_name?.includes('dedup');
         const label = isDuplicates ? 'ניקוי כפילויות' : 'השלמת נתונים';
         const type = isDuplicates ? 'cleanup' as const : 'backfill' as const;
-        
         let summary: string;
         if (isDuplicates) {
           summary = `${(run.processed_items ?? 0).toLocaleString('he-IL')} נבדקו, ${(run.successful_items ?? 0).toLocaleString('he-IL')} כפילויות`;
@@ -149,7 +164,6 @@ export const ScheduleSummaryCard: React.FC = () => {
           summary = `${(run.processed_items ?? 0).toLocaleString('he-IL')} עובדו, ${(run.successful_items ?? 0).toLocaleString('he-IL')} הצליחו`;
         }
         if (run.status === 'stopped') summary += ' (נעצר)';
-
         items.push({
           task: label,
           time: run.started_at ? formatTimeIL(run.started_at) : '—',
@@ -161,7 +175,6 @@ export const ScheduleSummaryCard: React.FC = () => {
         });
       });
 
-      // Availability
       availRes.data?.forEach(run => {
         items.push({
           task: 'בדיקת זמינות',
@@ -174,7 +187,6 @@ export const ScheduleSummaryCard: React.FC = () => {
         });
       });
 
-      // Matching (personal_scout_runs)
       matchRes.data?.forEach(run => {
         items.push({
           task: 'התאמה ללקוחות',
@@ -187,187 +199,130 @@ export const ScheduleSummaryCard: React.FC = () => {
         });
       });
 
-      // Sort by startedAt descending
       items.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
       return items;
     },
     refetchInterval: 30000,
-    enabled: activeTab === 'runs',
   });
 
-  // Build schedule items from real data only
+  // Build schedule items
   const scheduleItems = React.useMemo(() => {
     const items: ScheduleItem[] = [];
 
-    // 1. Duplicate cleanup - from settings
     const dedupTimes = settings?.duplicates?.schedule_times || ['00:00'];
     dedupTimes.forEach(time => {
       items.push({ time, endTime: settings?.duplicates?.schedule_end_time, label: 'ניקוי כפילויות', type: 'cleanup' });
     });
 
-    // 2. Backfill - from settings
     const backfillTimes = settings?.backfill?.schedule_times || ['03:00'];
     backfillTimes.forEach(time => {
       items.push({ time, endTime: settings?.backfill?.schedule_end_time, label: 'השלמת נתונים', type: 'backfill' });
     });
 
-    // 3. Availability - from settings
     const availTimes = settings?.availability?.schedule_times || ['05:00'];
     availTimes.forEach(time => {
       items.push({ time, endTime: settings?.availability?.schedule_end_time, label: 'בדיקת זמינות', type: 'availability' });
     });
 
-    // 4. Matching - from settings
     const matchingTimes = settings?.matching?.schedule_times || ['23:00'];
     matchingTimes.forEach(time => {
       items.push({ time, endTime: settings?.matching?.schedule_end_time, label: 'התאמה ללקוחות', type: 'matching' });
     });
 
-    // 5. Add scan times from active configs - with property_type
     scoutConfigs?.forEach(config => {
       const times = (config as any).schedule_times as string[] | null;
       if (!times || times.length === 0) return;
-
-      const sourceLabel = config.source === 'yad2' ? 'יד2' : 
-                          config.source === 'madlan' ? 'מדלן' : 'הומלס';
+      const sourceLabel = config.source === 'yad2' ? 'יד2' : config.source === 'madlan' ? 'מדלן' : 'הומלס';
       const propertyType = (config as any).property_type as string | null;
       const typeLabel = propertyType === 'rent' ? 'השכרה' : 'מכירה';
-
       times.forEach(time => {
-        items.push({ 
-          time, 
-          label: `${sourceLabel} ${typeLabel}`, 
-          type: 'scan',
-          source: config.source,
-          propertyType: propertyType || undefined
-        });
+        items.push({ time, label: `${sourceLabel} ${typeLabel}`, type: 'scan', source: config.source, propertyType: propertyType || undefined });
       });
     });
 
     return items;
   }, [settings, scoutConfigs]);
 
-  // Group by interval vs fixed time
   const fixedItems = scheduleItems.filter(item => !item.isInterval);
-
-  // Sort fixed items by time
   const sortedFixedItems = [...fixedItems].sort((a, b) => {
     const timeA = a.time.replace(':', '');
     const timeB = b.time.replace(':', '');
     return parseInt(timeA) - parseInt(timeB);
   });
 
-  // Group fixed items by time for display
   const groupedByTime = sortedFixedItems.reduce((acc, item) => {
     if (!acc[item.time]) acc[item.time] = [];
     acc[item.time].push(item);
     return acc;
   }, {} as Record<string, ScheduleItem[]>);
 
-  const getTypeColor = (type: ScheduleItem['type'], propertyType?: string) => {
-    if (type === 'scan') {
-      return propertyType === 'rent' ? 'bg-orange-400' : 'bg-orange-600';
-    }
-    switch (type) {
-      case 'matching': return 'bg-green-500';
-      case 'availability': return 'bg-blue-500';
-      case 'backfill': return 'bg-yellow-500';
-      case 'cleanup': return 'bg-gray-400';
-      default: return 'bg-gray-400';
-    }
-  };
-
   return (
-    <Card className="mt-4">
-      <CardHeader className="py-2.5 px-4">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary" />
-            {/* Compact tab switcher */}
-            <div className="flex bg-muted rounded-md p-0.5 gap-0.5">
-              <button
-                onClick={() => setActiveTab('schedule')}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                  activeTab === 'schedule' 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                זמנים
-              </button>
-              <button
-                onClick={() => setActiveTab('runs')}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                  activeTab === 'runs' 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                ריצות
-              </button>
-            </div>
-          </div>
-          {/* Compact Legend as inline badges */}
-          <div className="flex flex-wrap gap-1.5">
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />השכרה
-            </span>
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-600" />מכירה
-            </span>
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />התאמות
-            </span>
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />זמינות
-            </span>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="py-2 px-4">
-        {activeTab === 'schedule' ? (
-          <div className="space-y-1 max-h-[250px] overflow-y-auto">
-            {Object.entries(groupedByTime).map(([time, items]) => (
-              <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
-                <span className="font-mono text-xs w-24 font-medium shrink-0">
-                  {items[0]?.endTime ? `${time} - ${items[0].endTime}` : time}
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {items.map((item, idx) => (
-                    <Badge 
-                      key={idx} 
-                      variant="outline" 
-                      className="text-[10px] h-5 px-1.5 flex items-center gap-0.5"
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
-                      {item.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-1 max-h-[250px] overflow-y-auto">
-            {!recentRuns || recentRuns.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">אין ריצות ב-24 שעות אחרונות</p>
-            ) : (
-              recentRuns.map((run, idx) => (
-                <div key={idx} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
-                  <div className="flex items-center gap-1 shrink-0">
-                    {getStatusIcon(run.status)}
-                    <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(run.type, run.propertyType)}`} />
+    <div className="mt-4 space-y-2">
+      {/* Shared legend */}
+      <div className="flex justify-end px-1">
+        <Legend />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Schedule Card */}
+        <Card>
+          <CardHeader className="py-2.5 px-4">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              לוח זמנים
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="py-2 px-4">
+            <div className="space-y-1 max-h-[250px] overflow-y-auto">
+              {Object.entries(groupedByTime).map(([time, items]) => (
+                <div key={time} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
+                  <span className="font-mono text-xs w-24 font-medium shrink-0">
+                    {items[0]?.endTime ? `${time} - ${items[0].endTime}` : time}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {items.map((item, idx) => (
+                      <Badge key={idx} variant="outline" className="text-[10px] h-5 px-1.5 flex items-center gap-0.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(item.type, item.propertyType)}`} />
+                        {item.label}
+                      </Badge>
+                    ))}
                   </div>
-                  <span className="text-[11px] font-medium w-24 shrink-0 truncate">{run.task}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground w-11 shrink-0">{run.time}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground w-12 shrink-0">{run.duration}</span>
-                  <span className="text-[10px] text-muted-foreground truncate">{run.summary}</span>
                 </div>
-              ))
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Runs Card */}
+        <Card>
+          <CardHeader className="py-2.5 px-4">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              ריצות אחרונות
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="py-2 px-4">
+            <div className="space-y-1 max-h-[250px] overflow-y-auto">
+              {!recentRuns || recentRuns.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">אין ריצות ב-24 שעות אחרונות</p>
+              ) : (
+                recentRuns.map((run, idx) => (
+                  <div key={idx} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {getStatusIcon(run.status)}
+                      <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(run.type, run.propertyType)}`} />
+                    </div>
+                    <span className="text-[11px] font-medium w-24 shrink-0 truncate">{run.task}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground w-11 shrink-0">{run.time}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground w-12 shrink-0">{run.duration}</span>
+                    <span className="text-[10px] text-muted-foreground truncate">{run.summary}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
