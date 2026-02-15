@@ -81,7 +81,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
     queryKey: ['upcoming-appointments', limit],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const weekFromNow = format(addDays(new Date(), 7), 'yyyy-MM-dd');
+      const weekFromNow = format(addDays(new Date(), 30), 'yyyy-MM-dd');
       
       const { data, error } = await supabase
         .from('appointments')
