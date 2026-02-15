@@ -2388,6 +2388,7 @@ export type Database = {
           created_at: string | null
           id: string
           image_url: string
+          is_furnished: boolean | null
           is_main: boolean | null
           media_type: string | null
           order_index: number | null
@@ -2399,6 +2400,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url: string
+          is_furnished?: boolean | null
           is_main?: boolean | null
           media_type?: string | null
           order_index?: number | null
@@ -2410,6 +2412,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string
+          is_furnished?: boolean | null
           is_main?: boolean | null
           media_type?: string | null
           order_index?: number | null

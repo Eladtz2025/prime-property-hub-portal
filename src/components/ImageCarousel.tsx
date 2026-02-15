@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play, Volume2, VolumeX, Sofa, ArrowLeft } from 'lucide-react';
 import { PropertyImage } from '../types/property';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -99,17 +99,24 @@ const VideoWithPlaceholder: React.FC<{
 
 interface ImageCarouselProps {
   images: PropertyImage[];
+  furnishedImages?: PropertyImage[];
   className?: string;
   priceLabel?: string;
+  furnishedButtonLabel?: string;
+  backButtonLabel?: string;
 }
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   images,
+  furnishedImages = [],
   className = "",
-  priceLabel
+  priceLabel,
+  furnishedButtonLabel = "תראה לי איך הדירה תהיה מרוהטת",
+  backButtonLabel = "חזרה לתמונות המקוריות"
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFurnished, setShowFurnished] = useState(false);
   const [imageOrientation, setImageOrientation] = useState<'landscape' | 'portrait' | 'unknown'>('unknown');
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -133,6 +140,14 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
     }
   };
 
+  const activeImages = showFurnished && furnishedImages.length > 0 ? furnishedImages : images;
+  const hasFurnished = furnishedImages.length > 0;
+
+  const handleToggleFurnished = () => {
+    setShowFurnished(!showFurnished);
+    setCurrentIndex(0);
+  };
+
   if (!images || images.length === 0) {
     return (
       <Card className={className}>
@@ -147,11 +162,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
   }
 
   const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    setCurrentIndex((prev) => (prev + 1) % activeImages.length);
   };
 
   const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentIndex((prev) => (prev - 1 + activeImages.length) % activeImages.length);
   };
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -160,9 +175,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
     setImageOrientation(isLandscape ? 'landscape' : 'portrait');
   };
 
-  const currentImage = images[currentIndex];
+  const currentImage = activeImages[currentIndex];
   const isVideo = currentImage.mediaType === 'video';
-  const hasVideo = images.some(img => img.mediaType === 'video');
+  const hasVideo = activeImages.some(img => img.mediaType === 'video');
 
   // Controls overlay component - shared between both layouts
   const ControlsOverlay = () => (
@@ -175,7 +190,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
       )}
       
       {/* Navigation arrows */}
-      {images.length > 1 && (
+      {activeImages.length > 1 && (
         <>
           <Button
             variant="secondary"
@@ -222,9 +237,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
       )}
       
       {/* Image counter */}
-      {images.length > 1 && (
+      {activeImages.length > 1 && (
         <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20">
-          {currentIndex + 1} / {images.length}
+          {currentIndex + 1} / {activeImages.length}
         </div>
       )}
     </>
@@ -316,10 +331,33 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             </div>
           )}
           
+          {/* Furnished gallery toggle button */}
+          {hasFurnished && (
+            <div className="px-3 pt-3">
+              <Button
+                variant={showFurnished ? "default" : "outline"}
+                className="w-full gap-2"
+                onClick={handleToggleFurnished}
+              >
+                {showFurnished ? (
+                  <>
+                    <ArrowLeft className="h-4 w-4" />
+                    {backButtonLabel}
+                  </>
+                ) : (
+                  <>
+                    <Sofa className="h-4 w-4" />
+                    {furnishedButtonLabel}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Thumbnail strip */}
-          {images.length > 1 && (
+          {activeImages.length > 1 && (
             <div className="flex gap-2 p-3 overflow-x-auto" dir="rtl">
-              {images.map((image, index) => {
+              {activeImages.map((image, index) => {
                 const isThumbVideo = image.mediaType === 'video';
                 return (
                   <button
@@ -369,7 +407,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             />
             
             {/* Navigation in fullscreen */}
-            {images.length > 1 && (
+            {activeImages.length > 1 && (
               <>
                 <Button
                   variant="secondary"
@@ -389,7 +427,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 </Button>
                 
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-2 rounded">
-                  {currentIndex + 1} / {images.length}
+                  {currentIndex + 1} / {activeImages.length}
                 </div>
               </>
             )}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play, Sofa } from 'lucide-react';
 import { addWatermarkToFile } from '@/utils/watermark';
 import {
   Dialog,
@@ -33,6 +33,7 @@ interface PropertyImage {
   is_main: boolean | null;
   order_index: number | null;
   media_type?: string;
+  is_furnished?: boolean;
 }
 
 export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) => {
@@ -289,17 +290,33 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                             <Play className="h-8 w-8 text-white" />
                           </div>
-                          <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                            <Video className="h-3 w-3" />
-                            סרטון
+                          <div className="absolute top-2 left-2 flex gap-1">
+                            <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                              <Video className="h-3 w-3" />
+                              סרטון
+                            </div>
+                            {image.is_furnished && (
+                              <div className="bg-amber-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                <Sofa className="h-3 w-3" />
+                                מרוהטת
+                              </div>
+                            )}
                           </div>
                         </>
                       ) : (
-                        <img
-                          src={image.image_url}
-                          alt={image.alt_text || 'תמונת נכס'}
-                          className="w-full h-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={image.image_url}
+                            alt={image.alt_text || 'תמונת נכס'}
+                            className="w-full h-full object-cover"
+                          />
+                          {image.is_furnished && (
+                            <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                              <Sofa className="h-3 w-3" />
+                              מרוהטת
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
@@ -318,13 +335,33 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                         <Download className="h-4 w-4" />
                       </Button>
                       {isSuperAdmin && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(image)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant={image.is_furnished ? "default" : "secondary"}
+                            onClick={async () => {
+                              const newValue = !image.is_furnished;
+                              await supabase
+                                .from('property_images')
+                                .update({ is_furnished: newValue })
+                                .eq('id', image.id);
+                              loadImages();
+                              toast({
+                                title: newValue ? 'סומנה כמרוהטת' : 'הוסר סימון מרוהטת',
+                              });
+                            }}
+                            title={image.is_furnished ? 'הסר סימון מרוהטת' : 'סמן כמרוהטת'}
+                          >
+                            <Sofa className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(image)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>

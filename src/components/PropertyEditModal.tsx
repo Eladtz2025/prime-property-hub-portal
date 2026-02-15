@@ -207,6 +207,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           url: img.image_url,
           isPrimary: img.is_main || false,
           uploadedAt: img.created_at || new Date().toISOString(),
+          isFurnished: (img as any).is_furnished || false,
         }));
 
         setFormData(prev => ({
@@ -404,6 +405,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
             alt_text: image.name || 'תמונת נכס',
             is_main: image.isPrimary || i === 0,
             order_index: i,
+            is_furnished: image.isFurnished || false,
           };
 
           console.log('💾 Inserting image to DB:', imageData);

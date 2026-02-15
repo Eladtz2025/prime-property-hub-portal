@@ -1,0 +1,1 @@
+ALTER TABLE property_images ADD COLUMN is_furnished boolean DEFAULT false;
