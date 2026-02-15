@@ -1,42 +1,72 @@
 
-# תיקון כרטיסיית "ריצות אחרונות" -- 3 באגים
 
-## באג 1: התאמות לא מוצגות (קריטי)
+# תיקון פונקציית update_cron_schedule + עדכון זמני Cron
 
-הקוד שולף התאמות מטבלת `personal_scout_runs` שהיא ריקה לגמרי, בעוד שנתוני ההתאמות נמצאים בטבלת `scout_runs` עם `source = 'matching'`. בנוסף, הקוד במפורש מסנן החוצה `matching` מה-query של scout_runs (שורה 118: `.neq('source', 'matching')`).
+## הבעיה
 
-**תיקון:** הוספת query חמישי שמושך מ-`scout_runs` WHERE `source = 'matching'`, והצגתו כ"התאמה ללקוחות" עם `leads_matched` ו-`properties_found`.
+קיימות שתי גרסאות של הפונקציה `update_cron_schedule`:
+- גרסה ישנה: `(p_job_name text, p_new_schedule text)` עם `search_path = 'public'`
+- גרסה חדשה: `(p_job_name text, p_new_schedule text, p_new_command text DEFAULT NULL)` עם `search_path = 'cron', 'public'`
 
-## באג 2: השלמת נתונים שתקועה
+PostgreSQL לא מצליח לבחור ביניהן כשקוראים עם 2 פרמטרים (שגיאת "function is not unique").
 
-יש ריצת `data_completion_auto_madlan` שהתחילה אתמול ב-21:48 UTC ועדיין בסטטוס `running` (לא הסתיימה). זה גורם לה להופיע כ"רץ..." בכרטיס. בנוסף, ה-Cron של ההשלמת נתונים לא סונכרן ולכן רץ בשעה 03:00 ישראל במקום 00:00.
+## פתרון
 
-**פעולה נדרשת:** עדכון ה-Cron (SQL שניתן קודם), וסגירת הריצה התקועה.
+### שלב 1: מיגרציה - מחיקת הגרסה הישנה
 
-## באג 3: כפילויות -- בעיית cron
-
-הכפילויות רצו ב-21:49 שעון ישראל (19:49 UTC) במקום 03:00 שעון ישראל. זה בגלל ה-Cron שלא סונכרן. הנתונים עצמם נמשכים נכון מ-`backfill_progress`, אבל ברגע שה-Cron יעודכן, הכפילויות ירוצו בשעה הנכונה.
-
-## שינויים טכניים
-
-### קובץ: `src/components/scout/ScheduleSummaryCard.tsx`
-
-1. הוספת query נפרד ל-`scout_runs` WHERE `source = 'matching'` (במקום `personal_scout_runs`)
-2. הסרת ה-query ל-`personal_scout_runs` (טבלה ריקה ולא רלוונטית)
-3. עיבוד נתוני ההתאמות מתוך `scout_runs`: הצגת `properties_found` (נכסים שנבדקו) ו-`leads_matched` (התאמות שנמצאו)
-4. שינוי הסיכום להציג: `"X נבדקו, Y התאמות"` במקום `"X התאמות, Y לידים"`
-
-### פעולה ידנית נדרשת (SQL)
-
-עדכון שעות ה-Cron (כפי שניתן בהודעה הקודמת):
 ```sql
-UPDATE cron.job SET schedule = '0 22 * * *' WHERE jobname = 'backfill-data-completion-job';
-UPDATE cron.job SET schedule = '0 1 * * *' WHERE jobname = 'cleanup-orphan-duplicates-hourly';
-UPDATE cron.job SET schedule = '0 5 * * *' WHERE jobname = 'match-leads-job';
+-- Drop the old 2-param version (search_path = 'public' only)
+DROP FUNCTION IF EXISTS public.update_cron_schedule(text, text);
+
+-- Recreate the single unified version with optional command parameter
+CREATE OR REPLACE FUNCTION public.update_cron_schedule(
+  p_job_name text, 
+  p_new_schedule text, 
+  p_new_command text DEFAULT NULL
+)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path TO 'cron', 'public'
+AS $function$
+  UPDATE cron.job 
+  SET schedule = p_new_schedule,
+      command = COALESCE(p_new_command, command)
+  WHERE jobname = p_job_name;
+$function$;
 ```
 
-סגירת ריצות תקועות:
+### שלב 2: עדכון זמני ה-Cron + תיקון פקודת הכפילויות (INSERT tool)
+
+לאחר שהמיגרציה תעבור, אפעיל את הפקודות הבאות דרך ה-insert tool:
+
 ```sql
-UPDATE backfill_progress SET status = 'stopped', completed_at = now(), error_message = 'manually stopped - stuck'
-WHERE status = 'running' AND started_at < now() - interval '6 hours';
+-- 1. Data Completion: 00:00 Israel (22:00 UTC)
+SELECT update_cron_schedule('backfill-data-completion-job', '0 22 * * *');
+
+-- 2. Deduplication: 03:00 Israel (01:00 UTC) + fix command to call detect-duplicates
+SELECT update_cron_schedule(
+    'cleanup-orphan-duplicates-hourly',
+    '0 1 * * *',
+    $cmd$
+      SELECT net.http_post(
+        url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/detect-duplicates',
+        headers := jsonb_build_object('Content-Type', 'application/json'),
+        body := '{}'::jsonb
+      );
+    $cmd$
+);
+
+-- 3. Matching: 07:00 Israel (05:00 UTC)
+SELECT update_cron_schedule('match-leads-job', '0 5 * * *');
 ```
+
+## תוצאה צפויה
+
+לוח זמנים מעודכן:
+- 00:00 ישראל: השלמת נתונים
+- 03:00 ישראל: כפילויות (קורא ל-detect-duplicates, לא ל-cleanup)
+- 05:00 ישראל: בדיקת זמינות (ללא שינוי)
+- 07:00 ישראל: התאמת לקוחות
+- 23:00 ישראל: סריקות (ללא שינוי)
+
