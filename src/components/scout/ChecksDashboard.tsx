@@ -136,15 +136,15 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  // Eligible leads count for matching
-  const { data: eligibleLeads } = useQuery({
-    queryKey: ['eligible-leads-count'],
+  // Eligible & ineligible leads count for matching
+  const { data: leadCounts } = useQuery({
+    queryKey: ['lead-eligibility-counts'],
     queryFn: async () => {
-      const { count } = await supabase
-        .from('contact_leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('matching_status', 'eligible');
-      return count ?? 0;
+      const [eligibleRes, ineligibleRes] = await Promise.all([
+        supabase.from('contact_leads').select('id', { count: 'exact', head: true }).eq('matching_status', 'eligible'),
+        supabase.from('contact_leads').select('id', { count: 'exact', head: true }).eq('matching_status', 'incomplete'),
+      ]);
+      return { eligible: eligibleRes.count ?? 0, ineligible: ineligibleRes.count ?? 0 };
     },
     refetchInterval: 30000,
   });
@@ -186,27 +186,17 @@ export const ChecksDashboard: React.FC = () => {
   const { data: dedupStats } = useQuery({
     queryKey: ['dedup-stats-summary'],
     queryFn: async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const [uncheckedRes, losersRes, checkedTodayRes, lastRunRes] = await Promise.all([
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).is('dedup_checked_at', null),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('dedup_checked_at', today.toISOString()),
+      const [totalActiveRes, checkedRes, uncheckedRes, lastRunRes] = await Promise.all([
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).not('dedup_checked_at', 'is', null),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('dedup_checked_at', null),
         supabase.from('backfill_progress').select('*').eq('task_name', 'dedup-scan').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
-      // Get distinct group count from last run summary, or count losers + groups heuristic
-      const summary = lastRunRes.data?.summary_data as any;
-      // Total duplicates found = losers count; groups = total_active properties with group - losers
-      // Better: use the successful_items from last run as total dups found
-      const totalDups = lastRunRes.data?.successful_items ?? 0;
       return {
+        totalActive: totalActiveRes.count ?? 0,
+        checked: checkedRes.count ?? 0,
         unchecked: uncheckedRes.count ?? 0,
-        groups: losersRes.count ?? 0, // losers = non-primary duplicates (actual duplicates removed from view)
-        totalDups,
-        losers: losersRes.count ?? 0,
-        checkedToday: checkedTodayRes.count ?? 0,
         lastRun: lastRunRes.data,
-        summary,
       };
     },
     refetchInterval: 15000,
@@ -382,11 +372,10 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
           status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.unchecked ? 'idle' : 'idle'}
-          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : `${dedupStats?.losers ?? 0} כפילויות | ${dedupStats?.checkedToday ?? 0} נבדקו היום`}
+          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : `${dedupStats?.checked ?? 0} מתוך ${dedupStats?.totalActive ?? 0} נבדקו`}
           metrics={[
-            { label: 'לבדיקה', value: dedupStats?.unchecked ?? 0 },
-            { label: 'כפילויות (losers)', value: dedupStats?.losers ?? 0 },
-            { label: 'נבדקו היום', value: dedupStats?.checkedToday ?? 0 },
+            { label: 'נבדקו', value: `${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} / ${(dedupStats?.totalActive ?? 0).toLocaleString('he-IL')}` },
+            { label: 'נותרו לבדיקה', value: dedupStats?.unchecked ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
           isRunPending={triggerDedup.isPending}
@@ -420,10 +409,10 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Users className="h-4 w-4 text-green-600" />}
           iconColor="bg-green-100 dark:bg-green-900/30"
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          statusText={isMatchRunning ? 'מחפש התאמות...' : matchStats ? `${matchStats.total_matches ?? 0} התאמות` : 'לא הופעל'}
+          statusText={isMatchRunning ? 'מחפש התאמות...' : `${leadCounts?.eligible ?? 0} eligible | ${leadCounts?.ineligible ?? 0} לא eligible`}
           metrics={[
-            { label: 'לידים eligible', value: eligibleLeads ?? 0 },
-            { label: 'התאמות', value: matchStats?.total_matches ?? 0 },
+            { label: 'לידים Eligible', value: leadCounts?.eligible ?? 0 },
+            { label: 'לידים לא Eligible', value: leadCounts?.ineligible ?? 0 },
           ]}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
