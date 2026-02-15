@@ -64,13 +64,6 @@ async function checkWithFirecrawl(
       
       if (!response.ok) {
         console.warn(`Firecrawl returned ${response.status} for ${url}`);
-        
-        // 402 = Payment Required (out of credits) - stop immediately
-        if (response.status === 402) {
-          console.error(`🚫 Firecrawl 402 Payment Required - out of credits!`);
-          return { isInactive: false, reason: 'firecrawl_payment_required' };
-        }
-        
         if (attempt < maxRetries) {
           await new Promise(r => setTimeout(r, retryDelayMs * attempt));
           continue;
@@ -257,7 +250,6 @@ serve(async (req) => {
     const retryableReasons = new Set([
       'per_property_timeout', 
       'firecrawl_failed_after_retries', 
-      'firecrawl_payment_required',
       'check_error',
       'short_content_keeping_active'
     ]);
