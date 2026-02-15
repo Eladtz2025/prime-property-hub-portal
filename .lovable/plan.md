@@ -1,67 +1,74 @@
 
-# QA מלא - לוח הבקרה (Dashboard)
+# הוספת גלריית "דירה מרוהטת" לעמוד הנכס
 
-## סקשן 1: כותרת עליונה (Header/Greeting) - תקין
-לא נמצאו באגים. הברכה, הסטטיסטיקות, ועריכת ההכנסה עובדים כמצופה.
+## סקירה כללית
+הוספת אפשרות להעלות תמונות של הדירה מרוהטת באדמין, ובאתר הציבורי יופיע כפתור "תראה לי איך הדירה תהיה מרוהטת" שמחליף את הגלריה לתמונות המרוהטות - רק כשיש תמונות כאלה.
 
-## סקשן 2: הדירות האקטואליות (ActivePropertiesCard) - תקין
-הקרוסלה, כרטיסי הנכסים, והמודל עובדים. אין בעיות.
+## שינוי 1: הוספת עמודה לטבלת property_images
+הוספת עמודה `is_furnished` (boolean, default false) לטבלת `property_images` בדאטאבייס. זה מאפשר לסמן תמונות ספציפיות כ"תמונות ריהוט".
 
-## סקשן 3: Daily Priority + General Priority (PriorityTasksCard) - באג אחד
+## שינוי 2: עדכון האדמין - סימון תמונות כמרוהטות
+בממשק העריכה של תמונות (`PropertyEditModal.tsx` ו-`PropertyEditRow.tsx`), הוספת checkbox/toggle ליד כל תמונה שמאפשר לסמן אותה כ"תמונה מרוהטת". בגלריה (`PropertyGallery.tsx`) גם כן יתווסף סימון כזה.
 
-**באג: `onKeyPress` מיושן**
-- **קובץ:** `PriorityTasksCard.tsx`, שורה 267
-- **בעיה:** `onKeyPress` הוא deprecated ב-React. צריך להחליף ל-`onKeyDown`.
-- **חומרה:** נמוכה (עדיין עובד, אבל יכול לגרום ל-warning ב-console)
+## שינוי 3: עדכון הטיפוסים
+- הוספת `isFurnished` ל-`PropertyImage` ב-`types/property.ts`
+- עדכון ה-Supabase types (יתעדכן אוטומטית עם המיגרציה)
 
-## סקשן 4: פגישות קרובות (UpcomingAppointmentsCard) - תוקן כבר
-התיקונים מהסבבים הקודמים נראים טובים. הכל תקין עכשיו.
+## שינוי 4: עדכון ה-hooks שטוענים תמונות
+- `usePublicProperty.ts` - טעינת שדה `is_furnished`
+- `usePublicProperties.ts` - אותו דבר
+- העברת המידע לקומפוננטות
 
-## סקשן 5: באגים ובעיות (SiteIssuesCard) - באג אחד
+## שינוי 5: עדכון ImageCarousel - הכפתור והמעבר בין גלריות
+ב-`ImageCarousel.tsx`:
+- קבלת prop חדש `furnishedImages` (אופציונלי)
+- כשיש תמונות מרוהטות, הצגת כפתור "תראה לי איך הדירה תהיה מרוהטת" מתחת לגלריה
+- לחיצה על הכפתור מחליפה את הגלריה לתמונות המרוהטות
+- כפתור חזרה "חזרה לתמונות המקוריות"
 
-**באג: `onKeyPress` מיושן**
-- **קובץ:** `SiteIssuesCard.tsx`, שורה 171
-- **בעיה:** אותה בעיה - `onKeyPress` צריך להיות `onKeyDown`.
-- **חומרה:** נמוכה
-
-## סקשן 6: רעיונות לפיתוח (DevelopmentIdeasCard) - באג אחד
-
-**באג: עדיפות מתאפסת ל-`medium` במקום `normal`**
-- **קובץ:** `DevelopmentIdeasCard.tsx`, שורה 34
-- **בעיה:** אחרי הוספת רעיון, `setNewPriority('medium')` מאפס לערך שלא קיים ב-Select (הערכים הם `high`, `normal`, `low`). זה גורם לכך שה-Select מציג ערך ריק/לא תקין אחרי הוספת הרעיון הראשון.
-- **תיקון:** שינוי ל-`setNewPriority('normal')`
-- **חומרה:** בינונית
-
-## סקשן 7: פניות מהאתר (ContactLeadsListCompact) - תקין
-ה-query, התצוגה, ומצב ריק עובדים כמצופה.
-
-## סקשן 8: דשבורד מובייל (MobileDashboard) - תקין
-כל הסקשנים מוצגים, מודל הפגישות עובד, אין בעיות.
-
----
-
-## סיכום תיקונים נדרשים
-
-| # | קובץ | בעיה | חומרה |
-|---|-------|------|-------|
-| 1 | `DevelopmentIdeasCard.tsx` שורה 34 | `setNewPriority('medium')` צריך להיות `'normal'` | בינונית |
-| 2 | `PriorityTasksCard.tsx` שורה 267 | `onKeyPress` -> `onKeyDown` | נמוכה |
-| 3 | `SiteIssuesCard.tsx` שורה 171 | `onKeyPress` -> `onKeyDown` | נמוכה |
+## שינוי 6: עדכון עמודי הנכס (עברית + אנגלית)
+- `PropertyDetailPage.tsx` (עברית) - הפרדת התמונות לרגילות ומרוהטות, העברתן ל-ImageCarousel
+- `en/PropertyDetail.tsx` (אנגלית) - אותו דבר עם טקסט באנגלית ("Show me the apartment furnished")
 
 ---
 
 ## פירוט טכני
 
-### `DevelopmentIdeasCard.tsx`:
-- שורה 34: שינוי `setNewPriority('medium')` ל-`setNewPriority('normal')`
+### מיגרציית SQL:
+```sql
+ALTER TABLE property_images ADD COLUMN is_furnished boolean DEFAULT false;
+```
 
-### `PriorityTasksCard.tsx`:
-- שורה 267: שינוי `onKeyPress={handleKeyPress}` ל-`onKeyDown={handleKeyPress}`
+### `src/types/property.ts` - PropertyImage:
+הוספת `isFurnished?: boolean`
 
-### `SiteIssuesCard.tsx`:
-- שורה 171: שינוי `onKeyPress={handleKeyPress}` ל-`onKeyDown={handleKeyPress}`
+### `src/hooks/usePublicProperty.ts`:
+הוספת `is_furnished` לשאילתא וטרנספורמציה
+
+### `src/components/ImageCarousel.tsx`:
+- Props חדש: `furnishedImages?: PropertyImage[]`
+- State: `showFurnished` (boolean)
+- כפתור toggle בין שתי הגלריות
+- עיצוב הכפתור: אייקון ספה + טקסט, מוצג רק כש-`furnishedImages.length > 0`
+
+### `src/pages/PropertyDetailPage.tsx` + `src/pages/en/PropertyDetail.tsx`:
+- הפרדת `propertyImages` ל-`regularImages` ו-`furnishedImages` לפי `is_furnished`
+- העברת שניהם ל-`ImageCarousel`
+
+### `src/components/PropertyEditModal.tsx` + `PropertyEditRow.tsx`:
+- טעינת ושמירת `is_furnished` 
+- הוספת toggle ליד כל תמונה בעורך
+
+### `src/components/PropertyGallery.tsx`:
+- הוספת badge/toggle לסימון תמונה כמרוהטת
 
 ### קבצים לעריכה:
-- `src/components/DevelopmentIdeasCard.tsx`
-- `src/components/PriorityTasksCard.tsx`
-- `src/components/SiteIssuesCard.tsx`
+- מיגרציית SQL (עמודה חדשה)
+- `src/types/property.ts`
+- `src/hooks/usePublicProperty.ts`
+- `src/components/ImageCarousel.tsx`
+- `src/pages/PropertyDetailPage.tsx`
+- `src/pages/en/PropertyDetail.tsx`
+- `src/components/PropertyEditModal.tsx`
+- `src/components/PropertyEditRow.tsx`
+- `src/components/PropertyGallery.tsx`
