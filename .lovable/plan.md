@@ -1,55 +1,42 @@
 
-# שדרוג גלריית התמונות לרמה מקצועית
+# שיפור רספונסיביות הגלריה בדסקטופ
 
-## סקירה כללית
-הגלריה הנוכחית עובדת אבל מרגישה בסיסית - חסרות אנימציות, אין swipe במובייל, ה-thumbnails קטנים, ויש באגים קטנים. המטרה: להביא את החוויה לרמה של אתרי נדל"ן מקצועיים.
+## הבעיה
+בדסקטופ, הגלריה יושבת בתוך עמודה של 2/3 מהמסך עם aspect ratio קבוע של 4:3. זה יוצר אזור גבוה מדי עם הרבה שטח ריק מטושטש מסביב לתמונה. במובייל זה עובד מצוין כי הגלריה ברוחב מלא.
 
-## שיפור 1: אנימציית Slide חלקה בין תמונות
-במקום שהתמונה פשוט "קופצת", תהיה אנימציית slide-in/slide-out חלקה כשמחליפים תמונה. אפקט fade + slide קצר שנותן תחושה מלוטשת.
+## הפתרון
+התאמת ה-aspect ratio לפי גודל המסך - בדסקטופ נשתמש ב-16:10 (רחב ונמוך יותר) ובמובייל נשאיר 4:3. בנוסף, נעגל את הפינות של הגלריה בדסקטופ ונשפר את הכפתורים והמונה.
 
-## שיפור 2: תמיכה ב-Swipe במובייל (Touch Gestures)
-הוספת תמיכה בהחלקה ימינה/שמאלה עם האצבע במובייל. זה הבסיס לכל גלריה מודרנית - המשתמש פשוט מחליק והתמונה עוברת.
+## שינויים
 
-## שיפור 3: שדרוג ה-Thumbnails
-- הגדלה מ-64px ל-80px (דסקטופ) / 72px (מובייל)
-- הוספת אפקט hover (scale + brightness)
-- הוספת active indicator ברור יותר (לא רק border)
-- תיקון thumbnail שבור שמציג אייקון ריק
+### קובץ: `src/components/ImageCarousel.tsx`
 
-## שיפור 4: גובה אחיד לגלריה
-במקום הקפיצה בין "unknown" -> "landscape"/"portrait", להגדיר aspect ratio קבוע (16:9 או 4:3) עם object-fit שמתאים את עצמו. התמונה תמיד נטענת בתוך מסגרת יציבה בלי layout shift.
+1. **Aspect ratio רספונסיבי** - שינוי מ-`style={{ aspectRatio: '4/3' }}` ל-class שמגדיר `aspect-[4/3]` במובייל ו-`lg:aspect-[16/10]` בדסקטופ. זה יקטין את הגובה בדסקטופ ויצמצם את השטח הריק.
 
-## שיפור 5: שדרוג ה-Fullscreen
-- רקע כהה מלא (overlay)
-- thumbnails גם במצב fullscreen
-- תמיכה ב-swipe גם בפולסקרין
-- תיקון באג המונה (מציג "9/4" במקום "4/9")
-- ניווט עם מקשי חצים (keyboard)
-- אנימציית כניסה/יציאה חלקה
+2. **עיגול פינות בדסקטופ** - הוספת `lg:rounded-xl` לקונטיינר הראשי של התמונה כדי שייראה יותר מלוטש.
 
-## שיפור 6: Keyboard Navigation
-הוספת event listeners למקשי חצים ימינה/שמאלה + Escape לסגירת fullscreen. משפר נגישות ונוחות.
+3. **כפתורי ניווט גדולים יותר בדסקטופ** - הגדלת כפתורי החצים ל-`lg:h-12 lg:w-12` עם אייקונים גדולים יותר, ומיקום רחוק יותר מהקצה (`lg:left-4`, `lg:right-4`).
 
-## שיפור 7: Preloading חכם
-טעינה מראש של התמונה הבאה והקודמת ברקע, כדי שהמעבר יהיה מיידי בלי loading.
+4. **Thumbnails גדולים יותר בדסקטופ** - הגדלה ל-`lg:w-24 lg:h-24` (96px) ורווח גדול יותר בין ה-thumbnails.
 
 ---
 
 ## פירוט טכני
 
-### קובץ: `src/components/ImageCarousel.tsx`
+### שורה 300-301: שינוי aspect ratio
+- הסרת `style={{ aspectRatio: '4/3' }}`
+- הוספת className: `aspect-[4/3] lg:aspect-[16/10]`
 
-**Swipe support:** שימוש ב-touch events (touchstart/touchmove/touchend) ישירות, בלי ספרייה נוספת. מעקב אחרי deltaX ו-threshold של 50px להפעלת מעבר.
+### שורה 300: עיגול פינות
+- הוספת `lg:rounded-xl` לקונטיינר
 
-**Slide animation:** שימוש ב-CSS transitions עם transform: translateX. State חדש `slideDirection` שקובע את כיוון האנימציה.
+### שורות 341-356: כפתורי ניווט
+- הוספת `lg:h-12 lg:w-12` לכפתורים
+- הוספת `lg:left-4` ו-`lg:right-4` למרווח
+- הגדלת אייקונים ל-`lg:h-6 lg:w-6`
 
-**גובה אחיד:** החלפת הלוגיקה של 3 layouts שונים (unknown/landscape/portrait) ב-container אחד עם aspect-ratio: 4/3 ו-object-fit: contain. רקע blur תמיד מוצג לתמונות שלא ממלאות את כל השטח.
-
-**Thumbnails:** הגדלה ל-w-20 h-20, הוספת hover:scale-105 hover:brightness-110, ring indicator לפריט פעיל.
-
-**Fullscreen:** הוספת useEffect עם keydown listener, תיקון סדר המונה, הוספת thumbnails strip, רקע bg-black/95.
-
-**Preloading:** useEffect שטוען את image[currentIndex+1] ו-image[currentIndex-1] עם `new Image()`.
+### שורות 248-249: Thumbnails
+- הוספת `lg:w-24 lg:h-24` לגודל
 
 ### קבצים לעריכה:
-- `src/components/ImageCarousel.tsx` (שכתוב משמעותי)
+- `src/components/ImageCarousel.tsx`
