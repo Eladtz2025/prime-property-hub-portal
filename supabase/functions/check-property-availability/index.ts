@@ -36,7 +36,7 @@ async function checkWithFirecrawl(
   firecrawlApiKey: string,
   maxRetries: number,
   retryDelayMs: number
-): Promise<{ isInactive: boolean; reason: string }> {
+): Promise<{ isInactive: boolean; reason: string; rateLimited?: boolean }> {
   const waitForMs = source === 'yad2' ? 5000 : 3000;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -64,6 +64,11 @@ async function checkWithFirecrawl(
       clearTimeout(timeoutId);
       
       if (!response.ok) {
+        // Signal rate limit so caller can rotate keys
+        if (isRateLimitError(response.status)) {
+          console.warn(`🔑 Rate limited (${response.status}) for ${url}`);
+          return { isInactive: false, reason: 'rate_limited', rateLimited: true };
+        }
         console.warn(`Firecrawl returned ${response.status} for ${url}`);
         if (attempt < maxRetries) {
           await new Promise(r => setTimeout(r, retryDelayMs * attempt));
@@ -107,7 +112,7 @@ async function checkSingleProperty(
   firecrawlApiKey: string,
   settings: any,
   timeoutMs: number
-): Promise<CheckResult> {
+): Promise<CheckResult & { rateLimited?: boolean }> {
   const timeoutPromise = new Promise<never>((_, reject) => 
     setTimeout(() => reject(new Error('PROPERTY_TIMEOUT')), timeoutMs)
   );
@@ -133,12 +138,14 @@ async function checkSingleProperty(
 async function processPropertiesInParallel(
   properties: PropertyToCheck[],
   concurrencyLimit: number,
-  firecrawlApiKey: string,
+  initialFirecrawlKey: { key: string; id: string | null },
   settings: any,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
+  supabase: any
 ): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
   const perPropertyTimeout = settings.per_property_timeout_ms || 15000;
+  let currentKey = initialFirecrawlKey;
   
   for (let i = 0; i < properties.length; i += concurrencyLimit) {
     if (abortSignal.aborted) {
@@ -150,8 +157,46 @@ async function processPropertiesInParallel(
     console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
     
     const chunkResults = await Promise.allSettled(
-      chunk.map(prop => checkSingleProperty(prop, firecrawlApiKey, settings, perPropertyTimeout))
+      chunk.map(prop => checkSingleProperty(prop, currentKey.key, settings, perPropertyTimeout))
     );
+    
+    // Check if any result was rate limited
+    let needsKeyRotation = false;
+    for (const result of chunkResults) {
+      if (result.status === 'fulfilled' && result.value.rateLimited) {
+        needsKeyRotation = true;
+        break;
+      }
+    }
+    
+    if (needsKeyRotation) {
+      console.log(`🔑 Rate limited on key "${currentKey.id}", rotating...`);
+      await markKeyExhausted(supabase, currentKey.id);
+      
+      try {
+        currentKey = await getActiveFirecrawlKey(supabase);
+        console.log(`🔑 Rotated to new key, retrying chunk...`);
+        
+        // Retry the entire chunk with the new key
+        const retryResults = await Promise.allSettled(
+          chunk.map(prop => checkSingleProperty(prop, currentKey.key, settings, perPropertyTimeout))
+        );
+        
+        for (const result of retryResults) {
+          if (result.status === 'fulfilled') {
+            results.push(result.value);
+          }
+        }
+        continue;
+      } catch {
+        console.error('❌ No more Firecrawl keys available, stopping');
+        // Mark remaining as retryable
+        for (const prop of properties.slice(i)) {
+          results.push({ id: prop.id, isInactive: false, reason: 'all_keys_exhausted', error: true });
+        }
+        break;
+      }
+    }
     
     for (const result of chunkResults) {
       if (result.status === 'fulfilled') {
@@ -192,7 +237,7 @@ serve(async (req) => {
       error: 'No Firecrawl API key available'
     }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-  const firecrawlApiKey = firecrawlKey.key;
+  
 
   try {
     let propertyIds: string[] = [];
@@ -238,9 +283,10 @@ serve(async (req) => {
     const results = await processPropertiesInParallel(
       properties,
       concurrencyLimit,
-      firecrawlApiKey,
+      firecrawlKey,
       settings,
-      globalAbortController.signal
+      globalAbortController.signal,
+      supabase
     );
 
     clearTimeout(globalTimeoutId);
@@ -256,7 +302,9 @@ serve(async (req) => {
       'per_property_timeout', 
       'firecrawl_failed_after_retries', 
       'check_error',
-      'short_content_keeping_active'
+      'short_content_keeping_active',
+      'all_keys_exhausted',
+      'rate_limited'
     ]);
 
     for (const result of results) {
