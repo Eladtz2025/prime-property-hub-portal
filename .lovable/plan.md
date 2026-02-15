@@ -1,24 +1,67 @@
 
+# QA מלא - לוח הבקרה (Dashboard)
 
-# הוספת "Since 2016" וסטייל לכפתורים בהירו
+## סקשן 1: כותרת עליונה (Header/Greeting) - תקין
+לא נמצאו באגים. הברכה, הסטטיסטיקות, ועריכת ההכנסה עובדים כמצופה.
 
-## שינוי 1: הוספת "Since 2016" מתחת לכותרת
-בשני קבצי ה-VideoHero (עברית ואנגלית), יתווסף טקסט "Since 2016" מתחת לשורת "Properties" בגודל קטן, tracking רחב, וצבע לבן שקוף קצת - בסגנון דומה לשורת "Properties".
+## סקשן 2: הדירות האקטואליות (ActivePropertiesCard) - תקין
+הקרוסלה, כרטיסי הנכסים, והמודל עובדים. אין בעיות.
 
-## שינוי 2: רקע שקוף לכפתורי קנייה/השכרה
-לכפתורים יתווסף רקע חצי-שקוף (כמו לכפתור השפה) עם backdrop-blur.
+## סקשן 3: Daily Priority + General Priority (PriorityTasksCard) - באג אחד
+
+**באג: `onKeyPress` מיושן**
+- **קובץ:** `PriorityTasksCard.tsx`, שורה 267
+- **בעיה:** `onKeyPress` הוא deprecated ב-React. צריך להחליף ל-`onKeyDown`.
+- **חומרה:** נמוכה (עדיין עובד, אבל יכול לגרום ל-warning ב-console)
+
+## סקשן 4: פגישות קרובות (UpcomingAppointmentsCard) - תוקן כבר
+התיקונים מהסבבים הקודמים נראים טובים. הכל תקין עכשיו.
+
+## סקשן 5: באגים ובעיות (SiteIssuesCard) - באג אחד
+
+**באג: `onKeyPress` מיושן**
+- **קובץ:** `SiteIssuesCard.tsx`, שורה 171
+- **בעיה:** אותה בעיה - `onKeyPress` צריך להיות `onKeyDown`.
+- **חומרה:** נמוכה
+
+## סקשן 6: רעיונות לפיתוח (DevelopmentIdeasCard) - באג אחד
+
+**באג: עדיפות מתאפסת ל-`medium` במקום `normal`**
+- **קובץ:** `DevelopmentIdeasCard.tsx`, שורה 34
+- **בעיה:** אחרי הוספת רעיון, `setNewPriority('medium')` מאפס לערך שלא קיים ב-Select (הערכים הם `high`, `normal`, `low`). זה גורם לכך שה-Select מציג ערך ריק/לא תקין אחרי הוספת הרעיון הראשון.
+- **תיקון:** שינוי ל-`setNewPriority('normal')`
+- **חומרה:** בינונית
+
+## סקשן 7: פניות מהאתר (ContactLeadsListCompact) - תקין
+ה-query, התצוגה, ומצב ריק עובדים כמצופה.
+
+## סקשן 8: דשבורד מובייל (MobileDashboard) - תקין
+כל הסקשנים מוצגים, מודל הפגישות עובד, אין בעיות.
+
+---
+
+## סיכום תיקונים נדרשים
+
+| # | קובץ | בעיה | חומרה |
+|---|-------|------|-------|
+| 1 | `DevelopmentIdeasCard.tsx` שורה 34 | `setNewPriority('medium')` צריך להיות `'normal'` | בינונית |
+| 2 | `PriorityTasksCard.tsx` שורה 267 | `onKeyPress` -> `onKeyDown` | נמוכה |
+| 3 | `SiteIssuesCard.tsx` שורה 171 | `onKeyPress` -> `onKeyDown` | נמוכה |
 
 ---
 
 ## פירוט טכני
 
-### `src/components/he/VideoHero.tsx` (שורות 57-59):
-- הוספת שורת "Since 2016" אחרי "Properties"
-- שינוי className של הכפתורים (שורות 69, 75): הוספת `bg-white/10 backdrop-blur-sm`
+### `DevelopmentIdeasCard.tsx`:
+- שורה 34: שינוי `setNewPriority('medium')` ל-`setNewPriority('normal')`
 
-### `src/components/en/VideoHero.tsx` (שורות 57-59):
-- אותם שינויים בדיוק
+### `PriorityTasksCard.tsx`:
+- שורה 267: שינוי `onKeyPress={handleKeyPress}` ל-`onKeyDown={handleKeyPress}`
+
+### `SiteIssuesCard.tsx`:
+- שורה 171: שינוי `onKeyPress={handleKeyPress}` ל-`onKeyDown={handleKeyPress}`
 
 ### קבצים לעריכה:
-- `src/components/he/VideoHero.tsx`
-- `src/components/en/VideoHero.tsx`
+- `src/components/DevelopmentIdeasCard.tsx`
+- `src/components/PriorityTasksCard.tsx`
+- `src/components/SiteIssuesCard.tsx`
