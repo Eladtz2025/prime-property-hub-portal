@@ -1132,6 +1132,39 @@ export type Database = {
           },
         ]
       }
+      firecrawl_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          exhausted_at: string | null
+          id: string
+          label: string
+          priority: number
+          status: string
+          total_uses: number | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          exhausted_at?: string | null
+          id?: string
+          label: string
+          priority?: number
+          status?: string
+          total_uses?: number | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          exhausted_at?: string | null
+          id?: string
+          label?: string
+          priority?: number
+          status?: string
+          total_uses?: number | null
+        }
+        Relationships: []
+      }
       lease_expiry_alerts: {
         Row: {
           created_at: string

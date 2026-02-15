@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, scrapeWithRetry, validateScrapedContent } from "../_shared/scraping.ts";
+import { getActiveFirecrawlKey } from "../_shared/firecrawl-keys.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseYad2Markdown } from "../_experimental/parser-yad2.ts";
@@ -28,7 +29,6 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -98,11 +98,14 @@ serve(async (req) => {
       });
     }
 
-    // Check API keys once before looping
-    if (!firecrawlApiKey) {
+    // Get Firecrawl API key (with rotation support)
+    let firecrawlKey: { key: string; id: string | null };
+    try {
+      firecrawlKey = await getActiveFirecrawlKey(supabase);
+    } catch {
       await updatePageStatus(supabase, runId, page, { 
         status: 'failed', 
-        error: 'FIRECRAWL_API_KEY not configured',
+        error: 'No Firecrawl API key available',
         duration_ms: Date.now() - pageStartTime
       });
       if (maxPages) {
@@ -142,8 +145,8 @@ serve(async (req) => {
     for (const url of urls) {
       console.log(`🟠 Yad2 page ${page}: Scraping ${url}`);
 
-      // Scrape this URL
-      const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, 'yad2', YAD2_CONFIG.MAX_RETRIES);
+      // Scrape this URL (with key rotation support)
+      const scrapeData = await scrapeWithRetry(url, firecrawlKey.key, 'yad2', YAD2_CONFIG.MAX_RETRIES, undefined, { supabase, keyId: firecrawlKey.id });
       
       if (!scrapeData) {
         console.warn(`⚠️ Yad2 page ${page}: Scrape failed for ${url}, continuing to next URL`);

@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown } from '../_shared/broker-detection.ts';
 import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
+import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from '../_shared/firecrawl-keys.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -138,8 +139,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get Firecrawl API key with rotation support
+    let firecrawlKey = await getActiveFirecrawlKey(supabase);
+    let firecrawlApiKey = firecrawlKey.key;
 
     const { 
       action = 'start', 
@@ -478,6 +482,18 @@ Deno.serve(async (req) => {
         });
 
         if (!scrapeResponse.ok) {
+          // Handle rate limit with key rotation
+          if (isRateLimitError(scrapeResponse.status)) {
+            console.warn(`🔄 Rate limited (${scrapeResponse.status}), rotating key...`);
+            await markKeyExhausted(supabase, firecrawlKey.id);
+            try {
+              firecrawlKey = await getActiveFirecrawlKey(supabase);
+              firecrawlApiKey = firecrawlKey.key;
+              console.log(`🔄 Rotated to new key, will retry on next item`);
+            } catch {
+              console.error('No more Firecrawl keys available');
+            }
+          }
           const errorText = await scrapeResponse.text();
           console.log(`❌ Scrape failed: ${errorText}`);
           failCount++;

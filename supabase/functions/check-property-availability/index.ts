@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
 import { isListingRemoved } from "../_shared/availability-indicators.ts";
+import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from "../_shared/firecrawl-keys.ts";
 
 const GLOBAL_TIMEOUT_MS = 50000;
 
@@ -176,18 +177,22 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const settings = await fetchCategorySettings(supabase, 'availability');
 
-  if (!firecrawlApiKey) {
+  // Get Firecrawl API key with rotation support
+  let firecrawlKey: { key: string; id: string | null };
+  try {
+    firecrawlKey = await getActiveFirecrawlKey(supabase);
+  } catch {
     clearTimeout(globalTimeoutId);
     return new Response(JSON.stringify({
       success: false,
-      error: 'FIRECRAWL_API_KEY not configured'
+      error: 'No Firecrawl API key available'
     }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
+  const firecrawlApiKey = firecrawlKey.key;
 
   try {
     let propertyIds: string[] = [];

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, scrapeWithRetry, validateScrapedContent } from "../_shared/scraping.ts";
+import { getActiveFirecrawlKey } from "../_shared/firecrawl-keys.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseHomelessHtml } from "../_experimental/parser-homeless.ts";
@@ -25,7 +26,6 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -83,9 +83,13 @@ serve(async (req) => {
     console.log(`🟣 Homeless page ${page}: Scraping ${url}`);
     await updatePageStatus(supabase, runId, page, { url });
 
-    if (!firecrawlApiKey) {
+    // Get Firecrawl API key (with rotation support)
+    let firecrawlKey: { key: string; id: string | null };
+    try {
+      firecrawlKey = await getActiveFirecrawlKey(supabase);
+    } catch {
       await updatePageStatus(supabase, runId, page, { 
-        status: 'failed', error: 'FIRECRAWL_API_KEY not configured', duration_ms: Date.now() - pageStartTime
+        status: 'failed', error: 'No Firecrawl API key available', duration_ms: Date.now() - pageStartTime
       });
       if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
       return new Response(JSON.stringify({ success: false, error: 'No API key' }), {
@@ -94,7 +98,7 @@ serve(async (req) => {
     }
 
     // Scrape the page
-    const scrapeData = await scrapeWithRetry(url, firecrawlApiKey, 'homeless', HOMELESS_CONFIG.MAX_RETRIES, HOMELESS_CONFIG.WAIT_FOR_MS);
+    const scrapeData = await scrapeWithRetry(url, firecrawlKey.key, 'homeless', HOMELESS_CONFIG.MAX_RETRIES, HOMELESS_CONFIG.WAIT_FOR_MS, { supabase, keyId: firecrawlKey.id });
     
     if (!scrapeData) {
       console.error(`All retry attempts failed for Homeless page ${page}`);
