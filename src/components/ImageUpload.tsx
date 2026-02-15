@@ -462,8 +462,25 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
             </div>
           )}
           
-          {/* Controls */}
-          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {/* Always-visible furnished button */}
+          {!isVideo && (
+            <div className="absolute top-1 right-1 z-10">
+              <Button
+                size="sm"
+                variant={isFurnished ? "default" : "secondary"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFurnished(image.id);
+                }}
+                className={`h-6 w-6 p-0 ${isFurnished ? '' : 'opacity-60 hover:opacity-100'}`}
+                title={isFurnished ? "הסר סימון מרוהטת" : "סמן כמרוהטת"}
+              >
+                <Sofa className={`h-3 w-3 ${isFurnished ? 'text-orange-500' : ''}`} />
+              </Button>
+            </div>
+          )}
+          {/* Hover Controls */}
+          <div className={`absolute ${!isVideo ? 'top-1 right-8' : 'top-1 right-1'} flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
             <Button
               size="sm"
               variant={isHidden ? "outline" : "secondary"}
@@ -495,20 +512,6 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
                 ) : (
                   <StarOff className="h-3 w-3" />
                 )}
-              </Button>
-            )}
-            {!isVideo && (
-              <Button
-                size="sm"
-                variant={isFurnished ? "default" : "secondary"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFurnished(image.id);
-                }}
-                className="h-6 w-6 p-0"
-                title={isFurnished ? "הסר סימון מרוהטת" : "סמן כמרוהטת"}
-              >
-                <Sofa className={`h-3 w-3 ${isFurnished ? 'text-orange-500' : ''}`} />
               </Button>
             )}
             <Button
