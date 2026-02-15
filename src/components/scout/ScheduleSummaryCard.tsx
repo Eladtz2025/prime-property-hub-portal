@@ -210,12 +210,12 @@ export const ScheduleSummaryCard: React.FC = () => {
   const scheduleItems = React.useMemo(() => {
     const items: ScheduleItem[] = [];
 
-    const dedupTimes = settings?.duplicates?.schedule_times || ['00:00'];
+  const dedupTimes = settings?.duplicates?.schedule_times || ['03:00'];
     dedupTimes.forEach(time => {
       items.push({ time, endTime: settings?.duplicates?.schedule_end_time, label: 'ניקוי כפילויות', type: 'cleanup' });
     });
 
-    const backfillTimes = settings?.backfill?.schedule_times || ['03:00'];
+    const backfillTimes = settings?.backfill?.schedule_times || ['00:00'];
     backfillTimes.forEach(time => {
       items.push({ time, endTime: settings?.backfill?.schedule_end_time, label: 'השלמת נתונים', type: 'backfill' });
     });
@@ -225,7 +225,7 @@ export const ScheduleSummaryCard: React.FC = () => {
       items.push({ time, endTime: settings?.availability?.schedule_end_time, label: 'בדיקת זמינות', type: 'availability' });
     });
 
-    const matchingTimes = settings?.matching?.schedule_times || ['23:00'];
+    const matchingTimes = settings?.matching?.schedule_times || ['07:00'];
     matchingTimes.forEach(time => {
       items.push({ time, endTime: settings?.matching?.schedule_end_time, label: 'התאמה ללקוחות', type: 'matching' });
     });
