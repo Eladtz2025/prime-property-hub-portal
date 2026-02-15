@@ -28,7 +28,10 @@ serve(async (req) => {
   let runId: string | null = null;
 
   try {
-    console.log('🔍 Starting availability check (cron-based)...');
+    const { manual, continue_run } = await req.json().catch(() => ({}));
+    const isManual = manual === true;
+
+    console.log(`🔍 Starting availability check (${isManual ? 'manual' : 'cron-based'})...`);
 
     // Fire-and-forget cleanup of stuck runs before starting
     fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
@@ -253,11 +256,15 @@ serve(async (req) => {
     const remainingDailyQuota = remainingQuota - processedThisRun;
     // Check schedule end time before self-chaining
     let endTimeReached = false;
-    try {
-      const availSettings = await fetchCategorySettings(supabase, 'availability');
-      endTimeReached = isPastEndTime(availSettings.schedule_end_time);
-    } catch (e) {
-      console.warn('Failed to check end time:', e);
+    if (!isManual) {
+      try {
+        const availSettings = await fetchCategorySettings(supabase, 'availability');
+        endTimeReached = isPastEndTime(availSettings.schedule_end_time);
+      } catch (e) {
+        console.warn('Failed to check end time:', e);
+      }
+    } else {
+      console.log('⏩ Manual run — skipping schedule_end_time check');
     }
 
     if (remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached) {
@@ -270,7 +277,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ continue_run: true })
+      body: JSON.stringify({ continue_run: true, manual: isManual })
       }).catch(err => console.error('⚠️ Self-chain failed:', err));
     } else if (endTimeReached) {
       console.log(`⏰ End time reached, stopping self-chain. ${remainingBatches} batches remaining.`);
