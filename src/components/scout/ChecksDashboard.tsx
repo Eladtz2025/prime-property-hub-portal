@@ -237,6 +237,23 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Stop availability
+  const stopAvailability = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('availability_check_runs')
+        .update({ status: 'stopped', completed_at: new Date().toISOString() })
+        .eq('status', 'running');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('בדיקת זמינות נעצרה');
+      queryClient.invalidateQueries({ queryKey: ['availability-last-run'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-availability-detail'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // Trigger matching
   const triggerMatching = useMutation({
     mutationFn: async () => {
@@ -325,7 +342,9 @@ export const ChecksDashboard: React.FC = () => {
           ]}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailability.mutate()}
+          onStop={() => stopAvailability.mutate()}
           isRunPending={triggerAvailability.isPending}
+          isStopPending={stopAvailability.isPending}
           historyContent={<AvailabilityHistorySection />}
           settingsContent={
             <div className="space-y-6">
