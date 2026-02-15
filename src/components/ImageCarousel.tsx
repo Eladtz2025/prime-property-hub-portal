@@ -336,7 +336,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
             <div className="px-3 pt-3">
               <Button
                 variant={showFurnished ? "default" : "outline"}
-                className="w-full gap-2"
+                className={`w-full gap-2 ${!showFurnished ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' : ''}`}
                 onClick={handleToggleFurnished}
               >
                 {showFurnished ? (
