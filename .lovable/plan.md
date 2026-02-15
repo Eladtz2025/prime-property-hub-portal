@@ -1,76 +1,55 @@
 
 
-# הוספת בדיקת שעת סיום ל-detect-duplicates ו-trigger-matching
+# איחוד ריצות רצופות בסיכום "ריצות אחרונות"
 
 ## הבעיה
 
-שני תהליכים לא בודקים את `schedule_end_time` ולכן יכולים לרוץ ללא הגבלת זמן:
-- **detect-duplicates** (כפילויות) - אין בדיקת `isPastEndTime`, אין self-chain stop
-- **trigger-matching** (התאמות) - אין בדיקת `isPastEndTime`, אין self-chain stop
-
-שלושה תהליכים אחרים כבר בודקים ועובדים נכון:
-- backfill-property-data (עוצר ב-02:30)
-- reclassify-broker (עוצר ב-02:30 עם אותה הגדרה)
-- trigger-availability-check (עוצר ב-06:30)
-
-## מה לגבי backfill אחרי סריקה?
-
-אין טריגר כזה. ה-backfill רץ רק מה-Cron המתוזמן שלו ב-00:00. זה תקין - לא צריך לשנות.
+כשתהליך כמו "בדיקת זמינות" רץ ב-8 באצ'ים רצופים, כל באצ' מוצג כשורה נפרדת ברשימה. התוצאה: הרשימה מוצפת בשורות זהות שלא מוסיפות ערך.
 
 ## הפתרון
 
-### שלב 1: עדכון detect-duplicates/index.ts
-הוספת `isPastEndTime` ו-`fetchCategorySettings` מ-`_shared/settings.ts`. בסוף כל באצ', לפני self-chain, בדיקה האם עברנו את שעת הסיום (04:30 ברירת מחדל). אם כן - עצירה.
+איחוד ריצות רצופות מאותו סוג (task) לשורה סיכומית אחת.
 
-### שלב 2: עדכון trigger-matching/index.ts
-אותו דבר - הוספת בדיקת `isPastEndTime` עם הגדרת `schedule_end_time` מקטגוריית matching (08:30 ברירת מחדל). אם עברנו את השעה - עצירה.
+**לפני:**
+```text
+בדיקת זמינות  06:29  34 דק׳  18 נבדקו, 9 לא זמינים
+בדיקת זמינות  06:29  35 דק׳  18 נבדקו, 11 לא זמינים
+בדיקת זמינות  06:28  51 דק׳  18 נבדקו, 2 לא זמינים
+בדיקת זמינות  06:27  51 דק׳  18 נבדקו, 0 לא זמינים
+בדיקת זמינות  06:26  44 דק׳  18 נבדקו, 10 לא זמינים
+...
+```
 
-### שלב 3: תיקון default schedule_times ב-matching
-ערכי ברירת המחדל `['09:15', '18:15']` כבר לא רלוונטיים (ההתאמות לא בודקות schedule_times פנימית). נעדכן ל-`['07:00']` לעקביות בתצוגת ה-UI.
+**אחרי:**
+```text
+בדיקת זמינות  05:12-06:29  8 באצ׳ים  144 נבדקו, 35 לא זמינים
+```
+
+## לוגיקת האיחוד
+
+שורות נחשבות "רצופות" אם:
+1. אותו שם task (למשל "בדיקת זמינות", "יד2 השכרה")
+2. ההפרש בין ריצה לריצה לא עולה על 10 דקות
+
+לכל קבוצה מאוחדת יוצג:
+- **שם המשימה** -- ללא שינוי
+- **טווח זמנים** -- שעת התחלה ראשונה עד שעת סיום אחרונה (למשל `05:12-06:29`)
+- **כמות באצ'ים** -- `8 באצ׳ים`
+- **סיכום מצטבר** -- סכימת כל המספרים (למשל `144 נבדקו, 35 לא זמינים`)
+- **סטטוס** -- אם אחד נכשל = אדום, אם אחד רץ = כחול, אחרת = ירוק
 
 ## פרטים טכניים
 
-### detect-duplicates - שינוי בסוף הפונקציה
-```typescript
-import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
+### קובץ: `src/components/scout/ScheduleSummaryCard.tsx`
 
-// After batch processing, before self-chain:
-let endTimeReached = false;
-try {
-  const dedupSettings = await fetchCategorySettings(supabase, 'duplicates');
-  endTimeReached = isPastEndTime(dedupSettings.schedule_end_time);
-} catch (e) {
-  console.warn('Failed to check end time:', e);
-}
+1. **הוספת פונקציית איחוד** `aggregateConsecutiveRuns(items: RunItem[])`:
+   - הרשימה כבר ממוינת לפי `startedAt` יורד
+   - עובר על הרשימה ומקבץ ריצות עם אותו `task` שהן בהפרש של עד 10 דקות
+   - כל קבוצה הופכת לשורה אחת עם סיכום מצטבר
 
-if (endTimeReached) {
-  // Update status to stopped, don't self-chain
-}
-```
+2. **פרסור הסיכום לצורך סכימה**: הפונקציה תפרסר את טקסט ה-`summary` (למשל `"18 נבדקו, 9 לא זמינים"`) ותסכום את המספרים בין הריצות
 
-### trigger-matching - שינוי דומה
-```typescript
-import { isPastEndTime } from '../_shared/settings.ts';
-// fetchCategorySettings already imported
+3. **עדכון התצוגה**: שימוש ב-`aggregateConsecutiveRuns(recentRuns)` במקום `recentRuns` ישירות. שורה מאוחדת תציג טווח זמנים ומספר באצ'ים במקום זמן ומשך בודדים
 
-// Before self-chain decision:
-let endTimeReached = false;
-try {
-  const matchSettings = await fetchCategorySettings(supabase, 'matching');
-  endTimeReached = isPastEndTime(matchSettings.schedule_end_time);
-} catch (e) {
-  console.warn('Failed to check end time:', e);
-}
-```
+4. **ריצה בודדת**: אם יש רק באצ' אחד -- תוצג כמו היום, ללא שינוי
 
-## תוצאה צפויה
-
-```text
-23:00          Scouts (סריקות)
-00:00 - 02:30  Backfill (השלמת נתונים) - כבר עובד
-03:00 - 04:30  Duplicates (כפילויות) - יתוקן
-05:00 - 06:30  Availability (זמינות) - כבר עובד
-07:00 - 08:30  Matching (התאמות) - יתוקן
-```
-
-כל התהליכים יעצרו אוטומטית בשעת הסיום שלהם.
