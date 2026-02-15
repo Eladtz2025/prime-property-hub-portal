@@ -187,6 +187,35 @@ serve(async (req) => {
           // Collect run details from batch results
           if (result.results && Array.isArray(result.results)) {
             allRunDetails.push(...result.results);
+            
+            // Check if Firecrawl ran out of credits (402)
+            const paymentRequired = result.results.some((r: any) => r.reason === 'firecrawl_payment_required');
+            if (paymentRequired) {
+              console.error(`🚫 Firecrawl out of credits (402)! Stopping run immediately.`);
+              // Mark run as failed with clear message
+              await supabase
+                .from('availability_check_runs')
+                .update({
+                  status: 'failed',
+                  completed_at: new Date().toISOString(),
+                  properties_checked: processedThisRun,
+                  inactive_marked: inactiveThisRun,
+                  run_details: allRunDetails,
+                  error_message: 'Firecrawl credits exhausted (402 Payment Required). Please check your Firecrawl account.'
+                })
+                .eq('id', runId);
+              
+              return new Response(JSON.stringify({
+                success: false,
+                error: 'firecrawl_payment_required',
+                message: 'Firecrawl credits exhausted. Run stopped.',
+                run_id: runId,
+                processed_this_run: processedThisRun,
+              }), {
+                status: 402,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            }
           }
         } else {
           console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
