@@ -1,87 +1,53 @@
 
-# תיקון: ריצה ידנית נחסמת על ידי lock של ריצה מקבילה
+# הוספת כפתור "עצור" לבדיקת זמינות (ולהתאמות)
 
 ## הבעיה
 
-כשלוחצים "הפעל ריצה עכשיו", לפעמים עולים שני instances במקביל (retry של Supabase, double-click, וכו'). ה-instance בלי `manual: true` תופס את ה-lock ורץ כ-cron-based, נעצר ב-`schedule_end_time`. ה-instance הידני נחסם ומחזיר "Already running".
+כפתור העצירה לא מופיע בכרטיס "בדיקת זמינות" (וגם "התאמות") כי ה-`onStop` לא מועבר ל-ProcessCard. רק ל-Backfill יש כפתור עצירה.
 
 ## הפתרון
 
-שני שינויים קטנים:
+### קובץ: `src/components/scout/ChecksDashboard.tsx`
 
-### 1. שמירת דגל `manual` בטבלת `availability_check_runs`
+**שינוי 1 — הוספת mutation לעצירת בדיקת זמינות:**
 
-הוספת עמודה `is_manual` (boolean, default false) לטבלה. כשיוצרים ריצה, רושמים אם היא ידנית.
-
-### 2. עדכון לוגיקת ה-lock בפונקציה
-
-כשריצה ידנית מגיעה ומוצאת lock פעיל:
-- אם ה-lock הוא של ריצה **לא ידנית** (cron) -- הריצה הידנית "מחליפה" אותה: מעדכנת את הרשומה ל-`is_manual = true` וממשיכה
-- אם ה-lock הוא של ריצה **ידנית** אחרת -- מחזירה "Already running" כרגיל
-
-בנוסף, בשלב ה-self-chain, הבדיקה של `endTimeReached` תשתמש ב-`is_manual` מהדאטאבייס (לא רק מה-body) כדי להבטיח עקביות.
-
-## פרטים טכניים
-
-### מיגרציה: הוספת עמודה `is_manual`
-
-```sql
-ALTER TABLE availability_check_runs 
-ADD COLUMN IF NOT EXISTS is_manual BOOLEAN DEFAULT false;
+```typescript
+const stopAvailability = useMutation({
+  mutationFn: async () => {
+    // Update the running availability_check_runs record to 'stopped'
+    const { error } = await supabase
+      .from('availability_check_runs')
+      .update({ status: 'stopped', completed_at: new Date().toISOString() })
+      .eq('status', 'running');
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    toast.success('בדיקת זמינות נעצרה');
+    queryClient.invalidateQueries({ queryKey: ['availability-runs'] });
+  },
+  onError: (err) => toast.error(`שגיאה בעצירה: ${err.message}`),
+});
 ```
 
-### קובץ: `supabase/functions/trigger-availability-check/index.ts`
-
-**שינוי 1 - Lock check (שורות ~43-60):**
-
-לפני:
-```text
-if (runningCheck) {
-  return "Already running"
-}
-```
-
-אחרי:
-```text
-if (runningCheck) {
-  if (isManual && !runningCheck.is_manual) {
-    // Manual overrides cron: update the existing run to manual
-    await supabase.from('availability_check_runs')
-      .update({ is_manual: true })
-      .eq('id', runningCheck.id);
-    return "Upgraded existing run to manual"
-  }
-  return "Already running"
-}
-```
-
-**שינוי 2 - יצירת ריצה חדשה (שורה ~68):**
+**שינוי 2 — העברת `onStop` ו-`isStopPending` לכרטיס הזמינות (שורה ~327):**
 
 ```text
-.insert({ status: 'running', is_manual: isManual })
+onRun={() => triggerAvailability.mutate()}
+onStop={() => stopAvailability.mutate()}
+isRunPending={triggerAvailability.isPending}
+isStopPending={stopAvailability.isPending}
 ```
 
-**שינוי 3 - בדיקת end time (שורות ~259-268):**
+**שינוי 3 — הוספת mutation לעצירת התאמות (אם רלוונטי):**
 
-במקום לבדוק רק `isManual` מה-body, גם לבדוק `is_manual` מהדאטאבייס:
+אותו רעיון עבור `scout_runs` של matching — עדכון status ל-stopped.
 
-```text
-// Check if run was upgraded to manual by another invocation
-const { data: currentRun } = await supabase
-  .from('availability_check_runs')
-  .select('is_manual')
-  .eq('id', runId)
-  .single();
+## איך זה עובד
 
-const effectiveManual = isManual || currentRun?.is_manual === true;
-
-if (!effectiveManual) {
-  // check isPastEndTime...
-}
-```
+כפתור העצירה מעדכן את הרשומה ב-DB ל-`status = 'stopped'`. כשהריצה מסיימת את ה-batch הנוכחי ומנסה לעשות self-chain, היא בודקת את הסטטוס ורואה שהוא כבר לא `running` -- ולכן לא ממשיכה.
 
 ## סיכום
 
-- 1 מיגרציה (הוספת עמודה)
-- 1 קובץ Edge Function לעריכה
-- ריצה ידנית תמיד תעבוד -- גם אם cron רץ במקביל
+- קובץ אחד לעריכה: `ChecksDashboard.tsx`
+- הוספת 2 mutations (עצירת זמינות + עצירת התאמות)
+- העברת props `onStop`/`isStopPending` לשני ה-ProcessCards
