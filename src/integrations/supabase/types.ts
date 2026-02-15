@@ -143,6 +143,7 @@ export type Database = {
           error_message: string | null
           id: string
           inactive_marked: number | null
+          is_manual: boolean | null
           properties_checked: number | null
           run_details: Json | null
           started_at: string
@@ -153,6 +154,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           inactive_marked?: number | null
+          is_manual?: boolean | null
           properties_checked?: number | null
           run_details?: Json | null
           started_at?: string
@@ -163,6 +165,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           inactive_marked?: number | null
+          is_manual?: boolean | null
           properties_checked?: number | null
           run_details?: Json | null
           started_at?: string
