@@ -22,7 +22,7 @@ export async function getActiveFirecrawlKey(
     // 2. Get highest priority active key
     const { data, error } = await supabase
       .from('firecrawl_api_keys')
-      .select('id, api_key, label')
+      .select('id, api_key, label, total_uses')
       .eq('status', 'active')
       .order('priority', { ascending: true })
       .limit(1)
@@ -33,7 +33,7 @@ export async function getActiveFirecrawlKey(
       // Increment usage counter (fire and forget)
       supabase
         .from('firecrawl_api_keys')
-        .update({ total_uses: data.total_uses + 1 })
+        .update({ total_uses: (data.total_uses || 0) + 1 })
         .eq('id', data.id)
         .then(() => {});
       return { key: data.api_key, id: data.id };
