@@ -34,6 +34,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const [manualMonthlyIncome, setManualMonthlyIncome] = useState<number | null>(null);
   const [isEditingIncome, setIsEditingIncome] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
   
   // Load saved manual income from localStorage
   useEffect(() => {
@@ -202,10 +203,11 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* שורה 1: Daily Priority + Weekly Priority + פגישות קרובות */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <PriorityTasksCard taskType="daily" title="Daily Priority" />
-        <PriorityTasksCard taskType="weekly" title="Weekly Priority" />
+        <PriorityTasksCard taskType="weekly" title="General Priority" />
         <UpcomingAppointmentsCard 
           limit={3} 
           onAddAppointment={() => setIsAppointmentModalOpen(true)}
+          onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
         />
       </div>
 
@@ -242,7 +244,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       {/* מודל הוספת פגישה */}
       <AddAppointmentModal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
+        onClose={() => { setIsAppointmentModalOpen(false); setEditingAppointment(null); }}
+        editingAppointment={editingAppointment}
       />
     </div>
   );
