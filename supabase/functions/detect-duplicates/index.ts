@@ -233,6 +233,19 @@ Deno.serve(async (req) => {
 
     console.log(`Dedup scan complete: ${totalProcessed} processed, ${totalDuplicates} duplicates, ${totalGroups} new groups, ${totalSkipped} skipped`);
 
+    // Fire-and-forget: cleanup orphan duplicate groups after dedup completes
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    fetch(`${supabaseUrl}/functions/v1/cleanup-orphan-duplicates`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    }).catch(err => console.error('⚠️ Cleanup orphan duplicates failed:', err));
+    console.log('🧹 Triggered cleanup-orphan-duplicates after dedup completion');
+
     return new Response(JSON.stringify({
       status: 'completed',
       processed: totalProcessed,
