@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { fetchCategorySettings } from "../_shared/settings.ts";
+import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
 import { 
   ScoutedProperty, 
   ContactLead, 
@@ -170,6 +170,25 @@ serve(async (req) => {
     // If lead_id is provided, handle single lead re-matching
     if (leadId) {
       return await rematchSingleLead(leadId, supabase);
+    }
+
+    // Check end time before starting any work
+    let endTimeReached = false;
+    try {
+      const matchingTimingSettings = await fetchCategorySettings(supabase, 'matching');
+      endTimeReached = isPastEndTime(matchingTimingSettings.schedule_end_time ?? '08:30');
+    } catch (e) {
+      console.warn('Failed to check end time:', e);
+    }
+
+    if (endTimeReached) {
+      console.log(`⏰ End time reached — not starting matching`);
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Stopped: end time reached',
+        total_properties: 0,
+        batches_triggered: 0,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     console.log(`🎯 Starting matching orchestration...`);
