@@ -83,7 +83,7 @@ export const defaultSettings: ScoutSettings = {
     rent_flex_mid_threshold: 15000,
     rent_flex_mid_percent: 0.05,
     rent_flex_high_percent: 0.03,
-    schedule_times: ['09:15', '18:15'],
+    schedule_times: ['07:00'],
     schedule_end_time: '08:30',
   },
   scraping: {

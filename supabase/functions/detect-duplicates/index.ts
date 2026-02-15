@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -179,6 +180,45 @@ Deno.serve(async (req) => {
 
       // Safety: if we've been running too long (> 50 seconds), self-trigger and exit
       if (batchCount >= 10) {
+        // Check end time before self-chaining
+        let endTimeReached = false;
+        try {
+          const dedupSettings = await fetchCategorySettings(supabase, 'duplicates');
+          endTimeReached = isPastEndTime(dedupSettings.schedule_end_time);
+        } catch (e) {
+          console.warn('Failed to check end time:', e);
+        }
+
+        if (endTimeReached) {
+          console.log(`⏰ End time reached — stopping after ${batchCount} batches (${totalProcessed} processed)`);
+          await supabase
+            .from('backfill_progress')
+            .update({
+              status: 'stopped',
+              completed_at: new Date().toISOString(),
+              summary_data: {
+                ...((await supabase.from('backfill_progress').select('summary_data').eq('task_name', TASK_NAME).maybeSingle()).data?.summary_data as Record<string, unknown> || {}),
+                duplicates_found: totalDuplicates,
+                groups_created: totalGroups,
+                batches: batchCount,
+                skipped: totalSkipped,
+                stopped_reason: 'end_time_reached',
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('task_name', TASK_NAME);
+
+          return new Response(JSON.stringify({
+            status: 'stopped',
+            reason: 'end_time_reached',
+            processed: totalProcessed,
+            duplicates_found: totalDuplicates,
+            groups_created: totalGroups,
+            skipped: totalSkipped,
+            batches: batchCount,
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
         console.log(`Self-triggering after ${batchCount} batches (${totalProcessed} processed)`);
 
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
