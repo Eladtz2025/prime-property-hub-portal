@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { getActiveFirecrawlKey } from '../_shared/firecrawl-keys.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,10 +64,8 @@ function normalizeStatus(status: string | null | undefined): string {
 }
 
 async function scrapeProjectPage(url: string): Promise<any> {
-  const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
-  if (!apiKey) {
-    throw new Error('FIRECRAWL_API_KEY not configured');
-  }
+  const firecrawlKey = await getActiveFirecrawlKey(supabase);
+  const apiKey = firecrawlKey.key;
 
   console.log(`Scraping project URL: ${url}`);
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getActiveFirecrawlKey } from "../_shared/firecrawl-keys.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,10 +94,19 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  // Get Firecrawl API key with rotation support
+  let firecrawlKey: { key: string; id: string | null };
+  try {
+    firecrawlKey = await getActiveFirecrawlKey(supabase);
+  } catch {
+    firecrawlKey = { key: '', id: null };
+  }
+  const firecrawlApiKey = firecrawlKey.key || null;
+
 
   try {
     const body = await req.json().catch(() => ({}));

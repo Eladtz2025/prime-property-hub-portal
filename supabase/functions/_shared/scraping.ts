@@ -105,18 +105,32 @@ export function validateScrapedContent(
 }
 
 /**
- * Scrape with retry mechanism using different user agents
+ * Scrape with retry mechanism using different user agents.
+ * Supports automatic Firecrawl key rotation when rate limited (402/429).
+ * 
+ * @param url - URL to scrape
+ * @param firecrawlApiKey - API key to use (or initial key if rotation is enabled)
+ * @param source - Source identifier (yad2, madlan, homeless, etc.)
+ * @param maxRetries - Max retry attempts per key
+ * @param delayMs - Custom wait time for page rendering
+ * @param rotationCtx - Optional: { supabase, keyId } for automatic key rotation on 402/429
  */
 export async function scrapeWithRetry(
   url: string, 
   firecrawlApiKey: string, 
   source: string, 
   maxRetries = 3,
-  delayMs?: number
+  delayMs?: number,
+  rotationCtx?: { supabase: any; keyId: string | null }
 ): Promise<any> {
+  const { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } = await import('./firecrawl-keys.ts');
+  
   // Determine wait time based on source
   // Homeless needs longer wait to let Cloudflare challenge resolve
   const waitForMs = delayMs || (source === 'homeless' ? 8000 : source === 'yad2' ? 5000 : 3000);
+  
+  let currentKey = firecrawlApiKey;
+  let currentKeyId = rotationCtx?.keyId ?? null;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -164,7 +178,7 @@ export async function scrapeWithRetry(
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Authorization': `Bearer ${currentKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
@@ -177,6 +191,25 @@ export async function scrapeWithRetry(
         const data = await response.json();
         console.log(`Scrape successful for ${url}`);
         return data;
+      }
+
+      // Handle rate limit / quota exhaustion with key rotation
+      if (isRateLimitError(response.status) && rotationCtx?.supabase) {
+        console.warn(`🔄 Rate limited (${response.status}) on key ${currentKeyId || 'env'}, attempting key rotation...`);
+        await markKeyExhausted(rotationCtx.supabase, currentKeyId);
+        
+        try {
+          const nextKey = await getActiveFirecrawlKey(rotationCtx.supabase);
+          currentKey = nextKey.key;
+          currentKeyId = nextKey.id;
+          console.log(`🔄 Rotated to new key: ${currentKeyId || 'env fallback'}`);
+          // Don't count this as a retry attempt - retry immediately with new key
+          attempt--;
+          continue;
+        } catch {
+          console.error('No more Firecrawl keys available after rotation');
+          return null;
+        }
       }
 
       const errorText = await response.text();

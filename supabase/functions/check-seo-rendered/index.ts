@@ -1,3 +1,6 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { getActiveFirecrawlKey } from '../_shared/firecrawl-keys.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -488,8 +491,19 @@ Deno.serve(async (req) => {
     // Check AI crawlers first (doesn't depend on HTML)
     const aiCrawlers = await checkAiCrawlers(baseUrl);
 
-    // Try Firecrawl first for rendered HTML
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    // Try Firecrawl first for rendered HTML (with key rotation)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    let firecrawlApiKey: string | null = null;
+    try {
+      const firecrawlKey = await getActiveFirecrawlKey(supabase);
+      firecrawlApiKey = firecrawlKey.key;
+    } catch {
+      console.log('No Firecrawl API key available, using simple fetch');
+    }
     
     if (firecrawlApiKey) {
       console.log('Using Firecrawl for rendered HTML...');
@@ -526,7 +540,7 @@ Deno.serve(async (req) => {
         console.error('Firecrawl request failed:', firecrawlError);
       }
     } else {
-      console.log('FIRECRAWL_API_KEY not configured, using simple fetch');
+      console.log('No Firecrawl API key, using simple fetch');
     }
 
     // Fallback to simple fetch

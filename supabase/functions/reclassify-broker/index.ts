@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown, extractEvidenceSnippet } from '../_shared/broker-detection.ts';
 import { isPastEndTime, fetchCategorySettings } from '../_shared/settings.ts';
+import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from '../_shared/firecrawl-keys.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,8 +76,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get Firecrawl API key with rotation support
+    let firecrawlKey = await getActiveFirecrawlKey(supabase);
+    let firecrawlApiKey = firecrawlKey.key;
 
     const {
       action = 'start',
