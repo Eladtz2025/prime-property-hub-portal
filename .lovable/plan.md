@@ -1,53 +1,82 @@
 
-# הוספת כפתור "עצור" לבדיקת זמינות (ולהתאמות)
+# תיקון מקיף: בדיקת זמינות - 3 באגים שנמצאו
 
-## הבעיה
+## הבעיות שזיהיתי
 
-כפתור העצירה לא מופיע בכרטיס "בדיקת זמינות" (וגם "התאמות") כי ה-`onStop` לא מועבר ל-ProcessCard. רק ל-Backfill יש כפתור עצירה.
+### באג 1: כפתור "הפעל" בממשק לא שולח `manual: true`
+**זו הבעיה הכי חשובה.** בשורה 228 ב-ChecksDashboard.tsx:
+```text
+supabase.functions.invoke('trigger-availability-check')
+// ^ אין body עם manual: true!
+```
+כשאתה לוחץ "הפעל" בממשק, הריצה נרשמת כ-`is_manual: false` (כאילו cron), ולכן היא נעצרת ב-`schedule_end_time` (06:30 ישראל). **זו הסיבה שהריצה נעצרה אחרי 18 נכסים בפעם הקודמת.**
+
+### באג 2: כפתור "עצור" לא עובד בגלל race condition
+הפונקציה מעדכנת את הריצה ל-`status: completed` (שורה 257) **לפני** שהיא מחליטה אם לעשות self-chain (שורה 294). כפתור העצירה מחפש `WHERE status = 'running'`, אבל הסטטוס כבר `completed`, אז העצירה לא תופסת והריצה ממשיכה.
+
+### באג 3: Self-chain לא בודק אם עצרו אותו
+גם אם העצירה הצליחה לתפוס את הריצה, ה-self-chain החדש לא יודע על כך ויוצר ריצה חדשה.
 
 ## הפתרון
 
-### קובץ: `src/components/scout/ChecksDashboard.tsx`
+### קובץ 1: `src/components/scout/ChecksDashboard.tsx`
 
-**שינוי 1 — הוספת mutation לעצירת בדיקת זמינות:**
-
+**תיקון triggerAvailability (שורה 228):**
 ```typescript
-const stopAvailability = useMutation({
-  mutationFn: async () => {
-    // Update the running availability_check_runs record to 'stopped'
-    const { error } = await supabase
-      .from('availability_check_runs')
-      .update({ status: 'stopped', completed_at: new Date().toISOString() })
-      .eq('status', 'running');
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    toast.success('בדיקת זמינות נעצרה');
-    queryClient.invalidateQueries({ queryKey: ['availability-runs'] });
-  },
-  onError: (err) => toast.error(`שגיאה בעצירה: ${err.message}`),
-});
+const { data, error } = await supabase.functions.invoke(
+  'trigger-availability-check',
+  { body: { manual: true } }
+);
 ```
 
-**שינוי 2 — העברת `onStop` ו-`isStopPending` לכרטיס הזמינות (שורה ~327):**
+**תיקון stopAvailability (שורות 241-247):**
+במקום לעדכן רק `status = 'running'`, גם לעדכן `status = 'completed'` (כדי לתפוס ריצות שכבר סיימו אבל עומדות לעשות self-chain):
+```typescript
+// Stop: update both running AND completed runs (to prevent self-chain)
+const { error: e1 } = await supabase
+  .from('availability_check_runs')
+  .update({ status: 'stopped', completed_at: new Date().toISOString() })
+  .eq('status', 'running');
 
-```text
-onRun={() => triggerAvailability.mutate()}
-onStop={() => stopAvailability.mutate()}
-isRunPending={triggerAvailability.isPending}
-isStopPending={stopAvailability.isPending}
+const { error: e2 } = await supabase
+  .from('availability_check_runs')
+  .update({ status: 'stopped' })
+  .eq('status', 'completed')
+  .is('completed_at', null); // safety: only recent ones
 ```
 
-**שינוי 3 — הוספת mutation לעצירת התאמות (אם רלוונטי):**
+### קובץ 2: `supabase/functions/trigger-availability-check/index.ts`
 
-אותו רעיון עבור `scout_runs` של matching — עדכון status ל-stopped.
+**תיקון Self-chain (לפני שורה 298):**
+לפני ביצוע self-chain, לבדוק מה הסטטוס הנוכחי בדאטאבייס:
+```typescript
+// Before self-chaining, check if run was stopped by user
+const { data: runStatus } = await supabase
+  .from('availability_check_runs')
+  .select('status')
+  .eq('id', runId)
+  .single();
 
-## איך זה עובד
+if (runStatus?.status === 'stopped') {
+  console.log('🛑 Run was stopped by user, not self-chaining');
+  // Don't self-chain
+} else if (remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached) {
+  // Self-chain...
+}
+```
 
-כפתור העצירה מעדכן את הרשומה ב-DB ל-`status = 'stopped'`. כשהריצה מסיימת את ה-batch הנוכחי ומנסה לעשות self-chain, היא בודקת את הסטטוס ורואה שהוא כבר לא `running` -- ולכן לא ממשיכה.
+**שינוי סדר: לא לסמן completed לפני self-chain decision:**
+להזיז את העדכון ל-`completed` לאחרי ההחלטה על self-chain. ככה כפתור "עצור" תמיד יתפוס ריצה `running`.
 
-## סיכום
+## סיכום השינויים
 
-- קובץ אחד לעריכה: `ChecksDashboard.tsx`
-- הוספת 2 mutations (עצירת זמינות + עצירת התאמות)
-- העברת props `onStop`/`isStopPending` לשני ה-ProcessCards
+| קובץ | שינוי | סיבה |
+|-------|--------|-------|
+| ChecksDashboard.tsx | הוספת `{ body: { manual: true } }` | ריצה ידנית תזוהה נכון |
+| ChecksDashboard.tsx | עדכון לוגיקת עצירה | עצירה תתפוס גם ריצות שסיימו |
+| trigger-availability-check | בדיקת status לפני self-chain | עצירה תעבוד |
+| trigger-availability-check | הזזת completed לאחרי self-chain | race condition |
+
+- 2 קבצים לעריכה
+- 0 מיגרציות
+- פתרון 3 באגים קריטיים בבת אחת
