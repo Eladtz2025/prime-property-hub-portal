@@ -1,16 +1,17 @@
 
-# הסרת מגבלת ה-Daily Limit מבדיקות זמינות
+
+# תיקון רספונסיביות הגלריה במסכים בינוניים
 
 ## הבעיה
-בדיקת הזמינות נעצרת כשמגיעים ל-2,500 נכסים ביום בגלל מנגנון `daily_limit` מובנה. אין צורך במגבלה כי Firecrawl לא עולה כסף.
+ה-breakpoint הנוכחי (`lg:` = 1024px) גורם לכך שמסכי דסקטופ קטנים/בינוניים (כמו לפטופ) עדיין מקבלים את יחס ה-4:3 הגבוה במקום 16:10. רק מסכים מעל 1024px מקבלים את היחס הרחב.
 
-## השינוי
-הסרת כל הלוגיקה של daily limit מהקובץ `supabase/functions/trigger-availability-check/index.ts`:
+## הפתרון
+להוריד את ה-breakpoint מ-`lg:` (1024px) ל-`md:` (768px) עבור ה-aspect ratio וכל השיפורים הרספונסיביים של הגלריה. ככה כל מסך שהוא לא מובייל יקבל את היחס הרחב והנמוך יותר.
 
-1. **הסרת הבדיקה היומית** (שורות 103-138) - כל הקוד שבודק כמה נכסים כבר נבדקו היום ועוצר אם הגענו למגבלה
-2. **הסרת חישוב ה-quota** - המשתנים `remainingQuota` ו-`remainingDailyQuota` שהגבילו את מספר הנכסים לשליפה
-3. **עדכון לוגיקת Self-chain** - החלטת ההמשך תהיה רק לפי האם יש עוד batches ולפי `schedule_end_time`, בלי בדיקת quota
-4. **ניקוי ה-response** - הסרת שדות `daily_limit` ו-`processed_today` מהתשובה
+## שינויים בקובץ `src/components/ImageCarousel.tsx`
 
-### קובץ לעריכה:
-- `supabase/functions/trigger-availability-check/index.ts`
+1. **Aspect ratio** - שינוי `lg:aspect-[16/10]` ל-`md:aspect-[16/10]`
+2. **עיגול פינות** - שינוי `lg:rounded-xl` ל-`md:rounded-xl`
+3. **כפתורי ניווט** - שינוי `lg:left-4`, `lg:h-12`, `lg:w-12`, `lg:h-6`, `lg:w-6` ל-`md:` בהתאם
+4. **Thumbnails** - שינוי `lg:w-24 lg:h-24` ל-`md:w-24 md:h-24`
+

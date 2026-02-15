@@ -100,15 +100,48 @@ serve(async (req) => {
     // Fetch availability settings from database
     const settings = await fetchCategorySettings(supabase, 'availability');
     const batchSize = settings.batch_size;
+    const dailyLimit = settings.daily_limit;
     const minDaysBeforeCheck = settings.min_days_before_check;
     const firstRecheckDays = settings.first_recheck_interval_days || 8;
     const recurringRecheckDays = settings.recurring_recheck_interval_days || 2;
 
-    console.log(`⚙️ Settings: batchSize=${batchSize}, firstRecheck=${firstRecheckDays}d, recurringRecheck=${recurringRecheckDays}d`);
+    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, firstRecheck=${firstRecheckDays}d, recurringRecheck=${recurringRecheckDays}d`);
 
-    const fetchLimit = batchSize * (MAX_BATCHES_PER_RUN + 1);
+    // Check how many we've processed today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { count: todayCount } = await supabase
+      .from('scouted_properties')
+      .select('*', { count: 'exact', head: true })
+      .gte('availability_checked_at', today.toISOString());
 
-    console.log(`📊 Fetching up to ${fetchLimit} properties`);
+    const processedToday = todayCount || 0;
+    console.log(`📊 Already processed today: ${processedToday}/${dailyLimit}`);
+
+    // Check if we've hit daily limit
+    if (processedToday >= dailyLimit) {
+      console.log(`✅ Daily limit reached (${dailyLimit}). Stopping.`);
+      // Release lock
+      await supabase
+        .from('availability_check_runs')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), properties_checked: 0 })
+        .eq('id', runId);
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Daily limit reached',
+        processed_today: processedToday,
+        daily_limit: dailyLimit
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Remaining quota for today
+    const remainingQuota = dailyLimit - processedToday;
+    const fetchLimit = Math.min(remainingQuota, batchSize * (MAX_BATCHES_PER_RUN + 1)); // Fetch one extra batch to detect if more work remains
+
+    console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
 
     // Fetch properties using smart recheck RPC
     const { data: properties, error: fetchError } = await supabase
@@ -218,11 +251,12 @@ serve(async (req) => {
     console.log(`   - Processed this run: ${processedThisRun}`);
     console.log(`   - Inactive marked: ${inactiveThisRun}`);
     console.log(`   - Remaining batches: ${remainingBatches}`);
-    
+    console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
 
     console.log(`✅ Run batches complete: ${processedThisRun} processed`);
 
-    // Self-chain decision: check status and schedule BEFORE marking completed
+    // Self-chain decision: check status, schedule, and quota BEFORE marking completed
+    const remainingDailyQuota = remainingQuota - processedThisRun;
 
     // Check if run was stopped by user or upgraded to manual
     const { data: currentRun } = await supabase
@@ -246,7 +280,7 @@ serve(async (req) => {
       console.log('⏩ Manual run — skipping schedule_end_time check');
     }
 
-    const shouldSelfChain = !wasStopped && remainingBatches > 0 && !endTimeReached;
+    const shouldSelfChain = !wasStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
 
     // NOW mark as completed (after self-chain decision, so stop button can catch 'running' status)
     if (!wasStopped) {
@@ -265,7 +299,7 @@ serve(async (req) => {
     if (wasStopped) {
       console.log('🛑 Run was stopped by user, not self-chaining');
     } else if (shouldSelfChain) {
-      console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining`);
+      console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
       await sleep(3000);
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
         method: 'POST',
@@ -283,11 +317,13 @@ serve(async (req) => {
       success: true,
       run_id: runId,
       processed_this_run: processedThisRun,
+      processed_today: processedToday + processedThisRun,
       inactive_this_run: inactiveThisRun,
       failed_batches: failedBatches,
       remaining_in_queue: remainingBatches > 0 ? remainingBatches * batchSize : 0,
-      self_chained: shouldSelfChain,
-      next_run: shouldSelfChain ? 'self-chaining now' : 'backlog cleared'
+      daily_limit: dailyLimit,
+      self_chained: remainingBatches > 0 && remainingDailyQuota > 0,
+      next_run: remainingBatches > 0 && remainingDailyQuota > 0 ? 'self-chaining now' : remainingBatches > 0 ? 'daily limit reached' : 'backlog cleared'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
