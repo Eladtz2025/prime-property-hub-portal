@@ -12,6 +12,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useScoutSettings } from '@/hooks/useScoutSettings';
+import { aggregateConsecutiveRuns } from './aggregateRuns';
 
 interface ScheduleItem {
   time: string;
@@ -307,15 +308,15 @@ export const ScheduleSummaryCard: React.FC = () => {
               {!recentRuns || recentRuns.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">אין ריצות ב-24 שעות אחרונות</p>
               ) : (
-                recentRuns.map((run, idx) => (
+                aggregateConsecutiveRuns(recentRuns).map((run, idx) => (
                   <div key={idx} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
                     <div className="flex items-center gap-1 shrink-0">
                       {getStatusIcon(run.status)}
                       <span className={`w-1.5 h-1.5 rounded-full ${getTypeColor(run.type, run.propertyType)}`} />
                     </div>
                     <span className="text-[11px] font-medium w-24 shrink-0 truncate">{run.task}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground w-11 shrink-0">{run.time}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground w-12 shrink-0">{run.duration}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">{run.time}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground w-14 shrink-0">{run.duration}</span>
                     <span className="text-[10px] text-muted-foreground truncate">{run.summary}</span>
                   </div>
                 ))
