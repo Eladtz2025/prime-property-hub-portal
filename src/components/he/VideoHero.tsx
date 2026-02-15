@@ -57,9 +57,6 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
           <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest">
             Properties
           </p>
-          <p className="font-montserrat text-[10px] md:text-xs text-white/70 tracking-[0.3em] mt-1">
-            Since 2016
-          </p>
         </div>
         <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
           {subtitle}
@@ -80,6 +77,9 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             קנייה
           </button>
         </div>
+        <p className="font-montserrat text-[10px] md:text-xs text-white/70 tracking-[0.3em] mt-4 animate-fade-in animation-delay-400">
+          Since 2016
+        </p>
       </div>
 
       {/* Language Switcher - Bottom Right (opposite side from WhatsApp) */}
