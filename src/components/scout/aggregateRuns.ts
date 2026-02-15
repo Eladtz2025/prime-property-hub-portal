@@ -24,7 +24,7 @@ export interface AggregatedRun {
 const MAX_GAP_MS = 10 * 60 * 1000; // 10 minutes
 
 function parseSummaryNumbers(summary: string): number[] {
-  const matches = summary.match(/[\d,]+/g);
+  const matches = summary.match(/\d[\d,]*/g);
   if (!matches) return [];
   return matches.map(m => parseInt(m.replace(/,/g, ''), 10));
 }
@@ -33,7 +33,7 @@ function buildAggregatedSummary(summaries: string[]): string {
   if (summaries.length === 0) return '';
   // Extract the "template" from the first summary (words between numbers)
   const template = summaries[0];
-  const parts = template.split(/[\d,]+/);
+  const parts = template.split(/\d[\d,]*/);
   
   // Sum all numbers across summaries
   const allNumbers = summaries.map(parseSummaryNumbers);
