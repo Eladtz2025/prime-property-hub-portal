@@ -1,40 +1,22 @@
 
+# ✅ תיקון: לוגיקת בדיקת זמינות — טקסט ספציפי בלבד (v4.0)
 
-# תיקון: הפעלה ידנית של בדיקת זמינות תדלג על schedule_end_time
+## מה תוקן
 
-## הבעיה
+הלוגיקה הישנה (HEAD redirects, HTTP 404, property indicators) סימנה ~2,011 נכסים כלא אקטיביים בטעות.
 
-כשלוחצים "הפעל ריצה עכשיו" בממשק, הפונקציה `trigger-availability-check` מעבדת עד 3 באצ'ים ואז בודקת את `schedule_end_time`. אם השעה עברה את 06:30 (שעת הסיום המוגדרת), היא עוצרת ולא משרשרת ריצה נוספת -- גם אם ההפעלה הייתה ידנית.
+## הלוגיקה החדשה
 
-## הפתרון
+Firecrawl בלבד → חיפוש טקסט ספציפי בלבד:
+- **יד2:** "חיפשנו בכל מקום אבל אין לנו עמוד כזה" / "העמוד שחיפשת הוסר"
+- **מדל"ן:** "המודעה הוסרה"
+- **הומלס:** "נראה שעסקה זו כבר נסגרה"
 
-העברת פרמטר `manual: true` מה-UI לפונקציה, כך שהשרשור העצמי ידלג על בדיקת שעת הסיום.
+אין HEAD check, אין redirect check, אין property indicators.
 
-## פרטים טכניים
-
-### קובץ 1: `src/components/scout/availability/AvailabilityActions.tsx`
-- שורה 26: הוספת `body: { manual: true }` לקריאת `supabase.functions.invoke('trigger-availability-check')`
-
-### קובץ 2: `supabase/functions/trigger-availability-check/index.ts`
-- שורה ~30: קריאת `manual` מה-body של הבקשה (`const { manual, continue_run } = await req.json().catch(() => ({}))`)
-- שורה ~254-263: בבדיקת `endTimeReached` -- דילוג אם `manual` או `continue_run` עם `manual`:
-  - אם `manual === true`, לא בודקים `isPastEndTime` ו-`endTimeReached` נשאר `false`
-- שורה ~273: העברת `manual: true` גם בשרשור העצמי כדי שכל הבאצ'ים הבאים ידלגו גם הם על בדיקת שעת הסיום
-
-### לוגיקת השינוי בפונקציה
-
-```text
-בקשה נכנסת
-  --> קריאת body: { manual?, continue_run? }
-  ...
-  --> אחרי עיבוד הבאצ'ים:
-      אם manual == true:
-        endTimeReached = false  (דילוג על בדיקה)
-      אחרת:
-        בדיקה רגילה של isPastEndTime
-  --> בשרשור עצמי:
-      body: { continue_run: true, manual: manual }  (שמירה על הדגל)
-```
-
-שינוי מינימלי -- שני קבצים, 4 שורות.
-
+## בוצע
+- [x] עדכון `_shared/availability-indicators.ts` — רק 4 טקסטים ספציפיים
+- [x] שכתוב `check-property-availability/index.ts` — Firecrawl-only, v4.0
+- [x] איפוס ~2,011 נכסים שסומנו בטעות (head_redirect_away, http_404, etc.)
+- [x] בדיקה על 5 נכסים אקטיביים — כולם content_ok ✅
+- [x] אימות 2 נכסים שסומנו listing_removed_indicator — באמת הוסרו ✅
