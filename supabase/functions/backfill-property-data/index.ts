@@ -636,12 +636,32 @@ Deno.serve(async (req) => {
           batchStats.address_already_has_number++;
         }
         
+  // Extract entry date info
+        const entryDateInfo = extractEntryDateInfo(markdown, prop.source);
+        
         // Merge features - keep existing, add new (also update if features is empty object)
-        const existingFeatures = prop.features || {};
+        const existingFeatures = (prop.features || {}) as Record<string, any>;
         const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
         const hasNewFeatures = Object.keys(features).some(key => features[key as keyof PropertyFeatures] === true);
-        if (hasNewFeatures || existingIsEmpty) {
-          updates.features = { ...existingFeatures, ...features };
+        
+        // Always merge: features + entry date info + elevator default
+        const mergedFeatures = { ...existingFeatures, ...features };
+        
+        // Entry date: only set if not already present in existing features
+        if (entryDateInfo.entry_date && !existingFeatures.entry_date) {
+          mergedFeatures.entry_date = entryDateInfo.entry_date;
+        }
+        if (!existingFeatures.entry_date && !existingFeatures.immediate_entry) {
+          mergedFeatures.immediate_entry = entryDateInfo.immediate_entry;
+        }
+        
+        // Elevator: if not explicitly found as true, set to false (user rule: absence = no elevator)
+        if (mergedFeatures.elevator !== true && !existingFeatures.elevator) {
+          mergedFeatures.elevator = false;
+        }
+        
+        if (hasNewFeatures || existingIsEmpty || entryDateInfo.entry_date || entryDateInfo.immediate_entry || mergedFeatures.elevator === false) {
+          updates.features = mergedFeatures;
           batchStats.features_updated++;
         }
 
@@ -1214,13 +1234,15 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   }
 
   // Elevator - context patterns (expanded)
+  // NOTE: \b doesn't work with Hebrew chars, use explicit patterns instead
   if (hasFeature(
     [
       /יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, 
       /בניין\s*עם\s*מעלית/i, 
       /מעלית\s*שבת/i,      // Shabbat elevator
       /\d+\s*מעליות/i,     // "2 מעליות"
-      /\bמעלית\b/          // simple mention (fallback)
+      /[-•]\s*מעלית/,      // "- מעלית" list item (Yad2 format)
+      /מעלית/              // simple mention (fallback, no \b needed for Hebrew)
     ],
     [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i]
   )) {
@@ -1410,7 +1432,94 @@ function isolatePropertyDescription(markdown: string, source?: string): string {
 }
 
 /**
- * Detect if property is private or broker based on markdown content
- * Uses source-specific logic with careful regex to avoid phone number false positives
+ * Extract entry date information from property page markdown.
+ * 
+ * Rules:
+ * 1. If a specific date is found → return { entry_date: ISO string, immediate_entry: false }
+ * 2. If "מיידי"/"immediate"/"גמיש" is found → return { immediate_entry: true }
+ * 3. If NOTHING is found about entry date → treat as immediate (user rule: no date = immediate)
  */
+function extractEntryDateInfo(markdown: string, source?: string): { entry_date: string | null; immediate_entry: boolean } {
+  // Hebrew month names for parsing
+  const hebrewMonths: Record<string, number> = {
+    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4,
+    'מאי': 5, 'יוני': 6, 'יולי': 7, 'אוגוסט': 8,
+    'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12,
+  };
+
+  // Check for immediate entry keywords first
+  const immediatePatterns = [
+    /תאריך\s*כניסה\s*מיידי/i,
+    /כניסה\s*מיידית/i,
+    /כניסה\s*:?\s*מיידית/i,
+    /כניסה\s*:?\s*מיידי/i,
+    /immediate\s*entry/i,
+    /תאריך\s*כניסה\s*גמיש/i,
+    /כניסה\s*גמישה/i,
+    /פנוי[הת]?\s*(?:לכניסה|מיד|עכשיו)/i,
+    /פנוי[הת]?\s*$/im,  // "פנויה" at end of line
+  ];
+  
+  for (const pattern of immediatePatterns) {
+    if (pattern.test(markdown)) {
+      console.log(`📅 Entry date: immediate (matched pattern)`);
+      return { entry_date: null, immediate_entry: true };
+    }
+  }
+
+  // Try to extract specific date
+  const datePatterns = [
+    // "תאריך כניסה01/03/26" (Yad2 concatenated format)
+    /תאריך\s*כניסה\s*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i,
+    // "כניסה: 01/03/2026"
+    /כניסה\s*:?\s*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i,
+    // "כניסה 1 3 26" (spaces instead of separators)
+    /כניסה\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})/i,
+    // "מועד כניסה: DD/MM/YYYY"
+    /מועד\s*כניסה\s*:?\s*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i,
+    // "entry date: DD/MM/YYYY"
+    /entry\s*date\s*:?\s*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i,
+  ];
+
+  for (const pattern of datePatterns) {
+    const match = markdown.match(pattern);
+    if (match) {
+      const day = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      let year = parseInt(match[3]);
+      
+      // Fix 2-digit year
+      if (year < 100) {
+        year += 2000;
+      }
+      
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2024 && year <= 2030) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        console.log(`📅 Entry date: ${dateStr}`);
+        return { entry_date: dateStr, immediate_entry: false };
+      }
+    }
+  }
+
+  // Try Hebrew month patterns: "כניסה באפריל 2026" or "כניסה ב-1 במרץ"
+  const hebrewMonthPattern = /כניסה\s*(?:ב|ל|in\s*)?-?\s*(?:(\d{1,2})\s*ב?)?\s*(ינואר|פברואר|מרץ|אפריל|מאי|יוני|יולי|אוגוסט|ספטמבר|אוקטובר|נובמבר|דצמבר)\s*(\d{4})?/i;
+  const hebrewMatch = markdown.match(hebrewMonthPattern);
+  if (hebrewMatch) {
+    const day = hebrewMatch[1] ? parseInt(hebrewMatch[1]) : 1;
+    const monthName = hebrewMatch[2];
+    const month = hebrewMonths[monthName];
+    const year = hebrewMatch[3] ? parseInt(hebrewMatch[3]) : new Date().getFullYear();
+    
+    if (month && day >= 1 && day <= 31 && year >= 2024 && year <= 2030) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      console.log(`📅 Entry date (Hebrew month): ${dateStr}`);
+      return { entry_date: dateStr, immediate_entry: false };
+    }
+  }
+
+  // Nothing found about entry date → treat as immediate (user rule #1)
+  console.log(`📅 Entry date: not found → treating as immediate`);
+  return { entry_date: null, immediate_entry: true };
+}
+
 // detectBrokerFromMarkdown is now imported from _shared/broker-detection.ts
