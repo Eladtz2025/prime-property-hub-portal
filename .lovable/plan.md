@@ -1,65 +1,76 @@
 
 
-# תיקון לוח זמנים ופקודות Cron - 3 בעיות קריטיות
+# הוספת בדיקת שעת סיום ל-detect-duplicates ו-trigger-matching
 
-## הבעיות שנמצאו
+## הבעיה
 
-### בעיה 1: Backfill ו-Duplicates מוחלפים
-- Backfill (השלמת נתונים) רץ ב-03:00 ישראל במקום 00:00
-- Duplicates (כפילויות) רץ ב-00:00 ישראל במקום 03:00
-- התוצאה: הכפילויות רצות לפני שהנתונים הושלמו, מה שאומר שהן עובדות על נתונים חסרים
+שני תהליכים לא בודקים את `schedule_end_time` ולכן יכולים לרוץ ללא הגבלת זמן:
+- **detect-duplicates** (כפילויות) - אין בדיקת `isPastEndTime`, אין self-chain stop
+- **trigger-matching** (התאמות) - אין בדיקת `isPastEndTime`, אין self-chain stop
 
-### בעיה 2: Matching רץ ב-23:00 במקום 07:00
-- ההתאמות רצות באותו חלון זמן של הסריקות (23:00)
-- זה גורם לתחרות על משאבים וההתאמות לא נהנות מהנתונים שהושלמו באותו לילה
+שלושה תהליכים אחרים כבר בודקים ועובדים נכון:
+- backfill-property-data (עוצר ב-02:30)
+- reclassify-broker (עוצר ב-02:30 עם אותה הגדרה)
+- trigger-availability-check (עוצר ב-06:30)
 
-### בעיה 3: Duplicates קורא לפונקציה השגויה
-- הפקודה קוראת ל-`cleanup-orphan-duplicates` (ניקוי קבוצות יתומות)
-- צריכה לקרוא ל-`detect-duplicates` (סריקת כפילויות חדשות)
-- cleanup רץ אוטומטית בסיום detect, אז כרגע רק הניקוי רץ בלי הסריקה
+## מה לגבי backfill אחרי סריקה?
+
+אין טריגר כזה. ה-backfill רץ רק מה-Cron המתוזמן שלו ב-00:00. זה תקין - לא צריך לשנות.
 
 ## הפתרון
 
-מיגרציה אחת שמבצעת:
+### שלב 1: עדכון detect-duplicates/index.ts
+הוספת `isPastEndTime` ו-`fetchCategorySettings` מ-`_shared/settings.ts`. בסוף כל באצ', לפני self-chain, בדיקה האם עברנו את שעת הסיום (04:30 ברירת מחדל). אם כן - עצירה.
 
-1. הענקת הרשאות לפונקציית `update_cron_schedule` (GRANT על cron schema)
-2. עדכון כל 3 ה-Cron Jobs לזמנים הנכונים
-3. תיקון פקודת ה-Duplicates לקרוא ל-`detect-duplicates`
+### שלב 2: עדכון trigger-matching/index.ts
+אותו דבר - הוספת בדיקת `isPastEndTime` עם הגדרת `schedule_end_time` מקטגוריית matching (08:30 ברירת מחדל). אם עברנו את השעה - עצירה.
 
-## לוח זמנים אחרי התיקון
-
-```text
-23:00  Scouts (סריקות)           - ללא שינוי
-00:00  Backfill (השלמת נתונים)   - תוקן מ-03:00
-03:00  Duplicates (כפילויות)     - תוקן מ-00:00 + פקודה תוקנה
-05:00  Availability (זמינות)     - ללא שינוי
-07:00  Matching (התאמות)          - תוקן מ-23:00
-```
+### שלב 3: תיקון default schedule_times ב-matching
+ערכי ברירת המחדל `['09:15', '18:15']` כבר לא רלוונטיים (ההתאמות לא בודקות schedule_times פנימית). נעדכן ל-`['07:00']` לעקביות בתצוגת ה-UI.
 
 ## פרטים טכניים
 
-### שלב 1: הרשאות
-```sql
-GRANT USAGE ON SCHEMA cron TO postgres;
-GRANT ALL ON ALL TABLES IN SCHEMA cron TO postgres;
+### detect-duplicates - שינוי בסוף הפונקציה
+```typescript
+import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
+
+// After batch processing, before self-chain:
+let endTimeReached = false;
+try {
+  const dedupSettings = await fetchCategorySettings(supabase, 'duplicates');
+  endTimeReached = isPastEndTime(dedupSettings.schedule_end_time);
+} catch (e) {
+  console.warn('Failed to check end time:', e);
+}
+
+if (endTimeReached) {
+  // Update status to stopped, don't self-chain
+}
 ```
 
-### שלב 2: עדכון ישיר של cron.job
-```sql
--- Backfill: 00:00 Israel = 22:00 UTC
-UPDATE cron.job SET schedule = '0 22 * * *' 
-WHERE jobid = 26;
+### trigger-matching - שינוי דומה
+```typescript
+import { isPastEndTime } from '../_shared/settings.ts';
+// fetchCategorySettings already imported
 
--- Duplicates: 03:00 Israel = 01:00 UTC + fix command
-UPDATE cron.job 
-SET schedule = '0 1 * * *',
-    command = [call detect-duplicates instead of cleanup]
-WHERE jobid = 25;
-
--- Matching: 07:00 Israel = 05:00 UTC
-UPDATE cron.job SET schedule = '0 5 * * *' 
-WHERE jobid = 23;
+// Before self-chain decision:
+let endTimeReached = false;
+try {
+  const matchSettings = await fetchCategorySettings(supabase, 'matching');
+  endTimeReached = isPastEndTime(matchSettings.schedule_end_time);
+} catch (e) {
+  console.warn('Failed to check end time:', e);
+}
 ```
 
-הכל ייעשה במיגרציה אחת, כולל ה-GRANT, כך שלא צריך לעשות שום דבר ידנית.
+## תוצאה צפויה
 
+```text
+23:00          Scouts (סריקות)
+00:00 - 02:30  Backfill (השלמת נתונים) - כבר עובד
+03:00 - 04:30  Duplicates (כפילויות) - יתוקן
+05:00 - 06:30  Availability (זמינות) - כבר עובד
+07:00 - 08:30  Matching (התאמות) - יתוקן
+```
+
+כל התהליכים יעצרו אוטומטית בשעת הסיום שלהם.
