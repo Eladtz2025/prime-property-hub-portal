@@ -264,7 +264,7 @@ export const PriorityTasksCard = memo(({
             placeholder="הוסף משימה חדשה..."
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             className="flex-1"
           />
           {taskType === 'daily' && (
