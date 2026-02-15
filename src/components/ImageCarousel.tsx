@@ -246,7 +246,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               }
             }}
             className={`flex-shrink-0 rounded-lg overflow-hidden transition-all duration-200 relative
-              w-[72px] h-[72px] md:w-20 md:h-20
+              w-[72px] h-[72px] md:w-20 md:h-20 lg:w-24 lg:h-24
               hover:scale-105 hover:brightness-110
               ${isActive
                 ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 brightness-100'
@@ -297,8 +297,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
         <CardContent className="p-0 relative">
           {/* Main image container - stable aspect ratio */}
           <div
-            className="relative overflow-hidden rounded-t-lg bg-black/5"
-            style={{ aspectRatio: '4/3' }}
+            className="relative overflow-hidden rounded-t-lg lg:rounded-xl bg-black/5 aspect-[4/3] lg:aspect-[16/10]"
             {...swipeHandlers}
           >
             {/* Blurred background for non-covering images */}
@@ -341,18 +340,18 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg z-20 opacity-80 hover:opacity-100"
+                  className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 h-10 w-10 lg:h-12 lg:w-12 shadow-lg z-20 opacity-80 hover:opacity-100"
                   onClick={goNext}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-5 w-5 lg:h-6 lg:w-6" />
                 </Button>
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 shadow-lg z-20 opacity-80 hover:opacity-100"
+                  className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 h-10 w-10 lg:h-12 lg:w-12 shadow-lg z-20 opacity-80 hover:opacity-100"
                   onClick={goPrev}
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-5 w-5 lg:h-6 lg:w-6" />
                 </Button>
               </>
             )}
