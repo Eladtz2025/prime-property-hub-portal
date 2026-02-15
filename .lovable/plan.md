@@ -1,72 +1,65 @@
 
 
-# תיקון פונקציית update_cron_schedule + עדכון זמני Cron
+# תיקון לוח זמנים ופקודות Cron - 3 בעיות קריטיות
 
-## הבעיה
+## הבעיות שנמצאו
 
-קיימות שתי גרסאות של הפונקציה `update_cron_schedule`:
-- גרסה ישנה: `(p_job_name text, p_new_schedule text)` עם `search_path = 'public'`
-- גרסה חדשה: `(p_job_name text, p_new_schedule text, p_new_command text DEFAULT NULL)` עם `search_path = 'cron', 'public'`
+### בעיה 1: Backfill ו-Duplicates מוחלפים
+- Backfill (השלמת נתונים) רץ ב-03:00 ישראל במקום 00:00
+- Duplicates (כפילויות) רץ ב-00:00 ישראל במקום 03:00
+- התוצאה: הכפילויות רצות לפני שהנתונים הושלמו, מה שאומר שהן עובדות על נתונים חסרים
 
-PostgreSQL לא מצליח לבחור ביניהן כשקוראים עם 2 פרמטרים (שגיאת "function is not unique").
+### בעיה 2: Matching רץ ב-23:00 במקום 07:00
+- ההתאמות רצות באותו חלון זמן של הסריקות (23:00)
+- זה גורם לתחרות על משאבים וההתאמות לא נהנות מהנתונים שהושלמו באותו לילה
 
-## פתרון
+### בעיה 3: Duplicates קורא לפונקציה השגויה
+- הפקודה קוראת ל-`cleanup-orphan-duplicates` (ניקוי קבוצות יתומות)
+- צריכה לקרוא ל-`detect-duplicates` (סריקת כפילויות חדשות)
+- cleanup רץ אוטומטית בסיום detect, אז כרגע רק הניקוי רץ בלי הסריקה
 
-### שלב 1: מיגרציה - מחיקת הגרסה הישנה
+## הפתרון
 
-```sql
--- Drop the old 2-param version (search_path = 'public' only)
-DROP FUNCTION IF EXISTS public.update_cron_schedule(text, text);
+מיגרציה אחת שמבצעת:
 
--- Recreate the single unified version with optional command parameter
-CREATE OR REPLACE FUNCTION public.update_cron_schedule(
-  p_job_name text, 
-  p_new_schedule text, 
-  p_new_command text DEFAULT NULL
-)
-RETURNS void
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path TO 'cron', 'public'
-AS $function$
-  UPDATE cron.job 
-  SET schedule = p_new_schedule,
-      command = COALESCE(p_new_command, command)
-  WHERE jobname = p_job_name;
-$function$;
+1. הענקת הרשאות לפונקציית `update_cron_schedule` (GRANT על cron schema)
+2. עדכון כל 3 ה-Cron Jobs לזמנים הנכונים
+3. תיקון פקודת ה-Duplicates לקרוא ל-`detect-duplicates`
+
+## לוח זמנים אחרי התיקון
+
+```text
+23:00  Scouts (סריקות)           - ללא שינוי
+00:00  Backfill (השלמת נתונים)   - תוקן מ-03:00
+03:00  Duplicates (כפילויות)     - תוקן מ-00:00 + פקודה תוקנה
+05:00  Availability (זמינות)     - ללא שינוי
+07:00  Matching (התאמות)          - תוקן מ-23:00
 ```
 
-### שלב 2: עדכון זמני ה-Cron + תיקון פקודת הכפילויות (INSERT tool)
+## פרטים טכניים
 
-לאחר שהמיגרציה תעבור, אפעיל את הפקודות הבאות דרך ה-insert tool:
-
+### שלב 1: הרשאות
 ```sql
--- 1. Data Completion: 00:00 Israel (22:00 UTC)
-SELECT update_cron_schedule('backfill-data-completion-job', '0 22 * * *');
-
--- 2. Deduplication: 03:00 Israel (01:00 UTC) + fix command to call detect-duplicates
-SELECT update_cron_schedule(
-    'cleanup-orphan-duplicates-hourly',
-    '0 1 * * *',
-    $cmd$
-      SELECT net.http_post(
-        url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/detect-duplicates',
-        headers := jsonb_build_object('Content-Type', 'application/json'),
-        body := '{}'::jsonb
-      );
-    $cmd$
-);
-
--- 3. Matching: 07:00 Israel (05:00 UTC)
-SELECT update_cron_schedule('match-leads-job', '0 5 * * *');
+GRANT USAGE ON SCHEMA cron TO postgres;
+GRANT ALL ON ALL TABLES IN SCHEMA cron TO postgres;
 ```
 
-## תוצאה צפויה
+### שלב 2: עדכון ישיר של cron.job
+```sql
+-- Backfill: 00:00 Israel = 22:00 UTC
+UPDATE cron.job SET schedule = '0 22 * * *' 
+WHERE jobid = 26;
 
-לוח זמנים מעודכן:
-- 00:00 ישראל: השלמת נתונים
-- 03:00 ישראל: כפילויות (קורא ל-detect-duplicates, לא ל-cleanup)
-- 05:00 ישראל: בדיקת זמינות (ללא שינוי)
-- 07:00 ישראל: התאמת לקוחות
-- 23:00 ישראל: סריקות (ללא שינוי)
+-- Duplicates: 03:00 Israel = 01:00 UTC + fix command
+UPDATE cron.job 
+SET schedule = '0 1 * * *',
+    command = [call detect-duplicates instead of cleanup]
+WHERE jobid = 25;
+
+-- Matching: 07:00 Israel = 05:00 UTC
+UPDATE cron.job SET schedule = '0 5 * * *' 
+WHERE jobid = 23;
+```
+
+הכל ייעשה במיגרציה אחת, כולל ה-GRANT, כך שלא צריך לעשות שום דבר ידנית.
 
