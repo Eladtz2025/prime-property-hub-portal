@@ -1,22 +1,87 @@
 
-# ✅ תיקון: לוגיקת בדיקת זמינות — טקסט ספציפי בלבד (v4.0)
+# תיקון: ריצה ידנית נחסמת על ידי lock של ריצה מקבילה
 
-## מה תוקן
+## הבעיה
 
-הלוגיקה הישנה (HEAD redirects, HTTP 404, property indicators) סימנה ~2,011 נכסים כלא אקטיביים בטעות.
+כשלוחצים "הפעל ריצה עכשיו", לפעמים עולים שני instances במקביל (retry של Supabase, double-click, וכו'). ה-instance בלי `manual: true` תופס את ה-lock ורץ כ-cron-based, נעצר ב-`schedule_end_time`. ה-instance הידני נחסם ומחזיר "Already running".
 
-## הלוגיקה החדשה
+## הפתרון
 
-Firecrawl בלבד → חיפוש טקסט ספציפי בלבד:
-- **יד2:** "חיפשנו בכל מקום אבל אין לנו עמוד כזה" / "העמוד שחיפשת הוסר"
-- **מדל"ן:** "המודעה הוסרה"
-- **הומלס:** "נראה שעסקה זו כבר נסגרה"
+שני שינויים קטנים:
 
-אין HEAD check, אין redirect check, אין property indicators.
+### 1. שמירת דגל `manual` בטבלת `availability_check_runs`
 
-## בוצע
-- [x] עדכון `_shared/availability-indicators.ts` — רק 4 טקסטים ספציפיים
-- [x] שכתוב `check-property-availability/index.ts` — Firecrawl-only, v4.0
-- [x] איפוס ~2,011 נכסים שסומנו בטעות (head_redirect_away, http_404, etc.)
-- [x] בדיקה על 5 נכסים אקטיביים — כולם content_ok ✅
-- [x] אימות 2 נכסים שסומנו listing_removed_indicator — באמת הוסרו ✅
+הוספת עמודה `is_manual` (boolean, default false) לטבלה. כשיוצרים ריצה, רושמים אם היא ידנית.
+
+### 2. עדכון לוגיקת ה-lock בפונקציה
+
+כשריצה ידנית מגיעה ומוצאת lock פעיל:
+- אם ה-lock הוא של ריצה **לא ידנית** (cron) -- הריצה הידנית "מחליפה" אותה: מעדכנת את הרשומה ל-`is_manual = true` וממשיכה
+- אם ה-lock הוא של ריצה **ידנית** אחרת -- מחזירה "Already running" כרגיל
+
+בנוסף, בשלב ה-self-chain, הבדיקה של `endTimeReached` תשתמש ב-`is_manual` מהדאטאבייס (לא רק מה-body) כדי להבטיח עקביות.
+
+## פרטים טכניים
+
+### מיגרציה: הוספת עמודה `is_manual`
+
+```sql
+ALTER TABLE availability_check_runs 
+ADD COLUMN IF NOT EXISTS is_manual BOOLEAN DEFAULT false;
+```
+
+### קובץ: `supabase/functions/trigger-availability-check/index.ts`
+
+**שינוי 1 - Lock check (שורות ~43-60):**
+
+לפני:
+```text
+if (runningCheck) {
+  return "Already running"
+}
+```
+
+אחרי:
+```text
+if (runningCheck) {
+  if (isManual && !runningCheck.is_manual) {
+    // Manual overrides cron: update the existing run to manual
+    await supabase.from('availability_check_runs')
+      .update({ is_manual: true })
+      .eq('id', runningCheck.id);
+    return "Upgraded existing run to manual"
+  }
+  return "Already running"
+}
+```
+
+**שינוי 2 - יצירת ריצה חדשה (שורה ~68):**
+
+```text
+.insert({ status: 'running', is_manual: isManual })
+```
+
+**שינוי 3 - בדיקת end time (שורות ~259-268):**
+
+במקום לבדוק רק `isManual` מה-body, גם לבדוק `is_manual` מהדאטאבייס:
+
+```text
+// Check if run was upgraded to manual by another invocation
+const { data: currentRun } = await supabase
+  .from('availability_check_runs')
+  .select('is_manual')
+  .eq('id', runId)
+  .single();
+
+const effectiveManual = isManual || currentRun?.is_manual === true;
+
+if (!effectiveManual) {
+  // check isPastEndTime...
+}
+```
+
+## סיכום
+
+- 1 מיגרציה (הוספת עמודה)
+- 1 קובץ Edge Function לעריכה
+- ריצה ידנית תמיד תעבוד -- גם אם cron רץ במקביל
