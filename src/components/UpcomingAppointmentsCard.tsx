@@ -233,7 +233,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
             {filteredAppointments.map((appointment) => (
               <div 
                 key={appointment.id} 
-                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors overflow-hidden"
+                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
               >
                 {/* Date & Time */}
                 <div className="flex sm:flex-col items-center justify-between sm:justify-center bg-primary/10 rounded-lg p-2 sm:p-3 w-full sm:w-auto sm:min-w-[70px]">
