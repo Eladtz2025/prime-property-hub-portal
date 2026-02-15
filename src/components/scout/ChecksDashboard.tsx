@@ -225,7 +225,7 @@ export const ChecksDashboard: React.FC = () => {
   // Trigger availability
   const triggerAvailability = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('trigger-availability-check');
+      const { data, error } = await supabase.functions.invoke('trigger-availability-check', { body: { manual: true } });
       if (error) throw error;
       return data;
     },
@@ -240,11 +240,19 @@ export const ChecksDashboard: React.FC = () => {
   // Stop availability
   const stopAvailability = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      // Stop running runs
+      const { error: e1 } = await supabase
         .from('availability_check_runs')
         .update({ status: 'stopped', completed_at: new Date().toISOString() })
         .eq('status', 'running');
-      if (error) throw error;
+      if (e1) throw e1;
+      // Also stop recently completed runs to prevent self-chain
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      await supabase
+        .from('availability_check_runs')
+        .update({ status: 'stopped' })
+        .eq('status', 'completed')
+        .gte('completed_at', fiveMinAgo);
     },
     onSuccess: () => {
       toast.success('בדיקת זמינות נעצרה');
