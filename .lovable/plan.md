@@ -1,23 +1,40 @@
 
-# תיקון שני באגים: NaN בסיכום ריצות + ספירת כפילויות
 
-## תיקון 1: NaN בסיכום ריצות
+# תיקון: הפעלה ידנית של בדיקת זמינות תדלג על schedule_end_time
 
-**הבעיה:** הרג'קס `/[\d,]+/g` תופס פסיקים בודדים (`,`) כתוצאה מפורמט מספרים בעברית (למשל `1,764`), מה שגורם ל-`parseInt` להחזיר `NaN`.
+## הבעיה
 
-**הפתרון:** שינוי הרג'קס ל-`/\d[\d,]*/g` כך שכל התאמה חייבת להתחיל בספרה.
+כשלוחצים "הפעל ריצה עכשיו" בממשק, הפונקציה `trigger-availability-check` מעבדת עד 3 באצ'ים ואז בודקת את `schedule_end_time`. אם השעה עברה את 06:30 (שעת הסיום המוגדרת), היא עוצרת ולא משרשרת ריצה נוספת -- גם אם ההפעלה הייתה ידנית.
 
-### קובץ: `src/components/scout/aggregateRuns.ts`
-- שורה 27: שינוי רג'קס ב-`parseSummaryNumbers` מ-`/[\d,]+/g` ל-`/\d[\d,]*/g`
-- שורה 36: שינוי רג'קס ב-`buildAggregatedSummary` (ה-split) מ-`/[\d,]+/` ל-`/\d[\d,]*/`
+## הפתרון
 
----
+העברת פרמטר `manual: true` מה-UI לפונקציה, כך שהשרשור העצמי ידלג על בדיקת שעת הסיום.
 
-## תיקון 2: ספירת "ממתינים לבדיקה" בכפילויות כוללת נכסים לא פעילים
+## פרטים טכניים
 
-**הבעיה:** השאילתה סופרת את כל הנכסים ללא `dedup_checked_at`, כולל נכסים לא פעילים, מה שמנפח את המספר.
+### קובץ 1: `src/components/scout/availability/AvailabilityActions.tsx`
+- שורה 26: הוספת `body: { manual: true }` לקריאת `supabase.functions.invoke('trigger-availability-check')`
 
-**הפתרון:** הוספת פילטר `.eq('is_active', true)` לשאילתת ה-`unchecked`.
+### קובץ 2: `supabase/functions/trigger-availability-check/index.ts`
+- שורה ~30: קריאת `manual` מה-body של הבקשה (`const { manual, continue_run } = await req.json().catch(() => ({}))`)
+- שורה ~254-263: בבדיקת `endTimeReached` -- דילוג אם `manual` או `continue_run` עם `manual`:
+  - אם `manual === true`, לא בודקים `isPastEndTime` ו-`endTimeReached` נשאר `false`
+- שורה ~273: העברת `manual: true` גם בשרשור העצמי כדי שכל הבאצ'ים הבאים ידלגו גם הם על בדיקת שעת הסיום
 
-### קובץ: `src/components/scout/checks/DeduplicationStatus.tsx`
-- שורה 83: הוספת `.eq('is_active', true)` לשאילתה שסופרת `dedup_checked_at IS NULL`
+### לוגיקת השינוי בפונקציה
+
+```text
+בקשה נכנסת
+  --> קריאת body: { manual?, continue_run? }
+  ...
+  --> אחרי עיבוד הבאצ'ים:
+      אם manual == true:
+        endTimeReached = false  (דילוג על בדיקה)
+      אחרת:
+        בדיקה רגילה של isPastEndTime
+  --> בשרשור עצמי:
+      body: { continue_run: true, manual: manual }  (שמירה על הדגל)
+```
+
+שינוי מינימלי -- שני קבצים, 4 שורות.
+
