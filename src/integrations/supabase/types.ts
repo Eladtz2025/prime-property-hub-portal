@@ -3595,10 +3595,19 @@ export type Database = {
         }[]
       }
       reset_dedup_checked: { Args: never; Returns: undefined }
-      update_cron_schedule: {
-        Args: { p_job_name: string; p_new_schedule: string }
-        Returns: undefined
-      }
+      update_cron_schedule:
+        | {
+            Args: { p_job_name: string; p_new_schedule: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_job_name: string
+              p_new_command?: string
+              p_new_schedule: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role:
