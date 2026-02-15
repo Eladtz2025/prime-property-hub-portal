@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Phone, User, MapPin, ExternalLink, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Phone, User, MapPin, ExternalLink, ArrowLeft, Plus, Trash2, Pencil } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, isToday, isTomorrow, parseISO, addDays } from 'date-fns';
+import { format, isToday, isTomorrow, parseISO, addDays, formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ interface Appointment {
   notes: string | null;
   status: string;
   property_id: string | null;
+  created_at: string;
   location?: string | null;
   properties?: {
     address: string;
@@ -41,6 +42,7 @@ interface Appointment {
 interface UpcomingAppointmentsCardProps {
   limit?: number;
   onAddAppointment?: () => void;
+  onEditAppointment?: (appointment: Appointment) => void;
   showViewAll?: boolean;
 }
 
@@ -69,6 +71,7 @@ const appointmentTypeColors: Record<string, string> = {
 export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> = ({
   limit = 5,
   onAddAppointment,
+  onEditAppointment,
   showViewAll = true
 }) => {
   const queryClient = useQueryClient();
@@ -225,13 +228,13 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
             {filteredAppointments.map((appointment) => (
               <div 
                 key={appointment.id} 
-                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors overflow-hidden"
               >
-                {/* Date & Time - horizontal on mobile, vertical on desktop */}
+                {/* Date & Time */}
                 <div className="flex sm:flex-col items-center justify-between sm:justify-center bg-primary/10 rounded-lg p-2 sm:p-3 w-full sm:w-auto sm:min-w-[70px]">
                   <span className="text-sm sm:text-xs font-medium text-primary">
                     {getDateLabel(appointment.appointment_date)}
@@ -242,23 +245,21 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                 </div>
 
                 {/* Details */}
-                <div className="flex-1 space-y-2 text-right">
-                  {/* Badge and Name - stacked on mobile */}
+                <div className="flex-1 min-w-0 space-y-2 text-right">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <Badge className={`${appointmentTypeColors[appointment.appointment_type]} w-fit`}>
                       {appointmentTypeLabels[appointment.appointment_type]}
                     </Badge>
-                    <span className="font-medium flex items-center gap-1">
+                    <span className="font-medium flex items-center gap-1 truncate">
                       <User className="h-3 w-3 flex-shrink-0" />
                       {appointment.client_name}
                     </span>
                   </div>
                   
-                  {/* Location with truncate */}
                   {(appointment.properties || appointment.notes) && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1 max-w-full">
                       <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">
+                      <span className="line-clamp-2">
                         {appointment.properties 
                           ? `${appointment.properties.address}, ${appointment.properties.city}`
                           : appointment.notes || 'לא צוין מיקום'
@@ -266,8 +267,13 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                       </span>
                     </p>
                   )}
+
+                  {/* Created at */}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(parseISO(appointment.created_at), { locale: he, addSuffix: true })}
+                  </p>
                   
-                  {/* Phone + Calendar Button together */}
+                  {/* Phone + Actions */}
                   <div className="flex items-center justify-between gap-2">
                     {appointment.client_phone ? (
                       <a 
@@ -291,6 +297,17 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                         <ExternalLink className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline text-xs">יומן גוגל</span>
                       </Button>
+                      {onEditAppointment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditAppointment(appointment)}
+                          title="ערוך פגישה"
+                          className="h-8 px-2 text-muted-foreground hover:text-primary"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

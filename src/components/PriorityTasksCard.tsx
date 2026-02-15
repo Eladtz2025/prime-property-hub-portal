@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Plus, Trash2, ChevronDown, ChevronUp, Calendar, ListTodo } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Calendar, ListTodo, Pencil, Check, X } from 'lucide-react';
 import { usePriorityTasks, PriorityTask, TaskType } from '@/hooks/usePriorityTasks';
-import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
+import { format, isToday, isTomorrow, isPast, parseISO, formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -35,14 +35,30 @@ const TaskItem = memo(({
   task, 
   onToggle, 
   onDelete,
-  onPriorityChange
+  onPriorityChange,
+  onEdit
 }: { 
   task: PriorityTask; 
   onToggle: () => void; 
   onDelete: () => void;
   onPriorityChange: (newPriority: number) => void;
+  onEdit: (title: string) => void;
 }) => {
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !task.is_completed;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  
+  const handleSaveEdit = () => {
+    if (editTitle.trim()) {
+      onEdit(editTitle.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditTitle(task.title);
+    setIsEditing(false);
+  };
   
   return (
     <div className={cn(
@@ -50,7 +66,7 @@ const TaskItem = memo(({
       task.is_completed ? "bg-muted/50 opacity-60" : "bg-background hover:bg-muted/30",
       isOverdue && !task.is_completed && "border-red-500/50"
     )}>
-      {/* Row 1: priority number + delete */}
+      {/* Row 1: priority number + edit + delete */}
       <div className="flex items-center justify-between">
         <Popover>
           <PopoverTrigger asChild>
@@ -80,14 +96,24 @@ const TaskItem = memo(({
             </div>
           </PopoverContent>
         </Popover>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-primary"
+            onClick={() => { setEditTitle(task.title); setIsEditing(true); }}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       {/* Row 2: checkbox + text */}
@@ -98,21 +124,47 @@ const TaskItem = memo(({
           className="mt-0.5"
         />
         <div className="flex-1">
-          <p className={cn(
-            "text-sm font-medium",
-            task.is_completed && "line-through text-muted-foreground"
-          )}>
-            {task.title}
-          </p>
-          {task.due_date && (
+          {isEditing ? (
+            <div className="flex items-center gap-1">
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveEdit();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+                className="h-7 text-sm"
+                autoFocus
+              />
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSaveEdit}>
+                <Check className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancelEdit}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
             <p className={cn(
-              "text-xs flex items-center gap-1 mt-1",
-              isOverdue ? "text-red-500" : "text-muted-foreground"
+              "text-sm font-medium",
+              task.is_completed && "line-through text-muted-foreground"
             )}>
-              <Calendar className="w-3 h-3" />
-              {formatDueDate(task.due_date)}
+              {task.title}
             </p>
           )}
+          <div className="flex items-center gap-2 mt-1">
+            {task.due_date && (
+              <p className={cn(
+                "text-xs flex items-center gap-1",
+                isOverdue ? "text-red-500" : "text-muted-foreground"
+              )}>
+                <Calendar className="w-3 h-3" />
+                {formatDueDate(task.due_date)}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(parseISO(task.created_at), { locale: he, addSuffix: true })}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -252,6 +304,7 @@ export const PriorityTasksCard = memo(({
                 onToggle={() => toggleComplete(task.id)}
                 onDelete={() => deleteTask(task.id)}
                 onPriorityChange={(newPriority) => handlePriorityChange(task.id, newPriority)}
+                onEdit={(title) => updateTask(task.id, { title })}
               />
             ))
           )}
@@ -274,6 +327,7 @@ export const PriorityTasksCard = memo(({
                   onToggle={() => toggleComplete(task.id)}
                   onDelete={() => deleteTask(task.id)}
                   onPriorityChange={(newPriority) => handlePriorityChange(task.id, newPriority)}
+                  onEdit={(title) => updateTask(task.id, { title })}
                 />
               ))}
             </CollapsibleContent>

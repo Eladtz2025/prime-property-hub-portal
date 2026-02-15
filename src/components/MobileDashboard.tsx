@@ -56,6 +56,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   const [isEditingIncome, setIsEditingIncome] = useState(false);
   const [editIncomeValue, setEditIncomeValue] = useState('');
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
   
   // Load saved manual income from localStorage
   useEffect(() => {
@@ -198,7 +199,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
 
         {/* Priority Tasks Cards */}
         <PriorityTasksCard taskType="daily" title="Daily Priority" />
-        <PriorityTasksCard taskType="weekly" title="Weekly Priority" />
+        <PriorityTasksCard taskType="weekly" title="General Priority" />
 
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
@@ -207,6 +208,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         <UpcomingAppointmentsCard 
           limit={3} 
           onAddAppointment={() => setIsAppointmentModalOpen(true)}
+          onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
         />
 
         {/* Analytics Summary Card */}
@@ -235,7 +237,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
       {/* Add Appointment Modal */}
       <AddAppointmentModal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
+        onClose={() => { setIsAppointmentModalOpen(false); setEditingAppointment(null); }}
+        editingAppointment={editingAppointment}
       />
     </div>
   );

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +18,24 @@ import { toast } from 'sonner';
 import { Property } from '@/types/property';
 import { validateField, phoneSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
+interface EditableAppointment {
+  id: string;
+  title?: string | null;
+  client_name: string;
+  client_phone?: string | null;
+  appointment_date: string;
+  appointment_time: string;
+  appointment_type: string;
+  notes?: string | null;
+  property_id?: string | null;
+}
+
 interface AddAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   property?: Property;
   onSuccess?: () => void;
+  editingAppointment?: EditableAppointment | null;
 }
 
 const appointmentTypes = [
@@ -47,10 +62,13 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
   isOpen,
   onClose,
   property,
-  onSuccess
+  onSuccess,
+  editingAppointment
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const isEditMode = !!editingAppointment;
   const [formData, setFormData] = useState({
     clientName: '',
     clientPhone: '',
@@ -62,6 +80,21 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
   });
   const [errors, setErrors] = useState<FormErrors<FormFields>>({});
   const [touched, setTouched] = useState<FormTouched<FormFields>>({});
+
+  // Load editing appointment data
+  React.useEffect(() => {
+    if (editingAppointment && isOpen) {
+      setFormData({
+        clientName: editingAppointment.client_name || '',
+        clientPhone: editingAppointment.client_phone || '',
+        location: '',
+        appointmentDate: parseISO(editingAppointment.appointment_date),
+        appointmentTime: editingAppointment.appointment_time || '',
+        appointmentType: editingAppointment.appointment_type || 'meeting',
+        notes: editingAppointment.notes || ''
+      });
+    }
+  }, [editingAppointment, isOpen]);
 
   const validateFormField = (field: FormFields, value: string) => {
     let error: string | null = null;
@@ -98,8 +131,8 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.from('appointments').insert({
-        property_id: property?.id,
+      const appointmentData = {
+        property_id: editingAppointment?.property_id || property?.id || null,
         title: property ? `${getAppointmentTypeLabel(formData.appointmentType)} - ${property.address}` : getAppointmentTypeLabel(formData.appointmentType),
         client_name: formData.clientName,
         client_phone: formData.clientPhone,
@@ -107,13 +140,24 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
         appointment_time: formData.appointmentTime,
         appointment_type: formData.appointmentType,
         notes: formData.notes,
-        created_by: user?.id,
-        assigned_to: user?.id
-      });
+      };
+
+      let error;
+      if (isEditMode && editingAppointment) {
+        ({ error } = await supabase.from('appointments').update(appointmentData).eq('id', editingAppointment.id));
+      } else {
+        ({ error } = await supabase.from('appointments').insert({
+          ...appointmentData,
+          created_by: user?.id,
+          assigned_to: user?.id
+        }));
+      }
 
       if (error) throw error;
 
-      toast.success('הפגישה נוספה בהצלחה');
+      toast.success(isEditMode ? 'הפגישה עודכנה בהצלחה' : 'הפגישה נוספה בהצלחה');
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-appointments'] });
       
       if (addToCalendar) {
         openGoogleCalendar();
@@ -189,7 +233,7 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-right">קביעת פגישה</DialogTitle>
+          <DialogTitle className="text-right">{isEditMode ? 'עריכת פגישה' : 'קביעת פגישה'}</DialogTitle>
           {property && (
             <p className="text-sm text-muted-foreground text-right">
               {property.address}, {property.city}
