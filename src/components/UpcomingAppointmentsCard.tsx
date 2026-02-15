@@ -113,7 +113,8 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   };
 
   const openGoogleCalendar = (appointment: Appointment) => {
-    const startDate = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+    const timeStr = appointment.appointment_time.slice(0, 5);
+    const startDate = new Date(`${appointment.appointment_date}T${timeStr}:00`);
     const endDate = new Date(startDate);
     endDate.setHours(endDate.getHours() + 1);
 
@@ -207,8 +208,8 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                 הוסף
               </Button>
             )}
-            {showViewAll && (
-              <Button variant="ghost" size="sm" className="gap-1">
+            {showViewAll && filteredAppointments.length > limit && (
+              <Button variant="ghost" size="sm" className="gap-1" onClick={() => window.location.href = '/appointments'}>
                 ראה הכל
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -256,15 +257,17 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
                     </span>
                   </div>
                   
-                  {(appointment.properties || appointment.notes) && (
+                  {appointment.properties && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1 max-w-full">
                       <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="line-clamp-2">
-                        {appointment.properties 
-                          ? `${appointment.properties.address}, ${appointment.properties.city}`
-                          : appointment.notes || 'לא צוין מיקום'
-                        }
+                      <span className="truncate">
+                        {`${appointment.properties.address}, ${appointment.properties.city}`}
                       </span>
+                    </p>
+                  )}
+                  {appointment.notes && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 max-w-full">
+                      {appointment.notes}
                     </p>
                   )}
 

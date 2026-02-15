@@ -89,7 +89,7 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
         clientPhone: editingAppointment.client_phone || '',
         location: '',
         appointmentDate: parseISO(editingAppointment.appointment_date),
-        appointmentTime: editingAppointment.appointment_time || '',
+        appointmentTime: (editingAppointment.appointment_time || '').slice(0, 5),
         appointmentType: editingAppointment.appointment_type || 'meeting',
         notes: editingAppointment.notes || ''
       });
@@ -167,7 +167,7 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
       handleClose();
     } catch (error) {
       console.error('Error adding appointment:', error);
-      toast.error('שגיאה בהוספת הפגישה');
+      toast.error(isEditMode ? 'שגיאה בעדכון הפגישה' : 'שגיאה בהוספת הפגישה');
     } finally {
       setIsLoading(false);
     }
