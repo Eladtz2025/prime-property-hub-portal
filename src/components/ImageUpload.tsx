@@ -2,7 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff, Sofa } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
@@ -348,6 +348,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                     );
                     onImagesChange(updatedImages);
                   }}
+                  onToggleFurnished={(id) => {
+                    const updatedImages = images.map(img => 
+                      img.id === id ? { ...img, isFurnished: !img.isFurnished } : img
+                    );
+                    onImagesChange(updatedImages);
+                  }}
                 />
               ))}
             </div>
@@ -367,6 +373,7 @@ interface SortableImageCardProps {
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   onToggleWebsite: (id: string) => void;
+  onToggleFurnished: (id: string) => void;
 }
 
 const SortableImageCard: React.FC<SortableImageCardProps> = ({
@@ -377,7 +384,8 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
   onSetPrimary,
   onMoveUp,
   onMoveDown,
-  onToggleWebsite
+  onToggleWebsite,
+  onToggleFurnished
 }) => {
   const {
     attributes,
@@ -396,6 +404,7 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
 
   const isVideo = image.mediaType === 'video';
   const isHidden = image.showOnWebsite === false;
+  const isFurnished = image.isFurnished === true;
 
   return (
     <Card 
@@ -441,7 +450,13 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
               סרטון
             </div>
           )}
-          {!isHidden && image.isPrimary && !isVideo && (
+          {!isHidden && isFurnished && (
+            <div className="absolute top-1 left-1 bg-orange-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+              <Sofa className="h-3 w-3" />
+              מרוהטת
+            </div>
+          )}
+          {!isHidden && image.isPrimary && !isVideo && !isFurnished && (
             <div className="absolute top-1 left-1 bg-yellow-500 text-white px-2 py-1 rounded text-xs">
               ראשית
             </div>
@@ -480,6 +495,20 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
                 ) : (
                   <StarOff className="h-3 w-3" />
                 )}
+              </Button>
+            )}
+            {!isVideo && (
+              <Button
+                size="sm"
+                variant={isFurnished ? "default" : "secondary"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFurnished(image.id);
+                }}
+                className="h-6 w-6 p-0"
+                title={isFurnished ? "הסר סימון מרוהטת" : "סמן כמרוהטת"}
+              >
+                <Sofa className={`h-3 w-3 ${isFurnished ? 'text-orange-500' : ''}`} />
               </Button>
             )}
             <Button
