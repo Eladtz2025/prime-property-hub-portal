@@ -68,6 +68,7 @@ export interface PropertyImage {
   size?: number;
   mediaType?: 'image' | 'video';
   showOnWebsite?: boolean;
+  isFurnished?: boolean;
 }
 
 export interface PropertyDocument {

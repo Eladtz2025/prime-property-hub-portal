@@ -27,14 +27,18 @@ const PropertyDetailPage = () => {
 
 
   // Convert property images to PropertyImage format with cache busting
-  const propertyImages: PropertyImage[] = property?.images.map(img => ({
+  const allImages: (PropertyImage & { isFurnished?: boolean })[] = property?.images.map(img => ({
     id: img.id,
     name: img.alt_text || 'תמונת נכס',
     url: `${img.image_url}?t=${Date.now()}`,
     isPrimary: img.is_main,
     uploadedAt: new Date().toISOString(),
     mediaType: img.media_type || 'image',
+    isFurnished: img.is_furnished || false,
   })) || [];
+
+  const propertyImages = allImages.filter(img => !img.isFurnished);
+  const furnishedImages = allImages.filter(img => img.isFurnished);
 
   const handleWhatsApp = () => {
     const agentPhone = property?.agent?.phone;
@@ -181,7 +185,7 @@ const PropertyDetailPage = () => {
         </div>
 
         {/* Image Gallery */}
-        <ImageCarousel images={propertyImages} priceLabel="" />
+        <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
 
         {/* Property Info */}
         <div className="px-4 py-6 space-y-6 text-right">
@@ -319,7 +323,7 @@ const PropertyDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Right Column - Image Gallery */}
           <div className="lg:col-span-2 order-1 lg:order-1">
-            <ImageCarousel images={propertyImages} priceLabel="" />
+            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
           </div>
 
           {/* Left Column - Property Details */}

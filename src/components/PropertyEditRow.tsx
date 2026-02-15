@@ -188,6 +188,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           uploadedAt: img.created_at || new Date().toISOString(),
           mediaType: (img.media_type as 'image' | 'video') || 'image',
           showOnWebsite: img.show_on_website ?? true,
+          isFurnished: (img as any).is_furnished || false,
         }));
 
         setFormData(prev => ({
@@ -340,6 +341,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
             order_index: i,
             media_type: image.mediaType || 'image',
             show_on_website: image.showOnWebsite ?? true,
+            is_furnished: image.isFurnished || false,
           });
         }
       }

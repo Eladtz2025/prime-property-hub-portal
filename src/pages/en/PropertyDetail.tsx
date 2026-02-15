@@ -27,14 +27,18 @@ const EnglishPropertyDetail = () => {
   const translatedNeighborhood = property?.neighborhood_en || property?.neighborhood || property?.city || '';
 
   // Convert property images to PropertyImage format
-  const propertyImages: PropertyImage[] = property?.images.map(img => ({
+  const allImages: (PropertyImage & { isFurnished?: boolean })[] = property?.images.map(img => ({
     id: img.id,
     name: img.alt_text || 'Property Image',
     url: img.image_url,
     isPrimary: img.is_main,
     uploadedAt: new Date().toISOString(),
     mediaType: img.media_type || 'image',
+    isFurnished: img.is_furnished || false,
   })) || [];
+
+  const propertyImages = allImages.filter(img => !img.isFurnished);
+  const furnishedImages = allImages.filter(img => img.isFurnished);
 
   const handleWhatsApp = () => {
     const agentPhone = property?.agent?.phone;
@@ -160,7 +164,7 @@ const EnglishPropertyDetail = () => {
         </div>
 
         {/* Image Gallery */}
-        <ImageCarousel images={propertyImages} priceLabel="" />
+        <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" furnishedButtonLabel="Show me the apartment furnished" backButtonLabel="Back to original photos" />
 
         {/* Property Info */}
         <div className="px-4 py-6 space-y-6">
@@ -398,7 +402,7 @@ const EnglishPropertyDetail = () => {
 
           {/* Right Column - Image Gallery */}
           <div className="lg:col-span-2 order-1 lg:order-2">
-            <ImageCarousel images={propertyImages} priceLabel={getPriceDisplay()} />
+            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel={getPriceDisplay()} furnishedButtonLabel="Show me the apartment furnished" backButtonLabel="Back to original photos" />
           </div>
         </div>
 
