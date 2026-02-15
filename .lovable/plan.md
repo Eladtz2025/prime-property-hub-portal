@@ -1,16 +1,18 @@
 
-# הסרת מגבלת ה-Daily Limit מבדיקות זמינות
+# תיקון באג בפונקציית בדיקת זמינות + בדיקת Firecrawl
 
-## הבעיה
-בדיקת הזמינות נעצרת כשמגיעים ל-2,500 נכסים ביום בגלל מנגנון `daily_limit` מובנה. אין צורך במגבלה כי Firecrawl לא עולה כסף.
+## בעיה 1: באג בקוד (קל לתקן)
+בשורה 136 בקובץ `trigger-availability-check/index.ts` נשאר reference למשתנה `processedToday` שהוסר כשהסרנו את ה-daily limit. צריך להחליף אותו.
 
-## השינוי
-הסרת כל הלוגיקה של daily limit מהקובץ `supabase/functions/trigger-availability-check/index.ts`:
+### תיקון:
+- שורה 136: החלפת `processed_today: processedToday` ב-`properties_found: 0`
 
-1. **הסרת הבדיקה היומית** (שורות 103-138) - כל הקוד שבודק כמה נכסים כבר נבדקו היום ועוצר אם הגענו למגבלה
-2. **הסרת חישוב ה-quota** - המשתנים `remainingQuota` ו-`remainingDailyQuota` שהגבילו את מספר הנכסים לשליפה
-3. **עדכון לוגיקת Self-chain** - החלטת ההמשך תהיה רק לפי האם יש עוד batches ולפי `schedule_end_time`, בלי בדיקת quota
-4. **ניקוי ה-response** - הסרת שדות `daily_limit` ו-`processed_today` מהתשובה
+## בעיה 2: Firecrawl מחזיר 402 (Payment Required)
+כל הקריאות ל-Firecrawl API נכשלות עם שגיאת 402, שמשמעותה שנגמרו הקרדיטים או שה-API Key לא תקין. זו לא בעיית קוד - צריך לבדוק את חשבון ה-Firecrawl.
 
-### קובץ לעריכה:
-- `supabase/functions/trigger-availability-check/index.ts`
+אפשר לבדוק את זה ע"י:
+- כניסה לדשבורד של Firecrawl ובדיקת יתרת קרדיטים
+- או בדיקה שה-API Key עדיין תקף
+
+## קובץ לעריכה:
+- `supabase/functions/trigger-availability-check/index.ts` (תיקון שורה 136)
