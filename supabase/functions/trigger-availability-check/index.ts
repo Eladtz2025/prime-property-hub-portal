@@ -133,7 +133,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         message: 'No properties need checking',
-        processed_today: processedToday,
+        properties_found: 0,
         properties_found: 0
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
