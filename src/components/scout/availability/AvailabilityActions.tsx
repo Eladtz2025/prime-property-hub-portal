@@ -23,7 +23,7 @@ export const AvailabilityActions: React.FC = () => {
 
   const triggerRunMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('trigger-availability-check');
+      const { data, error } = await supabase.functions.invoke('trigger-availability-check', { body: { manual: true } });
       if (error) throw error;
       return data;
     },
