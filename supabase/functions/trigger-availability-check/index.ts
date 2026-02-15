@@ -253,47 +253,53 @@ serve(async (req) => {
     console.log(`   - Remaining batches: ${remainingBatches}`);
     console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
 
-    // Release lock - mark as completed with run details
-    await supabase
-      .from('availability_check_runs')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        properties_checked: processedThisRun,
-        inactive_marked: inactiveThisRun,
-        run_details: allRunDetails
-      })
-      .eq('id', runId);
+    console.log(`✅ Run batches complete: ${processedThisRun} processed`);
 
-    console.log(`✅ Run complete: ${processedThisRun} processed, lock released`);
-
-    // Self-chain: if there are remaining items and daily quota left, trigger another run
+    // Self-chain decision: check status, schedule, and quota BEFORE marking completed
     const remainingDailyQuota = remainingQuota - processedThisRun;
-    // Check schedule end time before self-chaining
-    // Check if run was upgraded to manual by another invocation
+
+    // Check if run was stopped by user or upgraded to manual
     const { data: currentRun } = await supabase
       .from('availability_check_runs')
-      .select('is_manual')
+      .select('status, is_manual')
       .eq('id', runId)
       .single();
 
+    const wasStopped = currentRun?.status === 'stopped';
     const effectiveManual = isManual || currentRun?.is_manual === true;
 
     let endTimeReached = false;
-    if (!effectiveManual) {
+    if (!effectiveManual && !wasStopped) {
       try {
         const availSettings = await fetchCategorySettings(supabase, 'availability');
         endTimeReached = isPastEndTime(availSettings.schedule_end_time);
       } catch (e) {
         console.warn('Failed to check end time:', e);
       }
-    } else {
+    } else if (effectiveManual) {
       console.log('⏩ Manual run — skipping schedule_end_time check');
     }
 
-    if (remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached) {
+    const shouldSelfChain = !wasStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
+
+    // NOW mark as completed (after self-chain decision, so stop button can catch 'running' status)
+    if (!wasStopped) {
+      await supabase
+        .from('availability_check_runs')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          properties_checked: processedThisRun,
+          inactive_marked: inactiveThisRun,
+          run_details: allRunDetails
+        })
+        .eq('id', runId);
+    }
+
+    if (wasStopped) {
+      console.log('🛑 Run was stopped by user, not self-chaining');
+    } else if (shouldSelfChain) {
       console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
-      // Small delay before self-chain to avoid hammering
       await sleep(3000);
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check`, {
         method: 'POST',
@@ -301,7 +307,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-      body: JSON.stringify({ continue_run: true, manual: effectiveManual })
+        body: JSON.stringify({ continue_run: true, manual: effectiveManual })
       }).catch(err => console.error('⚠️ Self-chain failed:', err));
     } else if (endTimeReached) {
       console.log(`⏰ End time reached, stopping self-chain. ${remainingBatches} batches remaining.`);
