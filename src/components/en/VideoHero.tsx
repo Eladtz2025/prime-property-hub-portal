@@ -57,6 +57,9 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
           <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest">
             Properties
           </p>
+          <p className="font-montserrat text-[10px] md:text-xs text-white/70 tracking-[0.3em] mt-1">
+            Since 2016
+          </p>
         </div>
         <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
           {subtitle}
@@ -66,13 +69,13 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
           <button
             onClick={() => navigate("/en/rentals")}
-            className="px-10 py-4 border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
+            className="px-10 py-4 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             Rent
           </button>
           <button
             onClick={() => navigate("/en/sales")}
-            className="px-10 py-4 border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
+            className="px-10 py-4 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             Buy
           </button>
