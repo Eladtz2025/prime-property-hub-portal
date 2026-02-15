@@ -1,48 +1,53 @@
 
+# באגים בסקשן פגישות קרובות
 
-# שיפורים עיצוביים לסקשני המשימות והפגישות
+## באג 1: הטופס לא מתאפס כשפותחים "הוסף פגישה חדשה" אחרי עריכה
+**קובץ:** `AddAppointmentModal.tsx`
+**הבעיה:** כשעורכים פגישה, הנתונים נטענים ל-form באמצעות useEffect. אבל כשסוגרים ופותחים מחדש ב"הוסף חדש" (בלי editingAppointment), ה-useEffect לא רץ כי הוא רק רץ כש-`editingAppointment` קיים. הטופס כן מתאפס ב-handleClose, אבל ה-`appointmentTime` שנטען מעריכה יכול להגיע בפורמט "14:00:00" (מה-DB) בעוד שה-timeSlots מצפים ל-"14:00" - מה שגורם לכך שהשעה לא תיבחר נכון בעריכה.
 
-## 4 שינויים מבוקשים
+**תיקון:** לחתוך את appointment_time ל-5 תווים ראשונים (`slice(0, 5)`) בעת טעינה.
 
-### 1. הצגת תאריך יצירה/עדכון בכל כרטיסייה
-בכל TaskItem (משימות יומיות וכלליות) ובכל פגישה, יתווסף טקסט קטן שמציג מתי הפריט נוצר.
-- במשימות: שימוש ב-`created_at` שכבר קיים בנתונים
-- בפגישות: שימוש ב-`created_at` מטבלת appointments (אם קיים) או תאריך הפגישה עצמו
+## באג 2: הערות ארוכות (notes) מוצגות במקום כתובת כשאין property
+**קובץ:** `UpcomingAppointmentsCard.tsx`, שורה 259-268
+**הבעיה:** כשאין property מקושר, הקוד מציג את ה-notes עם אייקון MapPin (מיקום), מה שמטעה. הערות ארוכות (כמו לינקים + טקסט) גולשות, למרות ה-`line-clamp-2` שנוסף. לינקים בהערות מוצגים כטקסט רגיל ולא לחיצים.
 
-### 2. שינוי כותרת Weekly Priority ל-General Priority
-שינוי פשוט בקובץ `Dashboard.tsx` שורה 205 - שינוי ה-title prop מ-"Weekly Priority" ל-"General Priority".
+**תיקון:** לא להציג notes כ-location. להציג notes בנפרד ללא אייקון MapPin, או לחלופין להסתיר אותן מהכרטיס.
 
-### 3. תיקון overflow בכרטיסיית פגישות קרובות
-הבעיה: תוכן ארוך (כמו הטקסט הארוך בצילום) גולש מהכרטיסייה וגורם לסקרולר. הפתרון: הוספת `overflow-hidden` ו-`max-h` עם סקרולר פנימי לכרטיסייה, וכן `truncate` או `line-clamp` לטקסטים ארוכים בתוך הפגישה.
+## באג 3: כפתור "ראה הכל" לא עושה כלום
+**קובץ:** `UpcomingAppointmentsCard.tsx`, שורה 211
+**הבעיה:** הכפתור "ראה הכל" מוצג אבל אין לו onClick handler - הוא לא עושה שום דבר.
 
-### 4. אופציית עריכה למשימות ופגישות
-- **משימות**: הוספת כפתור עריכה (אייקון עיפרון) ליד כפתור המחיקה ב-TaskItem. לחיצה תפתח מצב inline editing שמאפשר לשנות את הטקסט, או דיאלוג עריכה קטן.
-- **פגישות**: הוספת כפתור עריכה ליד כפתור המחיקה בכל פגישה. לחיצה תפתח את ה-AddAppointmentModal במצב עריכה (עם הנתונים הקיימים טעונים מראש).
+**תיקון:** להוסיף onClick שמנווט לעמוד פגישות, או להסתיר את הכפתור אם אין עמוד כזה.
 
-## פירוט טכני
+## באג 4: appointment_time בפורמט שונה גורם לבעיות
+**קובץ:** `UpcomingAppointmentsCard.tsx`, שורה 166
+**הבעיה:** ב-`filteredAppointments`, יצירת Date עם `new Date("2026-02-25T14:00:00")` עובד, אבל אם ה-time מגיע מה-DB בפורמט "14:00:00" (עם שניות), ה-`slice(0, 5)` בשורה 243 מטפל בתצוגה, אבל ה-Date parsing בשורה 116 (openGoogleCalendar) עשוי ליצור תאריך לא תקין בדפדפנים מסוימים.
+
+## באג 5: הטופס לא מציג את ה-location בעריכה
+**קובץ:** `AddAppointmentModal.tsx`, שורה 90
+**הבעיה:** ב-useEffect של טעינת עריכה, ה-location תמיד מוגדר כ-'' (ריק). השדה location לא נשמר בכלל ב-DB (אין עמודה כזו בטבלת appointments), כך שנתון המיקום אבד.
+
+## באג 6: שגיאת toast לא מותאמת למצב עריכה
+**קובץ:** `AddAppointmentModal.tsx`, שורה 170
+**הבעיה:** הודעת השגיאה תמיד אומרת "שגיאה בהוספת הפגישה" גם כשמדובר בעריכה. צריך להיות "שגיאה בעדכון הפגישה" במצב עריכה.
+
+## באג 7: ה-notes לא נשמרות בעדכון
+**קובץ:** `AddAppointmentModal.tsx`, שורה 134-143
+**הבעיה:** ב-appointmentData, שדה ה-notes נשמר, אבל ב-update גם created_by ו-assigned_to לא נשלחים (מה שטוב), אבל ה-title נדרס בעריכה עם ערך שלא תואם את הכותרת המקורית אם אין property.
+
+---
+
+## פירוט טכני - תיקונים
+
+### `AddAppointmentModal.tsx`:
+1. שורה 92: שינוי `appointmentTime: editingAppointment.appointment_time || ''` ל-`appointmentTime: (editingAppointment.appointment_time || '').slice(0, 5)`
+2. שורה 170: שינוי ל-`toast.error(isEditMode ? 'שגיאה בעדכון הפגישה' : 'שגיאה בהוספת הפגישה')`
+
+### `UpcomingAppointmentsCard.tsx`:
+1. שורות 259-268: הפרדת תצוגת notes מ-properties address - לא להציג notes עם אייקון MapPin
+2. שורה 211: הוספת onClick לכפתור "ראה הכל" או הסרתו
+3. שורה 116: הבטחת פורמט תקין של זמן ב-openGoogleCalendar
 
 ### קבצים לעריכה:
-
-**`src/components/Dashboard.tsx`**
-- שורה 205: שינוי `title="Weekly Priority"` ל-`title="General Priority"`
-
-**`src/components/PriorityTasksCard.tsx`**
-- הוספת תצוגת `created_at` מתחת לטקסט המשימה (טקסט קטן אפור)
-- הוספת כפתור עריכה (Pencil icon) ליד כפתור המחיקה
-- הוספת state לעריכה inline: שינוי כותרת המשימה ותיאור
-- הוספת `onEdit` callback ל-TaskItem
-
-**`src/components/UpcomingAppointmentsCard.tsx`**
-- הוספת `overflow-y-auto max-h-[400px]` לקונטיינר הפגישות
-- הוספת `line-clamp-2` לטקסטים ארוכים (title, notes)
-- הוספת כפתור עריכה ליד כפתור מחיקה
-- הוספת state ל-editingAppointment
-
-**`src/components/AddAppointmentModal.tsx`**
-- הוספת prop אופציונלי `appointment` למצב עריכה
-- כשמקבל appointment קיים, טוען את הנתונים לטופס ומשתמש ב-`update` במקום `insert`
-- שינוי כותרת הדיאלוג ל-"עריכת פגישה" במצב עריכה
-
-**`src/components/MobileDashboard.tsx`**
-- שינוי מקביל ל-"General Priority"
-
+- `src/components/AddAppointmentModal.tsx`
+- `src/components/UpcomingAppointmentsCard.tsx`
