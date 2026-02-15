@@ -47,7 +47,7 @@ serve(async (req) => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { data: runningCheck } = await supabase
       .from('availability_check_runs')
-      .select('id, started_at')
+      .select('id, started_at, is_manual')
       .eq('status', 'running')
       .gt('started_at', tenMinutesAgo)
       .order('started_at', { ascending: false })
@@ -55,6 +55,21 @@ serve(async (req) => {
       .single();
 
     if (runningCheck) {
+      if (isManual && !runningCheck.is_manual) {
+        // Manual overrides cron: upgrade the existing run to manual
+        await supabase
+          .from('availability_check_runs')
+          .update({ is_manual: true })
+          .eq('id', runningCheck.id);
+        console.log(`🔄 Upgraded existing run ${runningCheck.id} to manual mode`);
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Upgraded existing run to manual',
+          run_id: runningCheck.id
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
       const runAge = (Date.now() - new Date(runningCheck.started_at).getTime()) / 1000;
       console.log(`⏳ Already running: ${runningCheck.id} (${runAge.toFixed(0)}s ago). Skipping.`);
       return new Response(JSON.stringify({
@@ -70,7 +85,7 @@ serve(async (req) => {
     // Create new run record (claim the lock)
     const { data: newRun, error: insertError } = await supabase
       .from('availability_check_runs')
-      .insert({ status: 'running' })
+      .insert({ status: 'running', is_manual: isManual })
       .select('id')
       .single();
 
@@ -255,8 +270,17 @@ serve(async (req) => {
     // Self-chain: if there are remaining items and daily quota left, trigger another run
     const remainingDailyQuota = remainingQuota - processedThisRun;
     // Check schedule end time before self-chaining
+    // Check if run was upgraded to manual by another invocation
+    const { data: currentRun } = await supabase
+      .from('availability_check_runs')
+      .select('is_manual')
+      .eq('id', runId)
+      .single();
+
+    const effectiveManual = isManual || currentRun?.is_manual === true;
+
     let endTimeReached = false;
-    if (!isManual) {
+    if (!effectiveManual) {
       try {
         const availSettings = await fetchCategorySettings(supabase, 'availability');
         endTimeReached = isPastEndTime(availSettings.schedule_end_time);
@@ -277,7 +301,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-      body: JSON.stringify({ continue_run: true, manual: isManual })
+      body: JSON.stringify({ continue_run: true, manual: effectiveManual })
       }).catch(err => console.error('⚠️ Self-chain failed:', err));
     } else if (endTimeReached) {
       console.log(`⏰ End time reached, stopping self-chain. ${remainingBatches} batches remaining.`);
