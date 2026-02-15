@@ -31,7 +31,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
     setIsAdding(true);
     await addIdea(newIdeaTitle.trim(), newPriority);
     setNewIdeaTitle('');
-    setNewPriority('medium');
+    setNewPriority('normal');
     setIsAdding(false);
   };
 
