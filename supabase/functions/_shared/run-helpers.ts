@@ -266,61 +266,6 @@ export async function checkAndFinalizeRun(
   }
 
   console.log(`✅ ${source} run ${runId} finalized with status: ${finalStatus}`);
-
-  // AUTO-BACKFILL: If new properties were found, trigger backfill for feature extraction
-  const newPropertiesCount = run.new_properties || 0;
-  if (newPropertiesCount > 0) {
-    console.log(`🔄 Triggering auto-backfill for ${newPropertiesCount} new properties from ${source}...`);
-    await triggerAutoBackfill(supabase, runId, source, newPropertiesCount);
-  }
-}
-
-
-/**
- * Trigger automatic backfill for new properties after a scout run
- * Only processes properties that were created by this run (last 30 minutes)
- */
-async function triggerAutoBackfill(
-  supabase: any,
-  runId: string,
-  source: string,
-  newCount: number
-): Promise<void> {
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('⚠️ Cannot trigger auto-backfill: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-      return;
-    }
-
-    // Call backfill function with source filter to only process recent properties
-    const response = await fetch(`${supabaseUrl}/functions/v1/backfill-property-data`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`
-      },
-      body: JSON.stringify({
-        source_filter: source, // Only process properties from this source
-        only_recent: true,     // Only process properties created in last 30 min
-        batch_size: Math.min(newCount, 25), // Process up to 25 at a time
-        auto_trigger: true,    // Flag to identify auto-triggered runs
-        run_id: runId          // Reference to the scout run
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log(`✅ Auto-backfill triggered: ${result.processed || 0} properties queued`);
-    } else {
-      const error = await response.text();
-      console.error(`❌ Auto-backfill failed: ${error}`);
-    }
-  } catch (err) {
-    console.error('❌ Auto-backfill error:', err);
-  }
 }
 
 /**
