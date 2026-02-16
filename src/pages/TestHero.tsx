@@ -4,7 +4,7 @@ import NewHeroTest from "@/components/he/NewHeroTest";
 const TestHero = () => {
   return (
     <>
-      <HebrewHeader />
+      <HebrewHeader forceWhite />
       <NewHeroTest />
     </>
   );

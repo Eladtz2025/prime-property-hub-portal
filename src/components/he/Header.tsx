@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Instagram, Facebook } from "lucide-react";
 
-const HebrewHeader = () => {
+const HebrewHeader = ({ forceWhite = false }: { forceWhite?: boolean }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,17 +12,20 @@ const HebrewHeader = () => {
   const isPropertyPage = location.pathname.includes('/property/');
 
   useEffect(() => {
+    if (forceWhite) {
+      setScrollProgress(1);
+      return;
+    }
+
     const handleScroll = () => {
-      // Use different scroll thresholds based on the page
       const isHomePage = location.pathname === '/';
-      // Property pages use shorter threshold for quick transition
       const scrollThreshold = isPropertyPage ? 200 : (isHomePage ? window.innerHeight : 150);
       const progress = Math.min(window.scrollY / scrollThreshold, 1);
       setScrollProgress(progress);
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [location.pathname, isPropertyPage]);
 
