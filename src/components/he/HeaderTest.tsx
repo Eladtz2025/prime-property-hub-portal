@@ -61,7 +61,7 @@ const HeaderTest = () => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`relative text-[14px] tracking-[0.08em] font-normal transition-all duration-300 ${
-                  (item as any).bordered ? 'border border-foreground px-5 py-1.5 hover:bg-primary hover:text-white hover:border-primary' : ''
+                  (item as any).bordered ? 'border border-foreground px-5 py-1.5 hover:bg-[hsl(38,60%,45%)] hover:text-white hover:border-[hsl(38,60%,45%)]' : ''
                 }`}
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
