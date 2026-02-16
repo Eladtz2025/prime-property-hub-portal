@@ -7,6 +7,56 @@ const NewHeroTest = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
+      {/* Minimalist Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white" dir="rtl">
+        <div className="container mx-auto px-6 h-full">
+          <div className="grid grid-cols-3 items-center h-full">
+            {/* Right Nav (RTL) */}
+            <nav className="flex items-center gap-8 justify-end">
+              <button
+                onClick={() => navigate("/he")}
+                className="font-montserrat text-[11px] tracking-[0.2em] uppercase text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                דף הבית
+              </button>
+              <button
+                onClick={() => navigate("/he/sales")}
+                className="font-montserrat text-[11px] tracking-[0.2em] uppercase text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                נכסים
+              </button>
+            </nav>
+
+            {/* Center Logo */}
+            <div className="flex items-center justify-center">
+              <button onClick={() => navigate("/he")} className="transition-transform duration-200 hover:scale-105">
+                <img
+                  src="/images/city-market-icon.png"
+                  alt="City Market"
+                  className="h-9 w-auto"
+                />
+              </button>
+            </div>
+
+            {/* Left Nav (RTL) */}
+            <nav className="flex items-center gap-8 justify-start">
+              <button
+                onClick={() => navigate("/he/about")}
+                className="font-montserrat text-[11px] tracking-[0.2em] uppercase text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                עלינו
+              </button>
+              <button
+                onClick={() => navigate("/he/contact")}
+                className="font-montserrat text-[11px] tracking-[0.2em] uppercase text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                צור קשר
+              </button>
+            </nav>
+          </div>
+        </div>
+      </header>
+
       {/* Background Image */}
       <picture>
         <source
@@ -27,11 +77,9 @@ const NewHeroTest = () => {
       <div className="absolute inset-0 bg-black/15" />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 pt-20">
+      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 pt-14">
         {/* Top label */}
-        <p
-          className="font-montserrat text-[11px] md:text-xs text-white/70 tracking-[0.55em] uppercase mb-6 animate-fade-in"
-        >
+        <p className="font-montserrat text-[11px] md:text-xs text-white/70 tracking-[0.55em] uppercase mb-6 animate-fade-in">
           Real Estate Boutique
         </p>
 
@@ -44,16 +92,12 @@ const NewHeroTest = () => {
         </h1>
 
         {/* Subtitle in Hebrew */}
-        <p
-          className="text-white/80 text-base md:text-lg font-light mb-3 animate-fade-in animation-delay-200 max-w-lg"
-        >
+        <p className="text-white/80 text-base md:text-lg font-light mb-3 animate-fade-in animation-delay-200 max-w-lg">
           מומחיות מקומית. שירות אישי. תהליך ברור.
         </p>
 
         {/* Since 2016 */}
-        <p
-          className="font-montserrat text-[9px] md:text-[10px] text-amber-400/50 tracking-[0.4em] uppercase mb-10 animate-fade-in animation-delay-200"
-        >
+        <p className="font-montserrat text-[9px] md:text-[10px] text-amber-400/50 tracking-[0.4em] uppercase mb-10 animate-fade-in animation-delay-200">
           Since 2016
         </p>
 
@@ -83,7 +127,7 @@ const NewHeroTest = () => {
         English
       </button>
 
-      {/* Scroll Indicator - vertical line */}
+      {/* Scroll Indicator */}
       <div
         className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2"
         style={{ bottom: `${bottomOffset}px` }}
