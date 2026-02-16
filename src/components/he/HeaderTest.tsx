@@ -28,7 +28,7 @@ const HeaderTest = () => {
       <div className="container mx-auto px-16 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-10 justify-end">
+          <nav className="hidden lg:flex items-center gap-10 justify-start">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -55,7 +55,7 @@ const HeaderTest = () => {
           </div>
 
           {/* Left Navigation (RTL) with Instagram icon */}
-          <nav className="hidden lg:flex items-center gap-10 justify-start">
+          <nav className="hidden lg:flex items-center gap-10 justify-end">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
