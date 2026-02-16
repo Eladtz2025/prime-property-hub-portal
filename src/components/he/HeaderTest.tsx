@@ -28,7 +28,7 @@ const HeaderTest = () => {
       <div className="container mx-auto px-6 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-14 justify-start">
+          <nav className="hidden lg:flex items-center gap-8 justify-start -mr-4">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -55,7 +55,7 @@ const HeaderTest = () => {
           </div>
 
           {/* Left Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-14 justify-end">
+          <nav className="hidden lg:flex items-center gap-8 justify-end -ml-4">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
