@@ -219,6 +219,18 @@ Deno.serve(async (req) => {
     let progressId: string;
 
     if (action === 'continue' && task_id) {
+      // Kill switch check on continue (self-chain)
+      if (!await isProcessEnabled(supabase, 'backfill')) {
+        console.log('🚫 Process backfill is DISABLED — stopping self-chain');
+        await supabase
+          .from('backfill_progress')
+          .update({ status: 'stopped', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq('id', task_id);
+        return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // Continue existing task
       progressId = task_id;
       const { data: taskData } = await supabase
