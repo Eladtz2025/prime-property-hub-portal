@@ -33,7 +33,7 @@ const HeaderTest = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative text-[13px] tracking-[0.08em] font-normal transition-all duration-300"
+                className="relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300"
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
                   fontFamily: "'Heebo', sans-serif",
@@ -47,8 +47,8 @@ const HeaderTest = () => {
           <div className="flex items-center justify-center">
             <button
               onClick={() => navigate("/he")}
-              className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-normal"
-              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '22px' }}
+              className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-bold"
+              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px' }}
             >
               CITY MARKET
             </button>
@@ -60,7 +60,7 @@ const HeaderTest = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative text-[13px] tracking-[0.08em] font-normal transition-all duration-300"
+                className="relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300"
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
                   fontFamily: "'Heebo', sans-serif",
