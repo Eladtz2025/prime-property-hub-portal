@@ -26,7 +26,7 @@ const HeaderTest = () => {
   const mutedColor = 'hsl(var(--foreground))';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white shadow-md" dir="rtl">
+    <header className="fixed top-0 left-0 right-0 z-50 h-10 bg-white shadow-md" dir="rtl">
       <div className="container mx-auto px-4 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) with Facebook icon */}
@@ -73,7 +73,7 @@ const HeaderTest = () => {
               <img 
                 src="/images/city-market-icon.png" 
                 alt="City Market" 
-                className="h-10 md:h-12 w-auto translate-y-1"
+                className="h-7 md:h-8 w-auto translate-y-0.5"
                 style={{ filter: 'grayscale(100%)' }}
               />
             </button>
