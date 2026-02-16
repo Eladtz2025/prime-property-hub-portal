@@ -1,39 +1,28 @@
 
-# הירו חדש לבדיקה - בסגנון SUNLESS
 
-## מה ייווצר
-קומפוננטת הירו חדשה בשם `NewHeroTest` בסגנון התמונה שנשלחה - מראה מינימליסטי ואלגנטי עם:
+# הירו חדש לבדיקה - שינויים בהדר בלבד
 
-- תמונת רקע full-screen עם overlay כהה עדין
-- טקסט עליון קטן עם tracking רחב (כמו "DESIGN YOUR LIGHT") - אצלנו: "REAL ESTATE BOUTIQUE"
-- שם החברה גדול ובולט: **CITY MARKET**
-- תת-כותרת בעברית באמצע
-- "Since 2016" בזהב עדין
-- שני כפתורי CTA: אחד מלא (רקע לבן) ואחד outline (גבול לבן בלבד) - בדיוק כמו בתמונה
-- Scroll indicator בתחתית
+## מה ישתנה
+דף בדיקה חדש בנתיב `/he/herotest` שמציג את אותו הירו הקיים (VideoHero) עם הדר מותאם. שלושת השינויים בהדר:
 
-## נקודות חשובות
-- הקומפוננטה תישמר כקובץ נפרד ולא תחליף את ה-Hero הקיים
-- תירשם בנתיב בדיקה (למשל `/he/test-hero`) כדי לא להשפיע על הפרודקשן
-- תשתמש באותה תמונת רקע קיימת
+1. **רקע לבן קבוע** - ההדר יהיה תמיד עם רקע לבן (לא שקוף שמשתנה בגלילה)
+2. **לוגו שחור-לבן** - הלוגו באמצע יקבל `filter: grayscale(100%)` כדי להיות רק שחור-לבן
+3. **כפתורים שחורים** - כל הטקסטים, אייקונים וכפתורי הניווט בהדר יהיו בשחור (במקום לבן)
 
 ## פירוט טכני
 
-### קובץ חדש: `src/components/he/NewHeroTest.tsx`
-- קומפוננטה full-screen (`h-screen`)
-- רקע: אותה תמונת hero קיימת עם `bg-black/40` overlay
-- טיפוגרפיה:
-  - טקסט עליון: `tracking-[0.4em] uppercase text-sm text-white/80`
-  - כותרת ראשית: `font-serif text-6xl md:text-8xl font-bold text-white`
-  - תת-כותרת: `text-white/90 text-base md:text-lg` בעברית
-  - Since 2016: בצבע זהוב (`text-amber-400/80`) עם tracking רחב
-- כפתור ראשון (השכרה): רקע לבן מלא, טקסט כהה - כמו "Shop Online" בתמונה
-- כפתור שני (קנייה): border לבן בלבד, טקסט לבן - כמו "תיאום ייעוץ בבית" בתמונה
-- Language switcher ו-scroll indicator כמו ב-VideoHero הקיים
+### קובץ חדש: `src/components/he/HeaderTest.tsx`
+- העתק של `Header.tsx` עם השינויים הבאים:
+  - רקע לבן קבוע (opacity: 1 תמיד, ללא שינוי בגלילה)
+  - צבע טקסט שחור קבוע לכל הכפתורים (ללא מצב "לבן" כשלא גוללים)
+  - הלוגו עם `filter: grayscale(100%)` תמיד
+  - אייקוני הרשתות החברתיות בשחור
 
-### קובץ חדש: `src/pages/TestHero.tsx`
-- דף פשוט שמציג את `NewHeroTest` בלבד
-- ללא header/footer - רק ההירו לצפייה
+### קובץ חדש: `src/pages/TestHeroPage.tsx`
+- דף שמציג את `HeaderTest` + `VideoHero` הקיים (ללא שאר תוכן העמוד)
+- שימוש באותו VideoHero ללא שינוי
 
 ### עדכון: `src/App.tsx`
-- הוספת route: `/he/test-hero` שמצביע ל-`TestHero`
+- הוספת route חדש: `/he/herotest` שמפנה ל-`TestHeroPage`
+- Lazy load כמו שאר הדפים
+
