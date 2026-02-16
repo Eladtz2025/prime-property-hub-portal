@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Instagram, Facebook } from "lucide-react";
+import { Menu, X, Instagram } from "lucide-react";
 
 const HeaderTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const leftNavItems = [
-    { label: "שכונות", path: "/he/neighborhoods" },
-    { label: "קצת עלינו", path: "/he/about" },
-    { label: "צור קשר", path: "/he/contact" },
+  const rightNavItems = [
+    { label: "אודות", path: "/he/about" },
+    { label: "בניינים חדשים", path: "/he/new-developments" },
   ];
 
-  const rightNavItems = [
-    { label: "דף הבית", path: "/he" },
-    { label: "ניהול נכסים", path: "/he/management" },
-    { label: "בניינים חדשים", path: "/he/new-developments" },
+  const leftNavItems = [
+    { label: "טופס חיפוש דירה", path: "/he/search-form" },
+    { label: "הזמנת יעוץ", path: "/he/contact" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -31,16 +29,6 @@ const HeaderTest = () => {
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) with Facebook icon */}
           <nav className="hidden lg:flex items-center gap-6 justify-end">
-            <a
-              href="https://www.facebook.com/Ctmarket"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-all duration-300 hover:scale-110 hover:opacity-80 ml-2"
-              style={{ color: mutedColor }}
-            >
-              <Facebook className="w-5 h-5" />
-            </a>
-            
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
@@ -146,14 +134,6 @@ const HeaderTest = () => {
               ))}
               
               <div className="flex items-center justify-center gap-6 pt-4 mt-4 border-t border-border">
-                <a
-                  href="https://www.facebook.com/Ctmarket"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/70 hover:text-primary transition-colors"
-                >
-                  <Facebook className="w-6 h-6" />
-                </a>
                 <a
                   href="https://www.instagram.com/citymarket/"
                   target="_blank"
