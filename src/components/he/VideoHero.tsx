@@ -49,8 +49,11 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
       <div className="absolute inset-0 bg-black/30" />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[12.5%]">
-        <div className="mb-6 animate-fade-in">
+      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
+        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-6 animate-fade-in" style={{ color: 'hsl(38, 60%, 45%)' }}>
+          {subtitle}
+        </p>
+        <div className="mb-6 animate-fade-in animation-delay-200">
           <h1 className="reliz-hero-title text-white">
             {title}
           </h1>
@@ -58,9 +61,6 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             Properties
           </p>
         </div>
-        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
-          {subtitle}
-        </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400" dir="rtl">
@@ -77,7 +77,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             קנייה
           </button>
         </div>
-        <p className="font-montserrat text-[10px] md:text-xs text-white/70 tracking-[0.3em] mt-4 animate-fade-in animation-delay-400">
+        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-4 animate-fade-in animation-delay-400" style={{ color: 'hsl(38, 60%, 45%)' }}>
           Since 2016
         </p>
       </div>
