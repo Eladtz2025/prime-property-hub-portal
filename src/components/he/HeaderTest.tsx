@@ -23,7 +23,7 @@ const HeaderTest = () => {
 
   const textColor = 'hsl(var(--foreground))';
   const activeColor = 'hsl(var(--primary))';
-  const mutedColor = 'hsl(var(--foreground) / 0.7)';
+  const mutedColor = 'hsl(var(--foreground))';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white shadow-md" dir="rtl">
