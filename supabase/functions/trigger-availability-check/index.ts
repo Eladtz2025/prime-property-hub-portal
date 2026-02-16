@@ -229,6 +229,32 @@ serve(async (req) => {
           if (result.results && Array.isArray(result.results)) {
             allRunDetails.push(...result.results);
           }
+          
+          // If all results in this batch are all_keys_exhausted, stop immediately
+          const allExhausted = result.results?.length > 0 && 
+            result.results.every((r: any) => r.reason === 'all_keys_exhausted');
+          if (allExhausted) {
+            console.error('❌ All Firecrawl keys exhausted, stopping run early');
+            await supabase
+              .from('availability_check_runs')
+              .update({
+                status: 'stopped',
+                completed_at: new Date().toISOString(),
+                properties_checked: processedThisRun,
+                inactive_marked: inactiveThisRun,
+                error_message: 'All Firecrawl API keys exhausted (rate limited)',
+                run_details: allRunDetails
+              })
+              .eq('id', runId);
+            return new Response(JSON.stringify({
+              success: false,
+              run_id: runId,
+              error: 'All Firecrawl API keys exhausted',
+              processed_this_run: processedThisRun,
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
         } else {
           console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
           failedBatches++;
