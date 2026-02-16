@@ -20,7 +20,7 @@ const HeaderTest = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const textColor = '#000';
-  const activeColor = 'hsl(var(--primary))';
+  const activeColor = 'hsl(38, 60%, 45%)';
   const mutedColor = 'hsl(var(--foreground))';
 
   return (

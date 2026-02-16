@@ -7,7 +7,7 @@ const TestHeroPage = () => {
       <HeaderTest />
       <VideoHero
         title="CITY MARKET"
-        subtitle="נדל״ן בתל אביב"
+        subtitle="מומחיות מקומית. שירות אישי. תהליך ברור."
       />
     </div>
   );
