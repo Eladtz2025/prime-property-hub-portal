@@ -24,30 +24,22 @@ const HeaderTest = () => {
   const mutedColor = 'hsl(var(--foreground))';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-12 bg-white shadow-md" dir="rtl">
-      <div className="container mx-auto px-4 relative h-full">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-border/30" dir="rtl">
+      <div className="container mx-auto px-8 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
-          {/* Right Navigation (RTL) with Facebook icon */}
-          <nav className="hidden lg:flex items-center gap-6 justify-end">
+          {/* Right Navigation (RTL) */}
+          <nav className="hidden lg:flex items-center gap-10 justify-end">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
+                className="relative text-[13px] tracking-[0.08em] font-normal transition-all duration-300"
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
+                  fontFamily: "'Heebo', sans-serif",
                 }}
               >
-                <span style={{ position: 'relative' }}>
-                  {item.label}
-                  <span 
-                    className="absolute w-full h-0.5 bottom-0 right-0 origin-right transition-transform duration-300"
-                    style={{
-                      backgroundColor: activeColor,
-                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                    }}
-                  />
-                </span>
+                {item.label}
               </button>
             ))}
           </nav>
@@ -55,34 +47,26 @@ const HeaderTest = () => {
           <div className="flex items-center justify-center">
             <button
               onClick={() => navigate("/he")}
-              className="transition-transform duration-200 hover:scale-105 font-montserrat text-lg tracking-[0.2em] uppercase font-bold"
-              style={{ color: textColor }}
+              className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-normal"
+              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '22px' }}
             >
               CITY MARKET
             </button>
           </div>
 
           {/* Left Navigation (RTL) with Instagram icon */}
-          <nav className="hidden lg:flex items-center gap-6 justify-start">
+          <nav className="hidden lg:flex items-center gap-10 justify-start">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative font-montserrat text-sm tracking-[0.15em] uppercase font-normal transition-all duration-300"
+                className="relative text-[13px] tracking-[0.08em] font-normal transition-all duration-300"
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
+                  fontFamily: "'Heebo', sans-serif",
                 }}
               >
-                <span style={{ position: 'relative' }}>
-                  {item.label}
-                  <span 
-                    className="absolute w-full h-0.5 bottom-0 right-0 origin-right transition-transform duration-300"
-                    style={{
-                      backgroundColor: activeColor,
-                      transform: isActive(item.path) ? 'scaleX(1)' : 'scaleX(0)',
-                    }}
-                  />
-                </span>
+                {item.label}
               </button>
             ))}
             
@@ -93,7 +77,7 @@ const HeaderTest = () => {
               className="transition-all duration-300 hover:scale-110 hover:opacity-80 mr-2"
               style={{ color: mutedColor }}
             >
-              <Instagram className="w-5 h-5" />
+              <Instagram className="w-4 h-4" />
             </a>
           </nav>
 
