@@ -348,11 +348,21 @@ serve(async (req) => {
       if (isRetryable) {
         errorCount++;
         try {
+          const { data: curProp } = await supabase
+            .from('scouted_properties')
+            .select('availability_check_count')
+            .eq('id', result.id)
+            .single();
+          
           await supabase
             .from('scouted_properties')
-            .update({ availability_check_reason: result.reason })
+            .update({ 
+              availability_check_reason: result.reason,
+              availability_checked_at: new Date().toISOString(),
+              availability_check_count: (curProp?.availability_check_count ?? 0) + 1,
+            })
             .eq('id', result.id);
-          console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue`);
+          console.log(`🔄 ${result.id} - retryable (${result.reason}), removed from immediate queue`);
         } catch (dbError) {
           console.error(`DB update error for ${result.id}:`, dbError);
         }
