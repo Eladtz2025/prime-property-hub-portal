@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { Play, History, Settings, Loader2, Square } from 'lucide-react';
 
 export interface ProcessCardMetric {
@@ -25,6 +26,9 @@ export interface ProcessCardProps {
   settingsContent?: React.ReactNode;
   historyTitle?: string;
   settingsTitle?: string;
+  enabled?: boolean;
+  onToggleEnabled?: (enabled: boolean) => void;
+  isTogglePending?: boolean;
 }
 
 const statusIndicator = (status: string) => {
@@ -61,13 +65,18 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   settingsContent,
   historyTitle,
   settingsTitle,
+  enabled = true,
+  onToggleEnabled,
+  isTogglePending,
 }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const isDisabled = enabled === false;
+
   return (
     <>
-      <Card className="h-full">
+      <Card className={`h-full ${isDisabled ? 'opacity-60' : ''}`}>
         <CardContent className="p-3 space-y-2.5">
           {/* Header */}
           <div className="flex items-center gap-2">
@@ -77,11 +86,21 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">{title}</p>
             </div>
-            {statusIndicator(status)}
+            {onToggleEnabled && (
+              <Switch
+                checked={enabled}
+                onCheckedChange={onToggleEnabled}
+                disabled={isTogglePending}
+                className="scale-75"
+              />
+            )}
+            {statusIndicator(isDisabled ? 'idle' : status)}
           </div>
 
           {/* Status */}
-          <p className="text-[11px] text-muted-foreground">{statusText}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {isDisabled ? 'מושבת' : statusText}
+          </p>
 
           {/* Metrics */}
           <div className="flex flex-wrap gap-x-3 gap-y-0.5">
@@ -106,7 +125,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
                 עצור
               </Button>
             ) : onRun ? (
-              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 flex-1" onClick={onRun} disabled={isRunPending || status === 'running'}>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 flex-1" onClick={onRun} disabled={isRunPending || status === 'running' || isDisabled}>
                 {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
                 הפעל
               </Button>

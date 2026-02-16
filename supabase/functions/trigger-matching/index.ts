@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
+import { isProcessEnabled } from '../_shared/process-flags.ts';
 import { 
   ScoutedProperty, 
   ContactLead, 
@@ -170,6 +171,13 @@ serve(async (req) => {
     // If lead_id is provided, handle single lead re-matching
     if (leadId) {
       return await rematchSingleLead(leadId, supabase);
+    }
+
+    // Kill switch check (skip for forced/manual runs)
+    if (!isForced && !await isProcessEnabled(supabase, 'matching')) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Check end time before starting any work

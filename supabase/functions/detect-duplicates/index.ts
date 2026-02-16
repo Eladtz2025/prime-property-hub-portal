@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
+import { isProcessEnabled } from '../_shared/process-flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,16 @@ Deno.serve(async (req) => {
     try {
       body = await req.json();
     } catch { /* no body */ }
+
+    const isReset = body.reset === true;
+    const isContinuation = body.continuation === true;
+
+    // Kill switch check (skip for manual resets)
+    if (!isReset && !await isProcessEnabled(supabase, 'duplicates')) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     const isReset = body.reset === true;
     const isContinuation = body.continuation === true;

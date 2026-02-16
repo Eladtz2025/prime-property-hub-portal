@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
+import { isProcessEnabled } from '../_shared/process-flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +31,13 @@ serve(async (req) => {
   try {
     const { manual, continue_run } = await req.json().catch(() => ({}));
     const isManual = manual === true;
+
+    // Kill switch check (skip for manual runs)
+    if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability')) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     console.log(`🔍 Starting availability check (${isManual ? 'manual' : 'cron-based'})...`);
 

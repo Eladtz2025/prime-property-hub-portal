@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown } from '../_shared/broker-detection.ts';
 import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from '../_shared/firecrawl-keys.ts';
+import { isProcessEnabled } from '../_shared/process-flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -158,6 +159,13 @@ Deno.serve(async (req) => {
 
     // Fire-and-forget cleanup of stuck runs (only on start, not continue)
     if (action === 'start') {
+      // Kill switch check
+      if (!await isProcessEnabled(supabase, 'backfill')) {
+        return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
         method: 'POST',
         headers: {

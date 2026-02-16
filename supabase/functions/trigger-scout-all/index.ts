@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
+import { isProcessEnabled } from '../_shared/process-flags.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +16,13 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Kill switch check
+    if (!await isProcessEnabled(supabase, 'scans')) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Fire-and-forget cleanup of stuck runs before starting
     fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
