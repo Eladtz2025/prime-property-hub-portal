@@ -1,28 +1,39 @@
 
+# הירו חדש לבדיקה - בסגנון SUNLESS
 
-# תיקון: שמירת שדה ריהוט (furnished) ללקוחות
+## מה ייווצר
+קומפוננטת הירו חדשה בשם `NewHeroTest` בסגנון התמונה שנשלחה - מראה מינימליסטי ואלגנטי עם:
 
-## הבעיה
-שדות `furnished_required`, `furnished_flexible`, `mamad_required`, ו-`mamad_flexible` לא נשמרים כמו שצריך בשלוש נקודות שמירה:
+- תמונת רקע full-screen עם overlay כהה עדין
+- טקסט עליון קטן עם tracking רחב (כמו "DESIGN YOUR LIGHT") - אצלנו: "REAL ESTATE BOUTIQUE"
+- שם החברה גדול ובולט: **CITY MARKET**
+- תת-כותרת בעברית באמצע
+- "Since 2016" בזהב עדין
+- שני כפתורי CTA: אחד מלא (רקע לבן) ואחד outline (גבול לבן בלבד) - בדיוק כמו בתמונה
+- Scroll indicator בתחתית
 
-1. **CustomerEditModal.tsx** (שורות 145-157) -- שדות דרישות פיזיות (חניה, מרפסת, מעלית, חצר, ממ"ד, ריהוט) נשמרים רק כש-`isRental` = true. אם סוג העסקה הוא "מכירה", הם נמחקים.
-2. **CustomerMobileTable.tsx** (שורות 182-189) -- אותה בעיה בדיוק, ובנוסף חסרים לגמרי שדות `mamad`, `furnished`, `roof`, ו-`outdoor_space_any`.
-3. **ExpandableCustomerRow.tsx** (שורות 244-254) -- השדות הפיזיים כבר תוקנו (לא תלויים ב-isRental), אבל חסרים `mamad_required`, `mamad_flexible`, `furnished_required`, `furnished_flexible`.
-
-## הפתרון
-בכל שלושת הקבצים, שדות הדרישות הפיזיות מהנכס (חניה, מרפסת, מעלית, חצר, גג, ממ"ד, ריהוט, שטח חיצוני) יישמרו תמיד -- לא משנה סוג העסקה.
+## נקודות חשובות
+- הקומפוננטה תישמר כקובץ נפרד ולא תחליף את ה-Hero הקיים
+- תירשם בנתיב בדיקה (למשל `/he/test-hero`) כדי לא להשפיע על הפרודקשן
+- תשתמש באותה תמונת רקע קיימת
 
 ## פירוט טכני
 
-### קובץ 1: `src/components/CustomerEditModal.tsx`
-- שורות 145-157: להסיר את התנאי `isRental ?` מכל שדות הדרישות הפיזיות
-- להוסיף שדות חסרים: `roof_required`, `roof_flexible`, `outdoor_space_any`
-- `furnished_required` ו-`furnished_flexible` יישמרו תמיד
+### קובץ חדש: `src/components/he/NewHeroTest.tsx`
+- קומפוננטה full-screen (`h-screen`)
+- רקע: אותה תמונת hero קיימת עם `bg-black/40` overlay
+- טיפוגרפיה:
+  - טקסט עליון: `tracking-[0.4em] uppercase text-sm text-white/80`
+  - כותרת ראשית: `font-serif text-6xl md:text-8xl font-bold text-white`
+  - תת-כותרת: `text-white/90 text-base md:text-lg` בעברית
+  - Since 2016: בצבע זהוב (`text-amber-400/80`) עם tracking רחב
+- כפתור ראשון (השכרה): רקע לבן מלא, טקסט כהה - כמו "Shop Online" בתמונה
+- כפתור שני (קנייה): border לבן בלבד, טקסט לבן - כמו "תיאום ייעוץ בבית" בתמונה
+- Language switcher ו-scroll indicator כמו ב-VideoHero הקיים
 
-### קובץ 2: `src/components/CustomerMobileTable.tsx`
-- שורות 182-189: להסיר את התנאי `isRental ?` מכל שדות הדרישות הפיזיות
-- להוסיף שדות חסרים: `mamad_required`, `mamad_flexible`, `furnished_required`, `furnished_flexible`, `roof_required`, `roof_flexible`, `outdoor_space_any`, `pets_flexible`
+### קובץ חדש: `src/pages/TestHero.tsx`
+- דף פשוט שמציג את `NewHeroTest` בלבד
+- ללא header/footer - רק ההירו לצפייה
 
-### קובץ 3: `src/components/ExpandableCustomerRow.tsx`
-- להוסיף בשורה 254 את השדות החסרים: `mamad_required`, `mamad_flexible`, `furnished_required`, `furnished_flexible`
-
+### עדכון: `src/App.tsx`
+- הוספת route: `/he/test-hero` שמצביע ל-`TestHero`
