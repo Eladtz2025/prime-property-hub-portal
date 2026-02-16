@@ -81,7 +81,6 @@ const DynamicPresentationPricingPage = React.lazy(() => import('./pages/DynamicP
 const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/DynamicPresentationExclusivityForm'));
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
-const TestHero = React.lazy(() => import('./pages/TestHero'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -172,7 +171,6 @@ const AppContent: React.FC = () => {
           <Route path="/he/neighborhoods/old-north" element={<HebrewOldNorth />} />
           <Route path="/he/new-developments" element={<HebrewNewDevelopments />} />
           <Route path="/he/property/:id" element={<PropertyDetailPage />} />
-          <Route path="/he/test-hero" element={<TestHero />} />
           
           {/* English Public Routes */}
             <Route path="/en" element={<EnglishIndex />} />

@@ -1,44 +1,39 @@
 
+# הירו חדש לבדיקה - בסגנון SUNLESS
 
-# הירו בסגנון SUNLESS - הדר מינימליסטי
+## מה ייווצר
+קומפוננטת הירו חדשה בשם `NewHeroTest` בסגנון התמונה שנשלחה - מראה מינימליסטי ואלגנטי עם:
 
-## הבעיה המרכזית
-ההדר הנוכחי (`HebrewHeader`) עמוס מדי לעומת SUNLESS:
-- **אצלנו**: 6 פריטי ניווט + Facebook + Instagram + לוגו = צפוף ואגרסיבי
-- **ב-SUNLESS**: לוגו במרכז, 2-3 פריטים בכל צד, נקי ומינימלי
+- תמונת רקע full-screen עם overlay כהה עדין
+- טקסט עליון קטן עם tracking רחב (כמו "DESIGN YOUR LIGHT") - אצלנו: "REAL ESTATE BOUTIQUE"
+- שם החברה גדול ובולט: **CITY MARKET**
+- תת-כותרת בעברית באמצע
+- "Since 2016" בזהב עדין
+- שני כפתורי CTA: אחד מלא (רקע לבן) ואחד outline (גבול לבן בלבד) - בדיוק כמו בתמונה
+- Scroll indicator בתחתית
 
-## מה ישתנה
-
-### 1. הדר חדש מינימליסטי (`NewHeroTest.tsx` או הדר ייעודי)
-במקום להשתמש ב-`HebrewHeader` המלא, ניצור הדר פשוט בתוך קומפוננטת ההירו עצמה:
-- לוגו במרכז
-- 2-3 פריטי ניווט מכל צד (בדומה ל-SUNLESS)
-- בלי אייקונים חברתיים בהדר
-- רקע לבן, טקסט כהה, מינימלי
-
-### 2. מבנה ההדר החדש (בתוך `NewHeroTest.tsx`)
-- צד ימין (RTL): "דף הבית" | "נכסים"
-- מרכז: לוגו City Market
-- צד שמאל: "עלינו" | "צור קשר"
-- פונט קטן, tracking רחב, אותיות גדולות - בדיוק כמו SUNLESS
-
-### 3. `TestHero.tsx` - הסרת HebrewHeader
-לא נשתמש ב-`HebrewHeader` בדף הבדיקה. במקום זה, ההדר המינימלי יהיה חלק מהקומפוננטה עצמה.
-
-### 4. ההירו עצמו נשאר כמו שהוא
-הטיפוגרפיה, הכפתורים, וה-overlay שכבר עודכנו - נשארים. רק ההדר משתנה.
+## נקודות חשובות
+- הקומפוננטה תישמר כקובץ נפרד ולא תחליף את ה-Hero הקיים
+- תירשם בנתיב בדיקה (למשל `/he/test-hero`) כדי לא להשפיע על הפרודקשן
+- תשתמש באותה תמונת רקע קיימת
 
 ## פירוט טכני
 
-### קובץ: `src/pages/TestHero.tsx`
-- הסרת ייבוא ושימוש ב-`HebrewHeader`
-- רק רנדור של `NewHeroTest`
+### קובץ חדש: `src/components/he/NewHeroTest.tsx`
+- קומפוננטה full-screen (`h-screen`)
+- רקע: אותה תמונת hero קיימת עם `bg-black/40` overlay
+- טיפוגרפיה:
+  - טקסט עליון: `tracking-[0.4em] uppercase text-sm text-white/80`
+  - כותרת ראשית: `font-serif text-6xl md:text-8xl font-bold text-white`
+  - תת-כותרת: `text-white/90 text-base md:text-lg` בעברית
+  - Since 2016: בצבע זהוב (`text-amber-400/80`) עם tracking רחב
+- כפתור ראשון (השכרה): רקע לבן מלא, טקסט כהה - כמו "Shop Online" בתמונה
+- כפתור שני (קנייה): border לבן בלבד, טקסט לבן - כמו "תיאום ייעוץ בבית" בתמונה
+- Language switcher ו-scroll indicator כמו ב-VideoHero הקיים
 
-### קובץ: `src/components/he/NewHeroTest.tsx`
-- הוספת הדר מינימליסטי קבוע בראש הדף:
-  - `position: fixed`, רקע לבן, גובה ~60px
-  - grid של 3 עמודות: ניווט ימין | לוגו | ניווט שמאל
-  - 2 פריטים בכל צד בלבד
-  - פונט montserrat, `text-xs`, `tracking-[0.15em]`, uppercase
-  - צבע טקסט: אפור כהה (`text-gray-600`)
+### קובץ חדש: `src/pages/TestHero.tsx`
+- דף פשוט שמציג את `NewHeroTest` בלבד
+- ללא header/footer - רק ההירו לצפייה
 
+### עדכון: `src/App.tsx`
+- הוספת route: `/he/test-hero` שמצביע ל-`TestHero`
