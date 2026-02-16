@@ -410,6 +410,20 @@ export async function saveProperty(
     existedBefore = !!existingByUrl;
   }
 
+  // Determine if backfill is needed based on available data
+  const hasAllCriticalFields = !!(
+    property.rooms !== undefined && property.rooms !== null &&
+    property.price !== undefined && property.price !== null &&
+    property.size !== undefined && property.size !== null &&
+    property.floor !== undefined && property.floor !== null &&
+    property.neighborhood &&
+    property.features && Object.keys(property.features).length > 0
+  );
+  const backfillStatus = hasAllCriticalFields ? 'not_needed' : 'pending';
+  if (hasAllCriticalFields) {
+    console.log(`✅ All critical fields present for ${normalizedSourceUrl}, marking backfill as not_needed`);
+  }
+
   // UPSERT: Insert new property or update if (source, source_url) already exists
   const { data: upsertResult, error: upsertError } = await supabase
     .from('scouted_properties')
@@ -439,7 +453,8 @@ export async function saveProperty(
       is_primary_listing: isPrimaryListing,
       duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
       dedup_checked_at: null,
-      last_seen_at: new Date().toISOString()
+      last_seen_at: new Date().toISOString(),
+      backfill_status: backfillStatus,
     }, {
       onConflict: 'source,source_url',
       ignoreDuplicates: false  // Update existing records
