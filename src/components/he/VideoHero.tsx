@@ -50,7 +50,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
-        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-6 animate-fade-in" style={{ color: 'hsl(38, 60%, 45%)' }}>
+        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-6 animate-fade-in font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
           {subtitle}
         </p>
         <div className="mb-6 animate-fade-in animation-delay-200">
@@ -77,7 +77,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             קנייה
           </button>
         </div>
-        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-4 animate-fade-in animation-delay-400" style={{ color: 'hsl(38, 60%, 45%)' }}>
+        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-4 animate-fade-in animation-delay-400 font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
           Since 2016
         </p>
       </div>
