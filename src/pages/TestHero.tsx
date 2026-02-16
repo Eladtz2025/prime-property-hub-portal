@@ -1,7 +1,13 @@
+import HebrewHeader from "@/components/he/Header";
 import NewHeroTest from "@/components/he/NewHeroTest";
 
 const TestHero = () => {
-  return <NewHeroTest />;
+  return (
+    <>
+      <HebrewHeader />
+      <NewHeroTest />
+    </>
+  );
 };
 
 export default TestHero;
