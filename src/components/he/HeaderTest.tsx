@@ -19,21 +19,21 @@ const HeaderTest = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const textColor = 'hsl(var(--foreground))';
+  const textColor = '#000';
   const activeColor = 'hsl(var(--primary))';
   const mutedColor = 'hsl(var(--foreground))';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-border/20" dir="rtl">
-      <div className="container mx-auto px-16 relative h-full">
+      <div className="container mx-auto px-6 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-10 justify-start">
+          <nav className="hidden lg:flex items-center gap-14 justify-start">
             {rightNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300"
+                className="relative text-[14px] tracking-[0.08em] font-normal transition-all duration-300"
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
                   fontFamily: "'Heebo', sans-serif",
@@ -48,20 +48,20 @@ const HeaderTest = () => {
             <button
               onClick={() => navigate("/he")}
               className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-normal"
-              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 300 }}
+              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 400 }}
             >
               CITY MARKET
             </button>
           </div>
 
           {/* Left Navigation (RTL) */}
-          <nav className="hidden lg:flex items-center gap-10 justify-end">
+          <nav className="hidden lg:flex items-center gap-14 justify-end">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300 ${
-                  (item as any).bordered ? 'border border-foreground px-5 py-1.5 hover:bg-foreground hover:text-white' : ''
+                className={`relative text-[14px] tracking-[0.08em] font-normal transition-all duration-300 ${
+                  (item as any).bordered ? 'border border-foreground px-5 py-1.5 hover:bg-primary hover:text-white hover:border-primary' : ''
                 }`}
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
