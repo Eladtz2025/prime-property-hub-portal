@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Instagram } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const HeaderTest = () => {
   const navigate = useNavigate();
@@ -13,8 +13,8 @@ const HeaderTest = () => {
   ];
 
   const leftNavItems = [
-    { label: "טופס חיפוש דירה", path: "/he/search-form" },
     { label: "הזמנת יעוץ", path: "/he/contact" },
+    { label: "טופס חיפוש דירה", path: "/he/search-form", bordered: true },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -24,7 +24,7 @@ const HeaderTest = () => {
   const mutedColor = 'hsl(var(--foreground))';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-border/30" dir="rtl">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-border/20" dir="rtl">
       <div className="container mx-auto px-16 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) */}
@@ -47,20 +47,22 @@ const HeaderTest = () => {
           <div className="flex items-center justify-center">
             <button
               onClick={() => navigate("/he")}
-              className="transition-transform duration-200 hover:scale-105 tracking-[0.15em] uppercase font-bold"
-              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px' }}
+              className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-normal"
+              style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 300 }}
             >
               CITY MARKET
             </button>
           </div>
 
-          {/* Left Navigation (RTL) with Instagram icon */}
+          {/* Left Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-10 justify-end">
             {leftNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300"
+                className={`relative text-[16px] tracking-[0.08em] font-normal transition-all duration-300 ${
+                  (item as any).bordered ? 'border border-foreground px-5 py-1.5 hover:bg-foreground hover:text-white' : ''
+                }`}
                 style={{
                   color: isActive(item.path) ? activeColor : mutedColor,
                   fontFamily: "'Heebo', sans-serif",
@@ -69,16 +71,6 @@ const HeaderTest = () => {
                 {item.label}
               </button>
             ))}
-            
-            <a
-              href="https://www.instagram.com/citymarket/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-all duration-300 hover:scale-110 hover:opacity-80 mr-2"
-              style={{ color: mutedColor }}
-            >
-              <Instagram className="w-4 h-4" />
-            </a>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -116,17 +108,6 @@ const HeaderTest = () => {
                   {item.label}
                 </button>
               ))}
-              
-              <div className="flex items-center justify-center gap-6 pt-4 mt-4 border-t border-border">
-                <a
-                  href="https://www.instagram.com/citymarket/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/70 hover:text-primary transition-colors"
-                >
-                  <Instagram className="w-6 h-6" />
-                </a>
-              </div>
             </div>
           </nav>
         )}
