@@ -170,12 +170,22 @@ async function processPropertiesInParallel(
     }
     
     if (needsKeyRotation) {
-      console.log(`🔑 Rate limited on key "${currentKey.id}", rotating...`);
+      // If the current key is the env var fallback (id=null),
+      // we can't rotate further — stop immediately
+      if (currentKey.id === null) {
+        console.error('❌ All Firecrawl keys exhausted (including env fallback), stopping');
+        for (const prop of properties.slice(i)) {
+          results.push({ id: prop.id, isInactive: false, reason: 'all_keys_exhausted', error: true });
+        }
+        break;
+      }
+
+      console.log(`🔑 Rate limited on DB key "${currentKey.id}", rotating...`);
       await markKeyExhausted(supabase, currentKey.id);
       
       try {
         currentKey = await getActiveFirecrawlKey(supabase);
-        console.log(`🔑 Rotated to new key, retrying chunk...`);
+        console.log(`🔑 Rotated to new key (id=${currentKey.id}), retrying chunk...`);
         
         // Retry the entire chunk with the new key
         const retryResults = await Promise.allSettled(
@@ -190,7 +200,6 @@ async function processPropertiesInParallel(
         continue;
       } catch {
         console.error('❌ No more Firecrawl keys available, stopping');
-        // Mark remaining as retryable
         for (const prop of properties.slice(i)) {
           results.push({ id: prop.id, isInactive: false, reason: 'all_keys_exhausted', error: true });
         }

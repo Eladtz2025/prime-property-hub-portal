@@ -8,17 +8,26 @@
  * Falls back to FIRECRAWL_API_KEY env var if no DB keys available.
  */
 export async function getActiveFirecrawlKey(
-  supabase: any
+  supabase: any,
+  skipEnvFallback = false
 ): Promise<{ key: string; id: string | null }> {
+  // 1. Always reset keys exhausted more than 24 hours ago (even before checking DB)
   try {
-    // 1. Reset keys exhausted more than 24 hours ago
     const resetCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    await supabase
+    const { data: resetData } = await supabase
       .from('firecrawl_api_keys')
       .update({ status: 'active', exhausted_at: null })
       .eq('status', 'exhausted')
-      .lt('exhausted_at', resetCutoff);
+      .lt('exhausted_at', resetCutoff)
+      .select('label');
+    if (resetData?.length) {
+      console.log(`🔄 Auto-reset ${resetData.length} exhausted keys: ${resetData.map((k: any) => k.label).join(', ')}`);
+    }
+  } catch (err) {
+    console.warn('Warning: failed to reset exhausted keys:', err);
+  }
 
+  try {
     // 2. Get highest priority active key
     const { data, error } = await supabase
       .from('firecrawl_api_keys')
@@ -42,14 +51,16 @@ export async function getActiveFirecrawlKey(
     console.warn('Error fetching Firecrawl key from DB, falling back to env:', err);
   }
 
-  // 3. Fallback to env var (connector key)
-  const envKey = Deno.env.get('FIRECRAWL_API_KEY');
-  if (envKey) {
-    console.log('🔑 Using fallback FIRECRAWL_API_KEY from env');
-    return { key: envKey, id: null };
+  // 3. Fallback to env var (connector key) — unless explicitly skipped
+  if (!skipEnvFallback) {
+    const envKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (envKey) {
+      console.log('🔑 Using fallback FIRECRAWL_API_KEY from env');
+      return { key: envKey, id: null };
+    }
   }
 
-  throw new Error('No Firecrawl API key available (no DB keys and no env var)');
+  throw new Error('No Firecrawl API key available (no active DB keys and env fallback exhausted/skipped)');
 }
 
 /**
