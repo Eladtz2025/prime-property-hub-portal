@@ -25,7 +25,7 @@ const HeaderTest = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-border/30" dir="rtl">
-      <div className="container mx-auto px-8 relative h-full">
+      <div className="container mx-auto px-16 relative h-full">
         <div className="grid grid-cols-3 items-center h-full">
           {/* Right Navigation (RTL) */}
           <nav className="hidden lg:flex items-center gap-10 justify-end">
@@ -47,7 +47,7 @@ const HeaderTest = () => {
           <div className="flex items-center justify-center">
             <button
               onClick={() => navigate("/he")}
-              className="transition-transform duration-200 hover:scale-105 tracking-[0.35em] uppercase font-bold"
+              className="transition-transform duration-200 hover:scale-105 tracking-[0.15em] uppercase font-bold"
               style={{ color: textColor, fontFamily: "'Playfair Display', serif", fontSize: '28px' }}
             >
               CITY MARKET
