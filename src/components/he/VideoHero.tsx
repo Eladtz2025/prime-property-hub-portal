@@ -50,11 +50,11 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
-        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-6 animate-fade-in font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
+        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-8 animate-fade-in font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
           {subtitle}
         </p>
-        <div className="mb-6 animate-fade-in animation-delay-200">
-          <h1 className="reliz-hero-title text-white">
+        <div className="mb-10 animate-fade-in animation-delay-200">
+          <h1 className="reliz-hero-title text-white font-bold">
             {title}
           </h1>
           <p className="font-montserrat text-sm md:text-base text-white/90 tracking-widest">
@@ -66,18 +66,18 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400" dir="rtl">
           <button
             onClick={() => navigate("/rentals")}
-            className="px-10 py-4 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
+            className="px-14 py-5 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-base tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             השכרה
           </button>
           <button
             onClick={() => navigate("/sales")}
-            className="px-10 py-4 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-sm tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
+            className="px-14 py-5 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-base tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             קנייה
           </button>
         </div>
-        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-4 animate-fade-in animation-delay-400 font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
+        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-6 animate-fade-in animation-delay-400 font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
           Since 2016
         </p>
       </div>
