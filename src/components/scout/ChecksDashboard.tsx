@@ -102,6 +102,36 @@ export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfill = useBackfillProgress();
 
+  // Process kill switches (feature flags)
+  const { data: processFlags } = useQuery({
+    queryKey: ['process-flags'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('feature_flags')
+        .select('name, is_enabled')
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill']);
+      const flags: Record<string, boolean> = {};
+      data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
+      return flags;
+    },
+    refetchInterval: 30000,
+  });
+
+  const toggleFlag = useMutation({
+    mutationFn: async ({ name, enabled }: { name: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from('feature_flags')
+        .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
+        .eq('name', name);
+      if (error) throw error;
+    },
+    onSuccess: (_, { name, enabled }) => {
+      queryClient.invalidateQueries({ queryKey: ['process-flags'] });
+      toast.success(enabled ? 'התהליך הופעל' : 'התהליך כובה');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // Availability stats (unique key to avoid collision with global stats)
   const { data: stats } = useQuery({
     queryKey: ['dashboard-availability-detail'],
@@ -324,6 +354,9 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={<UnifiedScoutSettings />}
           historyTitle="היסטוריית סריקות"
           settingsTitle="הגדרות סריקה"
+          enabled={processFlags?.process_scans ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
 
         {/* Availability */}
@@ -364,6 +397,9 @@ export const ChecksDashboard: React.FC = () => {
           }
           historyTitle="היסטוריית בדיקות זמינות"
           settingsTitle="הגדרות בדיקת זמינות"
+          enabled={processFlags?.process_availability ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
 
         {/* Dedup */}
@@ -401,6 +437,9 @@ export const ChecksDashboard: React.FC = () => {
           }
           historyTitle="כפילויות"
           settingsTitle="הגדרות כפילויות"
+          enabled={processFlags?.process_duplicates ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_duplicates', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
 
         {/* Matching */}
@@ -436,6 +475,9 @@ export const ChecksDashboard: React.FC = () => {
           }
           historyTitle="היסטוריית התאמות"
           settingsTitle="הגדרות התאמות"
+          enabled={processFlags?.process_matching ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_matching', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
 
         {/* Backfill */}
@@ -473,6 +515,9 @@ export const ChecksDashboard: React.FC = () => {
           }
           historyTitle="היסטוריית השלמת נתונים"
           settingsTitle="הגדרות השלמת נתונים"
+          enabled={processFlags?.process_backfill ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
       </div>
 
