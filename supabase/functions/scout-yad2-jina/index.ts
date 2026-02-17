@@ -64,14 +64,14 @@ serve(async (req) => {
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina');
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     if (config.property_type === 'both') {
       const errorMsg = 'property_type "both" is not supported';
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: errorMsg, duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina');
       return new Response(JSON.stringify({ success: false, error: errorMsg }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -167,7 +167,7 @@ async function chainNextPage(
     if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
       await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages);
     } else {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2');
+      await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina');
     }
   } else if (currentPage < maxPages) {
     await triggerNextPage(supabaseUrl, supabaseKey, configId, currentPage + 1, runId, maxPages, startPage);
@@ -220,11 +220,11 @@ async function triggerNextPage(
         const currentIdx = retryPages.indexOf(nextPage);
         if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
           await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages, _skipCount + 1);
-        } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); }
+        } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); }
       } else if (nextPage < maxPages) {
         await triggerNextPage(supabaseUrl, supabaseKey, configId, nextPage + 1, runId, maxPages, startPage, false, undefined, _skipCount + 1);
-      } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); }
-    } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); }
+      } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); }
+    } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); }
   }
 }
 
@@ -239,7 +239,7 @@ async function handleRetryOrFinalize(
     (p: any) => p.status === 'blocked' && (p.retry_count || 0) < YAD2_CONFIG.MAX_BLOCK_RETRIES
   );
 
-  if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); return; }
+  if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); return; }
 
   console.log(`🔄 Retrying ${blockedPages.length} blocked pages for run ${runId}`);
   const updatedStats = (run.page_stats as any[]).map((p: any) => {
