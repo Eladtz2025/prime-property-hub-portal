@@ -1,82 +1,113 @@
 
+# שכפול מערכת הסריקות עם Jina -- כולל הומלס
 
-# הוספת כפתור כיבוי לזמינות Jina + כרטיסיית השלמת נתונים Jina
+## סקירה
+שכפול 5 Edge Functions של מערכת הסריקות, החלפת Firecrawl ב-Jina Reader. **הומלס נכלל** -- Jina תחזיר HTML (עם `X-Return-Format: html`) כך שהפרסר הקיים `parseHomelessHtml` ימשיך לעבוד כרגיל.
 
-## 1. כפתור כיבוי (Toggle) לכרטיסיית בדיקת זמינות Jina
+## קבצים חדשים (6)
 
-כרגע לכרטיסייה של Jina אין Switch כיבוי/הפעלה. צריך:
+### 1. `supabase/functions/_shared/scraping-jina.ts`
+פונקציה משותפת שמחליפה את `scrapeWithRetry` + `getActiveFirecrawlKey`:
+- `scrapeWithJina(url, source, options)` -- GET ל-`r.jina.ai/{url}`
+- משתמשת ב-`JINA_API_KEY` (כבר קיים)
+- Headers: Authorization, X-No-Cache, X-Wait-For-Selector, X-Timeout: 35, X-Proxy-Url
+- **עבור Homeless**: `Accept: text/html` + `X-Return-Format: html` (כדי לקבל HTML ולא markdown)
+- **עבור Yad2/Madlan**: `Accept: text/markdown` (כמו היום)
+- מחזירה `{ markdown, html }` -- HTML מלא להומלס, ריק לשאר
+- Retry עם exponential backoff
+- ולידציה של התוכן (שימוש ב-`validateScrapedContent` הקיים)
 
-- להוסיף רשומה חדשה בטבלת `feature_flags` בשם `process_availability_jina`
-- לשלוף את הדגל הזה בקומפוננט `ChecksDashboard`
-- לחבר את ה-Switch בכרטיסייה של Jina
+### 2. `supabase/functions/scout-yad2-jina/index.ts`
+העתקה של `scout-yad2` עם:
+- ייבוא `scrapeWithJina` במקום `scrapeWithRetry` + `getActiveFirecrawlKey`
+- הסרת כל הלוגיקה של Firecrawl key rotation
+- שרשור עצמי קורא ל-`scout-yad2-jina`
+- אותו parser (`parseYad2Markdown`), save logic, retry/chain logic
 
-**קובץ:** `src/components/scout/ChecksDashboard.tsx`
-- הוספת `process_availability_jina` לרשימת הדגלים בשאילתת `process-flags`
-- הוספת `enabled` ו-`onToggleEnabled` לכרטיסיית Jina
+### 3. `supabase/functions/scout-madlan-jina/index.ts`
+העתקה של `scout-madlan` עם אותם שינויים:
+- `scrapeWithJina` במקום Firecrawl
+- שרשור ל-`scout-madlan-jina`
 
-## 2. כרטיסיית השלמת נתונים (Jina)
+### 4. `supabase/functions/scout-homeless-jina/index.ts`
+העתקה של `scout-homeless` עם:
+- `scrapeWithJina(url, 'homeless')` -- מקבל HTML חזרה מ-Jina
+- אותו parser `parseHomelessHtml` עובד על ה-HTML שחוזר
+- Fallback ל-`parseHomelessMarkdown` אם ה-HTML ריק
 
-### Edge Function חדשה: `backfill-property-data-jina`
+### 5. `supabase/functions/trigger-scout-pages-jina/index.ts`
+העתקה של `trigger-scout-pages` עם:
+- `targetFunction = scout-{source}-jina` במקום `scout-{source}`
+- תמיכה בכל 3 המקורות (yad2, madlan, homeless)
 
-העתקה של `backfill-property-data` עם השינויים הבאים:
-- החלפת קריאת Firecrawl API (`api.firecrawl.dev/v1/scrape`) בקריאת Jina (`r.jina.ai/URL`)
-- הסרת לוגיקת רוטציית מפתחות Firecrawl (שימוש ב-`JINA_API_KEY` בלבד)
-- שם task שונה: `data_completion_jina` (כדי לא להתנגש עם ה-backfill הרגיל)
-- אותו קוד חילוץ נתונים, features, כתובות, broker detection -- בדיוק כמו המקור
+### 6. `supabase/functions/trigger-scout-all-jina/index.ts`
+העתקה של `trigger-scout-all` עם:
+- Kill switch: `process_scans_jina`
+- קריאה ל-`trigger-scout-pages-jina`
 
-### Hook חדש: `useBackfillProgressJina`
+## קבצים שיערכו (2)
 
-העתקה של `useBackfillProgress` עם `task_name = 'data_completion_jina'` וקריאה ל-`backfill-property-data-jina`.
+### `src/components/scout/ChecksDashboard.tsx`
+- הוספת `process_scans_jina` לרשימת הדגלים
+- הוספת ProcessCard חדש **"סריקות 2 (Jina)"** עם:
+  - אייקון Search בצבע teal
+  - Kill switch, מטריקות, היסטוריה
 
-### כרטיסייה בדשבורד
+### `supabase/config.toml`
+- הוספת 5 פונקציות חדשות עם `verify_jwt = false`
 
-הוספת `ProcessCard` חדש בשם "השלמת נתונים 2 (Jina)" עם:
-- אייקון Database בצבע teal (כמו הזמינות של Jina)
-- כפתורי הפעל/עצור
-- מטריקות (נותרו, הצלחות, כשלונות)
-- תיאור לוגיקה בהגדרות
-
-## פרטים טכניים
-
-### Migration (feature flag):
-
+## Migration
 ```sql
 INSERT INTO feature_flags (name, is_enabled, description)
-VALUES ('process_availability_jina', true, 'Kill switch for Jina availability check')
+VALUES ('process_scans_jina', true, 'Kill switch for Jina-based property scanning')
 ON CONFLICT (name) DO NOTHING;
 ```
 
-### שינוי ב-Firecrawl -> Jina (בקובץ החדש):
+## פרטים טכניים
+
+### scrapeWithJina -- הפרדה לפי מקור
 
 ```text
--- מקור (Firecrawl):
-const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-  method: 'POST',
-  headers: { 'Authorization': `Bearer ${firecrawlApiKey}`, ... },
-  body: JSON.stringify({ url: prop.source_url, formats: ['markdown'], ... })
-});
-const scrapeData = await scrapeResponse.json();
-const markdown = scrapeData.data?.markdown || '';
-
--- יעד (Jina):
-const scrapeResponse = await fetch(`https://r.jina.ai/${prop.source_url}`, {
-  method: 'GET',
-  headers: {
-    'Authorization': `Bearer ${jinaApiKey}`,
-    'Accept': 'text/markdown',
-    'X-No-Cache': 'true',
-    'X-Wait-For-Selector': 'body',
-    'X-Timeout': '35',
-    'X-Proxy-Url': 'https://premium.residential-proxy.io',
+function scrapeWithJina(url, source, options):
+  headers = {
+    Authorization: Bearer JINA_API_KEY,
+    X-No-Cache: true,
+    X-Wait-For-Selector: body,
+    X-Timeout: 35,
+    X-Proxy-Url: premium.residential-proxy.io,
   }
-});
-const markdown = await scrapeResponse.text();
+
+  if source === 'homeless':
+    headers.Accept = 'text/html'
+    headers['X-Return-Format'] = 'html'
+    --> returns { markdown: '', html: responseBody }
+  else:
+    headers.Accept = 'text/markdown'
+    --> returns { markdown: responseBody, html: '' }
 ```
 
-### קבצים שישתנו/ייווצרו:
+### שרשור עצמי -- שינוי שם הפונקציה
 
-1. `supabase/functions/backfill-property-data-jina/index.ts` -- חדש (העתקה + Jina)
-2. `src/hooks/useBackfillProgressJina.ts` -- חדש
-3. `src/components/scout/ChecksDashboard.tsx` -- עריכה (toggle + כרטיסייה חדשה)
-4. Migration -- הוספת feature flag
+```text
+-- scout-yad2 המקורי:
+fetch(`${supabaseUrl}/functions/v1/scout-yad2`, ...)
 
+-- scout-yad2-jina:
+fetch(`${supabaseUrl}/functions/v1/scout-yad2-jina`, ...)
+```
+
+### trigger-scout-pages-jina -- מיפוי פונקציות
+
+```text
+source='yad2'     --> scout-yad2-jina
+source='madlan'   --> scout-madlan-jina
+source='homeless' --> scout-homeless-jina
+```
+
+### השפעה על הקוד הקיים
+- אפס שינויים בפונקציות המקוריות
+- אפס שינויים בפרסרים
+- אפס שינויים ב-shared utilities
+
+## בדיקה אחרי פריסה
+אפעיל את `trigger-scout-all-jina` ואבדוק בלוגים שהכל עובד תקין לפני שאתה מנסה.
