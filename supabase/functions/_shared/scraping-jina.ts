@@ -32,7 +32,7 @@ export async function scrapeWithJina(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const isYad2 = source === 'yad2';
-      const fetchTimeout = isYad2 ? 25000 : 45000; // Yad2: shorter to fit retries in 60s edge limit
+      const fetchTimeout = isYad2 ? 35000 : 45000;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
