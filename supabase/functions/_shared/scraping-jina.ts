@@ -49,7 +49,8 @@ export async function scrapeWithJina(
 
       // Yad2 is a React SPA - needs longer render timeout but shorter fetch timeout
       if (isYad2) {
-        headers['X-Timeout'] = '20';
+        headers['X-Timeout'] = '30';
+        headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
       }
 
       if (isHomeless) {
