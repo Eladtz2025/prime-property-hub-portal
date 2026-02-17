@@ -186,7 +186,8 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
           baseUrl += `/${citySlug}`;
         }
         
-        const pageUrl = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+        // Always include ?page= param for Madlan (page 1 without it returns truncated SSR content)
+        const pageUrl = `${baseUrl}?page=${page}`;
         console.log(`Built Madlan single page URL (page ${page}): ${pageUrl}`);
         urls.push(pageUrl);
       
@@ -343,7 +344,8 @@ export function buildSearchUrls(config: ScoutConfig, settings?: ScrapingSettings
         console.log(`Madlan pages to scrape: ${madlanPagesToScrape} (config override: ${config.max_pages ? 'yes' : 'no'})`);
         
         for (let page = 1; page <= madlanPagesToScrape; page++) {
-          const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+          // Always include ?page= param for Madlan (page 1 without it returns truncated SSR content)
+          const url = `${baseUrl}?page=${page}`;
           console.log(`Built Madlan URL (page ${page}/${madlanPagesToScrape}): ${url}`);
           urls.push(url);
         }

@@ -436,8 +436,12 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   let size: number | null = null;
   
   if (isJinaSingleLine) {
+    // Clean ALL RTL/LTR/bidi control characters before numeric extraction
+    // This prevents digits from adjacent fields (e.g. rooms) being concatenated with the price
+    const cleanedBlock = block.replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069\u200B-\u200D]/g, '');
+    
     // Extract price: look for number followed by ₪ 
-    const priceMatch = block.match(/([\d,]+)\s*[\u200F\u200E]*₪/);
+    const priceMatch = cleanedBlock.match(/([\d,]+)\s*₪/);
     if (priceMatch) {
       const priceStr = priceMatch[1].replace(/,/g, '');
       const priceNum = parseInt(priceStr, 10);
@@ -445,16 +449,16 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     }
     
     // Extract rooms: "X חד׳"
-    const roomsMatch = block.match(/(\d+\.?\d*)\s*חד[׳'ר]/);
+    const roomsMatch = cleanedBlock.match(/(\d+\.?\d*)\s*חד[׳'ר]/);
     if (roomsMatch) rooms = parseFloat(roomsMatch[1]);
     
     // Extract floor: "קומה X" or "קומת קרקע"
-    const floorMatch = block.match(/קומה\s+(\d+)/);
+    const floorMatch = cleanedBlock.match(/קומה\s+(\d+)/);
     if (floorMatch) floor = parseInt(floorMatch[1], 10);
-    else if (/קומת\s*קרקע/.test(block)) floor = 0;
+    else if (/קומת\s*קרקע/.test(cleanedBlock)) floor = 0;
     
     // Extract size: "X מ"ר"
-    const sizeMatch = block.match(/(\d+)\s*מ"ר/);
+    const sizeMatch = cleanedBlock.match(/(\d+)\s*מ"ר/);
     if (sizeMatch) size = parseInt(sizeMatch[1], 10);
   } else {
     // Original parts-based extraction for Format A/B/C

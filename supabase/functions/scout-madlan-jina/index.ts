@@ -113,17 +113,22 @@ serve(async (req) => {
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });
+      let willChainOnFail = false;
       const { data: runCheck } = await supabase.from('scout_runs').select('status').eq('id', runId).single();
       if (runCheck?.status !== 'stopped') {
         if (isRetry && retryPages.length > 0) {
+          willChainOnFail = true;
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, retryPages[0], runId, maxPages!, startPage, true, retryPages.slice(1));
         } else if (!isRetry && maxPages && page < maxPages) {
+          willChainOnFail = true;
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
         }
       }
-      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
+      if (!willChainOnFail) {
+        await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
+      }
       return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -131,17 +136,22 @@ serve(async (req) => {
     const validation = validateScrapedContent(markdown, html, 'madlan');
     if (!validation.valid) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: validation.reason || 'Validation failed', duration_ms: Date.now() - pageStartTime });
+      let willChainOnValidation = false;
       const { data: runCheck2 } = await supabase.from('scout_runs').select('status').eq('id', runId).single();
       if (runCheck2?.status !== 'stopped') {
         if (isRetry && retryPages.length > 0) {
+          willChainOnValidation = true;
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, retryPages[0], runId, maxPages!, startPage, true, retryPages.slice(1));
         } else if (!isRetry && maxPages && page < maxPages) {
+          willChainOnValidation = true;
           await new Promise(r => setTimeout(r, MADLAN_CONFIG.RECOVERY_DELAY));
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
         }
       }
-      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
+      if (!willChainOnValidation) {
+        await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
+      }
       return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
