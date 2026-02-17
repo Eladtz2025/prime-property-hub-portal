@@ -16,8 +16,9 @@
 export function extractPrice(text: string): number | null {
   if (!text) return null;
   
-  // Remove currency symbols and common Hebrew price terms
+  // Remove currency symbols, RTL/LTR marks, and common Hebrew price terms
   const cleaned = text
+    .replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069]/g, '') // RTL/LTR marks
     .replace(/[₪$€]/g, '')
     .replace(/ש"ח|שקל|שקלים/g, '')
     .replace(/,/g, '')
