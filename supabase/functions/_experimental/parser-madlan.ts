@@ -440,17 +440,39 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
     // This prevents digits from adjacent fields (e.g. rooms) being concatenated with the price
     const cleanedBlock = block.replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069\u200B-\u200D]/g, '');
     
-    // Extract price: look for number followed by ₪ 
-    const priceMatch = cleanedBlock.match(/([\d,]+)\s*₪/);
-    if (priceMatch) {
-      const priceStr = priceMatch[1].replace(/,/g, '');
+    // Strategy 1 (preferred): Combined price+rooms regex
+    // Madlan Jina format is: "PRICE₪ ROOMS חד׳" - capture both at once
+    // to prevent digit concatenation (e.g. 8,000,000₪1 חד׳ → 80000001)
+    const priceRoomsMatch = cleanedBlock.match(/([\d,]+)\s*₪\s*(\d+\.?\d*)\s*חד[׳'ר]/);
+    if (priceRoomsMatch) {
+      const priceStr = priceRoomsMatch[1].replace(/,/g, '');
       const priceNum = parseInt(priceStr, 10);
       if (priceNum >= 500 && priceNum <= 100000000) price = priceNum;
+      rooms = parseFloat(priceRoomsMatch[2]);
+    } else {
+      // Strategy 2: Strict comma-formatted price regex (X,XXX,XXX₪)
+      // Only matches properly comma-separated numbers to avoid grabbing concatenated digits
+      const strictPriceMatch = cleanedBlock.match(/(\d{1,3}(?:,\d{3})+)\s*₪/);
+      if (strictPriceMatch) {
+        const priceStr = strictPriceMatch[1].replace(/,/g, '');
+        const priceNum = parseInt(priceStr, 10);
+        if (priceNum >= 500 && priceNum <= 100000000) price = priceNum;
+      } else {
+        // Strategy 3: Simple number₪ with max sanity check
+        const simplePriceMatch = cleanedBlock.match(/([\d,]+)\s*₪/);
+        if (simplePriceMatch) {
+          const priceStr = simplePriceMatch[1].replace(/,/g, '');
+          const priceNum = parseInt(priceStr, 10);
+          // For sale: max 50M, for rent: max 100K - if over, likely concatenated
+          const maxPrice = propertyType === 'sale' ? 50000000 : 100000;
+          if (priceNum >= 500 && priceNum <= maxPrice) price = priceNum;
+        }
+      }
+      
+      // Extract rooms separately if not found via combined match
+      const roomsMatch = cleanedBlock.match(/(\d+\.?\d*)\s*חד[׳'ר]/);
+      if (roomsMatch) rooms = parseFloat(roomsMatch[1]);
     }
-    
-    // Extract rooms: "X חד׳"
-    const roomsMatch = cleanedBlock.match(/(\d+\.?\d*)\s*חד[׳'ר]/);
-    if (roomsMatch) rooms = parseFloat(roomsMatch[1]);
     
     // Extract floor: "קומה X" or "קומת קרקע"
     const floorMatch = cleanedBlock.match(/קומה\s+(\d+)/);
