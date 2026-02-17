@@ -111,7 +111,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase
         .from('feature_flags')
         .select('name, is_enabled')
-        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina']);
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina']);
       const flags: Record<string, boolean> = {};
       data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
       return flags;
@@ -620,6 +620,9 @@ export const ChecksDashboard: React.FC = () => {
             </div>
           }
           settingsTitle="הגדרות השלמת נתונים (Jina)"
+          enabled={processFlags?.process_backfill_jina ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill_jina', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
       </div>
 
