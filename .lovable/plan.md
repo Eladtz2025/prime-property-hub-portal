@@ -1,44 +1,30 @@
 
-# תיקון סריקת יד2 - שינוי X-Wait-For-Selector
+# תיקון פשוט: fetchTimeout קצר מדי
 
 ## הבעיה
 
-בקוד הנוכחי (`scraping-jina.ts` שורה 44), `X-Wait-For-Selector` מוגדר ל-`body` לכל המקורות. הבלוק הספציפי ליד2 (שורות 51-53) משנה רק את `X-Timeout` אבל **לא משנה את הסלקטור**. 
+שורה אחת גורמת לכל הכשלונות:
 
-`body` קיים מיד ב-HTML הראשוני של יד2 (לפני שה-JavaScript טוען את המודעות), אז Jina מחזיר את ה-shell הריק (~304 תווים) ולא מחכה לתוכן.
+```
+fetchTimeout = 25000  (25 שניות - ה-AbortController שלנו)
+X-Timeout = 30        (30 שניות - הזמן שאנחנו מבקשים מ-Jina)
+```
 
-## הפתרון
+אנחנו סוגרים את החיבור אחרי 25 שניות, אבל Jina צריך 30 שניות לרנדר את הדף. כל הלוגים מראים `timeout` אחרי 25 שניות בדיוק.
 
-שינוי אחד בלבד בקובץ `supabase/functions/_shared/scraping-jina.ts`:
+## התיקון
 
-בתוך הבלוק `if (isYad2)` (שורות 51-53), להוסיף שורה שמשנה את `X-Wait-For-Selector` ל-`a[href*="/realestate/item/"]`.
-
-סלקטור זה תופס את הלינקים של המודעות עצמן (כמו `yad2.co.il/realestate/item/tel-aviv-area/9risihcd`), שמופיעים **רק** אחרי שה-React SPA סיים לרנדר את הפיד. כך Jina יחכה עד שהמודעות באמת נטענות לפני שהוא מחזיר את התוכן.
-
-בנוסף, נעלה את `X-Timeout` ל-`30` (במקום `20`) כדי לתת ליד2 מספיק זמן להטען.
-
-### שינוי טכני
+שינוי מספר אחד בשורה 35 של `scraping-jina.ts`:
 
 ```typescript
-// שורות 51-53 -- מ:
-if (isYad2) {
-  headers['X-Timeout'] = '20';
-}
+// מ:
+const fetchTimeout = isYad2 ? 25000 : 45000;
 
 // ל:
-if (isYad2) {
-  headers['X-Timeout'] = '30';
-  headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
-}
+const fetchTimeout = isYad2 ? 35000 : 45000;
 ```
 
-### קבצים שישתנו
-- `supabase/functions/_shared/scraping-jina.ts` -- הוספת סלקטור ספציפי ליד2
+35 שניות נותן ל-Jina את ה-30 שניות שהוא צריך + 5 שניות מרווח.
 
-### למה `a[href*="/realestate/item/"]`?
-
-מה-debug sample המוצלח (ינואר) ניתן לראות שכל מודעה מכילה לינק בפורמט:
-```
-https://www.yad2.co.il/realestate/item/tel-aviv-area/9risihcd
-```
-אלמנטים אלו קיימים רק אחרי שהפיד נטען. זה סלקטור יציב שלא תלוי בשמות class שעלולים להשתנות.
+### קובץ שישתנה
+- `supabase/functions/_shared/scraping-jina.ts` - שורה 35 בלבד
