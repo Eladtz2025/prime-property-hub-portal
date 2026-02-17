@@ -204,11 +204,21 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 10000,
   });
 
-  // Last scan run
+  // Last scan run (firecrawl or legacy null)
   const { data: lastScanRun } = useQuery({
     queryKey: ['scan-last-run'],
     queryFn: async () => {
-      const { data } = await supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source').order('started_at', { ascending: false }).limit(1).maybeSingle();
+      const { data } = await (supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source') as any).or('scanner.is.null,scanner.eq.firecrawl').order('started_at', { ascending: false }).limit(1).maybeSingle();
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+
+  // Last scan run (Jina)
+  const { data: lastScanRunJina } = useQuery({
+    queryKey: ['scan-last-run-jina'],
+    queryFn: async () => {
+      const { data } = await (supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source') as any).eq('scanner', 'jina').order('started_at', { ascending: false }).limit(1).maybeSingle();
       return data;
     },
     refetchInterval: 10000,
@@ -352,8 +362,40 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Trigger scans Jina
+  const triggerScansJina = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('trigger-scout-all-jina');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('סריקות Jina הופעלו');
+      queryClient.invalidateQueries({ queryKey: ['scan-last-run-jina'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  // Stop scans Jina
+  const stopScansJina = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase
+        .from('scout_runs')
+        .update({ status: 'stopped', completed_at: new Date().toISOString(), error_message: 'הופסק ידנית' } as any)
+        .eq('status', 'running') as any)
+        .eq('scanner', 'jina');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('סריקות Jina נעצרו');
+      queryClient.invalidateQueries({ queryKey: ['scan-last-run-jina'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const isAvailRunning = lastAvailRun?.status === 'running';
   const isScanRunning = lastScanRun?.status === 'running';
+  const isScanJinaRunning = lastScanRunJina?.status === 'running';
   const isMatchRunning = matchStats?.status === 'running';
 
   const formatDuration = (started: string, completed: string | null) => {
@@ -404,14 +446,18 @@ export const ChecksDashboard: React.FC = () => {
           title="סריקות 2 (Jina)"
           icon={<Search className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
-          status={isScanRunning ? 'running' : lastScanRun ? 'completed' : 'idle'}
-          statusText={isScanRunning ? 'סריקה פעילה (Jina)...' : lastScanRun ? `${lastScanRun.properties_found ?? 0} נמצאו, ${lastScanRun.new_properties ?? 0} חדשים` : 'לא הופעל'}
+          status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
+          statusText={isScanJinaRunning ? 'סריקה פעילה (Jina)...' : lastScanRunJina ? `${lastScanRunJina.properties_found ?? 0} נמצאו, ${lastScanRunJina.new_properties ?? 0} חדשים` : 'לא הופעל'}
           metrics={[
-            { label: 'מקור', value: lastScanRun?.source || '—' },
-            { label: 'נמצאו', value: lastScanRun?.properties_found ?? 0 },
+            { label: 'מקור', value: lastScanRunJina?.source || '—' },
+            { label: 'נמצאו', value: lastScanRunJina?.properties_found ?? 0 },
             { label: 'configs פעילים', value: activeConfigs ?? 0 },
           ]}
-          lastRun={formatLastRun(lastScanRun?.started_at, lastScanRun?.completed_at)}
+          lastRun={formatLastRun(lastScanRunJina?.started_at, lastScanRunJina?.completed_at)}
+          onRun={() => triggerScansJina.mutate()}
+          onStop={() => stopScansJina.mutate()}
+          isRunPending={triggerScansJina.isPending}
+          isStopPending={stopScansJina.isPending}
           historyContent={<ScoutRunHistory />}
           settingsContent={
             <div className="space-y-6">
