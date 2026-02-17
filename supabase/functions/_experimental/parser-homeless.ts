@@ -40,7 +40,8 @@ import { lookupNeighborhoodByStreet } from './street-lookup.ts';
 export async function parseHomelessHtml(
   html: string,
   propertyType: 'rent' | 'sale',
-  supabase?: SupabaseClient
+  supabase?: SupabaseClient,
+  ownerTypeFilter?: 'private' | 'broker' | null
 ): Promise<ParserResult> {
   const $ = cheerioLoad(html);
   const properties: ParsedProperty[] = [];
@@ -390,6 +391,15 @@ export async function parseHomelessHtml(
           streetText
         }
       };
+      
+      // Filter by owner type if configured
+      if (ownerTypeFilter === 'private' && property.is_private !== true) {
+        console.log(`[Homeless Parser] Filtered out broker listing: ${sourceUrl}`);
+        continue;
+      }
+      if (ownerTypeFilter === 'broker' && property.is_private !== false) {
+        continue;
+      }
       
       properties.push(property);
       
