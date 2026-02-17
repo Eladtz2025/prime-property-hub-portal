@@ -32,7 +32,7 @@ export async function scrapeWithJina(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 50000); // 50s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
       console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source})`);
 
@@ -40,14 +40,10 @@ export async function scrapeWithJina(
         'Authorization': `Bearer ${jinaKey}`,
         'X-No-Cache': 'true',
         'X-Wait-For-Selector': 'body',
-        'X-Timeout': '35',
+        'X-Timeout': '30',
+        'X-Locale': 'he-IL',
+        'X-With-Generated-Alt': 'false',
       };
-
-      // Use proxy for Israeli property sites
-      const proxyUrl = Deno.env.get('JINA_PROXY_URL') || '';
-      if (proxyUrl) {
-        headers['X-Proxy-Url'] = proxyUrl;
-      }
 
       if (isHomeless) {
         // Homeless needs HTML for Cheerio-based parser

@@ -15,7 +15,7 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
   MAX_RETRIES: 3,
-  NEXT_PAGE_DELAY: 8000,
+  NEXT_PAGE_DELAY: 10000,
   RECOVERY_DELAY: 10000,
 };
 
