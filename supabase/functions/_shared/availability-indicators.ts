@@ -25,6 +25,12 @@ export const LISTING_REMOVED_INDICATORS = [
   ...HOMELESS_REMOVAL_INDICATORS,
 ];
 
+// Madlan homepage indicators (redirect = listing removed)
+const MADLAN_HOMEPAGE_INDICATORS = [
+  'חיפושים פופולריים · דירות למכירה',
+  'חיפושים פופולריים · פרויקטים חדשים',
+];
+
 /**
  * Check if content indicates the listing was removed
  */
@@ -40,4 +46,16 @@ export function isListingRemoved(content: string): boolean {
   }
   
   return false;
+}
+
+/**
+ * Check if content is Madlan's homepage (redirect from removed listing)
+ */
+export function isMadlanHomepage(content: string): boolean {
+  if (!content) return false;
+  let count = 0;
+  for (const indicator of MADLAN_HOMEPAGE_INDICATORS) {
+    if (content.includes(indicator)) count++;
+  }
+  return count >= 2;
 }
