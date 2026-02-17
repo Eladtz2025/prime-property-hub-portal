@@ -111,7 +111,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase
         .from('feature_flags')
         .select('name, is_enabled')
-        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina']);
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina', 'process_scans_jina']);
       const flags: Record<string, boolean> = {};
       data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
       return flags;
@@ -396,6 +396,36 @@ export const ChecksDashboard: React.FC = () => {
           settingsTitle="הגדרות סריקה"
           enabled={processFlags?.process_scans ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
+        />
+
+        {/* Scans Jina */}
+        <ProcessCard
+          title="סריקות 2 (Jina)"
+          icon={<Search className="h-4 w-4 text-teal-600" />}
+          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          status={isScanRunning ? 'running' : lastScanRun ? 'completed' : 'idle'}
+          statusText={isScanRunning ? 'סריקה פעילה (Jina)...' : lastScanRun ? `${lastScanRun.properties_found ?? 0} נמצאו, ${lastScanRun.new_properties ?? 0} חדשים` : 'לא הופעל'}
+          metrics={[
+            { label: 'מקור', value: lastScanRun?.source || '—' },
+            { label: 'נמצאו', value: lastScanRun?.properties_found ?? 0 },
+            { label: 'configs פעילים', value: activeConfigs ?? 0 },
+          ]}
+          lastRun={formatLastRun(lastScanRun?.started_at, lastScanRun?.completed_at)}
+          historyContent={<ScoutRunHistory />}
+          settingsContent={
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'אותה מערכת סריקות כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
+                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
+                'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
+              ]} />
+            </div>
+          }
+          historyTitle="היסטוריית סריקות (Jina)"
+          settingsTitle="הגדרות סריקות (Jina)"
+          enabled={processFlags?.process_scans_jina ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
         />
 
