@@ -1,24 +1,95 @@
 
-## תיקון שריפת קרדיטים של Firecrawl + אופטימיזציות
+# תיקון סינון מודעות תיווך - הומלס ומדלן
 
-### ✅ בוצע
+## הבעיה האמיתית (אחרי בדיקה מעמיקה)
 
-#### תיקון 1: עדכון `availability_checked_at` גם לתוצאות retryable
-**קובץ:** `supabase/functions/check-property-availability/index.ts`
-- עכשיו גם תוצאות retryable מעדכנות `availability_checked_at` ו-`availability_check_count`
-- נכסים שנכשלים יוצאים מהתור המיידי וחוזרים רק אחרי 2 ימים
+### הומלס: הפרסר מעולם לא תוקן
+הפרסר של הומלס (`parser-homeless.ts`) לא מקבל פרמטר `ownerTypeFilter` ולא מסנן מתווכים. בנוסף, הקונפיגורציות של הומלס מוגדרות עם `owner_type_filter = NULL`. כתוצאה, **132 מודעות תיווך** אקטיביות נכנסו למערכת.
 
-#### תיקון 2: סינון duplicate losers מהתור
-**קובץ:** Migration - עדכון RPC `get_properties_needing_availability_check`
-- נוסף תנאי: `AND (sp.duplicate_group_id IS NULL OR sp.is_primary_listing = true)`
-- חוסך ~216 קרדיטים מיותרים לכל מחזור
+### מדלן: הפרסר עובד - אבל ה-backfill דורס!
+הפרסר של מדלן (`parser-madlan.ts`, שורה 74) כן מסנן מתווכים נכון בזמן הסריקה. **אבל** ה-backfill (`backfill-property-data/index.ts`, שורה 707) דורס את `is_private` עבור כל נכס ממדלן - גם אלה שכבר סוננו. בדיקת הנתונים מוכיחה שכל 48 מודעות התיווך שנכנסו אחרי 12/2 עודכנו ע"י ה-backfill 1-3 ימים אחרי היצירה.
 
-#### תיקון 3: סימון `backfill_status = 'not_needed'` מוקדם
-**קובץ:** `supabase/functions/_shared/property-helpers.ts`
-- אם כל השדות הקריטיים מלאים (rooms, price, size, floor, neighborhood, features) - מסמן `not_needed` מיד
-- חוסך קריאות Firecrawl של backfill על נכסים שכבר מלאים
+## הפתרון - 3 תיקונים
 
-#### תיקון מערכת סיבוב מפתחות (בוצע קודם)
-- מניעת לולאה אינסופית כשמפתח ה-env נחסם
-- עצירת self-chaining כשכל המפתחות מותשים
-- שיפור auto-reset למפתחות מותשים מעל 24 שעות
+### תיקון 1: הומלס - הוספת סינון לפרסר
+- **קובץ**: `supabase/functions/_experimental/parser-homeless.ts`
+  - הוספת פרמטר `ownerTypeFilter` לפונקציה `parseHomelessHtml`
+  - הוספת סינון בלולאה: `if (ownerTypeFilter === 'private' && !isBroker) continue;`
+- **קובץ**: `supabase/functions/scout-homeless/index.ts`
+  - העברת `config.owner_type_filter` כפרמטר רביעי לפרסר
+
+### תיקון 2: Backfill - לא לדרוס is_private כשהקונפיגורציה מסננת
+- **קובץ**: `supabase/functions/backfill-property-data/index.ts`
+  - שינוי בשורה 707: כשנכס כבר סווג כפרטי (`is_private = true`), לא לדרוס אותו
+  - הלוגיקה החדשה: לסווג מחדש רק נכסים שה-`is_private` שלהם הוא `null` (לא ידוע), לא כאלה שכבר סומנו כפרטיים בסריקה
+  - במדלן ספציפית: להסיר את `prop.source === 'madlan'` מהתנאי שמאפשר re-classification תמיד
+
+### תיקון 3: עדכון DB + ניקוי
+- עדכון קונפיגורציות הומלס: `owner_type_filter = 'private'`
+- ביטול מודעות תיווך קיימות מהומלס (132 נכסים)
+- ביטול מודעות תיווך ממדלן שנדרסו ע"י backfill (48 נכסים)
+
+## פרטים טכניים
+
+### שינוי 1 - parser-homeless.ts (שורה 40-43)
+```text
+// לפני:
+export async function parseHomelessHtml(
+  html: string,
+  propertyType: 'rent' | 'sale',
+  supabase?: SupabaseClient
+): Promise<ParserResult>
+
+// אחרי:
+export async function parseHomelessHtml(
+  html: string,
+  propertyType: 'rent' | 'sale',
+  supabase?: SupabaseClient,
+  ownerTypeFilter?: 'private' | 'broker' | null
+): Promise<ParserResult>
+```
+
+בתוך הלולאה, אחרי שנבנה ה-property ולפני push, להוסיף:
+```text
+if (ownerTypeFilter === 'private' && property.is_private !== true) continue;
+if (ownerTypeFilter === 'broker' && property.is_private !== false) continue;
+```
+
+### שינוי 2 - scout-homeless/index.ts (שורה ~136)
+```text
+// לפני:
+const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase);
+
+// אחרי:
+const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase, config.owner_type_filter);
+```
+
+### שינוי 3 - backfill-property-data/index.ts (שורה 707)
+```text
+// לפני:
+const shouldClassifyBroker = prop.source === 'madlan' 
+  || prop.is_private === null 
+  || prop.is_private === undefined;
+
+// אחרי - לא לדרוס נכסים שכבר סווגו:
+const shouldClassifyBroker = prop.is_private === null 
+  || prop.is_private === undefined;
+```
+
+### SQL Migration
+```text
+-- עדכון קונפיגורציות הומלס
+UPDATE scout_configs 
+SET owner_type_filter = 'private' 
+WHERE source = 'homeless';
+
+-- ביטול מודעות תיווך מהומלס
+UPDATE scouted_properties 
+SET is_active = false, status = 'inactive' 
+WHERE source = 'homeless' AND is_private = false;
+
+-- ביטול מודעות תיווך ממדלן שנדרסו ע"י backfill
+UPDATE scouted_properties 
+SET is_active = false, status = 'inactive' 
+WHERE source = 'madlan' AND is_private = false;
+```
