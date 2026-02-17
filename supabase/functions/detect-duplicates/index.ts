@@ -37,8 +37,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const isReset = body.reset === true;
-    const isContinuation = body.continuation === true;
+    // (duplicate declaration removed)
 
     // If reset requested (manual run), clear all dedup_checked_at
     if (isReset && !isContinuation) {
