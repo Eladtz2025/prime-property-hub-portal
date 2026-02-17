@@ -702,10 +702,10 @@ Deno.serve(async (req) => {
         }
 
         // Detect broker/private classification from markdown
-        // For Madlan: always re-evaluate (fix historical false-broker bias)
-        // For other sources: only classify when unknown
-        const shouldClassifyBroker = prop.source === 'madlan' 
-          || prop.is_private === null 
+        // Only classify when unknown (null) - don't override scout's classification
+        // Previously Madlan was always re-evaluated, causing backfill to override
+        // scout's correct private/broker filtering with wrong classifications
+        const shouldClassifyBroker = prop.is_private === null 
           || prop.is_private === undefined;
 
         if (shouldClassifyBroker) {
