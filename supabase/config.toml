@@ -143,3 +143,6 @@ verify_jwt = false
 
 [functions.detect-duplicates]
 verify_jwt = false
+
+[functions.test-jina-availability]
+verify_jwt = false
