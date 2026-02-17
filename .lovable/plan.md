@@ -1,72 +1,82 @@
 
 
-# תיקון זיהוי מדלן ב-Jina - חסימת בוט vs. הסרת מודעה
+# הוספת כפתור כיבוי לזמינות Jina + כרטיסיית השלמת נתונים Jina
 
-## הבעיה שמצאנו
-Jina לא מבדיל בין שני מצבים:
-- **מודעה שהוסרה** -- מדלן מפנה לדף הבית (לגיטימי)
-- **בוט שנחסם** -- מדלן מפנה לדף הבית או מציג CAPTCHA (חסימה)
+## 1. כפתור כיבוי (Toggle) לכרטיסיית בדיקת זמינות Jina
 
-בגלל זה, דירות אקטיביות סומנו בטעות כלא פעילות.
+כרגע לכרטיסייה של Jina אין Switch כיבוי/הפעלה. צריך:
 
-## מה בדיוק ישתנה
+- להוסיף רשומה חדשה בטבלת `feature_flags` בשם `process_availability_jina`
+- לשלוף את הדגל הזה בקומפוננט `ChecksDashboard`
+- לחבר את ה-Switch בכרטיסייה של Jina
 
-### 1. קובץ: `supabase/functions/check-property-availability-jina/index.ts`
+**קובץ:** `src/components/scout/ChecksDashboard.tsx`
+- הוספת `process_availability_jina` לרשימת הדגלים בשאילתת `process-flags`
+- הוספת `enabled` ו-`onToggleEnabled` לכרטיסיית Jina
 
-שלושה שינויים בפונקציה `checkWithJina`:
+## 2. כרטיסיית השלמת נתונים (Jina)
 
-**א. זיהוי CAPTCHA (בדיקה חדשה לפני כל השאר):**
-אם התוכן מכיל "סליחה על ההפרעה" -- זה חסימת בוט, לא הסרה. מסומן כ-`madlan_captcha_blocked` (retryable).
+### Edge Function חדשה: `backfill-property-data-jina`
 
-**ב. שינוי הלוגיקה של homepage redirect:**
-במקום לסמן `madlan_homepage_redirect` כ-inactive, מסמנים אותו כ-retryable. הסיבה: ב-Jina אי אפשר לסמוך שהפניה לדף הבית מעידה על הסרה -- היא יכולה להיות גם חסימת בוט.
+העתקה של `backfill-property-data` עם השינויים הבאים:
+- החלפת קריאת Firecrawl API (`api.firecrawl.dev/v1/scrape`) בקריאת Jina (`r.jina.ai/URL`)
+- הסרת לוגיקת רוטציית מפתחות Firecrawl (שימוש ב-`JINA_API_KEY` בלבד)
+- שם task שונה: `data_completion_jina` (כדי לא להתנגש עם ה-backfill הרגיל)
+- אותו קוד חילוץ נתונים, features, כתובות, broker detection -- בדיוק כמו המקור
 
-**ג. הוספת `madlan_captcha_blocked` לרשימת ה-retryable reasons:**
-כדי שדירות שנחסמו יחזרו לתור הבדיקה ולא ייזרקו.
+### Hook חדש: `useBackfillProgressJina`
 
-### 2. לא משנים את `availability-indicators.ts`
-הקובץ המשותף נשאר כמו שהוא -- ב-Firecrawl ההתנהגות תקינה. השינוי רק בקוד של Jina.
+העתקה של `useBackfillProgress` עם `task_name = 'data_completion_jina'` וקריאה ל-`backfill-property-data-jina`.
 
-## סדר הבדיקות החדש למדלן ב-Jina
+### כרטיסייה בדשבורד
 
-```text
-1. תוכן קצר מ-100 תווים? --> keeping active (retryable)
-2. מדלן + תוכן קצר מ-1000 תווים? --> madlan_skeleton (retryable)  
-3. מכיל "סליחה על ההפרעה"? --> madlan_captcha_blocked (retryable) [חדש]
-4. מכיל "המודעה הוסרה"? --> listing_removed_indicator (inactive) [נשאר]
-5. דף הבית של מדלן? --> madlan_homepage_redirect (retryable, לא inactive) [שינוי]
-6. אף אחד מהנ"ל? --> content_ok (active)
-```
-
-## התוצאה
-
-- **יד2 והומלס** -- אין שינוי, עובד מצוין
-- **מדלן** -- רק "המודעה הוסרה" (טקסט מפורש) יסמן דירה כלא פעילה. חסימות בוט והפניות לדף הבית יחזרו לתור הבדיקה
+הוספת `ProcessCard` חדש בשם "השלמת נתונים 2 (Jina)" עם:
+- אייקון Database בצבע teal (כמו הזמינות של Jina)
+- כפתורי הפעל/עצור
+- מטריקות (נותרו, הצלחות, כשלונות)
+- תיאור לוגיקה בהגדרות
 
 ## פרטים טכניים
 
-### שינויי קוד ב-`checkWithJina`:
+### Migration (feature flag):
 
-```text
-// אחרי בדיקת skeleton, לפני isListingRemoved:
-if (source === 'madlan' && markdown.includes('סליחה על ההפרעה')) {
-  return { isInactive: false, reason: 'madlan_captcha_blocked' };
-}
-
-// שינוי ה-homepage redirect מ-inactive ל-retryable:
-if (source === 'madlan' && isMadlanHomepage(markdown)) {
-  return { isInactive: false, reason: 'madlan_homepage_redirect' };
-  // היה: isInactive: true
-}
+```sql
+INSERT INTO feature_flags (name, is_enabled, description)
+VALUES ('process_availability_jina', true, 'Kill switch for Jina availability check')
+ON CONFLICT (name) DO NOTHING;
 ```
 
-### שינוי ברשימת retryableReasons:
+### שינוי ב-Firecrawl -> Jina (בקובץ החדש):
 
 ```text
-const retryableReasons = new Set([
-  ...existing reasons,
-  'madlan_captcha_blocked',    // חדש
-  'madlan_homepage_redirect',  // הועבר לכאן מ-"inactive"
-]);
+-- מקור (Firecrawl):
+const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${firecrawlApiKey}`, ... },
+  body: JSON.stringify({ url: prop.source_url, formats: ['markdown'], ... })
+});
+const scrapeData = await scrapeResponse.json();
+const markdown = scrapeData.data?.markdown || '';
+
+-- יעד (Jina):
+const scrapeResponse = await fetch(`https://r.jina.ai/${prop.source_url}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${jinaApiKey}`,
+    'Accept': 'text/markdown',
+    'X-No-Cache': 'true',
+    'X-Wait-For-Selector': 'body',
+    'X-Timeout': '35',
+    'X-Proxy-Url': 'https://premium.residential-proxy.io',
+  }
+});
+const markdown = await scrapeResponse.text();
 ```
+
+### קבצים שישתנו/ייווצרו:
+
+1. `supabase/functions/backfill-property-data-jina/index.ts` -- חדש (העתקה + Jina)
+2. `src/hooks/useBackfillProgressJina.ts` -- חדש
+3. `src/components/scout/ChecksDashboard.tsx` -- עריכה (toggle + כרטיסייה חדשה)
+4. Migration -- הוספת feature flag
 
