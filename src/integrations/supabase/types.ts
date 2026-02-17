@@ -2827,6 +2827,7 @@ export type Database = {
           properties_found: number | null
           retry_count: number | null
           retry_of: string | null
+          scanner: string | null
           source: string
           started_at: string
           status: string
@@ -2844,6 +2845,7 @@ export type Database = {
           properties_found?: number | null
           retry_count?: number | null
           retry_of?: string | null
+          scanner?: string | null
           source: string
           started_at?: string
           status?: string
@@ -2861,6 +2863,7 @@ export type Database = {
           properties_found?: number | null
           retry_count?: number | null
           retry_of?: string | null
+          scanner?: string | null
           source?: string
           started_at?: string
           status?: string

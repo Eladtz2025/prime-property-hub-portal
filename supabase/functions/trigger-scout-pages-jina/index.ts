@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
 
     const { data: runData, error: runError } = await supabase
       .from('scout_runs')
-      .insert({ config_id, source, status: 'running', properties_found: 0, new_properties: 0, page_stats: initialPageStats })
+      .insert({ config_id, source, status: 'running', properties_found: 0, new_properties: 0, page_stats: initialPageStats, scanner: 'jina' })
       .select().single();
 
     if (runError) {

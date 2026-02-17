@@ -1,0 +1,1 @@
+ALTER TABLE scout_runs ADD COLUMN IF NOT EXISTS scanner TEXT DEFAULT 'firecrawl';
