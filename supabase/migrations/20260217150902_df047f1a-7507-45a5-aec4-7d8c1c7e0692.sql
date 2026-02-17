@@ -1,0 +1,1 @@
+DELETE FROM backfill_progress WHERE task_name = 'jina_test_run';
