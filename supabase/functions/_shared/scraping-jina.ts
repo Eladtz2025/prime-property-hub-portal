@@ -51,6 +51,7 @@ export async function scrapeWithJina(
       if (isYad2) {
         headers['X-Timeout'] = '30';
         headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
+        headers['X-Proxy-Country'] = 'IL';
       }
 
       if (isHomeless) {
