@@ -1,30 +1,41 @@
 
-# תיקון פשוט: fetchTimeout קצר מדי
+# תיקון יד2 עם Jina - הוספת פרוקסי גיאוגרפי
 
 ## הבעיה
 
-שורה אחת גורמת לכל הכשלונות:
+Jina מתחבר ליד2 בהצלחה (637 תווים), אבל יד2 מזהה אותו כבוט ומציג דף captcha.
 
-```
-fetchTimeout = 25000  (25 שניות - ה-AbortController שלנו)
-X-Timeout = 30        (30 שניות - הזמן שאנחנו מבקשים מ-Jina)
-```
+ההבדל היחיד מ-Firecrawl שעובד: Firecrawl משתמש ב-`proxy: 'stealth'` (פרוקסי פרמיום), בעוד ש-Jina לא משתמש בפרוקסי בכלל.
 
-אנחנו סוגרים את החיבור אחרי 25 שניות, אבל Jina צריך 30 שניות לרנדר את הדף. כל הלוגים מראים `timeout` אחרי 25 שניות בדיוק.
+## הפתרון - שורה אחת
 
-## התיקון
+הוספת `X-Proxy-Country: IL` ל-headers של Jina עבור יד2. Header זה מפעיל פרוקסי residential ישראלי של Jina, שגורם לבקשה להיראות כמו משתמש רגיל מישראל.
 
-שינוי מספר אחד בשורה 35 של `scraping-jina.ts`:
+### שינוי טכני
+
+קובץ: `supabase/functions/_shared/scraping-jina.ts`
 
 ```typescript
+// בתוך הבלוק if (isYad2) -- שורות 51-54
 // מ:
-const fetchTimeout = isYad2 ? 25000 : 45000;
+if (isYad2) {
+  headers['X-Timeout'] = '30';
+  headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
+}
 
 // ל:
-const fetchTimeout = isYad2 ? 35000 : 45000;
+if (isYad2) {
+  headers['X-Timeout'] = '30';
+  headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
+  headers['X-Proxy-Country'] = 'IL';
+}
 ```
 
-35 שניות נותן ל-Jina את ה-30 שניות שהוא צריך + 5 שניות מרווח.
+### למה זה אמור לעבוד
+
+- Firecrawl עובד ליד2 בזכות פרוקסי stealth (residential)
+- Jina מציע את אותה יכולת דרך `X-Proxy-Country` -- פרוקסי residential ממדינה ספציפית
+- יד2 אתר ישראלי, אז IP ישראלי residential יראה הכי טבעי
 
 ### קובץ שישתנה
-- `supabase/functions/_shared/scraping-jina.ts` - שורה 35 בלבד
+- `supabase/functions/_shared/scraping-jina.ts` -- הוספת שורה אחת
