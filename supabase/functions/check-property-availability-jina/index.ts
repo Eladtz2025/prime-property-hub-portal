@@ -86,16 +86,22 @@ async function checkWithJina(
         return { isInactive: false, reason: 'madlan_skeleton' };
       }
 
-      // Check 1: does the page contain a specific removal string?
+      // Check 1: Madlan CAPTCHA/bot block detection (before removal checks)
+      if (source === 'madlan' && markdown.includes('סליחה על ההפרעה')) {
+        console.log(`🤖 Madlan CAPTCHA block detected for ${url} — retryable`);
+        return { isInactive: false, reason: 'madlan_captcha_blocked' };
+      }
+
+      // Check 2: does the page contain a specific removal string?
       if (isListingRemoved(markdown)) {
         console.log(`🚫 Removal text found for ${url}`);
         return { isInactive: true, reason: 'listing_removed_indicator' };
       }
 
-      // Check 2: Madlan homepage redirect detection
+      // Check 3: Madlan homepage redirect — treated as retryable in Jina (can't distinguish bot block from real removal)
       if (source === 'madlan' && isMadlanHomepage(markdown)) {
-        console.log(`🚫 Madlan homepage redirect detected for ${url}`);
-        return { isInactive: true, reason: 'madlan_homepage_redirect' };
+        console.log(`🔄 Madlan homepage redirect for ${url} — treating as retryable (possible bot block)`);
+        return { isInactive: false, reason: 'madlan_homepage_redirect' };
       }
 
       return { isInactive: false, reason: 'content_ok' };
@@ -267,7 +273,9 @@ serve(async (req) => {
       'check_error',
       'short_content_keeping_active',
       'rate_limited',
-      'madlan_skeleton'
+      'madlan_skeleton',
+      'madlan_captcha_blocked',
+      'madlan_homepage_redirect',
     ]);
 
     for (const result of results) {
