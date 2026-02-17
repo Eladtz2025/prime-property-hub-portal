@@ -16,25 +16,32 @@
 export function extractPrice(text: string): number | null {
   if (!text) return null;
   
-  // Remove currency symbols, RTL/LTR marks, and common Hebrew price terms
+  // Clean ONLY RTL/LTR marks and zero-width chars - keep spaces and currency symbols as anchors!
   const cleaned = text
-    .replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069]/g, '') // RTL/LTR marks
-    .replace(/[₪$€]/g, '')
-    .replace(/ש"ח|שקל|שקלים/g, '')
-    .replace(/,/g, '')
-    .replace(/\s/g, '')
-    .trim();
+    .replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069\u200B-\u200D\uFEFF]/g, '');
   
-  // Extract first number sequence
-  const match = cleaned.match(/(\d+)/);
-  if (!match) return null;
+  // Strategy 1: Number directly before ₪ (e.g. "3,980,000₪" or "3,980,000 ₪")
+  const beforeShekel = cleaned.match(/([\d,]+)\s*₪/);
+  if (beforeShekel) {
+    const price = parseInt(beforeShekel[1].replace(/,/g, ''), 10);
+    if (price >= 500 && price <= 100000000) return price;
+  }
   
-  const price = parseInt(match[1], 10);
+  // Strategy 2: ₪ before number (e.g. "₪8,500")
+  const afterShekel = cleaned.match(/₪\s*([\d,]+)/);
+  if (afterShekel) {
+    const price = parseInt(afterShekel[1].replace(/,/g, ''), 10);
+    if (price >= 500 && price <= 100000000) return price;
+  }
   
-  // Sanity check - prices should be reasonable
-  if (price < 500 || price > 100000000) return null;
+  // Strategy 3: ש"ח pattern (e.g. "8500 ש"ח")
+  const shekelMatch = cleaned.match(/([\d,]+)\s*ש"ח/);
+  if (shekelMatch) {
+    const price = parseInt(shekelMatch[1].replace(/,/g, ''), 10);
+    if (price >= 500 && price <= 100000000) return price;
+  }
   
-  return price;
+  return null;
 }
 
 // ============================================
