@@ -270,7 +270,7 @@ const ScanLogicDescription: React.FC = () => (
   </div>
 );
 
-export const UnifiedScoutSettings: React.FC = () => {
+export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ triggerFunction = 'trigger-scout-pages' }) => {
   const queryClient = useQueryClient();
   const { data: settings, isLoading: settingsLoading } = useScoutSettings();
   const updateSetting = useUpdateScoutSetting();
@@ -481,7 +481,7 @@ export const UnifiedScoutSettings: React.FC = () => {
       
       // Use trigger-scout-pages for all sources - proven stable approach
       // Each page runs independently, preventing timeouts
-      const functionName = 'trigger-scout-pages';
+      const functionName = triggerFunction;
       
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { config_id: configId },

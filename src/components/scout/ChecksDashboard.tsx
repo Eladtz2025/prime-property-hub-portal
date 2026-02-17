@@ -466,6 +466,7 @@ export const ChecksDashboard: React.FC = () => {
                 'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
                 'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
               ]} />
+              <UnifiedScoutSettings triggerFunction="trigger-scout-pages-jina" />
             </div>
           }
           historyTitle="היסטוריית סריקות (Jina)"
