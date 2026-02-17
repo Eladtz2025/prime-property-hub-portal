@@ -53,7 +53,7 @@ serve(async (req) => {
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless-jina');
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -66,7 +66,7 @@ serve(async (req) => {
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless-jina');
       return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -81,7 +81,7 @@ serve(async (req) => {
     const validation = validateScrapedContent(markdown, html, 'homeless');
     if (!validation.valid) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: validation.reason || 'Validation failed', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless-jina');
       return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -101,7 +101,7 @@ serve(async (req) => {
     const duration = Date.now() - pageStartTime;
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: extractedProperties.length, new: pageNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, extractedProperties.length, pageNew);
-    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
+    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless-jina');
 
     return new Response(JSON.stringify({
       success: true, page, found: extractedProperties.length, new: pageNew, duration_ms: duration, parser: 'no-ai'
@@ -110,7 +110,7 @@ serve(async (req) => {
   } catch (error) {
     console.error(`scout-homeless-jina page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
-    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless');
+    if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'homeless-jina');
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

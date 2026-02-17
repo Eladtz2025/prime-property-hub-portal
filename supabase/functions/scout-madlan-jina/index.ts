@@ -54,11 +54,11 @@ async function triggerNextPage(
     } else if (!isRetry && nextPage < maxPages) {
       return triggerNextPage(supabaseUrl, supabaseServiceKey, configId, nextPage + 1, runId, maxPages, startPage, false, [], _skipCount + 1);
     } else {
-      await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
+      await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan-jina');
     }
   } else {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan');
+    await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan-jina');
   }
   return false;
 }
@@ -101,7 +101,7 @@ serve(async (req) => {
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages - startPage + 1, 'madlan-jina');
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -123,7 +123,7 @@ serve(async (req) => {
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
         }
       }
-      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan');
+      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
       return new Response(JSON.stringify({ success: false, error: 'Scrape failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -141,7 +141,7 @@ serve(async (req) => {
           await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
         }
       }
-      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan');
+      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
       return new Response(JSON.stringify({ success: false, error: 'Validation failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -174,16 +174,22 @@ serve(async (req) => {
     await incrementRunStats(supabase, runId, extractedProperties.length, pageNew);
 
     const { data: runCheck } = await supabase.from('scout_runs').select('status').eq('id', runId).single();
+    let willChain = false;
     if (runCheck?.status !== 'stopped') {
       if (isRetry && retryPages.length > 0) {
+        willChain = true;
         await new Promise(r => setTimeout(r, MADLAN_CONFIG.NEXT_PAGE_DELAY));
         await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, retryPages[0], runId, maxPages!, startPage, true, retryPages.slice(1));
       } else if (!isRetry && maxPages && page < maxPages) {
+        willChain = true;
         await new Promise(r => setTimeout(r, MADLAN_CONFIG.NEXT_PAGE_DELAY));
         await triggerNextPage(supabaseUrl, supabaseServiceKey, configId, page + 1, runId, maxPages, startPage);
       }
     }
-    await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan');
+    // Only finalize when no more chaining will happen
+    if (!willChain) {
+      await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
+    }
 
     console.log(`📊 Madlan-Jina page ${page} DONE: new=${pageNew} updated=${pageUpdated} | ${duration}ms`);
 
@@ -194,7 +200,7 @@ serve(async (req) => {
   } catch (error) {
     console.error(`scout-madlan-jina page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
-    await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan');
+    await checkAndFinalizeRun(supabase, runId, maxPages! - startPage + 1, 'madlan-jina');
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
