@@ -155,3 +155,18 @@ verify_jwt = false
 
 [functions.backfill-property-data-jina]
 verify_jwt = false
+
+[functions.scout-yad2-jina]
+verify_jwt = false
+
+[functions.scout-madlan-jina]
+verify_jwt = false
+
+[functions.scout-homeless-jina]
+verify_jwt = false
+
+[functions.trigger-scout-pages-jina]
+verify_jwt = false
+
+[functions.trigger-scout-all-jina]
+verify_jwt = false
