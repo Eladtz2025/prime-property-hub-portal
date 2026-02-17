@@ -146,9 +146,8 @@ export function buildSinglePageUrl(config: ScoutConfig, page: number): string[] 
         if (config.min_price) params.set('price', `${config.min_price}-${config.max_price || ''}`);
         if (config.min_rooms) params.set('rooms', `${config.min_rooms}-${config.max_rooms || ''}`);
         
-        if (page > 1) {
-          params.set('page', page.toString());
-        }
+        // Always include page param (page 1 without it may return different/truncated content)
+        params.set('page', page.toString());
         
         const pageUrl = baseUrl + '?' + params.toString();
         console.log(`Built Yad2 single page URL (page ${page}, neighborhood: ${neighborhoodCode || 'all'}): ${pageUrl}`);
