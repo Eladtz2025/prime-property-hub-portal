@@ -282,6 +282,44 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Trigger availability Jina
+  const triggerAvailabilityJina = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('trigger-availability-check-jina', { body: { manual: true } });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`בדיקת זמינות (Jina) הופעלה: ${data?.message || ''}`);
+      queryClient.invalidateQueries({ queryKey: ['dashboard-availability-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['global-scout-stats'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  // Stop availability Jina
+  const stopAvailabilityJina = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase
+        .from('availability_check_runs')
+        .update({ status: 'stopped', completed_at: new Date().toISOString() })
+        .eq('status', 'running');
+      if (e1) throw e1;
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      await supabase
+        .from('availability_check_runs')
+        .update({ status: 'stopped' })
+        .eq('status', 'completed')
+        .gte('completed_at', fiveMinAgo);
+    },
+    onSuccess: () => {
+      toast.success('בדיקת זמינות (Jina) נעצרה');
+      queryClient.invalidateQueries({ queryKey: ['availability-last-run'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-availability-detail'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // Trigger matching
   const triggerMatching = useMutation({
     mutationFn: async () => {
@@ -400,6 +438,37 @@ export const ChecksDashboard: React.FC = () => {
           enabled={processFlags?.process_availability ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability', enabled: v })}
           isTogglePending={toggleFlag.isPending}
+        />
+
+        {/* Availability Jina */}
+        <ProcessCard
+          title="בדיקת זמינות 2 (Jina)"
+          icon={<Shield className="h-4 w-4 text-teal-600" />}
+          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
+          statusText={isAvailRunning ? 'בודק זמינות (Jina)...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
+          metrics={[
+            { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
+            { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
+            { label: 'Timeouts', value: stats?.timeouts ?? 0 },
+          ]}
+          lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
+          onRun={() => triggerAvailabilityJina.mutate()}
+          onStop={() => stopAvailabilityJina.mutate()}
+          isRunPending={triggerAvailabilityJina.isPending}
+          isStopPending={stopAvailabilityJina.isPending}
+          historyContent={<AvailabilityHistorySection />}
+          settingsContent={
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'ניסוי: אותה לוגיקת בדיקת זמינות, אבל עם Jina AI Reader במקום Firecrawl.',
+                'משתמש ב-r.jina.ai לסריקת דפים ובודק אותם מחרוזות הסרה בדיוק כמו המערכת המקורית.',
+                'זיהוי skeleton למדלן: תוכן קצר מ-1000 תווים מסומן כ-retryable.',
+              ]} />
+            </div>
+          }
+          historyTitle="היסטוריית בדיקות זמינות (Jina)"
+          settingsTitle="הגדרות בדיקת זמינות (Jina)"
         />
 
         {/* Dedup */}
