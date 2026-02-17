@@ -152,3 +152,6 @@ verify_jwt = false
 
 [functions.trigger-availability-check-jina]
 verify_jwt = false
+
+[functions.backfill-property-data-jina]
+verify_jwt = false
