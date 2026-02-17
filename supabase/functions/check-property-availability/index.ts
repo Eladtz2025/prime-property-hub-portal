@@ -6,7 +6,7 @@ import { fetchCategorySettings } from "../_shared/settings.ts";
 import { isListingRemoved } from "../_shared/availability-indicators.ts";
 import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from "../_shared/firecrawl-keys.ts";
 
-const GLOBAL_TIMEOUT_MS = 50000;
+const GLOBAL_TIMEOUT_MS = 55000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +42,7 @@ async function checkWithFirecrawl(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 22000);
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
