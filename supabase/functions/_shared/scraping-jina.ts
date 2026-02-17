@@ -31,10 +31,12 @@ export async function scrapeWithJina(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      const isYad2 = source === 'yad2';
+      const fetchTimeout = isYad2 ? 25000 : 45000; // Yad2: shorter to fit retries in 60s edge limit
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+      const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
-      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source})`);
+      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, timeout: ${fetchTimeout/1000}s)`);
 
       const headers: Record<string, string> = {
         'Authorization': `Bearer ${jinaKey}`,
@@ -44,6 +46,11 @@ export async function scrapeWithJina(
         'X-Locale': 'he-IL',
         'X-With-Generated-Alt': 'false',
       };
+
+      // Yad2 is a React SPA - needs longer render timeout but shorter fetch timeout
+      if (isYad2) {
+        headers['X-Timeout'] = '20';
+      }
 
       if (isHomeless) {
         // Homeless needs HTML for Cheerio-based parser

@@ -14,8 +14,8 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const YAD2_CONFIG = {
   SOURCE: 'yad2',
-  MAX_RETRIES: 1,
-  PAGE_DELAY_MS: 10000,
+  MAX_RETRIES: 2,
+  PAGE_DELAY_MS: 15000,
   RETRY_DELAY_MS: 25000,
   MAX_BLOCK_RETRIES: 2,
 };
