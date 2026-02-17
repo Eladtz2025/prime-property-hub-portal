@@ -42,7 +42,7 @@ async function checkWithFirecrawl(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 22000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',

@@ -1,0 +1,1 @@
+UPDATE availability_check_runs SET status = 'stopped', completed_at = now() WHERE id = '25687a82-61f0-4184-b1ab-8d9f42b2888b' AND status = 'running';
