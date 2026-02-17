@@ -1,67 +1,72 @@
 
-# ניסוי Jina v2 - העתקת המערכת המקורית
 
-## הגישה
-העתקה מדויקת של שתי הפונקציות המקוריות (`check-property-availability` ו-`trigger-availability-check`) עם החלפת Firecrawl ב-Jina. אותו flow, אותה לוגיקת זיהוי, אותם עדכוני DB.
+# תיקון זיהוי מדלן ב-Jina - חסימת בוט vs. הסרת מודעה
 
-## מה ישתנה
+## הבעיה שמצאנו
+Jina לא מבדיל בין שני מצבים:
+- **מודעה שהוסרה** -- מדלן מפנה לדף הבית (לגיטימי)
+- **בוט שנחסם** -- מדלן מפנה לדף הבית או מציג CAPTCHA (חסימה)
 
-### קובץ חדש: `supabase/functions/check-property-availability-jina/index.ts`
-- העתקה מלאה של `check-property-availability/index.ts`
-- הפונקציה `checkWithFirecrawl` תוחלף ב-`checkWithJina`:
-  - במקום POST ל-Firecrawl API, שליחת GET ל-`https://r.jina.ai/{url}`
-  - Headers: `X-No-Cache: true`, `X-Wait-For-Selector: body`, `X-Timeout: 30`, `X-Locale: he-IL`, `Accept: text/markdown`
-  - שימוש ב-`JINA_API_KEY` מהסודות (כבר מוגדר) עבור Bearer auth
-  - אין צורך ברוטציית מפתחות או proxy settings
-- אותה לוגיקת זיהוי: `isListingRemoved`, `isMadlanHomepage`
-- אותם עדכוני DB: `availability_checked_at`, `availability_check_count`, `is_active`, `status`
-- אותו run_id ו-`append_run_detail`
+בגלל זה, דירות אקטיביות סומנו בטעות כלא פעילות.
 
-### קובץ חדש: `supabase/functions/trigger-availability-check-jina/index.ts`
-- העתקה מלאה של `trigger-availability-check/index.ts`
-- ההבדל היחיד: קריאה ל-`check-property-availability-jina` במקום `check-property-availability`
-- אותו flow: lock check, batching, self-chaining, daily limit, settings
+## מה בדיוק ישתנה
 
-### עדכון: `supabase/config.toml`
-- הוספת שתי הפונקציות החדשות עם `verify_jwt = false`
+### 1. קובץ: `supabase/functions/check-property-availability-jina/index.ts`
 
-## מה לא ישתנה
-- `check-property-availability` - נשאר כמו שהוא
-- `trigger-availability-check` - נשאר כמו שהוא
-- `_shared/availability-indicators.ts` - נשאר כמו שהוא
-- טבלאות DB - אותן טבלאות בדיוק (`availability_check_runs`, `scouted_properties`)
+שלושה שינויים בפונקציה `checkWithJina`:
 
-## איך תריץ את הניסוי
-תפעיל את `trigger-availability-check-jina` (ידנית או curl) והוא יעבוד בדיוק כמו המקורי - רק עם Jina במקום Firecrawl. תוכל לראות את התוצאות באותם מקומות.
+**א. זיהוי CAPTCHA (בדיקה חדשה לפני כל השאר):**
+אם התוכן מכיל "סליחה על ההפרעה" -- זה חסימת בוט, לא הסרה. מסומן כ-`madlan_captcha_blocked` (retryable).
+
+**ב. שינוי הלוגיקה של homepage redirect:**
+במקום לסמן `madlan_homepage_redirect` כ-inactive, מסמנים אותו כ-retryable. הסיבה: ב-Jina אי אפשר לסמוך שהפניה לדף הבית מעידה על הסרה -- היא יכולה להיות גם חסימת בוט.
+
+**ג. הוספת `madlan_captcha_blocked` לרשימת ה-retryable reasons:**
+כדי שדירות שנחסמו יחזרו לתור הבדיקה ולא ייזרקו.
+
+### 2. לא משנים את `availability-indicators.ts`
+הקובץ המשותף נשאר כמו שהוא -- ב-Firecrawl ההתנהגות תקינה. השינוי רק בקוד של Jina.
+
+## סדר הבדיקות החדש למדלן ב-Jina
+
+```text
+1. תוכן קצר מ-100 תווים? --> keeping active (retryable)
+2. מדלן + תוכן קצר מ-1000 תווים? --> madlan_skeleton (retryable)  
+3. מכיל "סליחה על ההפרעה"? --> madlan_captcha_blocked (retryable) [חדש]
+4. מכיל "המודעה הוסרה"? --> listing_removed_indicator (inactive) [נשאר]
+5. דף הבית של מדלן? --> madlan_homepage_redirect (retryable, לא inactive) [שינוי]
+6. אף אחד מהנ"ל? --> content_ok (active)
+```
+
+## התוצאה
+
+- **יד2 והומלס** -- אין שינוי, עובד מצוין
+- **מדלן** -- רק "המודעה הוסרה" (טקסט מפורש) יסמן דירה כלא פעילה. חסימות בוט והפניות לדף הבית יחזרו לתור הבדיקה
 
 ## פרטים טכניים
 
-### ההבדל בין Firecrawl ל-Jina בפועל
+### שינויי קוד ב-`checkWithJina`:
 
 ```text
-Firecrawl:
-  POST https://api.firecrawl.dev/v1/scrape
-  Authorization: Bearer {FIRECRAWL_KEY}
-  Body: { url, formats: ['markdown'], proxy: 'stealth', ... }
-  Response: { data: { markdown: "..." } }
+// אחרי בדיקת skeleton, לפני isListingRemoved:
+if (source === 'madlan' && markdown.includes('סליחה על ההפרעה')) {
+  return { isInactive: false, reason: 'madlan_captcha_blocked' };
+}
 
-Jina:
-  GET https://r.jina.ai/{url}
-  Authorization: Bearer {JINA_API_KEY}
-  Accept: text/markdown
-  X-No-Cache: true
-  X-Wait-For-Selector: body
-  X-Timeout: 30
-  Response: plain text markdown
+// שינוי ה-homepage redirect מ-inactive ל-retryable:
+if (source === 'madlan' && isMadlanHomepage(markdown)) {
+  return { isInactive: false, reason: 'madlan_homepage_redirect' };
+  // היה: isInactive: true
+}
 ```
 
-### Rate limit handling
-- Firecrawl: רוטציית מפתחות מורכבת (402/429)
-- Jina: פשוט retry. אם status 429 - ממתינים ומנסים שוב. בלי רוטציה
+### שינוי ברשימת retryableReasons:
 
-### הבדלי retry
-- הלוגיקה של `maxRetries` ו-`retryDelayMs` נשארת זהה
-- במקום `rateLimited` flag שמפעיל רוטציית מפתחות, פשוט retry רגיל
+```text
+const retryableReasons = new Set([
+  ...existing reasons,
+  'madlan_captcha_blocked',    // חדש
+  'madlan_homepage_redirect',  // הועבר לכאן מ-"inactive"
+]);
+```
 
-### מדלן skeleton detection
-- תוספת קטנה: אם source=madlan ו-content.length < 1000, מסומן כ-`madlan_skeleton` (retryable) במקום `content_ok`
