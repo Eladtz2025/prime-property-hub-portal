@@ -19,6 +19,7 @@ import { MatchingStatus } from './checks/MatchingStatus';
 import { BackfillStatus } from './checks/BackfillStatus';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgress } from '@/hooks/useBackfillProgress';
+import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 
 
@@ -101,6 +102,7 @@ const AvailabilitySettingsContent: React.FC = () => {
 export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfill = useBackfillProgress();
+  const backfillJina = useBackfillProgressJina();
 
   // Process kill switches (feature flags)
   const { data: processFlags } = useQuery({
@@ -109,7 +111,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase
         .from('feature_flags')
         .select('name, is_enabled')
-        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill']);
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina']);
       const flags: Record<string, boolean> = {};
       data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
       return flags;
@@ -469,6 +471,9 @@ export const ChecksDashboard: React.FC = () => {
           }
           historyTitle="היסטוריית בדיקות זמינות (Jina)"
           settingsTitle="הגדרות בדיקת זמינות (Jina)"
+          enabled={processFlags?.process_availability_jina ?? true}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability_jina', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
         />
 
         {/* Dedup */}
@@ -587,6 +592,34 @@ export const ChecksDashboard: React.FC = () => {
           enabled={processFlags?.process_backfill ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill', enabled: v })}
           isTogglePending={toggleFlag.isPending}
+        />
+
+        {/* Backfill Jina */}
+        <ProcessCard
+          title="השלמת נתונים 2 (Jina)"
+          icon={<Database className="h-4 w-4 text-teal-600" />}
+          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
+          statusText={backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : backfillJina.progress?.status === 'completed' ? 'הושלם' : 'לא הופעל'}
+          metrics={[
+            { label: 'נותרו', value: backfillRemaining ?? 0 },
+            { label: 'הצלחות', value: backfillJina.progress?.successful_items ?? 0 },
+            { label: 'כשלונות', value: backfillJina.progress?.failed_items ?? 0 },
+          ]}
+          onRun={backfillJina.start}
+          onStop={backfillJina.stop}
+          isRunPending={backfillJina.isStarting}
+          isStopPending={backfillJina.isStopping}
+          settingsContent={
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'אותה לוגיקת השלמת נתונים כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
+                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features, ומספר בית.',
+                'משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות.',
+              ]} />
+            </div>
+          }
+          settingsTitle="הגדרות השלמת נתונים (Jina)"
         />
       </div>
 
