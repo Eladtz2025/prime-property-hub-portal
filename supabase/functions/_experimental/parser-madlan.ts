@@ -2,9 +2,9 @@
  * Madlan Markdown Parser
  * 
  * Parses property listings from Madlan markdown.
- * Handles TWO distinct formats:
+ * Handles THREE distinct formats:
  * 
- * Format A - Broker listings (fragmented blocks):
+ * Format A - Broker listings (fragmented blocks, Firecrawl):
  * [![Address, City](IMG_URL)](listing_url)
  * [![](AGENT_IMG)](agent_url)
  * ‏Price ‏₪
@@ -14,18 +14,15 @@
  * Type, Street, Neighborhood
  * תיווך
  * 
- * Format B - Private listings (compact block with \\):
+ * Format B - Private listings (compact block with \\, Firecrawl):
  * [![Address, City](IMG_URL)\\
  * \\
  * ‏Price ‏₪\\
- * \\
- * X חד׳\\
- * \\
- * קומה Y\\
- * \\
- * Z מ"ר\\
- * \\
+ * ...
  * Type, Street, Neighborhood](listing_url)
+ * 
+ * Format D - Jina single-line format (both broker & private):
+ * [![Image X: Address, City](IMG) [![Image Y: ...](AGENT_IMG)](agentsOffice/...) Price₪ X חד׳ קומה Y Z מ"ר Type, Street, Neighborhood תיווך](listing_url)
  */
 
 import { 
@@ -103,7 +100,7 @@ export function parseMadlanMarkdown(
 export const parseMadlanHtml = parseMadlanMarkdown;
 
 // ============================================
-// Block Detection - Handles Format A & B
+// Block Detection - Handles Format A, B & D (Jina)
 // ============================================
 
 function findPropertyBlocks(markdown: string): string[] {
@@ -115,14 +112,34 @@ function findPropertyBlocks(markdown: string): string[] {
     const line = lines[i].trim();
     
     // =============================================
-    // FORMAT B DETECTION (PRIVATE listings)
+    // FORMAT D DETECTION (Jina single-line format)
+    // Entire listing is on one line:
+    // [![Image X: addr](IMG) ... content ... תיווך](listing_url)
+    // The listing URL is at the END of the line as a wrapping link
+    // =============================================
+    if (line.startsWith('[![Image') && line.includes('madlan.co.il/listings/')) {
+      // Extract listing URL from the END of the line (wrapping link)
+      const urlMatch = line.match(/https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s\]]+)/);
+      if (urlMatch) {
+        const urlId = urlMatch[1].replace(/\)$/, '');
+        if (!capturedUrls.has(urlId)) {
+          // Verify it has property data
+          if (line.includes('₪') || /\d+\s*חד[׳'ר]/.test(line) || /\d+\s*מ"ר/.test(line)) {
+            blocks.push(line);
+            capturedUrls.add(urlId);
+          }
+        }
+      }
+      continue;
+    }
+    
+    // =============================================
+    // FORMAT B DETECTION (PRIVATE listings, Firecrawl)
     // Multi-line block: starts with [![...](IMG)\\
     // and ends with ...](https://www.madlan.co.il/listings/XXX)
     // The listing URL is on the LAST line, not the first!
     // =============================================
     if (line.startsWith('[![') && line.endsWith('\\\\') && !line.includes('madlan.co.il/listings/')) {
-      // This looks like the start of a Format B block
-      // Collect lines until we find the closing ](listing_url)
       const blockLines: string[] = [line];
       let foundListing = false;
       
@@ -130,7 +147,6 @@ function findPropertyBlocks(markdown: string): string[] {
         const nextLine = lines[j].trim();
         blockLines.push(nextLine);
         
-        // Check if this line closes the block with a listing URL
         const listingMatch = nextLine.match(/\]\(https:\/\/www\.madlan\.co\.il\/listings\/([^\)\s]+)/);
         if (listingMatch) {
           const urlId = listingMatch[1].replace(/\)$/, '');
@@ -142,11 +158,10 @@ function findPropertyBlocks(markdown: string): string[] {
             }
           }
           foundListing = true;
-          i = j; // Skip past this block
+          i = j;
           break;
         }
         
-        // Stop if we hit a new block or section
         if (nextLine.startsWith('[![') && !nextLine.endsWith('\\\\') && !nextLine.endsWith('\\')) {
           break;
         }
@@ -183,7 +198,6 @@ function findPropertyBlocks(markdown: string): string[] {
         const nextLine = lines[j];
         const nextLineTrimmed = nextLine.trim();
         
-        // Stop if we hit a new property block
         if (nextLineTrimmed.startsWith('[![') && (nextLineTrimmed.includes('/listings/') || nextLineTrimmed.endsWith('\\\\'))) {
           break;
         }
@@ -383,9 +397,24 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   
   // Determine block format and split accordingly
   const isCompactBlock = block.includes('\\\\') && block.startsWith('[![');
+  const isJinaSingleLine = block.startsWith('[![Image') && !block.includes('\n');
   
   let parts: string[];
-  if (isCompactBlock) {
+  if (isJinaSingleLine) {
+    // Format D (Jina): Single line - extract the text content between images/links and the listing URL
+    // Strip markdown images and links to get plain text content
+    const plainText = block
+      .replace(/\[!\[[^\]]*\]\([^\)]*\)/g, '') // Remove [![alt](url) image tags
+      .replace(/\]\(https:\/\/www\.madlan\.co\.il\/[^\)]*\)/g, '') // Remove ](listing_url)
+      .replace(/\]\(https:\/\/www\.madlan\.co\.il\/agentsOffice\/[^\)]*\)/g, '') // Remove agent links
+      .replace(/[\u200F\u200E\u202A-\u202E\u2066-\u2069]/g, '') // Remove RTL/LTR marks
+      .trim();
+    // Split by spaces but keep meaningful chunks together
+    parts = plainText.split(/\s+/).filter(p => p.length > 0);
+    // Also create pseudo-parts for field extraction by joining back
+    // The plainText will be: "13,900₪ 4 חד׳ קומה 1 120 מ"ר דירה, בלקינד , הצפון החדש תיווך"
+    parts = [plainText]; // Use the whole cleaned text as one part for field extraction
+  } else if (isCompactBlock) {
     // Format B: Split by \\ 
     parts = block
       .split(/\\\\/)
@@ -399,21 +428,48 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
       .filter(p => p.length > 0);
   }
   
-  // Extract price
-  const pricePart = parts.find(p => p.includes('₪'));
-  const price = pricePart ? extractPrice(pricePart) : null;
+  // For Jina single-line format, extract fields directly from the raw block
+  // because the parts-based approach doesn't work well with one giant part
+  let price: number | null = null;
+  let rooms: number | null = null;
+  let floor: number | null = null;
+  let size: number | null = null;
   
-  // Extract rooms - look for "X חד׳" pattern
-  const roomsPart = parts.find(p => /\d+\.?\d*\s*חד[׳'ר]/.test(p));
-  const rooms = roomsPart ? extractRooms(roomsPart) : null;
-  
-  // Extract floor - look for "קומה" pattern
-  const floorPart = parts.find(p => /קומה/.test(p));
-  const floor = floorPart ? extractFloor(floorPart) : null;
-  
-  // Extract size - look for מ"ר pattern
-  const sizePart = parts.find(p => /\d+\s*מ"ר|\d+\s*מ״ר/.test(p));
-  const size = sizePart ? extractSize(sizePart) : null;
+  if (isJinaSingleLine) {
+    // Extract price: look for number followed by ₪ 
+    const priceMatch = block.match(/([\d,]+)\s*[\u200F\u200E]*₪/);
+    if (priceMatch) {
+      const priceStr = priceMatch[1].replace(/,/g, '');
+      const priceNum = parseInt(priceStr, 10);
+      if (priceNum >= 500 && priceNum <= 100000000) price = priceNum;
+    }
+    
+    // Extract rooms: "X חד׳"
+    const roomsMatch = block.match(/(\d+\.?\d*)\s*חד[׳'ר]/);
+    if (roomsMatch) rooms = parseFloat(roomsMatch[1]);
+    
+    // Extract floor: "קומה X" or "קומת קרקע"
+    const floorMatch = block.match(/קומה\s+(\d+)/);
+    if (floorMatch) floor = parseInt(floorMatch[1], 10);
+    else if (/קומת\s*קרקע/.test(block)) floor = 0;
+    
+    // Extract size: "X מ"ר"
+    const sizeMatch = block.match(/(\d+)\s*מ"ר/);
+    if (sizeMatch) size = parseInt(sizeMatch[1], 10);
+  } else {
+    // Original parts-based extraction for Format A/B/C
+    const pricePart = parts.find(p => p.includes('₪'));
+    price = pricePart ? extractPrice(pricePart) : null;
+    
+    const roomsPart = parts.find(p => /\d+\.?\d*\s*חד[׳'ר]/.test(p));
+    rooms = roomsPart ? extractRooms(roomsPart) : null;
+    
+    const floorPart = parts.find(p => /קומה/.test(p));
+    floor = floorPart ? extractFloor(floorPart) : null;
+    
+    const sizePart = parts.find(p => /\d+\s*מ"ר|\d+\s*מ״ר/.test(p));
+    size = sizePart ? extractSize(sizePart) : null;
+  }
   
   // Extract address and neighborhood
   let address: string | null = null;
@@ -453,8 +509,9 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   }
   
   // Also check alt text for address (may contain house number)
+  // Jina adds "Image XX: " prefix to alt text, clean it
   let altAddress: string | null = null;
-  const altMatch = block.match(/\[!\[([^\]]+)\]/);
+  const altMatch = block.match(/\[!\[(?:Image\s*\d+:\s*)?([^\]]+)\]/);
   if (altMatch) {
     const altText = altMatch[1];
     const altParts = altText.split(',').map(p => p.trim());
@@ -496,14 +553,20 @@ function parsePropertyBlock(block: string, propertyType: 'rent' | 'sale'): Parse
   
   let isPrivate: boolean | null = null;
   
-  // Check for broker labels (appear as standalone text after property details)
-  const hasTivuchLabel = /^תיווך$/m.test(block) || /\nתיווך\n/.test(block) || /\nתיווך$/.test(block);
-  const hasExclusivity = /^בבלעדיות$/m.test(block) || /\nבבלעדיות\n/.test(block) || /\nבבלעדיות$/.test(block);
+  // Check for broker labels
+  // Firecrawl: "תיווך" appears as standalone line
+  // Jina: "תיווך" appears inline before the closing ](url)
+  const hasTivuchLabel = /^תיווך$/m.test(block) || /\nתיווך\n/.test(block) || /\nתיווך$/.test(block)
+    || /תיווך\]\(/.test(block) || / תיווך\]/.test(block);
+  const hasExclusivity = /^בבלעדיות$/m.test(block) || /\nבבלעדיות\n/.test(block) || /\nבבלעדיות$/.test(block)
+    || /בבלעדיות\]\(/.test(block) || / בבלעדיות\]/.test(block);
   const hasAgentOfficeLink = block.includes('agentsOffice') || block.includes('/agents/');
   // "מתיווך" appears inline in some broker listings (means "from broker")
   const hasMeTivuch = /מתיווך/.test(block);
-  // Agent image: a second [![ linking to realEstateAgent or realEstateOffice image
-  const hasAgentImage = /\[!\[\]\(https:\/\/images2\.madlan\.co\.il\/.*(?:realEstateAgent|realEstateOffice)/.test(block);
+  // Agent image: [![ linking to realEstateAgent or realEstateOffice image
+  // Firecrawl: [![](https://images2.madlan.co.il/...realEstateAgent...)
+  // Jina: [![Image XX: ...](https://images2.madlan.co.il/...realEstateAgent...)
+  const hasAgentImage = /\[!\[(?:Image\s*\d+:[^\]]*)?\]\(https:\/\/images2\.madlan\.co\.il\/.*(?:realEstateAgent|realEstateOffice)/.test(block);
   
   if (hasTivuchLabel || hasExclusivity || hasAgentOfficeLink || hasMeTivuch || hasAgentImage) {
     isPrivate = false; // Broker
