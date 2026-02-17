@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
-import { isListingRemoved } from "../_shared/availability-indicators.ts";
+import { isListingRemoved, isMadlanHomepage } from "../_shared/availability-indicators.ts";
 import { getActiveFirecrawlKey, markKeyExhausted, isRateLimitError } from "../_shared/firecrawl-keys.ts";
 
 const GLOBAL_TIMEOUT_MS = 55000;
@@ -85,10 +85,16 @@ async function checkWithFirecrawl(
         return { isInactive: false, reason: 'short_content_keeping_active' };
       }
 
-      // The ONLY check: does the page contain a specific removal string?
+      // Check 1: does the page contain a specific removal string?
       if (isListingRemoved(markdown)) {
         console.log(`🚫 Removal text found for ${url}`);
         return { isInactive: true, reason: 'listing_removed_indicator' };
+      }
+
+      // Check 2: Madlan homepage redirect detection
+      if (source === 'madlan' && isMadlanHomepage(markdown)) {
+        console.log(`🚫 Madlan homepage redirect detected for ${url}`);
+        return { isInactive: true, reason: 'madlan_homepage_redirect' };
       }
 
       return { isInactive: false, reason: 'content_ok' };
