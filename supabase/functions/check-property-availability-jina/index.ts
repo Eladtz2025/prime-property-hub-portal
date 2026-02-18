@@ -46,7 +46,7 @@ async function checkWithJina(
 
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-Wait-For-Selector': 'body',
+        'X-Wait-For-Selector': isMadlan ? '[class*="listing"]' : 'body',
         'X-Timeout': isMadlan ? '45' : '30',
         'X-Locale': 'he-IL',
       };
@@ -54,6 +54,10 @@ async function checkWithJina(
       // Force fresh scrape only for non-Madlan (Madlan benefits from cache to avoid bot detection)
       if (!isMadlan) {
         headers['X-No-Cache'] = 'true';
+      }
+      // Israeli proxy for Madlan to bypass bot detection (same trick as Yad2 scanning)
+      if (isMadlan) {
+        headers['X-Proxy-Country'] = 'IL';
       }
 
 
