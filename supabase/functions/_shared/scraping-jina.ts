@@ -22,10 +22,6 @@ export async function scrapeWithJina(
   maxRetries = 3
 ): Promise<JinaScrapeResult | null> {
   const jinaKey = Deno.env.get('JINA_API_KEY');
-  if (!jinaKey) {
-    console.error('❌ JINA_API_KEY not configured');
-    return null;
-  }
 
   const isHomeless = source === 'homeless';
 
@@ -36,16 +32,20 @@ export async function scrapeWithJina(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
-      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, timeout: ${fetchTimeout/1000}s)`);
+      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, timeout: ${fetchTimeout/1000}s, auth: ${jinaKey ? 'yes' : 'free'})`);
 
       const headers: Record<string, string> = {
-        'Authorization': `Bearer ${jinaKey}`,
         'X-No-Cache': 'true',
         'X-Wait-For-Selector': 'body',
         'X-Timeout': '30',
         'X-Locale': 'he-IL',
         'X-With-Generated-Alt': 'false',
       };
+
+      // Use API key only if available (for higher rate limits)
+      if (jinaKey) {
+        headers['Authorization'] = `Bearer ${jinaKey}`;
+      }
 
       // Yad2 is a React SPA - needs longer render timeout but shorter fetch timeout
       if (isYad2) {

@@ -32,25 +32,31 @@ interface CheckResult {
 async function checkWithJina(
   url: string, 
   source: string, 
-  jinaApiKey: string,
   maxRetries: number,
   retryDelayMs: number
 ): Promise<{ isInactive: boolean; reason: string }> {
+  const jinaApiKey = Deno.env.get('JINA_API_KEY');
+  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+      const headers: Record<string, string> = {
+        'Accept': 'text/markdown',
+        'X-No-Cache': 'true',
+        'X-Wait-For-Selector': 'body',
+        'X-Timeout': '30',
+        'X-Locale': 'he-IL',
+      };
+
+      if (jinaApiKey) {
+        headers['Authorization'] = `Bearer ${jinaApiKey}`;
+      }
+
       const response = await fetch(`https://r.jina.ai/${url}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${jinaApiKey}`,
-          'Accept': 'text/markdown',
-          'X-No-Cache': 'true',
-          'X-Wait-For-Selector': 'body',
-          'X-Timeout': '30',
-          'X-Locale': 'he-IL',
-        },
+        headers,
         signal: controller.signal
       });
 
@@ -122,7 +128,6 @@ async function checkWithJina(
 
 async function checkSingleProperty(
   property: PropertyToCheck,
-  jinaApiKey: string,
   settings: any,
   timeoutMs: number
 ): Promise<CheckResult> {
@@ -133,7 +138,6 @@ async function checkSingleProperty(
   const checkPromise = checkWithJina(
     property.source_url,
     property.source,
-    jinaApiKey,
     settings.firecrawl_max_retries,
     settings.firecrawl_retry_delay_ms
   ).then(result => ({ id: property.id, ...result }));
@@ -151,7 +155,6 @@ async function checkSingleProperty(
 async function processPropertiesInParallel(
   properties: PropertyToCheck[],
   concurrencyLimit: number,
-  jinaApiKey: string,
   settings: any,
   abortSignal: AbortSignal
 ): Promise<CheckResult[]> {
@@ -168,7 +171,7 @@ async function processPropertiesInParallel(
     console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
     
     const chunkResults = await Promise.allSettled(
-      chunk.map(prop => checkSingleProperty(prop, jinaApiKey, settings, perPropertyTimeout))
+      chunk.map(prop => checkSingleProperty(prop, settings, perPropertyTimeout))
     );
     
     for (const result of chunkResults) {
@@ -198,16 +201,6 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const settings = await fetchCategorySettings(supabase, 'availability');
-
-  // Get Jina API key
-  const jinaApiKey = Deno.env.get('JINA_API_KEY');
-  if (!jinaApiKey) {
-    clearTimeout(globalTimeoutId);
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'No Jina API key available'
-    }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  }
 
   try {
     let propertyIds: string[] = [];
@@ -253,7 +246,6 @@ serve(async (req) => {
     const results = await processPropertiesInParallel(
       properties,
       concurrencyLimit,
-      jinaApiKey,
       settings,
       globalAbortController.signal
     );
