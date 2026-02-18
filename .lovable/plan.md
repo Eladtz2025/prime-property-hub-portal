@@ -1,83 +1,67 @@
 
-# תיקון בדיקת זמינות מדלן - התאמה ל-Jina Free Tier
 
-## הבעיה
-Jina Free Tier מגביל ל-20 בקשות לדקה. ההגדרות הנוכחיות שולחות בקשות מהר מדי:
-- `delay_between_batches_ms`: 1500ms (1.5 שניות בלבד בין באצ'ים)
-- `firecrawl_max_retries`: 1 (אין ניסיון חוזר בכלל על 429)
-- `concurrency_limit`: 2 (2 בקשות במקביל)
-- Self-chain עם 3 שניות בלבד
+# תיקון בדיקת זמינות מדלן - העתקת הטריקים של יד2
 
-תוצאה: Batch 2 כבר מקבל 429 (rate limited), ומסומן כ-`rate_limited` בלי ניסיון חוזר.
+## מה נמצא
+בסריקה של יד2 (`scraping-jina.ts`) יש שני headers שעוזרים לעבור הגנת בוטים:
+1. `X-Proxy-Country: IL` - גורם ל-Jina לנתב דרך פרוקסי ישראלי
+2. `X-Wait-For-Selector` ספציפי - סלקטור CSS שמכוון לתוכן אמיתי
 
-## הפתרון
+שני אלה עובדים על ה-Free Tier (בלי API key) ויד2 עובד מצוין איתם.
 
-### 1. עדכון הגדרות DB
-שינוי ההגדרות ב-`scout_settings`:
+בבדיקת הזמינות של מדלן, שניהם חסרים - מדלן מקבל רק `X-Wait-For-Selector: body` ובלי proxy.
+
+## מה ישתנה
+
+### קובץ: `supabase/functions/check-property-availability-jina/index.ts`
+
+בפונקציה `checkWithJina`, להוסיף למדלן:
 
 ```text
-delay_between_batches_ms: 1500 -> 8000  (8 שניות בין באצ'ים)
-firecrawl_max_retries: 1 -> 3           (3 ניסיונות חוזרים על 429)
-firecrawl_retry_delay_ms: 2000 -> 5000  (5 שניות המתנה לפני ניסיון חוזר)
+לפני (שורות 47-57):
+  headers = {
+    'Accept': 'text/markdown',
+    'X-Wait-For-Selector': 'body',
+    'X-Timeout': isMadlan ? '45' : '30',
+    'X-Locale': 'he-IL',
+  };
+  if (!isMadlan) headers['X-No-Cache'] = 'true';
+
+אחרי:
+  headers = {
+    'Accept': 'text/markdown',
+    'X-Wait-For-Selector': isMadlan ? '[class*="listing"]' : 'body',
+    'X-Timeout': isMadlan ? '45' : '30',
+    'X-Locale': 'he-IL',
+  };
+  if (!isMadlan) headers['X-No-Cache'] = 'true';
+  if (isMadlan) headers['X-Proxy-Country'] = 'IL';
 ```
 
-### 2. שינוי קוד: השהייה ארוכה יותר בין self-chains
-ב-`trigger-availability-check-jina/index.ts`:
-- שינוי ה-sleep לפני self-chain מ-3000ms ל-10000ms (10 שניות)
+### שינויים ספציפיים:
+1. **`X-Proxy-Country: IL`** למדלן - אותו header שעובד ליד2 בסריקה
+2. **`X-Wait-For-Selector`** ספציפי למדלן - `[class*="listing"]` במקום `body` גנרי, כדי לוודא שהתוכן האמיתי נטען ולא רק ה-skeleton
 
-### 3. שינוי קוד: השהייה בין בקשות בתוך באצ'
-ב-`check-property-availability-jina/index.ts`:
-- הוספת delay של 3 שניות בין בקשות בודדות בתוך כל chunk (כרגע שולח 2 במקביל ללא delay)
-
-### 4. איפוס נכסים שנתקעו עם rate_limited
-SQL migration לאיפוס נכסים שסומנו כ-rate_limited בריצה הנוכחית.
-
-### פירוט טכני
-
-**check-property-availability-jina -- processPropertiesInParallel:**
-במקום לשלוח את כל ה-chunk במקביל, לשלוח אותן אחת אחרי השנייה עם delay:
-```typescript
-// במקום Promise.allSettled במקביל:
-for (const prop of chunk) {
-  const result = await checkSingleProperty(prop, settings, perPropertyTimeout);
-  results.push(result);
-  // Wait between requests to respect rate limit
-  await new Promise(r => setTimeout(r, 3000));
-}
-```
-
-**trigger-availability-check-jina -- self-chain delay:**
-```typescript
-// לפני: await sleep(3000);
-await sleep(10000);
-```
-
-**SQL Migration:**
+### SQL: איפוס נכסי מדלן שנתקעו
 ```sql
-UPDATE scout_settings SET setting_value = '8000' 
-WHERE category = 'availability' AND setting_key = 'delay_between_batches_ms';
-
-UPDATE scout_settings SET setting_value = '3' 
-WHERE category = 'availability' AND setting_key = 'firecrawl_max_retries';
-
-UPDATE scout_settings SET setting_value = '5000' 
-WHERE category = 'availability' AND setting_key = 'firecrawl_retry_delay_ms';
-
-UPDATE scouted_properties 
-SET availability_checked_at = NULL, availability_check_reason = NULL, availability_check_count = 0
-WHERE availability_check_reason = 'rate_limited' AND is_active = true;
+UPDATE scouted_properties
+SET availability_checked_at = NULL, 
+    availability_check_reason = NULL, 
+    availability_check_count = 0
+WHERE source = 'madlan' 
+  AND is_active = true
+  AND availability_check_reason IN (
+    'madlan_skeleton', 'madlan_homepage_redirect', 
+    'madlan_captcha_blocked', 'per_property_timeout',
+    'jina_failed_after_retries'
+  );
 ```
-
-### קבצים שישתנו
-- `supabase/functions/check-property-availability-jina/index.ts`
-- `supabase/functions/trigger-availability-check-jina/index.ts`
-- SQL migration להגדרות ולאיפוס נכסים
 
 ### Deploy
 - `check-property-availability-jina`
-- `trigger-availability-check-jina`
 
-### תוצאה צפויה
-- כל 3 שניות בקשה אחת = ~20 בקשות לדקה (בדיוק בגבול)
-- ניסיונות חוזרים על 429 במקום כישלון מיידי
-- השהייה ארוכה יותר בין self-chains למניעת הצטברות
+### למה זה אמור לעבוד
+- אותו בדיוק מנגנון שעובד ליד2 בסריקה (Free Tier, בלי API key)
+- הפרוקסי הישראלי גורם לבקשה להיראות כמו גלישה רגילה מישראל
+- הסלקטור הספציפי מוודא שה-JavaScript של מדלן סיים לרנדר לפני שמחזירים תוכן
+
