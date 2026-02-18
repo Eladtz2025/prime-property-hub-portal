@@ -111,13 +111,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get Jina API key
-    const jinaApiKey = Deno.env.get('JINA_API_KEY');
-    if (!jinaApiKey) {
-      throw new Error('JINA_API_KEY not configured');
-    }
-
-    const { 
+    const {
       action = 'start', 
       task_id, 
       dry_run = false,
@@ -438,12 +432,10 @@ Deno.serve(async (req) => {
         const scrapeResponse = await fetch(`https://r.jina.ai/${prop.source_url}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${jinaApiKey}`,
             'Accept': 'text/markdown',
             'X-No-Cache': 'true',
             'X-Wait-For-Selector': 'body',
             'X-Timeout': '35',
-            'X-Proxy-Url': 'https://premium.residential-proxy.io',
           },
         });
 
