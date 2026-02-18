@@ -1,41 +1,65 @@
 
-# תיקון יד2 עם Jina - הוספת פרוקסי גיאוגרפי
+
+# תיקון Jina - מעבר למצב חופשי (ללא API)
 
 ## הבעיה
+הקוד הנוכחי שולח `Authorization: Bearer ${jinaKey}` לכל בקשה ל-Jina Reader, מה שמשתמש בקרדיטים בתשלום. כשנגמרו הקרדיטים, כל הבקשות מחזירות 402.
 
-Jina מתחבר ליד2 בהצלחה (637 תווים), אבל יד2 מזהה אותו כבוט ומציג דף captcha.
+Jina Reader תומך בשימוש חופשי לחלוטין -- פשוט שולחים בקשה ל-`r.jina.ai/{url}` בלי header של Authorization. המגבלה היחידה: 20 בקשות לדקה (לפי IP).
 
-ההבדל היחיד מ-Firecrawl שעובד: Firecrawl משתמש ב-`proxy: 'stealth'` (פרוקסי פרמיום), בעוד ש-Jina לא משתמש בפרוקסי בכלל.
+## הפתרון
 
-## הפתרון - שורה אחת
+### 1. `supabase/functions/_shared/scraping-jina.ts`
+- הסרת שורת ה-`Authorization` מה-headers
+- הסרת הבדיקה שמפסיקה אם אין JINA_API_KEY
+- אופציונלי: אם JINA_API_KEY קיים, להשתמש בו (לעדיפות גבוהה יותר), אבל אם לא -- לעבוד בלעדיו
 
-הוספת `X-Proxy-Country: IL` ל-headers של Jina עבור יד2. Header זה מפעיל פרוקסי residential ישראלי של Jina, שגורם לבקשה להיראות כמו משתמש רגיל מישראל.
+### 2. `supabase/functions/check-property-availability-jina/index.ts`
+- הסרת הדרישה ל-JINA_API_KEY (שורות 203-209 שמחזירות שגיאה אם אין מפתח)
+- הסרת `Authorization` header מפונקציית `checkWithJina` (שורה 47)
+- המשך העברת headers אחרים (X-No-Cache, X-Locale וכו')
 
-### שינוי טכני
+### פירוט טכני
 
-קובץ: `supabase/functions/_shared/scraping-jina.ts`
-
+**scraping-jina.ts -- שינויים:**
 ```typescript
-// בתוך הבלוק if (isYad2) -- שורות 51-54
-// מ:
-if (isYad2) {
-  headers['X-Timeout'] = '30';
-  headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
+// לפני:
+const jinaKey = Deno.env.get('JINA_API_KEY');
+if (!jinaKey) {
+  console.error('JINA_API_KEY not configured');
+  return null;
+}
+// ...
+headers: {
+  'Authorization': `Bearer ${jinaKey}`,
+  ...
 }
 
-// ל:
-if (isYad2) {
-  headers['X-Timeout'] = '30';
-  headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
-  headers['X-Proxy-Country'] = 'IL';
+// אחרי:
+const jinaKey = Deno.env.get('JINA_API_KEY');
+// ...
+const headers: Record<string, string> = {
+  'X-No-Cache': 'true',
+  ...
+};
+// Use API key only if available (for higher priority)
+if (jinaKey) {
+  headers['Authorization'] = `Bearer ${jinaKey}`;
 }
 ```
 
-### למה זה אמור לעבוד
+**check-property-availability-jina -- שינויים:**
+- הסרת הבדיקה שמפסיקה את הפונקציה אם אין JINA_API_KEY
+- שינוי `checkWithJina` שלא ידרוש `jinaApiKey` כפרמטר חובה
+- הוספת Authorization רק אם המפתח קיים
 
-- Firecrawl עובד ליד2 בזכות פרוקסי stealth (residential)
-- Jina מציע את אותה יכולת דרך `X-Proxy-Country` -- פרוקסי residential ממדינה ספציפית
-- יד2 אתר ישראלי, אז IP ישראלי residential יראה הכי טבעי
+### חשוב
+- מגבלת rate limit של 20/דקה בלי מפתח. המערכת כבר עובדת עם batch size 2 ו-delay, אז זה אמור להספיק
+- אם בעתיד תרצה לחזור למצב API (עם קרדיטים), פשוט תמלא את JINA_API_KEY והמערכת תשתמש בו אוטומטית
 
-### קובץ שישתנה
-- `supabase/functions/_shared/scraping-jina.ts` -- הוספת שורה אחת
+### קבצים שישתנו
+- `supabase/functions/_shared/scraping-jina.ts`
+- `supabase/functions/check-property-availability-jina/index.ts`
+
+### Deploy
+- `scout-yad2-jina`, `scout-madlan-jina`, `scout-homeless-jina`, `check-property-availability-jina`
