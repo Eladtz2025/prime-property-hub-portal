@@ -44,14 +44,12 @@ async function checkWithJina(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
-      // FINAL: Headers that work on Jina free tier (X-With-Generated-Alt causes 401!)
+      // Headers matching backfill, but Madlan skips X-No-Cache to use Jina cache (bypasses bot detection)
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-Locale': 'he-IL',
-        'X-Timeout': '30',
         'X-Wait-For-Selector': 'body',
+        'X-Timeout': '35',
       };
-      // X-No-Cache only for non-Madlan (Madlan uses cache to bypass bot detection)
       if (!isMadlan) {
         headers['X-No-Cache'] = 'true';
       }
