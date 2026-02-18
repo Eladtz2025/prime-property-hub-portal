@@ -1,67 +1,59 @@
 
 
-# תיקון בדיקת זמינות מדלן - העתקת הטריקים של יד2
+# ניסוי שיטתי - תיקון Headers של מדלן בבדיקת זמינות
 
-## מה נמצא
-בסריקה של יד2 (`scraping-jina.ts`) יש שני headers שעוזרים לעבור הגנת בוטים:
-1. `X-Proxy-Country: IL` - גורם ל-Jina לנתב דרך פרוקסי ישראלי
-2. `X-Wait-For-Selector` ספציפי - סלקטור CSS שמכוון לתוכן אמיתי
+## הרעיון
+יש 5 הבדלים בין ה-headers של הסקאוט (שעובד) לבדיקת הזמינות (שנכשלת). נבדוק כל אחד בנפרד כדי למצוא מה בדיוק חוסם.
 
-שני אלה עובדים על ה-Free Tier (בלי API key) ויד2 עובד מצוין איתם.
-
-בבדיקת הזמינות של מדלן, שניהם חסרים - מדלן מקבל רק `X-Wait-For-Selector: body` ובלי proxy.
-
-## מה ישתנה
-
-### קובץ: `supabase/functions/check-property-availability-jina/index.ts`
-
-בפונקציה `checkWithJina`, להוסיף למדלן:
+## שלב 1: החזרה ל-Headers של הסקאוט (כולם ביחד)
+קודם כל, נעתיק בדיוק את ה-headers מהסקאוט העובד לבדיקת הזמינות - כדי לוודא שזה בכלל עובד על דפי נכס בודדים:
 
 ```text
-לפני (שורות 47-57):
-  headers = {
-    'Accept': 'text/markdown',
-    'X-Wait-For-Selector': 'body',
-    'X-Timeout': isMadlan ? '45' : '30',
-    'X-Locale': 'he-IL',
-  };
-  if (!isMadlan) headers['X-No-Cache'] = 'true';
-
-אחרי:
-  headers = {
-    'Accept': 'text/markdown',
-    'X-Wait-For-Selector': isMadlan ? '[class*="listing"]' : 'body',
-    'X-Timeout': isMadlan ? '45' : '30',
-    'X-Locale': 'he-IL',
-  };
-  if (!isMadlan) headers['X-No-Cache'] = 'true';
-  if (isMadlan) headers['X-Proxy-Country'] = 'IL';
+headers = {
+  'Accept': 'text/markdown',
+  'X-No-Cache': 'true',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '30',
+  'X-Locale': 'he-IL',
+  'X-With-Generated-Alt': 'false',
+};
+// ללא X-Proxy-Country
 ```
 
-### שינויים ספציפיים:
-1. **`X-Proxy-Country: IL`** למדלן - אותו header שעובד ליד2 בסריקה
-2. **`X-Wait-For-Selector`** ספציפי למדלן - `[class*="listing"]` במקום `body` גנרי, כדי לוודא שהתוכן האמיתי נטען ולא רק ה-skeleton
+Deploy + בדיקה על 1-2 נכסי מדלן.
 
-### SQL: איפוס נכסי מדלן שנתקעו
-```sql
-UPDATE scouted_properties
-SET availability_checked_at = NULL, 
-    availability_check_reason = NULL, 
-    availability_check_count = 0
-WHERE source = 'madlan' 
-  AND is_active = true
-  AND availability_check_reason IN (
-    'madlan_skeleton', 'madlan_homepage_redirect', 
-    'madlan_captcha_blocked', 'per_property_timeout',
-    'jina_failed_after_retries'
-  );
+## שלב 2: אם שלב 1 עובד - ניסויים בודדים
+נחזיר כל header "בעייתי" אחד-אחד כדי למצוא מה חוסם:
+
+**ניסוי A**: הוספת `X-Proxy-Country: IL` בלבד
+**ניסוי B**: שינוי `X-Wait-For-Selector` ל-`[class*="listing"]`
+**ניסוי C**: הסרת `X-No-Cache`
+**ניסוי D**: הסרת `X-With-Generated-Alt`
+**ניסוי E**: שינוי `X-Timeout` ל-45
+
+כל ניסוי = deploy + בדיקה על נכס מדלן אחד.
+
+## שלב 2 (חלופי): אם שלב 1 לא עובד
+זה אומר שמדלן חוסם דפי נכס בודדים ללא קשר ל-headers, ואז צריך לחשוב על גישה אחרת (למשל בדיקה דרך דף חיפוש).
+
+## פרטים טכניים
+
+### קובץ שישתנה
+`supabase/functions/check-property-availability-jina/index.ts` - פונקציית `checkWithJina`, שורות 47-61
+
+### שלב 1 - קוד
+```typescript
+const headers: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-No-Cache': 'true',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '30',
+  'X-Locale': 'he-IL',
+  'X-With-Generated-Alt': 'false',
+};
+// ללא בלוקים של if (isMadlan) - אותם headers בדיוק לכל המקורות
 ```
 
-### Deploy
-- `check-property-availability-jina`
-
-### למה זה אמור לעבוד
-- אותו בדיוק מנגנון שעובד ליד2 בסריקה (Free Tier, בלי API key)
-- הפרוקסי הישראלי גורם לבקשה להיראות כמו גלישה רגילה מישראל
-- הסלקטור הספציפי מוודא שה-JavaScript של מדלן סיים לרנדר לפני שמחזירים תוכן
+### Deploy + בדיקה
+אחרי כל שינוי: deploy של `check-property-availability-jina`, ואז קריאת curl לבדיקת נכס מדלן אחד ובדיקת הלוגים.
 
