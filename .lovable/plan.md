@@ -1,59 +1,64 @@
 
 
-# ניסוי שיטתי - תיקון Headers של מדלן בבדיקת זמינות
+# תיקון Headers בבדיקת זמינות מדלן - התאמה ל-Backfill שעובד
 
-## הרעיון
-יש 5 הבדלים בין ה-headers של הסקאוט (שעובד) לבדיקת הזמינות (שנכשלת). נבדוק כל אחד בנפרד כדי למצוא מה בדיוק חוסם.
+## מה מצאנו
 
-## שלב 1: החזרה ל-Headers של הסקאוט (כולם ביחד)
-קודם כל, נעתיק בדיוק את ה-headers מהסקאוט העובד לבדיקת הזמינות - כדי לוודא שזה בכלל עובד על דפי נכס בודדים:
+ה-backfill (`backfill-property-data-jina`) מצליח לסרוק נכסי מדלן בודדים (136 נכסים הושלמו היום!), אבל בדיקת הזמינות נכשלת על אותם URLs בדיוק.
+
+### ההבדלים בין שתי המערכות
 
 ```text
-headers = {
-  'Accept': 'text/markdown',
-  'X-No-Cache': 'true',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '30',
-  'X-Locale': 'he-IL',
-  'X-With-Generated-Alt': 'false',
-};
-// ללא X-Proxy-Country
+Backfill (עובד על מדלן):              Availability (נכשל על מדלן):
+-----------------------------------    -----------------------------------
+'Accept': 'text/markdown'              'Accept': 'text/markdown'
+'X-No-Cache': 'true'          <--      (מוסר למדלן!)
+'X-Wait-For-Selector': 'body'          'X-Wait-For-Selector': 'body'
+'X-Timeout': '35'             <--      'X-Timeout': '30'
+                                        'X-Locale': 'he-IL'    <-- לא קיים ב-backfill!
 ```
 
-Deploy + בדיקה על 1-2 נכסי מדלן.
+שלושה הבדלים:
+1. **X-No-Cache** - ב-backfill נשלח `true` לכולם (כולל מדלן). בזמינות הוסר למדלן
+2. **X-Locale** - לא קיים כלל ב-backfill. בזמינות נשלח `he-IL`
+3. **X-Timeout** - ב-backfill `35`, בזמינות `30`
 
-## שלב 2: אם שלב 1 עובד - ניסויים בודדים
-נחזיר כל header "בעייתי" אחד-אחד כדי למצוא מה חוסם:
+## מה ישתנה
 
-**ניסוי A**: הוספת `X-Proxy-Country: IL` בלבד
-**ניסוי B**: שינוי `X-Wait-For-Selector` ל-`[class*="listing"]`
-**ניסוי C**: הסרת `X-No-Cache`
-**ניסוי D**: הסרת `X-With-Generated-Alt`
-**ניסוי E**: שינוי `X-Timeout` ל-45
+### קובץ: `supabase/functions/check-property-availability-jina/index.ts`
 
-כל ניסוי = deploy + בדיקה על נכס מדלן אחד.
+שינוי אחד בלבד - החלפת ה-headers (שורות 47-57) כך שיהיו **זהים בדיוק** ל-backfill:
 
-## שלב 2 (חלופי): אם שלב 1 לא עובד
-זה אומר שמדלן חוסם דפי נכס בודדים ללא קשר ל-headers, ואז צריך לחשוב על גישה אחרת (למשל בדיקה דרך דף חיפוש).
+```text
+לפני (שורות 47-57):
+  // FINAL: Headers that work on Jina free tier
+  const headers = {
+    'Accept': 'text/markdown',
+    'X-Locale': 'he-IL',
+    'X-Timeout': '30',
+    'X-Wait-For-Selector': 'body',
+  };
+  if (!isMadlan) {
+    headers['X-No-Cache'] = 'true';
+  }
 
-## פרטים טכניים
-
-### קובץ שישתנה
-`supabase/functions/check-property-availability-jina/index.ts` - פונקציית `checkWithJina`, שורות 47-61
-
-### שלב 1 - קוד
-```typescript
-const headers: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-No-Cache': 'true',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '30',
-  'X-Locale': 'he-IL',
-  'X-With-Generated-Alt': 'false',
-};
-// ללא בלוקים של if (isMadlan) - אותם headers בדיוק לכל המקורות
+אחרי:
+  // Headers identical to backfill-property-data-jina (proven to work on Madlan)
+  const headers = {
+    'Accept': 'text/markdown',
+    'X-No-Cache': 'true',
+    'X-Wait-For-Selector': 'body',
+    'X-Timeout': '35',
+  };
 ```
 
-### Deploy + בדיקה
-אחרי כל שינוי: deploy של `check-property-availability-jina`, ואז קריאת curl לבדיקת נכס מדלן אחד ובדיקת הלוגים.
+- הסרת `X-Locale: he-IL` (לא קיים ב-backfill)
+- `X-No-Cache: true` לכולם (כולל מדלן)
+- `X-Timeout: 35` (כמו ב-backfill)
+- בלי if/else לפי source - אותם headers בדיוק לכולם
 
+### Deploy ובדיקה
+Deploy של `check-property-availability-jina`, ואז בדיקה על נכס מדלן בודד לוודא שזה עובד.
+
+## למה זה אמור לעבוד
+ה-backfill השתמש בדיוק ב-headers האלה והצליח על 136 נכסי מדלן **היום**. אנחנו פשוט מעתיקים מה שכבר מוכח.
