@@ -1,65 +1,92 @@
 
+# הסרת JINA_API_KEY מכל המערכת + איפוס נכסים שנכשלו
 
-# תיקון Jina - מעבר למצב חופשי (ללא API)
+## מצב נוכחי
+- יש **1,882 נכסים** עם `jina_failed_after_retries` ו-**21** עם `rate_limited` -- כולם נכשלו בגלל שגיאת 402 (קרדיטים) אבל סומנו כאילו נבדקו
+- הקוד עדיין מכיל `JINA_API_KEY` ב-3 קבצים, חלקו אופציונלי וחלקו חובה
 
-## הבעיה
-הקוד הנוכחי שולח `Authorization: Bearer ${jinaKey}` לכל בקשה ל-Jina Reader, מה שמשתמש בקרדיטים בתשלום. כשנגמרו הקרדיטים, כל הבקשות מחזירות 402.
+## מה יתוקן
 
-Jina Reader תומך בשימוש חופשי לחלוטין -- פשוט שולחים בקשה ל-`r.jina.ai/{url}` בלי header של Authorization. המגבלה היחידה: 20 בקשות לדקה (לפי IP).
+### 1. איפוס נכסים שלא באמת נבדקו (SQL Migration)
+```sql
+UPDATE scouted_properties
+SET 
+  availability_checked_at = NULL,
+  availability_check_reason = NULL,
+  availability_check_count = 0
+WHERE availability_check_reason IN ('jina_failed_after_retries', 'rate_limited')
+  AND is_active = true;
+```
+זה יחזיר **1,903 נכסים** לתור הבדיקות כדי שייבדקו מחדש כראוי.
 
-## הפתרון
+### 2. הסרה מלאה של JINA_API_KEY מ-3 קבצים
 
-### 1. `supabase/functions/_shared/scraping-jina.ts`
-- הסרת שורת ה-`Authorization` מה-headers
-- הסרת הבדיקה שמפסיקה אם אין JINA_API_KEY
-- אופציונלי: אם JINA_API_KEY קיים, להשתמש בו (לעדיפות גבוהה יותר), אבל אם לא -- לעבוד בלעדיו
+**קובץ 1: `supabase/functions/_shared/scraping-jina.ts`**
+- הסרת `const jinaKey = Deno.env.get('JINA_API_KEY')`
+- הסרת הבלוק `if (jinaKey) { headers['Authorization'] = ... }`
+- הסרת ההתייחסות ל-`auth: yes/free` מהלוג
 
-### 2. `supabase/functions/check-property-availability-jina/index.ts`
-- הסרת הדרישה ל-JINA_API_KEY (שורות 203-209 שמחזירות שגיאה אם אין מפתח)
-- הסרת `Authorization` header מפונקציית `checkWithJina` (שורה 47)
-- המשך העברת headers אחרים (X-No-Cache, X-Locale וכו')
+**קובץ 2: `supabase/functions/check-property-availability-jina/index.ts`**
+- הסרת `const jinaApiKey = Deno.env.get('JINA_API_KEY')`
+- הסרת הבלוק `if (jinaApiKey) { headers['Authorization'] = ... }`
+
+**קובץ 3: `supabase/functions/backfill-property-data-jina/index.ts`**
+- הסרת הבדיקה שעוצרת את הפונקציה אם אין מפתח (שורות 114-118)
+- הסרת `'Authorization': \`Bearer ${jinaApiKey}\`` מה-headers של הבקשה (שורה 441)
+- הסרת `'X-Proxy-Url': 'https://premium.residential-proxy.io'` (פיצ'ר בתשלום)
+
+### 3. Deploy
+כל הפונקציות שמשתמשות ב-scraping-jina.ts:
+- `scout-yad2-jina`
+- `scout-madlan-jina`
+- `scout-homeless-jina`
+- `check-property-availability-jina`
+- `backfill-property-data-jina`
 
 ### פירוט טכני
 
-**scraping-jina.ts -- שינויים:**
+**scraping-jina.ts -- לפני:**
 ```typescript
-// לפני:
-const jinaKey = Deno.env.get('JINA_API_KEY');
-if (!jinaKey) {
-  console.error('JINA_API_KEY not configured');
-  return null;
-}
-// ...
-headers: {
-  'Authorization': `Bearer ${jinaKey}`,
-  ...
-}
-
-// אחרי:
 const jinaKey = Deno.env.get('JINA_API_KEY');
 // ...
-const headers: Record<string, string> = {
-  'X-No-Cache': 'true',
-  ...
-};
-// Use API key only if available (for higher priority)
 if (jinaKey) {
   headers['Authorization'] = `Bearer ${jinaKey}`;
 }
 ```
 
-**check-property-availability-jina -- שינויים:**
-- הסרת הבדיקה שמפסיקה את הפונקציה אם אין JINA_API_KEY
-- שינוי `checkWithJina` שלא ידרוש `jinaApiKey` כפרמטר חובה
-- הוספת Authorization רק אם המפתח קיים
+**scraping-jina.ts -- אחרי:**
+```typescript
+// No API key - using Jina free tier (20 req/min)
+```
 
-### חשוב
-- מגבלת rate limit של 20/דקה בלי מפתח. המערכת כבר עובדת עם batch size 2 ו-delay, אז זה אמור להספיק
-- אם בעתיד תרצה לחזור למצב API (עם קרדיטים), פשוט תמלא את JINA_API_KEY והמערכת תשתמש בו אוטומטית
+**backfill-property-data-jina -- לפני:**
+```typescript
+const jinaApiKey = Deno.env.get('JINA_API_KEY');
+if (!jinaApiKey) {
+  throw new Error('JINA_API_KEY not configured');
+}
+// ...
+headers: {
+  'Authorization': `Bearer ${jinaApiKey}`,
+  'X-Proxy-Url': 'https://premium.residential-proxy.io',
+  ...
+}
+```
+
+**backfill-property-data-jina -- אחרי:**
+```typescript
+// No API key needed - using Jina free tier
+// ...
+headers: {
+  'Accept': 'text/markdown',
+  'X-No-Cache': 'true',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+}
+```
 
 ### קבצים שישתנו
 - `supabase/functions/_shared/scraping-jina.ts`
 - `supabase/functions/check-property-availability-jina/index.ts`
-
-### Deploy
-- `scout-yad2-jina`, `scout-madlan-jina`, `scout-homeless-jina`, `check-property-availability-jina`
+- `supabase/functions/backfill-property-data-jina/index.ts`
+- SQL migration לאיפוס הנכסים
