@@ -160,23 +160,30 @@ async function processPropertiesInParallel(
   const results: CheckResult[] = [];
   const perPropertyTimeout = settings.per_property_timeout_ms || 15000;
   
-  for (let i = 0; i < properties.length; i += concurrencyLimit) {
+  const delayBetweenRequests = 3000; // 3s between requests to respect Jina free tier (20 req/min)
+  
+  for (let i = 0; i < properties.length; i++) {
     if (abortSignal.aborted) {
       console.log(`⏱️ Global timeout reached, stopping after ${results.length} results`);
       break;
     }
     
-    const chunk = properties.slice(i, i + concurrencyLimit);
-    console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
+    if (i > 0 && i % concurrencyLimit === 0) {
+      console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
+    } else if (i === 0) {
+      console.log(`🔄 Processing chunk 1`);
+    }
     
-    const chunkResults = await Promise.allSettled(
-      chunk.map(prop => checkSingleProperty(prop, settings, perPropertyTimeout))
-    );
+    try {
+      const result = await checkSingleProperty(properties[i], settings, perPropertyTimeout);
+      results.push(result);
+    } catch (err) {
+      console.error(`Error checking property ${properties[i].id}:`, err);
+    }
     
-    for (const result of chunkResults) {
-      if (result.status === 'fulfilled') {
-        results.push(result.value);
-      }
+    // Wait between requests to stay within Jina free tier rate limit
+    if (i < properties.length - 1) {
+      await new Promise(r => setTimeout(r, delayBetweenRequests));
     }
   }
   
