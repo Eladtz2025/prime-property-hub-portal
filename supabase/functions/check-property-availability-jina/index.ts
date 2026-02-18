@@ -44,20 +44,16 @@ async function checkWithJina(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
+      // FINAL: Headers that work on Jina free tier (X-With-Generated-Alt causes 401!)
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-Wait-For-Selector': isMadlan ? '[class*="listing"]' : 'body',
-        'X-Timeout': isMadlan ? '45' : '30',
         'X-Locale': 'he-IL',
+        'X-Timeout': '30',
+        'X-Wait-For-Selector': 'body',
       };
-
-      // Force fresh scrape only for non-Madlan (Madlan benefits from cache to avoid bot detection)
+      // X-No-Cache only for non-Madlan (Madlan uses cache to bypass bot detection)
       if (!isMadlan) {
         headers['X-No-Cache'] = 'true';
-      }
-      // Israeli proxy for Madlan to bypass bot detection (same trick as Yad2 scanning)
-      if (isMadlan) {
-        headers['X-Proxy-Country'] = 'IL';
       }
 
 
