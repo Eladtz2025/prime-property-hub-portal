@@ -1,5 +1,5 @@
-// Edge Function: check-property-availability-jina v1.0
-// Copy of check-property-availability with Jina AI Reader instead of Firecrawl
+// Edge Function: check-property-availability-jina v1.1
+// Uses Jina AI Reader with two-phase Madlan strategy (cache → fresh+proxy)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
@@ -27,7 +27,8 @@ interface CheckResult {
 }
 
 /**
- * Scrape a URL with Jina AI Reader and check for removal indicators
+ * Scrape a URL with Jina AI Reader and check for removal indicators.
+ * For Madlan: two-phase approach (cache first, then fresh+proxy if CAPTCHA detected)
  */
 async function checkWithJina(
   url: string, 
@@ -35,94 +36,103 @@ async function checkWithJina(
   maxRetries: number,
   retryDelayMs: number
 ): Promise<{ isInactive: boolean; reason: string }> {
+  const isMadlan = source === 'madlan';
   
+  // Madlan: Phase 1 = cache (fast), Phase 2 = fresh+proxy (bypasses CAPTCHA)
+  // Others: single phase with X-No-Cache
+  const phases = isMadlan 
+    ? [{ noCache: false, label: 'cache' }, { noCache: true, label: 'fresh+proxy' }]
+    : [{ noCache: true, label: 'standard' }];
   
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const isMadlan = source === 'madlan';
-      const fetchTimeout = isMadlan ? 50000 : 30000;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
+  for (const phase of phases) {
+    const attempts = isMadlan ? 1 : maxRetries;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        const fetchTimeout = isMadlan ? 50000 : 30000;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
-      // Headers matching backfill, but Madlan skips X-No-Cache to use Jina cache (bypasses bot detection)
-      const headers: Record<string, string> = {
-        'Accept': 'text/markdown',
-        'X-Wait-For-Selector': 'body',
-        'X-Timeout': '35',
-      };
-      if (!isMadlan) {
-        headers['X-No-Cache'] = 'true';
-      }
+        const headers: Record<string, string> = {
+          'Accept': 'text/markdown',
+          'X-Wait-For-Selector': 'body',
+          'X-Timeout': '35',
+        };
+        if (isMadlan) {
+          headers['X-Proxy-Country'] = 'IL';
+        }
+        if (phase.noCache) {
+          headers['X-No-Cache'] = 'true';
+        }
 
+        console.log(`🌐 Jina ${phase.label} for ${url} (attempt ${attempt})`);
 
+        const response = await fetch(`https://r.jina.ai/${url}`, {
+          method: 'GET',
+          headers,
+          signal: controller.signal
+        });
 
-
-      const response = await fetch(`https://r.jina.ai/${url}`, {
-        method: 'GET',
-        headers,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.warn(`⚠️ Jina rate limited (429) for ${url}, attempt ${attempt}/${maxRetries}`);
-          if (attempt < maxRetries) {
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          if (response.status === 429) {
+            console.warn(`⚠️ Jina rate limited (429) for ${url}`);
+            if (!isMadlan && attempt < maxRetries) {
+              await new Promise(r => setTimeout(r, retryDelayMs * attempt));
+              continue;
+            }
+            return { isInactive: false, reason: 'rate_limited' };
+          }
+          console.warn(`Jina returned ${response.status} for ${url}`);
+          if (!isMadlan && attempt < maxRetries) {
             await new Promise(r => setTimeout(r, retryDelayMs * attempt));
             continue;
           }
-          return { isInactive: false, reason: 'rate_limited' };
+          break; // try next phase for Madlan
         }
-        console.warn(`Jina returned ${response.status} for ${url}`);
-        if (attempt < maxRetries) {
+
+        const markdown = await response.text();
+
+        if (!markdown || markdown.length < 100) {
+          console.log(`⚠️ Very short/empty content (${markdown.length} chars) for ${url} — keeping active`);
+          return { isInactive: false, reason: 'short_content_keeping_active' };
+        }
+
+        // Madlan CAPTCHA/skeleton detection — try next phase
+        if (isMadlan && (markdown.length < 1000 || markdown.includes('סליחה על ההפרעה'))) {
+          console.log(`🤖 Madlan CAPTCHA/skeleton (${markdown.length} chars) in ${phase.label} phase for ${url}`);
+          if (phase.label !== 'fresh+proxy') {
+            await new Promise(r => setTimeout(r, 2000));
+            break; // break inner loop, continue to next phase
+          }
+          return { isInactive: false, reason: 'madlan_captcha_blocked' };
+        }
+
+        // Check removal indicators
+        if (isListingRemoved(markdown)) {
+          console.log(`🚫 Removal text found for ${url}`);
+          return { isInactive: true, reason: 'listing_removed_indicator' };
+        }
+
+        // Madlan homepage redirect (improved: excludes real listing pages)
+        if (isMadlan && isMadlanHomepage(markdown)) {
+          console.log(`🔄 Madlan homepage redirect for ${url} — treating as retryable`);
+          return { isInactive: false, reason: 'madlan_homepage_redirect' };
+        }
+
+        console.log(`✅ Content OK for ${url} (${markdown.length} chars, ${phase.label})`);
+        return { isInactive: false, reason: 'content_ok' };
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (!isMadlan && attempt < maxRetries) {
+          console.log(`⚠️ Attempt ${attempt} failed (${errorMsg}), retrying...`);
           await new Promise(r => setTimeout(r, retryDelayMs * attempt));
           continue;
         }
-        return { isInactive: false, reason: 'jina_failed_after_retries' };
+        console.error(`Jina error for ${url}:`, errorMsg);
+        if (isMadlan) break; // try next phase
       }
-
-      const markdown = await response.text();
-
-      if (!markdown || markdown.length < 100) {
-        console.log(`⚠️ Very short/empty content (${markdown.length} chars) for ${url} — keeping active`);
-        return { isInactive: false, reason: 'short_content_keeping_active' };
-      }
-
-      // Madlan skeleton detection: if content is suspiciously short, mark as retryable
-      if (source === 'madlan' && markdown.length < 1000) {
-        console.log(`⚠️ Madlan skeleton detected (${markdown.length} chars) for ${url}`);
-        return { isInactive: false, reason: 'madlan_skeleton' };
-      }
-
-      // Check 1: Madlan CAPTCHA/bot block detection (before removal checks)
-      if (source === 'madlan' && markdown.includes('סליחה על ההפרעה')) {
-        console.log(`🤖 Madlan CAPTCHA block detected for ${url} — retryable`);
-        return { isInactive: false, reason: 'madlan_captcha_blocked' };
-      }
-
-      // Check 2: does the page contain a specific removal string?
-      if (isListingRemoved(markdown)) {
-        console.log(`🚫 Removal text found for ${url}`);
-        return { isInactive: true, reason: 'listing_removed_indicator' };
-      }
-
-      // Check 3: Madlan homepage redirect — treated as retryable in Jina (can't distinguish bot block from real removal)
-      if (source === 'madlan' && isMadlanHomepage(markdown)) {
-        console.log(`🔄 Madlan homepage redirect for ${url} — treating as retryable (possible bot block)`);
-        return { isInactive: false, reason: 'madlan_homepage_redirect' };
-      }
-
-      return { isInactive: false, reason: 'content_ok' };
-
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      if (attempt < maxRetries) {
-        console.log(`⚠️ Attempt ${attempt} failed (${errorMsg}), retrying...`);
-        await new Promise(r => setTimeout(r, retryDelayMs * attempt));
-        continue;
-      }
-      console.error(`Jina error for ${url}:`, errorMsg);
     }
   }
   

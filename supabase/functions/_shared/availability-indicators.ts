@@ -50,9 +50,33 @@ export function isListingRemoved(content: string): boolean {
 
 /**
  * Check if content is Madlan's homepage (redirect from removed listing)
+ * Must match homepage indicators AND NOT contain listing-specific content
  */
 export function isMadlanHomepage(content: string): boolean {
   if (!content) return false;
+  
+  // If the page has listing-specific content, it's NOT a homepage redirect
+  const listingIndicators = [
+    'דירה להשכרה:',
+    'דירה למכירה:',
+    'דירת גן להשכרה:',
+    'דירת גן למכירה:',
+    'פנטהאוז להשכרה:',
+    'פנטהאוז למכירה:',
+    'בית פרטי להשכרה:',
+    'בית פרטי למכירה:',
+    'דו משפחתי',
+    'משרד להשכרה:',
+    'משרד למכירה:',
+  ];
+  
+  for (const indicator of listingIndicators) {
+    if (content.includes(indicator)) {
+      return false; // It's a real listing page, not homepage
+    }
+  }
+  
+  // Only then check for homepage indicators
   let count = 0;
   for (const indicator of MADLAN_HOMEPAGE_INDICATORS) {
     if (content.includes(indicator)) count++;
