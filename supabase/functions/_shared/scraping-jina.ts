@@ -21,10 +21,7 @@ export async function scrapeWithJina(
   source: string,
   maxRetries = 3
 ): Promise<JinaScrapeResult | null> {
-  const jinaKey = Deno.env.get('JINA_API_KEY');
-
   const isHomeless = source === 'homeless';
-
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const isYad2 = source === 'yad2';
@@ -32,7 +29,7 @@ export async function scrapeWithJina(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
-      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, timeout: ${fetchTimeout/1000}s, auth: ${jinaKey ? 'yes' : 'free'})`);
+      console.log(`🌐 Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} (source: ${source}, timeout: ${fetchTimeout/1000}s, free tier)`);
 
       const headers: Record<string, string> = {
         'X-No-Cache': 'true',
@@ -42,10 +39,7 @@ export async function scrapeWithJina(
         'X-With-Generated-Alt': 'false',
       };
 
-      // Use API key only if available (for higher rate limits)
-      if (jinaKey) {
-        headers['Authorization'] = `Bearer ${jinaKey}`;
-      }
+      // Yad2
 
       // Yad2 is a React SPA - needs longer render timeout but shorter fetch timeout
       if (isYad2) {

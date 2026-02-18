@@ -35,7 +35,7 @@ async function checkWithJina(
   maxRetries: number,
   retryDelayMs: number
 ): Promise<{ isInactive: boolean; reason: string }> {
-  const jinaApiKey = Deno.env.get('JINA_API_KEY');
+  
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -50,9 +50,8 @@ async function checkWithJina(
         'X-Locale': 'he-IL',
       };
 
-      if (jinaApiKey) {
-        headers['Authorization'] = `Bearer ${jinaApiKey}`;
-      }
+
+
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
         method: 'GET',
