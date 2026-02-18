@@ -39,16 +39,22 @@ async function checkWithJina(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      const isMadlan = source === 'madlan';
+      const fetchTimeout = isMadlan ? 50000 : 30000;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-No-Cache': 'true',
         'X-Wait-For-Selector': 'body',
-        'X-Timeout': '30',
+        'X-Timeout': isMadlan ? '45' : '30',
         'X-Locale': 'he-IL',
       };
+
+      // Force fresh scrape only for non-Madlan (Madlan benefits from cache to avoid bot detection)
+      if (!isMadlan) {
+        headers['X-No-Cache'] = 'true';
+      }
 
 
 
