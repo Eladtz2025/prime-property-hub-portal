@@ -75,6 +75,7 @@ const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingForm
 const PhotoStudio = React.lazy(() => import('./pages/PhotoStudio'));
 const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
+const ClientIntakePageEN = React.lazy(() => import('./pages/ClientIntakePageEN'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
 const DynamicPresentationPricingPage = React.lazy(() => import('./pages/DynamicPresentationPricingPage'));
@@ -128,6 +129,7 @@ const AppContent: React.FC = () => {
           
           {/* Client Intake Form - Public form for leads */}
           <Route path="/client-intake" element={<ClientIntakePage />} />
+          <Route path="/client-intake/en" element={<ClientIntakePageEN />} />
           
           {/* Price Offer Public Views - Clean pages without layout */}
           <Route path="/price-offer/:token" element={<PriceOfferView />} />
