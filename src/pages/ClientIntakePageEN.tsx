@@ -164,12 +164,28 @@ export default function ClientIntakePageEN() {
 
       const { data: existingCustomers } = await supabase
         .from('contact_leads')
-        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status');
+        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status, message, property_type');
       
       const existingCustomer = existingCustomers?.find(customer => {
         const customerSuffix = getPhoneSuffix(customer.phone, 9);
         return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
       }) || null;
+
+      // Determine message: don't overwrite existing with default text
+      const userMessage = formData.message?.trim();
+      let finalMessage: string;
+      if (existingCustomer) {
+        const existingMessage = existingCustomer.message || '';
+        if (userMessage) {
+          finalMessage = existingMessage && existingMessage !== userMessage
+            ? `${existingMessage}\n---\n${userMessage}`
+            : userMessage;
+        } else {
+          finalMessage = existingMessage || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`;
+        }
+      } else {
+        finalMessage = userMessage || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`;
+      }
 
       const commonData = {
         name: formData.name.trim(),
@@ -197,13 +213,15 @@ export default function ClientIntakePageEN() {
         roof_flexible: formData.roof_flexible,
         pets_flexible: formData.pets_flexible,
         pets: formData.property_type === 'rental' ? formData.pets : false,
-        message: formData.message?.trim() || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`,
+        message: finalMessage,
         tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
         cash_available: null,
         new_or_second_hand: null,
       };
 
-      if (existingCustomer) {
+      const shouldCreateNew = existingCustomer && existingCustomer.property_type !== formData.property_type;
+
+      if (existingCustomer && !shouldCreateNew) {
         const existingCities = existingCustomer.preferred_cities || [];
         const existingNeighborhoods = existingCustomer.preferred_neighborhoods || [];
         

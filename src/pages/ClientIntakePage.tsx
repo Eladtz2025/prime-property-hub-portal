@@ -169,12 +169,30 @@ export default function ClientIntakePage() {
 
       const { data: existingCustomers } = await supabase
         .from('contact_leads')
-        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status');
+        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status, message, property_type');
       
       const existingCustomer = existingCustomers?.find(customer => {
         const customerSuffix = getPhoneSuffix(customer.phone, 9);
         return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
       }) || null;
+
+      // Determine message: don't overwrite existing with default text
+      const userMessage = formData.message?.trim();
+      let finalMessage: string;
+      if (existingCustomer) {
+        const existingMessage = existingCustomer.message || '';
+        if (userMessage) {
+          // Append new message to existing (if different)
+          finalMessage = existingMessage && existingMessage !== userMessage
+            ? `${existingMessage}\n---\n${userMessage}`
+            : userMessage;
+        } else {
+          // No new message - keep existing
+          finalMessage = existingMessage || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`;
+        }
+      } else {
+        finalMessage = userMessage || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`;
+      }
 
       // Build the common data object
       const commonData = {
@@ -203,13 +221,16 @@ export default function ClientIntakePage() {
         roof_flexible: formData.roof_flexible,
         pets_flexible: formData.pets_flexible,
         pets: formData.property_type === 'rental' ? formData.pets : false,
-        message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
+        message: finalMessage,
         tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
         cash_available: null,
         new_or_second_hand: null,
       };
 
-      if (existingCustomer) {
+      // Check if existing customer has different property_type - create new record instead of overwriting
+      const shouldCreateNew = existingCustomer && existingCustomer.property_type !== formData.property_type;
+
+      if (existingCustomer && !shouldCreateNew) {
         const existingCities = existingCustomer.preferred_cities || [];
         const existingNeighborhoods = existingCustomer.preferred_neighborhoods || [];
         

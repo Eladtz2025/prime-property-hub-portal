@@ -228,18 +228,47 @@ const AdminForms = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {/* Client Link - direct action, no popover */}
-          <button
-            onClick={handleCopyClientIntakeLink}
-            className={`flex flex-col items-center justify-center p-4 rounded-xl 
-              ${copied ? 'bg-green-50 dark:bg-green-950/30' : 'bg-purple-50 dark:bg-purple-950/30'} 
-              border border-border hover:border-primary/40 
-              transition-all duration-200 hover:shadow-md hover:scale-[1.02]
-              min-h-[100px] gap-2`}
-          >
-            {copied ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-purple-600" />}
-            <span className="text-sm font-medium text-center">לינק ללקוח</span>
-          </button>
+          {/* Client Link - popover with language selection */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`flex flex-col items-center justify-center p-4 rounded-xl 
+                  ${copied ? 'bg-green-50 dark:bg-green-950/30' : 'bg-purple-50 dark:bg-purple-950/30'} 
+                  border border-border hover:border-primary/40 
+                  transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+                  min-h-[100px] gap-2`}
+              >
+                {copied ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-purple-600" />}
+                <span className="text-sm font-medium text-center">לינק ללקוח</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-2" align="center">
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/client-intake`);
+                    setCopied(true);
+                    toast.success('הלינק הועתק!', { description: 'לינק בעברית' });
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                >
+                  🇮🇱 עברית
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/client-intake/en`);
+                    setCopied(true);
+                    toast.success('Link copied!', { description: 'English link' });
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                >
+                  🇺🇸 English
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* All other cubes with popover */}
           {actionCubes.map((cube) => {
