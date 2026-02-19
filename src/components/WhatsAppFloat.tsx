@@ -56,7 +56,8 @@ const WhatsAppFloat = () => {
   const isBrokerageFormPage = location.pathname.startsWith('/brokerage-form');
   const isOfferLuxuryPage = location.pathname.startsWith('/offer-luxury');
   const isOfferPage = location.pathname.startsWith('/offer/');
-  if (isPropertyDetailPage || isAdminPage || isBrokerageFormPage || isOfferLuxuryPage || isOfferPage) return null;
+  const isProfessionalsPage = location.pathname.startsWith('/professionals/shared');
+  if (isPropertyDetailPage || isAdminPage || isBrokerageFormPage || isOfferLuxuryPage || isOfferPage || isProfessionalsPage) return null;
 
   return (
     <button
