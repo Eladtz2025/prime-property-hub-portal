@@ -1,27 +1,42 @@
 
-## עדכון WhatsApp עם הודעה מוכנה + הסרת כפתור העתקת טלפון
+## שדרוג עיצוב דפי אנשי מקצוע הציבוריים
 
-### מה ישתנה
+### בעיות שזוהו
 
-**1. הודעת WhatsApp מוכנה מראש**
-בכל 3 הקבצים, פונקציית ה-WhatsApp תשלח הודעה מוכנה עם שם איש המקצוע:
-- עברית: "שלום {שם}, קיבלנו את הטלפון שלך מחברת הנדל״ן סיטי מרקט. מה נשמע?"
-- אנגלית (בדף EN): "Hi {name}, we got your number from City Market Real Estate. How are you?"
+1. **עיצוב בסיסי מדי** - הדפים נראים פשוטים וחסרי מקצועיות
+2. **דף אנגלי מציג עברית** - שמות אנשי מקצוע, אזורים והערות מוצגים בעברית בדף האנגלי (כי הנתונים בDB בעברית - זה בסדר, אבל צריך לוודא שה-layout מתאים ל-mixed content)
+3. **כפתור שפה חוסם כותרת במובייל** - הכפתור ב-absolute position מתנגש עם הכותרת
 
-**2. הסרת כפתור "העתק טלפון"**
-הכפתור יוסר מהרשימה באדמין (`ProfessionalsList.tsx`). כפתורי חיוג ו-WhatsApp נשארים.
+### שינויים מתוכננים
+
+**1. Header משודרג**
+- כפתור שפה יעבור לתוך ה-flow של ה-header (לא absolute) - שורה נפרדת מעל הכותרת
+- הוספת gradient רקע לכותרת במקום רקע שטוח
+- טיפוגרפיה משופרת
+
+**2. כרטיסי אנשי מקצוע ברמה גבוהה יותר**
+- הוספת hover effects עדינים
+- מרווחים טובים יותר
+- כפתורים מעוצבים יותר עם rounded-full ו-shadow
+- קוד קופון עם עיצוב יותר מלוטש
+- שמות מקצועות כ-badge מעוצב
+
+**3. תיקון דף אנגלי**
+- ה-layout יתמוך ב-mixed RTL/LTR content (שמות בעברית בתוך דף LTR)
+- כפתור השפה יהיה בצד ימין (בהתאם ל-LTR)
 
 ### פרטים טכניים
 
-**3 קבצים לעדכון:**
+**קבצים שישתנו:**
 
-**`src/pages/ProfessionalsPublicPage.tsx`** (שורות 67-71):
-- שינוי `whatsApp(phone)` ל-`whatsApp(phone, name)`
-- הוספת `text` parameter עם ההודעה בעברית ל-URL של WhatsApp
+**`src/pages/ProfessionalsPublicPage.tsx`**
+- שינוי Header: הסרת `relative` ו-`absolute` מהכפתור, הוספת `flex justify-between` שורה עליונה
+- שדרוג כרטיסים: `hover:shadow-md transition-shadow`, כפתורים `rounded-full`
+- כפתור Call: gradient background במקום solid
+- כפתור WhatsApp: רקע ירוק בהיר עם border מעוצב
+- Badge מקצוע: עם רקע צבעוני עדין
 
-**`src/pages/ProfessionalsPublicPageEN.tsx`** (שורות 85-89):
-- אותו שינוי, עם הודעה באנגלית
-
-**`src/components/ProfessionalsList.tsx`**:
-- עדכון פונקציית WhatsApp להוסיף הודעה מוכנה
-- הסרת state של `copiedPhone` וכפתור "העתק טלפון"
+**`src/pages/ProfessionalsPublicPageEN.tsx`**
+- אותם שינויי עיצוב כמו בדף העברי
+- כפתור שפה בצד ימין (right) במקום שמאל
+- הוספת `dir="rtl"` על אלמנטים של שמות עבריים כדי שיוצגו נכון
