@@ -11,6 +11,8 @@ export interface Professional {
   notes: string | null;
   website: string | null;
   coupon_code: string | null;
+  name_en: string | null;
+  area_en: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

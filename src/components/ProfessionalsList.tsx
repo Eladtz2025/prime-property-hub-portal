@@ -28,7 +28,7 @@ const PROFESSION_EMOJI: Record<string, string> = {
   'אחר': '👷',
 };
 
-const emptyPro: NewProfessional = { name: '', profession: '', phone: '', area: '', notes: '', website: '', coupon_code: '' };
+const emptyPro: NewProfessional = { name: '', profession: '', phone: '', area: '', notes: '', website: '', coupon_code: '', name_en: '', area_en: '' };
 
 const ProfessionalsList = () => {
   const { professionals, loading, addProfessional, updateProfessional, deleteProfessional } = useProfessionals();
@@ -59,6 +59,8 @@ const ProfessionalsList = () => {
       notes: pro.notes || '',
       website: pro.website || '',
       coupon_code: pro.coupon_code || '',
+      name_en: pro.name_en || '',
+      area_en: pro.area_en || '',
     });
     setShowForm(true);
   };
@@ -199,6 +201,10 @@ const ProfessionalsList = () => {
               <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="שם מלא" />
             </div>
             <div>
+              <label className="text-sm font-medium mb-1 block">Name (English)</label>
+              <Input dir="ltr" value={formData.name_en || ''} onChange={e => setFormData({ ...formData, name_en: e.target.value })} placeholder="Full name in English" />
+            </div>
+            <div>
               <label className="text-sm font-medium mb-1 block">מקצוע *</label>
               <Select value={formData.profession} onValueChange={v => setFormData({ ...formData, profession: v })}>
                 <SelectTrigger><SelectValue placeholder="בחר מקצוע" /></SelectTrigger>
@@ -212,6 +218,10 @@ const ProfessionalsList = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">אזור</label>
               <Input value={formData.area || ''} onChange={e => setFormData({ ...formData, area: e.target.value })} placeholder="תל אביב, מרכז..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Area (English)</label>
+              <Input dir="ltr" value={formData.area_en || ''} onChange={e => setFormData({ ...formData, area_en: e.target.value })} placeholder="Tel Aviv, Center..." />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">אתר</label>

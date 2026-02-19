@@ -32,6 +32,8 @@ interface Professional {
   notes: string | null;
   website: string | null;
   coupon_code: string | null;
+  name_en: string | null;
+  area_en: string | null;
 }
 
 const ProfessionalsPublicPageEN = () => {
@@ -44,7 +46,7 @@ const ProfessionalsPublicPageEN = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from('professionals_list')
-        .select('id, name, profession, phone, area, notes, website, coupon_code')
+        .select('id, name, profession, phone, area, notes, website, coupon_code, name_en, area_en')
         .order('profession', { ascending: true });
       setProfessionals((data as Professional[]) || []);
       setLoading(false);
@@ -121,9 +123,9 @@ const ProfessionalsPublicPageEN = () => {
                     className="rounded-xl border border-border/20 bg-white p-5 md:p-6 space-y-3 hover:border-border/40 transition-colors"
                   >
                     <div>
-                      <h3 className="font-[Playfair_Display] text-lg text-foreground" dir="rtl">{pro.name}</h3>
-                      {pro.area && (
-                        <span className="text-xs text-muted-foreground/60 font-light" dir="rtl">{pro.area}</span>
+                      <h3 className="font-[Playfair_Display] text-lg text-foreground" dir={pro.name_en ? 'ltr' : 'rtl'}>{pro.name_en || pro.name}</h3>
+                      {(pro.area_en || pro.area) && (
+                        <span className="text-xs text-muted-foreground/60 font-light" dir={pro.area_en ? 'ltr' : 'rtl'}>{pro.area_en || pro.area}</span>
                       )}
                       {pro.notes && <p className="text-sm text-muted-foreground/70 mt-1.5 leading-relaxed font-light" dir="rtl">{pro.notes}</p>}
                     </div>
