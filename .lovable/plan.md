@@ -1,76 +1,37 @@
 
 
-## Fix English Intake Form -- 3 Issues
+## התאמת הטופס העברי לרמת הטופס האנגלי
 
-### 1. Cities and Neighborhoods in Hebrew
+### מה לא עובד טוב
 
-**Problem:** The English form reuses `CitySelectorDropdown` and `NeighborhoodSelectorDropdown` which pull labels from `locations.ts` -- all in Hebrew. The dropdown display text is also Hebrew ("בחר ערים...", "בחר שכונות...").
+1. **גובה לא אחיד** - הכפתורים של ערים/שכונות בגובה h-8 בזמן שכל שאר השדות בגובה h-11 (44px). זה נראה לא מיושר.
 
-**Solution:** Create English-specific versions of these dropdown components directly inside `ClientIntakePageEN.tsx`:
-- Define `CITIES_EN` array mapping Hebrew values to English labels (e.g., `תל אביב יפו` -> `Tel Aviv`, `רמת גן` -> `Ramat Gan`, etc.)
-- Define `NEIGHBORHOODS_EN` mapping Hebrew neighborhood values to English labels (e.g., `צפון_ישן` -> `Old North`, `נווה_צדק` -> `Neve Tzedek`, etc.)
-- Create inline `CitySelectorEN` and `NeighborhoodSelectorEN` components that use these English labels
-- The stored **values** remain Hebrew (for DB compatibility), only the **display labels** change
+2. **RTL גלובלי** - ה-hook `useMobileOptimization` מגדיר `document.dir = 'rtl'` ברמה הגלובלית, מה שעלול לפגוע בטופס האנגלי. כל טופס צריך לנהל את ה-direction שלו בעצמו.
 
-### 2. Remove "Flexible" Toggle from Pets
+3. **`pets_flexible` עדיין בסכמה** - הסרנו את הצ'קבוקס מה-UI אבל השדה עדיין קיים ב-schema וב-state. ניקוי.
 
-**Problem:** Pets is a binary field -- the tenant either has pets or doesn't. The "Flex" checkbox doesn't make sense here.
+### מה ישתנה
 
-**Solution:**
-- In `ClientIntakePageEN.tsx`: Remove the `pets_flexible` checkbox from the pets field. Keep just the "Pets" checkbox.
-- In `ClientIntakePage.tsx`: Same change -- remove the flexibility toggle from the pets field.
-- Remove `pets_flexible` from the schema and form state in both files (or just stop rendering it).
+**קובץ `src/pages/ClientIntakePage.tsx`:**
+- הגדלת גובה כפתורי ערים/שכונות מ-h-8 ל-h-11 (כמו שאר השדות)
+- הסרת `pets_flexible` מהסכמה, מה-state, ומה-commonData
+- וידוא שכל האלמנטים מיושרים ונראים אחיד
 
-### 3. Page Not Adapted for English (LTR)
+**קובץ `src/hooks/useMobileOptimization.ts`:**
+- הסרת השורות שמגדירות `document.dir = 'rtl'` ו-`document.documentElement.classList.add('rtl')` ברמה הגלובלית
+- כל דף מנהל את ה-direction שלו (הטופס העברי כבר מגדיר `dir="rtl"`, האנגלי `dir="ltr"`)
 
-**Problem:** From the screenshot:
-- Question mark appears on the wrong side ("?Looking for an Apartment")
-- Text inputs are right-aligned (RTL inheritance)
-- The overall page direction is RTL
+### פרטים טכניים
 
-**Solution:**
-- Add `dir="ltr"` to the root `div` of the English page
-- Fix the title: "Looking for an Apartment?" (question mark at end)
-- Ensure all input placeholders and text flow left-to-right
-- Add `text-left` classes where needed
+**`ClientIntakePage.tsx`:**
+- שורות של `CitySelectorDropdown` ו-`NeighborhoodSelectorDropdown` - להעביר prop של `className="h-11"` או לשנות את ה-component שהם משתמשים בו
+- הסרת `pets_flexible` משורה 46 (schema), שורה 101 (state), שורה 221 (commonData)
 
-### Technical Details
+**`useMobileOptimization.ts`:**
+- הסרת שורות 17-18 (`document.documentElement.classList.add('rtl')` ו-`document.dir = 'rtl'`)
 
-**Files to modify:**
-- `src/pages/ClientIntakePageEN.tsx` -- All 3 fixes (English city/neighborhood selectors, remove pets flexible, LTR direction)
-- `src/pages/ClientIntakePage.tsx` -- Remove pets flexible toggle only
+**`city-selector.tsx`:**
+- שינוי ברכיב `CitySelectorDropdown` - גובה הכפתור מ-`h-8` ל-`h-11` כדי שיתאים לשאר השדות בטופס
 
-**English City/Neighborhood Mapping (stored in ClientIntakePageEN.tsx):**
-
-| Hebrew Value | English Label |
-|---|---|
-| תל אביב יפו | Tel Aviv |
-| רמת גן | Ramat Gan |
-| גבעתיים | Givatayim |
-| הרצליה | Herzliya |
-| רעננה | Ra'anana |
-| פתח תקווה | Petah Tikva |
-| ראשון לציון | Rishon LeZion |
-| חולון | Holon |
-| בת ים | Bat Yam |
-| נתניה | Netanya |
-| בני ברק | Bnei Brak |
-| כפר סבא | Kfar Saba |
-| הוד השרון | Hod HaSharon |
-| רמת השרון | Ramat HaSharon |
-| אשדוד | Ashdod |
-| אשקלון | Ashkelon |
-
-Key neighborhoods (Tel Aviv):
-- צפון_ישן -> Old North
-- צפון_חדש -> New North
-- מרכז_העיר -> City Center
-- פלורנטין -> Florentin
-- נווה_צדק -> Neve Tzedek
-- רוטשילד -> Rothschild
-- כרם_התימנים -> Kerem HaTeimanim
-- כיכר_המדינה -> Kikar HaMedina
-- רמת_אביב -> Ramat Aviv
-- יפו -> Jaffa
-- (and all others)
-
+**`neighborhood-selector.tsx`:**
+- אותו שינוי - גובה הכפתור מ-`h-8` ל-`h-11`
