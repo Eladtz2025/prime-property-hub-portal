@@ -1,0 +1,1 @@
+ALTER TABLE public.business_expenses_list ADD COLUMN assigned_to uuid REFERENCES public.profiles(id);

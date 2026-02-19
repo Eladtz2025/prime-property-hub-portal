@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBusinessExpenses, NewBusinessExpense } from '@/hooks/useBusinessExpenses';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import BusinessExpensesMonthlySummary from './BusinessExpensesMonthlySummary';
 
 const CATEGORIES = ['משרד', 'רכב', 'ביטוח', 'פרסום', 'טלפון', 'תוכנה', 'אחר'];
 const FREQUENCIES = [
@@ -13,7 +15,12 @@ const FREQUENCIES = [
   { value: 'one_time', label: 'חד-פעמי' },
 ];
 
-const emptyExpense: NewBusinessExpense = { category: '', description: '', amount: null, frequency: 'monthly', notes: '' };
+const emptyExpense: NewBusinessExpense = { category: '', description: '', amount: null, frequency: 'monthly', notes: '', assigned_to: null };
+
+interface Agent {
+  id: string;
+  full_name: string | null;
+}
 
 const BusinessExpensesList = () => {
   const { expenses, loading, addExpense, updateExpense, deleteExpense } = useBusinessExpenses();
@@ -21,6 +28,15 @@ const BusinessExpensesList = () => {
   const [newItem, setNewItem] = useState<NewBusinessExpense>(emptyExpense);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<NewBusinessExpense>(emptyExpense);
+  const [agents, setAgents] = useState<Agent[]>([]);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      const { data } = await supabase.from('profiles').select('id, full_name').order('full_name');
+      if (data) setAgents(data);
+    };
+    fetchAgents();
+  }, []);
 
   const handleAdd = async () => {
     if (!newItem.category) return;
@@ -36,15 +52,29 @@ const BusinessExpensesList = () => {
 
   const startEdit = (expense: any) => {
     setEditingId(expense.id);
-    setEditItem({ category: expense.category, description: expense.description, amount: expense.amount, frequency: expense.frequency, notes: expense.notes });
+    setEditItem({ category: expense.category, description: expense.description, amount: expense.amount, frequency: expense.frequency, notes: expense.notes, assigned_to: expense.assigned_to });
   };
 
   const freqLabel = (val: string) => FREQUENCIES.find(f => f.value === val)?.label || val;
+  const agentName = (id: string | null) => {
+    if (!id) return '-';
+    return agents.find(a => a.id === id)?.full_name || '-';
+  };
+
+  const AgentSelect = ({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) => (
+    <Select value={value || 'none'} onValueChange={v => onChange(v === 'none' ? null : v)}>
+      <SelectTrigger className="h-8"><SelectValue placeholder="בחר סוכן" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">ללא</SelectItem>
+        {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.full_name || 'ללא שם'}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
 
   if (loading) return <div className="text-center py-4 text-muted-foreground">טוען...</div>;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setIsAdding(true)} disabled={isAdding}>
           <Plus className="h-4 w-4 ml-1" /> הוסף הוצאה
@@ -58,6 +88,7 @@ const BusinessExpensesList = () => {
             <TableHead>תיאור</TableHead>
             <TableHead>סכום</TableHead>
             <TableHead>תדירות</TableHead>
+            <TableHead>סוכן</TableHead>
             <TableHead>הערות</TableHead>
             <TableHead className="w-[100px]">פעולות</TableHead>
           </TableRow>
@@ -79,6 +110,7 @@ const BusinessExpensesList = () => {
                   <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
                 </Select>
               </TableCell>
+              <TableCell><AgentSelect value={newItem.assigned_to} onChange={v => setNewItem({ ...newItem, assigned_to: v })} /></TableCell>
               <TableCell><Input className="h-8" value={newItem.notes || ''} onChange={e => setNewItem({ ...newItem, notes: e.target.value })} /></TableCell>
               <TableCell>
                 <div className="flex gap-1">
@@ -106,6 +138,7 @@ const BusinessExpensesList = () => {
                       <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </TableCell>
+                  <TableCell><AgentSelect value={editItem.assigned_to} onChange={v => setEditItem({ ...editItem, assigned_to: v })} /></TableCell>
                   <TableCell><Input className="h-8" value={editItem.notes || ''} onChange={e => setEditItem({ ...editItem, notes: e.target.value })} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -120,6 +153,7 @@ const BusinessExpensesList = () => {
                   <TableCell>{exp.description}</TableCell>
                   <TableCell>{exp.amount != null ? `₪${exp.amount.toLocaleString()}` : '-'}</TableCell>
                   <TableCell>{freqLabel(exp.frequency)}</TableCell>
+                  <TableCell>{exp.profiles?.full_name || agentName(exp.assigned_to)}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">{exp.notes}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -132,10 +166,12 @@ const BusinessExpensesList = () => {
             </TableRow>
           ))}
           {expenses.length === 0 && !isAdding && (
-            <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">אין הוצאות עדיין</TableCell></TableRow>
+            <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">אין הוצאות עדיין</TableCell></TableRow>
           )}
         </TableBody>
       </Table>
+
+      <BusinessExpensesMonthlySummary expenses={expenses} agents={agents} />
     </div>
   );
 };
