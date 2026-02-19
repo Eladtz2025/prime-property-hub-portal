@@ -17,13 +17,12 @@ import { z } from 'zod';
 import { CitySelectorDropdown } from '@/components/ui/city-selector';
 import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
 import { cn } from '@/lib/utils';
-import { normalizePhoneForComparison, getPhoneSuffix } from '@/utils/phoneNormalization';
+import { getPhoneSuffix } from '@/utils/phoneNormalization';
 
-// Validation schema
 const clientIntakeSchema = z.object({
-  name: z.string().min(2, 'שם חייב להכיל לפחות 2 תווים'),
-  phone: z.string().regex(/^0[0-9]{8,9}$/, 'מספר טלפון לא תקין'),
-  email: z.string().email('אימייל לא תקין').optional().or(z.literal('')),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  phone: z.string().min(9, 'Invalid phone number'),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   property_type: z.enum(['rental', 'sale']),
   budget_max: z.number().min(0).optional(),
   rooms_min: z.number().min(1).max(10).optional(),
@@ -52,21 +51,21 @@ const clientIntakeSchema = z.object({
 type FormData = z.infer<typeof clientIntakeSchema>;
 
 const TENANT_TYPES = [
-  { value: 'single', label: 'יחיד/ה' },
-  { value: 'couple', label: 'זוג' },
-  { value: 'family', label: 'משפחה' },
-  { value: 'roommates', label: 'שותפים' },
+  { value: 'single', label: 'Single' },
+  { value: 'couple', label: 'Couple' },
+  { value: 'family', label: 'Family' },
+  { value: 'roommates', label: 'Roommates' },
 ];
 
 const REQUIREMENTS_OPTIONS = [
-  { value: 'parking', label: 'חניה', field: 'parking_required', flexibleField: 'parking_flexible' },
-  { value: 'elevator', label: 'מעלית', field: 'elevator_required', flexibleField: 'elevator_flexible' },
-  { value: 'balcony', label: 'מרפסת', field: 'balcony_required', flexibleField: 'balcony_flexible' },
-  { value: 'yard', label: 'חצר/גינה', field: 'yard_required', flexibleField: 'yard_flexible' },
-  { value: 'roof', label: 'גג/גישה לגג', field: 'roof_required', flexibleField: 'roof_flexible' },
+  { value: 'parking', label: 'Parking', field: 'parking_required', flexibleField: 'parking_flexible' },
+  { value: 'elevator', label: 'Elevator', field: 'elevator_required', flexibleField: 'elevator_flexible' },
+  { value: 'balcony', label: 'Balcony', field: 'balcony_required', flexibleField: 'balcony_flexible' },
+  { value: 'yard', label: 'Yard/Garden', field: 'yard_required', flexibleField: 'yard_flexible' },
+  { value: 'roof', label: 'Roof access', field: 'roof_required', flexibleField: 'roof_flexible' },
 ] as const;
 
-export default function ClientIntakePage() {
+export default function ClientIntakePageEN() {
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -114,15 +113,11 @@ export default function ClientIntakePage() {
     }
   };
 
-  const getSelectedRequirementsCount = () => {
-    return REQUIREMENTS_OPTIONS.filter(opt => formData[opt.field as keyof FormData]).length;
-  };
-
   const getSelectedRequirementsText = () => {
     const selected = REQUIREMENTS_OPTIONS.filter(opt => formData[opt.field as keyof FormData]);
-    if (selected.length === 0) return 'דרישות נוספות';
+    if (selected.length === 0) return 'Requirements';
     if (selected.length <= 2) return selected.map(s => s.label).join(', ');
-    return `${selected.length} דרישות נבחרו`;
+    return `${selected.length} selected`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,7 +171,6 @@ export default function ClientIntakePage() {
         return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
       }) || null;
 
-      // Build the common data object
       const commonData = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -203,7 +197,7 @@ export default function ClientIntakePage() {
         roof_flexible: formData.roof_flexible,
         pets_flexible: formData.pets_flexible,
         pets: formData.property_type === 'rental' ? formData.pets : false,
-        message: formData.message?.trim() || `לקוח מחפש ${formData.property_type === 'rental' ? 'שכירות' : 'רכישה'}`,
+        message: formData.message?.trim() || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`,
         tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
         cash_available: null,
         new_or_second_hand: null,
@@ -245,36 +239,35 @@ export default function ClientIntakePage() {
       }
 
       setIsSubmitted(true);
-      toast.success('הפרטים נשלחו בהצלחה!');
+      toast.success('Details submitted successfully!');
 
     } catch (error) {
       console.error('Error submitting form:', error);
-      toast.error('שגיאה בשליחת הטופס, נסה שוב');
+      toast.error('Error submitting the form, please try again');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Success screen
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-8 pb-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">תודה רבה!</h2>
+            <h2 className="text-2xl font-bold mb-2">Thank You!</h2>
             <p className="text-muted-foreground mb-6">
-              הפרטים שלך התקבלו בהצלחה.<br />
-              ניצור איתך קשר בהקדם עם נכסים מתאימים.
+              Your details have been received successfully.<br />
+              We'll contact you soon with matching properties.
             </p>
             <Button 
               variant="outline" 
               onClick={() => window.close()}
               className="min-h-[44px]"
             >
-              סגור חלון
+              Close Window
             </Button>
           </CardContent>
         </Card>
@@ -283,15 +276,15 @@ export default function ClientIntakePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
             <Home className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">מחפשים דירה?</h1>
-          <p className="text-muted-foreground mt-1">ספרו לנו מה אתם מחפשים ונמצא לכם</p>
+          <h1 className="text-2xl font-bold">Looking for an Apartment?</h1>
+          <p className="text-muted-foreground mt-1">Tell us what you're looking for and we'll find it</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -302,7 +295,7 @@ export default function ClientIntakePage() {
                 <Input
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="שם מלא *"
+                  placeholder="Full Name *"
                   className={cn("min-h-[44px]", errors.name && "border-destructive")}
                 />
                 {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
@@ -314,7 +307,7 @@ export default function ClientIntakePage() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="טלפון * (050-1234567)"
+                    placeholder="Phone *"
                     className={cn("min-h-[44px]", errors.phone && "border-destructive")}
                   />
                   {errors.phone && <p className="text-destructive text-sm mt-1">{errors.phone}</p>}
@@ -324,7 +317,7 @@ export default function ClientIntakePage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="אימייל (אופציונלי)"
+                  placeholder="Email (optional)"
                   className={cn("min-h-[44px]", errors.email && "border-destructive")}
                 />
               </div>
@@ -334,29 +327,28 @@ export default function ClientIntakePage() {
           {/* Property Preferences */}
           <Card className="mb-4">
             <CardContent className="pt-4 space-y-4">
-              {/* Transaction Type */}
               <RadioGroup
                 value={formData.property_type}
                 onValueChange={(value) => handleInputChange('property_type', value)}
                 className="flex gap-4"
               >
-                <div className="flex items-center space-x-2 space-x-reverse">
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="rental" id="rental" />
-                  <Label htmlFor="rental" className="cursor-pointer">שכירות</Label>
+                  <Label htmlFor="rental" className="cursor-pointer">Rental</Label>
                 </div>
-                <div className="flex items-center space-x-2 space-x-reverse">
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="sale" id="sale" />
-                  <Label htmlFor="sale" className="cursor-pointer">רכישה</Label>
+                  <Label htmlFor="sale" className="cursor-pointer">Purchase</Label>
                 </div>
               </RadioGroup>
 
-              {/* Budget + Move-in Date on same row */}
+              {/* Budget + Move-in Date */}
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   type="number"
                   value={formData.budget_max || ''}
                   onChange={(e) => handleInputChange('budget_max', e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder={formData.property_type === 'rental' ? 'תקציב מקסימום ₪/חודש' : 'תקציב מקסימום ₪'}
+                  placeholder={formData.property_type === 'rental' ? 'Max Budget ₪/month' : 'Max Budget ₪'}
                   className="min-h-[44px]"
                 />
                 <div className="flex items-center gap-2">
@@ -364,7 +356,7 @@ export default function ClientIntakePage() {
                     type="date"
                     value={formData.move_in_date}
                     onChange={(e) => handleInputChange('move_in_date', e.target.value)}
-                    placeholder="תאריך כניסה"
+                    placeholder="Move-in date"
                     className="min-h-[44px] flex-1"
                   />
                   <label className="flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
@@ -372,19 +364,19 @@ export default function ClientIntakePage() {
                       checked={formData.flexible_move_date}
                       onCheckedChange={(checked) => handleInputChange('flexible_move_date', !!checked)}
                     />
-                    <span className="text-xs">גמיש</span>
+                    <span className="text-xs">Flexible</span>
                   </label>
                 </div>
               </div>
 
-              {/* Size min + Rooms min on same row */}
+              {/* Size min + Rooms min */}
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   type="number"
                   min={0}
                   value={formData.size_min || ''}
                   onChange={(e) => handleInputChange('size_min', e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="גודל מינימום (מ״ר)"
+                  placeholder="Min Size (sqm)"
                   className="min-h-[44px]"
                 />
                 <Input
@@ -393,7 +385,7 @@ export default function ClientIntakePage() {
                   max={10}
                   value={formData.rooms_min || ''}
                   onChange={(e) => handleInputChange('rooms_min', e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="חדרים מינימום"
+                  placeholder="Min Rooms"
                   className="min-h-[44px]"
                 />
               </div>
@@ -414,7 +406,6 @@ export default function ClientIntakePage() {
               {/* Requirements + Tenant Type + Pets (rental) / Just Requirements (sale) */}
               {formData.property_type === 'rental' ? (
                 <div className="grid grid-cols-3 gap-3">
-                  {/* Requirements dropdown */}
                   <Popover open={requirementsOpen} onOpenChange={setRequirementsOpen}>
                     <PopoverTrigger asChild>
                       <Button 
@@ -459,7 +450,7 @@ export default function ClientIntakePage() {
                                 checked={!!formData[opt.flexibleField as keyof FormData]}
                                 onCheckedChange={(checked) => handleInputChange(opt.flexibleField as keyof FormData, !!checked)}
                               />
-                              <span className="text-xs">גמיש</span>
+                              <span className="text-xs">Flex</span>
                             </label>
                           </div>
                         ))}
@@ -473,20 +464,19 @@ export default function ClientIntakePage() {
                               checked={formData.outdoor_space_any}
                               onCheckedChange={(checked) => handleInputChange('outdoor_space_any', !!checked)}
                             />
-                            <span className="text-sm text-muted-foreground">מספיק אחד מהשטחים (מרפסת/חצר/גג)</span>
+                            <span className="text-sm text-muted-foreground">Any outdoor space is fine</span>
                           </label>
                         </div>
                       </div>
                     </PopoverContent>
                   </Popover>
 
-                  {/* Tenant type */}
                   <Select
                     value={formData.tenant_type || ''}
                     onValueChange={(value) => handleInputChange('tenant_type', value)}
                   >
                     <SelectTrigger className="h-11">
-                      <SelectValue placeholder="סוג שוכר" />
+                      <SelectValue placeholder="Tenant type" />
                     </SelectTrigger>
                     <SelectContent>
                       {TENANT_TYPES.map(type => (
@@ -497,14 +487,13 @@ export default function ClientIntakePage() {
                     </SelectContent>
                   </Select>
 
-                  {/* Pets standalone */}
                   <div className="flex items-center gap-2 h-11 border rounded-md px-3">
                     <label className="flex items-center gap-2 cursor-pointer flex-1">
                       <Checkbox
                         checked={formData.pets}
                         onCheckedChange={(checked) => handleInputChange('pets', !!checked)}
                       />
-                      <span className="text-sm">חיית מחמד</span>
+                      <span className="text-sm">Pets</span>
                     </label>
                     {formData.pets && (
                       <label className="flex items-center gap-1 cursor-pointer text-muted-foreground">
@@ -512,13 +501,12 @@ export default function ClientIntakePage() {
                           checked={formData.pets_flexible}
                           onCheckedChange={(checked) => handleInputChange('pets_flexible', !!checked)}
                         />
-                        <span className="text-xs">גמיש</span>
+                        <span className="text-xs">Flex</span>
                       </label>
                     )}
                   </div>
                 </div>
               ) : (
-                /* Sale - just requirements */
                 <Popover open={requirementsOpen} onOpenChange={setRequirementsOpen}>
                   <PopoverTrigger asChild>
                     <Button 
@@ -563,7 +551,7 @@ export default function ClientIntakePage() {
                               checked={!!formData[opt.flexibleField as keyof FormData]}
                               onCheckedChange={(checked) => handleInputChange(opt.flexibleField as keyof FormData, !!checked)}
                             />
-                            <span className="text-xs">גמיש</span>
+                            <span className="text-xs">Flex</span>
                           </label>
                         </div>
                       ))}
@@ -577,7 +565,7 @@ export default function ClientIntakePage() {
                             checked={formData.outdoor_space_any}
                             onCheckedChange={(checked) => handleInputChange('outdoor_space_any', !!checked)}
                           />
-                          <span className="text-sm text-muted-foreground">מספיק אחד מהשטחים (מרפסת/חצר/גג)</span>
+                          <span className="text-sm text-muted-foreground">Any outdoor space is fine</span>
                         </label>
                       </div>
                     </div>
@@ -593,7 +581,7 @@ export default function ClientIntakePage() {
               <Textarea
                 value={formData.message}
                 onChange={(e) => handleInputChange('message', e.target.value)}
-                placeholder="הערות נוספות (אופציונלי)"
+                placeholder="Additional notes (optional)"
                 rows={2}
                 className="resize-none"
               />
@@ -608,16 +596,16 @@ export default function ClientIntakePage() {
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin ml-2" />
-                שולח...
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Submitting...
               </>
             ) : (
-              'שליחת פרטים'
+              'Submit Details'
             )}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground mt-4">
-            הפרטים שלכם נשמרים בצורה מאובטחת ומשמשים אותנו רק למציאת דירה עבורכם
+            Your details are stored securely and used only to find you the right property
           </p>
         </form>
       </div>
