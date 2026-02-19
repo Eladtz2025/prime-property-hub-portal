@@ -64,10 +64,11 @@ const ProfessionalsPublicPage = () => {
     window.open(`tel:${phone}`, '_self');
   };
 
-  const whatsApp = (phone: string) => {
+  const whatsApp = (phone: string, name: string) => {
     const clean = phone.replace(/[^0-9]/g, '');
     const formatted = clean.startsWith('0') ? `972${clean.slice(1)}` : clean;
-    window.open(`https://wa.me/${formatted}`, '_blank');
+    const message = encodeURIComponent(`שלום ${name}, קיבלנו את הטלפון שלך מחברת הנדל״ן סיטי מרקט.\nמה נשמע?`);
+    window.open(`https://wa.me/${formatted}?text=${message}`, '_blank');
   };
 
   if (loading) {
@@ -153,7 +154,7 @@ const ProfessionalsPublicPage = () => {
                             size="sm"
                             variant="outline"
                             className="flex-1 min-w-[100px] gap-2 text-green-600 border-green-300 hover:bg-green-50"
-                            onClick={() => whatsApp(pro.phone!)}
+                            onClick={() => whatsApp(pro.phone!, pro.name)}
                           >
                             <MessageCircle className="h-4 w-4" />
                             WhatsApp

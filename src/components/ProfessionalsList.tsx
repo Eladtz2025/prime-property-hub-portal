@@ -35,7 +35,6 @@ const ProfessionalsList = () => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<NewProfessional>(emptyPro);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
   const handleSave = async () => {
@@ -64,13 +63,6 @@ const ProfessionalsList = () => {
     setShowForm(true);
   };
 
-  const copyPhone = (phone: string, id: string) => {
-    navigator.clipboard.writeText(phone);
-    setCopiedPhone(id);
-    toast.success('הטלפון הועתק!');
-    setTimeout(() => setCopiedPhone(null), 2000);
-  };
-
   const copyCoupon = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCoupon(id);
@@ -82,7 +74,8 @@ const ProfessionalsList = () => {
     if (!pro.phone) return;
     const phone = pro.phone.replace(/[^0-9]/g, '');
     const formattedPhone = phone.startsWith('0') ? `972${phone.slice(1)}` : phone;
-    window.open(`https://wa.me/${formattedPhone}`, '_blank');
+    const message = encodeURIComponent(`שלום ${pro.name}, קיבלנו את הטלפון שלך מחברת הנדל״ן סיטי מרקט.\nמה נשמע?`);
+    window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank');
   };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">טוען...</div>;
@@ -164,15 +157,6 @@ const ProfessionalsList = () => {
                       >
                         <Phone className="h-3.5 w-3.5" />
                         חייג
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs gap-1.5"
-                        onClick={() => copyPhone(pro.phone!, pro.id)}
-                      >
-                        {copiedPhone === pro.id ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                        {copiedPhone === pro.id ? 'הועתק!' : 'העתק טלפון'}
                       </Button>
                       <Button
                         size="sm"
