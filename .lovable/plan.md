@@ -1,37 +1,29 @@
 
 
-## התאמת הטופס העברי לרמת הטופס האנגלי
+## שני תיקונים לטופס העברי
 
-### מה לא עובד טוב
+### 1. כפתור מעבר שפה בטופס עצמו
 
-1. **גובה לא אחיד** - הכפתורים של ערים/שכונות בגובה h-8 בזמן שכל שאר השדות בגובה h-11 (44px). זה נראה לא מיושר.
+הוספת כפתור קומפקטי בראש כל טופס (עברית ואנגלית) שמאפשר למשתמש לעבור לשפה השנייה:
+- בטופס העברי: כפתור קטן "EN" או עם דגל שמנווט ל-`/client-intake/en`
+- בטופס האנגלי: כפתור קטן "עב" או עם דגל שמנווט ל-`/client-intake`
+- הכפתור יופיע בפינה העליונה של הדף, מעל הכותרת
 
-2. **RTL גלובלי** - ה-hook `useMobileOptimization` מגדיר `document.dir = 'rtl'` ברמה הגלובלית, מה שעלול לפגוע בטופס האנגלי. כל טופס צריך לנהל את ה-direction שלו בעצמו.
+### 2. תיקון סדר כפתורי שכירות/רכישה
 
-3. **`pets_flexible` עדיין בסכמה** - הסרנו את הצ'קבוקס מה-UI אבל השדה עדיין קיים ב-schema וב-state. ניקוי.
+בצילום המסך נראה ש"שכירות" ו"רכישה" מופיעים בסדר LTR (שכירות בשמאל, רכישה בימין). ב-RTL, האופציה הראשונה (שכירות) צריכה להיות בצד ימין.
 
-### מה ישתנה
-
-**קובץ `src/pages/ClientIntakePage.tsx`:**
-- הגדלת גובה כפתורי ערים/שכונות מ-h-8 ל-h-11 (כמו שאר השדות)
-- הסרת `pets_flexible` מהסכמה, מה-state, ומה-commonData
-- וידוא שכל האלמנטים מיושרים ונראים אחיד
-
-**קובץ `src/hooks/useMobileOptimization.ts`:**
-- הסרת השורות שמגדירות `document.dir = 'rtl'` ו-`document.documentElement.classList.add('rtl')` ברמה הגלובלית
-- כל דף מנהל את ה-direction שלו (הטופס העברי כבר מגדיר `dir="rtl"`, האנגלי `dir="ltr"`)
+הבעיה: ה-`RadioGroup` משתמש ב-`flex gap-4` אבל ייתכן שה-flex לא מגיב נכון ל-`dir="rtl"` בגלל הגדרות CSS. הפתרון: להוסיף `flex-row-reverse` לטופס העברי כדי לוודא שהסדר נכון.
 
 ### פרטים טכניים
 
-**`ClientIntakePage.tsx`:**
-- שורות של `CitySelectorDropdown` ו-`NeighborhoodSelectorDropdown` - להעביר prop של `className="h-11"` או לשנות את ה-component שהם משתמשים בו
-- הסרת `pets_flexible` משורה 46 (schema), שורה 101 (state), שורה 221 (commonData)
+**קבצים שישתנו:**
 
-**`useMobileOptimization.ts`:**
-- הסרת שורות 17-18 (`document.documentElement.classList.add('rtl')` ו-`document.dir = 'rtl'`)
+**`src/pages/ClientIntakePage.tsx`:**
+- הוספת `useNavigate` מ-react-router-dom
+- הוספת כפתור מעבר שפה בראש הדף: `<button onClick={() => navigate('/client-intake/en')}>🇺🇸 English</button>` - עם עיצוב קומפקטי (pill shape, שקוף עם border)
+- שורה 362-363: שינוי ה-RadioGroup className מ-`"flex gap-4"` ל-`"flex flex-row-reverse gap-4 justify-end"` כדי שהסדר יהיה נכון ב-RTL
 
-**`city-selector.tsx`:**
-- שינוי ברכיב `CitySelectorDropdown` - גובה הכפתור מ-`h-8` ל-`h-11` כדי שיתאים לשאר השדות בטופס
+**`src/pages/ClientIntakePageEN.tsx`:**
+- הוספת כפתור מעבר שפה מקביל: `<button onClick={() => navigate('/client-intake')}>🇮🇱 עברית</button>` - באותו עיצוב
 
-**`neighborhood-selector.tsx`:**
-- אותו שינוי - גובה הכפתור מ-`h-8` ל-`h-11`
