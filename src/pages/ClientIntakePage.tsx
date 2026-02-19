@@ -43,7 +43,7 @@ const clientIntakeSchema = z.object({
   balcony_flexible: z.boolean(),
   yard_flexible: z.boolean(),
   roof_flexible: z.boolean(),
-  pets_flexible: z.boolean(),
+  
   outdoor_space_any: z.boolean(),
   message: z.string().optional(),
   tenant_type: z.string().optional(),
@@ -98,7 +98,7 @@ export default function ClientIntakePage() {
     balcony_flexible: true,
     yard_flexible: true,
     roof_flexible: true,
-    pets_flexible: true,
+    
     outdoor_space_any: false,
     message: '',
     tenant_type: '',
@@ -218,7 +218,7 @@ export default function ClientIntakePage() {
         balcony_flexible: formData.balcony_flexible,
         yard_flexible: formData.yard_flexible,
         roof_flexible: formData.roof_flexible,
-        pets_flexible: formData.pets_flexible,
+        
         pets: formData.property_type === 'rental' ? formData.pets : false,
         message: defaultMessage,
         notes: finalNotes,

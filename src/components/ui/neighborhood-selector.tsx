@@ -348,7 +348,7 @@ export function NeighborhoodSelectorDropdown({
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
-          className={cn("w-full justify-between h-8 text-sm font-normal", className)}
+          className={cn("w-full justify-between h-11 text-sm font-normal", className)}
           disabled={isDisabled}
         >
           <span className="flex items-center gap-2">
