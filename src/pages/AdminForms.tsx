@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   FileSignature, 
   FileText, 
@@ -10,10 +10,11 @@ import {
   Star, 
   Users, 
   DollarSign,
-  ChevronDown,
   Presentation,
   Wallet,
-  Wrench
+  Wrench,
+  Plus,
+  List
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrokerageFormsMobileList } from '@/components/BrokerageFormsMobileList';
@@ -35,8 +36,22 @@ interface FormCounts {
   professionals: number;
 }
 
+type DialogId = 'brokerage' | 'memorandum' | 'exclusivity' | 'broker_sharing' | 'price_offers' | 'pitch_decks' | 'business_expenses' | 'professionals' | null;
+
+const dialogTitles: Record<string, string> = {
+  brokerage: 'טפסי תיווך',
+  memorandum: 'זיכרון דברים',
+  exclusivity: 'הסכמי בלעדיות',
+  broker_sharing: 'שיתוף מתווכים',
+  price_offers: 'הצעות מחיר',
+  pitch_decks: 'מצגות',
+  business_expenses: 'הוצאות עסק',
+  professionals: 'אנשי מקצוע',
+};
+
 const AdminForms = () => {
   const [copied, setCopied] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<DialogId>(null);
   const [counts, setCounts] = useState<FormCounts>({
     brokerage: 0,
     memorandum: 0,
@@ -47,16 +62,6 @@ const AdminForms = () => {
     business_expenses: 0,
     professionals: 0,
   });
-  const [openSections, setOpenSections] = useState({
-    brokerage: true,
-    memorandum: true,
-    exclusivity: true,
-    broker_sharing: true,
-    price_offers: true,
-    pitch_decks: true,
-    business_expenses: true,
-    professionals: true,
-  });
 
   useEffect(() => {
     fetchCounts();
@@ -64,12 +69,10 @@ const AdminForms = () => {
 
   const fetchCounts = async () => {
     try {
-      // Fetch brokerage forms count
       const { count: brokerageCount } = await supabase
         .from('brokerage_forms')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch legal forms counts by type
       const { data: legalForms } = await supabase
         .from('legal_forms')
         .select('form_type');
@@ -78,22 +81,18 @@ const AdminForms = () => {
       const exclusivityCount = legalForms?.filter(f => f.form_type === 'exclusivity').length || 0;
       const brokerSharingCount = legalForms?.filter(f => f.form_type === 'broker_sharing').length || 0;
 
-      // Fetch price offers count
       const { count: priceOffersCount } = await supabase
         .from('price_offers')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch pitch decks count
       const { count: pitchDecksCount } = await supabase
         .from('pitch_decks')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch business expenses count
       const { count: expensesCount } = await supabase
         .from('business_expenses_list')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch professionals count
       const { count: professionalsCount } = await supabase
         .from('professionals_list')
         .select('*', { count: 'exact', head: true });
@@ -125,315 +124,187 @@ const AdminForms = () => {
 
   const actionCubes = [
     {
-      id: 'brokerage',
+      id: 'brokerage' as const,
       label: 'טופס תיווך',
       icon: FileSignature,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-      onClick: () => window.open('/brokerage-form/new', '_blank'),
+      newFormUrl: '/brokerage-form/new',
+      dialogId: 'brokerage' as DialogId,
+      count: counts.brokerage,
     },
     {
-      id: 'client-link',
-      label: 'לינק ללקוח',
-      icon: copied ? Check : Link2,
-      color: copied ? 'text-green-600' : 'text-purple-600',
-      bgColor: copied ? 'bg-green-50 dark:bg-green-950/30' : 'bg-purple-50 dark:bg-purple-950/30',
-      onClick: handleCopyClientIntakeLink,
-    },
-    {
-      id: 'memorandum',
+      id: 'memorandum' as const,
       label: 'זיכרון דברים',
       icon: FileText,
       color: 'text-amber-600',
       bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-      onClick: () => window.open('/memorandum-form/new', '_blank'),
+      newFormUrl: '/memorandum-form/new',
+      dialogId: 'memorandum' as DialogId,
+      count: counts.memorandum,
     },
     {
-      id: 'exclusivity',
+      id: 'exclusivity' as const,
       label: 'הסכם בלעדיות',
       icon: Star,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50 dark:bg-orange-950/30',
-      onClick: () => window.open('/exclusivity-form/new', '_blank'),
+      newFormUrl: '/exclusivity-form/new',
+      dialogId: 'exclusivity' as DialogId,
+      count: counts.exclusivity,
     },
     {
-      id: 'broker_sharing',
+      id: 'broker_sharing' as const,
       label: 'שיתוף מתווכים',
       icon: Users,
       color: 'text-teal-600',
       bgColor: 'bg-teal-50 dark:bg-teal-950/30',
-      onClick: () => window.open('/broker-sharing-form/new', '_blank'),
+      newFormUrl: '/broker-sharing-form/new',
+      dialogId: 'broker_sharing' as DialogId,
+      count: counts.broker_sharing,
     },
     {
-      id: 'price_offer',
+      id: 'price_offer' as const,
       label: 'הצעת מחיר',
       icon: DollarSign,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
-      onClick: () => window.open('/price-offer-editor/new', '_blank'),
+      newFormUrl: '/price-offer-editor/new',
+      dialogId: 'price_offers' as DialogId,
+      count: counts.price_offers,
     },
     {
-      id: 'pitch_deck',
+      id: 'pitch_deck' as const,
       label: 'מצגת',
       icon: Presentation,
       color: 'text-pink-600',
       bgColor: 'bg-pink-50 dark:bg-pink-950/30',
-      onClick: () => window.location.href = '/admin-dashboard/pitch-decks/new',
+      newFormUrl: '/admin-dashboard/pitch-decks/new',
+      dialogId: 'pitch_decks' as DialogId,
+      count: counts.pitch_decks,
     },
     {
-      id: 'business_expenses',
+      id: 'business_expenses' as const,
       label: 'הוצאות עסק',
       icon: Wallet,
       color: 'text-red-600',
       bgColor: 'bg-red-50 dark:bg-red-950/30',
-      onClick: () => toggleSection('business_expenses'),
+      newFormUrl: null,
+      dialogId: 'business_expenses' as DialogId,
+      count: counts.business_expenses,
     },
     {
-      id: 'professionals',
+      id: 'professionals' as const,
       label: 'אנשי מקצוע',
       icon: Wrench,
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50 dark:bg-cyan-950/30',
-      onClick: () => toggleSection('professionals'),
+      newFormUrl: null,
+      dialogId: 'professionals' as DialogId,
+      count: counts.professionals,
     },
   ];
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  const renderDialogContent = () => {
+    switch (activeDialog) {
+      case 'brokerage': return <BrokerageFormsMobileList />;
+      case 'memorandum': return <LegalFormsList formType="memorandum" hideHeader />;
+      case 'exclusivity': return <LegalFormsList formType="exclusivity" hideHeader />;
+      case 'broker_sharing': return <LegalFormsList formType="broker_sharing" hideHeader />;
+      case 'price_offers': return <AdminPriceOffersContent />;
+      case 'pitch_decks': return <PitchDecksList />;
+      case 'business_expenses': return <BusinessExpensesList />;
+      case 'professionals': return <ProfessionalsList />;
+      default: return null;
+    }
   };
 
   return (
     <div className="min-h-screen" dir="rtl">
       <div className="p-4 text-right">
-        {/* Header */}
         <div className="flex flex-row-reverse items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">טפסים</h1>
         </div>
 
-        {/* Action Cubes Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {/* Client Link - direct action, no popover */}
+          <button
+            onClick={handleCopyClientIntakeLink}
+            className={`flex flex-col items-center justify-center p-4 rounded-xl 
+              ${copied ? 'bg-green-50 dark:bg-green-950/30' : 'bg-purple-50 dark:bg-purple-950/30'} 
+              border border-border hover:border-primary/40 
+              transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+              min-h-[100px] gap-2`}
+          >
+            {copied ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-purple-600" />}
+            <span className="text-sm font-medium text-center">לינק ללקוח</span>
+          </button>
+
+          {/* All other cubes with popover */}
           {actionCubes.map((cube) => {
             const Icon = cube.icon;
             return (
-              <button
-                key={cube.id}
-                onClick={cube.onClick}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl 
-                  ${cube.bgColor} border border-border hover:border-primary/40 
-                  transition-all duration-200 hover:shadow-md hover:scale-[1.02]
-                  min-h-[100px] gap-2`}
-              >
-                <Icon className={`h-7 w-7 ${cube.color}`} />
-                <span className="text-sm font-medium text-center">{cube.label}</span>
-              </button>
+              <Popover key={cube.id}>
+                <PopoverTrigger asChild>
+                  <button
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl 
+                      ${cube.bgColor} border border-border hover:border-primary/40 
+                      transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+                      min-h-[100px] gap-2 relative`}
+                  >
+                    <Icon className={`h-7 w-7 ${cube.color}`} />
+                    <span className="text-sm font-medium text-center">{cube.label}</span>
+                    {cube.count > 0 && (
+                      <Badge variant="secondary" className="absolute top-2 left-2 text-xs px-1.5 py-0.5 min-w-[20px]">
+                        {cube.count}
+                      </Badge>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="center">
+                  <div className="flex flex-col gap-1">
+                    {cube.newFormUrl && (
+                      <button
+                        onClick={() => {
+                          if (cube.id === 'pitch_deck') {
+                            window.location.href = cube.newFormUrl!;
+                          } else {
+                            window.open(cube.newFormUrl!, '_blank');
+                          }
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>טופס חדש</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setActiveDialog(cube.dialogId)}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                    >
+                      <List className="h-4 w-4" />
+                      <span>צפייה בנתונים</span>
+                      {cube.count > 0 && (
+                        <Badge variant="secondary" className="mr-auto text-xs">{cube.count}</Badge>
+                      )}
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             );
           })}
         </div>
-
-        {/* Sections */}
-        <div className="space-y-4">
-          {/* Brokerage Forms Section - Full Width */}
-          <Collapsible 
-            open={openSections.brokerage} 
-            onOpenChange={() => toggleSection('brokerage')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileSignature className="h-5 w-5 text-blue-600" />
-                    <h2 className="font-semibold text-lg">טפסי תיווך</h2>
-                    <Badge variant="secondary">{counts.brokerage}</Badge>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.brokerage ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <BrokerageFormsMobileList />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Row: Memorandum + Exclusivity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Memorandum Section */}
-            <Collapsible 
-              open={openSections.memorandum} 
-              onOpenChange={() => toggleSection('memorandum')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-amber-600" />
-                      <h2 className="font-semibold text-lg">זיכרון דברים</h2>
-                      <Badge variant="secondary">{counts.memorandum}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.memorandum ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <LegalFormsList formType="memorandum" hideHeader />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Exclusivity Section */}
-            <Collapsible 
-              open={openSections.exclusivity} 
-              onOpenChange={() => toggleSection('exclusivity')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Star className="h-5 w-5 text-orange-600" />
-                      <h2 className="font-semibold text-lg">הסכמי בלעדיות</h2>
-                      <Badge variant="secondary">{counts.exclusivity}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.exclusivity ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <LegalFormsList formType="exclusivity" hideHeader />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          </div>
-
-          {/* Row: Broker Sharing + Price Offers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Broker Sharing Section */}
-            <Collapsible 
-              open={openSections.broker_sharing} 
-              onOpenChange={() => toggleSection('broker_sharing')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Users className="h-5 w-5 text-teal-600" />
-                      <h2 className="font-semibold text-lg">שיתוף מתווכים</h2>
-                      <Badge variant="secondary">{counts.broker_sharing}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.broker_sharing ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <LegalFormsList formType="broker_sharing" hideHeader />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Price Offers Section */}
-            <Collapsible 
-              open={openSections.price_offers} 
-              onOpenChange={() => toggleSection('price_offers')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-emerald-600" />
-                      <h2 className="font-semibold text-lg">הצעות מחיר</h2>
-                      <Badge variant="secondary">{counts.price_offers}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.price_offers ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <AdminPriceOffersContent />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          </div>
-
-          {/* Pitch Decks Section - Full Width */}
-          <Collapsible 
-            open={openSections.pitch_decks} 
-            onOpenChange={() => toggleSection('pitch_decks')}
-          >
-            <Card>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Presentation className="h-5 w-5 text-pink-600" />
-                    <h2 className="font-semibold text-lg">מצגות</h2>
-                    <Badge variant="secondary">{counts.pitch_decks}</Badge>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.pitch_decks ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <PitchDecksList />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Row: Business Expenses + Professionals */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Business Expenses Section */}
-            <Collapsible 
-              open={openSections.business_expenses} 
-              onOpenChange={() => toggleSection('business_expenses')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Wallet className="h-5 w-5 text-red-600" />
-                      <h2 className="font-semibold text-lg">הוצאות עסק</h2>
-                      <Badge variant="secondary">{counts.business_expenses}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.business_expenses ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <BusinessExpensesList />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Professionals Section */}
-            <Collapsible 
-              open={openSections.professionals} 
-              onOpenChange={() => toggleSection('professionals')}
-            >
-              <Card>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Wrench className="h-5 w-5 text-cyan-600" />
-                      <h2 className="font-semibold text-lg">אנשי מקצוע</h2>
-                      <Badge variant="secondary">{counts.professionals}</Badge>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.professionals ? 'rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <ProfessionalsList />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          </div>
-        </div>
       </div>
+
+      {/* Single dialog for all data views */}
+      <Dialog open={activeDialog !== null} onOpenChange={(open) => !open && setActiveDialog(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{activeDialog ? dialogTitles[activeDialog] : ''}</DialogTitle>
+          </DialogHeader>
+          {renderDialogContent()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
