@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
@@ -51,6 +52,7 @@ const dialogTitles: Record<string, string> = {
 
 const AdminForms = () => {
   const [copied, setCopied] = useState(false);
+  const [copiedPro, setCopiedPro] = useState(false);
   const [activeDialog, setActiveDialog] = useState<DialogId>(null);
   const [counts, setCounts] = useState<FormCounts>({
     brokerage: 0,
@@ -203,6 +205,7 @@ const AdminForms = () => {
       newFormUrl: null,
       dialogId: 'professionals' as DialogId,
       count: counts.professionals,
+      directDialog: true,
     },
   ];
 
@@ -271,6 +274,24 @@ const AdminForms = () => {
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Professionals shared link */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/professionals/shared`);
+              setCopiedPro(true);
+              toast.success('לינק אנשי מקצוע הועתק!', { description: 'אפשר לשלוח ללקוח' });
+              setTimeout(() => setCopiedPro(false), 2000);
+            }}
+            className={`flex flex-col items-center justify-center p-4 rounded-xl 
+              ${copiedPro ? 'bg-green-50 dark:bg-green-950/30' : 'bg-cyan-50 dark:bg-cyan-950/30'} 
+              border border-border hover:border-primary/40 
+              transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+              min-h-[100px] gap-2`}
+          >
+            {copiedPro ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-cyan-600" />}
+            <span className="text-sm font-medium text-center">לינק אנשי מקצוע</span>
+          </button>
 
           {/* All other cubes with popover */}
           {actionCubes.map((cube) => {

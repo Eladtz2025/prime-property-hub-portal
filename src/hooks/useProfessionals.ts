@@ -9,6 +9,8 @@ export interface Professional {
   phone: string | null;
   area: string | null;
   notes: string | null;
+  website: string | null;
+  coupon_code: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
