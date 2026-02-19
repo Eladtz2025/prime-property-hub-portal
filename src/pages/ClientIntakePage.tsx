@@ -527,15 +527,6 @@ export default function ClientIntakePage() {
                       />
                       <span className="text-sm">חיית מחמד</span>
                     </label>
-                    {formData.pets && (
-                      <label className="flex items-center gap-1 cursor-pointer text-muted-foreground">
-                        <Checkbox
-                          checked={formData.pets_flexible}
-                          onCheckedChange={(checked) => handleInputChange('pets_flexible', !!checked)}
-                        />
-                        <span className="text-xs">גמיש</span>
-                      </label>
-                    )}
                   </div>
                 </div>
               ) : (

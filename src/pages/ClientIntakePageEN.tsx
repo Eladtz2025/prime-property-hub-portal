@@ -11,13 +11,209 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Home, CheckCircle2, Loader2, ChevronDown, ListChecks } from 'lucide-react';
+import { Home, CheckCircle2, Loader2, ChevronDown, ListChecks, MapPin, Building2 } from 'lucide-react';
 import { z } from 'zod';
-
-import { CitySelectorDropdown } from '@/components/ui/city-selector';
-import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
 import { cn } from '@/lib/utils';
 import { getPhoneSuffix } from '@/utils/phoneNormalization';
+
+// English label mappings (values stay Hebrew for DB compatibility)
+const CITIES_EN: { value: string; label: string }[] = [
+  { value: 'תל אביב יפו', label: 'Tel Aviv' },
+  { value: 'רמת גן', label: 'Ramat Gan' },
+  { value: 'גבעתיים', label: 'Givatayim' },
+  { value: 'הרצליה', label: 'Herzliya' },
+  { value: 'רעננה', label: "Ra'anana" },
+  { value: 'פתח תקווה', label: 'Petah Tikva' },
+  { value: 'ראשון לציון', label: 'Rishon LeZion' },
+  { value: 'חולון', label: 'Holon' },
+  { value: 'בת ים', label: 'Bat Yam' },
+  { value: 'נתניה', label: 'Netanya' },
+  { value: 'בני ברק', label: 'Bnei Brak' },
+  { value: 'כפר סבא', label: 'Kfar Saba' },
+  { value: 'הוד השרון', label: 'Hod HaSharon' },
+  { value: 'רמת השרון', label: 'Ramat HaSharon' },
+  { value: 'אשדוד', label: 'Ashdod' },
+  { value: 'אשקלון', label: 'Ashkelon' },
+];
+
+const NEIGHBORHOODS_EN: Record<string, { value: string; label: string }[]> = {
+  'תל אביב יפו': [
+    { value: 'צפון_ישן', label: 'Old North' },
+    { value: 'צפון_חדש', label: 'New North' },
+    { value: 'מרכז_העיר', label: 'City Center' },
+    { value: 'פלורנטין', label: 'Florentin' },
+    { value: 'נווה_צדק', label: 'Neve Tzedek' },
+    { value: 'רוטשילד', label: 'Rothschild' },
+    { value: 'כרם_התימנים', label: 'Kerem HaTeimanim' },
+    { value: 'כיכר_המדינה', label: 'Kikar HaMedina' },
+    { value: 'רמת_אביב', label: 'Ramat Aviv' },
+    { value: 'יפו', label: 'Jaffa' },
+    { value: 'צהלה', label: 'Tzahala' },
+    { value: 'בבלי', label: 'Bavli' },
+    { value: 'נמל_תל_אביב', label: 'Tel Aviv Port' },
+    { value: 'תל_ברוך', label: 'Tel Baruch' },
+    { value: 'דרום_תל_אביב', label: 'South Tel Aviv' },
+    { value: 'אזורי_חן', label: 'Azorei Chen' },
+    { value: 'נווה_אביבים', label: 'Neve Avivim' },
+    { value: 'הדר_יוסף', label: 'Hadar Yosef' },
+    { value: 'נווה_שרת', label: 'Neve Sharet' },
+    { value: 'יד_אליהו', label: 'Yad Eliyahu' },
+    { value: 'רמת_החייל', label: 'Ramat HaChayal' },
+    { value: 'אחר_תא', label: 'Other' },
+  ],
+  'רמת גן': [
+    { value: 'מרכז_רמת_גן', label: 'City Center' },
+    { value: 'בורסה', label: 'Diamond Exchange' },
+    { value: 'רמת_חן', label: 'Ramat Chen' },
+    { value: 'תל_בנימין', label: 'Tel Binyamin' },
+    { value: 'נחלת_גנים', label: 'Nahalat Ganim' },
+    { value: 'אחר_רג', label: 'Other' },
+  ],
+  'גבעתיים': [
+    { value: 'מרכז_גבעתיים', label: 'City Center' },
+    { value: 'בורוכוב', label: 'Borochov' },
+    { value: 'אחר_גבעתיים', label: 'Other' },
+  ],
+  'הרצליה': [
+    { value: 'הרצליה_פיתוח', label: 'Herzliya Pituach' },
+    { value: 'מרכז_הרצליה', label: 'City Center' },
+    { value: 'אחר_הרצליה', label: 'Other' },
+  ],
+};
+
+// Inline English City Selector Dropdown
+function CitySelectorEN({ selectedCities, onChange }: { selectedCities: string[]; onChange: (cities: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+
+  const toggleCity = (cityValue: string) => {
+    if (selectedCities.includes(cityValue)) {
+      onChange(selectedCities.filter(c => c !== cityValue));
+    } else {
+      onChange([...selectedCities, cityValue]);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (selectedCities.length === 0) return "Select cities...";
+    if (selectedCities.length === 1) {
+      const city = CITIES_EN.find(c => c.value === selectedCities[0]);
+      return city?.label || selectedCities[0];
+    }
+    return `${selectedCities.length} cities selected`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-between h-8 text-sm font-normal">
+          <span className="flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            {getDisplayText()}
+          </span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-2 max-h-60 overflow-y-auto" align="start">
+        <div className="space-y-1">
+          {CITIES_EN.map((city) => (
+            <div
+              key={city.value}
+              onClick={() => toggleCity(city.value)}
+              className={cn(
+                "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                selectedCities.includes(city.value) ? "bg-primary/10" : "hover:bg-muted"
+              )}
+            >
+              <Checkbox
+                checked={selectedCities.includes(city.value)}
+                onCheckedChange={() => toggleCity(city.value)}
+              />
+              <span className="text-sm">{city.label}</span>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Inline English Neighborhood Selector Dropdown
+function NeighborhoodSelectorEN({ selectedCities, selectedNeighborhoods, onChange }: { selectedCities: string[]; selectedNeighborhoods: string[]; onChange: (neighborhoods: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+
+  const availableNeighborhoods: { city: string; cityLabel: string; neighborhoods: { value: string; label: string }[] }[] = [];
+  for (const cityValue of selectedCities) {
+    const neighborhoods = NEIGHBORHOODS_EN[cityValue];
+    if (neighborhoods) {
+      const cityConfig = CITIES_EN.find(c => c.value === cityValue);
+      availableNeighborhoods.push({ city: cityValue, cityLabel: cityConfig?.label || cityValue, neighborhoods });
+    }
+  }
+
+  const toggleNeighborhood = (value: string) => {
+    if (selectedNeighborhoods.includes(value)) {
+      onChange(selectedNeighborhoods.filter(n => n !== value));
+    } else {
+      onChange([...selectedNeighborhoods, value]);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (selectedCities.length === 0) return "Select city first";
+    if (selectedNeighborhoods.length === 0) return "Select neighborhoods...";
+    if (selectedNeighborhoods.length === 1) {
+      for (const { neighborhoods } of availableNeighborhoods) {
+        const n = neighborhoods.find(n => n.value === selectedNeighborhoods[0]);
+        if (n) return n.label;
+      }
+      return selectedNeighborhoods[0];
+    }
+    return `${selectedNeighborhoods.length} neighborhoods`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-between h-8 text-sm font-normal" disabled={selectedCities.length === 0}>
+          <span className="flex items-center gap-2">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            {getDisplayText()}
+          </span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-2 max-h-72 overflow-y-auto" align="start">
+        <div className="space-y-3">
+          {availableNeighborhoods.map(({ city, cityLabel, neighborhoods }) => (
+            <div key={city}>
+              {availableNeighborhoods.length > 1 && (
+                <p className="text-xs font-medium text-muted-foreground mb-1 px-2">{cityLabel}:</p>
+              )}
+              <div className="space-y-1">
+                {neighborhoods.map((neighborhood) => (
+                  <div
+                    key={neighborhood.value}
+                    onClick={() => toggleNeighborhood(neighborhood.value)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                      selectedNeighborhoods.includes(neighborhood.value) ? "bg-primary/10" : "hover:bg-muted"
+                    )}
+                  >
+                    <Checkbox
+                      checked={selectedNeighborhoods.includes(neighborhood.value)}
+                      onCheckedChange={() => toggleNeighborhood(neighborhood.value)}
+                    />
+                    <span className="text-sm">{neighborhood.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const clientIntakeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -42,7 +238,6 @@ const clientIntakeSchema = z.object({
   balcony_flexible: z.boolean(),
   yard_flexible: z.boolean(),
   roof_flexible: z.boolean(),
-  pets_flexible: z.boolean(),
   outdoor_space_any: z.boolean(),
   message: z.string().optional(),
   tenant_type: z.string().optional(),
@@ -97,7 +292,6 @@ export default function ClientIntakePageEN() {
     balcony_flexible: true,
     yard_flexible: true,
     roof_flexible: true,
-    pets_flexible: true,
     outdoor_space_any: false,
     message: '',
     tenant_type: '',
@@ -212,7 +406,6 @@ export default function ClientIntakePageEN() {
         balcony_flexible: formData.balcony_flexible,
         yard_flexible: formData.yard_flexible,
         roof_flexible: formData.roof_flexible,
-        pets_flexible: formData.pets_flexible,
         pets: formData.property_type === 'rental' ? formData.pets : false,
         message: defaultMessage,
         notes: finalNotes,
@@ -271,7 +464,7 @@ export default function ClientIntakePageEN() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+      <div dir="ltr" className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-8 pb-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -296,8 +489,8 @@ export default function ClientIntakePageEN() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4">
-      <div className="max-w-lg mx-auto">
+    <div dir="ltr" className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4">
+      <div className="max-w-lg mx-auto text-left">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -352,11 +545,11 @@ export default function ClientIntakePageEN() {
                 onValueChange={(value) => handleInputChange('property_type', value)}
                 className="flex gap-4"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="rental" id="rental" />
                   <Label htmlFor="rental" className="cursor-pointer">Rental</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="sale" id="sale" />
                   <Label htmlFor="sale" className="cursor-pointer">Purchase</Label>
                 </div>
@@ -410,13 +603,13 @@ export default function ClientIntakePageEN() {
                 />
               </div>
 
-              {/* City + Neighborhood */}
+              {/* City + Neighborhood (English versions) */}
               <div className="grid grid-cols-2 gap-3">
-                <CitySelectorDropdown
+                <CitySelectorEN
                   selectedCities={selectedCities}
                   onChange={setSelectedCities}
                 />
-                <NeighborhoodSelectorDropdown
+                <NeighborhoodSelectorEN
                   selectedCities={selectedCities}
                   selectedNeighborhoods={selectedNeighborhoods}
                   onChange={setSelectedNeighborhoods}
@@ -515,15 +708,6 @@ export default function ClientIntakePageEN() {
                       />
                       <span className="text-sm">Pets</span>
                     </label>
-                    {formData.pets && (
-                      <label className="flex items-center gap-1 cursor-pointer text-muted-foreground">
-                        <Checkbox
-                          checked={formData.pets_flexible}
-                          onCheckedChange={(checked) => handleInputChange('pets_flexible', !!checked)}
-                        />
-                        <span className="text-xs">Flex</span>
-                      </label>
-                    )}
                   </div>
                 </div>
               ) : (
