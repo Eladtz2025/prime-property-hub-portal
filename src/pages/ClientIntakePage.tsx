@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,6 +68,7 @@ const REQUIREMENTS_OPTIONS = [
 
 export default function ClientIntakePage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -306,6 +307,18 @@ export default function ClientIntakePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4" dir="rtl">
       <div className="max-w-lg mx-auto">
+        {/* Language Toggle */}
+        <div className="flex justify-start mb-3">
+          <button
+            type="button"
+            onClick={() => navigate('/client-intake/en')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30 dark:hover:bg-red-900/40 transition-colors"
+          >
+            <span>🇺🇸</span>
+            <span>English</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -359,7 +372,7 @@ export default function ClientIntakePage() {
               <RadioGroup
                 value={formData.property_type}
                 onValueChange={(value) => handleInputChange('property_type', value)}
-                className="flex gap-4"
+                className="flex flex-row-reverse gap-4 justify-end"
               >
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <RadioGroupItem value="rental" id="rental" />

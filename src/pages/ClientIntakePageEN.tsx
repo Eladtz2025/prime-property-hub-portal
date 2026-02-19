@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -262,6 +262,7 @@ const REQUIREMENTS_OPTIONS = [
 
 export default function ClientIntakePageEN() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -491,6 +492,18 @@ export default function ClientIntakePageEN() {
   return (
     <div dir="ltr" className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-6 px-4">
       <div className="max-w-lg mx-auto text-left">
+        {/* Language Toggle */}
+        <div className="flex justify-end mb-3">
+          <button
+            type="button"
+            onClick={() => navigate('/client-intake')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:bg-blue-900/40 transition-colors"
+          >
+            <span>🇮🇱</span>
+            <span>עברית</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
