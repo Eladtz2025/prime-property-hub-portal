@@ -1,43 +1,50 @@
 
 
-## הוספת שדות תרגום לאנגלית באנשי מקצוע
+## הוספת שיוך סוכן להוצאות + טבלת סיכום חודשית
 
-### מה ישתנה
+### 1. מסד נתונים - עמודה חדשה
+הוספת עמודת `assigned_to` (uuid, nullable) לטבלת `business_expenses_list` - מפנה לסוכן שההוצאה שייכת אליו.
 
-הוספת שני שדות חדשים במסד הנתונים ובטופס הניהול - שם באנגלית ואזור באנגלית - כדי שהדף האנגלי יציג את הנתונים בשפה הנכונה.
+### 2. שדה בחירת סוכן בטופס ההוצאות
+- שליפת רשימת הסוכנים מ-`profiles` (שם מלא + id)
+- הוספת עמודת "סוכן" בטבלת ההוצאות עם Select dropdown
+- הצגת שם הסוכן בשורת ההוצאה (במצב צפייה)
+- השדה אופציונלי - אפשר להשאיר ריק אם ההוצאה כללית
 
-### 1. מסד נתונים - שני עמודות חדשות
-- `name_en` (text, nullable) - שם איש המקצוע באנגלית
-- `area_en` (text, nullable) - אזור באנגלית
-
-### 2. טופס ניהול אנשי מקצוע (Admin)
-בדיאלוג הוספה/עריכה יתווספו שני שדות:
-- **שם באנגלית** - שדה Input ליד שדה השם הקיים
-- **אזור באנגלית** - שדה Input ליד שדה האזור הקיים
-
-### 3. דף אנגלי - הצגת השדות המתורגמים
-הדף האנגלי (`ProfessionalsPublicPageEN.tsx`) ישתמש ב-`name_en` במקום `name` וב-`area_en` במקום `area` (עם fallback לעברית אם אין תרגום).
+### 3. טבלת סיכום חודשית מתחת להוצאות
+טבלה מסודרת שמציגה סיכום לפי חודשים:
+- עמודות: חודש | סה"כ חודשי | סה"כ שנתי | חד-פעמי | סה"כ
+- חישוב אוטומטי מתוך ההוצאות הקיימות (הוצאה חודשית מופיעה בכל חודש, שנתית מחולקת ל-12, חד-פעמית בחודש היצירה)
+- שורת סיכום כוללת בתחתית
+- אפשרות סינון לפי סוכן
 
 ### פרטים טכניים
 
 **שינוי במסד נתונים:**
-- הוספת עמודות `name_en` ו-`area_en` לטבלת `professionals_list`
+- `ALTER TABLE business_expenses_list ADD COLUMN assigned_to uuid REFERENCES profiles(id)`
 
 **קבצים שישתנו:**
 
-1. **`src/hooks/useProfessionals.ts`**
-   - הוספת `name_en` ו-`area_en` לממשק `Professional` ול-`NewProfessional`
+1. **`src/hooks/useBusinessExpenses.ts`**
+   - הוספת `assigned_to` ל-interface `BusinessExpense`
+   - הוספת `assigned_to` ל-type `NewBusinessExpense`
+   - שליפת ה-select תכלול `assigned_to, profiles:assigned_to(id, full_name)` כ-join
 
-2. **`src/components/ProfessionalsList.tsx`**
-   - הוספת שדות `name_en` ו-`area_en` ב-`emptyPro`
-   - הוספת שני שדות Input בדיאלוג (dir="ltr") - "Name (English)" ו-"Area (English)"
-   - הוספת השדות ב-`startEdit`
+2. **`src/components/BusinessExpensesList.tsx`**
+   - שליפת רשימת סוכנים מ-`profiles` (useEffect)
+   - הוספת עמודת "סוכן" לטבלה עם Select dropdown בעריכה/הוספה
+   - הצגת שם הסוכן במצב צפייה
+   - עדכון `emptyExpense` עם `assigned_to: null`
+   - עדכון `startEdit` לכלול `assigned_to`
 
-3. **`src/pages/ProfessionalsPublicPageEN.tsx`**
-   - הוספת `name_en` ו-`area_en` ל-interface ולשאילתת ה-select
-   - הצגת `pro.name_en || pro.name` במקום `pro.name`
-   - הצגת `pro.area_en || pro.area` במקום `pro.area`
-
-4. **`src/pages/ProfessionalsPublicPage.tsx`** (שינוי קטן)
-   - הוספת השדות החדשים ל-interface כדי שהטיפוסים יהיו עקביים
-
+3. **`src/components/BusinessExpensesMonthlySummary.tsx`** (קובץ חדש)
+   - קומפוננטת טבלת סיכום חודשית
+   - מקבלת את רשימת ההוצאות כ-prop
+   - מחשבת לכל חודש (12 חודשים של השנה הנוכחית):
+     - סה"כ הוצאות חודשיות (כל ההוצאות עם frequency=monthly)
+     - סה"כ הוצאות שנתיות מחולק ל-12
+     - הוצאות חד-פעמיות שנוצרו באותו חודש
+     - סה"כ לחודש
+   - סינון לפי סוכן (dropdown בראש הטבלה)
+   - שורת סיכום שנתי בתחתית
+   - הקומפוננטה תוצג מתחת לטבלת ההוצאות הקיימת
