@@ -1,45 +1,51 @@
 
 
-## החלפת כרטיסיות הסטטיסטיקה במטרות (Goals) בהדר הכחול
+## הוספת 2 טפסים חדשים לעמוד הטפסים
 
-### מה ישתנה
-הכרטיסיות הקטנות שבתוך הבאנר הכחול בדשבורד (סה"כ נכסים, הכנסה חודשית, תפוסים, פנויים, נוצר קשר, טרם קשר) יוחלפו בכרטיסיות מטרות חופשיות שניתן לערוך.
+### מה יתווסף
+
+**1. טופס הוצאות עסק** - רשימת הוצאות קבועות של העסק (משרד, רכב, ביטוח וכו') לניהול ומעקב פנימי.
+
+**2. טופס אנשי מקצוע** - רשימת אנשי מקצוע (שרברב, חשמלאי, צבעי וכו') שאפשר לשלוח ללקוחות.
 
 ### איך זה יראה
-- בתוך הבאנר הכחול, במקום 6 כרטיסיות סטטיסטיקה, יופיעו כרטיסיות מטרות
-- כל כרטיסיה תציג את טקסט המטרה בפונט לבן וגדול
-- כפתור עריכה (עיפרון) וכפתור מחיקה (X) מופיעים בhover
-- כפתור + להוספת מטרה חדשה (עד 6 מטרות)
-- עובד גם בדסקטופ וגם במובייל (grid של 2 עמודות במובייל)
+- 2 קוביות פעולה חדשות בגריד העליון של עמוד הטפסים
+- 2 סקשנים חדשים (Collapsible) מתחת לקיימים
+- כל סקשן מציג טבלה/רשימה עם אפשרות הוספה, עריכה ומחיקה
 
 ### שינויים טכניים
 
-**1. טבלה חדשה `dashboard_goals` ב-Supabase**
-- `id` (uuid), `title` (text), `position` (integer), `created_by` (uuid), timestamps
-- RLS: קריאה לכל authenticated, כתיבה/עדכון/מחיקה ל-admin/super_admin/manager
-- טריגר לעדכון אוטומטי של updated_at
+**1. טבלה חדשה `business_expenses_list`**
+- `id` (uuid), `category` (text - קטגוריה כמו "משרד", "רכב"), `description` (text), `amount` (numeric), `frequency` (text - חודשי/שנתי/חד-פעמי), `notes` (text), `created_by` (uuid), timestamps
+- RLS: קריאה/כתיבה ל-admin/super_admin/manager
 
-**2. הוק חדש `src/hooks/useDashboardGoals.ts`**
-- פונקציות CRUD: fetchGoals, addGoal, updateGoal, deleteGoal
-- שימוש ב-Supabase client ישירות
+**2. טבלה חדשה `professionals_list`**
+- `id` (uuid), `name` (text), `profession` (text - שרברב/חשמלאי/צבעי וכו'), `phone` (text), `area` (text - אזור שירות), `notes` (text), `created_by` (uuid), timestamps
+- RLS: קריאה/כתיבה ל-admin/super_admin/manager
 
-**3. קומפוננטה חדשה `src/components/DashboardGoalsGrid.tsx`**
-- מציגה מטרות בכרטיסיות שקופות (bg-white/15 backdrop-blur-lg)
-- אייקון Target ליד כל מטרה
-- מצב עריכה inline עם Input
-- כרטיסיית "הוסף מטרה" עם border-dashed
+**3. קומפוננטה חדשה `src/components/BusinessExpensesList.tsx`**
+- טבלה עם עמודות: קטגוריה, תיאור, סכום, תדירות, הערות
+- כפתור "הוסף הוצאה" שפותח שורה חדשה/מודל
+- עריכה ומחיקה inline
+- אייקון Wallet בצבע אדום-כתום
 
-**4. עדכון `src/components/Dashboard.tsx`**
-- הסרת imports לא נדרשים (Building, Users, CheckCircle, Clock, Phone, TrendingUp, Edit2)
-- הסרת state של manualMonthlyIncome ו-isEditingIncome
-- החלפת 6 כרטיסיות הסטטיסטיקה (שורות 106-195) ב-DashboardGoalsGrid
+**4. קומפוננטה חדשה `src/components/ProfessionalsList.tsx`**
+- טבלה עם עמודות: שם, מקצוע, טלפון, אזור, הערות
+- כפתור "הוסף איש מקצוע"
+- כפתור שליחה בוואטסאפ ליד כל רשומה (לשלוח פרטים ללקוח)
+- אייקון Wrench בצבע כחול-ירוק
 
-**5. עדכון `src/components/MobileDashboard.tsx`**
-- אותו שינוי: הסרת כרטיסיות הסטטיסטיקה והחלפה ב-DashboardGoalsGrid עם columns="grid-cols-2"
-- הסרת state של manualMonthlyIncome ו-isEditingIncome
+**5. עדכון `src/pages/AdminForms.tsx`**
+- הוספת 2 קוביות פעולה חדשות לגריד העליון
+- הוספת 2 סקשנים Collapsible חדשים
+- הוספת ה-counts החדשים ל-state
+- עדכון ה-grid ל-`grid-cols-9` בדסקטופ (או שיישאר דינמי)
+
+**6. הוקים חדשים**
+- `src/hooks/useBusinessExpenses.ts` - CRUD להוצאות עסק
+- `src/hooks/useProfessionals.ts` - CRUD לאנשי מקצוע
 
 ### מה לא ישתנה
-- הברכה (שלום + שם) נשארת
-- העיצוב הכללי של הבאנר הכחול נשאר
-- כל שאר הדשבורד נשאר כמו שהוא
+- כל הטפסים הקיימים (תיווך, זיכרון דברים, בלעדיות, שיתוף מתווכים, הצעות מחיר, מצגות) נשארים כמו שהם
+- מבנה העמוד הכללי נשמר
 
