@@ -372,7 +372,7 @@ export default function ClientIntakePage() {
               <RadioGroup
                 value={formData.property_type}
                 onValueChange={(value) => handleInputChange('property_type', value)}
-                className="flex flex-row-reverse gap-4 justify-end"
+                className="flex gap-4"
               >
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <RadioGroupItem value="rental" id="rental" />
