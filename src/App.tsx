@@ -78,6 +78,7 @@ const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const ClientIntakePageEN = React.lazy(() => import('./pages/ClientIntakePageEN'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
 const ProfessionalsPublicPage = React.lazy(() => import('./pages/ProfessionalsPublicPage'));
+const ProfessionalsPublicPageEN = React.lazy(() => import('./pages/ProfessionalsPublicPageEN'));
 const PresentationPricingPage = React.lazy(() => import('./pages/PresentationPricingPage'));
 const DynamicPresentationPricingPage = React.lazy(() => import('./pages/DynamicPresentationPricingPage'));
 const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/DynamicPresentationExclusivityForm'));
@@ -134,6 +135,7 @@ const AppContent: React.FC = () => {
           
           {/* Professionals Public Page */}
           <Route path="/professionals/shared" element={<ProfessionalsPublicPage />} />
+          <Route path="/professionals/shared/en" element={<ProfessionalsPublicPageEN />} />
           
           {/* Price Offer Public Views - Clean pages without layout */}
           <Route path="/price-offer/:token" element={<PriceOfferView />} />

@@ -276,22 +276,48 @@ const AdminForms = () => {
           </Popover>
 
           {/* Professionals shared link */}
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/professionals/shared`);
-              setCopiedPro(true);
-              toast.success('לינק אנשי מקצוע הועתק!', { description: 'אפשר לשלוח ללקוח' });
-              setTimeout(() => setCopiedPro(false), 2000);
-            }}
-            className={`flex flex-col items-center justify-center p-4 rounded-xl 
-              ${copiedPro ? 'bg-green-50 dark:bg-green-950/30' : 'bg-cyan-50 dark:bg-cyan-950/30'} 
-              border border-border hover:border-primary/40 
-              transition-all duration-200 hover:shadow-md hover:scale-[1.02]
-              min-h-[100px] gap-2`}
-          >
-            {copiedPro ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-cyan-600" />}
-            <span className="text-sm font-medium text-center">לינק אנשי מקצוע</span>
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`flex flex-col items-center justify-center p-4 rounded-xl 
+                  ${copiedPro ? 'bg-green-50 dark:bg-green-950/30' : 'bg-cyan-50 dark:bg-cyan-950/30'} 
+                  border border-border hover:border-primary/40 
+                  transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+                  min-h-[100px] gap-2`}
+              >
+                {copiedPro ? <Check className="h-7 w-7 text-green-600" /> : <Link2 className="h-7 w-7 text-cyan-600" />}
+                <span className="text-sm font-medium text-center">לינק אנשי מקצוע</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="center">
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/professionals/shared`);
+                    setCopiedPro(true);
+                    toast.success('הלינק הועתק!', { description: 'לינק בעברית' });
+                    setTimeout(() => setCopiedPro(false), 2000);
+                  }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-right"
+                >
+                  <span className="text-lg">🇮🇱</span>
+                  <span>עברית</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/professionals/shared/en`);
+                    setCopiedPro(true);
+                    toast.success('Link copied!', { description: 'English link' });
+                    setTimeout(() => setCopiedPro(false), 2000);
+                  }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-right"
+                >
+                  <span className="text-lg">🇺🇸</span>
+                  <span>English</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* All other cubes with popover */}
           {actionCubes.map((cube) => {
