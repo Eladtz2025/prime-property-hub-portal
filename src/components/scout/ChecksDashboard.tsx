@@ -17,6 +17,7 @@ import { AvailabilityHistorySection } from './checks/AvailabilityHistorySection'
 import { DeduplicationStatus } from './checks/DeduplicationStatus';
 import { MatchingStatus } from './checks/MatchingStatus';
 import { BackfillStatus } from './checks/BackfillStatus';
+import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
@@ -687,6 +688,8 @@ export const ChecksDashboard: React.FC = () => {
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
           isStopPending={backfillJina.isStopping}
+          historyContent={<BackfillJinaHistory />}
+          historyTitle="היסטוריית השלמת נתונים (Jina)"
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[

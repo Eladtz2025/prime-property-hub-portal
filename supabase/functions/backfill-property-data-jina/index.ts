@@ -371,7 +371,7 @@ Deno.serve(async (req) => {
         const summary = (current?.summary_data as Record<string, any>) || {};
         const recentItems = Array.isArray(summary.recent_items) ? summary.recent_items : [];
         recentItems.push(item);
-        if (recentItems.length > 10) recentItems.splice(0, recentItems.length - 10);
+        if (recentItems.length > 500) recentItems.splice(0, recentItems.length - 500);
         summary.recent_items = recentItems;
         
         await supabase
