@@ -400,6 +400,7 @@ Deno.serve(async (req) => {
       blacklisted: 0,
       non_ta_deactivated: 0,
       scrape_failed: 0,
+      timeout_skipped: 0,
       no_content: 0,
       no_new_data: 0,
       update_db_error: 0,
@@ -428,16 +429,54 @@ Deno.serve(async (req) => {
 
         console.log(`\n🔍 Processing (Jina): ${prop.source_url}`);
 
-        // ===== JINA SCRAPE (replaces Firecrawl) =====
-        const scrapeResponse = await fetch(`https://r.jina.ai/${prop.source_url}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'text/markdown',
-            'X-No-Cache': 'true',
-            'X-Wait-For-Selector': 'body',
-            'X-Timeout': '35',
-          },
-        });
+        // ===== JINA SCRAPE with 45s property-level timeout =====
+        const propertyController = new AbortController();
+        const propertyTimeout = setTimeout(() => propertyController.abort(), 45000);
+        
+        let scrapeResponse: Response;
+        try {
+          scrapeResponse = await fetch(`https://r.jina.ai/${prop.source_url}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'text/markdown',
+              'X-No-Cache': 'true',
+              'X-Wait-For-Selector': 'body',
+              'X-Timeout': '35',
+            },
+            signal: propertyController.signal,
+          });
+        } catch (fetchError) {
+          clearTimeout(propertyTimeout);
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            console.log(`⏱️ Property timeout (45s) for ${prop.source_url} — skipping`);
+            failCount++;
+            batchStats.timeout_skipped++;
+            batchStats.total_processed++;
+            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await saveRecentItem({
+              address: prop.address || prop.title,
+              neighborhood: prop.neighborhood,
+              source: prop.source,
+              source_url: prop.source_url,
+              status: 'timeout_skipped',
+              timestamp: new Date().toISOString(),
+            });
+            // Update progress in DB
+            const { data: currentProgress } = await supabase
+              .from('backfill_progress')
+              .select('processed_items, failed_items')
+              .eq('id', progressId)
+              .single();
+            await supabase.from('backfill_progress').update({
+              processed_items: (currentProgress?.processed_items || 0) + 1,
+              failed_items: (currentProgress?.failed_items || 0) + 1,
+              updated_at: new Date().toISOString(),
+            }).eq('id', progressId);
+            continue;
+          }
+          throw fetchError;
+        }
+        clearTimeout(propertyTimeout);
 
         if (!scrapeResponse.ok) {
           const errorText = await scrapeResponse.text();
