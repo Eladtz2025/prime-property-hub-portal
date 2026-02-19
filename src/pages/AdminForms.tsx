@@ -11,13 +11,17 @@ import {
   Users, 
   DollarSign,
   ChevronDown,
-  Presentation
+  Presentation,
+  Wallet,
+  Wrench
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrokerageFormsMobileList } from '@/components/BrokerageFormsMobileList';
 import AdminPriceOffersContent from '@/components/AdminPriceOffersContent';
 import LegalFormsList from '@/components/forms/LegalFormsList';
 import PitchDecksList from '@/components/pitch-deck/builder/PitchDecksList';
+import BusinessExpensesList from '@/components/BusinessExpensesList';
+import ProfessionalsList from '@/components/ProfessionalsList';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FormCounts {
@@ -27,6 +31,8 @@ interface FormCounts {
   broker_sharing: number;
   price_offers: number;
   pitch_decks: number;
+  business_expenses: number;
+  professionals: number;
 }
 
 const AdminForms = () => {
@@ -38,6 +44,8 @@ const AdminForms = () => {
     broker_sharing: 0,
     price_offers: 0,
     pitch_decks: 0,
+    business_expenses: 0,
+    professionals: 0,
   });
   const [openSections, setOpenSections] = useState({
     brokerage: true,
@@ -46,6 +54,8 @@ const AdminForms = () => {
     broker_sharing: true,
     price_offers: true,
     pitch_decks: true,
+    business_expenses: true,
+    professionals: true,
   });
 
   useEffect(() => {
@@ -78,6 +88,16 @@ const AdminForms = () => {
         .from('pitch_decks')
         .select('*', { count: 'exact', head: true });
 
+      // Fetch business expenses count
+      const { count: expensesCount } = await supabase
+        .from('business_expenses_list')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch professionals count
+      const { count: professionalsCount } = await supabase
+        .from('professionals_list')
+        .select('*', { count: 'exact', head: true });
+
       setCounts({
         brokerage: brokerageCount || 0,
         memorandum: memorandumCount,
@@ -85,6 +105,8 @@ const AdminForms = () => {
         broker_sharing: brokerSharingCount,
         price_offers: priceOffersCount || 0,
         pitch_decks: pitchDecksCount || 0,
+        business_expenses: expensesCount || 0,
+        professionals: professionalsCount || 0,
       });
     } catch (error) {
       console.error('Error fetching form counts:', error);
@@ -157,6 +179,22 @@ const AdminForms = () => {
       color: 'text-pink-600',
       bgColor: 'bg-pink-50 dark:bg-pink-950/30',
       onClick: () => window.location.href = '/admin-dashboard/pitch-decks/new',
+    },
+    {
+      id: 'business_expenses',
+      label: 'הוצאות עסק',
+      icon: Wallet,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50 dark:bg-red-950/30',
+      onClick: () => toggleSection('business_expenses'),
+    },
+    {
+      id: 'professionals',
+      label: 'אנשי מקצוע',
+      icon: Wrench,
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50 dark:bg-cyan-950/30',
+      onClick: () => toggleSection('professionals'),
     },
   ];
 
@@ -343,6 +381,57 @@ const AdminForms = () => {
               </CollapsibleContent>
             </Card>
           </Collapsible>
+
+          {/* Row: Business Expenses + Professionals */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Business Expenses Section */}
+            <Collapsible 
+              open={openSections.business_expenses} 
+              onOpenChange={() => toggleSection('business_expenses')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Wallet className="h-5 w-5 text-red-600" />
+                      <h2 className="font-semibold text-lg">הוצאות עסק</h2>
+                      <Badge variant="secondary">{counts.business_expenses}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.business_expenses ? 'rotate-180' : ''}`} />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <BusinessExpensesList />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* Professionals Section */}
+            <Collapsible 
+              open={openSections.professionals} 
+              onOpenChange={() => toggleSection('professionals')}
+            >
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 rounded-t-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-cyan-600" />
+                      <h2 className="font-semibold text-lg">אנשי מקצוע</h2>
+                      <Badge variant="secondary">{counts.professionals}</Badge>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections.professionals ? 'rotate-180' : ''}`} />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <ProfessionalsList />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
         </div>
       </div>
     </div>

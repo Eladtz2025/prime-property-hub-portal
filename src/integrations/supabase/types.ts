@@ -439,6 +439,42 @@ export type Database = {
           },
         ]
       }
+      business_expenses_list: {
+        Row: {
+          amount: number | null
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          frequency: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_leads: {
         Row: {
           assigned_agent_id: string | null
@@ -2044,6 +2080,42 @@ export type Database = {
           priority?: number
           task_type?: string
           title?: string
+        }
+        Relationships: []
+      }
+      professionals_list: {
+        Row: {
+          area: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          profession: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          profession: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          profession?: string
+          updated_at?: string
         }
         Relationships: []
       }
