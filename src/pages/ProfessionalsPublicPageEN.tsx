@@ -82,10 +82,11 @@ const ProfessionalsPublicPageEN = () => {
     window.open(`tel:${phone}`, '_self');
   };
 
-  const whatsApp = (phone: string) => {
+  const whatsApp = (phone: string, name: string) => {
     const clean = phone.replace(/[^0-9]/g, '');
     const formatted = clean.startsWith('0') ? `972${clean.slice(1)}` : clean;
-    window.open(`https://wa.me/${formatted}`, '_blank');
+    const message = encodeURIComponent(`Hi ${name}, we got your number from City Market Real Estate.\nHow are you?`);
+    window.open(`https://wa.me/${formatted}?text=${message}`, '_blank');
   };
 
   if (loading) {
@@ -169,7 +170,7 @@ const ProfessionalsPublicPageEN = () => {
                             size="sm"
                             variant="outline"
                             className="flex-1 min-w-[100px] gap-2 text-green-600 border-green-300 hover:bg-green-50"
-                            onClick={() => whatsApp(pro.phone!)}
+                            onClick={() => whatsApp(pro.phone!, pro.name)}
                           >
                             <MessageCircle className="h-4 w-4" />
                             WhatsApp
