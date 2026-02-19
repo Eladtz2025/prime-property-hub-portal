@@ -1,40 +1,27 @@
 
-## הוספת תמיכה באנגלית לדף אנשי מקצוע הציבורי
+## עדכון WhatsApp עם הודעה מוכנה + הסרת כפתור העתקת טלפון
 
-### מה ייעשה
+### מה ישתנה
 
-1. **יצירת דף אנגלי חדש** - `src/pages/ProfessionalsPublicPageEN.tsx`
-   - אותו עיצוב בדיוק כמו הדף העברי, אבל ב-LTR ובאנגלית
-   - כותרת: "Recommended Professionals"
-   - כפתורים: "Call", "WhatsApp", "Website"
-   - קופון: "Discount code:"
-   - כפתור מעבר לעברית בראש הדף
+**1. הודעת WhatsApp מוכנה מראש**
+בכל 3 הקבצים, פונקציית ה-WhatsApp תשלח הודעה מוכנה עם שם איש המקצוע:
+- עברית: "שלום {שם}, קיבלנו את הטלפון שלך מחברת הנדל״ן סיטי מרקט. מה נשמע?"
+- אנגלית (בדף EN): "Hi {name}, we got your number from City Market Real Estate. How are you?"
 
-2. **הוספת כפתור מעבר שפה לדף העברי** - `src/pages/ProfessionalsPublicPage.tsx`
-   - כפתור "English" בראש הדף שמנווט ל-`/professionals/shared/en`
-   - אותו עיצוב כמו כפתור השפה בטפסי הקליטה
-
-3. **הוספת Route חדש** - `src/App.tsx`
-   - הוספת `/professionals/shared/en` עם הדף האנגלי
-
-4. **עדכון לינק באדמין** - `src/pages/AdminForms.tsx`
-   - הוספת אפשרות להעתיק גם את הלינק האנגלי (או שהלינק יישאר עברי והלקוח יעבור שפה בעצמו)
+**2. הסרת כפתור "העתק טלפון"**
+הכפתור יוסר מהרשימה באדמין (`ProfessionalsList.tsx`). כפתורי חיוג ו-WhatsApp נשארים.
 
 ### פרטים טכניים
 
-**קובץ חדש: `src/pages/ProfessionalsPublicPageEN.tsx`**
-- העתקה של הדף העברי עם תרגום לאנגלית
-- `dir="ltr"` במקום `dir="rtl"`
-- מיפוי מקצועות לאנגלית (Plumber, Electrician, Painter, וכו')
-- כפתור מעבר שפה בראש: "עברית" שמנווט ל-`/professionals/shared`
-- טקסטים: "Call", "WhatsApp", "Website", "Discount code:", "Copy"
+**3 קבצים לעדכון:**
 
-**עדכון: `src/pages/ProfessionalsPublicPage.tsx`**
-- הוספת `useNavigate` מ-react-router-dom
-- הוספת כפתור "English" בראש הדף (אותו סגנון כמו בטפסי הקליטה)
+**`src/pages/ProfessionalsPublicPage.tsx`** (שורות 67-71):
+- שינוי `whatsApp(phone)` ל-`whatsApp(phone, name)`
+- הוספת `text` parameter עם ההודעה בעברית ל-URL של WhatsApp
 
-**עדכון: `src/App.tsx`**
-- הוספת route: `/professionals/shared/en` -> `ProfessionalsPublicPageEN`
+**`src/pages/ProfessionalsPublicPageEN.tsx`** (שורות 85-89):
+- אותו שינוי, עם הודעה באנגלית
 
-**עדכון: `src/pages/AdminForms.tsx`**
-- הוספת כפתור העתקת לינק אנגלי לאנשי מקצוע (ליד הכפתור העברי)
+**`src/components/ProfessionalsList.tsx`**:
+- עדכון פונקציית WhatsApp להוסיף הודעה מוכנה
+- הסרת state של `copiedPhone` וכפתור "העתק טלפון"
