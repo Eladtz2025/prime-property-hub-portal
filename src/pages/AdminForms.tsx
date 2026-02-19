@@ -192,6 +192,7 @@ const AdminForms = () => {
       newFormUrl: null,
       dialogId: 'business_expenses' as DialogId,
       count: counts.business_expenses,
+      directDialog: true,
     },
     {
       id: 'professionals' as const,
@@ -243,6 +244,28 @@ const AdminForms = () => {
           {/* All other cubes with popover */}
           {actionCubes.map((cube) => {
             const Icon = cube.icon;
+
+            if (cube.directDialog) {
+              return (
+                <button
+                  key={cube.id}
+                  onClick={() => setActiveDialog(cube.dialogId)}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl 
+                    ${cube.bgColor} border border-border hover:border-primary/40 
+                    transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+                    min-h-[100px] gap-2 relative`}
+                >
+                  <Icon className={`h-7 w-7 ${cube.color}`} />
+                  <span className="text-sm font-medium text-center">{cube.label}</span>
+                  {cube.count > 0 && (
+                    <Badge variant="secondary" className="absolute top-2 left-2 text-xs px-1.5 py-0.5 min-w-[20px]">
+                      {cube.count}
+                    </Badge>
+                  )}
+                </button>
+              );
+            }
+
             return (
               <Popover key={cube.id}>
                 <PopoverTrigger asChild>
