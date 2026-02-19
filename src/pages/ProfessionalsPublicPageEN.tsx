@@ -1,27 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Phone, MessageCircle, Globe, Tag, Copy, Check, MapPin } from 'lucide-react';
+import { Phone, MessageCircle, Globe, Tag, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
-const PROFESSION_EMOJI: Record<string, string> = {
-  'שרברב': '🔧',
-  'חשמלאי': '⚡',
-  'צבעי': '🎨',
-  'מנעולן': '🔑',
-  'מיזוג אוויר': '❄️',
-  'נגר': '🪚',
-  'מוביל': '🚚',
-  'קבלן שיפוצים': '🏗️',
-  'אדריכל': '📐',
-  'מעצב פנים': '🛋️',
-  'עורך דין': '⚖️',
-  'שמאי': '📊',
-  'וילונות': '🪟',
-  'ניקיון': '🧹',
-  'אחר': '👷',
-};
 
 const PROFESSION_EN: Record<string, string> = {
   'שרברב': 'Plumber',
@@ -91,7 +73,7 @@ const ProfessionalsPublicPageEN = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(38,60%,45%)]"></div>
       </div>
     );
   }
@@ -105,63 +87,59 @@ const ProfessionalsPublicPageEN = () => {
   return (
     <div className="min-h-screen bg-[hsl(220,20%,97%)]" dir="ltr">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[hsl(220,25%,18%)] to-[hsl(220,30%,28%)] text-white">
+      <div className="bg-[hsl(220,15%,8%)] text-white border-b border-[hsl(38,60%,45%)]/30">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="flex justify-end pt-3 pb-2">
+          <div className="flex justify-end pt-4 pb-2">
             <button
               onClick={() => navigate('/professionals/shared')}
-              className="px-3 py-1.5 text-xs rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all flex items-center gap-1.5 text-white/90 hover:text-white border border-white/20"
+              className="text-xs text-white/50 hover:text-white/80 transition-colors hover:underline underline-offset-4"
             >
-              <span>🇮🇱</span> עברית
+              🇮🇱 עברית
             </button>
           </div>
-          <div className="pb-6 text-center">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Recommended Professionals</h1>
-            <p className="text-sm text-white/70 mt-1.5">Trusted and verified professionals</p>
+          <div className="pb-8 text-center">
+            <h1 className="font-[Playfair_Display] italic font-light text-3xl md:text-4xl tracking-tight">Recommended Professionals</h1>
+            <p className="text-xs text-white/40 mt-2 tracking-[0.2em] uppercase">Trusted & verified professionals</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-10">
         {Object.entries(grouped).map(([profession, pros]) => {
-          const emoji = PROFESSION_EMOJI[profession] || '👷';
           const enName = PROFESSION_EN[profession] || profession;
           return (
             <div key={profession}>
-              <div className="flex items-center gap-2.5 mb-4">
-                <span className="w-9 h-9 rounded-lg bg-[hsl(220,25%,18%)]/10 flex items-center justify-center text-lg">{emoji}</span>
-                <h2 className="text-base font-bold text-[hsl(220,25%,18%)] tracking-tight">{enName}</h2>
-                <span className="text-xs text-muted-foreground font-medium bg-muted rounded-full px-2.5 py-0.5">{pros.length}</span>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-[1px] bg-[hsl(38,60%,45%)]" />
+                <h2 className="text-lg font-light tracking-wide text-foreground">{enName}</h2>
+                <span className="text-xs text-muted-foreground/50 font-light">{pros.length}</span>
               </div>
               <div className="space-y-3">
                 {pros.map(pro => (
                   <div
                     key={pro.id}
-                    className="rounded-2xl border border-border/60 bg-card p-4 md:p-5 space-y-3 shadow-sm hover:shadow-md transition-shadow"
+                    className="rounded-xl border border-border/20 bg-white p-5 md:p-6 space-y-3 hover:border-border/40 transition-colors"
                   >
                     <div>
-                      <h3 className="font-semibold text-foreground text-[1.05rem]" dir="rtl">{pro.name}</h3>
+                      <h3 className="font-[Playfair_Display] text-lg text-foreground" dir="rtl">{pro.name}</h3>
                       {pro.area && (
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground" dir="rtl">{pro.area}</span>
-                        </div>
+                        <span className="text-xs text-muted-foreground/60 font-light" dir="rtl">{pro.area}</span>
                       )}
-                      {pro.notes && <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed" dir="rtl">{pro.notes}</p>}
+                      {pro.notes && <p className="text-sm text-muted-foreground/70 mt-1.5 leading-relaxed font-light" dir="rtl">{pro.notes}</p>}
                     </div>
 
                     {pro.coupon_code && (
-                      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3 border border-amber-200/60 dark:border-amber-800/40">
-                        <Tag className="h-4 w-4 text-amber-600 shrink-0" />
-                        <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Discount code:</span>
-                        <span className="font-mono font-bold text-amber-800 dark:text-amber-200 tracking-wider">{pro.coupon_code}</span>
+                      <div className="flex items-center gap-2 rounded-lg p-3 border border-[hsl(38,60%,45%)]/30">
+                        <Tag className="h-3.5 w-3.5 text-[hsl(38,60%,45%)] shrink-0" />
+                        <span className="text-xs font-light text-[hsl(38,60%,35%)]">Discount code:</span>
+                        <span className="font-mono font-medium text-sm text-[hsl(38,60%,30%)] tracking-wider">{pro.coupon_code}</span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 ml-auto rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                          className="h-7 w-7 ml-auto rounded-full hover:bg-[hsl(38,60%,45%)]/10"
                           onClick={() => copyCoupon(pro.coupon_code!, pro.id)}
                         >
-                          {copiedCoupon === pro.id ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-amber-600" />}
+                          {copiedCoupon === pro.id ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-[hsl(38,60%,45%)]" />}
                         </Button>
                       </div>
                     )}
@@ -171,7 +149,8 @@ const ProfessionalsPublicPageEN = () => {
                         <>
                           <Button
                             size="sm"
-                            className="flex-1 min-w-[100px] gap-2 rounded-full bg-[hsl(220,25%,18%)] hover:bg-[hsl(220,25%,25%)] text-white shadow-sm"
+                            variant="outline"
+                            className="flex-1 min-w-[100px] gap-2 rounded-full border-foreground/15 text-foreground bg-transparent hover:bg-foreground/5"
                             onClick={() => callPhone(pro.phone!)}
                           >
                             <Phone className="h-4 w-4" />
@@ -180,7 +159,7 @@ const ProfessionalsPublicPageEN = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="flex-1 min-w-[100px] gap-2 rounded-full text-[hsl(142,60%,30%)] border-[hsl(142,40%,70%)] hover:bg-[hsl(142,50%,95%)] shadow-sm"
+                            className="flex-1 min-w-[100px] gap-2 rounded-full border-foreground/15 text-foreground bg-transparent hover:bg-foreground/5"
                             onClick={() => whatsApp(pro.phone!, pro.name)}
                           >
                             <MessageCircle className="h-4 w-4" />
@@ -189,15 +168,13 @@ const ProfessionalsPublicPageEN = () => {
                         </>
                       )}
                       {pro.website && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 min-w-[100px] gap-2 rounded-full shadow-sm"
+                        <button
+                          className="flex-1 min-w-[100px] text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors flex items-center justify-center gap-1.5 py-2"
                           onClick={() => window.open(pro.website!.startsWith('http') ? pro.website! : `https://${pro.website}`, '_blank')}
                         >
-                          <Globe className="h-4 w-4" />
+                          <Globe className="h-3.5 w-3.5" />
                           Website
-                        </Button>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -209,13 +186,14 @@ const ProfessionalsPublicPageEN = () => {
 
         {professionals.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-lg">No professionals to display at the moment</p>
+            <p className="text-lg font-light">No professionals to display at the moment</p>
           </div>
         )}
       </div>
 
-      <div className="text-center py-6 text-xs text-muted-foreground border-t border-border mt-4">
-        Prime Property © {new Date().getFullYear()}
+      <div className="h-[1px] bg-[hsl(38,60%,45%)]/20 max-w-2xl mx-auto" />
+      <div className="text-center py-6 text-xs text-muted-foreground/50 tracking-[0.3em]">
+        CITY MARKET © {new Date().getFullYear()}
       </div>
     </div>
   );
