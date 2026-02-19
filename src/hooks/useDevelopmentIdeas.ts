@@ -88,17 +88,22 @@ export const useDevelopmentIdeas = () => {
 
   const toggleComplete = useCallback(async (id: string, currentState: boolean) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('development_ideas')
         .update({
           is_completed: !currentState,
           completed_at: !currentState ? new Date().toISOString() : null,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) throw error;
       
-      // Optimistic update
+      if (!data || data.length === 0) {
+        toast.error('אין הרשאה לעדכן רעיון זה');
+        return;
+      }
+      
       setIdeas(prev => prev.map(idea => 
         idea.id === id 
           ? { 
