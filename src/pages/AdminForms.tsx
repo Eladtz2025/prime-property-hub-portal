@@ -242,8 +242,8 @@ const AdminForms = () => {
                 <span className="text-sm font-medium text-center">לינק ללקוח</span>
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-40 p-2" align="center">
-              <div className="flex flex-col gap-1">
+            <PopoverContent className="w-48 p-2" align="center">
+              <div className="flex flex-col gap-1.5">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/client-intake`);
@@ -251,9 +251,10 @@ const AdminForms = () => {
                     toast.success('הלינק הועתק!', { description: 'לינק בעברית' });
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                  className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-right"
                 >
-                  🇮🇱 עברית
+                  <span className="text-lg">🇮🇱</span>
+                  <span>עברית</span>
                 </button>
                 <button
                   onClick={() => {
@@ -262,9 +263,10 @@ const AdminForms = () => {
                     toast.success('Link copied!', { description: 'English link' });
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-right"
+                  className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-right"
                 >
-                  🇺🇸 English
+                  <span className="text-lg">🇺🇸</span>
+                  <span>English</span>
                 </button>
               </div>
             </PopoverContent>
