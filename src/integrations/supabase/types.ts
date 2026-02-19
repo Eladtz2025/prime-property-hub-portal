@@ -2086,6 +2086,7 @@ export type Database = {
       professionals_list: {
         Row: {
           area: string | null
+          coupon_code: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -2094,9 +2095,11 @@ export type Database = {
           phone: string | null
           profession: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           area?: string | null
+          coupon_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -2105,9 +2108,11 @@ export type Database = {
           phone?: string | null
           profession: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           area?: string | null
+          coupon_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -2116,6 +2121,7 @@ export type Database = {
           phone?: string | null
           profession?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
