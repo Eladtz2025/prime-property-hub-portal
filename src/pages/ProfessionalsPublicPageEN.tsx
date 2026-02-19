@@ -24,6 +24,24 @@ const PROFESSION_EMOJI: Record<string, string> = {
   'אחר': '👷',
 };
 
+const PROFESSION_EN: Record<string, string> = {
+  'שרברב': 'Plumber',
+  'חשמלאי': 'Electrician',
+  'צבעי': 'Painter',
+  'מנעולן': 'Locksmith',
+  'מיזוג אוויר': 'HVAC',
+  'נגר': 'Carpenter',
+  'מוביל': 'Mover',
+  'קבלן שיפוצים': 'Renovation Contractor',
+  'אדריכל': 'Architect',
+  'מעצב פנים': 'Interior Designer',
+  'עורך דין': 'Lawyer',
+  'שמאי': 'Appraiser',
+  'וילונות': 'Curtains',
+  'ניקיון': 'Cleaning',
+  'אחר': 'Other',
+};
+
 interface Professional {
   id: string;
   name: string;
@@ -35,7 +53,7 @@ interface Professional {
   coupon_code: string | null;
 }
 
-const ProfessionalsPublicPage = () => {
+const ProfessionalsPublicPageEN = () => {
   const navigate = useNavigate();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +74,7 @@ const ProfessionalsPublicPage = () => {
   const copyCoupon = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCoupon(id);
-    toast.success('קוד הקופון הועתק!');
+    toast.success('Coupon code copied!');
     setTimeout(() => setCopiedCoupon(null), 2000);
   };
 
@@ -78,7 +96,6 @@ const ProfessionalsPublicPage = () => {
     );
   }
 
-  // Group by profession
   const grouped = professionals.reduce((acc, pro) => {
     if (!acc[pro.profession]) acc[pro.profession] = [];
     acc[pro.profession].push(pro);
@@ -86,27 +103,28 @@ const ProfessionalsPublicPage = () => {
   }, {} as Record<string, Professional[]>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" dir="ltr">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-6 text-center relative">
         <button
-          onClick={() => navigate('/professionals/shared/en')}
+          onClick={() => navigate('/professionals/shared')}
           className="absolute left-4 top-4 px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-accent transition-colors flex items-center gap-1.5"
         >
-          <span>🇺🇸</span> English
+          <span>🇮🇱</span> עברית
         </button>
-        <h1 className="text-2xl font-bold text-foreground">🛠️ אנשי מקצוע מומלצים</h1>
-        <p className="text-sm text-muted-foreground mt-1">רשימת אנשי מקצוע אמינים ומוכחים</p>
+        <h1 className="text-2xl font-bold text-foreground">🛠️ Recommended Professionals</h1>
+        <p className="text-sm text-muted-foreground mt-1">Trusted and verified professionals</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {Object.entries(grouped).map(([profession, pros]) => {
           const emoji = PROFESSION_EMOJI[profession] || '👷';
+          const enName = PROFESSION_EN[profession] || profession;
           return (
             <div key={profession}>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <span className="text-xl">{emoji}</span>
-                {profession}
+                {enName}
               </h2>
               <div className="space-y-3">
                 {pros.map(pro => (
@@ -120,16 +138,15 @@ const ProfessionalsPublicPage = () => {
                       {pro.notes && <p className="text-sm text-muted-foreground mt-1">{pro.notes}</p>}
                     </div>
 
-                    {/* Coupon */}
                     {pro.coupon_code && (
                       <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2.5 border border-amber-200 dark:border-amber-800">
                         <Tag className="h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-medium text-amber-700 dark:text-amber-300">קוד הנחה:</span>
+                        <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Discount code:</span>
                         <span className="font-mono font-bold text-amber-800 dark:text-amber-200">{pro.coupon_code}</span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 mr-auto"
+                          className="h-7 w-7 ml-auto"
                           onClick={() => copyCoupon(pro.coupon_code!, pro.id)}
                         >
                           {copiedCoupon === pro.id ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
@@ -137,7 +154,6 @@ const ProfessionalsPublicPage = () => {
                       </div>
                     )}
 
-                    {/* Action buttons */}
                     <div className="flex flex-wrap gap-2">
                       {pro.phone && (
                         <>
@@ -147,7 +163,7 @@ const ProfessionalsPublicPage = () => {
                             onClick={() => callPhone(pro.phone!)}
                           >
                             <Phone className="h-4 w-4" />
-                            התקשר
+                            Call
                           </Button>
                           <Button
                             size="sm"
@@ -168,7 +184,7 @@ const ProfessionalsPublicPage = () => {
                           onClick={() => window.open(pro.website!.startsWith('http') ? pro.website! : `https://${pro.website}`, '_blank')}
                         >
                           <Globe className="h-4 w-4" />
-                          לאתר
+                          Website
                         </Button>
                       )}
                     </div>
@@ -181,12 +197,11 @@ const ProfessionalsPublicPage = () => {
 
         {professionals.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-lg">אין אנשי מקצוע להצגה כרגע</p>
+            <p className="text-lg">No professionals to display at the moment</p>
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <div className="text-center py-6 text-xs text-muted-foreground border-t border-border mt-8">
         Prime Property © {new Date().getFullYear()}
       </div>
@@ -194,4 +209,4 @@ const ProfessionalsPublicPage = () => {
   );
 };
 
-export default ProfessionalsPublicPage;
+export default ProfessionalsPublicPageEN;
