@@ -1,28 +1,45 @@
 
 
-## Bug: סימון רעיון כהושלם חוזר אחרי ריפרש
+## החלפת כרטיסיות הסטטיסטיקה במטרות (Goals) בהדר הכחול
 
-### הבעיה
-מדיניות האבטחה (RLS) בטבלת `development_ideas` מאפשרת עדכון רק למי שיצר את הרעיון (`auth.uid() = created_by`). כשמשתמש מנסה לסמן רעיון שנוצר על ידי משתמש אחר, העדכון נחסם בשקט - בלי שגיאה - אבל הנתון לא נשמר בפועל.
+### מה ישתנה
+הכרטיסיות הקטנות שבתוך הבאנר הכחול בדשבורד (סה"כ נכסים, הכנסה חודשית, תפוסים, פנויים, נוצר קשר, טרם קשר) יוחלפו בכרטיסיות מטרות חופשיות שניתן לערוך.
 
-### הפתרון
-לאפשר לכל המשתמשים המחוברים (אדמינים ומנהלים) לעדכן ולמחוק את כל הרעיונות, לא רק את אלו שהם יצרו.
+### איך זה יראה
+- בתוך הבאנר הכחול, במקום 6 כרטיסיות סטטיסטיקה, יופיעו כרטיסיות מטרות
+- כל כרטיסיה תציג את טקסט המטרה בפונט לבן וגדול
+- כפתור עריכה (עיפרון) וכפתור מחיקה (X) מופיעים בhover
+- כפתור + להוספת מטרה חדשה (עד 6 מטרות)
+- עובד גם בדסקטופ וגם במובייל (grid של 2 עמודות במובייל)
 
 ### שינויים טכניים
 
-**1. עדכון מדיניות RLS בטבלת `development_ideas`**
-- שינוי פוליסת UPDATE מ-`auth.uid() = created_by` ל:
-  ```sql
-  (auth.uid() = created_by) OR 
-  (get_current_user_role() = ANY (ARRAY['admin', 'super_admin', 'manager']))
-  ```
-- אותו שינוי לפוליסת DELETE
+**1. טבלה חדשה `dashboard_goals` ב-Supabase**
+- `id` (uuid), `title` (text), `position` (integer), `created_by` (uuid), timestamps
+- RLS: קריאה לכל authenticated, כתיבה/עדכון/מחיקה ל-admin/super_admin/manager
+- טריגר לעדכון אוטומטי של updated_at
 
-**2. שיפור הקוד (אופציונלי אך מומלץ)**
-- בהוק `useDevelopmentIdeas.ts` - להוסיף בדיקה שה-update באמת השפיע על שורה, ואם לא - להציג הודעת שגיאה במקום לעשות optimistic update שקרי.
+**2. הוק חדש `src/hooks/useDashboardGoals.ts`**
+- פונקציות CRUD: fetchGoals, addGoal, updateGoal, deleteGoal
+- שימוש ב-Supabase client ישירות
+
+**3. קומפוננטה חדשה `src/components/DashboardGoalsGrid.tsx`**
+- מציגה מטרות בכרטיסיות שקופות (bg-white/15 backdrop-blur-lg)
+- אייקון Target ליד כל מטרה
+- מצב עריכה inline עם Input
+- כרטיסיית "הוסף מטרה" עם border-dashed
+
+**4. עדכון `src/components/Dashboard.tsx`**
+- הסרת imports לא נדרשים (Building, Users, CheckCircle, Clock, Phone, TrendingUp, Edit2)
+- הסרת state של manualMonthlyIncome ו-isEditingIncome
+- החלפת 6 כרטיסיות הסטטיסטיקה (שורות 106-195) ב-DashboardGoalsGrid
+
+**5. עדכון `src/components/MobileDashboard.tsx`**
+- אותו שינוי: הסרת כרטיסיות הסטטיסטיקה והחלפה ב-DashboardGoalsGrid עם columns="grid-cols-2"
+- הסרת state של manualMonthlyIncome ו-isEditingIncome
 
 ### מה לא ישתנה
-- לוגיקת הסריקות (Yad2, Madlan, Homeless) לא נוגעים בה כלל
-- ה-UI של הרעיונות נשאר אותו דבר
-- פוליסות SELECT ו-INSERT נשארות כמו שהן
+- הברכה (שלום + שם) נשארת
+- העיצוב הכללי של הבאנר הכחול נשאר
+- כל שאר הדשבורד נשאר כמו שהוא
 
