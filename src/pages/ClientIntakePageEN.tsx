@@ -164,28 +164,29 @@ export default function ClientIntakePageEN() {
 
       const { data: existingCustomers } = await supabase
         .from('contact_leads')
-        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status, message, property_type');
+        .select('id, phone, preferred_cities, preferred_neighborhoods, assigned_agent_id, status, notes, message, property_type');
       
       const existingCustomer = existingCustomers?.find(customer => {
         const customerSuffix = getPhoneSuffix(customer.phone, 9);
         return customerSuffix === phoneSuffix && phoneSuffix.length >= 9;
       }) || null;
 
-      // Determine message: don't overwrite existing with default text
+      // Determine notes: save user comments to `notes` field (admin reads from `notes`)
       const userMessage = formData.message?.trim();
-      let finalMessage: string;
+      let finalNotes: string | null;
       if (existingCustomer) {
-        const existingMessage = existingCustomer.message || '';
+        const existingNotes = existingCustomer.notes || '';
         if (userMessage) {
-          finalMessage = existingMessage && existingMessage !== userMessage
-            ? `${existingMessage}\n---\n${userMessage}`
+          finalNotes = existingNotes && existingNotes !== userMessage
+            ? `${existingNotes}\n---\n${userMessage}`
             : userMessage;
         } else {
-          finalMessage = existingMessage || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`;
+          finalNotes = existingNotes || null;
         }
       } else {
-        finalMessage = userMessage || `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`;
+        finalNotes = userMessage || null;
       }
+      const defaultMessage = `Client looking for ${formData.property_type === 'rental' ? 'rental' : 'purchase'}`;
 
       const commonData = {
         name: formData.name.trim(),
@@ -213,7 +214,8 @@ export default function ClientIntakePageEN() {
         roof_flexible: formData.roof_flexible,
         pets_flexible: formData.pets_flexible,
         pets: formData.property_type === 'rental' ? formData.pets : false,
-        message: finalMessage,
+        message: defaultMessage,
+        notes: finalNotes,
         tenant_type: formData.property_type === 'rental' && formData.tenant_type ? formData.tenant_type : null,
         cash_available: null,
         new_or_second_hand: null,
