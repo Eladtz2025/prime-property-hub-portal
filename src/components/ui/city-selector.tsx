@@ -112,7 +112,7 @@ export function CitySelectorDropdown({ selectedCities, onChange, className }: Ci
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
-          className={cn("w-full justify-between h-8 text-sm font-normal", className)}
+          className={cn("w-full justify-between h-11 text-sm font-normal", className)}
         >
           <span className="flex items-center gap-2">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
