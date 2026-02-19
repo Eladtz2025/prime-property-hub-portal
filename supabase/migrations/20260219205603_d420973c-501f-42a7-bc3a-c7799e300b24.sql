@@ -1,0 +1,1 @@
+ALTER TABLE public.professionals_list ADD COLUMN name_en text, ADD COLUMN area_en text;

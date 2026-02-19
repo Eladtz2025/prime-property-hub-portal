@@ -2086,11 +2086,13 @@ export type Database = {
       professionals_list: {
         Row: {
           area: string | null
+          area_en: string | null
           coupon_code: string | null
           created_at: string
           created_by: string | null
           id: string
           name: string
+          name_en: string | null
           notes: string | null
           phone: string | null
           profession: string
@@ -2099,11 +2101,13 @@ export type Database = {
         }
         Insert: {
           area?: string | null
+          area_en?: string | null
           coupon_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           name: string
+          name_en?: string | null
           notes?: string | null
           phone?: string | null
           profession: string
@@ -2112,11 +2116,13 @@ export type Database = {
         }
         Update: {
           area?: string | null
+          area_en?: string | null
           coupon_code?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           name?: string
+          name_en?: string | null
           notes?: string | null
           phone?: string | null
           profession?: string
