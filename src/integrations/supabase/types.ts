@@ -442,6 +442,7 @@ export type Database = {
       business_expenses_list: {
         Row: {
           amount: number | null
+          assigned_to: string | null
           category: string
           created_at: string
           created_by: string | null
@@ -453,6 +454,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          assigned_to?: string | null
           category: string
           created_at?: string
           created_by?: string | null
@@ -464,6 +466,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          assigned_to?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -473,7 +476,22 @@ export type Database = {
           notes?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_expenses_list_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_expenses_list_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_leads: {
         Row: {

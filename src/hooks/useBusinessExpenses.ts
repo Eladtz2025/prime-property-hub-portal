@@ -9,12 +9,14 @@ export interface BusinessExpense {
   amount: number | null;
   frequency: string;
   notes: string | null;
+  assigned_to: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  profiles?: { id: string; full_name: string | null } | null;
 }
 
-export type NewBusinessExpense = Omit<BusinessExpense, 'id' | 'created_at' | 'updated_at' | 'created_by'>;
+export type NewBusinessExpense = Omit<BusinessExpense, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'profiles'>;
 
 export const useBusinessExpenses = () => {
   const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
@@ -24,7 +26,7 @@ export const useBusinessExpenses = () => {
     try {
       const { data, error } = await supabase
         .from('business_expenses_list')
-        .select('*')
+        .select('*, profiles:assigned_to(id, full_name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setExpenses((data as BusinessExpense[]) || []);
