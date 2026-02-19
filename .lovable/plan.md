@@ -1,51 +1,36 @@
 
 
-## הוספת 2 טפסים חדשים לעמוד הטפסים
+## הגנה מפני תקיעה ברמת הנכס (Property-Level Timeout)
 
-### מה יתווסף
+### הבעיה
+כשקריאת Jina לנכס מסוים נתקעת (timeout של השרת, תגובה איטית מאוד), כל ה-Edge Function נתקע איתה. אין מנגנון שמדלג על נכס בעייתי וממשיך הלאה.
 
-**1. טופס הוצאות עסק** - רשימת הוצאות קבועות של העסק (משרד, רכב, ביטוח וכו') לניהול ומעקב פנימי.
-
-**2. טופס אנשי מקצוע** - רשימת אנשי מקצוע (שרברב, חשמלאי, צבעי וכו') שאפשר לשלוח ללקוחות.
-
-### איך זה יראה
-- 2 קוביות פעולה חדשות בגריד העליון של עמוד הטפסים
-- 2 סקשנים חדשים (Collapsible) מתחת לקיימים
-- כל סקשן מציג טבלה/רשימה עם אפשרות הוספה, עריכה ומחיקה
+### הפתרון (במקום Cron watchdog)
+הוספת timeout פנימי של 45 שניות לכל נכס. אם הסריקה של נכס לוקחת יותר מ-45 שניות - מדלגים עליו, מסמנים אותו כ-failed, וממשיכים לנכס הבא.
 
 ### שינויים טכניים
 
-**1. טבלה חדשה `business_expenses_list`**
-- `id` (uuid), `category` (text - קטגוריה כמו "משרד", "רכב"), `description` (text), `amount` (numeric), `frequency` (text - חודשי/שנתי/חד-פעמי), `notes` (text), `created_by` (uuid), timestamps
-- RLS: קריאה/כתיבה ל-admin/super_admin/manager
+**עדכון `supabase/functions/backfill-property-data-jina/index.ts`**
 
-**2. טבלה חדשה `professionals_list`**
-- `id` (uuid), `name` (text), `profession` (text - שרברב/חשמלאי/צבעי וכו'), `phone` (text), `area` (text - אזור שירות), `notes` (text), `created_by` (uuid), timestamps
-- RLS: קריאה/כתיבה ל-admin/super_admin/manager
+1. הוספת `AbortController` עם timeout של 45 שניות סביב קריאת ה-fetch ל-Jina (שורה 432)
+2. אם ה-fetch נכשל עם `AbortError` (timeout), הנכס מסומן כ-`failed` עם `backfill_status = 'failed'` ומדלגים הלאה
+3. הוספת מונה `timeout_skipped` ל-`batchStats` כדי לעקוב כמה נכסים דולגו
+4. ה-`saveRecentItem` ישמור סטטוס `timeout_skipped` כדי שזה יופיע בממשק
 
-**3. קומפוננטה חדשה `src/components/BusinessExpensesList.tsx`**
-- טבלה עם עמודות: קטגוריה, תיאור, סכום, תדירות, הערות
-- כפתור "הוסף הוצאה" שפותח שורה חדשה/מודל
-- עריכה ומחיקה inline
-- אייקון Wallet בצבע אדום-כתום
-
-**4. קומפוננטה חדשה `src/components/ProfessionalsList.tsx`**
-- טבלה עם עמודות: שם, מקצוע, טלפון, אזור, הערות
-- כפתור "הוסף איש מקצוע"
-- כפתור שליחה בוואטסאפ ליד כל רשומה (לשלוח פרטים ללקוח)
-- אייקון Wrench בצבע כחול-ירוק
-
-**5. עדכון `src/pages/AdminForms.tsx`**
-- הוספת 2 קוביות פעולה חדשות לגריד העליון
-- הוספת 2 סקשנים Collapsible חדשים
-- הוספת ה-counts החדשים ל-state
-- עדכון ה-grid ל-`grid-cols-9` בדסקטופ (או שיישאר דינמי)
-
-**6. הוקים חדשים**
-- `src/hooks/useBusinessExpenses.ts` - CRUD להוצאות עסק
-- `src/hooks/useProfessionals.ts` - CRUD לאנשי מקצוע
+```text
+לכל נכס בבאץ':
+  |
+  v
+התחל AbortController (45 שניות)
+  |
+  v
+קריאת Jina fetch
+  |
+  +-- הצליח תוך 45 שניות --> עיבוד רגיל
+  +-- חרג מ-45 שניות --> AbortError --> סימון failed, דילוג, המשך לנכס הבא
+```
 
 ### מה לא ישתנה
-- כל הטפסים הקיימים (תיווך, זיכרון דברים, בלעדיות, שיתוף מתווכים, הצעות מחיר, מצגות) נשארים כמו שהם
-- מבנה העמוד הכללי נשמר
-
+- כל שאר הלוגיקה (self-chain, end time, kill switch, stop) נשארת כמו שהיא
+- לא נוסיף Cron job חדש
+- ה-X-Timeout של Jina (35 שניות) נשאר, אבל ה-AbortController מגבה אותו למקרה שגם Jina עצמה לא עומדת ב-timeout שלה
