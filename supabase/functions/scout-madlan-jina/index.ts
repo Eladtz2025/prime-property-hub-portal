@@ -9,7 +9,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
       console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
@@ -17,10 +17,9 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
         headers: {
           'Accept': 'text/markdown',
           'X-No-Cache': 'true',
-          'X-Wait-For-Selector': '[class*="listing"]',
+          'X-Wait-For-Selector': 'a[href*="/listing/"]',
           'X-Timeout': '45',
           'X-Proxy-Country': 'IL',
-          'X-Locale': 'he-IL',
         },
         signal: controller.signal,
       });
