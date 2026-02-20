@@ -1,25 +1,57 @@
 
-## החלפת כל הקריאות הידניות ל-Jina
 
-### הבעיה
-כל הבדיקות הידניות (כפתור "בדוק זמינות" בטבלה, בדשבורד, ובפעולות מהירות) קוראות ל-`check-property-availability` שמשתמש ב-Firecrawl. מפתחות ה-Firecrawl מותשים (שגיאת 402), ולכן הבדיקה נכשלת ומחזירה "אקטיבי" כברירת מחדל.
+# הפרדת מערכות ג'ינה לסריקות (Scout)
 
-### הפתרון
-החלפת שם ה-Edge Function מ-`check-property-availability` ל-`check-property-availability-jina` ב-4 קבצים:
+## מצב נוכחי
 
-### שינויים
+3 פונקציות סריקה משתמשות בקובץ משותף אחד (`_shared/scraping-jina.ts`):
+- `scout-homeless-jina` (צריך HTML, כותרות ייחודיות)
+- `scout-yad2-jina` (צריך Markdown, proxy ישראלי, selector ייחודי)
+- `scout-madlan-jina` (צריך Markdown, proxy ישראלי)
 
-**1. `src/components/scout/ScoutedPropertiesTable.tsx`** (2 מקומות)
-- שורה 794: `check-property-availability` -> `check-property-availability-jina`
-- שורה 833: `check-property-availability` -> `check-property-availability-jina`
+**בדיקת הזמינות והשלמת הנתונים כבר עצמאיות** -- לא צריך לגעת בהן.
 
-**2. `src/components/scout/AvailabilityCheckDashboard.tsx`** (מקום 1)
-- שורה 205: `check-property-availability` -> `check-property-availability-jina`
+## מה ישתנה
 
-**3. `src/components/scout/checks/AvailabilityHistorySection.tsx`** (מקום 1)
-- שורה 131: `check-property-availability` -> `check-property-availability-jina`
+כל סורק יקבל פונקציית `scrapeWithJina` פנימית בתוך ה-`index.ts` שלו, עם הכותרות הספציפיות שהוא צריך. הקובץ המשותף `_shared/scraping-jina.ts` יישאר לתאימות אבל לא ייובא יותר.
 
-**4. `src/components/scout/availability/AvailabilityActions.tsx`** (מקום 1)
-- שורה 69: `check-property-availability` -> `check-property-availability-jina`
+## פירוט טכני
 
-סה"כ 5 החלפות פשוטות של שם הפונקציה. אין שינוי במבנה הבקשה או בפרמטרים - הפורמט זהה בשתי הגרסאות.
+### 1. scout-homeless-jina/index.ts
+- הסרת `import { scrapeWithJina } from "../_shared/scraping-jina.ts"`
+- הוספת פונקציה פנימית `scrapeHomelessWithJina(url, maxRetries)` עם:
+  - `X-Return-Format: html` (צריך HTML לפרסר Cheerio)
+  - `X-No-Cache: true`
+  - `X-Wait-For-Selector: body`
+  - `X-Timeout: 30`
+  - `X-Locale: he-IL`
+  - **ללא** `X-With-Generated-Alt` (גורם ל-401)
+
+### 2. scout-yad2-jina/index.ts
+- הסרת `import { scrapeWithJina } from "../_shared/scraping-jina.ts"`
+- הוספת פונקציה פנימית `scrapeYad2WithJina(url, maxRetries)` עם:
+  - `Accept: text/markdown`
+  - `X-No-Cache: true`
+  - `X-Wait-For-Selector: a[href*="/realestate/item/"]`
+  - `X-Timeout: 30`
+  - `X-Proxy-Country: IL`
+  - `X-Locale: he-IL`
+  - Timeout של 35 שניות
+
+### 3. scout-madlan-jina/index.ts
+- הסרת `import { scrapeWithJina } from "../_shared/scraping-jina.ts"`
+- הוספת פונקציה פנימית `scrapeMadlanWithJina(url, maxRetries)` עם:
+  - `Accept: text/markdown`
+  - `X-No-Cache: true`
+  - `X-Wait-For-Selector: body`
+  - `X-Timeout: 30`
+  - `X-Proxy-Country: IL`
+  - `X-Locale: he-IL`
+
+### 4. _shared/scraping-jina.ts
+- נשאר כפי שהוא (לא מוחקים) למקרה שיש שימושים עתידיים, אבל אף סורק לא ייבא ממנו
+
+## תוצאה
+
+שינוי בסורק אחד לא ישפיע על אף מערכת אחרת. כל מערכת עצמאית לחלוטין.
+
