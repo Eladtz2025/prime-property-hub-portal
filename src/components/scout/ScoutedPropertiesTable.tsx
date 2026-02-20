@@ -47,6 +47,8 @@ interface ScoutedProperty {
   is_private?: boolean | null;
   duplicate_group_id?: string | null;
   is_primary_listing?: boolean | null;
+  availability_check_reason?: string | null;
+  availability_checked_at?: string | null;
 }
 
 const PAGE_SIZE = 20;
@@ -540,6 +542,16 @@ export const ScoutedPropertiesTable: React.FC = () => {
     }
   });
 
+  // Helper: map check reason to Hebrew
+  const getCheckReasonLabel = (reason: string | null | undefined): string => {
+    switch (reason) {
+      case 'per_property_timeout': return 'טיימאאוט';
+      case 'captcha_blocked': return 'CAPTCHA';
+      case 'scrape_failed': return 'כשלון סריקה';
+      default: return reason || '—';
+    }
+  };
+
   // Build query filters helper - uses appliedFilters
   const applyFilters = (query: any, filters: NonNullable<typeof appliedFilters>) => {
     // Always filter for active properties only
@@ -552,7 +564,6 @@ export const ScoutedPropertiesTable: React.FC = () => {
     query = query.ilike('city', '%תל אביב%');
     
     // Safety net: Exclude known broken URL patterns (projects, search pages)
-    // These lead to 404 errors when clicked
     query = query
       .not('source_url', 'ilike', '%/yad1/%')
       .not('source_url', 'ilike', '%/projects/%')
@@ -561,7 +572,10 @@ export const ScoutedPropertiesTable: React.FC = () => {
       .not('source_url', 'ilike', '%/for-rent/%')
       .not('source_url', 'ilike', '%/for-sale/%');
     
-    if (filters.status !== 'all') {
+    // Check failures filter
+    if (filters.status === 'check_failed') {
+      query = query.in('availability_check_reason', ['per_property_timeout', 'captcha_blocked', 'scrape_failed']);
+    } else if (filters.status !== 'all') {
       query = query.eq('status', filters.status);
     }
     if (filters.propertyType !== 'all') {
@@ -1201,6 +1215,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
                           <SelectItem value="imported">יובא</SelectItem>
                           <SelectItem value="archived">ארכיון</SelectItem>
                           <SelectItem value="inactive">לא פעיל</SelectItem>
+                          <SelectItem value="check_failed">⚠️ כשלונות בדיקה</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1392,6 +1407,22 @@ export const ScoutedPropertiesTable: React.FC = () => {
               </PopoverContent>
             </Popover>
 
+            {/* Status Filter - Desktop */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[120px] h-8 text-sm">
+                <SelectValue placeholder="סטטוס" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
+                <SelectItem value="new">חדש</SelectItem>
+                <SelectItem value="matched">עבר התאמה</SelectItem>
+                <SelectItem value="imported">יובא</SelectItem>
+                <SelectItem value="archived">ארכיון</SelectItem>
+                <SelectItem value="inactive">לא פעיל</SelectItem>
+                <SelectItem value="check_failed">⚠️ כשלונות בדיקה</SelectItem>
+              </SelectContent>
+            </Select>
+
             {/* Source Filter */}
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className="w-[90px] h-8 text-sm">
@@ -1485,6 +1516,9 @@ export const ScoutedPropertiesTable: React.FC = () => {
                   <TableHead className="w-[80px]">חדרים</TableHead>
                   <TableHead className="w-[80px]">גודל</TableHead>
                   <TableHead className="w-[100px]">סטטוס</TableHead>
+                  {appliedFilters.status === 'check_failed' && (
+                    <TableHead className="w-[120px]">סיבה</TableHead>
+                  )}
                   <TableHead className="w-[120px]">התאמות</TableHead>
                   <TableHead className="w-[100px]">נמצא</TableHead>
                   <TableHead className="w-[180px]">פעולות</TableHead>
@@ -1493,13 +1527,13 @@ export const ScoutedPropertiesTable: React.FC = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8">
                       טוען...
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8 text-muted-foreground">
                       לא נמצאו דירות התואמות את החיפוש
                     </TableCell>
                   </TableRow>
@@ -1532,6 +1566,20 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     <TableCell>{property.rooms || '-'}</TableCell>
                     <TableCell>{property.size ? `${property.size} מ"ר` : '-'}</TableCell>
                     <TableCell>{getStatusBadge(property.status, property.is_active)}</TableCell>
+                    {appliedFilters.status === 'check_failed' && (
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline" className="text-xs w-fit bg-red-50 text-red-700 border-red-300">
+                            {getCheckReasonLabel(property.availability_check_reason)}
+                          </Badge>
+                          {property.availability_checked_at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {formatDistanceToNow(new Date(property.availability_checked_at), { addSuffix: true, locale: he })}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {property.matched_leads?.length > 0 ? (
                         <Dialog>
@@ -1715,6 +1763,11 @@ export const ScoutedPropertiesTable: React.FC = () => {
                     <Badge variant="outline" className="text-[10px] h-5 px-1 bg-orange-50 text-orange-700 border-orange-300 shrink-0">תיווך</Badge>
                   )}
                   {getSourceBadge(property.source)}
+                  {appliedFilters.status === 'check_failed' && property.availability_check_reason && (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-red-50 text-red-700 border-red-300 shrink-0">
+                      {getCheckReasonLabel(property.availability_check_reason)}
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Row 2: Actions | Price+Time */}
