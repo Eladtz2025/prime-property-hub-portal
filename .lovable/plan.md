@@ -1,50 +1,39 @@
 
 
-## הוספת שיוך סוכן להוצאות + טבלת סיכום חודשית
+## הוספת פילטר "כשלונות בדיקה" בטבלת הנכסים
 
-### 1. מסד נתונים - עמודה חדשה
-הוספת עמודת `assigned_to` (uuid, nullable) לטבלת `business_expenses_list` - מפנה לסוכן שההוצאה שייכת אליו.
+### מה ישתנה
 
-### 2. שדה בחירת סוכן בטופס ההוצאות
-- שליפת רשימת הסוכנים מ-`profiles` (שם מלא + id)
-- הוספת עמודת "סוכן" בטבלת ההוצאות עם Select dropdown
-- הצגת שם הסוכן בשורת ההוצאה (במצב צפייה)
-- השדה אופציונלי - אפשר להשאיר ריק אם ההוצאה כללית
+הוספת אופציה חדשה בפילטר הסטטוס הקיים בטבלת "דירות שנמצאו" שתאפשר לסנן נכסים שנכשלו בבדיקת זמינות (timeout, captcha וכו'), כך שתוכל לעבור עליהם ידנית.
 
-### 3. טבלת סיכום חודשית מתחת להוצאות
-טבלה מסודרת שמציגה סיכום לפי חודשים:
-- עמודות: חודש | סה"כ חודשי | סה"כ שנתי | חד-פעמי | סה"כ
-- חישוב אוטומטי מתוך ההוצאות הקיימות (הוצאה חודשית מופיעה בכל חודש, שנתית מחולקת ל-12, חד-פעמית בחודש היצירה)
-- שורת סיכום כוללת בתחתית
-- אפשרות סינון לפי סוכן
+### 1. פילטר חדש בשדה "מקור" או פילטר ייעודי
+הוספת ערך חדש ב-Select הקיים - "כשלונות בדיקה" - שיסנן לפי:
+- `availability_check_reason` שווה ל-`per_property_timeout` או `captcha_blocked` או `scrape_failed`
+
+### 2. עמודת מידע נוספת
+בשורת כל נכס מסונן, הצגת סיבת הכשלון (`availability_check_reason`) ותאריך הבדיקה האחרונה (`availability_checked_at`) כ-Badge קטן.
+
+### 3. כפתור "בדוק ידנית"
+לכל נכס בתצוגה הזו - לינק ישיר ל-URL המקורי כדי שתוכל לבדוק בעצמך אם המודעה עדיין קיימת.
 
 ### פרטים טכניים
 
-**שינוי במסד נתונים:**
-- `ALTER TABLE business_expenses_list ADD COLUMN assigned_to uuid REFERENCES profiles(id)`
+**קובץ שישתנה:**
+- `src/components/scout/ScoutedPropertiesTable.tsx`
 
-**קבצים שישתנו:**
+**שינויים:**
+1. הוספת ערך חדש ל-`statusFilter` Select: `"check_failed"` עם תווית "כשלונות בדיקה"
+2. ב-`appliedFilters` - הוספת שדה `checkStatus` (string)
+3. ב-`applyFilters` - כשהפילטר פעיל:
+   - הסרת הסינון `is_active = true` (כדי לראות גם נכסים שנכשלו)
+   - הוספת `.in('availability_check_reason', ['per_property_timeout', 'captcha_blocked', 'scrape_failed'])`
+   - הוספת `.eq('is_active', true)` (נכסים פעילים בלבד)
+4. הוספת עמודת "סיבה" בטבלה שמוצגת רק כשהפילטר פעיל - מציגה את `availability_check_reason` בצורה קריאה
+5. הוספת השדות `availability_check_reason` ו-`availability_checked_at` ל-interface `ScoutedProperty`
 
-1. **`src/hooks/useBusinessExpenses.ts`**
-   - הוספת `assigned_to` ל-interface `BusinessExpense`
-   - הוספת `assigned_to` ל-type `NewBusinessExpense`
-   - שליפת ה-select תכלול `assigned_to, profiles:assigned_to(id, full_name)` כ-join
+**מיפוי סיבות לעברית:**
+- `per_property_timeout` -> "טיימאאוט"
+- `captcha_blocked` -> "CAPTCHA"
+- `scrape_failed` -> "כשלון סריקה"
+- אחר -> הערך המקורי
 
-2. **`src/components/BusinessExpensesList.tsx`**
-   - שליפת רשימת סוכנים מ-`profiles` (useEffect)
-   - הוספת עמודת "סוכן" לטבלה עם Select dropdown בעריכה/הוספה
-   - הצגת שם הסוכן במצב צפייה
-   - עדכון `emptyExpense` עם `assigned_to: null`
-   - עדכון `startEdit` לכלול `assigned_to`
-
-3. **`src/components/BusinessExpensesMonthlySummary.tsx`** (קובץ חדש)
-   - קומפוננטת טבלת סיכום חודשית
-   - מקבלת את רשימת ההוצאות כ-prop
-   - מחשבת לכל חודש (12 חודשים של השנה הנוכחית):
-     - סה"כ הוצאות חודשיות (כל ההוצאות עם frequency=monthly)
-     - סה"כ הוצאות שנתיות מחולק ל-12
-     - הוצאות חד-פעמיות שנוצרו באותו חודש
-     - סה"כ לחודש
-   - סינון לפי סוכן (dropdown בראש הטבלה)
-   - שורת סיכום שנתי בתחתית
-   - הקומפוננטה תוצג מתחת לטבלת ההוצאות הקיימת
