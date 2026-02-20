@@ -1,8 +1,52 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
-import { scrapeWithJina } from "../_shared/scraping-jina.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
+
+interface JinaScrapeResult { markdown: string; html: string; }
+
+async function scrapeHomelessWithJina(url: string, maxRetries = 2): Promise<JinaScrapeResult | null> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      console.log(`🌐 Homeless-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+
+      const response = await fetch(`https://r.jina.ai/${url}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html',
+          'X-Return-Format': 'html',
+          'X-No-Cache': 'true',
+          'X-Wait-For-Selector': 'body',
+          'X-Timeout': '30',
+          'X-Locale': 'he-IL',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const body = await response.text();
+        console.log(`✅ Homeless-Jina scrape successful (${body.length} chars)`);
+        return { markdown: '', html: body };
+      }
+
+      const errorText = await response.text();
+      console.warn(`⚠️ Homeless-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`⏱️ Homeless-Jina attempt ${attempt + 1} timeout`);
+      } else {
+        console.error(`❌ Homeless-Jina attempt ${attempt + 1} error:`, error);
+      }
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    }
+  }
+  console.error(`❌ All ${maxRetries} Homeless-Jina attempts failed for ${url}`);
+  return null;
+}
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseHomelessHtml } from "../_experimental/parser-homeless.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
@@ -62,7 +106,7 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { url });
 
     // Jina returns HTML for homeless (via X-Return-Format: html in scraping-jina.ts)
-    const scrapeResult = await scrapeWithJina(url, 'homeless', HOMELESS_CONFIG.MAX_RETRIES);
+    const scrapeResult = await scrapeHomelessWithJina(url, HOMELESS_CONFIG.MAX_RETRIES);
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });
