@@ -19,65 +19,76 @@ function isMadlanBlocked(content: string): boolean {
  * Scrape Madlan search pages using Jina with proxy to bypass bot detection.
  */
 async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+  // Two-phase approach: Phase 1 = cache (fast), Phase 2 = fresh (X-No-Cache)
+  const phases = [
+    { noCache: false, label: 'cache' },
+    { noCache: true, label: 'fresh' },
+  ];
 
-      const headers: Record<string, string> = {
-        'Accept': 'text/markdown',
-        'X-No-Cache': 'true',
-        'X-Wait-For-Selector': 'body',
-        'X-Timeout': '30',
-        'X-Locale': 'he-IL',
-      };
+  for (const phase of phases) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        console.log(`🌐 Madlan-Jina ${phase.label} attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
-      const response = await fetch(`https://r.jina.ai/${url}`, {
-        method: 'GET',
-        headers,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const body = await response.text();
-        console.log(`✅ Madlan-Jina scrape attempt ${attempt + 1}: ${body.length} chars`);
-
-        // Check if blocked by CAPTCHA
-        if (isMadlanBlocked(body)) {
-          console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1}: CAPTCHA/block detected (${body.length} chars)`);
-          if (attempt < maxRetries - 1) {
-            const waitTime = 5000 * (attempt + 1); // 5s, 10s between retries
-            console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
-            await new Promise(r => setTimeout(r, waitTime));
-          }
-          continue;
+        const headers: Record<string, string> = {
+          'Accept': 'text/markdown',
+          'X-Wait-For-Selector': 'body',
+          'X-Timeout': '30',
+          'X-Locale': 'he-IL',
+        };
+        if (phase.noCache) {
+          headers['X-No-Cache'] = 'true';
         }
 
-        console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
-        return { markdown: body, html: '' };
-      }
+        const response = await fetch(`https://r.jina.ai/${url}`, {
+          method: 'GET',
+          headers,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-      const errorText = await response.text();
-      console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
-      if (attempt < maxRetries - 1) {
-        const waitTime = 5000 * (attempt + 1);
-        await new Promise(r => setTimeout(r, waitTime));
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
-      } else {
-        console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
-      }
-      if (attempt < maxRetries - 1) {
-        const waitTime = 5000 * (attempt + 1);
-        await new Promise(r => setTimeout(r, waitTime));
+        if (response.ok) {
+          const body = await response.text();
+          console.log(`✅ Madlan-Jina ${phase.label} attempt ${attempt + 1}: ${body.length} chars`);
+
+          // Check if blocked by CAPTCHA
+          if (isMadlanBlocked(body)) {
+            console.warn(`⚠️ Madlan-Jina ${phase.label} attempt ${attempt + 1}: CAPTCHA/block detected (${body.length} chars)`);
+            if (attempt < maxRetries - 1) {
+              const waitTime = 5000 * (attempt + 1);
+              console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
+              await new Promise(r => setTimeout(r, waitTime));
+            }
+            continue;
+          }
+
+          console.log(`✅ Madlan-Jina ${phase.label} scrape successful (${body.length} chars)`);
+          return { markdown: body, html: '' };
+        }
+
+        const errorText = await response.text();
+        console.warn(`⚠️ Madlan-Jina ${phase.label} attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+        if (attempt < maxRetries - 1) {
+          const waitTime = 5000 * (attempt + 1);
+          await new Promise(r => setTimeout(r, waitTime));
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error(`⏱️ Madlan-Jina ${phase.label} attempt ${attempt + 1} timeout`);
+        } else {
+          console.error(`❌ Madlan-Jina ${phase.label} attempt ${attempt + 1} error:`, error);
+        }
+        if (attempt < maxRetries - 1) {
+          const waitTime = 5000 * (attempt + 1);
+          await new Promise(r => setTimeout(r, waitTime));
+        }
       }
     }
+    console.warn(`⚠️ Madlan-Jina ${phase.label} phase exhausted for ${url}, trying next phase...`);
   }
-  console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
+  console.error(`❌ All phases failed for ${url}`);
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
