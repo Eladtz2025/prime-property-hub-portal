@@ -1,39 +1,39 @@
 
+## תיקון מונה "נותרו" בדשבורד בדיקות זמינות
 
-## הוספת פילטר "כשלונות בדיקה" בטבלת הנכסים
+### הבעיה
+המונה "נותרו" בדשבורד מציג 269, אבל בפועל אין נכסים שממתינים לבדיקה. הסיבה: המונה משתמש בלוגיקה פשוטה (כל נכס אקטיבי שלא נבדק 7 ימים), בעוד שה-RPC האמיתי מסנן:
+- כפילויות (duplicate losers) - 184 נכסים
+- נכסים חדשים מדי (פחות מ-3 ימים) - 83 נכסים
+- מרווחי בדיקה חוזרת שונים (8 ימים לבדיקה ראשונה, 2 ימים לחוזרת)
 
-### מה ישתנה
-
-הוספת אופציה חדשה בפילטר הסטטוס הקיים בטבלת "דירות שנמצאו" שתאפשר לסנן נכסים שנכשלו בבדיקת זמינות (timeout, captcha וכו'), כך שתוכל לעבור עליהם ידנית.
-
-### 1. פילטר חדש בשדה "מקור" או פילטר ייעודי
-הוספת ערך חדש ב-Select הקיים - "כשלונות בדיקה" - שיסנן לפי:
-- `availability_check_reason` שווה ל-`per_property_timeout` או `captcha_blocked` או `scrape_failed`
-
-### 2. עמודת מידע נוספת
-בשורת כל נכס מסונן, הצגת סיבת הכשלון (`availability_check_reason`) ותאריך הבדיקה האחרונה (`availability_checked_at`) כ-Badge קטן.
-
-### 3. כפתור "בדוק ידנית"
-לכל נכס בתצוגה הזו - לינק ישיר ל-URL המקורי כדי שתוכל לבדוק בעצמך אם המודעה עדיין קיימת.
+### הפתרון
+עדכון השאילתה של `pendingRecheck` בקובץ `src/components/scout/ChecksDashboard.tsx` כך שתקרא ישירות ל-RPC `get_properties_needing_availability_check` במקום לבצע שאילתה פשוטה. כך המונה יציג את המספר האמיתי של נכסים שמחכים לבדיקה.
 
 ### פרטים טכניים
 
-**קובץ שישתנה:**
-- `src/components/scout/ScoutedPropertiesTable.tsx`
+**קובץ שישתנה:** `src/components/scout/ChecksDashboard.tsx`
 
-**שינויים:**
-1. הוספת ערך חדש ל-`statusFilter` Select: `"check_failed"` עם תווית "כשלונות בדיקה"
-2. ב-`appliedFilters` - הוספת שדה `checkStatus` (string)
-3. ב-`applyFilters` - כשהפילטר פעיל:
-   - הסרת הסינון `is_active = true` (כדי לראות גם נכסים שנכשלו)
-   - הוספת `.in('availability_check_reason', ['per_property_timeout', 'captcha_blocked', 'scrape_failed'])`
-   - הוספת `.eq('is_active', true)` (נכסים פעילים בלבד)
-4. הוספת עמודת "סיבה" בטבלה שמוצגת רק כשהפילטר פעיל - מציגה את `availability_check_reason` בצורה קריאה
-5. הוספת השדות `availability_check_reason` ו-`availability_checked_at` ל-interface `ScoutedProperty`
+**שינוי בשורות 146-153:**
+החלפת השאילתה של `recheckRes` (שורה 151) מ:
+```
+supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
+  .eq('is_active', true)
+  .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`)
+```
 
-**מיפוי סיבות לעברית:**
-- `per_property_timeout` -> "טיימאאוט"
-- `captcha_blocked` -> "CAPTCHA"
-- `scrape_failed` -> "כשלון סריקה"
-- אחר -> הערך המקורי
+לקריאת RPC:
+```
+supabase.rpc('get_properties_needing_availability_check', {
+  p_first_recheck_days: 8,
+  p_recurring_recheck_days: 2,
+  p_min_days_before_check: 3,
+  p_fetch_limit: 10000
+})
+```
 
+ואז הערך יהיה `recheckRes.data?.length ?? 0` במקום `recheckRes.count ?? 0`.
+
+**אותו שינוי גם במונה הגלובלי** ב-`src/pages/AdminPropertyScout.tsx` (שורות 38-44) - אותה בעיה קיימת שם.
+
+אין שינוי במסד נתונים - ה-RPC כבר קיים.
