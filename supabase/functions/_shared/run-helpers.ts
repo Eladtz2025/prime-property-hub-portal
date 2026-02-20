@@ -62,9 +62,15 @@ export async function updatePageStatus(
   const idx = pageStats.findIndex(p => p.page === page);
 
   if (idx !== -1) {
+    // When status is 'completed', auto-clear the error field to prevent
+    // stale errors from causing the run to be marked as 'partial'
+    const cleanedUpdates = { ...updates };
+    if (cleanedUpdates.status === 'completed') {
+      cleanedUpdates.error = undefined;
+    }
     pageStats[idx] = {
       ...pageStats[idx],
-      ...updates
+      ...cleanedUpdates
     };
 
     await supabase

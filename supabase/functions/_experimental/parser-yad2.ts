@@ -177,14 +177,18 @@ function isValidPropertyBlock(block: string): boolean {
 function findYad2Blocks(markdown: string): string[] {
   const blocks: string[] = [];
   
-  // Split by newlines (NOT spaces!) and accumulate list items
+  // Split by newlines and accumulate list items
   const lines = markdown.split('\n');
   let currentBlock = '';
   let inBlock = false;
   
   for (const line of lines) {
-    // New list item starts a new block (line starts with "- ")
-    if (line.startsWith('- ')) {
+    // Detect list item start:
+    // Format A (Firecrawl): "- [![..." 
+    // Format E (Jina): "*   [![..." or "*  [![..."
+    const isListItemStart = line.startsWith('- ') || /^\*\s{1,4}\[/.test(line);
+    
+    if (isListItemStart) {
       // Save previous block if valid
       if (currentBlock && isValidPropertyBlock(currentBlock)) {
         blocks.push(currentBlock.trim());
@@ -283,67 +287,69 @@ function parseYad2Block(block: string, propertyType: 'rent' | 'sale', index: num
   let address: string | null = null;
   let neighborhood: string | null = null;
   let neighborhoodValue: string | null = null;
-  let city: string | null = null; // No default - extract from content
+  let city: string | null = null;
   
+  // Source text for property details: bold text (Firecrawl) or full block (Jina inline)
+  const detailsSource = boldMatch ? boldMatch[1] : cleanedBlock;
+  
+  // Extract rooms: "X חדרים" or "X.5 חדרים"
+  const roomsMatch = detailsSource.match(/(\d+(?:\.\d)?)\s*חדרים/);
+  if (roomsMatch) {
+    rooms = parseFloat(roomsMatch[1]);
+  }
+  
+  // Extract floor: "קומה Y" (Y can include ‎ markers)
+  const floorMatch = detailsSource.match(/קומה\s*(\d+|קרקע)/);
+  if (floorMatch) {
+    floor = floorMatch[1] === 'קרקע' ? 0 : parseInt(floorMatch[1], 10);
+  }
+  
+  // Extract size: "Z מ״ר" or "Z מ"ר"
+  const sizeMatch = detailsSource.match(/(\d+)\s*מ[״"']?ר/);
+  if (sizeMatch) {
+    size = parseInt(sizeMatch[1], 10);
+  }
+  
+  // Extract city from details
+  const extractedCity = extractCity(detailsSource);
+  if (extractedCity) {
+    city = extractedCity;
+  }
+  
+  // Extract neighborhood
+  const neighborhoodInfo = extractNeighborhood(detailsSource, city || '');
+  if (neighborhoodInfo) {
+    neighborhood = neighborhoodInfo.label;
+    neighborhoodValue = neighborhoodInfo.value;
+  }
+  
+  // Extract address
   if (boldMatch) {
-    const details = boldMatch[1];
-    
-    // Extract rooms: "X חדרים" or "X.5 חדרים"
-    const roomsMatch = details.match(/(\d+(?:\.\d)?)\s*חדרים/);
-    if (roomsMatch) {
-      rooms = parseFloat(roomsMatch[1]);
-    }
-    
-    // Extract floor: "קומה Y" (Y can include ‎ markers)
-    const floorMatch = details.match(/קומה\s*(\d+|קרקע)/);
-    if (floorMatch) {
-      floor = floorMatch[1] === 'קרקע' ? 0 : parseInt(floorMatch[1], 10);
-    }
-    
-    // Extract size: "Z מ״ר" or "Z מ"ר"
-    const sizeMatch = details.match(/(\d+)\s*מ[״"']?ר/);
-    if (sizeMatch) {
-      size = parseInt(sizeMatch[1], 10);
-    }
-    
-    // Extract city from details
-    const extractedCity = extractCity(details);
-    if (extractedCity) {
-      city = extractedCity;
-    }
-    
-    // Extract neighborhood
-    const neighborhoodInfo = extractNeighborhood(details, city || '');
-    if (neighborhoodInfo) {
-      neighborhood = neighborhoodInfo.label;
-      neighborhoodValue = neighborhoodInfo.value;
-    }
-    
-    // Extract address - first part before "דירה" or "דירת גן" etc.
+    // Firecrawl format: address from bold text
     const addressPattern = /^([^,]+?)(?:דירה|דירת גן|גג\/פנטהאוז|סטודיו|פנטהאוז)/;
-    const addressMatch = details.match(addressPattern);
+    const addressMatch = detailsSource.match(addressPattern);
     let boldAddress: string | null = null;
     if (addressMatch) {
       boldAddress = cleanText(addressMatch[1]);
     }
     
-    // Also check alt text for address (may contain house number)
     let altAddress: string | null = null;
     const altMatch = block.match(/\[!\[([^\]]+)\]/);
     if (altMatch && !altMatch[1].includes('פרויקט')) {
       altAddress = cleanText(altMatch[1]);
     }
     
-    // Prefer address WITH house number over one without
     const boldHasNum = boldAddress && /\d{1,3}/.test(boldAddress);
     const altHasNum = altAddress && /\d{1,3}/.test(altAddress);
     
-    if (boldHasNum) {
-      address = boldAddress;
-    } else if (altHasNum) {
-      address = altAddress;
-    } else {
-      address = boldAddress || altAddress;
+    if (boldHasNum) address = boldAddress;
+    else if (altHasNum) address = altAddress;
+    else address = boldAddress || altAddress;
+  } else {
+    // Jina inline format: address from alt text (Image XX: prefix stripped)
+    const altMatch = block.match(/\[!\[(?:Image\s*\d+:\s*)?([^\]]+)\]/);
+    if (altMatch && !altMatch[1].includes('פרויקט')) {
+      address = cleanText(altMatch[1]);
     }
   }
   
