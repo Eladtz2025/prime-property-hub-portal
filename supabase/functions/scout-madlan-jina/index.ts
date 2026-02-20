@@ -31,14 +31,13 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
         'X-Wait-For-Selector': 'body',
-        'X-Timeout': '30',
-        'X-Locale': 'he-IL',
+        'X-Timeout': '35',
+        'X-Proxy-Country': 'IL',
       };
 
-      // Phase 2: force fresh scrape with proxy to bypass blocks
+      // Phase 2: force fresh scrape to bypass blocks
       if (isPhase2) {
         headers['X-No-Cache'] = 'true';
-        headers['X-Proxy-Country'] = 'IL';
       }
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
