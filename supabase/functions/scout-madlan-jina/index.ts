@@ -5,42 +5,84 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
+/**
+ * Detect if the response is a CAPTCHA/bot block from Madlan
+ */
+function isMadlanBlocked(content: string): boolean {
+  return content.includes('סליחה על ההפרעה') || 
+         content.includes('משהו בדפדפן שלך גרם לנו לחשוב') ||
+         content.includes('error 403') ||
+         content.length < 1000;
+}
+
+/**
+ * Two-phase Madlan scraping strategy (mirrors availability check approach):
+ * Phase 1: Use Jina cache (no X-No-Cache) - faster, avoids triggering bot detection
+ * Phase 2: Force fresh scrape with X-No-Cache + X-Proxy-Country: IL - bypasses blocks
+ */
 async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      const isPhase2 = attempt > 0; // First attempt uses cache, retries force fresh
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
-      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} [Phase ${isPhase2 ? '2 (fresh+proxy)' : '1 (cache)'}]`);
+
+      const headers: Record<string, string> = {
+        'Accept': 'text/markdown',
+        'X-Wait-For-Selector': 'body',
+        'X-Timeout': '30',
+        'X-Locale': 'he-IL',
+      };
+
+      // Phase 2: force fresh scrape with proxy to bypass blocks
+      if (isPhase2) {
+        headers['X-No-Cache'] = 'true';
+        headers['X-Proxy-Country'] = 'IL';
+      }
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
         method: 'GET',
-        headers: {
-          'Accept': 'text/markdown',
-          'X-No-Cache': 'true',
-          'X-Wait-For-Selector': 'a[href*="/listing/"]',
-          'X-Timeout': '45',
-          'X-Proxy-Country': 'IL',
-        },
+        headers,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
       if (response.ok) {
         const body = await response.text();
+        console.log(`✅ Madlan-Jina scrape attempt ${attempt + 1}: ${body.length} chars`);
+
+        // Check if blocked by CAPTCHA
+        if (isMadlanBlocked(body)) {
+          console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1}: CAPTCHA/block detected (${body.length} chars)`);
+          if (attempt < maxRetries - 1) {
+            const waitTime = 5000 * (attempt + 1); // 5s, 10s between retries
+            console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
+            await new Promise(r => setTimeout(r, waitTime));
+          }
+          continue;
+        }
+
         console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
         return { markdown: body, html: '' };
       }
 
       const errorText = await response.text();
       console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
-      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+      if (attempt < maxRetries - 1) {
+        const waitTime = 5000 * (attempt + 1);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
       } else {
         console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
       }
-      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+      if (attempt < maxRetries - 1) {
+        const waitTime = 5000 * (attempt + 1);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
     }
   }
   console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
@@ -58,8 +100,8 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
   MAX_RETRIES: 3,
-  NEXT_PAGE_DELAY: 10000,
-  RECOVERY_DELAY: 10000,
+  NEXT_PAGE_DELAY: 15000,  // 15s between pages to avoid bot detection
+  RECOVERY_DELAY: 15000,
 };
 
 async function triggerNextPage(
