@@ -17,8 +17,8 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
         headers: {
           'Accept': 'text/markdown',
           'X-No-Cache': 'true',
-          'X-Wait-For-Selector': 'body',
-          'X-Timeout': '30',
+          'X-Wait-For-Selector': '[class*="listing"]',
+          'X-Timeout': '45',
           'X-Proxy-Country': 'IL',
           'X-Locale': 'he-IL',
         },
