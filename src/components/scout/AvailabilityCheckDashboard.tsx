@@ -202,7 +202,7 @@ export const AvailabilityCheckDashboard: React.FC = () => {
   // ─── Manual Check Mutation ───
   const manualCheckMutation = useMutation({
     mutationFn: async (propertyIds: string[]) => {
-      const { data, error } = await supabase.functions.invoke('check-property-availability', { body: { property_ids: propertyIds } });
+      const { data, error } = await supabase.functions.invoke('check-property-availability-jina', { body: { property_ids: propertyIds } });
       if (error) throw error;
       return data;
     },
