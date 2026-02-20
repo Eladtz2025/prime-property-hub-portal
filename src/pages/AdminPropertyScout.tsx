@@ -33,21 +33,22 @@ const AdminPropertyScout: React.FC = () => {
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const recheckCutoff = new Date();
-      recheckCutoff.setDate(recheckCutoff.getDate() - 7);
       const [totalRes, totalActiveRes, pendingRecheckRes, checkedTodayRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
-          .eq('is_active', true)
-          .or(`availability_checked_at.is.null,availability_checked_at.lt.${recheckCutoff.toISOString()}`),
+        supabase.rpc('get_properties_needing_availability_check', {
+          p_first_recheck_days: 8,
+          p_recurring_recheck_days: 2,
+          p_min_days_before_check: 3,
+          p_fetch_limit: 10000
+        }),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
           .gte('availability_checked_at', today.toISOString()),
       ]);
       return {
         total: totalRes.count ?? 0,
         totalActive: totalActiveRes.count ?? 0,
-        pendingRecheck: pendingRecheckRes.count ?? 0,
+        pendingRecheck: pendingRecheckRes.data?.length ?? 0,
         checkedToday: checkedTodayRes.count ?? 0,
       };
     },
