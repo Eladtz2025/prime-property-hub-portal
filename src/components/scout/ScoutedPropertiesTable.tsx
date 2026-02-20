@@ -791,7 +791,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const checkAvailabilityMutation = useMutation({
     mutationFn: async (propertyId: string) => {
       setCheckingPropertyId(propertyId);
-      const { data, error } = await supabase.functions.invoke('check-property-availability', {
+const { data, error } = await supabase.functions.invoke('check-property-availability-jina', {
         body: { property_ids: [propertyId] }
       });
       if (error) throw error;
@@ -830,7 +830,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       }
       
       // 2. Check availability
-      const { data, error } = await supabase.functions.invoke('check-property-availability', {
+const { data, error } = await supabase.functions.invoke('check-property-availability-jina', {
         body: { property_ids: [property.id] }
       });
       if (error) throw error;

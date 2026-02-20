@@ -66,7 +66,7 @@ export const AvailabilityActions: React.FC = () => {
       if (findErr) throw findErr;
       if (!props?.length) throw new Error('לא נמצא נכס עם URL זה');
 
-      const { data, error } = await supabase.functions.invoke('check-property-availability', {
+      const { data, error } = await supabase.functions.invoke('check-property-availability-jina', {
         body: { property_ids: [props[0].id] },
       });
       if (error) throw error;
