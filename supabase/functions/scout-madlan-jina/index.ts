@@ -16,17 +16,14 @@ function isMadlanBlocked(content: string): boolean {
 }
 
 /**
- * Two-phase Madlan scraping strategy (mirrors availability check approach):
- * Phase 1: Use Jina cache (no X-No-Cache) - faster, avoids triggering bot detection
- * Phase 2: Force fresh scrape with X-No-Cache + X-Proxy-Country: IL - bypasses blocks
+ * Scrape Madlan search pages using Jina with proxy to bypass bot detection.
  */
 async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const isPhase2 = attempt > 0; // First attempt uses cache, retries force fresh
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
-      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url} [Phase ${isPhase2 ? '2 (fresh+proxy)' : '1 (cache)'}]`);
+      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
@@ -34,6 +31,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
         'X-Wait-For-Selector': 'body',
         'X-Timeout': '30',
         'X-Locale': 'he-IL',
+        'X-Proxy-Country': 'IL',
       };
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
