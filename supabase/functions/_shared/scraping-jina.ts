@@ -36,7 +36,6 @@ export async function scrapeWithJina(
         'X-Wait-For-Selector': 'body',
         'X-Timeout': '30',
         'X-Locale': 'he-IL',
-        'X-With-Generated-Alt': 'false',
       };
 
       // Yad2
