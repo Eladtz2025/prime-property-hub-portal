@@ -131,7 +131,7 @@ export async function checkAndFinalizeRun(
 ): Promise<void> {
   const { data: run } = await supabase
     .from('scout_runs')
-    .select('page_stats, status, config_id, properties_found, new_properties')
+    .select('page_stats, status, config_id, properties_found, new_properties, created_at')
     .eq('id', runId)
     .single();
 
@@ -146,7 +146,13 @@ export async function checkAndFinalizeRun(
   // Check for stuck pages: scraping or pending pages with no active processing
   const scrapingPages = pageStats.filter(p => p.status === 'scraping');
   const pendingPages = pageStats.filter(p => p.status === 'pending');
-  const activePages = scrapingPages.length; // pages currently being processed
+  const activePages = scrapingPages.length;
+  
+  // How long the run has been active (ms)
+  const runAgeMs = Date.now() - new Date(run.created_at).getTime();
+  // Minimum age before declaring broken chain (2 minutes) — 
+  // prevents false positives in parallel mode where pages are triggered with delays
+  const MIN_AGE_FOR_BROKEN_CHAIN_MS = 120_000;
   
   // Case 1: Some pages stuck in 'scraping' and all others are done — mark as failed
   if (scrapingPages.length > 0 && completedPages + scrapingPages.length >= maxPages) {
@@ -158,11 +164,11 @@ export async function checkAndFinalizeRun(
       }
     }
     await supabase.from('scout_runs').update({ page_stats: pageStats }).eq('id', runId);
-    // Now all pages are in terminal state — continue to retry/finalize logic below
   } 
   // Case 2: Broken chain — pages are pending but nothing is scraping (chain died)
-  else if (pendingPages.length > 0 && activePages === 0 && completedPages > 0) {
-    console.warn(`⚠️ ${source} run ${runId}: ${pendingPages.length} pages stuck in 'pending' (broken chain) — marking as failed`);
+  // Only trigger if run is old enough (>2 min) to avoid false positives in parallel mode
+  else if (pendingPages.length > 0 && activePages === 0 && completedPages > 0 && runAgeMs > MIN_AGE_FOR_BROKEN_CHAIN_MS) {
+    console.warn(`⚠️ ${source} run ${runId}: ${pendingPages.length} pages stuck in 'pending' (broken chain, age: ${Math.round(runAgeMs/1000)}s) — marking as failed`);
     for (const stuckPage of pendingPages) {
       const idx = pageStats.findIndex(p => p.page === stuckPage.page);
       if (idx !== -1) {
@@ -170,9 +176,8 @@ export async function checkAndFinalizeRun(
       }
     }
     await supabase.from('scout_runs').update({ page_stats: pageStats }).eq('id', runId);
-    // Continue to retry/finalize logic below
   }
-  // Case 3: Still actively processing — not done yet
+  // Case 3: Still actively processing or too young to declare broken — not done yet
   else if (completedPages < maxPages) {
     return;
   }
@@ -191,7 +196,6 @@ export async function checkAndFinalizeRun(
     
     if (supabaseUrl && supabaseKey) {
       for (const failedPage of failedPages) {
-        // Increment retry count
         const idx = pageStats.findIndex(p => p.page === failedPage.page);
         if (idx !== -1) {
           pageStats[idx] = {
@@ -203,41 +207,58 @@ export async function checkAndFinalizeRun(
         }
       }
       
-      // Save updated page_stats with retry counts
       await supabase
         .from('scout_runs')
         .update({ page_stats: pageStats })
         .eq('id', runId);
       
-      // Trigger the first failed page (it will chain to the next)
-      const firstRetry = failedPages[0];
-      console.log(`🔄 Retrying page ${firstRetry.page} (attempt ${(firstRetry.retry_count || 0) + 1})`);
-      
-      // Wait before retrying to give CAPTCHA time to clear
-      await new Promise(r => setTimeout(r, 15000));
-      
       const configId = run.config_id;
       const startPage = pageStats[0]?.page || 1;
       
-      try {
-        await fetch(`${supabaseUrl}/functions/v1/scout-${source}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`
-          },
-          body: JSON.stringify({
-            config_id: configId,
-            page: firstRetry.page,
-            run_id: runId,
-            max_pages: pageStats[pageStats.length - 1]?.page || maxPages,
-            start_page: startPage,
-            is_retry: true,
-            retry_pages: failedPages.slice(1).map(p => p.page) // remaining pages to retry
-          })
-        });
-      } catch (err) {
-        console.error(`❌ Failed to trigger retry for page ${firstRetry.page}:`, err);
+      // Determine the correct function name — source may already include '-jina'
+      const functionName = source.includes('-jina') 
+        ? `scout-${source}` 
+        : `scout-${source}-jina`;
+      
+      // For parallel-mode scanners (homeless), trigger each failed page independently
+      // For sequential scanners (yad2, madlan), chain via is_retry/retry_pages
+      const isParallelSource = source.startsWith('homeless');
+      
+      if (isParallelSource) {
+        // Fire-and-forget each failed page with a small delay between them
+        for (let i = 0; i < failedPages.length; i++) {
+          const fp = failedPages[i];
+          console.log(`🔄 Retrying page ${fp.page} (attempt ${(fp.retry_count || 0) + 1}) [parallel]`);
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+              body: JSON.stringify({ config_id: configId, page: fp.page, run_id: runId, max_pages: pageStats[pageStats.length - 1]?.page || maxPages })
+            });
+          } catch (err) {
+            console.error(`❌ Failed to trigger retry for page ${fp.page}:`, err);
+          }
+          if (i < failedPages.length - 1) await new Promise(r => setTimeout(r, 3000));
+        }
+      } else {
+        // Sequential: chain retries via is_retry mechanism
+        const firstRetry = failedPages[0];
+        console.log(`🔄 Retrying page ${firstRetry.page} (attempt ${(firstRetry.retry_count || 0) + 1}) [sequential]`);
+        await new Promise(r => setTimeout(r, 15000));
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({
+              config_id: configId, page: firstRetry.page, run_id: runId,
+              max_pages: pageStats[pageStats.length - 1]?.page || maxPages,
+              start_page: startPage, is_retry: true,
+              retry_pages: failedPages.slice(1).map(p => p.page)
+            })
+          });
+        } catch (err) {
+          console.error(`❌ Failed to trigger retry for page ${firstRetry.page}:`, err);
+        }
       }
       
       return; // Don't finalize yet - retries in progress
