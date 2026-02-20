@@ -1,8 +1,52 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
-import { scrapeWithJina } from "../_shared/scraping-jina.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
+
+interface JinaScrapeResult { markdown: string; html: string; }
+
+async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      console.log(`🌐 Madlan-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+
+      const response = await fetch(`https://r.jina.ai/${url}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/markdown',
+          'X-No-Cache': 'true',
+          'X-Wait-For-Selector': 'body',
+          'X-Timeout': '30',
+          'X-Proxy-Country': 'IL',
+          'X-Locale': 'he-IL',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const body = await response.text();
+        console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
+        return { markdown: body, html: '' };
+      }
+
+      const errorText = await response.text();
+      console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
+      } else {
+        console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
+      }
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    }
+  }
+  console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
+  return null;
+}
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
@@ -109,7 +153,7 @@ serve(async (req) => {
     console.log(`🔵 Madlan-Jina page ${page}: Scraping ${url}`);
     await updatePageStatus(supabase, runId, page, { url });
 
-    const scrapeResult = await scrapeWithJina(url, 'madlan', MADLAN_CONFIG.MAX_RETRIES);
+    const scrapeResult = await scrapeMadlanWithJina(url, MADLAN_CONFIG.MAX_RETRIES);
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });

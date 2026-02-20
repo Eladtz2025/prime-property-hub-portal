@@ -1,8 +1,52 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
-import { scrapeWithJina } from "../_shared/scraping-jina.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
+
+interface JinaScrapeResult { markdown: string; html: string; }
+
+async function scrapeYad2WithJina(url: string, maxRetries = 2): Promise<JinaScrapeResult | null> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      console.log(`🌐 Yad2-Jina scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
+
+      const response = await fetch(`https://r.jina.ai/${url}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/markdown',
+          'X-No-Cache': 'true',
+          'X-Wait-For-Selector': 'a[href*="/realestate/item/"]',
+          'X-Timeout': '30',
+          'X-Proxy-Country': 'IL',
+          'X-Locale': 'he-IL',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const body = await response.text();
+        console.log(`✅ Yad2-Jina scrape successful (${body.length} chars)`);
+        return { markdown: body, html: '' };
+      }
+
+      const errorText = await response.text();
+      console.warn(`⚠️ Yad2-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`⏱️ Yad2-Jina attempt ${attempt + 1} timeout`);
+      } else {
+        console.error(`❌ Yad2-Jina attempt ${attempt + 1} error:`, error);
+      }
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+    }
+  }
+  console.error(`❌ All ${maxRetries} Yad2-Jina attempts failed for ${url}`);
+  return null;
+}
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseYad2Markdown } from "../_experimental/parser-yad2.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
@@ -85,7 +129,7 @@ serve(async (req) => {
     for (const url of urls) {
       console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
 
-      const scrapeResult = await scrapeWithJina(url, 'yad2', YAD2_CONFIG.MAX_RETRIES);
+      const scrapeResult = await scrapeYad2WithJina(url, YAD2_CONFIG.MAX_RETRIES);
       if (!scrapeResult) {
         console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
