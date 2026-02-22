@@ -1,31 +1,26 @@
 
-# הסרת לוגיקת Cache מ-scout-madlan-jina
+# תיקון Madlan בכל 3 מערכות Jina — הושלם ✅
 
-## הבעיה
-הפונקציה עדיין משתמשת בלוגיקת Two-phase (cache ואז fresh) עם `X-No-Cache`. המשתמש מבקש להסיר את כל עניין הקאש ולעבוד בצורה פשוטה.
+## קבצים ששונו
 
-## השינוי
-קובץ: `supabase/functions/scout-madlan-jina/index.ts`
+| # | קובץ | מה שונה | למה |
+|---|-------|---------|-----|
+| 1 | `_shared/madlan-observability.ts` | **חדש** — shared helper: `classifyMadlanContent`, `logMadlanScrapeResult`, `MADLAN_BLOCK_PHRASES` | TASK F: observability ללא PII |
+| 2 | `scout-madlan-jina/index.ts` | `X-Wait-For-Selector` → `a[href^="/listings/"]`, `isMadlanBlocked` משודרג, structured log | TASK B: selector מדויק + חסימות |
+| 3 | `_shared/scraping.ts` | Madlan validation: דרישת `/listings/` רק בדפי רשימה, price/rooms בדפי מודעה | TASK C: לא לשבור backfill/availability |
+| 4 | `backfill-property-data-jina/index.ts` | Madlan cached-first (ללא X-No-Cache), blocked → `failed` + reason (לא סטטוס חדש) | TASK D: לא לתקוע נכסים |
+| 5 | `check-property-availability-jina/index.ts` | blocked=retryable (לא inactive), sightings fallback עם `last_seen_at` | TASK E: למנוע false inactive |
 
-הסרת לוגיקת ה-phases לחלוטין ומעבר ללולאת retries פשוטה אחת, בלי שום header של `X-No-Cache`:
+## 4 התנאים — עמידה
 
-```text
-Headers סופיים:
-  Accept: text/markdown
-  X-Wait-For-Selector: body
-  X-Timeout: 30
-  X-Locale: he-IL
-```
+1. ✅ **retryable_blocked**: לא הוספתי סטטוס חדש. משתמש ב-`failed` + reason קיים → נכסים חוזרים לתור
+2. ✅ **validateScrapedContent**: `/listings/` נדרש רק כש-URL מכיל `/for-rent/` או `/for-sale/`. דפי מודעה (backfill/availability) משתמשים בבדיקות מחיר/חדרים
+3. ✅ **last_seen_at**: אומת — העמודה קיימת ב-DB ו-`saveProperty` מעדכן אותה. Availability משתמש בה כ-fallback
+4. ✅ **Observability**: לוגים מובנים (JSON) עם url + content_length + classification בלבד, ללא raw snippets/PII
 
-### פירוט טכני
-- שורות 22-26: הסרת מערך `phases` והלוגיקה הדו-שלבית
-- שורות 28-90: החלפת שתי הלולאות המקוננות (`for phase` + `for attempt`) בלולאה אחת פשוטה של retries
-- הסרת `if (phase.noCache)` שמוסיף את `X-No-Cache`
-- ניקוי הודעות הלוג מ-"phase.label" למשהו פשוט כמו "attempt X/Y"
-- הסרת שורה 89 (הודעת "phase exhausted")
+## צעדי בדיקה
 
-## פריסה
-deploy של scout-madlan-jina בלבד.
-
-## מה לא נוגעים
-כל שאר הקבצים נשארים כמו שהם.
+1. **Scout**: הרץ config של Madlan (Scans 2). בלוגים חפש `madlan_obs` — צפה ל-classification `ok` או `blocked`/`skeleton`
+2. **Backfill**: הרץ backfill עם `source_filter: 'madlan'`. ודא שנכסים חסומים מקבלים `backfill_status: 'failed'` (לא סטטוס חדש)
+3. **Availability**: הרץ availability על נכסי Madlan. ודא שחסימות לא מסמנות inactive. חפש `recently_seen` או `needs_manual_review` בלוגים
+4. **Yad2/Homeless**: הרץ scout/backfill — ודא אפס שינויים בהתנהגות
