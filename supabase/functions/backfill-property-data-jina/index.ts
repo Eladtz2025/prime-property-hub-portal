@@ -440,7 +440,9 @@ Deno.serve(async (req) => {
           'X-Wait-For-Selector': 'body',
           'X-Timeout': '35',
         };
-        if (!isMadlanProp) {
+        if (isMadlanProp) {
+          jinaHeaders['X-Proxy-Country'] = 'IL';
+        } else {
           jinaHeaders['X-No-Cache'] = 'true';
         }
 
