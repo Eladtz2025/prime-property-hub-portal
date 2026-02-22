@@ -33,10 +33,10 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
 
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-Wait-For-Selector': 'a[href^="/listings/"]',
-        'X-Timeout': '30',
+        'X-Timeout': '45',
         'X-Locale': 'he-IL',
         'X-Proxy-Country': 'IL',
+        'X-No-Cache': 'true',
       };
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
