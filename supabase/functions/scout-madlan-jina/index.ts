@@ -2,21 +2,27 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
+import { classifyMadlanContent, logMadlanScrapeResult, MADLAN_BLOCK_PHRASES } from "../_shared/madlan-observability.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
 /**
- * Detect if the response is a CAPTCHA/bot block from Madlan
+ * Detect if the response is a CAPTCHA/bot block from Madlan.
+ * Uses shared block phrases + checks for short content without /listings/ links.
  */
-function isMadlanBlocked(content: string): boolean {
-  return content.includes('סליחה על ההפרעה') || 
-         content.includes('משהו בדפדפן שלך גרם לנו לחשוב') ||
-         content.includes('error 403') ||
-         content.length < 1000;
+function isMadlanBlocked(content: string, url: string): boolean {
+  const lower = content.toLowerCase();
+  for (const phrase of MADLAN_BLOCK_PHRASES) {
+    if (lower.includes(phrase.toLowerCase())) return true;
+  }
+  // For list pages: short content without listing links = skeleton
+  const isListPage = url.includes('/for-rent/') || url.includes('/for-sale/');
+  if (isListPage && content.length < 2000 && !content.includes('/listings/')) return true;
+  return false;
 }
 
 /**
- * Scrape Madlan search pages using Jina with proxy to bypass bot detection.
+ * Scrape Madlan search pages using Jina.
  */
 async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -27,7 +33,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
 
       const headers: Record<string, string> = {
         'Accept': 'text/markdown',
-        'X-Wait-For-Selector': 'body',
+        'X-Wait-For-Selector': 'a[href^="/listings/"]',
         'X-Timeout': '30',
         'X-Locale': 'he-IL',
       };
@@ -41,10 +47,11 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
 
       if (response.ok) {
         const body = await response.text();
-        console.log(`✅ Madlan-Jina attempt ${attempt + 1}: ${body.length} chars`);
+        const classification = classifyMadlanContent(body, url);
+        logMadlanScrapeResult('scout', url, body.length, classification);
 
-        if (isMadlanBlocked(body)) {
-          console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1}: CAPTCHA/block detected (${body.length} chars)`);
+        if (isMadlanBlocked(body, url)) {
+          console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1}: blocked/skeleton (${body.length} chars, ${classification})`);
           if (attempt < maxRetries - 1) {
             const waitTime = 5000 * (attempt + 1);
             console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);

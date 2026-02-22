@@ -1,9 +1,10 @@
-// Edge Function: check-property-availability-jina v1.1
-// Uses Jina AI Reader with two-phase Madlan strategy (cache → fresh+proxy)
+// Edge Function: check-property-availability-jina v1.2
+// Uses Jina AI Reader with Madlan-safe logic (blocked ≠ inactive)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
 import { isListingRemoved, isMadlanHomepage } from "../_shared/availability-indicators.ts";
+import { classifyMadlanContent, logMadlanScrapeResult } from "../_shared/madlan-observability.ts";
 
 const GLOBAL_TIMEOUT_MS = 55000;
 
@@ -98,23 +99,25 @@ async function checkWithJina(
           return { isInactive: false, reason: 'short_content_keeping_active' };
         }
 
-        // Madlan CAPTCHA/skeleton detection — try next phase
-        if (isMadlan && (markdown.length < 1000 || markdown.includes('סליחה על ההפרעה'))) {
-          console.log(`🤖 Madlan CAPTCHA/skeleton (${markdown.length} chars) in ${phase.label} phase for ${url}`);
-          if (phase.label !== 'fresh+proxy') {
-            await new Promise(r => setTimeout(r, 2000));
-            break; // break inner loop, continue to next phase
+        // Madlan: use shared classification for structured logging + safe handling
+        if (isMadlan) {
+          const classification = classifyMadlanContent(markdown, url);
+          logMadlanScrapeResult('availability', url, markdown.length, classification);
+          
+          if (classification !== 'ok') {
+            // Blocked/skeleton/captcha/homepage — NEVER mark inactive
+            console.log(`🤖 Madlan ${classification} (${markdown.length} chars) for ${url} — retryable, not inactive`);
+            return { isInactive: false, reason: `madlan_${classification}` };
           }
-          return { isInactive: false, reason: 'madlan_captcha_blocked' };
         }
 
-        // Check removal indicators
+        // Check removal indicators (explicit text = the ONLY path to inactive)
         if (isListingRemoved(markdown)) {
           console.log(`🚫 Removal text found for ${url}`);
           return { isInactive: true, reason: 'listing_removed_indicator' };
         }
 
-        // Madlan homepage redirect (improved: excludes real listing pages)
+        // Madlan homepage redirect (fallback — already caught by classifyMadlanContent above)
         if (isMadlan && isMadlanHomepage(markdown)) {
           console.log(`🔄 Madlan homepage redirect for ${url} — treating as retryable`);
           return { isInactive: false, reason: 'madlan_homepage_redirect' };
@@ -288,6 +291,10 @@ serve(async (req) => {
       'madlan_skeleton',
       'madlan_captcha_blocked',
       'madlan_homepage_redirect',
+      'madlan_blocked',
+      'madlan_captcha',
+      'madlan_empty',
+      'madlan_retryable',
     ]);
 
     for (const result of results) {
@@ -324,19 +331,33 @@ serve(async (req) => {
         try {
           const { data: curProp } = await supabase
             .from('scouted_properties')
-            .select('availability_check_count')
+            .select('availability_check_count, last_seen_at, source')
             .eq('id', result.id)
             .single();
+          
+          // Madlan sightings fallback: use last_seen_at to decide action
+          let finalReason = result.reason;
+          if (curProp?.source === 'madlan' && curProp?.last_seen_at) {
+            const lastSeenAge = Date.now() - new Date(curProp.last_seen_at).getTime();
+            const daysSinceLastSeen = lastSeenAge / (1000 * 60 * 60 * 24);
+            if (daysSinceLastSeen <= 7) {
+              finalReason = `${result.reason}_recently_seen`;
+              console.log(`🟢 Madlan ${result.id} blocked but seen ${daysSinceLastSeen.toFixed(1)} days ago — keeping active`);
+            } else if (daysSinceLastSeen > 30) {
+              finalReason = 'needs_manual_review';
+              console.log(`🟡 Madlan ${result.id} blocked and not seen for ${daysSinceLastSeen.toFixed(0)} days — needs manual review`);
+            }
+          }
           
           await supabase
             .from('scouted_properties')
             .update({ 
-              availability_check_reason: result.reason,
+              availability_check_reason: finalReason,
               availability_checked_at: new Date().toISOString(),
               availability_check_count: (curProp?.availability_check_count ?? 0) + 1,
             })
             .eq('id', result.id);
-          console.log(`🔄 ${result.id} - retryable (${result.reason}), removed from immediate queue`);
+          console.log(`🔄 ${result.id} - retryable (${finalReason}), removed from immediate queue`);
         } catch (dbError) {
           console.error(`DB update error for ${result.id}:`, dbError);
         }

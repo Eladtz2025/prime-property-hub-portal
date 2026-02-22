@@ -81,12 +81,24 @@ export function validateScrapedContent(
   
   // Source-specific validation for Madlan
   if (source === 'madlan') {
-    const hasListingIndicators = 
+    // For list pages (/for-rent/, /for-sale/): require /listings/ links
+    const content = markdown || html || '';
+    const isListPage = content.includes('/for-rent/') || content.includes('/for-sale/') ||
+      // Also detect list pages by checking if URL was passed via marker in content
+      // Fallback: if no /listings/ and no price indicators, it's suspicious
+      false;
+    
+    const hasListingLinks = content.includes('/listings/');
+    const hasPriceIndicators = 
       (markdown && (markdown.includes('₪') || markdown.includes('חד\'') || markdown.includes('חדרים'))) ||
       (html && (html.includes('listing') || html.includes('property-card') || html.includes('נכס')));
     
-    if (!hasListingIndicators) {
-      return { valid: false, reason: 'Madlan page has no property indicators - likely blocked or empty' };
+    if (hasListingLinks) {
+      // List page with listing links — valid
+    } else if (hasPriceIndicators) {
+      // Single listing page with price/rooms — valid (backfill/availability pages)
+    } else {
+      return { valid: false, reason: 'Madlan page has no /listings/ links or property indicators - likely blocked or skeleton' };
     }
   }
   
