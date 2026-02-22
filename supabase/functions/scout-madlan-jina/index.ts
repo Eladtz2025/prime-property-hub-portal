@@ -36,6 +36,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
         'X-Wait-For-Selector': 'a[href^="/listings/"]',
         'X-Timeout': '30',
         'X-Locale': 'he-IL',
+        'X-Proxy-Country': 'IL',
       };
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
