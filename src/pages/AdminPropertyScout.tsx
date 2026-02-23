@@ -36,12 +36,12 @@ const AdminPropertyScout: React.FC = () => {
       const [totalRes, totalActiveRes, pendingRecheckRes, checkedTodayRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        (supabase.rpc('get_properties_needing_availability_check', {
+        supabase.rpc('get_properties_needing_availability_check', {
           p_first_recheck_days: 8,
           p_recurring_recheck_days: 2,
           p_min_days_before_check: 3,
           p_fetch_limit: 10000
-        }) as any).select('id', { count: 'exact', head: true }),
+        }, { count: 'exact', head: true }),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
           .gte('availability_checked_at', today.toISOString()),
       ]);
