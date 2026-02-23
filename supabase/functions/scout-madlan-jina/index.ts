@@ -5,12 +5,12 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
+async function scrapemadlanWithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35000);
-      console.log(`🌐 Madlan-Jina attempt ${attempt + 1}/${maxRetries} for ${url}`);
+      console.log(`🌐 madlan-Jina attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
         method: 'GET',
@@ -28,36 +28,36 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
 
       if (response.ok) {
         const body = await response.text();
-        console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
+        console.log(`✅ madlan-Jina scrape successful (${body.length} chars)`);
         return { markdown: body, html: '' };
       }
 
       const errorText = await response.text();
-      console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+      console.warn(`⚠️ madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
       if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
+        console.error(`⏱️ madlan-Jina attempt ${attempt + 1} timeout`);
       } else {
-        console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
+        console.error(`❌ madlan-Jina attempt ${attempt + 1} error:`, error);
       }
       if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     }
   }
-  console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
+  console.error(`❌ All ${maxRetries} madlan-Jina attempts failed for ${url}`);
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parsemadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Madlan using Jina Reader - SEQUENTIAL MODE
+ * Edge Function for scraping madlan using Jina Reader - SEQUENTIAL MODE
  * Clone of scout-madlan with Firecrawl replaced by Jina.
  */
 
-const Madlan_CONFIG = {
-  SOURCE: 'Madlan',
+const madlan_CONFIG = {
+  SOURCE: 'madlan',
   MAX_RETRIES: 2,
   PAGE_DELAY_MS: 15000,
   RETRY_DELAY_MS: 25000,
@@ -89,7 +89,7 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🟠 scout-Madlan-jina: Page ${page} for run ${runId}`);
+  console.log(`🟠 scout-madlan-jina: Page ${page} for run ${runId}`);
 
   try {
     if (await isRunStopped(supabase, runId)) {
@@ -108,14 +108,14 @@ serve(async (req) => {
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina');
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     if (config.property_type === 'both') {
       const errorMsg = 'property_type "both" is not supported';
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: errorMsg, duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina');
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina');
       return new Response(JSON.stringify({ success: false, error: errorMsg }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -123,37 +123,37 @@ serve(async (req) => {
     let totalNew = 0;
     let urlsFailed = 0;
 
-    console.log(`🟠 Madlan-Jina page ${page}: ${urls.length} URL(s) to scrape`);
+    console.log(`🟠 madlan-Jina page ${page}: ${urls.length} URL(s) to scrape`);
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Madlan-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 madlan-Jina page ${page}: Scraping ${url}`);
 
       const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-      const scrapeResult = await scrapeMadlanWithJina(url, Madlan_CONFIG.MAX_RETRIES, timeoutSec);
+      const scrapeResult = await scrapemadlanWithJina(url, madlan_CONFIG.MAX_RETRIES, timeoutSec);
       if (!scrapeResult) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Scrape failed for ${url}`);
+        console.warn(`⚠️ madlan-Jina page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
       const { markdown, html } = scrapeResult;
-      const validation = validateScrapedContent(markdown, html, 'Madlan');
+      const validation = validateScrapedContent(markdown, html, 'madlan');
       if (!validation.valid) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Validation failed: ${validation.reason}`);
+        console.warn(`⚠️ madlan-Jina page ${page}: Validation failed: ${validation.reason}`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parsemadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
       if (markdown.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
-            source: 'Madlan', url, html: html?.substring(0, 100000) || null,
+            source: 'madlan', url, html: html?.substring(0, 100000) || null,
             markdown: markdown?.substring(0, 100000) || null,
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
@@ -185,7 +185,7 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
     return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'no-ai' }), {
@@ -193,7 +193,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`scout-Madlan-jina page ${page} error:`, error);
+    console.error(`scout-madlan-jina page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
     if (maxPages) await chainNextPage(supabaseUrl, supabaseServiceKey, createClient(supabaseUrl, supabaseServiceKey), configId!, page, runId, maxPages, startPage, isRetry, retryPages);
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
@@ -212,7 +212,7 @@ async function chainNextPage(
     if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
       await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages);
     } else {
-      await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina');
+      await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina');
     }
   } else if (currentPage < maxPages) {
     await triggerNextPage(supabaseUrl, supabaseKey, configId, currentPage + 1, runId, maxPages, startPage);
@@ -230,7 +230,7 @@ async function triggerNextPage(
   const MAX_TRIGGER_RETRIES = 3;
   const TRIGGER_RETRY_DELAY = 5000;
   const MAX_CONSECUTIVE_SKIPS = 3;
-  const delay = isRetry ? Madlan_CONFIG.RETRY_DELAY_MS : Madlan_CONFIG.PAGE_DELAY_MS;
+  const delay = isRetry ? madlan_CONFIG.RETRY_DELAY_MS : madlan_CONFIG.PAGE_DELAY_MS;
 
   console.log(`⏳ Waiting ${delay / 1000}s before page ${nextPage}${isRetry ? ' (retry)' : ''}...`);
   await new Promise(r => setTimeout(r, delay));
@@ -244,8 +244,8 @@ async function triggerNextPage(
   let triggered = false;
   for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
     try {
-      console.log(`📄 Madlan-Jina: triggering page ${nextPage} (attempt ${attempt})`);
-      await fetch(`${supabaseUrl}/functions/v1/scout-Madlan-jina`, {
+      console.log(`📄 madlan-Jina: triggering page ${nextPage} (attempt ${attempt})`);
+      await fetch(`${supabaseUrl}/functions/v1/scout-madlan-jina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ config_id: configId, page: nextPage, run_id: runId, max_pages: maxPages, start_page: startPage, is_retry: isRetry, retry_pages: retryPages })
@@ -265,11 +265,11 @@ async function triggerNextPage(
         const currentIdx = retryPages.indexOf(nextPage);
         if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
           await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages, _skipCount + 1);
-        } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina'); }
+        } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); }
       } else if (nextPage < maxPages) {
         await triggerNextPage(supabaseUrl, supabaseKey, configId, nextPage + 1, runId, maxPages, startPage, false, undefined, _skipCount + 1);
-      } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina'); }
-    } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina'); }
+      } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); }
+    } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); }
   }
 }
 
@@ -278,17 +278,17 @@ async function handleRetryOrFinalize(
   runId: string, maxPages: number, configId: string, startPage?: number
 ): Promise<void> {
   const { data: run } = await supabase.from('scout_runs').select('page_stats').eq('id', runId).single();
-  if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina'); return; }
+  if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); return; }
 
   const blockedPages = (run.page_stats as any[]).filter(
-    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES
+    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES
   );
 
-  if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'Madlan-jina'); return; }
+  if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); return; }
 
   console.log(`🔄 Retrying ${blockedPages.length} blocked pages for run ${runId}`);
   const updatedStats = (run.page_stats as any[]).map((p: any) => {
-    if (p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES) {
+    if (p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES) {
       return { ...p, status: 'pending', error: undefined, retry_count: (p.retry_count || 0) + 1 };
     }
     return p;
