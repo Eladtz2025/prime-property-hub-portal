@@ -48,7 +48,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parsemadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
@@ -145,7 +145,7 @@ serve(async (req) => {
         continue;
       }
 
-      const parseResult = parsemadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
       console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
