@@ -32,7 +32,7 @@ serve(async (req) => {
     const isManual = manual === true;
 
     // Kill switch check (skip for manual runs)
-    if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability')) {
+    if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability_jina')) {
       return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
