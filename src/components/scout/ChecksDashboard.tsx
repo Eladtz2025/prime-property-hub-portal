@@ -371,6 +371,24 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Stop dedup
+  const stopDedup = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('backfill_progress')
+        .update({ status: 'stopped', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('task_name', 'dedup-scan')
+        .eq('status', 'running');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('בדיקת כפילויות נעצרה');
+      queryClient.invalidateQueries({ queryKey: ['dedup-stats-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['dedup-run-history'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // Trigger scans Jina
   const triggerScansJina = useMutation({
     mutationFn: async () => {
@@ -567,14 +585,16 @@ export const ChecksDashboard: React.FC = () => {
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
-          status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : 'idle'}
-          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : `${dedupStats?.checked ?? 0} מתוך ${dedupStats?.totalActive ?? 0} נבדקו`}
+          status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : dedupStats?.lastRun?.status === 'stopped' ? 'completed' : 'idle'}
+          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : dedupStats?.lastRun?.status === 'stopped' ? 'נעצר' : `${dedupStats?.checked ?? 0} מתוך ${dedupStats?.totalActive ?? 0} נבדקו`}
           metrics={[
             { label: 'נבדקו', value: `${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} / ${(dedupStats?.totalActive ?? 0).toLocaleString('he-IL')}` },
             { label: 'נותרו לבדיקה', value: dedupStats?.unchecked ?? 0 },
           ]}
           onRun={() => triggerDedup.mutate()}
+          onStop={() => stopDedup.mutate()}
           isRunPending={triggerDedup.isPending}
+          isStopPending={stopDedup.isPending}
           historyContent={<DeduplicationStatus />}
           settingsContent={
             <div className="space-y-6">
