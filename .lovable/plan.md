@@ -1,38 +1,49 @@
 
-# תיקון שורש הבעיה: ריצות תקועות בסטטוס "running"
+# תיקון באגי Casing נוספים ב-scout-madlan-jina
 
 ## הבעיה
+הקובץ מכיל עוד שגיאות casing שגורמות לקריסה מיידית:
+- הפונקציה מוגדרת כ-`scrapeMadlanWithJina` אבל נקראת כ-`scrapemadlanWithJina` (שורה 133)
+- המשתנה מוגדר כ-`Madlan_CONFIG` אבל נקרא כ-`madlan_CONFIG` (שורות 133, 233, 284, 291)
 
-הפונקציה `checkAndFinalizeRun` בקובץ המשותף `run-helpers.ts` (שורות 133 ו-151) מנסה לקרוא את העמודה `created_at` מטבלת `scout_runs` - אבל העמודה הזו לא קיימת. העמודה הנכונה היא `started_at`.
+## התיקונים
 
-זה גורם לשאילתת Supabase להיכשל בשקט (שגיאת 400 מ-PostgREST), כך ש-`run` מוחזר כ-null, והפונקציה יוצאת מוקדם בשורה 137 בלי לסגור את הריצה לעולם.
+### קובץ: `supabase/functions/scout-madlan-jina/index.ts`
 
-**זו הסיבה שריצות נתקעות ב-running** - הן מסיימות לסרוק את כל הדפים, אבל הפונקציה שאמורה לעדכן את הסטטוס ל-completed/partial נכשלת לפני שהיא מגיעה לעדכון.
-
-### מידע מהריצה הנוכחית
-- ריצה `0e6efdc3`: כל 10 הדפים בסטטוס `completed`, אבל הריצה עצמה עדיין `running`
-- הבעיה משפיעה על **כל** הסורקים (מדלן, יד2, הומלס) כי כולם משתמשים באותו helper משותף
-
-## התיקון
-
-### קובץ: `supabase/functions/_shared/run-helpers.ts`
-
-**שורה 133** - שינוי `created_at` ל-`started_at` ב-select:
+**שורה 133** - תיקון שם הפונקציה + שם הקונפיג:
 ```
-.select('page_stats, status, config_id, properties_found, new_properties, started_at')
+// שגוי:
+const scrapeResult = await scrapemadlanWithJina(url, madlan_CONFIG.MAX_RETRIES, timeoutSec);
+// נכון:
+const scrapeResult = await scrapeMadlanWithJina(url, Madlan_CONFIG.MAX_RETRIES, timeoutSec);
 ```
 
-**שורה 151** - שינוי `created_at` ל-`started_at` בחישוב:
+**שורה 233** - תיקון שם הקונפיג:
 ```
-const runAgeMs = Date.now() - new Date(run.started_at).getTime();
+// שגוי:
+const delay = isRetry ? madlan_CONFIG.RETRY_DELAY_MS : madlan_CONFIG.PAGE_DELAY_MS;
+// נכון:
+const delay = isRetry ? Madlan_CONFIG.RETRY_DELAY_MS : Madlan_CONFIG.PAGE_DELAY_MS;
+```
+
+**שורה 284** - תיקון שם הקונפיג:
+```
+// שגוי:
+(p: any) => p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES
+// נכון:
+(p: any) => p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES
+```
+
+**שורה 291** - תיקון שם הקונפיג:
+```
+// שגוי:
+if (p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES)
+// נכון:
+if (p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES)
 ```
 
 ### ניקוי הריצה התקועה
-עדכון ריצה `0e6efdc3` מ-`running` ל-`completed` (כל 10 דפים הסתיימו בהצלחה).
+עדכון ריצה `bcef0734-7861-4cad-b829-ec044a7f0ec7` מ-`running` ל-`failed`.
 
 ### פריסה מחדש
-כל הפונקציות שמשתמשות ב-`run-helpers.ts`:
-- `scout-madlan-jina`
-- `scout-yad2-jina`
-- `scout-homeless-jina`
-
+פריסת `scout-madlan-jina` לאחר התיקון.
