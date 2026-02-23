@@ -1,49 +1,33 @@
 
-# תיקון באגי Casing נוספים ב-scout-madlan-jina
+
+# הפרדת בדיקת 409 בין סריקות 1 לסריקות 2
 
 ## הבעיה
-הקובץ מכיל עוד שגיאות casing שגורמות לקריסה מיידית:
-- הפונקציה מוגדרת כ-`scrapeMadlanWithJina` אבל נקראת כ-`scrapemadlanWithJina` (שורה 133)
-- המשתנה מוגדר כ-`Madlan_CONFIG` אבל נקרא כ-`madlan_CONFIG` (שורות 133, 233, 284, 291)
+שתי מערכות הסריקה (Firecrawl ו-Jina) בודקות ריצות running לפי `config_id` בלבד, בלי לסנן לפי עמודת `scanner`. ריצה ישנה של Firecrawl חוסמת ריצת Jina חדשה (ולהפך).
 
-## התיקונים
+## הפתרון
+הוספת פילטר `scanner` לבדיקת 409 בכל טריגר, כך שכל מערכת בודקת רק את הריצות שלה:
 
-### קובץ: `supabase/functions/scout-madlan-jina/index.ts`
+### קובץ: `supabase/functions/trigger-scout-pages-jina/index.ts`
+בשאילתת בדיקת הריצה הקיימת (שורות 60-66), הוספת:
+```
+.eq('scanner', 'jina')
+```
+כך ש-Jina בודק רק ריצות Jina פעילות, ולא נחסם על ידי ריצות Firecrawl.
 
-**שורה 133** - תיקון שם הפונקציה + שם הקונפיג:
+### קובץ: `supabase/functions/trigger-scout-pages/index.ts`
+בשאילתת בדיקת הריצה הקיימת (שורות 83-88), הוספת:
 ```
-// שגוי:
-const scrapeResult = await scrapemadlanWithJina(url, madlan_CONFIG.MAX_RETRIES, timeoutSec);
-// נכון:
-const scrapeResult = await scrapeMadlanWithJina(url, Madlan_CONFIG.MAX_RETRIES, timeoutSec);
+.neq('scanner', 'jina')
 ```
+כך ש-Firecrawl בודק רק ריצות שאינן Jina (ריצות ישנות ללא scanner או ריצות Firecrawl).
 
-**שורה 233** - תיקון שם הקונפיג:
-```
-// שגוי:
-const delay = isRetry ? madlan_CONFIG.RETRY_DELAY_MS : madlan_CONFIG.PAGE_DELAY_MS;
-// נכון:
-const delay = isRetry ? Madlan_CONFIG.RETRY_DELAY_MS : Madlan_CONFIG.PAGE_DELAY_MS;
-```
+## מה לא ישתנה
+- סריקות 2 (Jina) ימשיכו לעבוד בדיוק כמו היום
+- סריקות 1 (Firecrawl) ימשיכו לעבוד כרגיל
+- הלוגיקה של stale run detection ב-Jina נשארת כמו שהיא
+- שום דבר לא נשבר - רק מוסיפים פילטר אחד בכל קובץ
 
-**שורה 284** - תיקון שם הקונפיג:
-```
-// שגוי:
-(p: any) => p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES
-// נכון:
-(p: any) => p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES
-```
+## תוצאה
+אפשר יהיה להריץ סריקת Firecrawl וסריקת Jina על אותו config במקביל, בלי 409.
 
-**שורה 291** - תיקון שם הקונפיג:
-```
-// שגוי:
-if (p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES)
-// נכון:
-if (p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES)
-```
-
-### ניקוי הריצה התקועה
-עדכון ריצה `bcef0734-7861-4cad-b829-ec044a7f0ec7` מ-`running` ל-`failed`.
-
-### פריסה מחדש
-פריסת `scout-madlan-jina` לאחר התיקון.
