@@ -57,11 +57,21 @@ Deno.serve(async (req) => {
       default: pagesToScan = 5;
     }
 
+    // Check for existing running job
     const { data: existingRun } = await supabase
-      .from('scout_runs').select('id').eq('config_id', config_id).eq('status', 'running').single();
+      .from('scout_runs')
+      .select('id')
+      .eq('config_id', config_id)
+      .eq('status', 'running')
+      .single();
+
     if (existingRun) {
-      return new Response(JSON.stringify({ error: 'Config already has a running job', run_id: existingRun.id }), {
-        status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({ 
+        error: 'Config already has a running job',
+        run_id: existingRun.id 
+      }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
