@@ -1,64 +1,79 @@
 
+# תיקון ריצות תקועות — שינוי אחד פשוט
 
-# Fix: Scout Run Not Finalizing After All Pages Complete
+## הבעיה בקצרה
 
-## Problem
+כשסריקה קורסת באמצע (CAPTCHA, timeout), שרשרת העמודים נשברת. אף פונקציה לא נשארת חיה כדי לסגור את הריצה, והיא נשארת בסטטוס "running" לנצח. סריקות חדשות נחסמות עם שגיאה 409.
 
-Yad2 scout completed all 10 pages successfully (183 properties found, 181 new) but the run stayed in `running` status instead of transitioning to `completed`. The finalization logic in `checkAndFinalizeRun` either timed out or failed silently.
+## הפתרון
 
-## Root Cause
+שינוי אחד בלבד בקובץ `trigger-scout-pages-jina/index.ts` (שורות 60-66):
 
-Two issues contribute to this:
+**לפני:** הפונקציה בודקת אם יש ריצה פעילה וחוסמת מיד.
 
-1. **Silent failure in finalization**: The DB update in `checkAndFinalizeRun` (line 272-278 in `run-helpers.ts`) does not check for errors -- if the update fails, the run stays stuck in `running` forever.
+**אחרי:** הפונקציה בודקת גם כמה זמן הריצה רצה. אם יותר מ-15 דקות — היא כנראה תקועה, אז הפונקציה סוגרת אותה אוטומטית ומתחילה סריקה חדשה.
 
-2. **Missing source label**: `handleRetryOrFinalize` in `scout-yad2-jina/index.ts` (line 280) passes `'yad2'` instead of `'yad2-jina'` to `checkAndFinalizeRun`. While this doesn't break finalization directly, it causes incorrect function name resolution if retries are needed.
+הלוגיקה:
+- ריצה בת פחות מ-15 דקות = עדיין פעילה, מחזיר 409 כרגיל
+- ריצה בת יותר מ-15 דקות = תקועה, סוגר אותה כ-"partial" וממשיך
 
-## Changes
+## פרטים טכניים
 
-### 1. `supabase/functions/_shared/run-helpers.ts` -- Add error logging to finalization
+### קובץ: `supabase/functions/trigger-scout-pages-jina/index.ts`
 
-In `checkAndFinalizeRun`, add error checking after the final DB update (around line 272-278):
+שורות 60-66 משתנות מ:
 
+```text
+const { data: existingRun } = await supabase
+  .from('scout_runs').select('id').eq('config_id', config_id).eq('status', 'running').single();
+if (existingRun) {
+  return new Response(JSON.stringify({ error: 'Config already has a running job', run_id: existingRun.id }), {
+    status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
 ```
-const { error: updateError } = await supabase
+
+ל:
+
+```text
+const { data: existingRun } = await supabase
   .from('scout_runs')
-  .update({ status: finalStatus, completed_at: new Date().toISOString() })
-  .eq('id', runId);
+  .select('id, created_at')
+  .eq('config_id', config_id)
+  .eq('status', 'running')
+  .single();
 
-if (updateError) {
-  console.error(`Failed to finalize run ${runId}:`, updateError);
+if (existingRun) {
+  const runAgeMs = Date.now() - new Date(existingRun.created_at).getTime();
+  const STALE_RUN_THRESHOLD_MS = 15 * 60 * 1000; // 15 דקות
+
+  if (runAgeMs > STALE_RUN_THRESHOLD_MS) {
+    console.warn(`⚠️ Stale run ${existingRun.id} detected (${Math.round(runAgeMs / 60000)} min old) — auto-closing as partial`);
+    await supabase
+      .from('scout_runs')
+      .update({ status: 'partial', completed_at: new Date().toISOString() })
+      .eq('id', existingRun.id);
+    // ממשיך ליצור ריצה חדשה...
+  } else {
+    return new Response(JSON.stringify({
+      error: 'Config already has a running job',
+      run_id: existingRun.id
+    }), {
+      status: 409,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 ```
 
-Also add error checking after the config update (line 282-293).
+### פריסה
 
-### 2. `supabase/functions/scout-yad2-jina/index.ts` -- Fix source label
+- `trigger-scout-pages-jina`
 
-Line 280: Change `'yad2'` to `'yad2-jina'`:
+## למה זה הפתרון הכי נכון
 
-```
-if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); return; }
-```
-
-### 3. `supabase/functions/_shared/run-helpers.ts` -- Add safety timeout finalization
-
-Add a try/catch wrapper around the entire finalization block in `checkAndFinalizeRun` to prevent silent failures from leaving runs stuck:
-
-```
-try {
-  // existing finalization logic
-} catch (finalizeError) {
-  console.error(`Finalization error for run ${runId}:`, finalizeError);
-  // Emergency finalization attempt
-  await supabase.from('scout_runs')
-    .update({ status: 'partial', completed_at: new Date().toISOString(), error_message: 'Finalization error' })
-    .eq('id', runId);
-}
-```
-
-### Functions to Deploy
-
-- `scout-yad2-jina`
-- All functions sharing `run-helpers.ts` (the shared file is imported at deploy time)
-
+- **שינוי אחד, מקום אחד** — קל לתחזוקה ולהבנה
+- **לא משנה מה קרה** — לא משנה למה הריצה נתקעה (CAPTCHA, timeout, באג), התיקון עובד
+- **בטוח** — לא נוגע בריצות אמיתיות (פחות מ-15 דקות)
+- **אוטומטי** — לא צריך יותר לתקן ידנית במסד הנתונים
+- **רשת ביטחון** — גם אם `checkAndFinalizeRun` נכשל, הסריקה הבאה תנקה את הריצה התקועה
