@@ -2,28 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
-import { classifyMadlanContent, logMadlanScrapeResult, MADLAN_BLOCK_PHRASES } from "../_shared/madlan-observability.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-/**
- * Detect if the response is a CAPTCHA/bot block from Madlan.
- * Uses shared block phrases + checks for short content without /listings/ links.
- */
-function isMadlanBlocked(content: string, url: string): boolean {
-  const lower = content.toLowerCase();
-  for (const phrase of MADLAN_BLOCK_PHRASES) {
-    if (lower.includes(phrase.toLowerCase())) return true;
-  }
-  // For list pages: short content without listing links = skeleton
-  const isListPage = url.includes('/for-rent/') || url.includes('/for-sale/');
-  if (isListPage && content.length < 2000 && !content.includes('/listings/')) return true;
-  return false;
-}
-
-/**
- * Scrape Madlan search pages using Jina.
- */
 async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -31,17 +12,16 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
       const timeoutId = setTimeout(() => controller.abort(), 60000);
       console.log(`🌐 Madlan-Jina attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
-      const headers: Record<string, string> = {
-        'Accept': 'text/markdown',
-        'X-Timeout': '45',
-        'X-Locale': 'he-IL',
-        'X-Proxy-Country': 'IL',
-        'X-No-Cache': 'true',
-      };
-
       const response = await fetch(`https://r.jina.ai/${url}`, {
         method: 'GET',
-        headers,
+        headers: {
+          'Accept': 'text/markdown',
+          'X-No-Cache': 'true',
+          'X-Wait-For-Selector': 'a[href*="/realestate/item/"]',
+          'X-Timeout': '30',
+          'X-Proxy-Country': 'IL',
+          'X-Locale': 'he-IL',
+        },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
