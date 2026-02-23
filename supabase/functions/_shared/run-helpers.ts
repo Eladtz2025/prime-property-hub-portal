@@ -130,7 +130,7 @@ export async function checkAndFinalizeRun(
 ): Promise<void> {
   const { data: run } = await supabase
     .from('scout_runs')
-    .select('page_stats, status, config_id, properties_found, new_properties, created_at')
+    .select('page_stats, status, config_id, properties_found, new_properties, started_at')
     .eq('id', runId)
     .single();
 
@@ -148,7 +148,7 @@ export async function checkAndFinalizeRun(
   const activePages = scrapingPages.length;
   
   // How long the run has been active (ms)
-  const runAgeMs = Date.now() - new Date(run.created_at).getTime();
+  const runAgeMs = Date.now() - new Date(run.started_at).getTime();
   // Minimum age before declaring broken chain (2 minutes) — 
   // prevents false positives in parallel mode where pages are triggered with delays
   const MIN_AGE_FOR_BROKEN_CHAIN_MS = 120_000;

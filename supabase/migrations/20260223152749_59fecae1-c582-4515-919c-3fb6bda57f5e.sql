@@ -1,0 +1,1 @@
+UPDATE scout_runs SET status = 'completed', completed_at = now() WHERE id = '0e6efdc3-61d6-41d4-8bf4-a29bc4a43416' AND status = 'running';

@@ -297,3 +297,4 @@ async function handleRetryOrFinalize(
 
   const retryPageNumbers = blockedPages.map((p: any) => p.page);
   await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPageNumbers[0], runId, maxPages, startPage, true, retryPageNumbers);
+}
