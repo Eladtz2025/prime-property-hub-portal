@@ -57,6 +57,7 @@ async function checkWithJina(
           'Accept': 'text/markdown',
           'X-Wait-For-Selector': 'body',
           'X-Timeout': '35',
+          'X-Locale': 'he-IL',
         };
         if (isMadlan) {
           headers['X-Proxy-Country'] = 'IL';

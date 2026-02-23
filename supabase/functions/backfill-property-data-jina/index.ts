@@ -439,6 +439,7 @@ Deno.serve(async (req) => {
           'Accept': 'text/markdown',
           'X-Wait-For-Selector': 'body',
           'X-Timeout': '35',
+          'X-Locale': 'he-IL',
         };
         if (isMadlanProp) {
           jinaHeaders['X-Proxy-Country'] = 'IL';
