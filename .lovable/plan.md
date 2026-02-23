@@ -1,66 +1,57 @@
 
 
-# תיקון סגירת ריצות — הסרת retry מ-checkAndFinalizeRun
+# חיבור שדה wait_for_ms ל-X-Timeout בפונקציות Jina
 
-## הבעיה
+## מה משתנה
 
-הפונקציה `checkAndFinalizeRun` ב-`run-helpers.ts` מנסה לעשות retry לעמודים שנכשלו לפני סגירת הריצה. אם ה-retry קורס (CAPTCHA, timeout), אף אחד לא חוזר לסגור את הריצה — והיא נתקעת ב-"running" לנצח.
+בכל 3 פונקציות ה-Jina (homeless, yad2, madlan), הערך `X-Timeout: '30'` קבוע בקוד. השינוי יגרום לפונקציית הסריקה לקבל פרמטר `timeoutSeconds` אופציונלי, ואם הקונפיגורציה מכילה `wait_for_ms` — הוא יומר לשניות וישמש כ-`X-Timeout`.
 
-## הפתרון
-
-הסרת בלוק ה-retry (שורות 185-265) מ-`checkAndFinalizeRun`. כשכל העמודים הגיעו למצב סופי (completed/failed/blocked) — הריצה נסגרת מיד:
-- כל העמודים הצליחו → `completed`
-- חלק נכשלו/נחסמו → `partial`
-
-בלי ניסיונות חוזרים, בלי שרשראות שיכולות להישבר.
-
-## פרטים טכניים
-
-### קובץ: `supabase/functions/_shared/run-helpers.ts`
-
-**מוחקים** את שורות 185-265 (כל בלוק ה-retry) — מ:
+## לוגיקה
 
 ```text
-// Check for failed/blocked pages that haven't been retried yet
-const failedPages = pageStats.filter(p => 
-  (p.status === 'failed' || p.status === 'blocked') && (!p.retry_count || p.retry_count < 2)
-);
-
-if (failedPages.length > 0) {
-  // ... ~80 שורות של לוגיקת retry ...
-  return; // Don't finalize yet - retries in progress
-}
+config.wait_for_ms = 15000  -->  X-Timeout: '15'
+config.wait_for_ms = null   -->  X-Timeout: '30' (ברירת מחדל)
 ```
 
-**עד** לשורה 268 (שם מתחיל הקוד שסוגר את הריצה — `const hasErrors = ...`).
+## שינויים בקבצים
 
-הלוגיקה שנשארת פשוטה:
+### 1. `supabase/functions/scout-homeless-jina/index.ts`
+- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeHomelessWithJina`
+- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
+- העברת `config.wait_for_ms` מהקריאה בשורה 109
 
+### 2. `supabase/functions/scout-yad2-jina/index.ts`
+- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeYad2WithJina`
+- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
+- העברת `config.wait_for_ms` מהקריאה
+
+### 3. `supabase/functions/scout-madlan-jina/index.ts`
+- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeMadlanWithJina`
+- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
+- העברת `config.wait_for_ms` מהקריאה
+
+### דוגמה לשינוי (זהה ב-3 הפונקציות)
+
+**לפני:**
 ```text
-// כל העמודים סיימו — סוגרים את הריצה
-const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
-const finalStatus = hasErrors ? 'partial' : 'completed';
-// ... update run status ...
+async function scrapeHomelessWithJina(url, maxRetries = 2)
+  ...
+  'X-Timeout': '30',
 ```
 
-### גם מוחקים את שדה `retry_count` מהממשק `PageStat`
+**אחרי:**
+```text
+async function scrapeHomelessWithJina(url, maxRetries = 2, timeoutSeconds = 30)
+  ...
+  'X-Timeout': String(timeoutSeconds),
+```
 
-כבר לא צריך אותו בלי מנגנון retry.
+**בקריאה:**
+```text
+const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
+const scrapeResult = await scrapeHomelessWithJina(url, MAX_RETRIES, timeoutSec);
+```
 
 ### פריסה
-
-כל פונקציות ה-scout שמייבאות מ-`run-helpers.ts` ישתמשו אוטומטית בקוד המעודכן. צריך לפרוס מחדש:
-- `scout-madlan-jina`
-- `scout-yad2-jina`
-- `scout-homeless-jina`
-- `scout-madlan`
-- `scout-yad2`
-- `scout-homeless`
-
-## למה זה הפתרון הנכון
-
-- **פשוט** — מוחקים קוד במקום להוסיף, פחות מקומות שדברים יכולים להישבר
-- **אמין** — כל ריצה תמיד נסגרת כשהעמוד האחרון מסיים
-- **בטוח** — אם CAPTCHA חסם 5 מ-10 עמודים, הריצה נסגרת כ-partial עם 5 תוצאות — עדיף מריצה תקועה עם 0 תוצאות
-- **אין אובדן מידע** — ה-page_stats עדיין מתעדים בדיוק אילו עמודים נכשלו ולמה
+פריסה מחדש של 3 פונקציות: `scout-homeless-jina`, `scout-yad2-jina`, `scout-madlan-jina`
 
