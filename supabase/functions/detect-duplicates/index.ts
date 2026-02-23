@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     } catch { /* no body */ }
 
     const isReset = body.reset === true;
-    const isManualRun = isReset;
+    const isManualRun = isReset || body.manual === true;
     const isContinuation = body.continuation === true;
 
     // Kill switch check (skip for manual resets)
@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${serviceKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ continuation: true }),
+          body: JSON.stringify({ continuation: true, manual: isManualRun }),
         }).catch(err => console.error('Self-trigger failed:', err));
 
         return new Response(JSON.stringify({
