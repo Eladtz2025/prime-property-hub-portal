@@ -5,7 +5,7 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-async function scrapeMadlanWithJina(url: string, maxRetries = 3, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
+async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
