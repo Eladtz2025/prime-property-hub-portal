@@ -1,91 +1,57 @@
 
-# QA כפילויות - בעיות ותיקונים
+
+# תיקון כפילויות - ריצה ידנית נעצרת + כפתור עצירה חסר
 
 ## בעיות שנמצאו
 
-### 1. ריצה ידנית נעצרת אחרי 10 באצ'ים בגלל schedule_end_time (קריטי)
+### 1. ריצה ידנית עדיין נעצרת בגלל end_time (קריטי)
 
-הפעלת עכשיו את הכפילויות ב-19:10 שעון ישראל, אבל ה-`schedule_end_time` מוגדר ל-04:30. הפונקציה בודקת `isPastEndTime` אחרי 10 באצ'ים, ומכיוון ש-19:10 > 04:30, היא עוצרת מיד.
+התיקון הקודם הוסיף `isManualRun` שמבוסס על `body.reset === true`. אבל כשהפונקציה עושה self-chain אחרי 10 באצ'ים, היא שולחת `{ continuation: true }` בלבד - בלי `reset: true`. לכן ב-continuation, `isManualRun` הוא `false` והבדיקה של `endTimeReached` עוצרת את הריצה.
 
-**תוצאה**: רק 5,000 מתוך 5,632 נכסים נבדקו. 632 נשארו בלי בדיקה.
+**תוצאה בריצה האחרונה**: 5,252 מתוך 5,632 עובדו, 380 נדלגו, סטטוס "stopped" עם "end_time_reached".
 
-**תיקון**: ב-`detect-duplicates/index.ts` — להעביר את הפרמטר `reset` (שמסמן ריצה ידנית) לבדיקת ה-end time, ולדלג על הבדיקה כשמדובר בריצה ידנית. נשמור משתנה `isManualRun` בתחילת הפונקציה ונשתמש בו בתנאי.
-
-```typescript
-// שורה ~28: שמירת המשתנה
-const isManualRun = body.reset === true;
-
-// שורה ~202: דילוג על end_time לריצות ידניות
-if (endTimeReached && !isManualRun) {
-```
-
-### 2. כפתור "הפעל" תקוע (אותה בעיה כמו backfill)
-
-ה-`triggerDedup` mutation ב-ChecksDashboard.tsx עושה `await` על `supabase.functions.invoke`, ומכיוון שה-edge function מעבדת את כל הנתונים לפני שהיא מחזירה תשובה (6 שניות כאן, אבל יכול להיות יותר), הכפתור נשאר בסטטוס טעינה.
-
-**תיקון**: לשנות ל-fire-and-forget בדיוק כמו שעשינו ב-backfill.
+**תיקון**: להעביר `manual: true` ב-self-chain כשהריצה המקורית היתה ידנית, ולזהות את זה בתחילת הפונקציה.
 
 ```typescript
-const triggerDedup = useMutation({
-  mutationFn: async () => {
-    supabase.functions.invoke('detect-duplicates', {
-      body: { reset: true }
-    }).catch(err => console.error('Dedup trigger error:', err));
-    return { fired: true };
-  },
-  onSuccess: () => {
-    toast.success('בדיקת כפילויות הופעלה');
-    queryClient.invalidateQueries({ queryKey: ['dedup-stats-summary'] });
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['dedup-run-history'] });
-      queryClient.invalidateQueries({ queryKey: ['dedup-live-stats'] });
-    }, 2000);
-  },
-  ...
-});
+// בתחילת הפונקציה:
+const isManualRun = isReset || body.manual === true;
+
+// ב-self-chain (שורה 243):
+body: JSON.stringify({ continuation: true, manual: isManualRun }),
 ```
 
-### 3. סטטוס "stopped" לא מתורגם ב-UI (נמוך)
+### 2. אין כפתור "עצור" לכפילויות
 
-ב-DeduplicationStatus.tsx, שורות 164 ו-204-208, הסטטוס "stopped" נופל ל-else ומציג את הטקסט הגולמי. צריך להוסיף טיפול ב-"stopped".
+ה-ProcessCard של כפילויות לא מקבל `onStop`, כך שכשהתהליך רץ אין אפשרות לעצור אותו. צריך להוסיף mutation שמעדכן את הסטטוס ל-stopped.
 
-**תיקון**: בשני המקומות בקובץ, להוסיף תנאי ל-"stopped":
+**תיקון**: הוספת `stopDedup` mutation ב-ChecksDashboard שמעדכן את ה-backfill_progress ל-stopped, והעברתו כ-`onStop` ל-ProcessCard.
 
-```typescript
-// שורה 164-165: Badge בריצה אחרונה
-lastRun.status === 'completed' ? 'הושלם' 
-  : lastRun.status === 'stopped' ? 'נעצר'
-  : lastRun.status
+### 3. סטטוס "stopped" לא מוצג ככרטיס
 
-// שורות 204-208: Badge בטבלת היסטוריה  
-: run.status === 'stopped'
-? <Badge className="bg-yellow-100 ...">נעצר</Badge>
-```
+שורה 570 - ה-status prop לא מזהה "stopped", כך שהכרטיס מראה idle במקום מצב מתאים.
 
-### 4. סטטוס כרטיס הכפילויות לא מזהה "stopped" (נמוך)
-
-שורה 567 ב-ChecksDashboard — ה-`status` prop של ProcessCard בודק רק "running" ו-"completed", אבל לא "stopped". כשהסטטוס הוא "stopped" הוא נופל ל-idle, שזה לא מדויק.
-
-**תיקון**: להוסיף טיפול ב-"stopped" גם שם.
+**תיקון**: להוסיף בדיקה ל-stopped (נשתמש ב-completed כי "נעצר בהצלחה").
 
 ## שינויים נדרשים
 
 ### קובץ 1: `supabase/functions/detect-duplicates/index.ts`
-- הוספת `isManualRun` משתנה בתחילת הפונקציה
-- שינוי התנאי בשורה ~202 לדלג על end_time בריצה ידנית
+- שורה 31: שינוי `isManualRun` לכלול גם `body.manual === true`
+- שורה 243: הוספת `manual: isManualRun` ל-self-chain body
 
 ### קובץ 2: `src/components/scout/ChecksDashboard.tsx`
-- שינוי `triggerDedup` mutation ל-fire-and-forget
-- תיקון status ב-ProcessCard ל-"stopped"
+- הוספת `stopDedup` mutation שמעדכן backfill_progress ל-stopped
+- שורה 570: הוספת זיהוי "stopped" ב-status prop
+- שורה 576: הוספת `onStop` ו-`isStopPending` ל-ProcessCard
 
-### קובץ 3: `src/components/scout/checks/DeduplicationStatus.tsx`
-- הוספת Badge ל-"stopped" בשורה 164
-- הוספת Badge ל-"stopped" בטבלת היסטוריה (שורה 208)
+## סדר ביצוע
+1. תיקון edge function + deploy
+2. תיקון frontend
 
 ## פריסה
 - `detect-duplicates`
 
 ## תוצאה צפויה
-- ריצה ידנית תעבד את כל הנכסים ללא הגבלת שעה
-- כפתור "הפעל" יחזור למצב רגיל מיד
-- סטטוס "נעצר" יוצג בעברית נכונה
+- ריצה ידנית תמשיך דרך כל ה-continuations בלי להיעצר
+- כפתור "עצור" יופיע כשהתהליך רץ
+- סטטוס "נעצר" יוצג נכון בכרטיס
+
