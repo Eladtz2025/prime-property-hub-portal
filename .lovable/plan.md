@@ -1,35 +1,91 @@
 
-# תיקון מונה "נותרו" בבדיקת זמינות 2 (Jina)
+# QA כפילויות - בעיות ותיקונים
 
-## הבעיה
-לאחר התיקון הקודם שבו ניסיתי לעקוף את מגבלת 1,000 השורות על ידי שימוש ב-`count: 'exact'`, נראה שהמונה מציג "0" למרות שישנם נכסים הממתינים לבדיקה (שאילתת SQL מראה שישנם כ-2,504 נכסים כאלו).
+## בעיות שנמצאו
 
-הסיבה לכך היא שהשימוש ב-`.select('id', { count: 'exact', head: true })` לאחר קריאת ה-RPC אינו מחזיר את המאפיין `count` בצורה תקינה בספריית `supabase-js` בגרסה זו (הוא מחזיר גוף ריק או מערך, אך לא מעדכן את ה-header `Prefer: count=exact` בצורה הנכונה עבור קריאות POST ל-RPC).
+### 1. ריצה ידנית נעצרת אחרי 10 באצ'ים בגלל schedule_end_time (קריטי)
 
-## הפתרון
-נעבור לשימוש בתחביר הסטנדרטי של `rpc` עבור קבלת ספירה בלבד: העברת האפשרויות כפרמטר שלישי לפונקציית ה-`rpc`. זה מבטיח שהספרייה תשלח את ה-header המתאים ותחזיר את ה-`count` בצורה נכונה.
+הפעלת עכשיו את הכפילויות ב-19:10 שעון ישראל, אבל ה-`schedule_end_time` מוגדר ל-04:30. הפונקציה בודקת `isPastEndTime` אחרי 10 באצ'ים, ומכיוון ש-19:10 > 04:30, היא עוצרת מיד.
 
-## שלבי ביצוע
+**תוצאה**: רק 5,000 מתוך 5,632 נכסים נבדקו. 632 נשארו בלי בדיקה.
 
-### 1. עדכון דשבורד הבדיקות (`src/components/scout/ChecksDashboard.tsx`)
-נשנה את הקריאה ל-RPC בשורה 151 כך שתשתמש בפרמטר השלישי של אפשרויות (`options`) במקום שרשור `.select()`.
+**תיקון**: ב-`detect-duplicates/index.ts` — להעביר את הפרמטר `reset` (שמסמן ריצה ידנית) לבדיקת ה-end time, ולדלג על הבדיקה כשמדובר בריצה ידנית. נשמור משתנה `isManualRun` בתחילת הפונקציה ונשתמש בו בתנאי.
 
 ```typescript
-// לפני:
-(supabase.rpc('get_properties_needing_availability_check', { ... }) as any)
-  .select('id', { count: 'exact', head: true })
+// שורה ~28: שמירת המשתנה
+const isManualRun = body.reset === true;
 
-// אחרי:
-supabase.rpc('get_properties_needing_availability_check', {
-  p_first_recheck_days: 8,
-  p_recurring_recheck_days: 2,
-  p_min_days_before_check: 3,
-  p_fetch_limit: 10000
-}, { count: 'exact', head: true })
+// שורה ~202: דילוג על end_time לריצות ידניות
+if (endTimeReached && !isManualRun) {
 ```
 
-### 2. עדכון עמוד ניהול סקאוט (`src/pages/AdminPropertyScout.tsx`)
-נבצע את אותו התיקון גם בסטטיסטיקות הגלובליות שמוצגות בעמוד הניהול (שורות 39-44).
+### 2. כפתור "הפעל" תקוע (אותה בעיה כמו backfill)
+
+ה-`triggerDedup` mutation ב-ChecksDashboard.tsx עושה `await` על `supabase.functions.invoke`, ומכיוון שה-edge function מעבדת את כל הנתונים לפני שהיא מחזירה תשובה (6 שניות כאן, אבל יכול להיות יותר), הכפתור נשאר בסטטוס טעינה.
+
+**תיקון**: לשנות ל-fire-and-forget בדיוק כמו שעשינו ב-backfill.
+
+```typescript
+const triggerDedup = useMutation({
+  mutationFn: async () => {
+    supabase.functions.invoke('detect-duplicates', {
+      body: { reset: true }
+    }).catch(err => console.error('Dedup trigger error:', err));
+    return { fired: true };
+  },
+  onSuccess: () => {
+    toast.success('בדיקת כפילויות הופעלה');
+    queryClient.invalidateQueries({ queryKey: ['dedup-stats-summary'] });
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['dedup-run-history'] });
+      queryClient.invalidateQueries({ queryKey: ['dedup-live-stats'] });
+    }, 2000);
+  },
+  ...
+});
+```
+
+### 3. סטטוס "stopped" לא מתורגם ב-UI (נמוך)
+
+ב-DeduplicationStatus.tsx, שורות 164 ו-204-208, הסטטוס "stopped" נופל ל-else ומציג את הטקסט הגולמי. צריך להוסיף טיפול ב-"stopped".
+
+**תיקון**: בשני המקומות בקובץ, להוסיף תנאי ל-"stopped":
+
+```typescript
+// שורה 164-165: Badge בריצה אחרונה
+lastRun.status === 'completed' ? 'הושלם' 
+  : lastRun.status === 'stopped' ? 'נעצר'
+  : lastRun.status
+
+// שורות 204-208: Badge בטבלת היסטוריה  
+: run.status === 'stopped'
+? <Badge className="bg-yellow-100 ...">נעצר</Badge>
+```
+
+### 4. סטטוס כרטיס הכפילויות לא מזהה "stopped" (נמוך)
+
+שורה 567 ב-ChecksDashboard — ה-`status` prop של ProcessCard בודק רק "running" ו-"completed", אבל לא "stopped". כשהסטטוס הוא "stopped" הוא נופל ל-idle, שזה לא מדויק.
+
+**תיקון**: להוסיף טיפול ב-"stopped" גם שם.
+
+## שינויים נדרשים
+
+### קובץ 1: `supabase/functions/detect-duplicates/index.ts`
+- הוספת `isManualRun` משתנה בתחילת הפונקציה
+- שינוי התנאי בשורה ~202 לדלג על end_time בריצה ידנית
+
+### קובץ 2: `src/components/scout/ChecksDashboard.tsx`
+- שינוי `triggerDedup` mutation ל-fire-and-forget
+- תיקון status ב-ProcessCard ל-"stopped"
+
+### קובץ 3: `src/components/scout/checks/DeduplicationStatus.tsx`
+- הוספת Badge ל-"stopped" בשורה 164
+- הוספת Badge ל-"stopped" בטבלת היסטוריה (שורה 208)
+
+## פריסה
+- `detect-duplicates`
 
 ## תוצאה צפויה
-המונה "נותרו" בבדיקת זמינות 2 יציג את המספר המדויק (בסביבות 2,504) במקום 0 או 1,000.
+- ריצה ידנית תעבד את כל הנכסים ללא הגבלת שעה
+- כפתור "הפעל" יחזור למצב רגיל מיד
+- סטטוס "נעצר" יוצג בעברית נכונה
