@@ -5,7 +5,7 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-async function scrapeHomelessWithJina(url: string, maxRetries = 2): Promise<JinaScrapeResult | null> {
+async function scrapeHomelessWithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
@@ -19,7 +19,7 @@ async function scrapeHomelessWithJina(url: string, maxRetries = 2): Promise<Jina
           'X-Return-Format': 'html',
           'X-No-Cache': 'true',
           'X-Wait-For-Selector': 'body',
-          'X-Timeout': '30',
+          'X-Timeout': String(timeoutSeconds),
           'X-Locale': 'he-IL',
         },
         signal: controller.signal,
@@ -106,7 +106,8 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { url });
 
     // Jina returns HTML for homeless (via X-Return-Format: html in scraping-jina.ts)
-    const scrapeResult = await scrapeHomelessWithJina(url, HOMELESS_CONFIG.MAX_RETRIES);
+    const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
+    const scrapeResult = await scrapeHomelessWithJina(url, HOMELESS_CONFIG.MAX_RETRIES, timeoutSec);
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });
