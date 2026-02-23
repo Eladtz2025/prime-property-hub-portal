@@ -1,42 +1,51 @@
 
 
-# פישוט בדיקת זמינות 2 - מדלן כמו כולם
+# תיקון מונה "נותרו" בבדיקת זמינות 2
 
-## מה ישתנה
+## הבעיה
 
-הסרת כל הלוגיקה המיוחדת למדלן ב-`check-property-availability-jina/index.ts`. מדלן יעבוד בדיוק כמו yad2 ו-homeless: בקשה אחת עם `X-No-Cache`, retries רגילים, בלי phases, בלי classification.
+המונה "נותרו" תמיד מציג 1,000 כי PostgREST (שכבת ה-API של Supabase) מגביל תשובות RPC ל-1,000 שורות כברירת מחדל. הדשבורד קורא ל-RPC ואז סופר את אורך המערך (`recheckRes.data?.length`), אז הוא תמיד מקבל מקסימום 1,000.
 
-## שינויים בפונקציה `checkWithJina` (שורות 34-144)
+המספר האמיתי כרגע הוא **2,545** נכסים שממתינים לבדיקה.
 
-- **הסרת `isMadlan`** ומשתנה זה לגמרי
-- **הסרת two-phase logic** - כל המקורות יקבלו phase אחד עם `X-No-Cache: true`
-- **הסרת `X-Proxy-Country`** המותנה (שורות 62-64)
-- **הסרת `classifyMadlanContent` + `logMadlanScrapeResult`** (שורות 104-113)
-- **הסרת `isMadlanHomepage` check** (שורות 122-125)
-- **הסרת timeout מותנה** (שורה 52) - כולם יקבלו 30000
-- **הסרת attempts מותנה** (שורה 49) - כולם יקבלו maxRetries
-- **הסרת break/continue מותנים למדלן** (שורות 82-93, 132-138)
+## התיקון
 
-## שינויים ברשימת retryableReasons (שורות 286-299)
+בקובץ `src/components/scout/ChecksDashboard.tsx`, שורות 151-156 — להחליף את קריאת ה-RPC בגישה שמבקשת רק את הספירה:
 
-הסרת כל הסיבות הספציפיות למדלן:
-- `madlan_skeleton`, `madlan_captcha_blocked`, `madlan_homepage_redirect`
-- `madlan_blocked`, `madlan_captcha`, `madlan_empty`, `madlan_retryable`
+```typescript
+// לפני (מוגבל ל-1000):
+supabase.rpc('get_properties_needing_availability_check', {
+  p_first_recheck_days: 8,
+  p_recurring_recheck_days: 2,
+  p_min_days_before_check: 3,
+  p_fetch_limit: 10000
+})
 
-## שינויים בלוגיקת last_seen_at (שורות 339-351)
+// אחרי (ספירה מדויקת):
+supabase.rpc('get_properties_needing_availability_check', {
+  p_first_recheck_days: 8,
+  p_recurring_recheck_days: 2,
+  p_min_days_before_check: 3,
+  p_fetch_limit: 10000
+}).select('id', { count: 'exact', head: true })
+```
 
-הסרת הבלוק המיוחד של "Madlan sightings fallback" שבודק `last_seen_at` לנכסי מדלן.
+ובשורה 158 לשנות את הקריאה מ-`recheckRes.data?.length` ל-`recheckRes.count`:
 
-## הסרת imports שלא בשימוש (שורות 6-7)
+```typescript
+// לפני:
+pendingRecheck: recheckRes.data?.length ?? 0
 
-- הסרת `isMadlanHomepage` מ-availability-indicators
-- הסרת `classifyMadlanContent`, `logMadlanScrapeResult` מ-madlan-observability
+// אחרי:
+pendingRecheck: recheckRes.count ?? 0
+```
 
-## התוצאה
+אותו תיקון גם בקובץ `src/pages/AdminPropertyScout.tsx` (שורות 43-48) שם יש את אותה קריאת RPC לסטטיסטיקות הגלובליות.
 
-הפונקציה `checkWithJina` תהיה פשוטה: בקשה אחת ל-Jina עם `X-No-Cache` + `X-Locale: he-IL`, retries רגילים, בדיקת `isListingRemoved` בלבד. אותו דבר לכל המקורות.
+## סיכום
 
-## פריסה
-
-- `check-property-availability-jina`
+| קובץ | שינוי |
+|---|---|
+| `src/components/scout/ChecksDashboard.tsx` | שימוש ב-`count: 'exact', head: true` במקום `data.length` |
+| `src/pages/AdminPropertyScout.tsx` | אותו תיקון לסטטיסטיקה הגלובלית |
 
