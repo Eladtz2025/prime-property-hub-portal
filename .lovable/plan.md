@@ -1,57 +1,25 @@
 
+# תיקון מערכת ההתאמות - 2 באגים
 
-# תיקון כפילויות - ריצה ידנית נעצרת + כפתור עצירה חסר
+## בעיה 1: פונקציה שלא קיימת (הבעיה העיקרית)
+כרטיס ההתאמות ב-ChecksDashboard קורא לפונקציה `personal-scout` שלא קיימת בכלל (404). לכן הכפתור "הפעל" תמיד נכשל.
 
-## בעיות שנמצאו
+**תיקון:** שינוי הקריאה בקובץ `src/components/scout/ChecksDashboard.tsx` שורה 344 מ-`personal-scout` ל-`trigger-matching` עם הפרמטרים הנכונים (`force: true, send_whatsapp: false`).
 
-### 1. ריצה ידנית עדיין נעצרת בגלל end_time (קריטי)
+## בעיה 2: בדיקת end_time חוסמת ריצות ידניות
+בקובץ `supabase/functions/trigger-matching/index.ts`, בדיקת `isPastEndTime` (שורות 184-200) חוסמת את הפונקציה גם כאשר `force: true`. ה-kill switch כבר מדלג עם force, אבל בדיקת end_time לא.
 
-התיקון הקודם הוסיף `isManualRun` שמבוסס על `body.reset === true`. אבל כשהפונקציה עושה self-chain אחרי 10 באצ'ים, היא שולחת `{ continuation: true }` בלבד - בלי `reset: true`. לכן ב-continuation, `isManualRun` הוא `false` והבדיקה של `endTimeReached` עוצרת את הריצה.
+**תיקון:** הוספת תנאי `!isForced` לבדיקת end_time, כך שריצות ידניות (force) ידלגו גם על בדיקת שעת הסיום.
 
-**תוצאה בריצה האחרונה**: 5,252 מתוך 5,632 עובדו, 380 נדלגו, סטטוס "stopped" עם "end_time_reached".
+---
 
-**תיקון**: להעביר `manual: true` ב-self-chain כשהריצה המקורית היתה ידנית, ולזהות את זה בתחילת הפונקציה.
+## פרטים טכניים
 
-```typescript
-// בתחילת הפונקציה:
-const isManualRun = isReset || body.manual === true;
+### קובץ 1: `src/components/scout/ChecksDashboard.tsx`
+- שורה 344: שינוי `supabase.functions.invoke('personal-scout')` ל-`supabase.functions.invoke('trigger-matching', { body: { send_whatsapp: false, force: true } })`
 
-// ב-self-chain (שורה 243):
-body: JSON.stringify({ continuation: true, manual: isManualRun }),
-```
+### קובץ 2: `supabase/functions/trigger-matching/index.ts`
+- שורה 192: שינוי `if (endTimeReached)` ל-`if (endTimeReached && !isForced)` כך שריצות ידניות לא ייחסמו על ידי חלון הזמן
 
-### 2. אין כפתור "עצור" לכפילויות
-
-ה-ProcessCard של כפילויות לא מקבל `onStop`, כך שכשהתהליך רץ אין אפשרות לעצור אותו. צריך להוסיף mutation שמעדכן את הסטטוס ל-stopped.
-
-**תיקון**: הוספת `stopDedup` mutation ב-ChecksDashboard שמעדכן את ה-backfill_progress ל-stopped, והעברתו כ-`onStop` ל-ProcessCard.
-
-### 3. סטטוס "stopped" לא מוצג ככרטיס
-
-שורה 570 - ה-status prop לא מזהה "stopped", כך שהכרטיס מראה idle במקום מצב מתאים.
-
-**תיקון**: להוסיף בדיקה ל-stopped (נשתמש ב-completed כי "נעצר בהצלחה").
-
-## שינויים נדרשים
-
-### קובץ 1: `supabase/functions/detect-duplicates/index.ts`
-- שורה 31: שינוי `isManualRun` לכלול גם `body.manual === true`
-- שורה 243: הוספת `manual: isManualRun` ל-self-chain body
-
-### קובץ 2: `src/components/scout/ChecksDashboard.tsx`
-- הוספת `stopDedup` mutation שמעדכן backfill_progress ל-stopped
-- שורה 570: הוספת זיהוי "stopped" ב-status prop
-- שורה 576: הוספת `onStop` ו-`isStopPending` ל-ProcessCard
-
-## סדר ביצוע
-1. תיקון edge function + deploy
-2. תיקון frontend
-
-## פריסה
-- `detect-duplicates`
-
-## תוצאה צפויה
-- ריצה ידנית תמשיך דרך כל ה-continuations בלי להיעצר
-- כפתור "עצור" יופיע כשהתהליך רץ
-- סטטוס "נעצר" יוצג נכון בכרטיס
-
+### פריסה
+- `trigger-matching`
