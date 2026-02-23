@@ -168,7 +168,7 @@ export const ChecksDashboard: React.FC = () => {
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
-        .or('backfill_status.is.null,backfill_status.eq.failed');
+        .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
       return count ?? 0;
     },
     refetchInterval: 15000,
