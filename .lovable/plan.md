@@ -1,73 +1,73 @@
 
-# תיקון Cron Jobs - הפניה לפונקציות Jina
+
+# תיקון בדיקת זמינות 2 + השלמת נתונים 2 למדלן
 
 ## הבעיה
-שני cron jobs מכוונים לפונקציות הישנות (Firecrawl) שכבויות:
-- **בדיקת זמינות**: הcron קורא ל-`trigger-availability-check` (כבוי) במקום `trigger-availability-check-jina` (דלוק)
-- **השלמת נתונים**: הcron קורא ל-`backfill-property-data` (כבוי) במקום `backfill-property-data-jina` (דלוק)
+הסריקות (scout-madlan-jina) עובדות כי הן שולחות את הכותרת `X-Locale: he-IL` ל-Jina. בדיקת זמינות 2 והשלמת נתונים 2 לא שולחות את הכותרת הזו, מה שגורם לתוכן לחזור ללא עברית תקינה ולהיכשל בזיהוי.
 
-## מה דלוק ומה כבוי
+## ההבדלים בין מה שעובד למה שלא
 
-| תהליך | Kill Switch | סטטוס |
-|---|---|---|
-| סריקות 2 (Jina) | `process_scans_jina` | דלוק |
-| בדיקת זמינות 2 (Jina) | `process_availability_jina` | דלוק |
-| השלמת נתונים 2 (Jina) | `process_backfill_jina` | דלוק |
-| כפילויות | `process_duplicates` | דלוק |
-| התאמות | `process_matching` | דלוק |
-| סריקות 1 (Firecrawl) | `process_scans` | כבוי |
-| בדיקת זמינות 1 | `process_availability` | כבוי |
-| השלמת נתונים 1 | `process_backfill` | כבוי |
+| כותרת | סריקות (עובד) | זמינות 2 | השלמת נתונים 2 |
+|---|---|---|---|
+| X-Locale: he-IL | כן | **חסר** | **חסר** |
+| X-Proxy-Country: IL | כן | כן | כן |
+| X-No-Cache | כן | Phase 2 בלבד | לא (cache first) |
+| X-Wait-For-Selector | a[href*="/listings/"] | body | body |
 
 ## התיקון
-עדכון שני cron jobs דרך ה-RPC `update_cron_schedule` כדי להפנות לפונקציות Jina:
 
-### 1. עדכון cron של בדיקת זמינות
-שינוי `availability-check-continuous` מ-`trigger-availability-check` ל-`trigger-availability-check-jina`.
-הזמן נשאר `0 3 * * *` (05:00 שעון ישראל).
+### 1. check-property-availability-jina/index.ts
+הוספת `X-Locale: he-IL` לכותרות ה-Jina בפונקציה `checkWithJina` (סביב שורה 57).
 
-### 2. עדכון cron של השלמת נתונים
-שינוי `backfill-data-completion-job` מ-`backfill-property-data` ל-`backfill-property-data-jina`.
-הזמן נשאר `0 22 * * *` (00:00 שעון ישראל).
+שינוי:
+```typescript
+// לפני
+const headers: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+};
 
-## פרטים טכניים
-מיגרציה אחת עם שתי קריאות RPC:
-
-```sql
-SELECT public.update_cron_schedule(
-  'availability-check-continuous',
-  '0 3 * * *',
-  $$SELECT net.http_post(
-    url := '<supabase_url>/functions/v1/trigger-availability-check-jina',
-    headers := '...'::jsonb,
-    body := '{}'::jsonb
-  ) AS request_id;$$
-);
-
-SELECT public.update_cron_schedule(
-  'backfill-data-completion-job',
-  '0 22 * * *',
-  $$SELECT net.http_post(
-    url := '<supabase_url>/functions/v1/backfill-property-data-jina',
-    headers := '...'::jsonb,
-    body := '{"action": "start"}'::jsonb
-  );$$
-);
+// אחרי
+const headers: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+  'X-Locale': 'he-IL',
+};
 ```
+
+### 2. backfill-property-data-jina/index.ts
+הוספת `X-Locale: he-IL` לכותרות ה-Jina בסקשן הסקרייפ (סביב שורה 438).
+
+שינוי:
+```typescript
+// לפני
+const jinaHeaders: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+};
+
+// אחרי
+const jinaHeaders: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+  'X-Locale': 'he-IL',
+};
+```
+
+### 3. _shared/scraping-jina.ts (שיתופי)
+הפונקציה השיתופית `scrapeWithJina` כבר כוללת `X-Locale: he-IL` - אבל אף אחד מהתהליכים לא משתמש בה. התיקון הוא בקוד הישיר של כל פונקציה.
 
 ## מה לא ישתנה
-- זמני הריצה נשארים אותו דבר
-- סריקות 2, כפילויות, והתאמות כבר עובדים נכון
-- אף פונקציה לא נמחקת או משתנה
-- רק מפנים את ה-cron ליעד הנכון
+- **אף שינוי בסריקות** - לא נוגעים ב-scout-madlan-jina, scout-yad2-jina, scout-homeless-jina, או בשום trigger/helper שלהם
+- הלוגיקה של Madlan two-phase (cache first, then fresh+proxy) נשארת כמו שהיא
+- כל יתר ההגדרות נשארות
 
-## תוצאה
-כל 5 התהליכים הפעילים יופעלו נכון דרך ה-cron:
+## פריסה
+שני Edge Functions לפריסה:
+- `check-property-availability-jina`
+- `backfill-property-data-jina`
 
-```text
-00:00 IL  ->  backfill-property-data-jina     (היום: backfill-property-data - כבוי!)
-03:00 IL  ->  detect-duplicates               (תקין)
-05:00 IL  ->  trigger-availability-check-jina  (היום: trigger-availability-check - כבוי!)
-07:00 IL  ->  trigger-matching                 (תקין)
-23:00 IL  ->  trigger-scout-all-jina           (תקין)
-```
