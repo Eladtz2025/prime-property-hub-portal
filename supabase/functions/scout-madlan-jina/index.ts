@@ -5,7 +5,7 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaScrapeResult | null> {
+async function scrapeMadlanWithJina(url: string, maxRetries = 3, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
@@ -18,7 +18,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3): Promise<JinaSc
           'Accept': 'text/markdown',
           'X-No-Cache': 'true',
           'X-Wait-For-Selector': 'a[href*="/realestate/item/"]',
-          'X-Timeout': '30',
+          'X-Timeout': String(timeoutSeconds),
           'X-Proxy-Country': 'IL',
           'X-Locale': 'he-IL',
         },
@@ -172,7 +172,8 @@ serve(async (req) => {
     console.log(`🔵 Madlan-Jina page ${page}: Scraping ${url}`);
     await updatePageStatus(supabase, runId, page, { url });
 
-    const scrapeResult = await scrapeMadlanWithJina(url, MADLAN_CONFIG.MAX_RETRIES);
+    const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
+    const scrapeResult = await scrapeMadlanWithJina(url, MADLAN_CONFIG.MAX_RETRIES, timeoutSec);
 
     if (!scrapeResult) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'Scrape failed', duration_ms: Date.now() - pageStartTime });

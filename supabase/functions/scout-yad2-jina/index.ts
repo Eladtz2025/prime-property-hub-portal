@@ -5,7 +5,7 @@ import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
 interface JinaScrapeResult { markdown: string; html: string; }
 
-async function scrapeYad2WithJina(url: string, maxRetries = 2): Promise<JinaScrapeResult | null> {
+async function scrapeYad2WithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
@@ -18,7 +18,7 @@ async function scrapeYad2WithJina(url: string, maxRetries = 2): Promise<JinaScra
           'Accept': 'text/markdown',
           'X-No-Cache': 'true',
           'X-Wait-For-Selector': 'a[href*="/realestate/item/"]',
-          'X-Timeout': '30',
+          'X-Timeout': String(timeoutSeconds),
           'X-Proxy-Country': 'IL',
           'X-Locale': 'he-IL',
         },
@@ -129,7 +129,8 @@ serve(async (req) => {
     for (const url of urls) {
       console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
 
-      const scrapeResult = await scrapeYad2WithJina(url, YAD2_CONFIG.MAX_RETRIES);
+      const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
+      const scrapeResult = await scrapeYad2WithJina(url, YAD2_CONFIG.MAX_RETRIES, timeoutSec);
       if (!scrapeResult) {
         console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
