@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
       .select('id, started_at')
       .eq('config_id', config_id)
       .eq('status', 'running')
+      .eq('scanner', 'jina')
       .single();
 
     if (existingRun) {
