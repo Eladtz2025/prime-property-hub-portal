@@ -60,13 +60,13 @@ Deno.serve(async (req) => {
     // Check for existing running job
     const { data: existingRun } = await supabase
       .from('scout_runs')
-      .select('id, created_at')
+      .select('id, started_at')
       .eq('config_id', config_id)
       .eq('status', 'running')
       .single();
 
     if (existingRun) {
-      const runAgeMs = Date.now() - new Date(existingRun.created_at).getTime();
+      const runAgeMs = Date.now() - new Date(existingRun.started_at).getTime();
       const STALE_RUN_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
 
       if (runAgeMs > STALE_RUN_THRESHOLD_MS) {
