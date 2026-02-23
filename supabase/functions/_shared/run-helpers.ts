@@ -11,7 +11,6 @@ export interface PageStat {
   new: number;
   duration_ms: number;
   error?: string;
-  retry_count?: number;
 }
 
 /**
@@ -182,90 +181,7 @@ export async function checkAndFinalizeRun(
     return;
   }
 
-  // Check for failed/blocked pages that haven't been retried yet
-  const failedPages = pageStats.filter(p => 
-    (p.status === 'failed' || p.status === 'blocked') && (!p.retry_count || p.retry_count < 2)
-  );
-
-  if (failedPages.length > 0) {
-    // Retry failed pages before finalizing
-    console.log(`🔄 ${source} run ${runId}: ${failedPages.length} failed pages to retry`);
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (supabaseUrl && supabaseKey) {
-      for (const failedPage of failedPages) {
-        const idx = pageStats.findIndex(p => p.page === failedPage.page);
-        if (idx !== -1) {
-          pageStats[idx] = {
-            ...pageStats[idx],
-            status: 'pending' as const,
-            retry_count: (pageStats[idx].retry_count || 0) + 1,
-            error: undefined
-          };
-        }
-      }
-      
-      await supabase
-        .from('scout_runs')
-        .update({ page_stats: pageStats })
-        .eq('id', runId);
-      
-      const configId = run.config_id;
-      const startPage = pageStats[0]?.page || 1;
-      
-      // Determine the correct function name — source may already include '-jina'
-      const functionName = source.includes('-jina') 
-        ? `scout-${source}` 
-        : `scout-${source}-jina`;
-      
-      // For parallel-mode scanners (homeless), trigger each failed page independently
-      // For sequential scanners (yad2, madlan), chain via is_retry/retry_pages
-      const isParallelSource = source.startsWith('homeless');
-      
-      if (isParallelSource) {
-        // Fire-and-forget each failed page with a small delay between them
-        for (let i = 0; i < failedPages.length; i++) {
-          const fp = failedPages[i];
-          console.log(`🔄 Retrying page ${fp.page} (attempt ${(fp.retry_count || 0) + 1}) [parallel]`);
-          try {
-            await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-              body: JSON.stringify({ config_id: configId, page: fp.page, run_id: runId, max_pages: pageStats[pageStats.length - 1]?.page || maxPages })
-            });
-          } catch (err) {
-            console.error(`❌ Failed to trigger retry for page ${fp.page}:`, err);
-          }
-          if (i < failedPages.length - 1) await new Promise(r => setTimeout(r, 3000));
-        }
-      } else {
-        // Sequential: chain retries via is_retry mechanism
-        const firstRetry = failedPages[0];
-        console.log(`🔄 Retrying page ${firstRetry.page} (attempt ${(firstRetry.retry_count || 0) + 1}) [sequential]`);
-        await new Promise(r => setTimeout(r, 15000));
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-            body: JSON.stringify({
-              config_id: configId, page: firstRetry.page, run_id: runId,
-              max_pages: pageStats[pageStats.length - 1]?.page || maxPages,
-              start_page: startPage, is_retry: true,
-              retry_pages: failedPages.slice(1).map(p => p.page)
-            })
-          });
-        } catch (err) {
-          console.error(`❌ Failed to trigger retry for page ${firstRetry.page}:`, err);
-        }
-      }
-      
-      return; // Don't finalize yet - retries in progress
-    }
-  }
-
-  // All pages done (including retries) - finalize
+  // All pages done - finalize
   const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
   const finalStatus = hasErrors ? 'partial' : 'completed';
 
