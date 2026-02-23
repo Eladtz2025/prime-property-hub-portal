@@ -1,51 +1,42 @@
 
-# תיקון בדיקת זמינות 2 (Jina) + סקירת כפילויות והתאמות
 
-## בעיה 1: בדיקת זמינות 2 (Jina) - Kill Switch שגוי (קריטי)
+# פישוט בדיקת זמינות 2 - מדלן כמו כולם
 
-**הסיבה**: בקובץ `trigger-availability-check-jina/index.ts` שורה 35, הפונקציה בודקת את הדגל `process_availability` (שכבוי!) במקום `process_availability_jina` (שדלוק). כל ריצת cron נחסמת כי היא חושבת שהתהליך כבוי.
+## מה ישתנה
 
-**התיקון**: שינוי שורה 35 מ-`'availability'` ל-`'availability_jina'`:
-```typescript
-// לפני (שגוי):
-if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability')) {
-// אחרי (נכון):
-if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability_jina')) {
-```
+הסרת כל הלוגיקה המיוחדת למדלן ב-`check-property-availability-jina/index.ts`. מדלן יעבוד בדיוק כמו yad2 ו-homeless: בקשה אחת עם `X-No-Cache`, retries רגילים, בלי phases, בלי classification.
 
-## בעיה 2: ריצת זמינות תקועה
+## שינויים בפונקציה `checkWithJina` (שורות 34-144)
 
-ריצה `5e626233` בסטטוס `running` עם רק 2 נכסים שנבדקו. חוסמת ריצות חדשות.
+- **הסרת `isMadlan`** ומשתנה זה לגמרי
+- **הסרת two-phase logic** - כל המקורות יקבלו phase אחד עם `X-No-Cache: true`
+- **הסרת `X-Proxy-Country`** המותנה (שורות 62-64)
+- **הסרת `classifyMadlanContent` + `logMadlanScrapeResult`** (שורות 104-113)
+- **הסרת `isMadlanHomepage` check** (שורות 122-125)
+- **הסרת timeout מותנה** (שורה 52) - כולם יקבלו 30000
+- **הסרת attempts מותנה** (שורה 49) - כולם יקבלו maxRetries
+- **הסרת break/continue מותנים למדלן** (שורות 82-93, 132-138)
 
-**התיקון**: מיגרציה לסגירת הריצה:
-```sql
-UPDATE availability_check_runs
-SET status = 'stopped', completed_at = now()
-WHERE id = '5e626233-e942-4329-94aa-79ec1a77043a'
-AND status = 'running';
-```
+## שינויים ברשימת retryableReasons (שורות 286-299)
 
-## סקירת כפילויות - תקין
+הסרת כל הסיבות הספציפיות למדלן:
+- `madlan_skeleton`, `madlan_captcha_blocked`, `madlan_homepage_redirect`
+- `madlan_blocked`, `madlan_captcha`, `madlan_empty`, `madlan_retryable`
 
-- הריצה האחרונה (23/02 01:00) הושלמה בהצלחה
-- 0 כפילויות נמצאו (רוב הנכסים כבר נבדקו - 5,404 מתוך 5,636)
-- 232 נותרו לבדיקה - יטופלו בריצה הבאה
-- **אין בעיה**
+## שינויים בלוגיקת last_seen_at (שורות 339-351)
 
-## סקירת התאמות - לא רצו כמעט חודש
+הסרת הבלוק המיוחד של "Madlan sightings fallback" שבודק `last_seen_at` לנכסי מדלן.
 
-- הריצה האחרונה: **29 בינואר** (לפני ~25 יום)
-- נמצאה התאמה אחת מתוך 16 לידים
-- הcron פעיל ורץ כל יום ב-07:00, אז ייתכן שהריצות מתבצעות אבל אין לידים eligible חדשים
-- ייתכן גם שהcron קורא לפונקציה אחרת (trigger-matching) ולא ישירות ל-personal-scout
-- **צריך לבדוק**: האם ריצות matching אחרונות מסתיימות מהר בלי לידים, או שלא רצות בכלל
+## הסרת imports שלא בשימוש (שורות 6-7)
 
-## סיכום שינויים
+- הסרת `isMadlanHomepage` מ-availability-indicators
+- הסרת `classifyMadlanContent`, `logMadlanScrapeResult` מ-madlan-observability
 
-1. **קובץ**: `supabase/functions/trigger-availability-check-jina/index.ts` - תיקון kill switch מ-`availability` ל-`availability_jina`
-2. **מיגרציה**: סגירת ריצת זמינות תקועה `5e626233`
-3. **פריסה**: deploy של `trigger-availability-check-jina`
+## התוצאה
 
-## מה לא ישתנה
-- אף שינוי בסריקות
-- כפילויות והתאמות לא נדרשים תיקון קוד כרגע
+הפונקציה `checkWithJina` תהיה פשוטה: בקשה אחת ל-Jina עם `X-No-Cache` + `X-Locale: he-IL`, retries רגילים, בדיקת `isListingRemoved` בלבד. אותו דבר לכל המקורות.
+
+## פריסה
+
+- `check-property-availability-jina`
+
