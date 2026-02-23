@@ -433,19 +433,15 @@ Deno.serve(async (req) => {
         const propertyController = new AbortController();
         const propertyTimeout = setTimeout(() => propertyController.abort(), 45000);
         
-        // Madlan: cached-first (omit X-No-Cache on first attempt)
-        const isMadlanProp = prop.source === 'madlan';
+        // All sources: same headers (no Madlan-specific logic)
         const jinaHeaders: Record<string, string> = {
           'Accept': 'text/markdown',
           'X-Wait-For-Selector': 'body',
           'X-Timeout': '35',
           'X-Locale': 'he-IL',
+          'X-No-Cache': 'true',
+          'X-Proxy-Country': 'IL',
         };
-        if (isMadlanProp) {
-          jinaHeaders['X-Proxy-Country'] = 'IL';
-        } else {
-          jinaHeaders['X-No-Cache'] = 'true';
-        }
 
         let scrapeResponse: Response;
         try {
@@ -507,29 +503,6 @@ Deno.serve(async (req) => {
 
         const markdown = await scrapeResponse.text();
 
-        // Madlan: detect blocked content before proceeding
-        if (isMadlanProp && markdown) {
-          const { classifyMadlanContent, logMadlanScrapeResult } = await import('../_shared/madlan-observability.ts');
-          const classification = classifyMadlanContent(markdown, prop.source_url);
-          logMadlanScrapeResult('backfill', prop.source_url, markdown.length, classification);
-          
-          if (classification !== 'ok') {
-            console.log(`⚠️ Madlan backfill blocked (${classification}) for ${prop.source_url} — keeping as failed for retry`);
-            failCount++;
-            batchStats.scrape_failed++;
-            batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
-            await saveRecentItem({
-              address: prop.address || prop.title,
-              neighborhood: prop.neighborhood,
-              source: prop.source,
-              source_url: prop.source_url,
-              status: `madlan_${classification}`,
-              timestamp: new Date().toISOString(),
-            });
-            continue;
-          }
-        }
 
         if (!markdown || markdown.length < 100) {
           console.log(`❌ No content scraped (Jina)`);
