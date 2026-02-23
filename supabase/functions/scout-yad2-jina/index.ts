@@ -277,7 +277,7 @@ async function handleRetryOrFinalize(
   runId: string, maxPages: number, configId: string, startPage?: number
 ): Promise<void> {
   const { data: run } = await supabase.from('scout_runs').select('page_stats').eq('id', runId).single();
-  if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2'); return; }
+  if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'yad2-jina'); return; }
 
   const blockedPages = (run.page_stats as any[]).filter(
     (p: any) => p.status === 'blocked' && (p.retry_count || 0) < YAD2_CONFIG.MAX_BLOCK_RETRIES
