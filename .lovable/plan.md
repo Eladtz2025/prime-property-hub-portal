@@ -1,25 +1,77 @@
 
-# תיקון מערכת ההתאמות - 2 באגים
+# תיקון מנוע ההתאמות - 2 באגים
 
-## בעיה 1: פונקציה שלא קיימת (הבעיה העיקרית)
-כרטיס ההתאמות ב-ChecksDashboard קורא לפונקציה `personal-scout` שלא קיימת בכלל (404). לכן הכפתור "הפעל" תמיד נכשל.
+## בעיה 1 (עיקרית): נכסים "מיידיים" נדחים עבור לידים עם תאריך ספציפי
 
-**תיקון:** שינוי הקריאה בקובץ `src/components/scout/ChecksDashboard.tsx` שורה 344 מ-`personal-scout` ל-`trigger-matching` עם הפרמטרים הנכונים (`force: true, send_whatsapp: false`).
+60% מהנכסים מסומנים כ-`immediate_entry: true`. 52% מהלידים יש להם תאריך כניסה ספציפי. הלוגיקה הנוכחית דוחה את כולם -- גם אם הנכס פנוי היום והליד צריך ב-15 במרץ.
 
-## בעיה 2: בדיקת end_time חוסמת ריצות ידניות
-בקובץ `supabase/functions/trigger-matching/index.ts`, בדיקת `isPastEndTime` (שורות 184-200) חוסמת את הפונקציה גם כאשר `force: true`. ה-kill switch כבר מדלג עם force, אבל בדיקת end_time לא.
+**תיקון:** במקום לדחות נכסים מיידיים עבור לידים עם תאריך, לקבל אותם (פנוי עכשיו = פנוי גם בעתיד), עם הערה "כניסה מיידית - פנוי לפני התאריך המבוקש".
 
-**תיקון:** הוספת תנאי `!isForced` לבדיקת end_time, כך שריצות ידניות (force) ידלגו גם על בדיקת שעת הסיום.
+## בעיה 2 (משנית): השוואת ריהוט שגויה
+
+נכסים מאוחסנים עם `furnished: true` (boolean) אבל הקוד בודק `'fully_furnished'` (string). התוצאה: אף נכס מרוהט לא מתאים ללידים שדורשים ריהוט.
+
+**תיקון:** לקבל גם `true` (boolean) כתחליף ל-`'fully_furnished'`.
 
 ---
 
 ## פרטים טכניים
 
-### קובץ 1: `src/components/scout/ChecksDashboard.tsx`
-- שורה 344: שינוי `supabase.functions.invoke('personal-scout')` ל-`supabase.functions.invoke('trigger-matching', { body: { send_whatsapp: false, force: true } })`
+### קובץ: `supabase/functions/_shared/matching.ts`
 
-### קובץ 2: `supabase/functions/trigger-matching/index.ts`
-- שורה 192: שינוי `if (endTimeReached)` ל-`if (endTimeReached && !isForced)` כך שריצות ידניות לא ייחסמו על ידי חלון הזמן
+**תיקון 1 -- שורות 560-562:**
+
+לפני:
+```typescript
+} else if (propertyIsImmediate) {
+  return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+}
+```
+
+אחרי:
+```typescript
+} else if (propertyIsImmediate) {
+  // Immediate = available now = also available on the lead's requested date
+  reasons.push('כניסה מיידית - פנוי לפני התאריך המבוקש ✓');
+}
+```
+
+אותו שינוי גם בבלוק השני (שורות 582-584) עבור לידים עם תאריך גמיש:
+
+לפני:
+```typescript
+} else if (propertyIsImmediate) {
+  return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+}
+```
+
+אחרי:
+```typescript
+} else if (propertyIsImmediate) {
+  reasons.push('כניסה מיידית - פנוי לפני התאריך המבוקש ✓');
+}
+```
+
+**תיקון 2 -- שורות 510-511:**
+
+לפני:
+```typescript
+if (propertyFurnished !== 'fully_furnished') {
+  return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
+}
+```
+
+אחרי:
+```typescript
+if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== true) {
+  return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
+}
+```
+
+ואותו דבר עבור partially_furnished (שורה 517):
+```typescript
+if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished' && propertyFurnished !== true) {
+```
 
 ### פריסה
-- `trigger-matching`
+- אין צורך בפריסה נפרדת -- `matching.ts` הוא shared module שנטען אוטומטית על ידי `match-batch`
