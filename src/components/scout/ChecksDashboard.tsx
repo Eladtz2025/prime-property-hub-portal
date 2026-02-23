@@ -148,14 +148,14 @@ export const ChecksDashboard: React.FC = () => {
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('availability_check_reason', 'per_property_timeout').eq('is_active', true),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.rpc('get_properties_needing_availability_check', {
+        (supabase.rpc('get_properties_needing_availability_check', {
           p_first_recheck_days: 8,
           p_recurring_recheck_days: 2,
           p_min_days_before_check: 3,
           p_fetch_limit: 10000
-        }),
+        }) as any).select('id', { count: 'exact', head: true }),
       ]);
-      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: recheckRes.data?.length ?? 0 };
+      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: recheckRes.count ?? 0 };
     },
     refetchInterval: 15000,
   });
