@@ -1,42 +1,73 @@
 
-# תיקון ספירת "נותרו" בהשלמת נתונים + ניקוי ריצה תקועה
+# תיקון Cron Jobs - הפניה לפונקציות Jina
 
-## בעיה 1: "נותרו: 1" במקום 306
+## הבעיה
+שני cron jobs מכוונים לפונקציות הישנות (Firecrawl) שכבויות:
+- **בדיקת זמינות**: הcron קורא ל-`trigger-availability-check` (כבוי) במקום `trigger-availability-check-jina` (דלוק)
+- **השלמת נתונים**: הcron קורא ל-`backfill-property-data` (כבוי) במקום `backfill-property-data-jina` (דלוק)
 
-### הסיבה
-בקובץ `src/components/scout/ChecksDashboard.tsx` שורה 171, השאילתה סופרת רק:
-- `backfill_status IS NULL` (1 נכס)
-- `backfill_status = 'failed'` (0 נכסים)
+## מה דלוק ומה כבוי
 
-אבל **לא סופרת `pending`** - ויש 305 נכסים עם `backfill_status = 'pending'`!
+| תהליך | Kill Switch | סטטוס |
+|---|---|---|
+| סריקות 2 (Jina) | `process_scans_jina` | דלוק |
+| בדיקת זמינות 2 (Jina) | `process_availability_jina` | דלוק |
+| השלמת נתונים 2 (Jina) | `process_backfill_jina` | דלוק |
+| כפילויות | `process_duplicates` | דלוק |
+| התאמות | `process_matching` | דלוק |
+| סריקות 1 (Firecrawl) | `process_scans` | כבוי |
+| בדיקת זמינות 1 | `process_availability` | כבוי |
+| השלמת נתונים 1 | `process_backfill` | כבוי |
 
-### התיקון
-שורה 171 - שינוי ה-`or` filter:
-```
-// שגוי:
-.or('backfill_status.is.null,backfill_status.eq.failed');
-// נכון:
-.or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
-```
+## התיקון
+עדכון שני cron jobs דרך ה-RPC `update_cron_schedule` כדי להפנות לפונקציות Jina:
 
----
+### 1. עדכון cron של בדיקת זמינות
+שינוי `availability-check-continuous` מ-`trigger-availability-check` ל-`trigger-availability-check-jina`.
+הזמן נשאר `0 3 * * *` (05:00 שעון ישראל).
 
-## בעיה 2: 409 על סריקות 2
+### 2. עדכון cron של השלמת נתונים
+שינוי `backfill-data-completion-job` מ-`backfill-property-data` ל-`backfill-property-data-jina`.
+הזמן נשאר `0 22 * * *` (00:00 שעון ישראל).
 
-### הסיבה
-הריצה `6bf8e3ab` עדיין בסטטוס `running` עם 3 דפים (4, 7, 10) תקועים ב-`pending` (broken chain). התיקון של ההפרדה נפרס נכון, אבל הריצה הזו היא ריצת Jina ולכן היא חוסמת ריצת Jina חדשה בצדק.
+## פרטים טכניים
+מיגרציה אחת עם שתי קריאות RPC:
 
-### התיקון
-מיגרציה לסגירת הריצה התקועה:
 ```sql
-UPDATE scout_runs
-SET status = 'partial', completed_at = now()
-WHERE id = '6bf8e3ab-29cf-43af-994a-badcabbf1d05'
-AND status = 'running';
+SELECT public.update_cron_schedule(
+  'availability-check-continuous',
+  '0 3 * * *',
+  $$SELECT net.http_post(
+    url := '<supabase_url>/functions/v1/trigger-availability-check-jina',
+    headers := '...'::jsonb,
+    body := '{}'::jsonb
+  ) AS request_id;$$
+);
+
+SELECT public.update_cron_schedule(
+  'backfill-data-completion-job',
+  '0 22 * * *',
+  $$SELECT net.http_post(
+    url := '<supabase_url>/functions/v1/backfill-property-data-jina',
+    headers := '...'::jsonb,
+    body := '{"action": "start"}'::jsonb
+  );$$
+);
 ```
 
----
+## מה לא ישתנה
+- זמני הריצה נשארים אותו דבר
+- סריקות 2, כפילויות, והתאמות כבר עובדים נכון
+- אף פונקציה לא נמחקת או משתנה
+- רק מפנים את ה-cron ליעד הנכון
 
-## סיכום שינויים
-1. **קובץ**: `src/components/scout/ChecksDashboard.tsx` - הוספת `pending` לספירת הנותרים
-2. **מיגרציה**: סגירת ריצה תקועה `6bf8e3ab` כ-`partial`
+## תוצאה
+כל 5 התהליכים הפעילים יופעלו נכון דרך ה-cron:
+
+```text
+00:00 IL  ->  backfill-property-data-jina     (היום: backfill-property-data - כבוי!)
+03:00 IL  ->  detect-duplicates               (תקין)
+05:00 IL  ->  trigger-availability-check-jina  (היום: trigger-availability-check - כבוי!)
+07:00 IL  ->  trigger-matching                 (תקין)
+23:00 IL  ->  trigger-scout-all-jina           (תקין)
+```
