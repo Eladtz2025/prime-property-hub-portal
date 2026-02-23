@@ -48,12 +48,12 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parseMadlanMarkdown } from "../_experimental/parser-Madlan.ts";
+import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
  * Edge Function for scraping Madlan using Jina Reader - SEQUENTIAL MODE
- * Clone of scout-Madlan with Firecrawl replaced by Jina.
+ * Clone of scout-madlan with Firecrawl replaced by Jina.
  */
 
 const Madlan_CONFIG = {
