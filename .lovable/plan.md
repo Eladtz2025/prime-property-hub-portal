@@ -1,79 +1,66 @@
 
-# תיקון ריצות תקועות — שינוי אחד פשוט
 
-## הבעיה בקצרה
+# תיקון סגירת ריצות — הסרת retry מ-checkAndFinalizeRun
 
-כשסריקה קורסת באמצע (CAPTCHA, timeout), שרשרת העמודים נשברת. אף פונקציה לא נשארת חיה כדי לסגור את הריצה, והיא נשארת בסטטוס "running" לנצח. סריקות חדשות נחסמות עם שגיאה 409.
+## הבעיה
+
+הפונקציה `checkAndFinalizeRun` ב-`run-helpers.ts` מנסה לעשות retry לעמודים שנכשלו לפני סגירת הריצה. אם ה-retry קורס (CAPTCHA, timeout), אף אחד לא חוזר לסגור את הריצה — והיא נתקעת ב-"running" לנצח.
 
 ## הפתרון
 
-שינוי אחד בלבד בקובץ `trigger-scout-pages-jina/index.ts` (שורות 60-66):
+הסרת בלוק ה-retry (שורות 185-265) מ-`checkAndFinalizeRun`. כשכל העמודים הגיעו למצב סופי (completed/failed/blocked) — הריצה נסגרת מיד:
+- כל העמודים הצליחו → `completed`
+- חלק נכשלו/נחסמו → `partial`
 
-**לפני:** הפונקציה בודקת אם יש ריצה פעילה וחוסמת מיד.
-
-**אחרי:** הפונקציה בודקת גם כמה זמן הריצה רצה. אם יותר מ-15 דקות — היא כנראה תקועה, אז הפונקציה סוגרת אותה אוטומטית ומתחילה סריקה חדשה.
-
-הלוגיקה:
-- ריצה בת פחות מ-15 דקות = עדיין פעילה, מחזיר 409 כרגיל
-- ריצה בת יותר מ-15 דקות = תקועה, סוגר אותה כ-"partial" וממשיך
+בלי ניסיונות חוזרים, בלי שרשראות שיכולות להישבר.
 
 ## פרטים טכניים
 
-### קובץ: `supabase/functions/trigger-scout-pages-jina/index.ts`
+### קובץ: `supabase/functions/_shared/run-helpers.ts`
 
-שורות 60-66 משתנות מ:
+**מוחקים** את שורות 185-265 (כל בלוק ה-retry) — מ:
 
 ```text
-const { data: existingRun } = await supabase
-  .from('scout_runs').select('id').eq('config_id', config_id).eq('status', 'running').single();
-if (existingRun) {
-  return new Response(JSON.stringify({ error: 'Config already has a running job', run_id: existingRun.id }), {
-    status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
+// Check for failed/blocked pages that haven't been retried yet
+const failedPages = pageStats.filter(p => 
+  (p.status === 'failed' || p.status === 'blocked') && (!p.retry_count || p.retry_count < 2)
+);
+
+if (failedPages.length > 0) {
+  // ... ~80 שורות של לוגיקת retry ...
+  return; // Don't finalize yet - retries in progress
 }
 ```
 
-ל:
+**עד** לשורה 268 (שם מתחיל הקוד שסוגר את הריצה — `const hasErrors = ...`).
+
+הלוגיקה שנשארת פשוטה:
 
 ```text
-const { data: existingRun } = await supabase
-  .from('scout_runs')
-  .select('id, created_at')
-  .eq('config_id', config_id)
-  .eq('status', 'running')
-  .single();
-
-if (existingRun) {
-  const runAgeMs = Date.now() - new Date(existingRun.created_at).getTime();
-  const STALE_RUN_THRESHOLD_MS = 15 * 60 * 1000; // 15 דקות
-
-  if (runAgeMs > STALE_RUN_THRESHOLD_MS) {
-    console.warn(`⚠️ Stale run ${existingRun.id} detected (${Math.round(runAgeMs / 60000)} min old) — auto-closing as partial`);
-    await supabase
-      .from('scout_runs')
-      .update({ status: 'partial', completed_at: new Date().toISOString() })
-      .eq('id', existingRun.id);
-    // ממשיך ליצור ריצה חדשה...
-  } else {
-    return new Response(JSON.stringify({
-      error: 'Config already has a running job',
-      run_id: existingRun.id
-    }), {
-      status: 409,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-}
+// כל העמודים סיימו — סוגרים את הריצה
+const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
+const finalStatus = hasErrors ? 'partial' : 'completed';
+// ... update run status ...
 ```
+
+### גם מוחקים את שדה `retry_count` מהממשק `PageStat`
+
+כבר לא צריך אותו בלי מנגנון retry.
 
 ### פריסה
 
-- `trigger-scout-pages-jina`
+כל פונקציות ה-scout שמייבאות מ-`run-helpers.ts` ישתמשו אוטומטית בקוד המעודכן. צריך לפרוס מחדש:
+- `scout-madlan-jina`
+- `scout-yad2-jina`
+- `scout-homeless-jina`
+- `scout-madlan`
+- `scout-yad2`
+- `scout-homeless`
 
-## למה זה הפתרון הכי נכון
+## למה זה הפתרון הנכון
 
-- **שינוי אחד, מקום אחד** — קל לתחזוקה ולהבנה
-- **לא משנה מה קרה** — לא משנה למה הריצה נתקעה (CAPTCHA, timeout, באג), התיקון עובד
-- **בטוח** — לא נוגע בריצות אמיתיות (פחות מ-15 דקות)
-- **אוטומטי** — לא צריך יותר לתקן ידנית במסד הנתונים
-- **רשת ביטחון** — גם אם `checkAndFinalizeRun` נכשל, הסריקה הבאה תנקה את הריצה התקועה
+- **פשוט** — מוחקים קוד במקום להוסיף, פחות מקומות שדברים יכולים להישבר
+- **אמין** — כל ריצה תמיד נסגרת כשהעמוד האחרון מסיים
+- **בטוח** — אם CAPTCHA חסם 5 מ-10 עמודים, הריצה נסגרת כ-partial עם 5 תוצאות — עדיף מריצה תקועה עם 0 תוצאות
+- **אין אובדן מידע** — ה-page_stats עדיין מתעדים בדיוק אילו עמודים נכשלו ולמה
+
