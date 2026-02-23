@@ -48,7 +48,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parsemadlanMarkdown } from "../_experimental/parser-madlan.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
@@ -89,7 +89,7 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🟠 scout-Madlan-jina: Page ${page} for run ${runId}`);
+  console.log(`🟠 scout-madlan-jina: Page ${page} for run ${runId}`);
 
   try {
     if (await isRunStopped(supabase, runId)) {
@@ -145,7 +145,7 @@ serve(async (req) => {
         continue;
       }
 
-      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parsemadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
       console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
@@ -193,7 +193,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`scout-Madlan-jina page ${page} error:`, error);
+    console.error(`scout-madlan-jina page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
     if (maxPages) await chainNextPage(supabaseUrl, supabaseServiceKey, createClient(supabaseUrl, supabaseServiceKey), configId!, page, runId, maxPages, startPage, isRetry, retryPages);
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
@@ -245,7 +245,7 @@ async function triggerNextPage(
   for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
     try {
       console.log(`📄 Madlan-Jina: triggering page ${nextPage} (attempt ${attempt})`);
-      await fetch(`${supabaseUrl}/functions/v1/scout-Madlan-jina`, {
+      await fetch(`${supabaseUrl}/functions/v1/scout-madlan-jina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ config_id: configId, page: nextPage, run_id: runId, max_pages: maxPages, start_page: startPage, is_retry: isRetry, retry_pages: retryPages })
