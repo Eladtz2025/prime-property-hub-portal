@@ -1,67 +1,35 @@
 
+# תיקון מונה "נותרו" בבדיקת זמינות 2 (Jina)
 
-# תיקון כפתור "הפעל" בהשלמת נתונים 2 (Jina)
+## הבעיה
+לאחר התיקון הקודם שבו ניסיתי לעקוף את מגבלת 1,000 השורות על ידי שימוש ב-`count: 'exact'`, נראה שהמונה מציג "0" למרות שישנם נכסים הממתינים לבדיקה (שאילתת SQL מראה שישנם כ-2,504 נכסים כאלו).
 
-## בעיות שנמצאו
+הסיבה לכך היא שהשימוש ב-`.select('id', { count: 'exact', head: true })` לאחר קריאת ה-RPC אינו מחזיר את המאפיין `count` בצורה תקינה בספריית `supabase-js` בגרסה זו (הוא מחזיר גוף ריק או מערך, אך לא מעדכן את ה-header `Prefer: count=exact` בצורה הנכונה עבור קריאות POST ל-RPC).
 
-### 1. כפתור "הפעל" תקוע במצב טעינה עד סוף ה-batch (קריטי)
+## הפתרון
+נעבור לשימוש בתחביר הסטנדרטי של `rpc` עבור קבלת ספירה בלבד: העברת האפשרויות כפרמטר שלישי לפונקציית ה-`rpc`. זה מבטיח שהספרייה תשלח את ה-header המתאים ותחזיר את ה-`count` בצורה נכונה.
 
-כשלוחצים "הפעל", ה-edge function יוצרת את הרשומה ב-DB **ואז מעבדת את כל ה-batch** (5 נכסים x עד 35 שניות כל אחד) **לפני שהיא מחזירה תשובה**. כלומר הכפתור נשאר בסטטוס "טעינה" 2-3 דקות.
+## שלבי ביצוע
 
-ה-hook מחכה ל-`onSuccess` כדי להגדיר `isRunning=true` ולהתחיל polling, אבל ה-`onSuccess` מופעל רק אחרי שה-batch מסתיים.
-
-**תיקון**: בקובץ `src/hooks/useBackfillProgressJina.ts` - לשנות את `startMutation` לשיטת fire-and-forget. במקום לחכות לתשובה, לשלוח את הבקשה ומיד להתחיל polling:
+### 1. עדכון דשבורד הבדיקות (`src/components/scout/ChecksDashboard.tsx`)
+נשנה את הקריאה ל-RPC בשורה 151 כך שתשתמש בפרמטר השלישי של אפשרויות (`options`) במקום שרשור `.select()`.
 
 ```typescript
-const startMutation = useMutation({
-  mutationFn: async () => {
-    toast.info('מתחיל השלמת נתונים (Jina)...', { duration: 3000 });
-    // Fire-and-forget - don't await the full batch
-    supabase.functions.invoke('backfill-property-data-jina', {
-      body: { action: 'start', dry_run: false }
-    }).catch(err => console.error('Backfill Jina error:', err));
-    // Return immediately
-    return { fired: true };
-  },
-  onSuccess: () => {
-    setIsRunning(true);
-    // Small delay then start polling for the new task
-    setTimeout(() => refetchProgress(), 2000);
-  },
-  ...
-});
+// לפני:
+(supabase.rpc('get_properties_needing_availability_check', { ... }) as any)
+  .select('id', { count: 'exact', head: true })
+
+// אחרי:
+supabase.rpc('get_properties_needing_availability_check', {
+  p_first_recheck_days: 8,
+  p_recurring_recheck_days: 2,
+  p_min_days_before_check: 3,
+  p_fetch_limit: 10000
+}, { count: 'exact', head: true })
 ```
 
-### 2. Polling לא מתחיל כי ה-query הראשוני מוצא רשומה ישנה (בינוני)
-
-ה-query מחפש את הרשומה האחרונה עם `task_name = 'data_completion_jina'`. אבל ה-edge function **מוחקת** רשומות ישנות (completed/stopped/failed) לפני שיוצרת חדשה. כלומר אחרי לחיצה על "הפעל":
-- הרשומה הישנה נמחקת
-- הרשומה החדשה נוצרת עם status=running
-- אבל ה-hook עדיין לא יודע מזה כי `isRunning=false` ואין `refetchInterval`
-
-**תיקון**: ב-`onSuccess` של ה-mutation, להפעיל `setIsRunning(true)` מיד ולהתחיל polling עם delay קצר (2 שניות) כדי לתת ל-edge function זמן ליצור את הרשומה.
-
-### 3. גם useBackfillProgress (מקורי) סובל מאותה בעיה
-
-אותו דפוס בדיוק קיים גם ב-`useBackfillProgress.ts`. צריך לתקן את שניהם.
-
-## שינויים נדרשים
-
-### קובץ 1: `src/hooks/useBackfillProgressJina.ts`
-
-שינוי ה-`startMutation` לשיטת fire-and-forget:
-- שליחת הבקשה בלי `await` על התשובה
-- הגדרת `isRunning=true` מיד ב-`onSuccess`
-- `setTimeout(() => refetchProgress(), 2000)` כדי לתפוס את הרשומה החדשה
-- הוספת error handling ל-fire-and-forget
-
-### קובץ 2: `src/hooks/useBackfillProgress.ts`
-
-אותו תיקון בדיוק.
+### 2. עדכון עמוד ניהול סקאוט (`src/pages/AdminPropertyScout.tsx`)
+נבצע את אותו התיקון גם בסטטיסטיקות הגלובליות שמוצגות בעמוד הניהול (שורות 39-44).
 
 ## תוצאה צפויה
-
-- לחיצה על "הפעל" -> הכפתור חוזר למצב רגיל תוך שנייה
-- תוך 2 שניות ה-polling מתחיל ומציג את הסטטוס והפרוגרס
-- אין יותר "תקיעה" של 2-3 דקות על הכפתור
-
+המונה "נותרו" בבדיקת זמינות 2 יציג את המספר המדויק (בסביבות 2,504) במקום 0 או 1,000.
