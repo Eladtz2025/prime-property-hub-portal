@@ -9,7 +9,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
       console.log(`🌐 Madlan-Jina attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
@@ -17,7 +17,7 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds 
         headers: {
           'Accept': 'text/markdown',
           'X-No-Cache': 'true',
-          'X-Wait-For-Selector': 'a[href*="/realestate/item/"]',
+          'X-Wait-For-Selector': 'a[href*="/listings/"]',
           'X-Timeout': String(timeoutSeconds),
           'X-Proxy-Country': 'IL',
           'X-Locale': 'he-IL',
