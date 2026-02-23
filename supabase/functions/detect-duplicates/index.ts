@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     } catch { /* no body */ }
 
     const isReset = body.reset === true;
+    const isManualRun = isReset;
     const isContinuation = body.continuation === true;
 
     // Kill switch check (skip for manual resets)
@@ -199,7 +200,7 @@ Deno.serve(async (req) => {
           console.warn('Failed to check end time:', e);
         }
 
-        if (endTimeReached) {
+        if (endTimeReached && !isManualRun) {
           console.log(`⏰ End time reached — stopping after ${batchCount} batches (${totalProcessed} processed)`);
           await supabase
             .from('backfill_progress')
