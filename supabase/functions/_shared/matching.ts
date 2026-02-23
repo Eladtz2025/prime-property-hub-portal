@@ -508,13 +508,13 @@ export async function calculateMatch(
     const propertyFurnished = property.features?.furnished;
     
     if (lead.furnished_required === 'fully_furnished') {
-      if (propertyFurnished !== 'fully_furnished') {
+      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== true) {
         return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
       }
       reasons.push('מרוהטת מלא (חובה) ✓');
     } else if (lead.furnished_required === 'partially_furnished') {
       // Accept fully or partially furnished
-      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished') {
+      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished' && propertyFurnished !== true) {
         return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'], priority: 0 };
       }
       reasons.push('מרוהטת (חובה) ✓');
@@ -558,8 +558,8 @@ export async function calculateMatch(
         // Property has no date info - include with note (don't reject potential matches)
         reasons.push('תאריך כניסה לא ידוע');
       } else if (propertyIsImmediate) {
-        // Immediate properties don't match specific dates
-        return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+        // Immediate = available now = also available on the lead's requested date
+        reasons.push('כניסה מיידית - פנוי לפני התאריך המבוקש ✓');
       } else if (propertyEntryDate) {
         const requestedDate = new Date(lead.move_in_date);
         const daysBefore = new Date(requestedDate);
@@ -580,8 +580,8 @@ export async function calculateMatch(
         // Property has no date info - include with note (don't reject potential matches)
         reasons.push('תאריך כניסה לא ידוע');
       } else if (propertyIsImmediate) {
-        // Immediate properties don't match specific dates
-        return { lead, matchScore: 0, matchReasons: ['נדרש תאריך ספציפי - הנכס מיידי'], priority: 0 };
+        // Immediate = available now = also available on the lead's requested date
+        reasons.push('כניסה מיידית - פנוי לפני התאריך המבוקש ✓');
       } else if (propertyEntryDate) {
         const requestedDate = new Date(lead.move_in_date);
         const flexDaysBefore = new Date(requestedDate);
