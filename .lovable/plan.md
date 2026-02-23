@@ -1,64 +1,37 @@
 
 
-# תיקון 3 באגים בסריקות Jina
+# תיקון שגיאת Import ב-scout-madlan-jina
 
-## 1. באג ריצות כפולות - trigger-scout-pages-jina
+## הבעיה
+בעדכון האחרון, ה-import של הפרסר שונה בטעות מ-`parseMadlanMarkdown` (M גדולה - נכון) ל-`parsemadlanMarkdown` (m קטנה - שגוי). זה גורם לקריסה מיידית של הפונקציה.
 
-**הבעיה:** שורה 63 קוראת `created_at` אבל העמודה לא קיימת בטבלת `scout_runs` - העמודה הנכונה היא `started_at`. בגלל זה הבדיקה לריצה קיימת תמיד נכשלת בשקט ומאפשרת ריצות כפולות.
+בנוסף, הריצה האחרונה (`86a3dfda`) תקועה בסטטוס `running` כי הפונקציה קרסה לפני שעדכנה את הסטטוס.
 
-**התיקון:** בשורות 63 ו-69 - שינוי `created_at` ל-`started_at`.
+## התיקונים
 
-### קובץ: `supabase/functions/trigger-scout-pages-jina/index.ts`
+### 1. תיקון Import - `supabase/functions/scout-madlan-jina/index.ts`
 
+שורה 51 - החזרת ה-M הגדולה:
 ```
-// שורה 63: שינוי select
-.select('id, created_at')  -->  .select('id, started_at')
+// שגוי (מצב נוכחי):
+import { parsemadlanMarkdown } from "../_experimental/parser-madlan.ts";
 
-// שורה 69: שינוי חישוב הגיל
-Date.now() - new Date(existingRun.created_at).getTime()
--->
-Date.now() - new Date(existingRun.started_at).getTime()
-```
-
----
-
-## 2. X-Wait-For-Selector שגוי במדלן
-
-**הבעיה:** שורה 20 משתמשת בסלקטור של יד2 (`a[href*="/realestate/item/"]`) במקום הסלקטור של מדלן.
-
-**התיקון:** שינוי ל-`a[href*="/listings/"]` שמתאים לדפי רשימה של מדלן.
-
-### קובץ: `supabase/functions/scout-madlan-jina/index.ts`
-
-```
-// שורה 20:
-'X-Wait-For-Selector': 'a[href*="/realestate/item/"]'
--->
-'X-Wait-For-Selector': 'a[href*="/listings/"]'
+// נכון:
+import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
 ```
 
----
-
-## 3. AbortController timeout - 35 שניות
-
-**הבעיה:** ה-AbortController מוגדר ל-60 שניות (שורה 12), מה שאומר שניסיון כושל תוקע את הפונקציה דקה שלמה לפני שממשיך הלאה.
-
-**התיקון:** שינוי ל-35000ms (35 שניות) כדי שיהיה מעט מעל ה-X-Timeout של 30 שניות (ברירת המחדל), ולא יחכה יותר מדי.
-
-### קובץ: `supabase/functions/scout-madlan-jina/index.ts`
-
+שורה 148 - גם השימוש בפונקציה צריך M גדולה:
 ```
-// שורה 12:
-setTimeout(() => controller.abort(), 60000)
--->
-setTimeout(() => controller.abort(), 35000)
+// שגוי:
+const parseResult = parsemadlanMarkdown(markdown, ...)
+
+// נכון:
+const parseResult = parseMadlanMarkdown(markdown, ...)
 ```
 
----
+### 2. סגירת הריצה התקועה
+עדכון ריצה `86a3dfda` מ-`running` ל-`failed`.
 
-## פריסה
-
-פריסה מחדש של שתי הפונקציות:
-- `trigger-scout-pages-jina`
-- `scout-madlan-jina`
+### 3. פריסה מחדש
+פריסת `scout-madlan-jina` לאחר התיקון.
 
