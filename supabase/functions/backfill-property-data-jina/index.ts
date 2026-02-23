@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
         .eq('is_active', true)
         .not('source_url', 'is', null)
         .neq('source_url', 'https://www.homeless.co.il')
-        .or('backfill_status.is.null,backfill_status.eq.failed');
+      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
 
       if (source_filter) {
         countQuery = countQuery.eq('source', source_filter);
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('backfill_status.is.null,backfill_status.eq.failed')
+      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -849,7 +849,7 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .neq('source_url', 'https://www.homeless.co.il')
-      .or('backfill_status.is.null,backfill_status.eq.failed');
+      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
     if (source_filter) {
       remainingQuery = remainingQuery.eq('source', source_filter);
     }
