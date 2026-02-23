@@ -130,7 +130,7 @@ serve(async (req) => {
       console.log(`🟠 madlan-Jina page ${page}: Scraping ${url}`);
 
       const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-      const scrapeResult = await scrapemadlanWithJina(url, madlan_CONFIG.MAX_RETRIES, timeoutSec);
+      const scrapeResult = await scrapeMadlanWithJina(url, Madlan_CONFIG.MAX_RETRIES, timeoutSec);
       if (!scrapeResult) {
         console.warn(`⚠️ madlan-Jina page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
@@ -145,7 +145,7 @@ serve(async (req) => {
         continue;
       }
 
-      const parseResult = parsemadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
       console.log(`🟠 madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
@@ -230,7 +230,7 @@ async function triggerNextPage(
   const MAX_TRIGGER_RETRIES = 3;
   const TRIGGER_RETRY_DELAY = 5000;
   const MAX_CONSECUTIVE_SKIPS = 3;
-  const delay = isRetry ? madlan_CONFIG.RETRY_DELAY_MS : madlan_CONFIG.PAGE_DELAY_MS;
+  const delay = isRetry ? Madlan_CONFIG.RETRY_DELAY_MS : Madlan_CONFIG.PAGE_DELAY_MS;
 
   console.log(`⏳ Waiting ${delay / 1000}s before page ${nextPage}${isRetry ? ' (retry)' : ''}...`);
   await new Promise(r => setTimeout(r, delay));
@@ -281,14 +281,14 @@ async function handleRetryOrFinalize(
   if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); return; }
 
   const blockedPages = (run.page_stats as any[]).filter(
-    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES
+    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES
   );
 
   if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-jina'); return; }
 
   console.log(`🔄 Retrying ${blockedPages.length} blocked pages for run ${runId}`);
   const updatedStats = (run.page_stats as any[]).map((p: any) => {
-    if (p.status === 'blocked' && (p.retry_count || 0) < madlan_CONFIG.MAX_BLOCK_RETRIES) {
+    if (p.status === 'blocked' && (p.retry_count || 0) < Madlan_CONFIG.MAX_BLOCK_RETRIES) {
       return { ...p, status: 'pending', error: undefined, retry_count: (p.retry_count || 0) + 1 };
     }
     return p;
