@@ -1,73 +1,51 @@
 
+# תיקון בדיקת זמינות 2 (Jina) + סקירת כפילויות והתאמות
 
-# תיקון בדיקת זמינות 2 + השלמת נתונים 2 למדלן
+## בעיה 1: בדיקת זמינות 2 (Jina) - Kill Switch שגוי (קריטי)
 
-## הבעיה
-הסריקות (scout-madlan-jina) עובדות כי הן שולחות את הכותרת `X-Locale: he-IL` ל-Jina. בדיקת זמינות 2 והשלמת נתונים 2 לא שולחות את הכותרת הזו, מה שגורם לתוכן לחזור ללא עברית תקינה ולהיכשל בזיהוי.
+**הסיבה**: בקובץ `trigger-availability-check-jina/index.ts` שורה 35, הפונקציה בודקת את הדגל `process_availability` (שכבוי!) במקום `process_availability_jina` (שדלוק). כל ריצת cron נחסמת כי היא חושבת שהתהליך כבוי.
 
-## ההבדלים בין מה שעובד למה שלא
-
-| כותרת | סריקות (עובד) | זמינות 2 | השלמת נתונים 2 |
-|---|---|---|---|
-| X-Locale: he-IL | כן | **חסר** | **חסר** |
-| X-Proxy-Country: IL | כן | כן | כן |
-| X-No-Cache | כן | Phase 2 בלבד | לא (cache first) |
-| X-Wait-For-Selector | a[href*="/listings/"] | body | body |
-
-## התיקון
-
-### 1. check-property-availability-jina/index.ts
-הוספת `X-Locale: he-IL` לכותרות ה-Jina בפונקציה `checkWithJina` (סביב שורה 57).
-
-שינוי:
+**התיקון**: שינוי שורה 35 מ-`'availability'` ל-`'availability_jina'`:
 ```typescript
-// לפני
-const headers: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '35',
-};
-
-// אחרי
-const headers: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '35',
-  'X-Locale': 'he-IL',
-};
+// לפני (שגוי):
+if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability')) {
+// אחרי (נכון):
+if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability_jina')) {
 ```
 
-### 2. backfill-property-data-jina/index.ts
-הוספת `X-Locale: he-IL` לכותרות ה-Jina בסקשן הסקרייפ (סביב שורה 438).
+## בעיה 2: ריצת זמינות תקועה
 
-שינוי:
-```typescript
-// לפני
-const jinaHeaders: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '35',
-};
+ריצה `5e626233` בסטטוס `running` עם רק 2 נכסים שנבדקו. חוסמת ריצות חדשות.
 
-// אחרי
-const jinaHeaders: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '35',
-  'X-Locale': 'he-IL',
-};
+**התיקון**: מיגרציה לסגירת הריצה:
+```sql
+UPDATE availability_check_runs
+SET status = 'stopped', completed_at = now()
+WHERE id = '5e626233-e942-4329-94aa-79ec1a77043a'
+AND status = 'running';
 ```
 
-### 3. _shared/scraping-jina.ts (שיתופי)
-הפונקציה השיתופית `scrapeWithJina` כבר כוללת `X-Locale: he-IL` - אבל אף אחד מהתהליכים לא משתמש בה. התיקון הוא בקוד הישיר של כל פונקציה.
+## סקירת כפילויות - תקין
+
+- הריצה האחרונה (23/02 01:00) הושלמה בהצלחה
+- 0 כפילויות נמצאו (רוב הנכסים כבר נבדקו - 5,404 מתוך 5,636)
+- 232 נותרו לבדיקה - יטופלו בריצה הבאה
+- **אין בעיה**
+
+## סקירת התאמות - לא רצו כמעט חודש
+
+- הריצה האחרונה: **29 בינואר** (לפני ~25 יום)
+- נמצאה התאמה אחת מתוך 16 לידים
+- הcron פעיל ורץ כל יום ב-07:00, אז ייתכן שהריצות מתבצעות אבל אין לידים eligible חדשים
+- ייתכן גם שהcron קורא לפונקציה אחרת (trigger-matching) ולא ישירות ל-personal-scout
+- **צריך לבדוק**: האם ריצות matching אחרונות מסתיימות מהר בלי לידים, או שלא רצות בכלל
+
+## סיכום שינויים
+
+1. **קובץ**: `supabase/functions/trigger-availability-check-jina/index.ts` - תיקון kill switch מ-`availability` ל-`availability_jina`
+2. **מיגרציה**: סגירת ריצת זמינות תקועה `5e626233`
+3. **פריסה**: deploy של `trigger-availability-check-jina`
 
 ## מה לא ישתנה
-- **אף שינוי בסריקות** - לא נוגעים ב-scout-madlan-jina, scout-yad2-jina, scout-homeless-jina, או בשום trigger/helper שלהם
-- הלוגיקה של Madlan two-phase (cache first, then fresh+proxy) נשארת כמו שהיא
-- כל יתר ההגדרות נשארות
-
-## פריסה
-שני Edge Functions לפריסה:
-- `check-property-availability-jina`
-- `backfill-property-data-jina`
-
+- אף שינוי בסריקות
+- כפילויות והתאמות לא נדרשים תיקון קוד כרגע
