@@ -1,51 +1,112 @@
 
 
-# תיקון מונה "נותרו" בבדיקת זמינות 2
+# QA: השלמת נתונים 2 (Jina) - בעיות ותיקונים
 
-## הבעיה
+## בעיות שנמצאו
 
-המונה "נותרו" תמיד מציג 1,000 כי PostgREST (שכבת ה-API של Supabase) מגביל תשובות RPC ל-1,000 שורות כברירת מחדל. הדשבורד קורא ל-RPC ואז סופר את אורך המערך (`recheckRes.data?.length`), אז הוא תמיד מקבל מקסימום 1,000.
+### 1. מדלן עדיין עם לוגיקה מיוחדת (חוסם 100% מהנכסים)
+**חומרה: קריטי**
 
-המספר האמיתי כרגע הוא **2,545** נכסים שממתינים לבדיקה.
+בניגוד למה שנעשה בבדיקת זמינות 2, ב-backfill עדיין יש לוגיקה מיוחדת למדלן:
+- שורה 437: `const isMadlanProp = prop.source === 'madlan'` 
+- שורות 444-448: מדלן לא מקבל `X-No-Cache` (cached-first), ואז התוכן שחוזר הוא עמוד בית / CAPTCHA
+- שורות 511-531: `classifyMadlanContent` חוסם כל תוצאה שהיא לא `ok`
 
-## התיקון
+**תוצאה בפועל**: כל 87 נכסי מדלן שממתינים להשלמה נכשלים ב-100% - הלוגים מראים רק `captcha` ו-`homepage_redirect`.
 
-בקובץ `src/components/scout/ChecksDashboard.tsx`, שורות 151-156 — להחליף את קריאת ה-RPC בגישה שמבקשת רק את הספירה:
+**תיקון**: להסיר את כל הלוגיקה המיוחדת למדלן, בדיוק כמו שנעשה בבדיקת זמינות 2. כל המקורות יקבלו `X-No-Cache: true` + `X-Proxy-Country: IL`.
 
-```typescript
-// לפני (מוגבל ל-1000):
-supabase.rpc('get_properties_needing_availability_check', {
-  p_first_recheck_days: 8,
-  p_recurring_recheck_days: 2,
-  p_min_days_before_check: 3,
-  p_fetch_limit: 10000
-})
+### 2. Self-chain כפול (6 טריגרים במקביל)
+**חומרה: בינוני**
 
-// אחרי (ספירה מדויקת):
-supabase.rpc('get_properties_needing_availability_check', {
-  p_first_recheck_days: 8,
-  p_recurring_recheck_days: 2,
-  p_min_days_before_check: 3,
-  p_fetch_limit: 10000
-}).select('id', { count: 'exact', head: true })
-```
+בלוגים רואים "Next batch triggered successfully (Jina)" חוזר 6 פעמים באותה שנייה. זה קורה כי כשמספר batches רצים במקביל (מה-chain הכפול), כולם מסיימים ומפעילים chain חדש.
 
-ובשורה 158 לשנות את הקריאה מ-`recheckRes.data?.length` ל-`recheckRes.count`:
+**תיקון**: לא נדרש תיקון קוד - הסרת הלוגיקה המיוחדת למדלן תגרום לנכסים להצליח במקום להיכשל תוך שניות, מה שיאט את ה-batches באופן טבעי.
 
+### 3. תיאור שגוי בדשבורד
+**חומרה: נמוך**
+
+שורה 703 ב-ChecksDashboard.tsx אומרת:
+> "משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות"
+
+אבל כל ה-API keys הוסרו מהמערכת והכל עובד על free tier.
+
+**תיקון**: עדכון הטקסט לתיאור מדויק.
+
+### 4. סטטוסים חסרים בהיסטוריה
+**חומרה: נמוך**
+
+ב-BackfillJinaHistory.tsx, ה-`statusConfig` לא כולל סטטוסים ספציפיים למדלן כמו `madlan_captcha`, `madlan_homepage_redirect`, `madlan_blocked`, `no_content`. הם מוצגים כטקסט גולמי.
+
+**תיקון**: להוסיף את הסטטוסים החסרים ל-statusConfig. (אחרי תיקון 1, רוב הסטטוסים האלה ייעלמו, אבל `no_content` עדיין רלוונטי).
+
+## שינויים נדרשים
+
+### קובץ 1: `supabase/functions/backfill-property-data-jina/index.ts`
+
+**שינוי A** (שורות 436-448) - הסרת לוגיקה מיוחדת למדלן ב-headers:
 ```typescript
 // לפני:
-pendingRecheck: recheckRes.data?.length ?? 0
+const isMadlanProp = prop.source === 'madlan';
+const jinaHeaders = { ... };
+if (isMadlanProp) {
+  jinaHeaders['X-Proxy-Country'] = 'IL';
+} else {
+  jinaHeaders['X-No-Cache'] = 'true';
+}
 
 // אחרי:
-pendingRecheck: recheckRes.count ?? 0
+const jinaHeaders: Record<string, string> = {
+  'Accept': 'text/markdown',
+  'X-Wait-For-Selector': 'body',
+  'X-Timeout': '35',
+  'X-Locale': 'he-IL',
+  'X-No-Cache': 'true',
+  'X-Proxy-Country': 'IL',
+};
 ```
 
-אותו תיקון גם בקובץ `src/pages/AdminPropertyScout.tsx` (שורות 43-48) שם יש את אותה קריאת RPC לסטטיסטיקות הגלובליות.
+**שינוי B** (שורות 510-531) - הסרת classifyMadlanContent block:
+```typescript
+// להסיר את כל הבלוק:
+if (isMadlanProp && markdown) {
+  const { classifyMadlanContent, logMadlanScrapeResult } = await import(...);
+  ...
+  if (classification !== 'ok') { ... continue; }
+}
+```
 
-## סיכום
+### קובץ 2: `src/components/scout/ChecksDashboard.tsx`
 
-| קובץ | שינוי |
-|---|---|
-| `src/components/scout/ChecksDashboard.tsx` | שימוש ב-`count: 'exact', head: true` במקום `data.length` |
-| `src/pages/AdminPropertyScout.tsx` | אותו תיקון לסטטיסטיקה הגלובלית |
+**שינוי** (שורה 703) - תיקון תיאור:
+```typescript
+// לפני:
+'משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות.'
+
+// אחרי:
+'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).'
+```
+
+### קובץ 3: `src/components/scout/checks/BackfillJinaHistory.tsx`
+
+**שינוי** (שורות 38-46) - הוספת סטטוסים חסרים:
+```typescript
+// להוסיף:
+no_content: { label: 'אין תוכן', variant: 'destructive' },
+madlan_captcha: { label: 'CAPTCHA מדלן', variant: 'destructive' },
+madlan_homepage_redirect: { label: 'הפניה לדף בית', variant: 'destructive' },
+madlan_blocked: { label: 'חסימת מדלן', variant: 'destructive' },
+update_error: { label: 'שגיאת עדכון', variant: 'destructive' },
+```
+
+## פריסה
+
+- `backfill-property-data-jina`
+
+## תוצאה צפויה
+
+- נכסי מדלן יעברו השלמת נתונים בהצלחה במקום להיכשל ב-100%
+- כל המקורות (yad2, madlan, homeless) יטופלו באותה לוגיקה פשוטה
+- התיאור בדשבורד יהיה מדויק
+- ההיסטוריה תציג סטטוסים קריאים
 
