@@ -189,7 +189,7 @@ serve(async (req) => {
       console.warn('Failed to check end time:', e);
     }
 
-    if (endTimeReached) {
+    if (endTimeReached && !isForced) {
       console.log(`⏰ End time reached — not starting matching`);
       return new Response(JSON.stringify({
         success: true,
