@@ -65,18 +65,15 @@ export const useBackfillProgressJina = () => {
   const startMutation = useMutation({
     mutationFn: async () => {
       toast.info('מתחיל השלמת נתונים (Jina)...', { duration: 3000 });
-      const { data, error } = await supabase.functions.invoke('backfill-property-data-jina', {
+      // Fire-and-forget - don't await the full batch
+      supabase.functions.invoke('backfill-property-data-jina', {
         body: { action: 'start', dry_run: false }
-      });
-      if (error) throw error;
-      return data;
+      }).catch(err => console.error('Backfill Jina error:', err));
+      return { fired: true };
     },
-    onSuccess: (data) => {
-      if (data.task_id) {
-        setCurrentTaskId(data.task_id);
-        setIsRunning(true);
-        refetchProgress();
-      }
+    onSuccess: () => {
+      setIsRunning(true);
+      setTimeout(() => refetchProgress(), 2000);
     },
     onError: (error) => {
       console.error('Backfill Jina start error:', error);
