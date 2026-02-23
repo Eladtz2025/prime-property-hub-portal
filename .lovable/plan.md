@@ -1,112 +1,67 @@
 
 
-# QA: השלמת נתונים 2 (Jina) - בעיות ותיקונים
+# תיקון כפתור "הפעל" בהשלמת נתונים 2 (Jina)
 
 ## בעיות שנמצאו
 
-### 1. מדלן עדיין עם לוגיקה מיוחדת (חוסם 100% מהנכסים)
-**חומרה: קריטי**
+### 1. כפתור "הפעל" תקוע במצב טעינה עד סוף ה-batch (קריטי)
 
-בניגוד למה שנעשה בבדיקת זמינות 2, ב-backfill עדיין יש לוגיקה מיוחדת למדלן:
-- שורה 437: `const isMadlanProp = prop.source === 'madlan'` 
-- שורות 444-448: מדלן לא מקבל `X-No-Cache` (cached-first), ואז התוכן שחוזר הוא עמוד בית / CAPTCHA
-- שורות 511-531: `classifyMadlanContent` חוסם כל תוצאה שהיא לא `ok`
+כשלוחצים "הפעל", ה-edge function יוצרת את הרשומה ב-DB **ואז מעבדת את כל ה-batch** (5 נכסים x עד 35 שניות כל אחד) **לפני שהיא מחזירה תשובה**. כלומר הכפתור נשאר בסטטוס "טעינה" 2-3 דקות.
 
-**תוצאה בפועל**: כל 87 נכסי מדלן שממתינים להשלמה נכשלים ב-100% - הלוגים מראים רק `captcha` ו-`homepage_redirect`.
+ה-hook מחכה ל-`onSuccess` כדי להגדיר `isRunning=true` ולהתחיל polling, אבל ה-`onSuccess` מופעל רק אחרי שה-batch מסתיים.
 
-**תיקון**: להסיר את כל הלוגיקה המיוחדת למדלן, בדיוק כמו שנעשה בבדיקת זמינות 2. כל המקורות יקבלו `X-No-Cache: true` + `X-Proxy-Country: IL`.
+**תיקון**: בקובץ `src/hooks/useBackfillProgressJina.ts` - לשנות את `startMutation` לשיטת fire-and-forget. במקום לחכות לתשובה, לשלוח את הבקשה ומיד להתחיל polling:
 
-### 2. Self-chain כפול (6 טריגרים במקביל)
-**חומרה: בינוני**
+```typescript
+const startMutation = useMutation({
+  mutationFn: async () => {
+    toast.info('מתחיל השלמת נתונים (Jina)...', { duration: 3000 });
+    // Fire-and-forget - don't await the full batch
+    supabase.functions.invoke('backfill-property-data-jina', {
+      body: { action: 'start', dry_run: false }
+    }).catch(err => console.error('Backfill Jina error:', err));
+    // Return immediately
+    return { fired: true };
+  },
+  onSuccess: () => {
+    setIsRunning(true);
+    // Small delay then start polling for the new task
+    setTimeout(() => refetchProgress(), 2000);
+  },
+  ...
+});
+```
 
-בלוגים רואים "Next batch triggered successfully (Jina)" חוזר 6 פעמים באותה שנייה. זה קורה כי כשמספר batches רצים במקביל (מה-chain הכפול), כולם מסיימים ומפעילים chain חדש.
+### 2. Polling לא מתחיל כי ה-query הראשוני מוצא רשומה ישנה (בינוני)
 
-**תיקון**: לא נדרש תיקון קוד - הסרת הלוגיקה המיוחדת למדלן תגרום לנכסים להצליח במקום להיכשל תוך שניות, מה שיאט את ה-batches באופן טבעי.
+ה-query מחפש את הרשומה האחרונה עם `task_name = 'data_completion_jina'`. אבל ה-edge function **מוחקת** רשומות ישנות (completed/stopped/failed) לפני שיוצרת חדשה. כלומר אחרי לחיצה על "הפעל":
+- הרשומה הישנה נמחקת
+- הרשומה החדשה נוצרת עם status=running
+- אבל ה-hook עדיין לא יודע מזה כי `isRunning=false` ואין `refetchInterval`
 
-### 3. תיאור שגוי בדשבורד
-**חומרה: נמוך**
+**תיקון**: ב-`onSuccess` של ה-mutation, להפעיל `setIsRunning(true)` מיד ולהתחיל polling עם delay קצר (2 שניות) כדי לתת ל-edge function זמן ליצור את הרשומה.
 
-שורה 703 ב-ChecksDashboard.tsx אומרת:
-> "משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות"
+### 3. גם useBackfillProgress (מקורי) סובל מאותה בעיה
 
-אבל כל ה-API keys הוסרו מהמערכת והכל עובד על free tier.
-
-**תיקון**: עדכון הטקסט לתיאור מדויק.
-
-### 4. סטטוסים חסרים בהיסטוריה
-**חומרה: נמוך**
-
-ב-BackfillJinaHistory.tsx, ה-`statusConfig` לא כולל סטטוסים ספציפיים למדלן כמו `madlan_captcha`, `madlan_homepage_redirect`, `madlan_blocked`, `no_content`. הם מוצגים כטקסט גולמי.
-
-**תיקון**: להוסיף את הסטטוסים החסרים ל-statusConfig. (אחרי תיקון 1, רוב הסטטוסים האלה ייעלמו, אבל `no_content` עדיין רלוונטי).
+אותו דפוס בדיוק קיים גם ב-`useBackfillProgress.ts`. צריך לתקן את שניהם.
 
 ## שינויים נדרשים
 
-### קובץ 1: `supabase/functions/backfill-property-data-jina/index.ts`
+### קובץ 1: `src/hooks/useBackfillProgressJina.ts`
 
-**שינוי A** (שורות 436-448) - הסרת לוגיקה מיוחדת למדלן ב-headers:
-```typescript
-// לפני:
-const isMadlanProp = prop.source === 'madlan';
-const jinaHeaders = { ... };
-if (isMadlanProp) {
-  jinaHeaders['X-Proxy-Country'] = 'IL';
-} else {
-  jinaHeaders['X-No-Cache'] = 'true';
-}
+שינוי ה-`startMutation` לשיטת fire-and-forget:
+- שליחת הבקשה בלי `await` על התשובה
+- הגדרת `isRunning=true` מיד ב-`onSuccess`
+- `setTimeout(() => refetchProgress(), 2000)` כדי לתפוס את הרשומה החדשה
+- הוספת error handling ל-fire-and-forget
 
-// אחרי:
-const jinaHeaders: Record<string, string> = {
-  'Accept': 'text/markdown',
-  'X-Wait-For-Selector': 'body',
-  'X-Timeout': '35',
-  'X-Locale': 'he-IL',
-  'X-No-Cache': 'true',
-  'X-Proxy-Country': 'IL',
-};
-```
+### קובץ 2: `src/hooks/useBackfillProgress.ts`
 
-**שינוי B** (שורות 510-531) - הסרת classifyMadlanContent block:
-```typescript
-// להסיר את כל הבלוק:
-if (isMadlanProp && markdown) {
-  const { classifyMadlanContent, logMadlanScrapeResult } = await import(...);
-  ...
-  if (classification !== 'ok') { ... continue; }
-}
-```
-
-### קובץ 2: `src/components/scout/ChecksDashboard.tsx`
-
-**שינוי** (שורה 703) - תיקון תיאור:
-```typescript
-// לפני:
-'משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות.'
-
-// אחרי:
-'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).'
-```
-
-### קובץ 3: `src/components/scout/checks/BackfillJinaHistory.tsx`
-
-**שינוי** (שורות 38-46) - הוספת סטטוסים חסרים:
-```typescript
-// להוסיף:
-no_content: { label: 'אין תוכן', variant: 'destructive' },
-madlan_captcha: { label: 'CAPTCHA מדלן', variant: 'destructive' },
-madlan_homepage_redirect: { label: 'הפניה לדף בית', variant: 'destructive' },
-madlan_blocked: { label: 'חסימת מדלן', variant: 'destructive' },
-update_error: { label: 'שגיאת עדכון', variant: 'destructive' },
-```
-
-## פריסה
-
-- `backfill-property-data-jina`
+אותו תיקון בדיוק.
 
 ## תוצאה צפויה
 
-- נכסי מדלן יעברו השלמת נתונים בהצלחה במקום להיכשל ב-100%
-- כל המקורות (yad2, madlan, homeless) יטופלו באותה לוגיקה פשוטה
-- התיאור בדשבורד יהיה מדויק
-- ההיסטוריה תציג סטטוסים קריאים
+- לחיצה על "הפעל" -> הכפתור חוזר למצב רגיל תוך שנייה
+- תוך 2 שניות ה-polling מתחיל ומציג את הסטטוס והפרוגרס
+- אין יותר "תקיעה" של 2-3 דקות על הכפתור
 
