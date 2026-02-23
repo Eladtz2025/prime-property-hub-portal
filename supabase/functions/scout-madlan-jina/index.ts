@@ -28,42 +28,23 @@ async function scrapeMadlanWithJina(url: string, maxRetries = 3, timeoutSeconds 
 
       if (response.ok) {
         const body = await response.text();
-        const classification = classifyMadlanContent(body, url);
-        logMadlanScrapeResult('scout', url, body.length, classification);
-
-        if (isMadlanBlocked(body, url)) {
-          console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1}: blocked/skeleton (${body.length} chars, ${classification})`);
-          if (attempt < maxRetries - 1) {
-            const waitTime = 5000 * (attempt + 1);
-            console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
-            await new Promise(r => setTimeout(r, waitTime));
-          }
-          continue;
-        }
-
         console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
         return { markdown: body, html: '' };
       }
 
       const errorText = await response.text();
       console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
-      if (attempt < maxRetries - 1) {
-        const waitTime = 5000 * (attempt + 1);
-        await new Promise(r => setTimeout(r, waitTime));
-      }
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
       } else {
         console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
       }
-      if (attempt < maxRetries - 1) {
-        const waitTime = 5000 * (attempt + 1);
-        await new Promise(r => setTimeout(r, waitTime));
-      }
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     }
   }
-  console.error(`❌ All attempts failed for ${url}`);
+  console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
   return null;
 }
 import { saveProperty } from "../_shared/property-helpers.ts";
@@ -77,9 +58,10 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  MAX_RETRIES: 3,
+  MAX_RETRIES: 2,
   NEXT_PAGE_DELAY: 15000,  // 15s between pages to avoid bot detection
   RECOVERY_DELAY: 15000,
+  MAX_BLOCK_RETRIES: 2,
 };
 
 async function triggerNextPage(
