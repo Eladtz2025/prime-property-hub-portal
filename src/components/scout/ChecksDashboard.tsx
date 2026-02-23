@@ -352,18 +352,21 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Trigger dedup
+   // Trigger dedup (fire-and-forget)
     const triggerDedup = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('detect-duplicates', {
+      supabase.functions.invoke('detect-duplicates', {
         body: { reset: true }
-      });
-      if (error) throw error;
-      return data;
+      }).catch(err => console.error('Dedup trigger error:', err));
+      return { fired: true };
     },
     onSuccess: () => {
       toast.success('בדיקת כפילויות הופעלה');
       queryClient.invalidateQueries({ queryKey: ['dedup-stats-summary'] });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['dedup-run-history'] });
+        queryClient.invalidateQueries({ queryKey: ['dedup-live-stats'] });
+      }, 2000);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -564,7 +567,7 @@ export const ChecksDashboard: React.FC = () => {
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
-          status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.unchecked ? 'idle' : 'idle'}
+          status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : 'idle'}
           statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : `${dedupStats?.checked ?? 0} מתוך ${dedupStats?.totalActive ?? 0} נבדקו`}
           metrics={[
             { label: 'נבדקו', value: `${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} / ${(dedupStats?.totalActive ?? 0).toLocaleString('he-IL')}` },

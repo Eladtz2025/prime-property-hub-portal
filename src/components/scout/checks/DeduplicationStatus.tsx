@@ -161,8 +161,8 @@ export const DeduplicationStatus: React.FC = () => {
           <CardContent className="p-3 space-y-1">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">ריצה אחרונה</p>
-              <Badge className={lastRun.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}>
-                {lastRun.status === 'completed' ? 'הושלם' : lastRun.status}
+              <Badge className={lastRun.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : lastRun.status === 'stopped' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}>
+                {lastRun.status === 'completed' ? 'הושלם' : lastRun.status === 'stopped' ? 'נעצר' : lastRun.status}
               </Badge>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
@@ -205,6 +205,8 @@ export const DeduplicationStatus: React.FC = () => {
                       ? <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]"><CheckCircle className="h-3 w-3 mr-1" />הושלם</Badge>
                       : run.status === 'running'
                       ? <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]"><Clock className="h-3 w-3 mr-1" />רץ</Badge>
+                      : run.status === 'stopped'
+                      ? <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />נעצר</Badge>
                       : <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />{run.status}</Badge>
                     }
                   </TableCell>
