@@ -1,57 +1,36 @@
 
 
-# חיבור שדה wait_for_ms ל-X-Timeout בפונקציות Jina
+# תיקון: נכסים חדשים לא נכנסים להשלמת נתונים (Jina)
 
-## מה משתנה
+## הבעיה
 
-בכל 3 פונקציות ה-Jina (homeless, yad2, madlan), הערך `X-Timeout: '30'` קבוע בקוד. השינוי יגרום לפונקציית הסריקה לקבל פרמטר `timeoutSeconds` אופציונלי, ואם הקונפיגורציה מכילה `wait_for_ms` — הוא יומר לשניות וישמש כ-`X-Timeout`.
+נכסים חדשים שנסרקים נשמרים עם `backfill_status = 'pending'`, אבל פונקציית השלמת הנתונים מחפשת רק `backfill_status IS NULL` או `backfill_status = 'failed'` — ולכן מפספסת אותם לחלוטין.
 
-## לוגיקה
+## הפתרון
 
-```text
-config.wait_for_ms = 15000  -->  X-Timeout: '15'
-config.wait_for_ms = null   -->  X-Timeout: '30' (ברירת מחדל)
-```
+להוסיף `backfill_status.eq.pending` לפילטר בפונקציית ה-backfill.
 
-## שינויים בקבצים
+## קבצים לשינוי
 
-### 1. `supabase/functions/scout-homeless-jina/index.ts`
-- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeHomelessWithJina`
-- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
-- העברת `config.wait_for_ms` מהקריאה בשורה 109
+### `supabase/functions/backfill-property-data-jina/index.ts`
 
-### 2. `supabase/functions/scout-yad2-jina/index.ts`
-- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeYad2WithJina`
-- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
-- העברת `config.wait_for_ms` מהקריאה
-
-### 3. `supabase/functions/scout-madlan-jina/index.ts`
-- הוספת פרמטר `timeoutSeconds` לפונקציה `scrapeMadlanWithJina`
-- שימוש בו ב-header של `X-Timeout` (ברירת מחדל: 30)
-- העברת `config.wait_for_ms` מהקריאה
-
-### דוגמה לשינוי (זהה ב-3 הפונקציות)
+3 מקומות שבהם מופיע הפילטר (שורות ~247, ~306, ~852):
 
 **לפני:**
-```text
-async function scrapeHomelessWithJina(url, maxRetries = 2)
-  ...
-  'X-Timeout': '30',
+```
+.or('backfill_status.is.null,backfill_status.eq.failed')
 ```
 
 **אחרי:**
-```text
-async function scrapeHomelessWithJina(url, maxRetries = 2, timeoutSeconds = 30)
-  ...
-  'X-Timeout': String(timeoutSeconds),
+```
+.or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
 ```
 
-**בקריאה:**
-```text
-const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-const scrapeResult = await scrapeHomelessWithJina(url, MAX_RETRIES, timeoutSec);
-```
+### `supabase/functions/backfill-property-data/index.ts` (Firecrawl — אותו תיקון לעקביות)
 
-### פריסה
-פריסה מחדש של 3 פונקציות: `scout-homeless-jina`, `scout-yad2-jina`, `scout-madlan-jina`
+אותו שינוי ב-3 מקומות מקבילים (~292, ~357, ועוד).
+
+## פריסה
+
+פריסה מחדש של `backfill-property-data-jina` (ו-`backfill-property-data` אם רוצים עקביות).
 
