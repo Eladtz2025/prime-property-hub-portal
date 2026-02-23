@@ -269,30 +269,50 @@ export async function checkAndFinalizeRun(
   const hasErrors = pageStats.some(p => p.status === 'failed' || p.status === 'blocked');
   const finalStatus = hasErrors ? 'partial' : 'completed';
 
-  await supabase
-    .from('scout_runs')
-    .update({
-      status: finalStatus,
-      completed_at: new Date().toISOString()
-    })
-    .eq('id', runId);
-
-  // Update config last run
-  if (run.config_id) {
-    await supabase
-      .from('scout_configs')
+  try {
+    const { error: updateError } = await supabase
+      .from('scout_runs')
       .update({
-        last_run_at: new Date().toISOString(),
-        last_run_status: finalStatus,
-        last_run_results: { 
-          properties_found: run.properties_found || 0,
-          new_properties: run.new_properties || 0
-        }
+        status: finalStatus,
+        completed_at: new Date().toISOString()
       })
-      .eq('id', run.config_id);
-  }
+      .eq('id', runId);
 
-  console.log(`✅ ${source} run ${runId} finalized with status: ${finalStatus}`);
+    if (updateError) {
+      console.error(`❌ Failed to finalize run ${runId}:`, updateError);
+    }
+
+    // Update config last run
+    if (run.config_id) {
+      const { error: configError } = await supabase
+        .from('scout_configs')
+        .update({
+          last_run_at: new Date().toISOString(),
+          last_run_status: finalStatus,
+          last_run_results: { 
+            properties_found: run.properties_found || 0,
+            new_properties: run.new_properties || 0
+          }
+        })
+        .eq('id', run.config_id);
+
+      if (configError) {
+        console.error(`❌ Failed to update config for run ${runId}:`, configError);
+      }
+    }
+
+    console.log(`✅ ${source} run ${runId} finalized with status: ${finalStatus}`);
+  } catch (finalizeError) {
+    console.error(`❌ Finalization error for run ${runId}:`, finalizeError);
+    // Emergency finalization attempt
+    try {
+      await supabase.from('scout_runs')
+        .update({ status: 'partial', completed_at: new Date().toISOString() })
+        .eq('id', runId);
+    } catch (emergencyError) {
+      console.error(`❌ Emergency finalization also failed for run ${runId}:`, emergencyError);
+    }
+  }
 }
 
 /**
