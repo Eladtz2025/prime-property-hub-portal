@@ -700,7 +700,7 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'אותה לוגיקת השלמת נתונים כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
                 'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features, ומספר בית.',
-                'משתמש ב-JINA_API_KEY עם פרוקסי premium לעקיפת חסימות.',
+                'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).',
               ]} />
             </div>
           }

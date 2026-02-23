@@ -43,6 +43,11 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   no_new_data: { label: 'אין נתונים חדשים', variant: 'outline' },
   non_ta_deactivated: { label: 'לא ת"א - הוסר', variant: 'secondary' },
   no_markdown: { label: 'אין תוכן', variant: 'destructive' },
+  no_content: { label: 'אין תוכן', variant: 'destructive' },
+  madlan_captcha: { label: 'CAPTCHA מדלן', variant: 'destructive' },
+  madlan_homepage_redirect: { label: 'הפניה לדף בית', variant: 'destructive' },
+  madlan_blocked: { label: 'חסימת מדלן', variant: 'destructive' },
+  update_error: { label: 'שגיאת עדכון', variant: 'destructive' },
 };
 
 const getStatusInfo = (status: string) => statusConfig[status] || { label: status, variant: 'outline' as const };
