@@ -60,19 +60,31 @@ Deno.serve(async (req) => {
     // Check for existing running job
     const { data: existingRun } = await supabase
       .from('scout_runs')
-      .select('id')
+      .select('id, created_at')
       .eq('config_id', config_id)
       .eq('status', 'running')
       .single();
 
     if (existingRun) {
-      return new Response(JSON.stringify({ 
-        error: 'Config already has a running job',
-        run_id: existingRun.id 
-      }), {
-        status: 409,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      const runAgeMs = Date.now() - new Date(existingRun.created_at).getTime();
+      const STALE_RUN_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+
+      if (runAgeMs > STALE_RUN_THRESHOLD_MS) {
+        console.warn(`⚠️ Stale run ${existingRun.id} detected (${Math.round(runAgeMs / 60000)} min old) — auto-closing as partial`);
+        await supabase
+          .from('scout_runs')
+          .update({ status: 'partial', completed_at: new Date().toISOString() })
+          .eq('id', existingRun.id);
+        // Continue to create a new run...
+      } else {
+        return new Response(JSON.stringify({ 
+          error: 'Config already has a running job',
+          run_id: existingRun.id 
+        }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     const startPage = config.start_page || 1;
