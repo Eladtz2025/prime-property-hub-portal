@@ -1,5 +1,5 @@
 // Extract data from the Excel file and create unified properties JSON
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 import { processExcelToUnified } from '../src/utils/processExcelData';
 
 // Sample data extracted from the Excel file "בעלי דירות לסדר. (1).xlsx"

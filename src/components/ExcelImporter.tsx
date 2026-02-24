@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from 'sonner';
 import { Upload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 import { processExcelToUnified } from '@/utils/processExcelData';
 import { supabase } from '@/integrations/supabase/client';
 
