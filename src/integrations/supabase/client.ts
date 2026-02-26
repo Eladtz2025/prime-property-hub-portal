@@ -7,12 +7,18 @@ const SUPABASE_URL =
   (import.meta.env.SUPABASE_URL as string | undefined);
 
 const SUPABASE_ANON_KEY =
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  (import.meta.env.SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
   (import.meta.env.SUPABASE_ANON_KEY as string | undefined);
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("[Supabase] env check:", {
+    hasUrl: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_ANON_KEY,
+  });
   throw new Error(
-    "Missing Supabase env: set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (or SUPABASE_URL + SUPABASE_ANON_KEY)"
+    "Missing Supabase env: set VITE_SUPABASE_URL + one of VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_ANON_KEY"
   );
 }
 
