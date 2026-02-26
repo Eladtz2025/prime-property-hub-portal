@@ -1,34 +1,16 @@
 
-מטרה: לעצור את ה-crash במסך הראשי ולבטל את ה-blank screen בלי לשנות flow עסקי.
 
-1) בידוד התקלה
-- לאמת שה-crash קורה בזמן import של `src/integrations/supabase/client.ts` (לפני render).
-- לאמת שהשגיאה נובעת מחוסר התאמה בין שם משתנה הסביבה שהקוד דורש לבין מה שבפועל מוזרק בסביבת הפריוויו.
+## Problem
+The `.env` file is missing from the project. Even though Supabase is connected, the environment variables aren't being injected because the `.env` file doesn't exist.
 
-2) תיקון ממוקד בקובץ Supabase client
-- לעדכן את `src/integrations/supabase/client.ts` כך שמפתח הלקוח ייקרא עם fallback מסודר:
-  - `VITE_SUPABASE_ANON_KEY`
-  - `VITE_SUPABASE_PUBLISHABLE_KEY`
-  - `SUPABASE_ANON_KEY`
-  - `SUPABASE_PUBLISHABLE_KEY`
-- להשאיר את ה-URL עם fallback קיים (`VITE_SUPABASE_URL` ואז `SUPABASE_URL`).
-- לשמור על יצירת client רגילה (`createClient`) ללא שינוי behavior באפליקציה.
+## Fix
+Recreate the `.env` file with the correct values from the connected Supabase project:
 
-3) שיפור אבחון (ללא חשיפת סודות)
-- להחליף הודעת שגיאה כללית בהודעה מדויקת שמציינת אילו שמות env נבדקו.
-- להוסיף לוג דיבוג בטוח (רק האם משתנה קיים, לא הערך), כדי למנוע לופ של “עדיין לא עובד” בסבבים הבאים.
+```
+VITE_SUPABASE_PROJECT_ID="jswumsdymlooeobrxict"
+VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVApI8wFaVYeLYJec-2vFcGeYPe9mM"
+VITE_SUPABASE_URL="https://jswumsdymlooeobrxict.supabase.co"
+```
 
-4) יישור תיעוד כדי למנוע חזרה של התקלה
-- לעדכן `.env.example` ו-`README_AUTHENTICATION.md` שיתמכו גם ב-`VITE_SUPABASE_PUBLISHABLE_KEY` (בנוסף ל-anon), כדי למנוע קונפיגורציה שגויה בפרויקטים/מפתחים נוספים.
+This is one file change. The `.env` file was accidentally deleted in a previous edit cycle. Recreating it will restore the environment variables and fix the blank screen.
 
-5) ולידציה אחרי התיקון
-- להריץ build/preview ולוודא שאין יותר:
-  - `Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY`
-- לוודא שה-route `/` נטען ולא נשאר blank.
-- לבדוק flow בסיסי: public route + מסך התחברות נטענים תקין.
-- אם עדיין מופיע מסך ישן: לבצע hard reload ולוודא שאין cache ישן מה-Service Worker.
-
-סעיף טכני (מרוכז):
-- קובץ מושפע עיקרי: `src/integrations/supabase/client.ts`
-- קבצי תיעוד מושפעים: `.env.example`, `README_AUTHENTICATION.md`
-- Do I know what the issue is? כן: האפליקציה נופלת מוקדם בגלל בדיקת env קשיחה מדי לשם מפתח אחד, במקום תמיכה בשמות המפתח בפועל בסביבת Lovable/Supabase.
