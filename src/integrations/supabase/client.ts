@@ -4,23 +4,15 @@ import type { Database } from "./types";
 
 const SUPABASE_URL =
   (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
-  (import.meta.env.SUPABASE_URL as string | undefined);
+  (import.meta.env.SUPABASE_URL as string | undefined) ??
+  "https://jswumsdymlooeobrxict.supabase.co";
 
 const SUPABASE_ANON_KEY =
   (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
   (import.meta.env.SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
-  (import.meta.env.SUPABASE_ANON_KEY as string | undefined);
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error("[Supabase] env check:", {
-    hasUrl: !!SUPABASE_URL,
-    hasKey: !!SUPABASE_ANON_KEY,
-  });
-  throw new Error(
-    "Missing Supabase env: set VITE_SUPABASE_URL + one of VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_ANON_KEY"
-  );
-}
+  (import.meta.env.SUPABASE_ANON_KEY as string | undefined) ??
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzd3Vtc2R5bWxvb2VvYnJ4aWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NTIyNDQsImV4cCI6MjA3MjMyODI0NH0.EyxwF2qYl0u3BaVApI8wFaVYeLYJec-2vFcGeYPe9mM";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
