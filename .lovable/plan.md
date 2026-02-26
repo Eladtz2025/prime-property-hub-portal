@@ -1,95 +1,34 @@
 
-# שיפור מערכת הזמנים והריצות - Jina-First
+מטרה: לעצור את ה-crash במסך הראשי ולבטל את ה-blank screen בלי לשנות flow עסקי.
 
-## מצב נוכחי (בעיות)
+1) בידוד התקלה
+- לאמת שה-crash קורה בזמן import של `src/integrations/supabase/client.ts` (לפני render).
+- לאמת שהשגיאה נובעת מחוסר התאמה בין שם משתנה הסביבה שהקוד דורש לבין מה שבפועל מוזרק בסביבת הפריוויו.
 
-1. **3 כרטיסיות Jina חסרות עורך זמנים**: סריקות Jina, זמינות Jina, והשלמת נתונים Jina -- אין בהגדרות שלהן אפשרות לראות/לערוך שעות ריצה
-2. **Cron Jobs כבר קוראים ל-Jina**: הקרונים הקיימים (availability, backfill) כבר מפעילים פונקציות Jina, אבל עורך הזמנים נמצא רק בכרטיסיות הישנות (Firecrawl)
-3. **לוח הזמנים הכללי** לא מציג את התהליכים ב-Jina בצורה ברורה
+2) תיקון ממוקד בקובץ Supabase client
+- לעדכן את `src/integrations/supabase/client.ts` כך שמפתח הלקוח ייקרא עם fallback מסודר:
+  - `VITE_SUPABASE_ANON_KEY`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_PUBLISHABLE_KEY`
+- להשאיר את ה-URL עם fallback קיים (`VITE_SUPABASE_URL` ואז `SUPABASE_URL`).
+- לשמור על יצירת client רגילה (`createClient`) ללא שינוי behavior באפליקציה.
 
-## תוכנית שיפור
+3) שיפור אבחון (ללא חשיפת סודות)
+- להחליף הודעת שגיאה כללית בהודעה מדויקת שמציינת אילו שמות env נבדקו.
+- להוסיף לוג דיבוג בטוח (רק האם משתנה קיים, לא הערך), כדי למנוע לופ של “עדיין לא עובד” בסבבים הבאים.
 
-### 1. הוספת ScheduleTimeEditor לכל כרטיס Jina
+4) יישור תיעוד כדי למנוע חזרה של התקלה
+- לעדכן `.env.example` ו-`README_AUTHENTICATION.md` שיתמכו גם ב-`VITE_SUPABASE_PUBLISHABLE_KEY` (בנוסף ל-anon), כדי למנוע קונפיגורציה שגויה בפרויקטים/מפתחים נוספים.
 
-**קובץ: `src/components/scout/ChecksDashboard.tsx`**
+5) ולידציה אחרי התיקון
+- להריץ build/preview ולוודא שאין יותר:
+  - `Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY`
+- לוודא שה-route `/` נטען ולא נשאר blank.
+- לבדוק flow בסיסי: public route + מסך התחברות נטענים תקין.
+- אם עדיין מופיע מסך ישן: לבצע hard reload ולוודא שאין cache ישן מה-Service Worker.
 
-- **סריקות Jina (שורה ~491)**: הוספת ScheduleTimeEditor עם category="scraping" (חולק הגדרות עם הסריקות הרגילות -- כי שתיהן משתמשות באותם scout_configs)
-- **זמינות Jina (שורה ~573)**: הוספת ScheduleTimeEditor עם category="availability" ו-cronJobNames שמצביע על `availability-check-continuous` (שכבר קורא ל-Jina)
-- **השלמת נתונים Jina (שורה ~727)**: הוספת ScheduleTimeEditor עם category="backfill" ו-cronJobNames שמצביע על `backfill-data-completion-job` (שכבר קורא ל-Jina)
-
-כיוון שהקרונים כבר מפעילים את פונקציות ה-Jina, אפשר לחלוק את אותם categories ב-scout_settings.
-
-### 2. עדכון לוח הזמנים (ScheduleSummaryCard)
-
-**קובץ: `src/components/scout/ScheduleSummaryCard.tsx`**
-
-- הוספת תווית "(Jina)" לתהליכים שרצים דרך Jina, כדי שיהיה ברור בלוח הזמנים מה בדיוק רץ
-- עדכון ה-Legend להוסיף צבע ל-backfill ול-cleanup (חסרים כרגע)
-
-### 3. סנכרון הצגת זמנים בכרטיסיות הישנות
-
-מכיוון שהקרונים כבר מצביעים על Jina, נעדכן את ה-labels בכרטיסיות הישנות (Availability, Backfill) כדי לציין שהם מחוברים לאותו cron -- למניעת בלבול.
-
----
-
-## פרטים טכניים
-
-### שינויים ב-ChecksDashboard.tsx
-
-**כרטיס סריקות Jina** -- הוספה אחרי LogicDescription (שורה ~496):
-```typescript
-// Scout configs already have schedule_times per config
-// The ScheduleTimeEditor is on the UnifiedScoutSettings
-// No separate editor needed here -- it's inside UnifiedScoutSettings
-```
-(כבר קיים ב-UnifiedScoutSettings שמוצג בכרטיס)
-
-**כרטיס זמינות Jina** -- settingsContent (שורה 567-575), הוספת:
-```typescript
-<ScheduleTimeEditor
-  category="availability"
-  cronJobNames={[{ 
-    jobName: 'availability-check-continuous', 
-    cronTemplate: (h, m) => `${m} ${h} * * *` 
-  }]}
-  label="שעות ריצת בדיקת זמינות (Jina)"
-  showEndTime
-/>
-```
-
-**כרטיס השלמת נתונים Jina** -- settingsContent (שורה 722-728), הוספת:
-```typescript
-<ScheduleTimeEditor
-  category="backfill"
-  cronJobNames={[{ 
-    jobName: 'backfill-data-completion-job', 
-    cronTemplate: (h, m) => `${m} ${h} * * *` 
-  }]}
-  label="שעות ריצת השלמת נתונים (Jina)"
-  showEndTime
-/>
-```
-
-### שינויים ב-ScheduleSummaryCard.tsx
-
-עדכון הלייבלים שיציגו "(Jina)" ליד תהליכים רלוונטיים:
-- "בדיקת זמינות" --> "בדיקת זמינות (Jina)"  
-- "השלמת נתונים" --> "השלמת נתונים (Jina)"
-
-הוספת items ל-Legend עבור backfill ו-cleanup:
-```typescript
-<span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />השלמה
-<span className="w-1.5 h-1.5 rounded-full bg-gray-400" />כפילויות
-```
-
-### סיכום הקרונים האמיתיים (למידע)
-
-| Cron Job | UTC Schedule | IL Time | Edge Function |
-|---|---|---|---|
-| scout-properties-job | */5 20-21 * * * | 22:00-23:55 | trigger-scout-all-jina |
-| backfill-data-completion-job | 0 22 * * * | 00:00 | backfill-property-data-jina |
-| cleanup-orphan-duplicates-hourly | 0 1 * * * | 03:00 | detect-duplicates |
-| availability-check-continuous | 0 3 * * * | 05:00 | trigger-availability-check-jina |
-| match-leads-job | 0 5 * * * | 07:00 | trigger-matching |
-
-כל הקרונים כבר מצביעים על פונקציות Jina -- אין צורך לשנות קרונים, רק UI.
+סעיף טכני (מרוכז):
+- קובץ מושפע עיקרי: `src/integrations/supabase/client.ts`
+- קבצי תיעוד מושפעים: `.env.example`, `README_AUTHENTICATION.md`
+- Do I know what the issue is? כן: האפליקציה נופלת מוקדם בגלל בדיקת env קשיחה מדי לשם מפתח אחד, במקום תמיכה בשמות המפתח בפועל בסביבת Lovable/Supabase.
