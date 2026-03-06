@@ -571,6 +571,12 @@ export const ChecksDashboard: React.FC = () => {
                 'משתמש ב-r.jina.ai לסריקת דפים ובודק אותם מחרוזות הסרה בדיוק כמו המערכת המקורית.',
                 'זיהוי skeleton למדלן: תוכן קצר מ-1000 תווים מסומן כ-retryable.',
               ]} />
+              <ScheduleTimeEditor
+                category="availability"
+                cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+                label="שעות ריצת בדיקת זמינות (Jina)"
+                showEndTime
+              />
             </div>
           }
           historyTitle="היסטוריית בדיקות זמינות (Jina)"
