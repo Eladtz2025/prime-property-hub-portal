@@ -1,21 +1,32 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## הוספת עורך שעות ריצה לכרטיס "בדיקת זמינות 2 (Jina)"
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### הבעיה
+בכרטיס ההגדרות של "בדיקת זמינות 2 (Jina)" חסר רכיב `ScheduleTimeEditor` — בניגוד לכרטיס בדיקת הזמינות המקורי ולשאר הכרטיסים.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### הפתרון
+הוספת `ScheduleTimeEditor` לתוך `settingsContent` של הכרטיס, עם אותם פרמטרים כמו בכרטיס הזמינות המקורי:
+- `category="availability"` (שני הכרטיסים חולקים את אותו cron job — `availability-check-continuous`)
+- `showEndTime` מופעל
+- תווית בעברית
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### קובץ לעריכה
+**`src/components/scout/ChecksDashboard.tsx`** — שורות 568-574
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+הוספת `ScheduleTimeEditor` אחרי ה-`LogicDescription` בתוך ה-`settingsContent` של כרטיס "בדיקת זמינות 2 (Jina)":
+
+```tsx
+settingsContent={
+  <div className="space-y-6">
+    <LogicDescription lines={[...]} />
+    <ScheduleTimeEditor
+      category="availability"
+      cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
+      label="שעות ריצת בדיקת זמינות (Jina)"
+      showEndTime
+    />
+  </div>
+}
+```
 
