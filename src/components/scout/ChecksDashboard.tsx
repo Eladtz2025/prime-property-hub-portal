@@ -409,7 +409,7 @@ export const ChecksDashboard: React.FC = () => {
   });
 
   const isScanJinaRunning = lastScanRunJina?.status === 'running';
-  const isScanJinaRunning = lastScanRunJina?.status === 'running';
+  const isAvailRunning = lastAvailRun?.status === 'running';
   const isMatchRunning = matchStats?.status === 'running';
 
   const formatDuration = (started: string, completed: string | null) => {
