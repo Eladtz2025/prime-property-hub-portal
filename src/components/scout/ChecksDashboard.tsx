@@ -470,48 +470,6 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-        {/* Availability */}
-        <ProcessCard
-          title="בדיקת זמינות"
-          icon={<Shield className="h-4 w-4 text-blue-600" />}
-          iconColor="bg-blue-100 dark:bg-blue-900/30"
-          status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
-            { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
-            { label: 'Timeouts', value: stats?.timeouts ?? 0 },
-          ]}
-          lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
-          onRun={() => triggerAvailability.mutate()}
-          onStop={() => stopAvailability.mutate()}
-          isRunPending={triggerAvailability.isPending}
-          isStopPending={stopAvailability.isPending}
-          historyContent={<AvailabilityHistorySection />}
-          settingsContent={
-            <div className="space-y-6">
-              <LogicDescription lines={[
-                'בודקת האם דירות שנסרקו עדיין קיימות באתר המקור (לא משלימה נתונים — לשם כך קיים תהליך השלמת הנתונים).',
-                'שלב 1: בדיקת HEAD מהירה (3 שניות) — מזהה 404, הפניות לעמוד ראשי, ושגיאות שרת.',
-                'שלב 2: סריקת Firecrawl — בודקת האם בדף קיימים סימני נכס (₪, חדרים, מ"ר). אם כן — הנכס אקטיבי. אם לא ונמצאו סימני הסרה — מסומן כלא פעיל.',
-                'לוגיקת recheck חכמה: נכסים חדשים (פחות מ-3 ימים) לא נבדקים כלל. בדיקה ראשונה רק אחרי 3 ימים, recheck ראשון אחרי 8 ימים, rechecks חוזרים כל 2 ימים.',
-                'מכסה יומית מוגדרת למניעת עומס.',
-              ]} />
-              <ScheduleTimeEditor
-                category="availability"
-                cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת בדיקת זמינות"
-                showEndTime
-              />
-              <AvailabilitySettingsContent />
-            </div>
-          }
-          historyTitle="היסטוריית בדיקות זמינות"
-          settingsTitle="הגדרות בדיקת זמינות"
-          enabled={processFlags?.process_availability ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
 
         {/* Availability Jina */}
         <ProcessCard
