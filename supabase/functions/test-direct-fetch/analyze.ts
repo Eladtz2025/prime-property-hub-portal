@@ -1,75 +1,47 @@
 export function analyzeMadlanHtml(html: string): any {
-  // Find script tags containing price data
-  const scriptMatches = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)];
-  
-  let dataScript = '';
-  let dataScriptInfo = '';
-  
-  for (const match of scriptMatches) {
-    const content = match[1];
-    if (content.includes('"price":') && content.includes('"rooms":') && content.length > 1000) {
-      dataScript = content;
-      dataScriptInfo = `Found script with price+rooms data, length: ${content.length}`;
-      break;
-    }
+  // Find where "price":8300 appears
+  const priceIdx = html.indexOf('"price":');
+  let priceContext = '';
+  if (priceIdx > 0) {
+    const start = Math.max(0, priceIdx - 200);
+    const end = Math.min(html.length, priceIdx + 300);
+    priceContext = html.substring(start, end);
   }
 
-  // Extract a sample of the data script
-  let sampleData = '';
-  if (dataScript) {
-    // Find first occurrence of a listing-like object
-    const listingIdx = dataScript.indexOf('"price":');
-    if (listingIdx > 0) {
-      const start = Math.max(0, listingIdx - 500);
-      const end = Math.min(dataScript.length, listingIdx + 1500);
-      sampleData = dataScript.substring(start, end);
-    }
+  // Extract a full listing card's text content
+  const bulletinRegex = /data-auto="listed-bulletin"\s+data-auto-bulletin-id="([^"]+)"[\s\S]*?(?=data-auto="listed-bulletin"|$)/g;
+  const firstMatch = bulletinRegex.exec(html);
+  let firstCardText = '';
+  let firstCardInnerHtml = '';
+  if (firstMatch) {
+    const cardHtml = firstMatch[0].substring(0, 6000);
+    firstCardInnerHtml = cardHtml;
+    // Strip tags and CSS
+    firstCardText = cardHtml
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/g, '')
+      .replace(/<[^>]+>/g, '|')
+      .replace(/\|+/g, '|')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
-  // Also check for window.__INITIAL or similar
-  const initialStatePatterns = [
-    /window\.__INITIAL[^=]*=\s*/,
-    /window\.__PRELOADED[^=]*=\s*/,
-    /window\.__DATA[^=]*=\s*/,
-    /window\.INITIAL_PROPS\s*=\s*/,
-    /"props"\s*:\s*\{/,
-  ];
-  
-  const foundPatterns: string[] = [];
-  for (const p of initialStatePatterns) {
-    if (p.test(html)) foundPatterns.push(p.source);
-  }
+  // Search for all data-auto attributes inside a card
+  const dataAutoInCard = firstCardInnerHtml ? 
+    [...firstCardInnerHtml.matchAll(/data-auto="([^"]+)"/g)].map(m => m[1]) : [];
 
-  // Count bulletin IDs
-  const bulletinIds = [...html.matchAll(/data-auto-bulletin-id="([^"]+)"/g)].map(m => m[1]);
-
-  // JSON-LD analysis
-  const jsonLdMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-  
-  // Check if JSON-LD has all listings
-  let jsonLdListingCount = 0;
-  const jsonLdSample: any[] = [];
-  for (const m of jsonLdMatches) {
-    try {
-      const parsed = JSON.parse(m[1]);
-      if (parsed['@type'] === 'ImageObject' && parsed.caption) {
-        jsonLdListingCount++;
-        if (jsonLdSample.length < 3) jsonLdSample.push(parsed);
-      }
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          if (item['@type'] === 'ImageObject') jsonLdListingCount++;
-        }
-      }
-    } catch {}
-  }
+  // Find all text nodes that look like property data (rooms, floor, size)
+  const roomsPattern = html.match(/\d+\.?\d*\s*חד[׳'ר]/g)?.slice(0, 5) || [];
+  const floorPattern = html.match(/קומה\s*\d+/g)?.slice(0, 5) || [];
+  const sizePattern = html.match(/\d+\s*מ"ר/g)?.slice(0, 5) || [];
+  const brokerPattern = html.match(/תיווך/g)?.length || 0;
 
   return {
-    bulletin_count: bulletinIds.length,
-    data_script_info: dataScriptInfo,
-    data_sample: sampleData.substring(0, 3000),
-    found_patterns: foundPatterns,
-    json_ld_listing_count: jsonLdListingCount,
-    json_ld_sample: jsonLdSample.slice(0, 2),
+    price_context: priceContext,
+    first_card_text: firstCardText.substring(0, 2000),
+    data_auto_in_card: dataAutoInCard,
+    rooms_samples: roomsPattern,
+    floor_samples: floorPattern,
+    size_samples: sizePattern,
+    broker_mentions: brokerPattern,
   };
 }
