@@ -471,9 +471,9 @@ export const ChecksDashboard: React.FC = () => {
         />
 
 
-        {/* Availability Jina */}
+        {/* Availability (Jina) */}
         <ProcessCard
-          title="בדיקת זמינות 2 (Jina)"
+          title="בדיקת זמינות"
           icon={<Shield className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
