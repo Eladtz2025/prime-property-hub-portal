@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
-import { isListingRemoved } from "../_shared/availability-indicators.ts";
+import { isListingRemoved, isMadlanHomepage } from "../_shared/availability-indicators.ts";
 
 const GLOBAL_TIMEOUT_MS = 55000;
 
@@ -77,6 +77,11 @@ async function checkWithJina(
     if (isListingRemoved(markdown)) {
       console.log(`🚫 Removal text found for ${url}`);
       return { isInactive: true, reason: 'listing_removed_indicator' };
+    }
+
+    if (source === 'madlan' && isMadlanHomepage(markdown)) {
+      console.log(`🚫 Madlan homepage redirect for ${url} (${markdown.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
     }
 
     console.log(`✅ OK for ${url} (${markdown.length} chars)`);
