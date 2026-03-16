@@ -117,12 +117,6 @@ serve(async (req) => {
 
     const { markdown, html } = scrapeResult;
 
-    // Save debug sample
-    await supabase.from('debug_scrape_samples').upsert({
-      source: 'homeless', url, html: html.substring(0, 50000),
-      markdown: markdown.substring(0, 10000), properties_found: 0,
-    }, { onConflict: 'source' }).then(() => console.log('Debug sample saved'));
-
     const validation = validateScrapedContent(markdown, html, 'homeless');
     if (!validation.valid) {
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: validation.reason || 'Validation failed', duration_ms: Date.now() - pageStartTime });
@@ -134,6 +128,12 @@ serve(async (req) => {
     const propertyTypeForParsing = config.property_type === 'both' ? 'rent' : config.property_type;
     const parseResult = await parseHomelessHtml(html, propertyTypeForParsing, supabase, config.owner_type_filter);
     const extractedProperties = parseResult.properties;
+
+    // Save debug sample after validation and parsing with actual count
+    await supabase.from('debug_scrape_samples').upsert({
+      source: 'homeless', url, html: html.substring(0, 50000),
+      markdown: markdown.substring(0, 10000), properties_found: extractedProperties.length,
+    }, { onConflict: 'source' }).then(() => console.log('Debug sample saved'));
 
     console.log(`🟣 Homeless-Jina page ${page}: Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
 

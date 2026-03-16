@@ -228,13 +228,8 @@ export async function fetchCategorySettings<T extends keyof ScoutSettings>(
 }
 
 /**
- * Israel UTC offset (using +2 as base for winter, +3 for summer)
- */
-const IL_UTC_OFFSET = 2;
-
-/**
  * Check if the current time (in Israel) has passed the given end time.
- * Used by Edge Functions to stop self-chaining when the time window expires.
+ * Uses dynamic timezone to handle DST automatically.
  * 
  * @param endTimeIL - End time in Israel timezone, format "HH:MM" (e.g. "06:30")
  * @returns true if the current Israel time is past the end time
@@ -246,9 +241,10 @@ export function isPastEndTime(endTimeIL: string): boolean {
   if (isNaN(endH) || isNaN(endM)) return false;
   
   const now = new Date();
-  // Convert current UTC time to Israel time
-  const israelHour = (now.getUTCHours() + IL_UTC_OFFSET) % 24;
-  const israelMinute = now.getUTCMinutes();
+  const israelTimeStr = now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' });
+  const israelNow = new Date(israelTimeStr);
+  const israelHour = israelNow.getHours();
+  const israelMinute = israelNow.getMinutes();
   
   const currentMinutes = israelHour * 60 + israelMinute;
   const endMinutes = endH * 60 + endM;
