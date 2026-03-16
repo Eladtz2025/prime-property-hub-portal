@@ -79,6 +79,11 @@ async function checkWithJina(
       return { isInactive: true, reason: 'listing_removed_indicator' };
     }
 
+    if (source === 'madlan' && isMadlanHomepage(markdown)) {
+      console.log(`🚫 Madlan homepage redirect for ${url} (${markdown.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+    }
+
     console.log(`✅ OK for ${url} (${markdown.length} chars)`);
     return { isInactive: false, reason: 'content_ok' };
 
