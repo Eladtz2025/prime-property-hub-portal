@@ -1,0 +1,1 @@
+UPDATE scout_settings SET setting_value = '3' WHERE category = 'availability' AND setting_key = 'concurrency_limit';

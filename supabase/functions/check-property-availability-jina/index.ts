@@ -33,77 +33,61 @@ interface CheckResult {
 async function checkWithJina(
   url: string, 
   source: string, 
-  maxRetries: number,
-  retryDelayMs: number
+  _maxRetries: number,
+  _retryDelayMs: number
 ): Promise<{ isInactive: boolean; reason: string }> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+  // Single attempt - no retries. The queue system handles retries naturally.
+  // Retries multiply requests and trigger Jina rate limits.
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-      const headers: Record<string, string> = {
-        'Accept': 'text/markdown',
-        'X-Wait-For-Selector': 'body',
-        'X-Timeout': '35',
-        'X-Locale': 'he-IL',
-        'X-No-Cache': 'true',
-      };
+    const headers: Record<string, string> = {
+      'Accept': 'text/markdown',
+      'X-Wait-For-Selector': 'body',
+      'X-Timeout': '20',
+      'X-Locale': 'he-IL',
+      'X-No-Cache': 'true',
+    };
 
-      console.log(`🌐 Jina check for ${url} (attempt ${attempt}/${maxRetries})`);
+    const response = await fetch(`https://r.jina.ai/${url}`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal
+    });
 
-      const response = await fetch(`https://r.jina.ai/${url}`, {
-        method: 'GET',
-        headers,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.warn(`⚠️ Jina rate limited (429) for ${url}`);
-          if (attempt < maxRetries) {
-            await new Promise(r => setTimeout(r, retryDelayMs * attempt));
-            continue;
-          }
-          return { isInactive: false, reason: 'rate_limited' };
-        }
-        console.warn(`Jina returned ${response.status} for ${url}`);
-        if (attempt < maxRetries) {
-          await new Promise(r => setTimeout(r, retryDelayMs * attempt));
-          continue;
-        }
-        return { isInactive: false, reason: 'jina_failed_after_retries' };
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      if (response.status === 429) {
+        console.warn(`⚠️ Jina rate limited (429) for ${url}`);
+        return { isInactive: false, reason: 'rate_limited' };
       }
-
-      const markdown = await response.text();
-
-      if (!markdown || markdown.length < 100) {
-        console.log(`⚠️ Very short/empty content (${markdown.length} chars) for ${url} — keeping active`);
-        return { isInactive: false, reason: 'short_content_keeping_active' };
-      }
-
-      // Check removal indicators (explicit text = the ONLY path to inactive)
-      if (isListingRemoved(markdown)) {
-        console.log(`🚫 Removal text found for ${url}`);
-        return { isInactive: true, reason: 'listing_removed_indicator' };
-      }
-
-      console.log(`✅ Content OK for ${url} (${markdown.length} chars)`);
-      return { isInactive: false, reason: 'content_ok' };
-
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      if (attempt < maxRetries) {
-        console.log(`⚠️ Attempt ${attempt} failed (${errorMsg}), retrying...`);
-        await new Promise(r => setTimeout(r, retryDelayMs * attempt));
-        continue;
-      }
-      console.error(`Jina error for ${url}:`, errorMsg);
+      console.warn(`⚠️ Jina returned ${response.status} for ${url}`);
+      return { isInactive: false, reason: `jina_status_${response.status}` };
     }
+
+    const markdown = await response.text();
+
+    if (!markdown || markdown.length < 100) {
+      console.log(`⚠️ Short content (${markdown.length} chars) for ${url}`);
+      return { isInactive: false, reason: 'short_content_keeping_active' };
+    }
+
+    if (isListingRemoved(markdown)) {
+      console.log(`🚫 Removal text found for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_indicator' };
+    }
+
+    console.log(`✅ OK for ${url} (${markdown.length} chars)`);
+    return { isInactive: false, reason: 'content_ok' };
+
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const isTimeout = error instanceof Error && error.name === 'AbortError';
+    console.warn(`⚠️ Jina ${isTimeout ? 'timeout' : 'error'} for ${url}: ${errorMsg}`);
+    return { isInactive: false, reason: isTimeout ? 'per_property_timeout' : 'check_error' };
   }
-  
-  return { isInactive: false, reason: 'jina_failed_after_retries' };
 }
 
 async function checkSingleProperty(
