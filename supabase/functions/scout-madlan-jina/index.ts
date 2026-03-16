@@ -247,7 +247,7 @@ async function triggerNextPage(
   let triggered = false;
   for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
     try {
-      console.log(`📄 Madlan-Jina: triggering page ${nextPage} (attempt ${attempt})`);
+      console.log(`📄 Madlan-Direct: triggering page ${nextPage} (attempt ${attempt})`);
       await fetch(`${supabaseUrl}/functions/v1/scout-madlan-jina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
