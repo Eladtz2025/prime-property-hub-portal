@@ -88,9 +88,21 @@ async function checkWithJina(
       return { isInactive: true, reason: 'listing_removed_indicator' };
     }
 
-    if (source === 'madlan' && isMadlanHomepage(markdown)) {
+    const isMadlanListingUrl = source === 'madlan' && url.includes('/listings/');
+
+    if (source === 'madlan' && isMadlanBlocked(markdown)) {
+      console.warn(`⚠️ Madlan blocked/captcha for ${url} (${markdown.length} chars)`);
+      return { isInactive: false, reason: 'madlan_blocked_retry' };
+    }
+
+    if (isMadlanListingUrl && isMadlanHomepage(markdown)) {
       console.log(`🚫 Madlan homepage redirect for ${url} (${markdown.length} chars)`);
       return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+    }
+
+    if (isMadlanListingUrl && isMadlanSearchResultsPage(markdown)) {
+      console.log(`🚫 Madlan search-results redirect for ${url} (${markdown.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
     }
 
     console.log(`✅ OK for ${url} (${markdown.length} chars)`);
