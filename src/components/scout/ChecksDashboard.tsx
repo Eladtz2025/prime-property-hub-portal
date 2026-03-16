@@ -476,7 +476,7 @@ export const ChecksDashboard: React.FC = () => {
           title="בדיקת זמינות"
           icon={<Shield className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
-          status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
+          status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
           statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
           metrics={[
             { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
