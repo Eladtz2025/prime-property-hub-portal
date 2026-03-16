@@ -225,7 +225,6 @@ export function isValidSourceUrl(url: string, source: string): boolean {
 // ==================== Configuration ====================
 
 const MIN_RENT_PRICE = 3000;  // Minimum rent price (filters parking spots, storage)
-const MAX_RENT_PRICE = 30000; // Maximum rent price (filters misclassified sale listings)
 const MIN_SALE_PRICE = 100000; // Minimum sale price
 
 // ==================== Save Property ====================
