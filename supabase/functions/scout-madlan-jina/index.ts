@@ -128,34 +128,36 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Madlan-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 Madlan-Direct page ${page}: Scraping ${url}`);
 
       const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-      const scrapeResult = await scrapeMadlanWithJina(url, MADLAN_CONFIG.MAX_RETRIES, timeoutSec);
+      const scrapeResult = await scrapeMadlanDirect(url, MADLAN_CONFIG.MAX_RETRIES, timeoutSec);
       if (!scrapeResult) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Scrape failed for ${url}`);
+        console.warn(`⚠️ Madlan-Direct page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { markdown, html } = scrapeResult;
-      const validation = validateScrapedContent(markdown, html, 'madlan');
-      if (!validation.valid) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Validation failed: ${validation.reason}`);
+      const { html } = scrapeResult;
+      
+      // Validate: check minimum length and presence of listing data
+      const hasListings = html.includes('data-auto-bulletin-id');
+      if (html.length < 5000 || !hasListings) {
+        console.warn(`⚠️ Madlan-Direct page ${page}: Validation failed (${html.length} chars, listings: ${hasListings})`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseMadlanDirectHtml(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Madlan-Direct page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
-      if (markdown.length > 1000) {
+      if (html.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
             source: 'madlan', url, html: html?.substring(0, 100000) || null,
-            markdown: markdown?.substring(0, 100000) || null,
+            markdown: null,
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
