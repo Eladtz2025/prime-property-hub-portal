@@ -167,3 +167,6 @@ verify_jwt = false
 
 [functions.send-brokerage-form]
 verify_jwt = false
+
+[functions.test-direct-fetch]
+verify_jwt = false
