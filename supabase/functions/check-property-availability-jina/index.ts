@@ -32,8 +32,79 @@ interface CheckResult {
 }
 
 /**
+ * Direct Fetch for Madlan - bypasses Jina entirely.
+ * Same approach as scout-madlan: omit User-Agent to avoid bot detection.
+ */
+async function checkMadlanDirect(
+  url: string
+): Promise<{ isInactive: boolean; reason: string }> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    console.log(`🟠 Madlan-Direct availability check for ${url}`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': 'he-IL,he;q=0.9',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      // 404 = listing removed
+      if (response.status === 404) {
+        console.log(`🚫 Madlan 404 for ${url}`);
+        return { isInactive: true, reason: 'listing_removed_404' };
+      }
+      console.warn(`⚠️ Madlan-Direct returned ${response.status} for ${url}`);
+      return { isInactive: false, reason: `madlan_direct_status_${response.status}` };
+    }
+
+    const html = await response.text();
+
+    if (!html || html.length < 200) {
+      console.log(`⚠️ Madlan-Direct short content (${html.length} chars) for ${url}`);
+      return { isInactive: false, reason: 'short_content_keeping_active' };
+    }
+
+    // Check for removal indicators in HTML
+    if (isListingRemoved(html)) {
+      console.log(`🚫 Madlan-Direct removal text found for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_indicator' };
+    }
+
+    const isMadlanListingUrl = url.includes('/listings/');
+
+    // Check for homepage redirect (listing removed → redirected to homepage)
+    if (isMadlanListingUrl && isMadlanHomepage(html)) {
+      console.log(`🚫 Madlan-Direct homepage redirect for ${url} (${html.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+    }
+
+    // Check for search results redirect
+    if (isMadlanListingUrl && isMadlanSearchResultsPage(html)) {
+      console.log(`🚫 Madlan-Direct search-results redirect for ${url} (${html.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
+    }
+
+    console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
+    return { isInactive: false, reason: 'content_ok' };
+
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const isTimeout = error instanceof Error && error.name === 'AbortError';
+    console.warn(`⚠️ Madlan-Direct ${isTimeout ? 'timeout' : 'error'} for ${url}: ${errorMsg}`);
+    return { isInactive: false, reason: isTimeout ? 'per_property_timeout' : 'check_error' };
+  }
+}
+
+/**
  * Scrape a URL with Jina AI Reader and check for removal indicators.
- * Same logic for all sources: single request with X-No-Cache.
+ * Used for Yad2 and Homeless sources.
  */
 async function checkWithJina(
   url: string, 
@@ -41,8 +112,6 @@ async function checkWithJina(
   _maxRetries: number,
   _retryDelayMs: number
 ): Promise<{ isInactive: boolean; reason: string }> {
-  // Single attempt - no retries. The queue system handles retries naturally.
-  // Retries multiply requests and trigger Jina rate limits.
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
@@ -54,10 +123,6 @@ async function checkWithJina(
       'X-Locale': 'he-IL',
       'X-No-Cache': 'true',
     };
-
-    if (source === 'madlan') {
-      headers['X-Proxy-Country'] = 'IL';
-    }
 
     const response = await fetch(`https://r.jina.ai/${url}`, {
       method: 'GET',
@@ -86,23 +151,6 @@ async function checkWithJina(
     if (isListingRemoved(markdown)) {
       console.log(`🚫 Removal text found for ${url}`);
       return { isInactive: true, reason: 'listing_removed_indicator' };
-    }
-
-    const isMadlanListingUrl = source === 'madlan' && url.includes('/listings/');
-
-    if (source === 'madlan' && isMadlanBlocked(markdown)) {
-      console.warn(`⚠️ Madlan blocked/captcha for ${url} (${markdown.length} chars)`);
-      return { isInactive: false, reason: 'madlan_blocked_retry' };
-    }
-
-    if (isMadlanListingUrl && isMadlanHomepage(markdown)) {
-      console.log(`🚫 Madlan homepage redirect for ${url} (${markdown.length} chars)`);
-      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
-    }
-
-    if (isMadlanListingUrl && isMadlanSearchResultsPage(markdown)) {
-      console.log(`🚫 Madlan search-results redirect for ${url} (${markdown.length} chars)`);
-      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
     }
 
     console.log(`✅ OK for ${url} (${markdown.length} chars)`);
