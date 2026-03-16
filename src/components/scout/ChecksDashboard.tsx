@@ -456,7 +456,7 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'אותה מערכת סריקות כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
+                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס באמצעות Jina AI Reader.',
                 'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
                 'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
               ]} />
