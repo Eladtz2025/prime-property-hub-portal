@@ -288,11 +288,12 @@ serve(async (req) => {
     const detailedResults: any[] = [];
 
     const retryableReasons = new Set([
-      'per_property_timeout', 
-      'jina_failed_after_retries', 
+      'per_property_timeout',
+      'jina_failed_after_retries',
       'check_error',
       'short_content_keeping_active',
       'rate_limited',
+      'madlan_blocked_retry',
     ]);
 
     for (const result of results) {
