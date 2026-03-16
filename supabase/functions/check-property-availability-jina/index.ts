@@ -1,5 +1,5 @@
-// Edge Function: check-property-availability-jina v2.0
-// Simplified: all sources treated equally (no Madlan-specific logic)
+// Edge Function: check-property-availability-jina v3.0
+// Madlan uses Direct Fetch (no Jina), Yad2/Homeless use Jina
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
