@@ -2,6 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown } from '../_shared/broker-detection.ts';
 import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 import { isProcessEnabled } from '../_shared/process-flags.ts';
+import { getNeighborhoodConfig } from '../_shared/locations.ts';
+import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
