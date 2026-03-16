@@ -48,9 +48,6 @@ export interface ScoutSettings {
     recheck_interval_days: number;
     first_recheck_interval_days: number;
     recurring_recheck_interval_days: number;
-    firecrawl_max_retries: number;
-    firecrawl_retry_delay_ms: number;
-    use_firecrawl: boolean;
     concurrency_limit: number;
     per_property_timeout_ms: number;
     schedule_end_time: string;
