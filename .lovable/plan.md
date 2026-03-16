@@ -1,21 +1,21 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## תיקון ממצא 1: `saveProperty` דורס `status` ו-`availability_check_reason`
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### הבעיה
+בשני מסלולים ב-`saveProperty`, כל פעם שנכס נמצא מחדש בסריקה:
+- **Same-source update** (שורות 347-349): מאפס `status: 'new'` ו-`availability_check_reason: null`
+- **Upsert** (שורות 448-450): אותו דבר
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+זה גורם לנכסים שכבר עברו matching (סטטוס `matched`) לחזור ל-`new`, ולנתוני availability להימחק.
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### התיקון
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**קובץ:** `supabase/functions/_shared/property-helpers.ts`
+
+**1. Same-source update (שורות 347-349):** הסרת `status: 'new'` ו-`availability_check_reason: null` מה-update — לא לגעת בשדות האלה כשמעדכנים נכס קיים.
+
+**2. Upsert (שורות 448-450):** ה-upsert משמש גם ל-insert של נכסים חדשים, אז צריך לשמור `status: 'new'` ל-insert. אבל ב-update (onConflict) זה דורס. הפתרון: לפני ה-upsert, לבדוק אם הנכס כבר קיים (כבר יש את `existedBefore`). אם קיים — לא לכלול `status` ו-`availability_check_reason` ב-upsert, או להשתמש ב-insert+update נפרדים.
+
+הגישה הפשוטה והבטוחה: אם `existedBefore === true`, להריץ update במקום upsert (בלי לדרוס status/availability). אם `existedBefore === false`, להריץ insert עם `status: 'new'`.
 
