@@ -424,46 +424,69 @@ export async function saveProperty(
     console.log(`✅ All critical fields present for ${normalizedSourceUrl}, marking backfill as not_needed`);
   }
 
-  // UPSERT: Insert new property or update if (source, source_url) already exists
-  const { data: upsertResult, error: upsertError } = await supabase
-    .from('scouted_properties')
-    .upsert({
-      source: property.source,
-      source_url: normalizedSourceUrl,
-      source_id: property.source_id,
-      title: property.title,
-      city: normalizedCity,
-      neighborhood: property.neighborhood,
-      address: property.address,
-      price: property.price,
-      rooms: property.rooms,
-      size: property.size,
-      floor: property.floor,
-      duplicate_check_possible: canCheckDuplicates,
-      property_type: property.property_type,
-      description: property.description,
-      images: property.images || [],
-      features: property.features || {},
-      raw_data: property.raw_data,
-      status: 'new',
-      is_active: true,
-      availability_check_reason: null,
-      is_private: safeIsPrivate,
-      duplicate_group_id: duplicateGroupId,
-      is_primary_listing: isPrimaryListing,
-      duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
-      dedup_checked_at: null,
-      last_seen_at: new Date().toISOString(),
-      backfill_status: backfillStatus,
-    }, {
-      onConflict: 'source,source_url',
-      ignoreDuplicates: false  // Update existing records
-    })
-    .select('id')
-    .single();
+  // Common property data (shared between insert and update)
+  const propertyData = {
+    source: property.source,
+    source_url: normalizedSourceUrl,
+    source_id: property.source_id,
+    title: property.title,
+    city: normalizedCity,
+    neighborhood: property.neighborhood,
+    address: property.address,
+    price: property.price,
+    rooms: property.rooms,
+    size: property.size,
+    floor: property.floor,
+    duplicate_check_possible: canCheckDuplicates,
+    property_type: property.property_type,
+    description: property.description,
+    images: property.images || [],
+    features: property.features || {},
+    raw_data: property.raw_data,
+    is_active: true,
+    is_private: safeIsPrivate,
+    duplicate_group_id: duplicateGroupId,
+    is_primary_listing: isPrimaryListing,
+    duplicate_detected_at: duplicateGroupId ? new Date().toISOString() : null,
+    last_seen_at: new Date().toISOString(),
+    backfill_status: backfillStatus,
+  };
+
+  let upsertResult: { id: string } | null = null;
+  let upsertError: any = null;
+
+  if (existedBefore) {
+    // UPDATE existing property — preserve status, availability_check_reason, dedup_checked_at
+    const { data, error } = await supabase
+      .from('scouted_properties')
+      .update({
+        ...propertyData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('source', property.source)
+      .eq('source_url', normalizedSourceUrl)
+      .select('id')
+      .single();
+    upsertResult = data;
+    upsertError = error;
+  } else {
+    // INSERT new property — set initial status and clear fields
+    const { data, error } = await supabase
+      .from('scouted_properties')
+      .insert({
+        ...propertyData,
+        status: 'new',
+        availability_check_reason: null,
+        dedup_checked_at: null,
+      })
+      .select('id')
+      .single();
+    upsertResult = data;
+    upsertError = error;
+  }
 
   if (upsertError) {
-    console.log(`⚠️ Upsert error for ${normalizedSourceUrl}: ${upsertError.message}`);
+    console.log(`⚠️ ${existedBefore ? 'Update' : 'Insert'} error for ${normalizedSourceUrl}: ${upsertError.message}`);
     return { isNew: false };
   }
 
