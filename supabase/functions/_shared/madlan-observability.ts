@@ -23,10 +23,8 @@ export const MADLAN_BLOCK_PHRASES = [
   'error 403',
   'access denied',
   'Just a moment',
-  'enable JavaScript',
   'Checking your browser',
   'cf-browser-verification',
-  'Cloudflare',
   'בקשתך נחסמה',
 ];
 
