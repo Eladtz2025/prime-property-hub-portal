@@ -60,8 +60,8 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
   MAX_RETRIES: 2,
-  PAGE_DELAY_MS: 15000,
-  RETRY_DELAY_MS: 25000,
+  PAGE_DELAY_MS: 5000,      // Reduced from 15s - direct fetch is fast, no Jina rate limits
+  RETRY_DELAY_MS: 10000,    // Reduced from 25s
   MAX_BLOCK_RETRIES: 2,
 };
 
