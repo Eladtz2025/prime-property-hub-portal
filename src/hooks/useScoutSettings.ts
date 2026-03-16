@@ -48,7 +48,7 @@ export interface ScoutSettings {
     delay_between_requests_ms: number;
     head_timeout_ms: number;
     get_timeout_ms: number;
-    use_firecrawl: boolean;
+    
     first_recheck_interval_days: number;
     recurring_recheck_interval_days: number;
     schedule_times: string[];
