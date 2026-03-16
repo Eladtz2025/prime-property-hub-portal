@@ -344,9 +344,9 @@ export async function saveProperty(
         raw_data: property.raw_data,
         property_type: property.property_type,
         is_private: safeIsPrivate,
-        status: 'new',
+        // NOTE: Do NOT reset status or availability_check_reason here.
+        // The property may already be 'matched' or have availability data.
         is_active: true,
-        availability_check_reason: null,
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
