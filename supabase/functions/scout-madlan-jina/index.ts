@@ -1,66 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
+import { corsHeaders } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 
-interface JinaScrapeResult { markdown: string; html: string; }
+/**
+ * Direct Fetch for Madlan - replaces Jina with a simple fetch()
+ * Discovery: Madlan's SSR HTML is fully accessible without User-Agent headers.
+ * The HTML contains data-auto attributes for easy parsing.
+ */
 
-async function scrapeMadlanWithJina(url: string, maxRetries = 2, timeoutSeconds = 30): Promise<JinaScrapeResult | null> {
+async function scrapeMadlanDirect(url: string, maxRetries = 2, _timeoutSeconds = 30): Promise<{ html: string } | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35000);
-      console.log(`🌐 Madlan-Jina attempt ${attempt + 1}/${maxRetries} for ${url}`);
+      console.log(`🌐 Madlan-Direct attempt ${attempt + 1}/${maxRetries} for ${url}`);
 
-      const response = await fetch(`https://r.jina.ai/${url}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': 'text/markdown',
-          'X-No-Cache': 'true',
-          'X-Wait-For-Selector': 'a[href*="/listings/"]',
-          'X-Timeout': String(timeoutSeconds),
-          'X-Proxy-Country': 'IL',
-          'X-Locale': 'he-IL',
+          'Accept': '*/*',
+          'Accept-Language': 'he-IL,he;q=0.9',
         },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        const body = await response.text();
-        console.log(`✅ Madlan-Jina scrape successful (${body.length} chars)`);
-        return { markdown: body, html: '' };
+        const html = await response.text();
+        console.log(`✅ Madlan-Direct scrape successful (${html.length} chars)`);
+        return { html };
       }
 
       const errorText = await response.text();
-      console.warn(`⚠️ Madlan-Jina attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
+      console.warn(`⚠️ Madlan-Direct attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
       if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`⏱️ Madlan-Jina attempt ${attempt + 1} timeout`);
+        console.error(`⏱️ Madlan-Direct attempt ${attempt + 1} timeout`);
       } else {
-        console.error(`❌ Madlan-Jina attempt ${attempt + 1} error:`, error);
+        console.error(`❌ Madlan-Direct attempt ${attempt + 1} error:`, error);
       }
       if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     }
   }
-  console.error(`❌ All ${maxRetries} Madlan-Jina attempts failed for ${url}`);
+  console.error(`❌ All ${maxRetries} Madlan-Direct attempts failed for ${url}`);
   return null;
 }
+
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parseMadlanDirectHtml } from "../_experimental/parser-madlan-html.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Madlan using Jina Reader - SEQUENTIAL MODE
- * Clone of scout-madlan with Firecrawl replaced by Jina.
+ * Edge Function for scraping Madlan using Direct Fetch - SEQUENTIAL MODE
+ * Replaced Jina with direct HTTP fetch (no external API needed).
  */
 
 const MADLAN_CONFIG = {
   SOURCE: 'madlan',
   MAX_RETRIES: 2,
-  PAGE_DELAY_MS: 15000,
-  RETRY_DELAY_MS: 25000,
+  PAGE_DELAY_MS: 5000,      // Reduced from 15s - direct fetch is fast, no Jina rate limits
+  RETRY_DELAY_MS: 10000,    // Reduced from 25s
   MAX_BLOCK_RETRIES: 2,
 };
 
@@ -89,7 +90,7 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🟠 scout-madlan-jina: Page ${page} for run ${runId}`);
+  console.log(`🟠 scout-madlan-direct: Page ${page} for run ${runId}`);
 
   try {
     if (await isRunStopped(supabase, runId)) {
@@ -123,38 +124,40 @@ serve(async (req) => {
     let totalNew = 0;
     let urlsFailed = 0;
 
-    console.log(`🟠 Madlan-Jina page ${page}: ${urls.length} URL(s) to scrape`);
+    console.log(`🟠 Madlan-Direct page ${page}: ${urls.length} URL(s) to scrape`);
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Madlan-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 Madlan-Direct page ${page}: Scraping ${url}`);
 
       const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-      const scrapeResult = await scrapeMadlanWithJina(url, MADLAN_CONFIG.MAX_RETRIES, timeoutSec);
+      const scrapeResult = await scrapeMadlanDirect(url, MADLAN_CONFIG.MAX_RETRIES, timeoutSec);
       if (!scrapeResult) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Scrape failed for ${url}`);
+        console.warn(`⚠️ Madlan-Direct page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { markdown, html } = scrapeResult;
-      const validation = validateScrapedContent(markdown, html, 'madlan');
-      if (!validation.valid) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Validation failed: ${validation.reason}`);
+      const { html } = scrapeResult;
+      
+      // Validate: check minimum length and presence of listing data
+      const hasListings = html.includes('data-auto-bulletin-id');
+      if (html.length < 5000 || !hasListings) {
+        console.warn(`⚠️ Madlan-Direct page ${page}: Validation failed (${html.length} chars, listings: ${hasListings})`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseMadlanDirectHtml(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Madlan-Direct page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
-      if (markdown.length > 1000) {
+      if (html.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
             source: 'madlan', url, html: html?.substring(0, 100000) || null,
-            markdown: markdown?.substring(0, 100000) || null,
+            markdown: null,
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
@@ -185,7 +188,7 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ Madlan-Direct page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
     return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'no-ai' }), {
@@ -193,7 +196,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`scout-madlan-jina page ${page} error:`, error);
+    console.error(`scout-madlan-direct page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
     if (maxPages) await chainNextPage(supabaseUrl, supabaseServiceKey, createClient(supabaseUrl, supabaseServiceKey), configId!, page, runId, maxPages, startPage, isRetry, retryPages);
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
@@ -244,7 +247,7 @@ async function triggerNextPage(
   let triggered = false;
   for (let attempt = 1; attempt <= MAX_TRIGGER_RETRIES; attempt++) {
     try {
-      console.log(`📄 Madlan-Jina: triggering page ${nextPage} (attempt ${attempt})`);
+      console.log(`📄 Madlan-Direct: triggering page ${nextPage} (attempt ${attempt})`);
       await fetch(`${supabaseUrl}/functions/v1/scout-madlan-jina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
