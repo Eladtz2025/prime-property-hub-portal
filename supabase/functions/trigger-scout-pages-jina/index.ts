@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true, run_id: runId, source, pages_triggered: totalPages, start_page: startPage, delay_ms: delayMs,
-      mode: source === 'madlan' ? 'sequential' : 'parallel',
+      mode: (source === 'madlan' || source === 'yad2') ? 'sequential' : 'parallel',
       message: `Started Jina scraping pages ${startPage}-${pagesToScan} for ${config.name}`
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
