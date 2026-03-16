@@ -53,8 +53,8 @@ import { parseMadlanDirectHtml } from "../_experimental/parser-madlan-html.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Madlan using Jina Reader - SEQUENTIAL MODE
- * Clone of scout-madlan with Firecrawl replaced by Jina.
+ * Edge Function for scraping Madlan using Direct Fetch - SEQUENTIAL MODE
+ * Replaced Jina with direct HTTP fetch (no external API needed).
  */
 
 const MADLAN_CONFIG = {
