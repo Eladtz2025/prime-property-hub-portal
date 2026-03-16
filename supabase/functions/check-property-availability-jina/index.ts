@@ -173,12 +173,15 @@ async function checkSingleProperty(
     setTimeout(() => reject(new Error('PROPERTY_TIMEOUT')), timeoutMs)
   );
   
-  const checkPromise = checkWithJina(
-    property.source_url,
-    property.source,
-    settings.firecrawl_max_retries,
-    settings.firecrawl_retry_delay_ms
-  ).then(result => ({ id: property.id, ...result }));
+  // Route Madlan through Direct Fetch, others through Jina
+  const checkPromise = property.source === 'madlan'
+    ? checkMadlanDirect(property.source_url).then(result => ({ id: property.id, ...result }))
+    : checkWithJina(
+        property.source_url,
+        property.source,
+        settings.firecrawl_max_retries,
+        settings.firecrawl_retry_delay_ms
+      ).then(result => ({ id: property.id, ...result }));
   
   try {
     return await Promise.race([checkPromise, timeoutPromise]);
