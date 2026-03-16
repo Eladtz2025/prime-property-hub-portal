@@ -434,27 +434,6 @@ export const ChecksDashboard: React.FC = () => {
 
       {/* Process Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {/* Scans */}
-        <ProcessCard
-          title="סריקות"
-          icon={<Search className="h-4 w-4 text-orange-600" />}
-          iconColor="bg-orange-100 dark:bg-orange-900/30"
-          status={isScanRunning ? 'running' : lastScanRun ? 'completed' : 'idle'}
-          statusText={isScanRunning ? 'סריקה פעילה...' : lastScanRun ? `${lastScanRun.properties_found ?? 0} נמצאו, ${lastScanRun.new_properties ?? 0} חדשים` : 'לא הופעל'}
-          metrics={[
-            { label: 'מקור', value: lastScanRun?.source || '—' },
-            { label: 'נמצאו', value: lastScanRun?.properties_found ?? 0 },
-            { label: 'configs פעילים', value: activeConfigs ?? 0 },
-          ]}
-          lastRun={formatLastRun(lastScanRun?.started_at, lastScanRun?.completed_at)}
-          historyContent={<ScoutRunHistory />}
-          settingsContent={<UnifiedScoutSettings />}
-          historyTitle="היסטוריית סריקות"
-          settingsTitle="הגדרות סריקה"
-          enabled={processFlags?.process_scans ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
 
         {/* Scans Jina */}
         <ProcessCard
