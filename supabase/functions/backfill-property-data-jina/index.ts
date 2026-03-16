@@ -2,6 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { detectBrokerFromMarkdown } from '../_shared/broker-detection.ts';
 import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 import { isProcessEnabled } from '../_shared/process-flags.ts';
+import { getNeighborhoodConfig } from '../_shared/locations.ts';
+import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -600,6 +602,62 @@ Deno.serve(async (req) => {
         if (!prop.city && extracted.city) { updates.city = extracted.city; batchStats.fields_updated.city++; }
         if (!prop.floor && extracted.floor !== undefined) { updates.floor = extracted.floor; batchStats.fields_updated.floor++; }
         if (!prop.neighborhood && extracted.neighborhood) { updates.neighborhood = extracted.neighborhood; batchStats.fields_updated.neighborhood++; }
+        
+        // Neighborhood fallback: if still no neighborhood, try resolving from address
+        if (!prop.neighborhood && !extracted.neighborhood && prop.address) {
+          let resolvedNeighborhood: string | null = null;
+          
+          // 1. Try extracting from comma part (Madlan-style: "רחוב 27, שכונה")
+          if (prop.address.includes(',')) {
+            const commaPart = prop.address.split(',')[1]?.trim();
+            if (commaPart && commaPart.length >= 2 && !/^\d+$/.test(commaPart)) {
+              const config = getNeighborhoodConfig(commaPart, prop.city || 'תל אביב יפו');
+              if (config) {
+                resolvedNeighborhood = config.value;
+                console.log(`🏘️ Neighborhood from address comma: "${commaPart}" → ${config.value}`);
+              } else {
+                // Try normalizeNeighborhoodToValue as fallback for patterns
+                const normalized = normalizeNeighborhoodToValue(commaPart);
+                if (normalized && normalized !== commaPart.replace(/\s+/g, '_')) {
+                  resolvedNeighborhood = normalized;
+                  console.log(`🏘️ Neighborhood from pattern: "${commaPart}" → ${normalized}`);
+                }
+              }
+            }
+          }
+          
+          // 2. If still not found, try street_neighborhoods table lookup
+          if (!resolvedNeighborhood) {
+            const streetName = prop.address.split(',')[0]
+              ?.replace(/^\d+\s*/g, '')
+              ?.replace(/\s*\d+.*$/g, '')
+              ?.trim();
+            
+            if (streetName && streetName.length >= 2) {
+              const { data: streetMatch } = await supabase
+                .from('street_neighborhoods')
+                .select('neighborhood')
+                .eq('city', prop.city || 'תל אביב יפו')
+                .ilike('street_name', streetName)
+                .order('confidence', { ascending: false })
+                .limit(1)
+                .single();
+              
+              if (streetMatch?.neighborhood) {
+                const normalized = normalizeNeighborhoodToValue(streetMatch.neighborhood);
+                if (normalized) {
+                  resolvedNeighborhood = normalized;
+                  console.log(`🏘️ Neighborhood from street lookup: "${streetName}" → ${normalized}`);
+                }
+              }
+            }
+          }
+          
+          if (resolvedNeighborhood) {
+            updates.neighborhood = resolvedNeighborhood;
+            batchStats.fields_updated.neighborhood++;
+          }
+        }
         
         // Address enrichment
         if (prop.address && !hasHouseNumber(prop.address)) {
