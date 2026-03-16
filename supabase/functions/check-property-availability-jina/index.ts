@@ -252,7 +252,9 @@ serve(async (req) => {
       properties,
       concurrencyLimit,
       settings,
-      globalAbortController.signal
+      globalAbortController.signal,
+      supabase,
+      runId
     );
 
     clearTimeout(globalTimeoutId);

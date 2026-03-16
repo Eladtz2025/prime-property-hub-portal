@@ -297,7 +297,7 @@ serve(async (req) => {
 
     const shouldSelfChain = !finalStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
 
-    if (!wasStopped) {
+    if (!finalStopped) {
       await supabase
         .from('availability_check_runs')
         .update({
@@ -310,7 +310,7 @@ serve(async (req) => {
         .eq('id', runId);
     }
 
-    if (wasStopped) {
+    if (finalStopped) {
       console.log('🛑 Run was stopped by user, not self-chaining');
     } else if (shouldSelfChain) {
       console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
