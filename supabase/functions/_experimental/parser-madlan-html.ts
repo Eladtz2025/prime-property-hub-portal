@@ -258,11 +258,13 @@ function parseHtmlCard(cardHtml: string, propertyType: 'rent' | 'sale'): ParsedP
     }
   }
   
-  // Clean address - remove city suffix
+  // Clean address - remove city suffix, property type prefix, and trailing HTML
   if (address) {
     address = address
+      .replace(/<[^>]*$/g, '')  // Remove trailing broken HTML tags (e.g., "<div")
       .replace(/,?\s*תל[\s-]אביב.*$/i, '')
       .replace(/,?\s*ישראל\s*$/i, '')
+      .replace(/^(דירה|דירת\s*גן|פנטהאוז|מיני\s*פנטהאוז|בית\s*פרטי|סטודיו|דופלקס|משרד|חנות)\s*,\s*/i, '')
       .trim();
   }
   
