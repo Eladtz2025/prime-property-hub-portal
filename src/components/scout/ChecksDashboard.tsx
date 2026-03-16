@@ -409,8 +409,7 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const isAvailRunning = lastAvailRun?.status === 'running';
-  const isScanRunning = lastScanRun?.status === 'running';
+  const isScanJinaRunning = lastScanRunJina?.status === 'running';
   const isScanJinaRunning = lastScanRunJina?.status === 'running';
   const isMatchRunning = matchStats?.status === 'running';
 
