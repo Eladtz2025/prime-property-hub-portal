@@ -90,7 +90,7 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🟠 scout-madlan-jina: Page ${page} for run ${runId}`);
+  console.log(`🟠 scout-madlan-direct: Page ${page} for run ${runId}`);
 
   try {
     if (await isRunStopped(supabase, runId)) {
