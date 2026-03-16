@@ -592,9 +592,9 @@ export const ChecksDashboard: React.FC = () => {
         />
 
 
-        {/* Backfill Jina */}
+        {/* Backfill (Jina) */}
         <ProcessCard
-          title="השלמת נתונים 2 (Jina)"
+          title="השלמת נתונים"
           icon={<Database className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
