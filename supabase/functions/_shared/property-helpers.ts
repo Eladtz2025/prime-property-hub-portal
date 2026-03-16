@@ -255,16 +255,11 @@ export async function saveProperty(
     return { isNew: false, skipped: true };
   }
   
-  // Filter out invalid price listings
+  // Filter out low-price listings (parking spots, storage, etc.)
   if (property.price) {
     const minPrice = property.property_type === 'rent' ? MIN_RENT_PRICE : MIN_SALE_PRICE;
     if (property.price < minPrice) {
       console.log(`🚫 Skipping low-price property: ${property.price} ₪ (min: ${minPrice})`);
-      return { isNew: false, skipped: true };
-    }
-    // Filter high-price rent listings (likely misclassified sale properties)
-    if (property.property_type === 'rent' && property.price > MAX_RENT_PRICE) {
-      console.log(`🚫 Skipping high-price rent property: ${property.price} ₪ (max: ${MAX_RENT_PRICE})`);
       return { isNew: false, skipped: true };
     }
   }
