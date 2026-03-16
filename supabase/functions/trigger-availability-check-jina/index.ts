@@ -189,6 +189,19 @@ serve(async (req) => {
 
     for (let i = 0; i < batchesToProcess; i++) {
       const batch = batches[i];
+
+      // Check if run was stopped between batches
+      if (i > 0) {
+        const { data: midCheck } = await supabase
+          .from('availability_check_runs')
+          .select('status')
+          .eq('id', runId)
+          .single();
+        if (midCheck?.status === 'stopped') {
+          console.log(`🛑 Run stopped by user before batch ${i + 1}. Exiting.`);
+          break;
+        }
+      }
       
       console.log(`🚀 Processing batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
       
