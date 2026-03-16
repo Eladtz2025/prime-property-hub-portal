@@ -124,7 +124,7 @@ serve(async (req) => {
     let totalNew = 0;
     let urlsFailed = 0;
 
-    console.log(`🟠 Madlan-Jina page ${page}: ${urls.length} URL(s) to scrape`);
+    console.log(`🟠 Madlan-Direct page ${page}: ${urls.length} URL(s) to scrape`);
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
