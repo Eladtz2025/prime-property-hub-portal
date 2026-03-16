@@ -290,7 +290,7 @@ serve(async (req) => {
       console.log('🛑 Run was stopped by user, not self-chaining');
     } else if (shouldSelfChain) {
       console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
-      await sleep(10000);
+      await sleep(3000);
       // Self-chain to THIS function (Jina version)
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check-jina`, {
         method: 'POST',
