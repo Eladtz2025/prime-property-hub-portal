@@ -284,9 +284,20 @@ serve(async (req) => {
       console.log('⏩ Manual run — skipping schedule_end_time check');
     }
 
-    const shouldSelfChain = !wasStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
-
+    // Re-check stopped status right before deciding to self-chain
+    let finalStopped = wasStopped;
     if (!wasStopped) {
+      const { data: finalCheck } = await supabase
+        .from('availability_check_runs')
+        .select('status')
+        .eq('id', runId)
+        .single();
+      finalStopped = finalCheck?.status === 'stopped';
+    }
+
+    const shouldSelfChain = !finalStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
+
+    if (!finalStopped) {
       await supabase
         .from('availability_check_runs')
         .update({
@@ -299,7 +310,7 @@ serve(async (req) => {
         .eq('id', runId);
     }
 
-    if (wasStopped) {
+    if (finalStopped) {
       console.log('🛑 Run was stopped by user, not self-chaining');
     } else if (shouldSelfChain) {
       console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
