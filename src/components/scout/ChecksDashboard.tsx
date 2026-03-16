@@ -16,10 +16,8 @@ import { ScoutRunHistory } from './ScoutRunHistory';
 import { AvailabilityHistorySection } from './checks/AvailabilityHistorySection';
 import { DeduplicationStatus } from './checks/DeduplicationStatus';
 import { MatchingStatus } from './checks/MatchingStatus';
-import { BackfillStatus } from './checks/BackfillStatus';
 import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
-import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 
