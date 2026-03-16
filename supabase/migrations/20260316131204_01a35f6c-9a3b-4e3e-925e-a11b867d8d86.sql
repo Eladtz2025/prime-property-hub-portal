@@ -1,0 +1,1 @@
+UPDATE scouted_properties SET is_active = false, status = 'inactive' WHERE source = 'madlan' AND property_type = 'rent' AND is_active = true AND price > 30000;
