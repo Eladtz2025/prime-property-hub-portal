@@ -196,7 +196,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`scout-madlan-jina page ${page} error:`, error);
+    console.error(`scout-madlan-direct page ${page} error:`, error);
     await updatePageStatus(supabase, runId, page, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error', duration_ms: Date.now() - pageStartTime });
     if (maxPages) await chainNextPage(supabaseUrl, supabaseServiceKey, createClient(supabaseUrl, supabaseServiceKey), configId!, page, runId, maxPages, startPage, isRetry, retryPages);
     return new Response(JSON.stringify({ success: false, page, error: error instanceof Error ? error.message : 'Unknown error' }), {
