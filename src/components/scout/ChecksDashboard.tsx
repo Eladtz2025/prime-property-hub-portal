@@ -492,9 +492,9 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'ניסוי: אותה לוגיקת בדיקת זמינות, אבל עם Jina AI Reader במקום Firecrawl.',
-                'משתמש ב-r.jina.ai לסריקת דפים ובודק אותם מחרוזות הסרה בדיוק כמו המערכת המקורית.',
-                'זיהוי skeleton למדלן: תוכן קצר מ-1000 תווים מסומן כ-retryable.',
+                'בודקת האם דירות שנסרקו עדיין קיימות באתר המקור באמצעות Jina AI Reader.',
+                'שלב 1: בדיקת HEAD מהירה — מזהה 404, הפניות לעמוד ראשי, ושגיאות שרת.',
+                'שלב 2: סריקת Jina — בודקת סימני נכס (₪, חדרים, מ"ר). אם כן — אקטיבי. אם לא — מסומן כלא פעיל.',
               ]} />
               <ScheduleTimeEditor
                 category="availability"
