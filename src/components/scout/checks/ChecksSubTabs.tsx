@@ -4,7 +4,7 @@ import { History, Shield, Copy, Users, Database } from 'lucide-react';
 import { ScoutRunHistory } from '../ScoutRunHistory';
 import { DeduplicationStatus } from './DeduplicationStatus';
 import { MatchingStatus } from './MatchingStatus';
-import { BackfillStatus } from './BackfillStatus';
+
 
 // Import the availability run history + results section from AvailabilityCheckDashboard
 // We'll create a lightweight wrapper that shows just the collapsibles
