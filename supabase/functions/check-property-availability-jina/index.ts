@@ -54,6 +54,15 @@ async function checkMadlanDirect(
     });
     clearTimeout(timeoutId);
 
+    // Check for URL redirect BEFORE reading body
+    // When Madlan removes a listing, it returns 200 but redirects to homepage/search
+    const finalUrl = response.url;
+    const wasRedirected = finalUrl && finalUrl !== url && !finalUrl.includes('/listings/');
+    if (wasRedirected) {
+      console.log(`🚫 Madlan-Direct redirect detected: ${url} → ${finalUrl}`);
+      return { isInactive: true, reason: 'listing_removed_redirect' };
+    }
+
     if (!response.ok) {
       // 404/410 = listing removed
       if (response.status === 404 || response.status === 410) {
@@ -79,16 +88,13 @@ async function checkMadlanDirect(
 
     const isMadlanListingUrl = url.includes('/listings/');
 
-    // Check for homepage redirect (listing removed → redirected to homepage)
-    if (isMadlanListingUrl && isMadlanHomepage(html)) {
-      console.log(`🚫 Madlan-Direct homepage redirect for ${url} (${html.length} chars)`);
-      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
-    }
-
-    // Check for search results redirect
-    if (isMadlanListingUrl && isMadlanSearchResultsPage(html)) {
-      console.log(`🚫 Madlan-Direct search-results redirect for ${url} (${html.length} chars)`);
-      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
+    // Homepage redirect detection via HTML size.
+    // Active listing pages: ~90K chars (compact SSR).
+    // Homepage (removed listing redirect): ~2M chars (full app bundle + all components).
+    // Threshold 500K is very conservative (5x active, 4x below homepage).
+    if (isMadlanListingUrl && html.length > 500000) {
+      console.log(`🚫 Madlan-Direct homepage redirect detected via size for ${url} (${html.length} chars >> 500K threshold)`);
+      return { isInactive: true, reason: 'listing_removed_homepage_size' };
     }
 
     console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
