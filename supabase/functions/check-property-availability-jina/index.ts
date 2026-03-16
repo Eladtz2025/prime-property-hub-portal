@@ -55,6 +55,10 @@ async function checkWithJina(
       'X-No-Cache': 'true',
     };
 
+    if (source === 'madlan') {
+      headers['X-Proxy-Country'] = 'IL';
+    }
+
     const response = await fetch(`https://r.jina.ai/${url}`, {
       method: 'GET',
       headers,
