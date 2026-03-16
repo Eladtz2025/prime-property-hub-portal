@@ -58,7 +58,7 @@ const ReasonBadge: React.FC<{ reason: string | null }> = ({ reason }) => {
     content_ok: { className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: '✓ אקטיבי' },
     listing_removed_indicator: { className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', label: 'הוסר' },
     per_property_timeout: { className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400', label: 'Timeout' },
-    firecrawl_failed_after_retries: { className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', label: 'Firecrawl נכשל' },
+    firecrawl_failed_after_retries: { className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', label: 'סריקה נכשלה' },
     short_removal_page_suspicious: { className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'חשוד' },
     no_indicators_keeping_active: { className: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', label: 'ללא אינדיקטורים' },
   };
