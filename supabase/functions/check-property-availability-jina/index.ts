@@ -88,17 +88,13 @@ async function checkMadlanDirect(
 
     const isMadlanListingUrl = url.includes('/listings/');
 
-    // Fallback: check if HTML has listing-specific content
-    // Real listing pages have data-auto="price" or data-auto="address" attributes
-    // Homepage/search pages don't have these
-    if (isMadlanListingUrl) {
-      const hasListingContent = html.includes('data-auto="price"') || 
-                                html.includes('data-auto="unitPayment"') ||
-                                html.includes('data-auto="address"');
-      if (!hasListingContent && html.length > 5000) {
-        console.log(`🚫 Madlan-Direct no listing content found for ${url} (${html.length} chars)`);
-        return { isInactive: true, reason: 'listing_removed_no_listing_content' };
-      }
+    // Homepage redirect detection via HTML size.
+    // Active listing pages: ~90K chars (compact SSR).
+    // Homepage (removed listing redirect): ~2M chars (full app bundle + all components).
+    // Threshold 500K is very conservative (5x active, 4x below homepage).
+    if (isMadlanListingUrl && html.length > 500000) {
+      console.log(`🚫 Madlan-Direct homepage redirect detected via size for ${url} (${html.length} chars >> 500K threshold)`);
+      return { isInactive: true, reason: 'listing_removed_homepage_size' };
     }
 
     console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
