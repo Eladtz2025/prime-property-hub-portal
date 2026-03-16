@@ -121,11 +121,27 @@ async function checkSingleProperty(
   }
 }
 
+async function isRunStopped(supabase: any, runId: string | null): Promise<boolean> {
+  if (!runId) return false;
+  try {
+    const { data } = await supabase
+      .from('availability_check_runs')
+      .select('status')
+      .eq('id', runId)
+      .single();
+    return data?.status === 'stopped';
+  } catch {
+    return false;
+  }
+}
+
 async function processPropertiesInParallel(
   properties: PropertyToCheck[],
   concurrencyLimit: number,
   settings: any,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
+  supabase: any,
+  runId: string | null
 ): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
   const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
@@ -137,6 +153,12 @@ async function processPropertiesInParallel(
   for (let i = 0; i < properties.length; i += parallelism) {
     if (abortSignal.aborted) {
       console.log(`⏱️ Global timeout reached, stopping after ${results.length} results`);
+      break;
+    }
+
+    // Check if run was stopped before each mini-batch
+    if (await isRunStopped(supabase, runId)) {
+      console.log(`🛑 Run ${runId} stopped by user, halting after ${results.length} properties`);
       break;
     }
     
