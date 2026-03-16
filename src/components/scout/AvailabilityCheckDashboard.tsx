@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useUpdateScoutSetting } from '@/hooks/useScoutSettings';
 import { AvailabilityRunDetails } from './availability/AvailabilityRunDetails';
-import { AvailabilityActions } from './availability/AvailabilityActions';
+
 import { AvailabilityLiveFeed } from './availability/AvailabilityLiveFeed';
 import { Json } from '@/integrations/supabase/types';
 
@@ -92,7 +92,7 @@ const ReasonBadge: React.FC<{ reason: string | null }> = ({ reason }) => {
     content_ok: { className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: '✓ אקטיבי' },
     listing_removed_indicator: { className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', label: 'הוסר' },
     per_property_timeout: { className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400', label: 'Timeout' },
-    firecrawl_failed_after_retries: { className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', label: 'Firecrawl נכשל' },
+    firecrawl_failed_after_retries: { className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', label: 'סריקה נכשלה' },
     short_removal_page_suspicious: { className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'חשוד' },
     no_indicators_keeping_active: { className: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', label: 'ללא אינדיקטורים' },
   };
@@ -245,7 +245,6 @@ export const AvailabilityCheckDashboard: React.FC = () => {
   const settingLabels: Record<string, string> = {
     batch_size: 'גודל אצווה', concurrency_limit: 'מקביליות', daily_limit: 'מכסה יומית',
     delay_between_batches_ms: 'השהייה בין אצוות (ms)', delay_between_requests_ms: 'השהייה בין בקשות (ms)',
-    firecrawl_max_retries: 'ניסיונות Firecrawl', firecrawl_retry_delay_ms: 'השהייה ניסיונות (ms)',
     get_timeout_ms: 'Timeout GET (ms)', head_timeout_ms: 'Timeout HEAD (ms)',
     min_days_before_check: 'ימים לפני בדיקה ראשונה', per_property_timeout_ms: 'Timeout לנכס (ms)',
     recheck_interval_days: 'ימים בין בדיקות',
@@ -264,8 +263,6 @@ export const AvailabilityCheckDashboard: React.FC = () => {
           color={isRunning ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'} />
       </div>
 
-      {/* Quick Actions */}
-      <AvailabilityActions />
 
       {/* Live Feed - only shows when a run is active */}
       <AvailabilityLiveFeed />
@@ -369,7 +366,7 @@ export const AvailabilityCheckDashboard: React.FC = () => {
                     <SelectItem value="content_ok">✓ אקטיבי</SelectItem>
                     <SelectItem value="listing_removed_indicator">הוסר</SelectItem>
                     <SelectItem value="per_property_timeout">Timeout</SelectItem>
-                    <SelectItem value="firecrawl_failed_after_retries">Firecrawl נכשל</SelectItem>
+                    <SelectItem value="firecrawl_failed_after_retries">סריקה נכשלה</SelectItem>
                     <SelectItem value="no_indicators_keeping_active">ללא אינדיקטורים</SelectItem>
                     <SelectItem value="short_removal_page_suspicious">חשוד</SelectItem>
                   </SelectContent>

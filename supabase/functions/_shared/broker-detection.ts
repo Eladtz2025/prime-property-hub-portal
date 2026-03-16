@@ -67,7 +67,7 @@ export function normalizeCityName(city: string | undefined): string | undefined 
 }
 
 // ============================================
-// Deep Broker Detection (from Firecrawl markdown)
+// Deep Broker Detection (from scraped markdown)
 // ============================================
 
 /**

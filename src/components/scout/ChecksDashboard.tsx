@@ -16,10 +16,8 @@ import { ScoutRunHistory } from './ScoutRunHistory';
 import { AvailabilityHistorySection } from './checks/AvailabilityHistorySection';
 import { DeduplicationStatus } from './checks/DeduplicationStatus';
 import { MatchingStatus } from './checks/MatchingStatus';
-import { BackfillStatus } from './checks/BackfillStatus';
 import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
-import { useBackfillProgress } from '@/hooks/useBackfillProgress';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 
@@ -64,7 +62,6 @@ const AvailabilitySettingsContent: React.FC = () => {
   const settingLabels: Record<string, string> = {
     batch_size: 'גודל אצווה', concurrency_limit: 'מקביליות', daily_limit: 'מכסה יומית',
     delay_between_batches_ms: 'השהייה בין אצוות (ms)', delay_between_requests_ms: 'השהייה בין בקשות (ms)',
-    firecrawl_max_retries: 'ניסיונות Firecrawl', firecrawl_retry_delay_ms: 'השהייה ניסיונות (ms)',
     get_timeout_ms: 'Timeout GET (ms)', head_timeout_ms: 'Timeout HEAD (ms)',
     min_days_before_check: 'ימים לפני בדיקה ראשונה', per_property_timeout_ms: 'Timeout לנכס (ms)',
     recheck_interval_days: 'ימים בין בדיקות (ישן)',
@@ -102,8 +99,8 @@ const AvailabilitySettingsContent: React.FC = () => {
 
 export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
-  const backfill = useBackfillProgress();
   const backfillJina = useBackfillProgressJina();
+
 
   // Process kill switches (feature flags)
   const { data: processFlags } = useQuery({
@@ -210,15 +207,6 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 10000,
   });
 
-  // Last scan run (firecrawl or legacy null)
-  const { data: lastScanRun } = useQuery({
-    queryKey: ['scan-last-run'],
-    queryFn: async () => {
-      const { data } = await (supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source') as any).or('scanner.is.null,scanner.eq.firecrawl').order('started_at', { ascending: false }).limit(1).maybeSingle();
-      return data;
-    },
-    refetchInterval: 10000,
-  });
 
   // Last scan run (Jina)
   const { data: lastScanRunJina } = useQuery({
@@ -420,9 +408,8 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const isAvailRunning = lastAvailRun?.status === 'running';
-  const isScanRunning = lastScanRun?.status === 'running';
   const isScanJinaRunning = lastScanRunJina?.status === 'running';
+  const isAvailRunning = lastAvailRun?.status === 'running';
   const isMatchRunning = matchStats?.status === 'running';
 
   const formatDuration = (started: string, completed: string | null) => {
@@ -446,27 +433,6 @@ export const ChecksDashboard: React.FC = () => {
 
       {/* Process Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {/* Scans */}
-        <ProcessCard
-          title="סריקות"
-          icon={<Search className="h-4 w-4 text-orange-600" />}
-          iconColor="bg-orange-100 dark:bg-orange-900/30"
-          status={isScanRunning ? 'running' : lastScanRun ? 'completed' : 'idle'}
-          statusText={isScanRunning ? 'סריקה פעילה...' : lastScanRun ? `${lastScanRun.properties_found ?? 0} נמצאו, ${lastScanRun.new_properties ?? 0} חדשים` : 'לא הופעל'}
-          metrics={[
-            { label: 'מקור', value: lastScanRun?.source || '—' },
-            { label: 'נמצאו', value: lastScanRun?.properties_found ?? 0 },
-            { label: 'configs פעילים', value: activeConfigs ?? 0 },
-          ]}
-          lastRun={formatLastRun(lastScanRun?.started_at, lastScanRun?.completed_at)}
-          historyContent={<ScoutRunHistory />}
-          settingsContent={<UnifiedScoutSettings />}
-          historyTitle="היסטוריית סריקות"
-          settingsTitle="הגדרות סריקה"
-          enabled={processFlags?.process_scans ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
 
         {/* Scans Jina */}
         <ProcessCard
@@ -489,7 +455,7 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'אותה מערכת סריקות כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
+                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס באמצעות Jina AI Reader.',
                 'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
                 'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
               ]} />
@@ -503,56 +469,14 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-        {/* Availability */}
+
+        {/* Availability (Jina) */}
         <ProcessCard
           title="בדיקת זמינות"
-          icon={<Shield className="h-4 w-4 text-blue-600" />}
-          iconColor="bg-blue-100 dark:bg-blue-900/30"
-          status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
-            { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
-            { label: 'Timeouts', value: stats?.timeouts ?? 0 },
-          ]}
-          lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
-          onRun={() => triggerAvailability.mutate()}
-          onStop={() => stopAvailability.mutate()}
-          isRunPending={triggerAvailability.isPending}
-          isStopPending={stopAvailability.isPending}
-          historyContent={<AvailabilityHistorySection />}
-          settingsContent={
-            <div className="space-y-6">
-              <LogicDescription lines={[
-                'בודקת האם דירות שנסרקו עדיין קיימות באתר המקור (לא משלימה נתונים — לשם כך קיים תהליך השלמת הנתונים).',
-                'שלב 1: בדיקת HEAD מהירה (3 שניות) — מזהה 404, הפניות לעמוד ראשי, ושגיאות שרת.',
-                'שלב 2: סריקת Firecrawl — בודקת האם בדף קיימים סימני נכס (₪, חדרים, מ"ר). אם כן — הנכס אקטיבי. אם לא ונמצאו סימני הסרה — מסומן כלא פעיל.',
-                'לוגיקת recheck חכמה: נכסים חדשים (פחות מ-3 ימים) לא נבדקים כלל. בדיקה ראשונה רק אחרי 3 ימים, recheck ראשון אחרי 8 ימים, rechecks חוזרים כל 2 ימים.',
-                'מכסה יומית מוגדרת למניעת עומס.',
-              ]} />
-              <ScheduleTimeEditor
-                category="availability"
-                cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת בדיקת זמינות"
-                showEndTime
-              />
-              <AvailabilitySettingsContent />
-            </div>
-          }
-          historyTitle="היסטוריית בדיקות זמינות"
-          settingsTitle="הגדרות בדיקת זמינות"
-          enabled={processFlags?.process_availability ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
-
-        {/* Availability Jina */}
-        <ProcessCard
-          title="בדיקת זמינות 2 (Jina)"
           icon={<Shield className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
-          status={isAvailRunning ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          statusText={isAvailRunning ? 'בודק זמינות (Jina)...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
+          status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
+          statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
           metrics={[
             { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
             { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
@@ -567,9 +491,9 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'ניסוי: אותה לוגיקת בדיקת זמינות, אבל עם Jina AI Reader במקום Firecrawl.',
-                'משתמש ב-r.jina.ai לסריקת דפים ובודק אותם מחרוזות הסרה בדיוק כמו המערכת המקורית.',
-                'זיהוי skeleton למדלן: תוכן קצר מ-1000 תווים מסומן כ-retryable.',
+                'בודקת האם דירות שנסרקו עדיין קיימות באתר המקור באמצעות Jina AI Reader.',
+                'שלב 1: בדיקת HEAD מהירה — מזהה 404, הפניות לעמוד ראשי, ושגיאות שרת.',
+                'שלב 2: סריקת Jina — בודקת סימני נכס (₪, חדרים, מ"ר). אם כן — אקטיבי. אם לא — מסומן כלא פעיל.',
               ]} />
               <ScheduleTimeEditor
                 category="availability"
@@ -666,49 +590,10 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-        {/* Backfill */}
+
+        {/* Backfill (Jina) */}
         <ProcessCard
           title="השלמת נתונים"
-          icon={<Database className="h-4 w-4 text-emerald-600" />}
-          iconColor="bg-emerald-100 dark:bg-emerald-900/30"
-          status={backfill.isRunning ? 'running' : backfill.progress?.status === 'completed' ? 'completed' : 'idle'}
-          statusText={backfill.isRunning ? `${backfill.progress?.processed_items ?? 0}/${backfill.progress?.total_items ?? '?'}` : backfill.progress?.status === 'completed' ? 'הושלם' : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: backfillRemaining ?? 0 },
-            { label: 'הצלחות', value: backfill.progress?.successful_items ?? 0 },
-            { label: 'כשלונות', value: backfill.progress?.failed_items ?? 0 },
-          ]}
-          onRun={backfill.start}
-          onStop={backfill.stop}
-          isRunPending={backfill.isStarting}
-          isStopPending={backfill.isStopping}
-          historyContent={<BackfillStatus />}
-          settingsContent={
-            <div className="space-y-6">
-              <LogicDescription lines={[
-                'משלים נתונים חסרים לדירות שנסרקו באמצעות Firecrawl (סריקת עמוד המקור).',
-                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
-                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features (מרפסת, מעלית, חנייה, ממ"ד), ומספר בית.',
-                'כל נכס שהושלם בהצלחה מסומן completed. נכשלים מסומנים failed ויטופלו שוב בריצה הבאה.',
-              ]} />
-              <ScheduleTimeEditor
-                category="backfill"
-                cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת השלמת נתונים"
-                showEndTime
-              />
-            </div>
-          }
-          historyTitle="היסטוריית השלמת נתונים"
-          settingsTitle="הגדרות השלמת נתונים"
-          enabled={processFlags?.process_backfill ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
-
-        {/* Backfill Jina */}
-        <ProcessCard
-          title="השלמת נתונים 2 (Jina)"
           icon={<Database className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
@@ -727,8 +612,8 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'אותה לוגיקת השלמת נתונים כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
-                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features, ומספר בית.',
+                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader (סריקת עמוד המקור).',
+                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
                 'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).',
               ]} />
             </div>
