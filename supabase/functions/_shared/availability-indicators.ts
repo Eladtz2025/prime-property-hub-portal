@@ -31,6 +31,49 @@ const MADLAN_HOMEPAGE_INDICATORS = [
   'חיפושים פופולריים · פרויקטים חדשים',
 ];
 
+const MADLAN_BLOCK_INDICATORS = [
+  'סליחה על ההפרעה',
+  'משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט',
+  'אנא השלם את החידה שלפניך לקבלת גישה מיידית למדלן',
+  'Checking your browser',
+  'enable JavaScript',
+  'Cloudflare',
+  'Access denied',
+  'error 403',
+];
+
+const MADLAN_SEARCH_RESULTS_INDICATORS = [
+  'מיינו לפי: רלוונטיות',
+  'מסננים נוספים',
+  'שמירת חיפוש',
+];
+
+const MADLAN_AREA_PAGE_INDICATORS = [
+  'הכירו את העיר',
+  'הכירו את השכונה',
+];
+
+function hasMadlanListingSpecificContent(content: string): boolean {
+  if (!content) return false;
+
+  const listingIndicators = [
+    'דירה להשכרה:',
+    'דירה למכירה:',
+    'דירת גן להשכרה:',
+    'דירת גן למכירה:',
+    'פנטהאוז להשכרה:',
+    'פנטהאוז למכירה:',
+    'בית פרטי להשכרה:',
+    'בית פרטי למכירה:',
+    'דו משפחתי',
+    'משרד להשכרה:',
+    'משרד למכירה:',
+    'לכל התמונות',
+  ];
+
+  return listingIndicators.some((indicator) => content.includes(indicator));
+}
+
 /**
  * Check if content indicates the listing was removed
  */
@@ -49,37 +92,56 @@ export function isListingRemoved(content: string): boolean {
 }
 
 /**
+ * Check if Madlan returned a bot-block / captcha page.
+ */
+export function isMadlanBlocked(content: string): boolean {
+  if (!content) return false;
+
+  const lowerContent = content.toLowerCase();
+
+  for (const indicator of MADLAN_BLOCK_INDICATORS) {
+    if (lowerContent.includes(indicator.toLowerCase())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Check if content is Madlan's homepage (redirect from removed listing)
  * Must match homepage indicators AND NOT contain listing-specific content
  */
 export function isMadlanHomepage(content: string): boolean {
-  if (!content) return false;
+  if (!content || hasMadlanListingSpecificContent(content)) return false;
   
-  // If the page has listing-specific content, it's NOT a homepage redirect
-  const listingIndicators = [
-    'דירה להשכרה:',
-    'דירה למכירה:',
-    'דירת גן להשכרה:',
-    'דירת גן למכירה:',
-    'פנטהאוז להשכרה:',
-    'פנטהאוז למכירה:',
-    'בית פרטי להשכרה:',
-    'בית פרטי למכירה:',
-    'דו משפחתי',
-    'משרד להשכרה:',
-    'משרד למכירה:',
-  ];
-  
-  for (const indicator of listingIndicators) {
-    if (content.includes(indicator)) {
-      return false; // It's a real listing page, not homepage
-    }
-  }
-  
-  // Only then check for homepage indicators
   let count = 0;
   for (const indicator of MADLAN_HOMEPAGE_INDICATORS) {
     if (content.includes(indicator)) count++;
   }
   return count >= 2;
+}
+
+/**
+ * Check if content is a Madlan search-results page.
+ * This usually means a removed listing redirected to a generic area/filter results page.
+ */
+export function isMadlanSearchResultsPage(content: string): boolean {
+  if (!content || hasMadlanListingSpecificContent(content)) return false;
+
+  const hasResultsHeading =
+    /(^|\n)#\s*דירות[^\n#]{0,120}(למכירה|להשכרה)/m.test(content) ||
+    /(^|\n)##\s*\d+\s+דירות\s+(למכירה|להשכרה)/m.test(content);
+
+  const resultsIndicatorCount = MADLAN_SEARCH_RESULTS_INDICATORS.filter((indicator) =>
+    content.includes(indicator)
+  ).length;
+
+  const hasAreaIntro = MADLAN_AREA_PAGE_INDICATORS.some((indicator) =>
+    content.includes(indicator)
+  );
+
+  const listingsLinksCount = (content.match(/https:\/\/www\.madlan\.co\.il\/listings\//g) || []).length;
+
+  return hasResultsHeading && resultsIndicatorCount >= 2 && (hasAreaIntro || listingsLinksCount >= 2);
 }

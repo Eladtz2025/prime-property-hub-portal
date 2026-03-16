@@ -3,7 +3,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings } from "../_shared/settings.ts";
-import { isListingRemoved, isMadlanHomepage } from "../_shared/availability-indicators.ts";
+import {
+  isListingRemoved,
+  isMadlanBlocked,
+  isMadlanHomepage,
+  isMadlanSearchResultsPage,
+} from "../_shared/availability-indicators.ts";
 
 const GLOBAL_TIMEOUT_MS = 55000;
 
@@ -50,6 +55,10 @@ async function checkWithJina(
       'X-No-Cache': 'true',
     };
 
+    if (source === 'madlan') {
+      headers['X-Proxy-Country'] = 'IL';
+    }
+
     const response = await fetch(`https://r.jina.ai/${url}`, {
       method: 'GET',
       headers,
@@ -79,9 +88,21 @@ async function checkWithJina(
       return { isInactive: true, reason: 'listing_removed_indicator' };
     }
 
-    if (source === 'madlan' && isMadlanHomepage(markdown)) {
+    const isMadlanListingUrl = source === 'madlan' && url.includes('/listings/');
+
+    if (source === 'madlan' && isMadlanBlocked(markdown)) {
+      console.warn(`⚠️ Madlan blocked/captcha for ${url} (${markdown.length} chars)`);
+      return { isInactive: false, reason: 'madlan_blocked_retry' };
+    }
+
+    if (isMadlanListingUrl && isMadlanHomepage(markdown)) {
       console.log(`🚫 Madlan homepage redirect for ${url} (${markdown.length} chars)`);
       return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+    }
+
+    if (isMadlanListingUrl && isMadlanSearchResultsPage(markdown)) {
+      console.log(`🚫 Madlan search-results redirect for ${url} (${markdown.length} chars)`);
+      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
     }
 
     console.log(`✅ OK for ${url} (${markdown.length} chars)`);
@@ -267,11 +288,12 @@ serve(async (req) => {
     const detailedResults: any[] = [];
 
     const retryableReasons = new Set([
-      'per_property_timeout', 
-      'jina_failed_after_retries', 
+      'per_property_timeout',
+      'jina_failed_after_retries',
       'check_error',
       'short_content_keeping_active',
       'rate_limited',
+      'madlan_blocked_retry',
     ]);
 
     for (const result of results) {
