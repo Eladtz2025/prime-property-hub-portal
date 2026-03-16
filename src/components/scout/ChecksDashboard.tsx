@@ -297,17 +297,10 @@ export const ChecksDashboard: React.FC = () => {
   // Stop availability Jina
   const stopAvailabilityJina = useMutation({
     mutationFn: async () => {
-      const { error: e1 } = await supabase
-        .from('availability_check_runs')
-        .update({ status: 'stopped', completed_at: new Date().toISOString() })
-        .eq('status', 'running');
-      if (e1) throw e1;
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      await supabase
-        .from('availability_check_runs')
-        .update({ status: 'stopped' })
-        .eq('status', 'completed')
-        .gte('completed_at', fiveMinAgo);
+      const { data, error } = await supabase.functions.invoke('stop-availability-run', { body: {} });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to stop');
+      return data;
     },
     onSuccess: () => {
       toast.success('בדיקת זמינות (Jina) נעצרה');
