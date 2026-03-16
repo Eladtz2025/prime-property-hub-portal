@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { useBackfillProgress } from '@/hooks/useBackfillProgress';
+
 
 // Track which property is being checked for availability
 type CheckingPropertyId = string | null;
