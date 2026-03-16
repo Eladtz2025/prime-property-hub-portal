@@ -591,45 +591,6 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-        {/* Backfill */}
-        <ProcessCard
-          title="השלמת נתונים"
-          icon={<Database className="h-4 w-4 text-emerald-600" />}
-          iconColor="bg-emerald-100 dark:bg-emerald-900/30"
-          status={backfill.isRunning ? 'running' : backfill.progress?.status === 'completed' ? 'completed' : 'idle'}
-          statusText={backfill.isRunning ? `${backfill.progress?.processed_items ?? 0}/${backfill.progress?.total_items ?? '?'}` : backfill.progress?.status === 'completed' ? 'הושלם' : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: backfillRemaining ?? 0 },
-            { label: 'הצלחות', value: backfill.progress?.successful_items ?? 0 },
-            { label: 'כשלונות', value: backfill.progress?.failed_items ?? 0 },
-          ]}
-          onRun={backfill.start}
-          onStop={backfill.stop}
-          isRunPending={backfill.isStarting}
-          isStopPending={backfill.isStopping}
-          historyContent={<BackfillStatus />}
-          settingsContent={
-            <div className="space-y-6">
-              <LogicDescription lines={[
-                'משלים נתונים חסרים לדירות שנסרקו באמצעות Firecrawl (סריקת עמוד המקור).',
-                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
-                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features (מרפסת, מעלית, חנייה, ממ"ד), ומספר בית.',
-                'כל נכס שהושלם בהצלחה מסומן completed. נכשלים מסומנים failed ויטופלו שוב בריצה הבאה.',
-              ]} />
-              <ScheduleTimeEditor
-                category="backfill"
-                cronJobNames={[{ jobName: 'backfill-data-completion-job', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת השלמת נתונים"
-                showEndTime
-              />
-            </div>
-          }
-          historyTitle="היסטוריית השלמת נתונים"
-          settingsTitle="הגדרות השלמת נתונים"
-          enabled={processFlags?.process_backfill ?? true}
-          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill', enabled: v })}
-          isTogglePending={toggleFlag.isPending}
-        />
 
         {/* Backfill Jina */}
         <ProcessCard
