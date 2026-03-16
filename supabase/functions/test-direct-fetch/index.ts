@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { analyzeMadlanHtml } from "./analyze.ts";
+import { analyzeMadlanHtml, analyzeMadlanBrokerDetection } from "./analyze.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,9 +21,23 @@ serve(async (req) => {
   const page = body.page ?? 1;
   const city = body.city ?? 'תל-אביב-יפו-ישראל';
   const dealType = body.deal_type ?? 'for-rent';
-  const mode = body.mode ?? 'analyze'; // 'analyze' or 'strategies'
+  const mode = body.mode ?? 'analyze'; // 'analyze', 'broker-audit', or 'strategies'
 
   const baseUrl = `https://www.madlan.co.il/${dealType}/${encodeURIComponent(city)}?page=${page}`;
+
+  if (mode === 'broker-audit') {
+    // Broker detection diagnostic - detailed per-card analysis
+    const response = await fetch(baseUrl, {
+      method: 'GET',
+      headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
+    });
+    const html = await response.text();
+    const audit = analyzeMadlanBrokerDetection(html);
+    
+    return new Response(JSON.stringify({ url: baseUrl, page, html_length: html.length, audit }, null, 2), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   if (mode === 'analyze') {
     // Direct fetch with minimal headers and analyze structure
