@@ -76,14 +76,36 @@ Deno.serve(async (req) => {
     for (const config of configs) {
       try {
         console.log(`🔄 Triggering Jina scan for: ${config.name} (${config.id})`);
-        // Call trigger-scout-pages-jina instead of trigger-scout-pages
-        fetch(`${supabaseUrl}/functions/v1/trigger-scout-pages-jina`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config_id: config.id }),
-        }).catch(err => console.error(`❌ Failed to trigger ${config.name}:`, err));
+        
+        let success = false;
+        const MAX_ATTEMPTS = 3;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/trigger-scout-pages-jina`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ config_id: config.id }),
+            });
+            if (res.ok) {
+              console.log(`✅ ${config.name} triggered successfully (attempt ${attempt}, status ${res.status})`);
+              success = true;
+              break;
+            }
+            console.warn(`⚠️ ${config.name} attempt ${attempt}/${MAX_ATTEMPTS} failed: HTTP ${res.status}`);
+          } catch (fetchErr) {
+            console.warn(`⚠️ ${config.name} attempt ${attempt}/${MAX_ATTEMPTS} network error:`, fetchErr);
+          }
+          if (attempt < MAX_ATTEMPTS) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
+        }
 
-        triggered.push(config.name);
+        if (success) {
+          triggered.push(config.name);
+        } else {
+          console.error(`❌ ${config.name} failed after ${MAX_ATTEMPTS} attempts`);
+          errors.push(`${config.name}: failed after ${MAX_ATTEMPTS} attempts`);
+        }
         await new Promise(resolve => setTimeout(resolve, 1500));
       } catch (err) {
         console.error(`❌ Error triggering ${config.name}:`, err);
