@@ -6,12 +6,50 @@ const corsHeaders = {
 };
 
 /**
- * TEST ONLY - Direct Fetch Diagnostic for Madlan
- * Tests whether Edge Functions can directly fetch Madlan listing pages
- * without Jina or any other scraping service.
- * 
- * Does NOT save anything to DB. Safe to delete after testing.
+ * TEST ONLY - Direct Fetch Diagnostic v2
+ * Tests multiple fetch strategies against Madlan
+ * Does NOT save anything to DB.
  */
+
+const STRATEGIES = {
+  // Strategy 1: Minimal headers (like a simple curl)
+  minimal: {
+    'Accept': 'text/html',
+  },
+  // Strategy 2: Full browser simulation  
+  browser: {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"macOS"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'Cache-Control': 'max-age=0',
+  },
+  // Strategy 3: Googlebot (some sites whitelist)
+  googlebot: {
+    'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Accept': 'text/html',
+  },
+  // Strategy 4: Mobile browser
+  mobile: {
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'he-IL,he;q=0.9',
+  },
+  // Strategy 5: No User-Agent at all
+  naked: {},
+  // Strategy 6: Fetch API default (like Deno's default)
+  deno_default: {
+    'Accept': '*/*',
+  },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -21,88 +59,65 @@ serve(async (req) => {
   const page = body.page ?? 1;
   const city = body.city ?? 'תל-אביב-יפו-ישראל';
   const dealType = body.deal_type ?? 'for-rent';
+  const strategy = body.strategy as string | undefined; // specific strategy or "all"
 
-  const url = `https://www.madlan.co.il/${dealType}/${encodeURIComponent(city)}?page=${page}`;
-  
-  console.log(`🧪 Test Direct Fetch: ${url}`);
-  const startTime = Date.now();
+  const baseUrl = `https://www.madlan.co.il/${dealType}/${encodeURIComponent(city)}?page=${page}`;
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const strategiesToTest = strategy && strategy !== 'all' 
+    ? { [strategy]: (STRATEGIES as any)[strategy] || {} }
+    : STRATEGIES;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  const results: Record<string, any> = {};
 
-    const duration = Date.now() - startTime;
-    const html = await response.text();
+  for (const [name, headers] of Object.entries(strategiesToTest)) {
+    const startTime = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    // Diagnostics
-    const hasListings = html.includes('/listings/') || html.includes('data-auto="listing');
-    const listingLinkCount = (html.match(/\/listings\/[A-Za-z0-9]+/g) || []).length;
-    const uniqueListings = new Set(html.match(/\/listings\/[A-Za-z0-9]+/g) || []);
-    const hasPricePattern = (html.match(/₪|NIS|מחיר/g) || []).length;
-    const hasRoomsPattern = (html.match(/חד[׳']/g) || []).length;
-    const hasBlocked = html.includes('captcha') || html.includes('CAPTCHA') || html.includes('blocked');
-    const hasContent = html.length > 5000;
+      const response = await fetch(baseUrl, {
+        method: 'GET',
+        headers: headers as Record<string, string>,
+        signal: controller.signal,
+        redirect: 'follow',
+      });
+      clearTimeout(timeoutId);
 
-    // Try to extract a sample listing URL
-    const sampleListings = [...uniqueListings].slice(0, 5);
+      const html = await response.text();
+      const duration = Date.now() - startTime;
 
-    const result = {
-      success: true,
-      url,
-      page,
-      duration_ms: duration,
-      http_status: response.status,
-      html_length: html.length,
-      diagnostics: {
-        has_content: hasContent,
-        has_listings: hasListings,
-        listing_links_total: listingLinkCount,
-        unique_listing_links: uniqueListings.size,
-        price_mentions: hasPricePattern,
-        rooms_mentions: hasRoomsPattern,
-        appears_blocked: hasBlocked,
-        sample_listings: sampleListings,
-      },
-      // First 500 chars of HTML for quick inspection
-      html_preview: html.substring(0, 500),
-      // Last 500 chars
-      html_tail: html.substring(Math.max(0, html.length - 500)),
-    };
+      const uniqueListings = new Set(html.match(/\/listings\/[A-Za-z0-9]+/g) || []);
+      const hasPerimeterX = html.includes('_pxUuid') || html.includes('perimeterx');
+      const hasCaptcha = html.includes('captcha') || html.includes('CAPTCHA');
+      const hasCloudflare = html.includes('cf-browser-verification') || html.includes('cloudflare');
 
-    console.log(`🧪 Result: status=${response.status} | ${html.length} chars | ${uniqueListings.size} unique listings | ${duration}ms`);
+      results[name] = {
+        status: response.status,
+        html_length: html.length,
+        duration_ms: duration,
+        unique_listings: uniqueListings.size,
+        blocked_by: hasPerimeterX ? 'PerimeterX' : hasCaptcha ? 'CAPTCHA' : hasCloudflare ? 'Cloudflare' : 'none',
+        has_content: html.length > 50000,
+        sample: html.substring(0, 200),
+      };
 
-    return new Response(JSON.stringify(result, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      console.log(`🧪 ${name}: status=${response.status} | ${html.length} chars | listings=${uniqueListings.size} | blocked=${results[name].blocked_by} | ${duration}ms`);
+    } catch (error) {
+      results[name] = {
+        status: 0,
+        error: error instanceof Error ? error.message : 'Unknown',
+        duration_ms: Date.now() - startTime,
+      };
+      console.log(`🧪 ${name}: FAILED - ${results[name].error}`);
+    }
 
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`🧪 Direct fetch failed: ${errorMsg}`);
-
-    return new Response(JSON.stringify({
-      success: false,
-      url,
-      page,
-      duration_ms: duration,
-      error: errorMsg,
-    }, null, 2), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Small delay between strategies to avoid rate limiting
+    if (Object.keys(strategiesToTest).length > 1) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
   }
+
+  return new Response(JSON.stringify({ url: baseUrl, page, results }, null, 2), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 });
