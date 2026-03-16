@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useUpdateScoutSetting } from '@/hooks/useScoutSettings';
 import { AvailabilityRunDetails } from './availability/AvailabilityRunDetails';
-import { AvailabilityActions } from './availability/AvailabilityActions';
+
 import { AvailabilityLiveFeed } from './availability/AvailabilityLiveFeed';
 import { Json } from '@/integrations/supabase/types';
 

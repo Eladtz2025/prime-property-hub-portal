@@ -107,7 +107,7 @@ export const defaultSettings: ScoutSettings = {
     delay_between_requests_ms: 150,
     head_timeout_ms: 10000,
     get_timeout_ms: 8000,
-    use_firecrawl: true,
+    
     first_recheck_interval_days: 8,
     recurring_recheck_interval_days: 2,
     schedule_times: ['05:00'],

@@ -230,7 +230,7 @@ export const AvailabilityHistorySection: React.FC = () => {
                     <SelectItem value="content_ok">✓ אקטיבי</SelectItem>
                     <SelectItem value="listing_removed_indicator">הוסר</SelectItem>
                     <SelectItem value="per_property_timeout">Timeout</SelectItem>
-                    <SelectItem value="firecrawl_failed_after_retries">Firecrawl נכשל</SelectItem>
+                    <SelectItem value="firecrawl_failed_after_retries">סריקה נכשלה</SelectItem>
                     <SelectItem value="no_indicators_keeping_active">ללא אינדיקטורים</SelectItem>
                     <SelectItem value="short_removal_page_suspicious">חשוד</SelectItem>
                   </SelectContent>

@@ -1,6 +1,6 @@
 /**
  * Shared Jina Reader scraping utility
- * Replaces Firecrawl's scrapeWithRetry + getActiveFirecrawlKey
+ * Shared Jina Reader scraping function for scout, availability and backfill
  * Uses GET https://r.jina.ai/{url} with residential proxy
  */
 
