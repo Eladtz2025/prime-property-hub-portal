@@ -54,22 +54,17 @@ async function checkMadlanDirect(
     });
     clearTimeout(timeoutId);
 
-    // Check for URL redirect BEFORE reading body
-    // When Madlan removes a listing, it returns 200 but redirects to homepage/search
-    const finalUrl = response.url;
-    const wasRedirected = finalUrl && finalUrl !== url && !finalUrl.includes('/listings/');
-    if (wasRedirected) {
-      console.log(`🚫 Madlan-Direct redirect detected: ${url} → ${finalUrl}`);
-      return { isInactive: true, reason: 'listing_removed_redirect' };
+    // 404/410 = listing removed
+    if (response.status === 404 || response.status === 410) {
+      console.log(`🚫 Madlan ${response.status} for ${url}`);
+      // Consume body to avoid resource leak
+      await response.text();
+      return { isInactive: true, reason: `listing_removed_${response.status}` };
     }
 
     if (!response.ok) {
-      // 404/410 = listing removed
-      if (response.status === 404 || response.status === 410) {
-        console.log(`🚫 Madlan ${response.status} for ${url}`);
-        return { isInactive: true, reason: `listing_removed_${response.status}` };
-      }
       console.warn(`⚠️ Madlan-Direct returned ${response.status} for ${url}`);
+      await response.text();
       return { isInactive: false, reason: `madlan_direct_status_${response.status}` };
     }
 
@@ -80,21 +75,37 @@ async function checkMadlanDirect(
       return { isInactive: false, reason: 'short_content_keeping_active' };
     }
 
-    // Check for removal indicators in HTML
+    // Strategy 1: Check <title> for removal indicator (SSR-rendered, reliable)
+    const title = html.match(/<title>(.*?)<\/title>/)?.[1] || '';
+    if (title.includes('המודעה הוסרה')) {
+      console.log(`🚫 Madlan-Direct title indicates removal for ${url}: "${title}"`);
+      return { isInactive: true, reason: 'listing_removed_title' };
+    }
+
+    // Strategy 2: Check og:description for removal text (SSR-rendered, reliable)
+    const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/)?.[1] || '';
+    if (ogDesc.includes('המודעה המבוקשת כבר אינה מפורסמת') || ogDesc.includes('המודעה הוסרה')) {
+      console.log(`🚫 Madlan-Direct og:description indicates removal for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_og_description' };
+    }
+
+    // Strategy 3: Check og:title for removal text
+    const ogTitle = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/)?.[1] || '';
+    if (ogTitle.includes('המודעה הוסרה')) {
+      console.log(`🚫 Madlan-Direct og:title indicates removal for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_og_title' };
+    }
+
+    // Strategy 4: Check for removal indicators in body text (fallback)
     if (isListingRemoved(html)) {
-      console.log(`🚫 Madlan-Direct removal text found for ${url}`);
+      console.log(`🚫 Madlan-Direct removal text found in body for ${url}`);
       return { isInactive: true, reason: 'listing_removed_indicator' };
     }
 
-    const isMadlanListingUrl = url.includes('/listings/');
-
-    // Homepage redirect detection via HTML size.
-    // Active listing pages: ~90K chars (compact SSR).
-    // Homepage (removed listing redirect): ~2M chars (full app bundle + all components).
-    // Threshold 500K is very conservative (5x active, 4x below homepage).
-    if (isMadlanListingUrl && html.length > 500000) {
-      console.log(`🚫 Madlan-Direct homepage redirect detected via size for ${url} (${html.length} chars >> 500K threshold)`);
-      return { isInactive: true, reason: 'listing_removed_homepage_size' };
+    // Check for CAPTCHA/block page - treat as retryable, not removal
+    if (isMadlanBlocked(html)) {
+      console.log(`⚠️ Madlan-Direct CAPTCHA/block detected for ${url}`);
+      return { isInactive: false, reason: 'madlan_blocked_retry' };
     }
 
     console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
