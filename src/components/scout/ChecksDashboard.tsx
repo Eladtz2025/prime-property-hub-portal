@@ -420,7 +420,7 @@ export const ChecksDashboard: React.FC = () => {
 
         {/* Scans Jina */}
         <ProcessCard
-          title="סריקות 2 (Jina)"
+          title="סריקות"
           icon={<Search className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
