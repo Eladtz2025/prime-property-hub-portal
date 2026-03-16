@@ -264,8 +264,6 @@ export const AvailabilityCheckDashboard: React.FC = () => {
           color={isRunning ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'} />
       </div>
 
-      {/* Quick Actions */}
-      <AvailabilityActions />
 
       {/* Live Feed - only shows when a run is active */}
       <AvailabilityLiveFeed />

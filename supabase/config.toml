@@ -90,10 +90,7 @@ verify_jwt = false
 [functions.match-scouted-to-leads]
 verify_jwt = false
 
-[functions.check-property-availability]
-verify_jwt = false
-
-[functions.trigger-scout-all]
+[functions.trigger-scout-all-jina]
 verify_jwt = false
 
 [functions.notify-form-signed]
@@ -132,9 +129,6 @@ verify_jwt = false
 [functions.personal-scout-worker]
 verify_jwt = false
 
-[functions.backfill-property-data]
-verify_jwt = false
-
 [functions.cleanup-duplicates]
 verify_jwt = false
 
@@ -168,5 +162,8 @@ verify_jwt = false
 [functions.trigger-scout-pages-jina]
 verify_jwt = false
 
-[functions.trigger-scout-all-jina]
+[functions.notify-form-signed]
+verify_jwt = false
+
+[functions.send-brokerage-form]
 verify_jwt = false

@@ -893,8 +893,6 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
     }
   });
 
-  // Backfill progress hook
-  const backfill = useBackfillProgress();
 
   const importMutation = useMutation({
     mutationFn: async (scoutedProperty: ScoutedProperty) => {

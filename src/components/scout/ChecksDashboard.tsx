@@ -613,8 +613,8 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'אותה לוגיקת השלמת נתונים כמו המקורית, אבל עם Jina AI Reader במקום Firecrawl.',
-                'משלים: חדרים, מחיר, גודל, סיווג פרטי/מתווך, features, ומספר בית.',
+                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader (סריקת עמוד המקור).',
+                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
                 'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).',
               ]} />
             </div>
