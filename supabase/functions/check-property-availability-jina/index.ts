@@ -55,10 +55,10 @@ async function checkMadlanDirect(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // 404 = listing removed
-      if (response.status === 404) {
-        console.log(`🚫 Madlan 404 for ${url}`);
-        return { isInactive: true, reason: 'listing_removed_404' };
+      // 404/410 = listing removed
+      if (response.status === 404 || response.status === 410) {
+        console.log(`🚫 Madlan ${response.status} for ${url}`);
+        return { isInactive: true, reason: `listing_removed_${response.status}` };
       }
       console.warn(`⚠️ Madlan-Direct returned ${response.status} for ${url}`);
       return { isInactive: false, reason: `madlan_direct_status_${response.status}` };
