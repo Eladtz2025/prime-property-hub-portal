@@ -188,7 +188,7 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ Madlan-Direct page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
     return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'no-ai' }), {
