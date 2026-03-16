@@ -36,8 +36,6 @@ const MADLAN_BLOCK_INDICATORS = [
   'משהו בדפדפן שלך גרם לנו לחשוב שאתה רובוט',
   'אנא השלם את החידה שלפניך לקבלת גישה מיידית למדלן',
   'Checking your browser',
-  'enable JavaScript',
-  'Cloudflare',
   'Access denied',
   'error 403',
 ];
