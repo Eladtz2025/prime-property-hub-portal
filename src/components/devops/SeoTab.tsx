@@ -207,7 +207,7 @@ export const SeoTab: React.FC = () => {
     try {
       const url = page.url || `${PRODUCTION_DOMAIN}${page.path}`;
       
-      // Try rendered version first (with Firecrawl)
+      // Try rendered version first
       const { data, error } = await supabase.functions.invoke('check-seo-rendered', {
         body: { url }
       });
