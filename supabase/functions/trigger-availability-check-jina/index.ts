@@ -12,7 +12,7 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const MAX_BATCHES_PER_RUN = 3;
+const MAX_BATCHES_PER_RUN = 5;
 const BATCH_TIMEOUT_MS = 110000;
 
 serve(async (req) => {

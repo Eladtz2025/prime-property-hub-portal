@@ -139,32 +139,39 @@ async function processPropertiesInParallel(
   abortSignal: AbortSignal
 ): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
-  const perPropertyTimeout = settings.per_property_timeout_ms || 15000;
+  const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
   
-  const delayBetweenRequests = 3000; // 3s between requests to respect Jina free tier (20 req/min)
+  // Process in parallel batches of concurrencyLimit (default 3)
+  const parallelism = Math.min(concurrencyLimit, 5); // Cap at 5 concurrent
+  const delayBetweenBatches = 1500; // 1.5s between parallel batches
   
-  for (let i = 0; i < properties.length; i++) {
+  for (let i = 0; i < properties.length; i += parallelism) {
     if (abortSignal.aborted) {
       console.log(`⏱️ Global timeout reached, stopping after ${results.length} results`);
       break;
     }
     
-    if (i > 0 && i % concurrencyLimit === 0) {
-      console.log(`🔄 Processing chunk ${Math.floor(i / concurrencyLimit) + 1}`);
-    } else if (i === 0) {
-      console.log(`🔄 Processing chunk 1`);
+    const batch = properties.slice(i, i + parallelism);
+    console.log(`🔄 Parallel batch ${Math.floor(i / parallelism) + 1}: ${batch.length} properties simultaneously`);
+    
+    // Process batch in parallel with Promise.allSettled for resilience
+    const batchResults = await Promise.allSettled(
+      batch.map(prop => checkSingleProperty(prop, settings, perPropertyTimeout))
+    );
+    
+    for (let j = 0; j < batchResults.length; j++) {
+      const result = batchResults[j];
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+      } else {
+        console.error(`Error checking property ${batch[j].id}:`, result.reason);
+        results.push({ id: batch[j].id, isInactive: false, reason: 'check_error', error: true });
+      }
     }
     
-    try {
-      const result = await checkSingleProperty(properties[i], settings, perPropertyTimeout);
-      results.push(result);
-    } catch (err) {
-      console.error(`Error checking property ${properties[i].id}:`, err);
-    }
-    
-    // Wait between requests to stay within Jina free tier rate limit
-    if (i < properties.length - 1) {
-      await new Promise(r => setTimeout(r, delayBetweenRequests));
+    // Brief delay between parallel batches
+    if (i + parallelism < properties.length && !abortSignal.aborted) {
+      await new Promise(r => setTimeout(r, delayBetweenBatches));
     }
   }
   
