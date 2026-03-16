@@ -208,15 +208,6 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 10000,
   });
 
-  // Last scan run (firecrawl or legacy null)
-  const { data: lastScanRun } = useQuery({
-    queryKey: ['scan-last-run'],
-    queryFn: async () => {
-      const { data } = await (supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source') as any).or('scanner.is.null,scanner.eq.firecrawl').order('started_at', { ascending: false }).limit(1).maybeSingle();
-      return data;
-    },
-    refetchInterval: 10000,
-  });
 
   // Last scan run (Jina)
   const { data: lastScanRunJina } = useQuery({
