@@ -1,21 +1,27 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## תוכנית מפושטת: ניקוי ריצות תקועות
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### למה לא צריך את שלושתם
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+צודק. הבעיה המרכזית היא שריצות נתקעות בסטטוס "running" וחוסמות ריצות חדשות. מספיק **שינוי אחד בלבד**:
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### הפתרון — inline cleanup ב-`trigger-availability-check-jina`
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+בתחילת כל ריצה חדשה, לפני בדיקת ה-lock, נוסיף 3 שורות שמנקות ריצות תקועות (ישנות מ-15 דקות):
+
+```text
+// At the start of trigger-availability-check-jina, before lock check:
+UPDATE availability_check_runs 
+SET status = 'failed', completed_at = now(), error_message = 'Auto-cleanup: stuck > 15min'
+WHERE status = 'running' AND started_at < now() - interval '15 minutes';
+```
+
+**למה זה מספיק:**
+- כל ריצה חדשה (cron או ידנית) מנקה אוטומטית ריצות תקועות
+- לא צריך לתקן את `cleanup-stuck-runs` — ה-cleanup קורה inline
+- לא צריך try/finally — גם אם ריצה נתקעת, הבאה אחריה תנקה אותה
+
+### קובץ שישתנה
+- `supabase/functions/trigger-availability-check-jina/index.ts` — הוספת ~5 שורות בתחילת הפונקציה
 
