@@ -62,7 +62,7 @@ const BenYehudaPitchDeck = React.lazy(() => import('./components/price-offer/ben
 const AdminPriceOffers = React.lazy(() => import('./pages/AdminPriceOffers'));
 const PriceOfferBuilder = React.lazy(() => import('./pages/PriceOfferBuilder'));
 const ExclusivityFormPage = React.lazy(() => import('./pages/ExclusivityFormPage'));
-const AdminForms = React.lazy(() => import('./pages/AdminForms'));
+
 const BrokerageFormPage = React.lazy(() => import('./pages/BrokerageFormPage'));
 const AdminAlerts = React.lazy(() => import('./pages/AdminAlerts'));
 const AdminActivity = React.lazy(() => import('./pages/AdminActivity'));
