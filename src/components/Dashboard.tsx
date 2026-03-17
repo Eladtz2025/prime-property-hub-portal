@@ -14,7 +14,7 @@ import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { PriorityTasksCard } from './PriorityTasksCard';
 import { SiteIssuesCard } from './SiteIssuesCard';
-import { DashboardGoalsGrid } from './DashboardGoalsGrid';
+import { DashboardFormsCubes } from './DashboardFormsCubes';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
