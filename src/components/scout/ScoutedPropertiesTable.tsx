@@ -1642,17 +1642,6 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                         
-                        {property.status !== 'imported' && property.status !== 'archived' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleImportProperty(property)}
-                            disabled={importMutation.isPending}
-                            title="ייבא למערכת"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
                         
                         {property.status === 'new' && (
                           <Button
