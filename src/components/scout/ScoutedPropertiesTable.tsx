@@ -985,7 +985,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
       case 'archived':
         return <Badge variant="outline">ארכיון</Badge>;
       case 'imported':
-        return <Badge className="bg-blue-500">יובא למערכת</Badge>;
+        return <Badge className="bg-blue-500 w-fit">יובא למערכת</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="text-red-600 border-red-600">לא פעיל</Badge>;
       default:
