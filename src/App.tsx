@@ -338,7 +338,7 @@ const AppContent: React.FC = () => {
                 element={
                   <Layout onLogout={signOut}>
                     <ProtectedRoute requiredRole="viewer">
-                      <Navigate to="/admin-dashboard/forms" replace />
+                      <Navigate to="/admin-dashboard" replace />
                     </ProtectedRoute>
                   </Layout>
                 } 
