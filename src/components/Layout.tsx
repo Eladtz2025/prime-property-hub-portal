@@ -58,9 +58,7 @@ export const Layout: React.FC<LayoutProps> = ({
           
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="text-right">
-              <h1 className="font-bold text-primary-foreground text-lg leading-tight">
-                {userName ? `שלום ${userName} 👋` : 'City Market CRM'}
-              </h1>
+              <h1 className="font-bold text-primary-foreground text-lg leading-tight">City Market</h1>
               <p className="text-primary-foreground/70 text-xs">{today}</p>
             </div>
             <img src="/images/city-market-icon.png" alt="City Market" className="w-12 h-12 object-contain" />

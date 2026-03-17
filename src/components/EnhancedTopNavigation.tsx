@@ -58,10 +58,12 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
-              className="flex items-center gap-2 hover:bg-white/10 rounded-lg p-2"
+              className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-3 py-2"
             >
-              <UserAvatar size="sm" />
-              {!isMobile && <ChevronDown className="h-4 w-4 text-primary-foreground/70" />}
+              <span className="text-sm font-medium text-primary-foreground">
+                {firstName ? `שלום ${firstName}` : 'תפריט'}
+              </span>
+              <ChevronDown className="h-4 w-4 text-primary-foreground/70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-popover border shadow-lg">
