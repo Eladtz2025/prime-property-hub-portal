@@ -45,6 +45,8 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
   const { profile } = useAuth();
   const navigate = useNavigate();
 
+  const firstName = profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0] || '';
+
   return (
     <div className={cn(
       "flex items-center gap-4",
