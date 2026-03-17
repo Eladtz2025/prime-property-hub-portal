@@ -30,13 +30,9 @@ export const Layout: React.FC<LayoutProps> = ({
       <div className="min-h-screen flex flex-col w-full bg-background">
         <header className="border-b bg-primary sticky top-0 z-50 shadow-md" dir="rtl">
           <div className="flex items-center justify-between px-4 h-14">
-            <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
+            <EnhancedTopNavigation onLogout={onLogout} isMobile={true} today={today} />
             <div className="flex items-center gap-2 flex-shrink-0">
               <img src="/images/city-market-icon.png" alt="City Market" className="w-9 h-9 object-contain" />
-              <div className="text-right">
-                <h1 className="font-bold text-primary-foreground text-sm leading-tight">City Market</h1>
-                <p className="text-primary-foreground/70 text-[10px]">{today}</p>
-              </div>
             </div>
           </div>
         </header>
