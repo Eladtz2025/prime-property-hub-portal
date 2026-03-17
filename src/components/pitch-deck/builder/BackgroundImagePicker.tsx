@@ -18,6 +18,7 @@ interface BackgroundImagePickerProps {
 const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImagePickerProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [scrollIndex, setScrollIndex] = useState(0);
+  const [studioOpen, setStudioOpen] = useState(false);
 
   // Fetch images from property_images table
   const { data: propertyImages, isLoading } = useQuery({
