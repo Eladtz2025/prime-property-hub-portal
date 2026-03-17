@@ -356,6 +356,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                     );
                     onImagesChange(updatedImages);
                   }}
+                  onEditInStudio={(img) => setStudioImage(img)}
                 />
               ))}
             </div>
