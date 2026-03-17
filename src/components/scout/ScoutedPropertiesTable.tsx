@@ -1524,7 +1524,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8">
                       טוען...
                     </TableCell>
                   </TableRow>
