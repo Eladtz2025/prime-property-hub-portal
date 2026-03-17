@@ -1,21 +1,35 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שדרוג כרטיסי תהליכים — Queue Cards מינימליסטיים
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### קובצים לשינוי
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+| קובץ | שינוי |
+|-------|--------|
+| `ProcessCard.tsx` | שכתוב מלא — עיצוב queue-first מינימליסטי |
+| `ChecksDashboard.tsx` | עדכון props בכל 5 הכרטיסים — מספר ראשי = ממתינים בתור |
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+---
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### ProcessCard — עיצוב חדש
+
+**כרטיס**: `rounded-2xl`, `border border-border/40`, רקע נקי (ללא מסגרת צבעונית), ללא `border-t-2` צבעוני. Hover עדין בלבד.
+
+**שורה עליונה** — אייקון קטן (ללא רקע צבעוני כבד, רק האייקון עצמו בצבע) + שם מודול + בצד שמאל: toggle קטן + טקסט סטטוס פשוט (`פעיל` / `מושבת` / `תקלה`) בגודל `text-[11px]` — ללא pill/badge שמנמן.
+
+**מרכז** — מספר גדול (`text-4xl font-bold`), מתחתיו שורת הסבר (`ממתינים לבדיקה`), שורת מידע משנית אחת (`2,601 נבדקו היום`), שורת insight קטנה בירוק/אפור (`המערכת נקייה` / `קצב תקין`).
+
+**שורה תחתונה** — divider עדין, מצד ימין: לינק "פתח" (ghost button / text link), מצד שמאל: אייקוני History + Settings בלבד. ללא כפתור כהה גדול. כפתור Run/Stop יהיה רק כשהתהליך רץ (עצור) — אחרת רק "פתח".
+
+---
+
+### ChecksDashboard — מיפוי Props חדש
+
+כל כרטיס יציג **כמה ממתין בתור** כמספר הראשי:
+
+- **סריקות**: `primaryValue=0` (אין queue כרגע), `primaryLabel="ממתינים לסריקה"`, `secondaryLine="${found} נמצאו היום"`, `insight="אין פריטים חדשים לטיפול"`
+- **בדיקת זמינות**: `primaryValue={stats.pendingRecheck}`, `primaryLabel="ממתינים לבדיקה"`, `secondaryLine="${checkedToday} נבדקו היום"`, `insight` לפי timeouts
+- **כפילויות**: `primaryValue={dedupStats.unchecked}`, `primaryLabel="ממתינים לבדיקה"`, `secondaryLine="${checked} נבדקו"`
+- **התאמות**: `primaryValue={leadCounts.eligible}`, `primaryLabel="ממתינים להתאמה"`, `secondaryLine="${matchStats.total_matches} התאמות בריצה אחרונה"`
+- **השלמת נתונים**: `primaryValue={backfillRemaining}`, `primaryLabel="ממתינים להשלמה"`, `secondaryLine="${successful} הושלמו"`
 
