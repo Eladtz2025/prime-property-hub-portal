@@ -1,21 +1,22 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שלושה שינויים בטאב דירות שנמצאו
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### 1. הסרת כפתור "ייבא למערכת"
+- **Desktop** (שורות 1658-1668): הסרת הכפתור עם אייקון Download
+- **Mobile** (שורות 1803-1812): הסרת הכפתור עם אייקון Download
+- הסרת `handleImportProperty` ו-`importMutation` אם לא בשימוש במקום אחר (נבדוק)
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### 2. איחוד עמודות "סטטוס" ו"התאמות" לעמודה אחת
+- **Header** (שורה 1520): הסרת עמודת "התאמות" נפרדת
+- **Body** (שורות 1571 + 1586-1628): איחוד לתא אחד — סטטוס באדג' למעלה, התאמות (כפתור לקוחות או מקף) למטה
+- עדכון `colSpan` מ-10/9 ל-9/8
+- שינוי רוחב עמודת "סטטוס" ל-`w-[140px]` כדי להכיל את שניהם
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### 3. יותר מספרי עמודים בפגינציה (עם נקודות)
+- שינוי `delta` (שורה 1871): מ-`1`/`2` ל-`2`/`4` — כך יוצגו יותר עמודים סביב הנוכחי
+- הנקודות (...) נשארות כפי שהן בין הטווחים
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### קבצים לעריכה
+- `src/components/scout/ScoutedPropertiesTable.tsx`
 
