@@ -421,12 +421,11 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="סריקות"
           icon={<Search className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
-          primaryValue={lastScanRunJina?.properties_found ?? 0}
-          primaryLabel="נמצאו"
-          secondaryLine={`${activeConfigs ?? 0} configs פעילים • מקור: ${lastScanRunJina?.source || '—'}`}
-          insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'לא נמצאו חדשים'}
+          primaryValue={0}
+          primaryLabel="ממתינים לסריקה"
+          secondaryLine={`${lastScanRunJina?.properties_found ?? 0} נמצאו היום`}
+          insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'אין פריטים חדשים לטיפול'}
           insightType={lastScanRunJina?.new_properties > 0 ? 'ok' : 'info'}
           lastRun={formatLastRun(lastScanRunJina?.started_at, lastScanRunJina?.completed_at)}
           onRun={() => triggerScansJina.mutate()}
@@ -438,14 +437,13 @@ export const ChecksDashboard: React.FC = () => {
             <div className="space-y-6">
               <LogicDescription lines={[
                 'תומכת בכל 3 המקורות: יד2, מדלן, הומלס באמצעות Jina AI Reader.',
-                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
                 'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
               ]} />
               <UnifiedScoutSettings triggerFunction="trigger-scout-pages-jina" />
             </div>
           }
-          historyTitle="היסטוריית סריקות (Jina)"
-          settingsTitle="הגדרות סריקות (Jina)"
+          historyTitle="היסטוריית סריקות"
+          settingsTitle="הגדרות סריקות"
           enabled={processFlags?.process_scans_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
@@ -454,13 +452,12 @@ export const ChecksDashboard: React.FC = () => {
         {/* Availability (Jina) */}
         <ProcessCard
           title="בדיקת זמינות"
-          icon={<Shield className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          icon={<Shield className="h-4 w-4 text-blue-600" />}
           status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          primaryValue={stats?.checkedToday ?? 0}
-          primaryLabel="נבדקו היום"
-          secondaryLine={`${stats?.pendingRecheck ?? 0} ממתינים • ${stats?.timeouts ?? 0} timeouts`}
-          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : 'קצב תקין'}
+          primaryValue={stats?.pendingRecheck ?? 0}
+          primaryLabel="ממתינים לבדיקה"
+          secondaryLine={`${(stats?.checkedToday ?? 0).toLocaleString('he-IL')} נבדקו היום`}
+          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : (stats?.pendingRecheck ?? 0) === 0 ? 'המערכת נקייה' : 'קצב תקין'}
           insightType={(stats?.timeouts ?? 0) > 100 ? 'warning' : 'ok'}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailabilityJina.mutate()}
@@ -478,13 +475,13 @@ export const ChecksDashboard: React.FC = () => {
               <ScheduleTimeEditor
                 category="availability"
                 cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת בדיקת זמינות (Jina)"
+                label="שעות ריצת בדיקת זמינות"
                 showEndTime
               />
             </div>
           }
-          historyTitle="היסטוריית בדיקות זמינות (Jina)"
-          settingsTitle="הגדרות בדיקת זמינות (Jina)"
+          historyTitle="היסטוריית בדיקות זמינות"
+          settingsTitle="הגדרות בדיקת זמינות"
           enabled={processFlags?.process_availability_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
@@ -494,12 +491,11 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
-          iconColor="bg-purple-100 dark:bg-purple-900/30"
           status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : dedupStats?.lastRun?.status === 'stopped' ? 'completed' : 'idle'}
-          primaryValue={dedupStats?.checked ?? 0}
-          primaryLabel="נבדקו"
-          secondaryLine={`${dedupStats?.unchecked ?? 0} נותרו לבדיקה`}
-          insight={dedupStats?.unchecked === 0 ? 'כל הנכסים נבדקו' : `${dedupStats?.unchecked ?? 0} ממתינים`}
+          primaryValue={dedupStats?.unchecked ?? 0}
+          primaryLabel="ממתינים לבדיקה"
+          secondaryLine={`${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} נבדקו`}
+          insight={dedupStats?.unchecked === 0 ? 'כל הנתונים טופלו' : `${dedupStats?.unchecked ?? 0} ממתינים`}
           insightType={dedupStats?.unchecked === 0 ? 'ok' : 'info'}
           onRun={() => triggerDedup.mutate()}
           onStop={() => stopDedup.mutate()}
@@ -511,11 +507,7 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מזהה דירות כפולות בין מקורות שונים (cross-source) — למשל אותה דירה ביד2 ובמדלן.',
                 'התאמה לפי: כתובת מלאה (כולל מספר בית), מספר חדרים (סטייה של ±0.5), ושטח (סטייה של ±20%).',
-                'הפרדה חובה לפי סוג עסקה — דירה להשכרה ודירה למכירה באותה כתובת לא ייחשבו ככפילות.',
-                'כל קבוצת כפילויות מקבלת "נכס ראשי" (Winner) לפי היררכיה: פרטי > מתווך → עדכון אחרון → מחיר נמוך → זמן יצירה ישן.',
-                'נכסים שאינם ראשיים (Losers) מוסתרים מהתצוגה הראשית ומההתאמות, אבל נגישים דרך "עוד מודעות".',
-                'כפילויות מאותו מקור נחסמות אוטומטית לפי source + source_url (Unique Constraint).',
-                'ניקוי אוטומטי מריץ recompute_duplicate_winners אחרי כל זיהוי.',
+                'כל קבוצת כפילויות מקבלת "נכס ראשי" (Winner) לפי היררכיה: פרטי > מתווך → עדכון אחרון → מחיר נמוך.',
               ]} />
               <ScheduleTimeEditor
                 category="duplicates"
@@ -536,13 +528,12 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
-          iconColor="bg-green-100 dark:bg-green-900/30"
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
           primaryValue={leadCounts?.eligible ?? 0}
-          primaryLabel="לידים eligible"
-          secondaryLine={`${leadCounts?.ineligible ?? 0} לא eligible`}
-          insight={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : 'טרם רץ'}
-          insightType={matchStats?.total_matches ? 'ok' : 'info'}
+          primaryLabel="ממתינים להתאמה"
+          secondaryLine={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : undefined}
+          insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} לידים eligible`}
+          insightType={(leadCounts?.eligible ?? 0) === 0 ? 'ok' : 'info'}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
           isRunPending={triggerMatching.isPending}
@@ -552,7 +543,6 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מחפש התאמות בין לידים במצב "eligible" לבין נכסים פעילים (scouted_properties).',
                 'בודק התאמה לפי: עיר, שכונה, טווח מחיר, חדרים, גודל, קומה.',
-                'בודק גם דרישות נוספות: מעלית, חנייה, מרפסת, ממ"ד, גינה, גג — כולל גמישות אם הליד ציין.',
                 'תוצאות נשמרות ב-personal_scout_matches ומקושרות לליד ולריצה.',
               ]} />
               <ScheduleTimeEditor
@@ -573,30 +563,28 @@ export const ChecksDashboard: React.FC = () => {
         {/* Backfill (Jina) */}
         <ProcessCard
           title="השלמת נתונים"
-          icon={<Database className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          icon={<Database className="h-4 w-4 text-orange-600" />}
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
           primaryValue={backfillRemaining ?? 0}
-          primaryLabel="נותרו להשלמה"
-          secondaryLine={`${backfillJina.progress?.successful_items ?? 0} הצלחות • ${backfillJina.progress?.failed_items ?? 0} כשלונות`}
-          insight={backfillRemaining === 0 ? 'כל הנתונים הושלמו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : `${backfillRemaining} ממתינים`}
+          primaryLabel="ממתינים להשלמה"
+          secondaryLine={`${(backfillJina.progress?.successful_items ?? 0).toLocaleString('he-IL')} הושלמו`}
+          insight={backfillRemaining === 0 ? 'כל הנתונים טופלו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : 'לא זוהו עיכובים'}
           insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'warning'}
           onRun={backfillJina.start}
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
           isStopPending={backfillJina.isStopping}
           historyContent={<BackfillJinaHistory />}
-          historyTitle="היסטוריית השלמת נתונים (Jina)"
+          historyTitle="היסטוריית השלמת נתונים"
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader (סריקת עמוד המקור).',
-                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
-                'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).',
+                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader.',
+                'מטפל בנכסים עם backfill_status=null או failed.',
               ]} />
             </div>
           }
-          settingsTitle="הגדרות השלמת נתונים (Jina)"
+          settingsTitle="הגדרות השלמת נתונים"
           enabled={processFlags?.process_backfill_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
