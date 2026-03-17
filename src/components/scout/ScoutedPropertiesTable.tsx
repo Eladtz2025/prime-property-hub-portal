@@ -1754,11 +1754,16 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
-                    {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'}{property.address?.split(',')[0]?.trim() ? ` ב${property.address.split(',')[0].trim()}` : ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                    {property.address?.split(',')[0]?.trim() || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
                   </span>
                   <span className="text-muted-foreground text-xs shrink-0">
                     {property.city?.replace(' יפו', '') || 'תל אביב'}
                   </span>
+                  {property.property_type === 'rent' ? (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-purple-50 text-purple-700 border-purple-300 shrink-0">השכרה</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-blue-50 text-blue-700 border-blue-300 shrink-0">מכירה</Badge>
+                  )}
                   {property.is_private === true && (
                     <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
                   )}
