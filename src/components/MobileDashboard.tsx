@@ -9,8 +9,6 @@ import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
-import { PriorityTasksCard } from './PriorityTasksCard';
-import { SiteIssuesCard } from './SiteIssuesCard';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { DashboardFormsCubes } from './DashboardFormsCubes';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
