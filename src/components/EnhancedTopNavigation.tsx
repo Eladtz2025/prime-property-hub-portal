@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   Wrench,
-  FileText,
   ImagePlus,
   Search
 } from 'lucide-react';
