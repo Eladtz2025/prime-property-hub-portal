@@ -19,10 +19,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
 
-    --primary: 220 15% 28%;
+    --primary: 220 20% 18%;
     --primary-foreground: 0 0% 98%;
     
-    --primary-deep: 220 15% 20%;
+    --primary-deep: 220 20% 12%;
     --primary-light: 220 10% 92%;
 
     --secondary: 35 85% 55%;
@@ -46,9 +46,9 @@ All colors MUST be HSL.
     --input: 220 10% 90%;
     --ring: 220 15% 28%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(220 15% 28%), hsl(220 15% 38%));
-    --gradient-luxury: linear-gradient(135deg, hsl(215 25% 27%), hsl(215 25% 37%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 15% 28%), hsl(35 85% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 20% 18%), hsl(220 20% 28%));
+    --gradient-luxury: linear-gradient(135deg, hsl(220 20% 15%), hsl(220 20% 25%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 18%), hsl(35 85% 55%));
     
     --shadow-luxury: 0 10px 40px -10px hsl(215 25% 27% / 0.3);
     --shadow-card: 0 4px 20px -4px hsl(210 100% 45% / 0.15);
