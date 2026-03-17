@@ -107,7 +107,7 @@ export const DashboardFormsCubes = () => {
     setTimeout(() => setter(false), 2000);
   };
 
-  const cubeBase = "flex flex-col items-center justify-center p-3 rounded-xl bg-primary text-primary-foreground border border-primary-foreground/10 hover:bg-primary/90 transition-all duration-200 hover:scale-[1.03] min-h-[80px] gap-1.5 relative cursor-pointer shadow-sm";
+  const cubeBase = "flex flex-col items-center justify-center p-3 rounded-xl bg-white/10 backdrop-blur-md text-foreground border border-white/20 shadow-lg hover:bg-white/20 transition-all duration-200 hover:scale-[1.03] min-h-[80px] gap-1.5 relative cursor-pointer";
 
   return (
     <>
