@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Hourglass, CheckCircle, Timer, Database, Clock, Loader2,
-  Copy, Users, Search, Shield,
+  Database, Copy, Users, Search, Shield,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
