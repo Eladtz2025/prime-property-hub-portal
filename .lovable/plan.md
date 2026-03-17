@@ -1,10 +1,21 @@
 
 
-## תיקון: עיגול ה-Toggle חורג מגבולות ה-Switch
+## תיקון עקביות casing ב-scout-madlan-jina
 
-**הבעיה:** ב-`ProcessCard.tsx` ה-Switch מוקטן עם `scale-75`, אבל חסר `overflow-hidden` ברכיב ה-Switch עצמו, מה שגורם לעיגול (Thumb) להיראות כאילו הוא יוצא מהמסלול.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-**הפתרון:** הוספת `overflow-hidden` ל-Switch Root ב-`src/components/ui/switch.tsx` (שורה 12), כך שהעיגול תמיד יישאר בגבולות המסלול.
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**קובץ לעריכה:** `src/components/ui/switch.tsx` — הוספת `overflow-hidden` ל-className של SwitchPrimitives.Root.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
