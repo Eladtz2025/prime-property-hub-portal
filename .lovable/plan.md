@@ -1,21 +1,25 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## 4 תיקונים בהדר ובקוביות
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### 1. אפור כהה יותר — `src/index.css`
+שינוי `--primary` מ-`220 15% 28%` ל-`220 20% 18%` (כהה יותר, מקצועי). עדכון `--primary-deep` ל-`220 20% 12%` וה-gradients בהתאם.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### 2. קוביות טפסים עם blur שקוף — `src/components/DashboardFormsCubes.tsx`
+שינוי `cubeBase` (שורה 110) מ-`bg-primary text-primary-foreground` ל:
+`bg-white/10 backdrop-blur-md text-foreground border border-white/20 shadow-lg hover:bg-white/20`
+זה ייתן את אפקט הזכוכית (glassmorphism) על רקע הדשבורד.
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### 3. אמוג׳י 👋 + תאריך מתחת לשלום — `src/components/EnhancedTopNavigation.tsx` + `src/components/Layout.tsx`
+- בכפתור הדרופדאון (שורה 63): שינוי ל-`👋 שלום {firstName}` ומתחתיו התאריך בגודל קטן
+- ב-Layout: הסרת התאריך מהצד הימני (כי הוא עובר לצד שמאל עם הברכה). נעביר את `today` כ-prop ל-`EnhancedTopNavigation`
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### 4. הסרת "City Market" מההדר — `src/components/Layout.tsx`
+הסרת הטקסט `City Market` והתאריך מהצד הימני. נשאיר רק את האייקון/לוגו.
+
+### קבצים לעריכה
+- `src/index.css` — צבע primary כהה יותר
+- `src/components/DashboardFormsCubes.tsx` — סגנון blur שקוף
+- `src/components/EnhancedTopNavigation.tsx` — אמוג׳י + תאריך מתחת לברכה
+- `src/components/Layout.tsx` — הסרת "City Market", העברת today כ-prop
 
