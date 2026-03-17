@@ -1,39 +1,21 @@
 
 
-## תיקון מנגנון שחרור תקיעות בבדיקת זמינות
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### הבעיות שזוהו
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-1. **Timeout גבוה מדי (15 דקות)** — בפועל אפשר לדעת שריצה תקועה אחרי 5 דקות מקסימום. 15 דקות זה מיותר.
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-2. **Dead zone בין Lock ל-Cleanup** — ה-Lock Check חוסם ריצות חדשות אם יש ריצה מ-10 הדקות האחרונות, אבל ה-Cleanup משחרר רק אחרי 15 דקות. כלומר בין דקה 10 ל-15 אף אחד לא יכול להפעיל ריצה חדשה וגם הישנה לא תנוקה.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-3. **Cleanup הוא fire-and-forget** — הקריאה ל-`cleanup-stuck-runs` היא async בלי await, כך שה-Lock Check רץ לפני שהניקוי הסתיים. גם אם הניקוי היה מוצא את הריצה התקועה, הוא לא מספיק לרוץ לפני הבדיקה.
-
-### הפתרון
-
-**קובץ: `supabase/functions/trigger-availability-check-jina/index.ts`**
-
-1. **הורדת timeout inline מ-15 ל-5 דקות** (שורה 54) — ריצות שתקועות מעל 5 דקות יסומנו כ-failed
-2. **הורדת Lock Check מ-10 ל-5 דקות** (שורה 67) — כך ה-lock וה-cleanup מסונכרנים
-3. **הפיכת inline cleanup ל-await** — כך הניקוי מסתיים לפני ה-Lock Check, ולא race condition
-
-**קובץ: `supabase/functions/cleanup-stuck-runs/index.ts`**
-
-4. **הורדת timeout availability מ-15 ל-5 דקות** (שורה 411) — עקביות עם ה-inline cleanup
-
-### שינויים טכניים
-
-```text
-trigger-availability-check-jina/index.ts:
-  Line 54: 15 * 60 * 1000 → 5 * 60 * 1000
-  Line 57: 'stuck > 15min' → 'stuck > 5min'  
-  Line 67: 10 * 60 * 1000 → 5 * 60 * 1000
-  Lines 43-51: fire-and-forget fetch → awaited fetch (with try/catch)
-
-cleanup-stuck-runs/index.ts:
-  Line 411: 15 * 60 * 1000 → 5 * 60 * 1000
-```
-
-Deploy both functions after changes.
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

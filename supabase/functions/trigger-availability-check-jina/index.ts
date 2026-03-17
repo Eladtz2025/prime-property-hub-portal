@@ -40,23 +40,27 @@ serve(async (req) => {
 
     console.log(`🔍 Starting availability check JINA (${isManual ? 'manual' : 'cron-based'})...`);
 
-    // Fire-and-forget cleanup of stuck runs before starting
-    fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({}),
-    }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
+    // Await cleanup of stuck runs before lock check to avoid race conditions
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err) {
+      console.error('⚠️ Cleanup-stuck-runs failed:', err);
+    }
 
     // === AUTO-CLEANUP: Mark stuck runs (>15min) as failed ===
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: stuckCleanup } = await supabase
       .from('availability_check_runs')
-      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 15min' })
+      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo)
+      .lt('started_at', fiveMinutesAgo)
       .select('id');
     
     if (stuckCleanup && stuckCleanup.length > 0) {
@@ -64,12 +68,12 @@ serve(async (req) => {
     }
 
     // === LOCK CHECK: Prevent parallel runs ===
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: runningCheck } = await supabase
       .from('availability_check_runs')
       .select('id, started_at, is_manual')
       .eq('status', 'running')
-      .gt('started_at', tenMinutesAgo)
+      .gt('started_at', fiveMinAgo)
       .order('started_at', { ascending: false })
       .limit(1)
       .single();

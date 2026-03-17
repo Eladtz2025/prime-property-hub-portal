@@ -408,12 +408,12 @@ serve(async (req) => {
     console.log('\n🔍 Checking for stuck availability check runs...');
     let availabilityCleaned = 0;
 
-    const fifteenMinutesAgo = new Date(now - 15 * 60 * 1000).toISOString();
+    const fiveMinutesAgo = new Date(now - 5 * 60 * 1000).toISOString();
     const { data: stuckAvailability, error: availabilityError } = await supabase
       .from('availability_check_runs')
       .select('*')
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo);
+      .lt('started_at', fiveMinutesAgo);
 
     if (availabilityError) {
       console.error('❌ Error fetching availability runs:', availabilityError);
