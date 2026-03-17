@@ -3,12 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { Play, History, Settings, Loader2, Square, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { History, Settings, Loader2, Square, TrendingUp, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 
 export interface ProcessCardProps {
   title: string;
   icon: React.ReactNode;
-  iconColor: string;
+  iconColor?: string;
   status: 'running' | 'completed' | 'idle' | 'failed';
   primaryValue: number | string;
   primaryLabel: string;
@@ -29,13 +29,13 @@ export interface ProcessCardProps {
   isTogglePending?: boolean;
 }
 
-const statusConfig = (status: string, enabled: boolean) => {
-  if (!enabled) return { label: 'מושבת', bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-muted-foreground/20' };
+const statusText = (status: string, enabled: boolean) => {
+  if (!enabled) return { label: 'מושבת', color: 'text-muted-foreground' };
   switch (status) {
-    case 'running': return { label: 'בתהליך', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-400/40' };
-    case 'completed': return { label: 'פעיל', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', border: 'border-green-400/40' };
-    case 'failed': return { label: 'תקלה', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300', border: 'border-red-400/40' };
-    default: return { label: 'ממתין', bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-muted-foreground/20' };
+    case 'running': return { label: 'פעיל', color: 'text-blue-600 dark:text-blue-400' };
+    case 'completed': return { label: 'פעיל', color: 'text-green-600 dark:text-green-400' };
+    case 'failed': return { label: 'תקלה', color: 'text-destructive' };
+    default: return { label: 'ממתין', color: 'text-muted-foreground' };
   }
 };
 
@@ -74,74 +74,77 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isDisabled = enabled === false;
-  const st = statusConfig(status, enabled);
+  const st = statusText(status, enabled);
 
   return (
     <>
-      <Card className={`min-h-[220px] rounded-2xl border-t-2 ${st.border} transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${isDisabled ? 'opacity-60' : ''}`}>
-        <CardContent className="p-5 h-full flex flex-col justify-between gap-3">
-          {/* Header: icon + title + badge + toggle */}
-          <div className="flex items-center gap-2">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${iconColor}`}>
-              {icon}
-            </div>
+      <Card className={`rounded-2xl border border-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${isDisabled ? 'opacity-55' : ''}`}>
+        <CardContent className="p-5 flex flex-col gap-1">
+          {/* Header: icon + title ... toggle + status text */}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="shrink-0">{icon}</span>
             <p className="text-sm font-semibold truncate flex-1">{title}</p>
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${st.bg} ${st.text}`}>
-              {status === 'running' && enabled && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
-              {st.label}
-            </span>
+            <span className={`text-[11px] ${st.color}`}>{st.label}</span>
             {onToggleEnabled && (
               <Switch
                 checked={enabled}
                 onCheckedChange={onToggleEnabled}
                 disabled={isTogglePending}
-                className="scale-75"
+                className="scale-[0.7]"
               />
             )}
           </div>
 
-          {/* Center: primary number + label + secondary + insight */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-0.5">
-            <p className="text-3xl font-bold leading-none">
+          {/* Center: big number + labels */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-4 gap-0.5">
+            <p className="text-4xl font-bold leading-none tracking-tight">
               {typeof primaryValue === 'number' ? primaryValue.toLocaleString('he-IL') : primaryValue}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">{primaryLabel}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">{primaryLabel}</p>
             {secondaryLine && (
-              <p className="text-[10px] text-muted-foreground/70 mt-1">{secondaryLine}</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-1">{secondaryLine}</p>
             )}
             {insight && (
-              <div className="flex items-center gap-1 mt-1.5">
+              <div className="flex items-center gap-1 mt-2">
                 {insightIcon(insightType)}
-                <span className={`text-[10px] font-medium ${insightType === 'ok' ? 'text-green-600 dark:text-green-400' : insightType === 'warning' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                <span className={`text-[11px] font-medium ${
+                  insightType === 'ok' ? 'text-green-600 dark:text-green-400' 
+                  : insightType === 'warning' ? 'text-amber-600 dark:text-amber-400' 
+                  : 'text-muted-foreground'
+                }`}>
                   {insight}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Footer: primary action + secondary icon buttons */}
-          <div className="flex items-center gap-2 pt-2 border-t">
+          {/* Footer: divider + open link + icons */}
+          <div className="flex items-center gap-2 pt-3 border-t border-border/30">
             {status === 'running' && onStop ? (
-              <Button variant="destructive" size="sm" className="h-9 flex-1 text-xs gap-1.5" onClick={onStop} disabled={isStopPending}>
-                {isStopPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3.5 w-3.5" />}
+              <Button variant="ghost" size="sm" className="h-8 flex-1 text-xs gap-1.5 text-destructive hover:text-destructive" onClick={onStop} disabled={isStopPending}>
+                {isStopPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3 w-3" />}
                 עצור
               </Button>
             ) : onRun ? (
-              <Button size="sm" className="h-9 flex-1 text-xs gap-1.5" onClick={onRun} disabled={isRunPending || status === 'running' || isDisabled}>
-                {isRunPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              <Button variant="ghost" size="sm" className="h-8 flex-1 text-xs gap-1.5" onClick={onRun} disabled={isRunPending || status === 'running' || isDisabled}>
+                {isRunPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
                 הפעל
               </Button>
-            ) : null}
-            {historyContent && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setHistoryOpen(true)}>
-                <History className="h-4 w-4" />
-              </Button>
+            ) : (
+              <div className="flex-1" />
             )}
-            {settingsContent && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setSettingsOpen(true)}>
-                <Settings className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-0.5 mr-auto">
+              {historyContent && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setHistoryOpen(true)}>
+                  <History className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              )}
+              {settingsContent && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
