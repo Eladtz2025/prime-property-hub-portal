@@ -979,13 +979,13 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
     }
     switch (status) {
       case 'new':
-        return <Badge variant="default" className="bg-green-500">חדש</Badge>;
+        return <Badge variant="default" className="bg-green-500 w-fit">חדש</Badge>;
       case 'matched':
-        return <Badge variant="secondary">עבר התאמה</Badge>;
+        return <Badge variant="secondary" className="w-fit">עבר התאמה</Badge>;
       case 'archived':
         return <Badge variant="outline">ארכיון</Badge>;
       case 'imported':
-        return <Badge className="bg-blue-500">יובא למערכת</Badge>;
+        return <Badge className="bg-blue-500 w-fit">יובא למערכת</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="text-red-600 border-red-600">לא פעיל</Badge>;
       default:
@@ -1888,20 +1888,27 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   
-                  {/* Page numbers */}
+                  {/* Page dots */}
                   {getPageNumbers().map((page, idx) => 
                     typeof page === 'string' ? (
-                      <span key={page} className="h-8 w-6 flex items-center justify-center text-muted-foreground text-sm">...</span>
+                      <span key={page} className="h-6 w-4 flex items-center justify-center text-muted-foreground text-xs">...</span>
                     ) : (
-                      <Button
+                      <button
                         key={page}
-                        variant={page === currentPage ? 'default' : 'outline'}
-                        size="sm"
                         onClick={() => setCurrentPage(page)}
-                        className={cn("h-8 min-w-8 px-2 text-sm", page === currentPage && "pointer-events-none")}
+                        className={cn(
+                          "h-6 w-6 rounded-full flex items-center justify-center transition-colors",
+                          page === currentPage 
+                            ? "bg-primary pointer-events-none" 
+                            : "bg-muted hover:bg-muted-foreground/20"
+                        )}
+                        title={`עמוד ${page}`}
                       >
-                        {page}
-                      </Button>
+                        <span className={cn(
+                          "block rounded-full",
+                          page === currentPage ? "h-2.5 w-2.5 bg-primary-foreground" : "h-2 w-2 bg-muted-foreground/50"
+                        )} />
+                      </button>
                     )
                   )}
                   
