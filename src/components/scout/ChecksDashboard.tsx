@@ -424,12 +424,11 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Search className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
-          statusText={isScanJinaRunning ? 'סריקה פעילה (Jina)...' : lastScanRunJina ? `${lastScanRunJina.properties_found ?? 0} נמצאו, ${lastScanRunJina.new_properties ?? 0} חדשים` : 'לא הופעל'}
-          metrics={[
-            { label: 'מקור', value: lastScanRunJina?.source || '—' },
-            { label: 'נמצאו', value: lastScanRunJina?.properties_found ?? 0 },
-            { label: 'configs פעילים', value: activeConfigs ?? 0 },
-          ]}
+          primaryValue={lastScanRunJina?.properties_found ?? 0}
+          primaryLabel="נמצאו"
+          secondaryLine={`${activeConfigs ?? 0} configs פעילים • מקור: ${lastScanRunJina?.source || '—'}`}
+          insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'לא נמצאו חדשים'}
+          insightType={lastScanRunJina?.new_properties > 0 ? 'ok' : 'info'}
           lastRun={formatLastRun(lastScanRunJina?.started_at, lastScanRunJina?.completed_at)}
           onRun={() => triggerScansJina.mutate()}
           onStop={() => stopScansJina.mutate()}
@@ -453,19 +452,17 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-
         {/* Availability (Jina) */}
         <ProcessCard
           title="בדיקת זמינות"
           icon={<Shield className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          statusText={isAvailRunning ? 'בודק זמינות...' : lastAvailRun ? `${lastAvailRun.properties_checked ?? 0} נבדקו, ${lastAvailRun.inactive_marked ?? 0} הוסרו` : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: stats?.pendingRecheck ?? 0 },
-            { label: 'נבדקו היום', value: stats?.checkedToday ?? 0 },
-            { label: 'Timeouts', value: stats?.timeouts ?? 0 },
-          ]}
+          primaryValue={stats?.checkedToday ?? 0}
+          primaryLabel="נבדקו היום"
+          secondaryLine={`${stats?.pendingRecheck ?? 0} ממתינים • ${stats?.timeouts ?? 0} timeouts`}
+          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : 'קצב תקין'}
+          insightType={(stats?.timeouts ?? 0) > 100 ? 'warning' : 'ok'}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailabilityJina.mutate()}
           onStop={() => stopAvailabilityJina.mutate()}
@@ -500,11 +497,11 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Copy className="h-4 w-4 text-purple-600" />}
           iconColor="bg-purple-100 dark:bg-purple-900/30"
           status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : dedupStats?.lastRun?.status === 'stopped' ? 'completed' : 'idle'}
-          statusText={dedupStats?.lastRun?.status === 'running' ? 'סורק כפילויות...' : dedupStats?.lastRun?.status === 'stopped' ? 'נעצר' : `${dedupStats?.checked ?? 0} מתוך ${dedupStats?.totalActive ?? 0} נבדקו`}
-          metrics={[
-            { label: 'נבדקו', value: `${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} / ${(dedupStats?.totalActive ?? 0).toLocaleString('he-IL')}` },
-            { label: 'נותרו לבדיקה', value: dedupStats?.unchecked ?? 0 },
-          ]}
+          primaryValue={dedupStats?.checked ?? 0}
+          primaryLabel="נבדקו"
+          secondaryLine={`${dedupStats?.unchecked ?? 0} נותרו לבדיקה`}
+          insight={dedupStats?.unchecked === 0 ? 'כל הנכסים נבדקו' : `${dedupStats?.unchecked ?? 0} ממתינים`}
+          insightType={dedupStats?.unchecked === 0 ? 'ok' : 'info'}
           onRun={() => triggerDedup.mutate()}
           onStop={() => stopDedup.mutate()}
           isRunPending={triggerDedup.isPending}
@@ -542,11 +539,11 @@ export const ChecksDashboard: React.FC = () => {
           icon={<Users className="h-4 w-4 text-green-600" />}
           iconColor="bg-green-100 dark:bg-green-900/30"
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          statusText={isMatchRunning ? 'מחפש התאמות...' : `${leadCounts?.eligible ?? 0} eligible | ${leadCounts?.ineligible ?? 0} לא eligible`}
-          metrics={[
-            { label: 'לידים Eligible', value: leadCounts?.eligible ?? 0 },
-            { label: 'לידים לא Eligible', value: leadCounts?.ineligible ?? 0 },
-          ]}
+          primaryValue={leadCounts?.eligible ?? 0}
+          primaryLabel="לידים eligible"
+          secondaryLine={`${leadCounts?.ineligible ?? 0} לא eligible`}
+          insight={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : 'טרם רץ'}
+          insightType={matchStats?.total_matches ? 'ok' : 'info'}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
           isRunPending={triggerMatching.isPending}
@@ -574,19 +571,17 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-
         {/* Backfill (Jina) */}
         <ProcessCard
           title="השלמת נתונים"
           icon={<Database className="h-4 w-4 text-teal-600" />}
           iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
-          statusText={backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : backfillJina.progress?.status === 'completed' ? 'הושלם' : 'לא הופעל'}
-          metrics={[
-            { label: 'נותרו', value: backfillRemaining ?? 0 },
-            { label: 'הצלחות', value: backfillJina.progress?.successful_items ?? 0 },
-            { label: 'כשלונות', value: backfillJina.progress?.failed_items ?? 0 },
-          ]}
+          primaryValue={backfillRemaining ?? 0}
+          primaryLabel="נותרו להשלמה"
+          secondaryLine={`${backfillJina.progress?.successful_items ?? 0} הצלחות • ${backfillJina.progress?.failed_items ?? 0} כשלונות`}
+          insight={backfillRemaining === 0 ? 'כל הנתונים הושלמו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : `${backfillRemaining} ממתינים`}
+          insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'warning'}
           onRun={backfillJina.start}
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
