@@ -73,7 +73,7 @@ serve(async (req) => {
       .from('availability_check_runs')
       .select('id, started_at, is_manual')
       .eq('status', 'running')
-      .gt('started_at', tenMinutesAgo)
+      .gt('started_at', fiveMinAgo)
       .order('started_at', { ascending: false })
       .limit(1)
       .single();
