@@ -73,7 +73,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               <p className="text-white/90 text-sm">ברוך הבא למערכת ניהול הנכסים</p>
             </div>
             
-            <DashboardGoalsGrid columns="grid-cols-2" />
+            <DashboardFormsCubes />
           </div>
         </div>
 

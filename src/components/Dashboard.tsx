@@ -74,9 +74,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <p className="text-white/70 text-sm mt-1 text-right">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
             </div>
             
-            {/* Goals Grid */}
+            {/* Forms Cubes */}
             <div className="flex-1">
-              <DashboardGoalsGrid />
+              <DashboardFormsCubes />
             </div>
           </div>
         </div>

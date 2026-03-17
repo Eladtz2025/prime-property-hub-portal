@@ -27,7 +27,7 @@ const mainNavItems = [
 const moreNavItems = [
   { title: "סטודיו תמונות", url: "/admin-dashboard/photo-studio", icon: ImagePlus },
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search },
-  { title: "טפסים", url: "/admin-dashboard/forms", icon: FileText },
+  
   { title: "הגדרות", url: "/admin-dashboard/settings", icon: Settings },
 ];
 
