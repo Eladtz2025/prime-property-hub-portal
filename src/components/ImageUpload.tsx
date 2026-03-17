@@ -363,6 +363,22 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           </SortableContext>
         </DndContext>
       )}
+
+      {/* Photo Studio Dialog */}
+      {studioImage && (
+        <PhotoStudioDialog
+          open={!!studioImage}
+          onOpenChange={(open) => !open && setStudioImage(null)}
+          imageUrl={studioImage.url}
+          onImageReplace={(newUrl) => {
+            const updatedImages = images.map(img =>
+              img.id === studioImage.id ? { ...img, url: newUrl } : img
+            );
+            onImagesChange(updatedImages);
+            setStudioImage(null);
+          }}
+        />
+      )}
     </div>
   );
 };
