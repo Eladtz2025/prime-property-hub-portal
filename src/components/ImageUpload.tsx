@@ -387,7 +387,8 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
   onMoveUp,
   onMoveDown,
   onToggleWebsite,
-  onToggleFurnished
+  onToggleFurnished,
+  onEditInStudio,
 }) => {
   const {
     attributes,
