@@ -55,10 +55,10 @@ serve(async (req) => {
     }
 
     // === AUTO-CLEANUP: Mark stuck runs (>15min) as failed ===
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: stuckCleanup } = await supabase
       .from('availability_check_runs')
-      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 15min' })
+      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
       .eq('status', 'running')
       .lt('started_at', fifteenMinutesAgo)
       .select('id');
