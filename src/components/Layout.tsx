@@ -1,6 +1,5 @@
 import React from 'react';
 import { EnhancedTopNavigation } from './EnhancedTopNavigation';
-import { BreadcrumbNav } from './ui/breadcrumb-nav';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 interface LayoutProps {
@@ -28,7 +27,6 @@ export const Layout: React.FC<LayoutProps> = ({
         </header>
         <main className="flex-1 flex flex-col">
           <div className="flex-1 p-4 pb-20"> {/* Added bottom padding for mobile nav */}
-            <BreadcrumbNav />
             {children}
           </div>
         </main>
@@ -57,7 +55,6 @@ export const Layout: React.FC<LayoutProps> = ({
       
       <main className="flex-1 flex flex-col">
         <div className="flex-1 p-6">
-          <BreadcrumbNav />
           {children}
         </div>
       </main>
