@@ -78,10 +78,10 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
   return (
     <>
-      <Card className={`rounded-2xl border border-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${isDisabled ? 'opacity-55' : ''}`}>
-        <CardContent className="p-5 flex flex-col gap-1">
-          {/* Header: icon + title ... toggle + status text */}
-          <div className="flex items-center gap-2 mb-1">
+      <Card className={`rounded-2xl border border-border/40 transition-shadow duration-200 hover:shadow-sm ${isDisabled ? 'opacity-55' : ''}`}>
+        <CardContent className="p-3.5 flex flex-col gap-0">
+          {/* Header: icon + title + status + toggle */}
+          <div className="flex items-center gap-2">
             <span className="shrink-0">{icon}</span>
             <p className="text-sm font-semibold truncate flex-1">{title}</p>
             <span className={`text-[11px] ${st.color}`}>{st.label}</span>
@@ -95,17 +95,17 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             )}
           </div>
 
-          {/* Center: big number + labels */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-4 gap-0.5">
-            <p className="text-4xl font-bold leading-none tracking-tight">
+          {/* Center: compact metric */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-2 gap-0">
+            <p className="text-3xl font-bold leading-none tracking-tight">
               {typeof primaryValue === 'number' ? primaryValue.toLocaleString('he-IL') : primaryValue}
             </p>
-            <p className="text-xs text-muted-foreground mt-1.5">{primaryLabel}</p>
+            <p className="text-xs text-muted-foreground mt-1">{primaryLabel}</p>
             {secondaryLine && (
-              <p className="text-[11px] text-muted-foreground/70 mt-1">{secondaryLine}</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-0.5">{secondaryLine}</p>
             )}
             {insight && (
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1">
                 {insightIcon(insightType)}
                 <span className={`text-[11px] font-medium ${
                   insightType === 'ok' ? 'text-green-600 dark:text-green-400' 
@@ -118,31 +118,39 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             )}
           </div>
 
-          {/* Footer: divider + open link + icons */}
-          <div className="flex items-center gap-2 pt-3 border-t border-border/30">
+          {/* Thin footer */}
+          <div className="flex items-center gap-1 pt-2 border-t border-border/30">
             {status === 'running' && onStop ? (
-              <Button variant="ghost" size="sm" className="h-8 flex-1 text-xs gap-1.5 text-destructive hover:text-destructive" onClick={onStop} disabled={isStopPending}>
-                {isStopPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3 w-3" />}
+              <button
+                className="text-[11px] text-destructive hover:underline flex items-center gap-1 disabled:opacity-50"
+                onClick={onStop}
+                disabled={isStopPending}
+              >
+                {isStopPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-2.5 w-2.5" />}
                 עצור
-              </Button>
+              </button>
             ) : onRun ? (
-              <Button variant="ghost" size="sm" className="h-8 flex-1 text-xs gap-1.5" onClick={onRun} disabled={isRunPending || status === 'running' || isDisabled}>
-                {isRunPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
-                הפעל
-              </Button>
+              <button
+                className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 disabled:opacity-50"
+                onClick={onRun}
+                disabled={isRunPending || status === 'running' || isDisabled}
+              >
+                {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-2.5 w-2.5" />}
+                פתח
+              </button>
             ) : (
               <div className="flex-1" />
             )}
-            <div className="flex items-center gap-0.5 mr-auto">
+            <div className="flex items-center gap-0 mr-auto">
               {historyContent && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setHistoryOpen(true)}>
-                  <History className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
+                <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted/50" onClick={() => setHistoryOpen(true)}>
+                  <History className="h-3 w-3 text-muted-foreground" />
+                </button>
               )}
               {settingsContent && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSettingsOpen(true)}>
-                  <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
+                <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted/50" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="h-3 w-3 text-muted-foreground" />
+                </button>
               )}
             </div>
           </div>
