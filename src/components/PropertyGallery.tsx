@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play, Sofa } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play, Sofa, Wand2 } from 'lucide-react';
 import { addWatermarkToFile } from '@/utils/watermark';
+import { PhotoStudioDialog } from './photo-studio/PhotoStudioDialog';
 import {
   Dialog,
   DialogContent,
