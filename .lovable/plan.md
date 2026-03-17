@@ -1,21 +1,18 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שינוי כפתור "הפעל" לכפתור מלא בצבע Header + מרכוז
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### קובץ: `ProcessCard.tsx`
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**שינויים בפוטר (שורות 121-155):**
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+1. **כפתור "הפעל"** — מטקסט קטן לכפתור מלא בצבע primary:
+   - `bg-primary text-primary-foreground rounded-md px-4 py-1 text-[11px] font-medium`
+   - ממורכז בפוטר עם `justify-center` ו-`flex-1`
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+2. **כפתור "השהה"** — אותו סגנון אבל `bg-muted text-muted-foreground` (רך יותר)
+
+3. **אייקוני history/settings** — נשארים בצד, absolute או בקצה
+
+4. **מבנה הפוטר**: הכפתור במרכז, אייקונים בצד שמאל
 
