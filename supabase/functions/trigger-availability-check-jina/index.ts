@@ -68,7 +68,7 @@ serve(async (req) => {
     }
 
     // === LOCK CHECK: Prevent parallel runs ===
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: runningCheck } = await supabase
       .from('availability_check_runs')
       .select('id, started_at, is_manual')
