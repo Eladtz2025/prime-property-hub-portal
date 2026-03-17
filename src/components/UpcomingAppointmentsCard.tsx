@@ -194,7 +194,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   }
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Calendar className="h-5 w-5 text-primary" />
@@ -217,7 +217,7 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
           </div>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-y-auto">
         {filteredAppointments.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />

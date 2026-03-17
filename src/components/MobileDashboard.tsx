@@ -9,8 +9,6 @@ import { AnalyticsSummaryCard } from './AnalyticsSummaryCard';
 import { UpcomingAppointmentsCard } from './UpcomingAppointmentsCard';
 import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
-import { PriorityTasksCard } from './PriorityTasksCard';
-import { SiteIssuesCard } from './SiteIssuesCard';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
 import { DashboardFormsCubes } from './DashboardFormsCubes';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
@@ -77,10 +75,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
         </div>
 
-        {/* Priority Tasks Cards */}
-        <PriorityTasksCard taskType="daily" title="Daily Priority" />
-        <PriorityTasksCard taskType="weekly" title="General Priority" />
-
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
 
@@ -97,9 +91,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         {/* Development Ideas */}
         <DevelopmentIdeasCard />
 
-        {/* Site Issues */}
-        <SiteIssuesCard />
-
         {/* Website Inquiries */}
         <Card>
           <CardHeader className="pb-3">
@@ -108,7 +99,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               פניות מהאתר
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-[320px] overflow-y-auto">
             <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
