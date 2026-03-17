@@ -528,13 +528,12 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
-          iconColor="bg-green-100 dark:bg-green-900/30"
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
           primaryValue={leadCounts?.eligible ?? 0}
-          primaryLabel="לידים eligible"
-          secondaryLine={`${leadCounts?.ineligible ?? 0} לא eligible`}
-          insight={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : 'טרם רץ'}
-          insightType={matchStats?.total_matches ? 'ok' : 'info'}
+          primaryLabel="ממתינים להתאמה"
+          secondaryLine={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : undefined}
+          insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} לידים eligible`}
+          insightType={(leadCounts?.eligible ?? 0) === 0 ? 'ok' : 'info'}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
           isRunPending={triggerMatching.isPending}
@@ -544,7 +543,6 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מחפש התאמות בין לידים במצב "eligible" לבין נכסים פעילים (scouted_properties).',
                 'בודק התאמה לפי: עיר, שכונה, טווח מחיר, חדרים, גודל, קומה.',
-                'בודק גם דרישות נוספות: מעלית, חנייה, מרפסת, ממ"ד, גינה, גג — כולל גמישות אם הליד ציין.',
                 'תוצאות נשמרות ב-personal_scout_matches ומקושרות לליד ולריצה.',
               ]} />
               <ScheduleTimeEditor
