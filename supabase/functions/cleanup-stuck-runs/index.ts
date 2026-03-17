@@ -413,7 +413,7 @@ serve(async (req) => {
       .from('availability_check_runs')
       .select('*')
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo);
+      .lt('started_at', fiveMinutesAgo);
 
     if (availabilityError) {
       console.error('❌ Error fetching availability runs:', availabilityError);
