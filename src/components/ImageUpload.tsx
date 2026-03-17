@@ -375,6 +375,7 @@ interface SortableImageCardProps {
   onMoveDown: (index: number) => void;
   onToggleWebsite: (id: string) => void;
   onToggleFurnished: (id: string) => void;
+  onEditInStudio: (image: PropertyImage) => void;
 }
 
 const SortableImageCard: React.FC<SortableImageCardProps> = ({
