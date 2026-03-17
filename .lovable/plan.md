@@ -1,15 +1,21 @@
 
 
-## איפוס בדיקת זמינות לכל הדירות המותאמות
+## תיקון עקביות casing ב-scout-madlan-jina
 
-יש 336 דירות עם התאמות ללקוחות. כדי שהן יכנסו מחדש לתור בדיקת הזמינות, צריך לאפס את `availability_checked_at` שלהן ל-null — כך המערכת תזהה אותן כ"ממתינות לבדיקה" ותבדוק אותן בריצה הבאה.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### מה יקרה
-1. עדכון שדה `availability_checked_at = null` לכל 336 הנכסים שיש להם `matched_leads` לא ריק
-2. איפוס `availability_check_reason = null` כדי שלא ישמר סטטוס ישן
-3. הנכסים יופיעו מיד בכרטיסיית בדיקת הזמינות כ"ממתינים לבדיקה"
-4. בריצה הבאה של availability check — הם ייבדקו
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### שינוי טכני
-קובץ אחד — הוספת כפתור ב-`AvailabilityCheckDashboard.tsx` או ביצוע ישיר דרך query update פשוט בטעינת הדף. אפשר גם פשוט לבצע את העדכון ישירות ללא שינוי UI.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
