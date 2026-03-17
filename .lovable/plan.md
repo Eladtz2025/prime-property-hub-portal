@@ -1,21 +1,23 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## 4 שינויים בהדר ובקוביות
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### 1. העברת 👋 לאחרי השם — `src/components/EnhancedTopNavigation.tsx`
+שורה 67: שינוי מ-`👋 שלום ${firstName}` ל-`שלום ${firstName} 👋` כך שהטקסט "שלום אלעד" מיושר עם התאריך מתחתיו, והיד בצד השני.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### 2. טאבים לא פעילים בלבן — `src/components/EnhancedTopNavigation.tsx`
+שורה 135: שינוי הטאבים הלא-פעילים מ-`text-primary-foreground/70` ל-`text-primary-foreground` (לבן מלא גם כשלא עומדים עליהם).
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### 3. קוביות טפסים עם backdrop-blur — `src/components/DashboardFormsCubes.tsx`
+שורה 110: שינוי `cubeBase` מ-`bg-muted` ל-`bg-white/10 backdrop-blur-md border border-white/20 shadow-lg text-foreground hover:bg-white/20`. אפקט זכוכית מטושטשת כמו כפתור השפה באתר.
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**הערה**: כדי שאפקט ה-blur יעבוד, צריך רקע עם צבע/תמונה מאחורי הקוביות. אם הרקע לבן חלק, ה-blur לא ייראה. אפשר להוסיף gradient רקע עדין לאזור הטפסים, או להשתמש בגרסה עם `bg-gray-100/80 backdrop-blur-sm border border-gray-200/50` שנראית טוב גם על רקע לבן.
+
+### 4. כפתור "הוסף" באותו סגנון — זיהוי הכפתור
+לפי הקוד, כפתור "הוסף נכס" נמצא ב-`AdminDashboard.tsx` (מועבר דרך `onAddProperty`). אשנה אותו לאותו סגנון glassmorphism/muted כמו הקוביות.
+
+### קבצים לעריכה
+- `src/components/EnhancedTopNavigation.tsx` — שורות 67, 135
+- `src/components/DashboardFormsCubes.tsx` — שורה 110
+- כפתור ההוסף (צריך לזהות בדיוק איפה הוא מופיע בדשבורד)
 
