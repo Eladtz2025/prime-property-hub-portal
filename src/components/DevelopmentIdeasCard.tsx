@@ -92,7 +92,8 @@ export const DevelopmentIdeasCard: React.FC = () => {
             onClick={handleAddIdea} 
             disabled={!newIdeaTitle.trim() || isAdding}
             size="sm"
-            className="shrink-0"
+            variant="outline"
+            className="shrink-0 bg-muted/80 backdrop-blur-sm border-border/50 hover:bg-muted text-foreground"
           >
             {isAdding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
