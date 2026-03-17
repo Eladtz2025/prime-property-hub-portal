@@ -304,16 +304,6 @@ const AppContent: React.FC = () => {
                 } 
               />
               <Route 
-                path="/admin-dashboard/forms" 
-                element={
-                  <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
-                      <AdminForms />
-                    </ProtectedRoute>
-                  </Layout>
-                } 
-              />
-              <Route 
                 path="/admin-dashboard/price-offers" 
                 element={
                   <Layout onLogout={signOut}>
