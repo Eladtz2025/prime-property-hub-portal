@@ -563,30 +563,28 @@ export const ChecksDashboard: React.FC = () => {
         {/* Backfill (Jina) */}
         <ProcessCard
           title="השלמת נתונים"
-          icon={<Database className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          icon={<Database className="h-4 w-4 text-orange-600" />}
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
           primaryValue={backfillRemaining ?? 0}
-          primaryLabel="נותרו להשלמה"
-          secondaryLine={`${backfillJina.progress?.successful_items ?? 0} הצלחות • ${backfillJina.progress?.failed_items ?? 0} כשלונות`}
-          insight={backfillRemaining === 0 ? 'כל הנתונים הושלמו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : `${backfillRemaining} ממתינים`}
+          primaryLabel="ממתינים להשלמה"
+          secondaryLine={`${(backfillJina.progress?.successful_items ?? 0).toLocaleString('he-IL')} הושלמו`}
+          insight={backfillRemaining === 0 ? 'כל הנתונים טופלו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : 'לא זוהו עיכובים'}
           insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'warning'}
           onRun={backfillJina.start}
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
           isStopPending={backfillJina.isStopping}
           historyContent={<BackfillJinaHistory />}
-          historyTitle="היסטוריית השלמת נתונים (Jina)"
+          historyTitle="היסטוריית השלמת נתונים"
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader (סריקת עמוד המקור).',
-                'מטפל בנכסים עם backfill_status=null (טרם טופלו) או failed (נכשלו בעבר).',
-                'עובד על Jina Free Tier עם פרוקסי ישראלי (X-Proxy-Country: IL).',
+                'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader.',
+                'מטפל בנכסים עם backfill_status=null או failed.',
               ]} />
             </div>
           }
-          settingsTitle="הגדרות השלמת נתונים (Jina)"
+          settingsTitle="הגדרות השלמת נתונים"
           enabled={processFlags?.process_backfill_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
