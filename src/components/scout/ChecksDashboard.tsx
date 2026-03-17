@@ -452,13 +452,12 @@ export const ChecksDashboard: React.FC = () => {
         {/* Availability (Jina) */}
         <ProcessCard
           title="בדיקת זמינות"
-          icon={<Shield className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
+          icon={<Shield className="h-4 w-4 text-blue-600" />}
           status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
-          primaryValue={stats?.checkedToday ?? 0}
-          primaryLabel="נבדקו היום"
-          secondaryLine={`${stats?.pendingRecheck ?? 0} ממתינים • ${stats?.timeouts ?? 0} timeouts`}
-          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : 'קצב תקין'}
+          primaryValue={stats?.pendingRecheck ?? 0}
+          primaryLabel="ממתינים לבדיקה"
+          secondaryLine={`${(stats?.checkedToday ?? 0).toLocaleString('he-IL')} נבדקו היום`}
+          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : (stats?.pendingRecheck ?? 0) === 0 ? 'המערכת נקייה' : 'קצב תקין'}
           insightType={(stats?.timeouts ?? 0) > 100 ? 'warning' : 'ok'}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailabilityJina.mutate()}
@@ -476,13 +475,13 @@ export const ChecksDashboard: React.FC = () => {
               <ScheduleTimeEditor
                 category="availability"
                 cronJobNames={[{ jobName: 'availability-check-continuous', cronTemplate: (h, m) => `${m} ${h} * * *` }]}
-                label="שעות ריצת בדיקת זמינות (Jina)"
+                label="שעות ריצת בדיקת זמינות"
                 showEndTime
               />
             </div>
           }
-          historyTitle="היסטוריית בדיקות זמינות (Jina)"
-          settingsTitle="הגדרות בדיקת זמינות (Jina)"
+          historyTitle="היסטוריית בדיקות זמינות"
+          settingsTitle="הגדרות בדיקת זמינות"
           enabled={processFlags?.process_availability_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
