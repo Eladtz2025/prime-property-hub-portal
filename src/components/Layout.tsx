@@ -2,53 +2,70 @@ import React from 'react';
 import { EnhancedTopNavigation } from './EnhancedTopNavigation';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
+import { useAuth } from '@/contexts/AuthContext';
+
 interface LayoutProps {
   children: React.ReactNode;
   onLogout?: () => void;
 }
+
 export const Layout: React.FC<LayoutProps> = ({
   children,
   onLogout
 }) => {
-  const {
-    isMobile
-  } = useMobileOptimization();
+  const { isMobile } = useMobileOptimization();
+  const { profile } = useAuth();
+
+  const getUserName = () => {
+    if (profile?.full_name) return profile.full_name.split(' ')[0];
+    if (profile?.email) return profile.email.split('@')[0];
+    return '';
+  };
+
+  const userName = getUserName();
+  const today = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+
   if (isMobile) {
-    // Mobile layout without sidebar
-    return <div className="min-h-screen flex flex-col w-full bg-background">
-        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-50 shadow-sm" dir="rtl">
-          <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <img src="/images/city-market-icon.png" alt="City Market" className="w-10 h-10 object-contain" />
-            <h1 className="font-bold text-foreground text-base leading-tight">
-              City Market CRM
-            </h1>
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        <header className="border-b bg-primary sticky top-0 z-50 shadow-md" dir="rtl">
+          <div className="flex items-center justify-between px-4 h-14">
+            <EnhancedTopNavigation onLogout={onLogout} isMobile={true} />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <img src="/images/city-market-icon.png" alt="City Market" className="w-9 h-9 object-contain" />
+              <div className="text-right">
+                <h1 className="font-bold text-primary-foreground text-sm leading-tight">
+                  {userName ? `שלום ${userName}` : 'City Market CRM'}
+                </h1>
+                <p className="text-primary-foreground/70 text-[10px]">{today}</p>
+              </div>
+            </div>
           </div>
         </header>
         <main className="flex-1 flex flex-col">
-          <div className="flex-1 p-4 pb-20"> {/* Added bottom padding for mobile nav */}
+          <div className="flex-1 p-4 pb-20">
             {children}
           </div>
         </main>
         <MobileBottomNavigation />
-      </div>;
+      </div>
+    );
   }
 
-  // Desktop layout without sidebar
-  return <div className="min-h-screen flex flex-col w-full bg-background">
-      <header className="h-16 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center justify-between px-6 h-full max-w-screen-2xl mx-auto gap-4">
-          {/* Navigation on the left */}
+  return (
+    <div className="min-h-screen flex flex-col w-full bg-background">
+      <header className="border-b bg-primary sticky top-0 z-40 shadow-md">
+        <div className="flex items-center justify-between px-6 h-16 max-w-screen-2xl mx-auto gap-4">
           <EnhancedTopNavigation onLogout={onLogout} />
           
-          {/* Logo on the right */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div>
-              <h1 className="font-bold text-foreground text-xl leading-tight">
-                City Market CRM 
+            <div className="text-right">
+              <h1 className="font-bold text-primary-foreground text-lg leading-tight">
+                {userName ? `שלום ${userName} 👋` : 'City Market CRM'}
               </h1>
+              <p className="text-primary-foreground/70 text-xs">{today}</p>
             </div>
-            <img src="/images/city-market-icon.png" alt="City Market" className="w-14 h-14 object-contain" />
+            <img src="/images/city-market-icon.png" alt="City Market" className="w-12 h-12 object-contain" />
           </div>
         </div>
       </header>
@@ -58,5 +75,6 @@ export const Layout: React.FC<LayoutProps> = ({
           {children}
         </div>
       </main>
-    </div>;
+    </div>
+  );
 };

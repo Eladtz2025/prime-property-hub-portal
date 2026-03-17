@@ -53,32 +53,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
 
   return (
     <div className="space-y-6">
-      {/* Header with greeting card */}
-      <div className="w-full">
-        <div className="bg-gradient-primary rounded-2xl p-6 text-white shadow-elevated animate-fade-in relative isolate overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/20"></div>
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10"></div>
-          </div>
-          
-          <div className="relative z-10 flex items-start gap-6" dir="rtl">
-            {/* Greeting - Right side */}
-            <div className="shrink-0">
-              <h1 className="text-3xl font-bold mb-2 text-right">
-                שלום{userName ? ` ${userName}` : ''}! 👋
-              </h1>
-              <p className="text-white/90 text-base text-right">ברוך הבא למערכת ניהול הנכסים</p>
-              <p className="text-white/70 text-sm mt-1 text-right">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
-            </div>
-            
-            {/* Forms Cubes */}
-            <div className="flex-1">
-              <DashboardFormsCubes />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Quick Action Forms */}
+      <DashboardFormsCubes />
 
       {/* הדירות שלנו - קרוסלה */}
       <ActivePropertiesCard properties={properties} />
