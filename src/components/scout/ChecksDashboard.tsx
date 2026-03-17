@@ -421,12 +421,11 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="סריקות"
           icon={<Search className="h-4 w-4 text-teal-600" />}
-          iconColor="bg-teal-100 dark:bg-teal-900/30"
           status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
-          primaryValue={lastScanRunJina?.properties_found ?? 0}
-          primaryLabel="נמצאו"
-          secondaryLine={`${activeConfigs ?? 0} configs פעילים • מקור: ${lastScanRunJina?.source || '—'}`}
-          insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'לא נמצאו חדשים'}
+          primaryValue={0}
+          primaryLabel="ממתינים לסריקה"
+          secondaryLine={`${lastScanRunJina?.properties_found ?? 0} נמצאו היום`}
+          insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'אין פריטים חדשים לטיפול'}
           insightType={lastScanRunJina?.new_properties > 0 ? 'ok' : 'info'}
           lastRun={formatLastRun(lastScanRunJina?.started_at, lastScanRunJina?.completed_at)}
           onRun={() => triggerScansJina.mutate()}
@@ -438,14 +437,13 @@ export const ChecksDashboard: React.FC = () => {
             <div className="space-y-6">
               <LogicDescription lines={[
                 'תומכת בכל 3 המקורות: יד2, מדלן, הומלס באמצעות Jina AI Reader.',
-                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס.',
                 'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
               ]} />
               <UnifiedScoutSettings triggerFunction="trigger-scout-pages-jina" />
             </div>
           }
-          historyTitle="היסטוריית סריקות (Jina)"
-          settingsTitle="הגדרות סריקות (Jina)"
+          historyTitle="היסטוריית סריקות"
+          settingsTitle="הגדרות סריקות"
           enabled={processFlags?.process_scans_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_scans_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
