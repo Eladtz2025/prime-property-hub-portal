@@ -60,7 +60,7 @@ serve(async (req) => {
       .from('availability_check_runs')
       .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo)
+      .lt('started_at', fiveMinutesAgo)
       .select('id');
     
     if (stuckCleanup && stuckCleanup.length > 0) {
