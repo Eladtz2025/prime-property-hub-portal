@@ -1865,38 +1865,94 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
-              <div className="text-sm text-muted-foreground order-2 sm:order-1">
-                מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
+          {totalPages > 1 && (() => {
+            const getPageNumbers = () => {
+              const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
+              const delta = window.innerWidth < 640 ? 1 : 2;
+              const start = Math.max(2, currentPage - delta);
+              const end = Math.min(totalPages - 1, currentPage + delta);
+              
+              pages.push(1);
+              if (start > 2) pages.push('ellipsis-start');
+              for (let i = start; i <= end; i++) pages.push(i);
+              if (end < totalPages - 1) pages.push('ellipsis-end');
+              if (totalPages > 1) pages.push(totalPages);
+              
+              return pages;
+            };
+
+            return (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                  מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
+                </div>
+                <div className="flex items-center gap-1 order-1 sm:order-2">
+                  {/* First page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                    title="עמוד ראשון"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                  {/* Previous */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                    title="הקודם"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  {getPageNumbers().map((page, idx) => 
+                    typeof page === 'string' ? (
+                      <span key={page} className="h-8 w-6 flex items-center justify-center text-muted-foreground text-sm">...</span>
+                    ) : (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={cn("h-8 min-w-8 px-2 text-sm", page === currentPage && "pointer-events-none")}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  )}
+                  
+                  {/* Next */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                    title="הבא"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {/* Last page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                    title="עמוד אחרון"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 order-1 sm:order-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="h-9 px-2 sm:px-3"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="hidden sm:inline mr-1">הקודם</span>
-                </Button>
-                <span className="text-sm">
-                  {currentPage}/{totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="h-9 px-2 sm:px-3"
-                >
-                  <span className="hidden sm:inline ml-1">הבא</span>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 
