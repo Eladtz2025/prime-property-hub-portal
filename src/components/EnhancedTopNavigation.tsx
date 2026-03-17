@@ -59,7 +59,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               className="flex items-center gap-2 hover:bg-white/10 rounded-lg p-2"
             >
               <UserAvatar size="sm" />
-              {!isMobile && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              {!isMobile && <ChevronDown className="h-4 w-4 text-primary-foreground/70" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-popover border shadow-lg">
