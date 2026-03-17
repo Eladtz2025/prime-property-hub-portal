@@ -132,7 +132,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
                     "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
                     isActive
                       ? "bg-white/20 text-primary-foreground shadow-sm"
-                      : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10"
+                      : "text-primary-foreground hover:bg-white/10"
                   )
                 }
               >
