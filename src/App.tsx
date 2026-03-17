@@ -72,7 +72,7 @@ const AdminDevOps = React.lazy(() => import('./pages/AdminDevOps'));
 const MemorandumFormPage = React.lazy(() => import('./pages/MemorandumFormPage'));
 const SaleMemorandumFormPage = React.lazy(() => import('./pages/SaleMemorandumFormPage'));
 const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingFormPage'));
-const PhotoStudio = React.lazy(() => import('./pages/PhotoStudio'));
+
 const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const ClientIntakePageEN = React.lazy(() => import('./pages/ClientIntakePageEN'));
@@ -401,16 +401,6 @@ const AppContent: React.FC = () => {
                   <Layout onLogout={signOut}>
                     <ProtectedRoute requiredRole="viewer">
                       <AdminDevOps />
-                    </ProtectedRoute>
-                  </Layout>
-                } 
-              />
-              <Route 
-                path="/admin-dashboard/photo-studio" 
-                element={
-                  <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
-                      <PhotoStudio />
                     </ProtectedRoute>
                   </Layout>
                 } 

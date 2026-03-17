@@ -2,8 +2,9 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff, Sofa } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff, Sofa, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { PhotoStudioDialog } from './photo-studio/PhotoStudioDialog';
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [studioImage, setStudioImage] = useState<PropertyImage | null>(null);
   const { toast } = useToast();
 
   // Upload video directly to Supabase Storage
@@ -354,11 +356,28 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                     );
                     onImagesChange(updatedImages);
                   }}
+                  onEditInStudio={(img) => setStudioImage(img)}
                 />
               ))}
             </div>
           </SortableContext>
         </DndContext>
+      )}
+
+      {/* Photo Studio Dialog */}
+      {studioImage && (
+        <PhotoStudioDialog
+          open={!!studioImage}
+          onOpenChange={(open) => !open && setStudioImage(null)}
+          imageUrl={studioImage.url}
+          onImageReplace={(newUrl) => {
+            const updatedImages = images.map(img =>
+              img.id === studioImage.id ? { ...img, url: newUrl } : img
+            );
+            onImagesChange(updatedImages);
+            setStudioImage(null);
+          }}
+        />
       )}
     </div>
   );
@@ -374,6 +393,7 @@ interface SortableImageCardProps {
   onMoveDown: (index: number) => void;
   onToggleWebsite: (id: string) => void;
   onToggleFurnished: (id: string) => void;
+  onEditInStudio: (image: PropertyImage) => void;
 }
 
 const SortableImageCard: React.FC<SortableImageCardProps> = ({
@@ -385,7 +405,8 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
   onMoveUp,
   onMoveDown,
   onToggleWebsite,
-  onToggleFurnished
+  onToggleFurnished,
+  onEditInStudio,
 }) => {
   const {
     attributes,
@@ -481,6 +502,20 @@ const SortableImageCard: React.FC<SortableImageCardProps> = ({
           )}
           {/* Hover Controls */}
           <div className={`absolute ${!isVideo ? 'top-1 right-8' : 'top-1 right-1'} flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+            {!isVideo && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditInStudio(image);
+                }}
+                className="h-6 w-6 p-0"
+                title="עריכה בסטודיו"
+              >
+                <Wand2 className="h-3 w-3 text-primary" />
+              </Button>
+            )}
             <Button
               size="sm"
               variant={isHidden ? "outline" : "secondary"}

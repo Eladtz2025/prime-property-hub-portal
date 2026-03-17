@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   Wrench,
-  ImagePlus,
   Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,7 @@ const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
   
-  { title: "סטודיו תמונות", url: "/admin-dashboard/photo-studio", icon: ImagePlus },
+  
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];

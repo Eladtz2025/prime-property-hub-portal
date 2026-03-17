@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play, Sofa } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Download, Eye, Video, Play, Sofa, Wand2 } from 'lucide-react';
 import { addWatermarkToFile } from '@/utils/watermark';
+import { PhotoStudioDialog } from './photo-studio/PhotoStudioDialog';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
   const [selectedProperty, setSelectedProperty] = useState<string>(properties[0]?.id || '');
   const [uploading, setUploading] = useState(false);
   const [viewImage, setViewImage] = useState<PropertyImage | null>(null);
+  const [studioImage, setStudioImage] = useState<PropertyImage | null>(null);
   const isSuperAdmin = profile?.role === 'super_admin';
 
   useEffect(() => {
@@ -327,6 +329,16 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {!isVideo && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setStudioImage(image)}
+                          title="עריכה בסטודיו"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="secondary"
@@ -399,6 +411,23 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Photo Studio Dialog */}
+      {studioImage && (
+        <PhotoStudioDialog
+          open={!!studioImage}
+          onOpenChange={(open) => !open && setStudioImage(null)}
+          imageUrl={studioImage.image_url}
+          onImageReplace={async (newUrl) => {
+            await supabase
+              .from('property_images')
+              .update({ image_url: newUrl })
+              .eq('id', studioImage.id);
+            loadImages();
+            setStudioImage(null);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -30,7 +30,7 @@ const routeLabels: Record<string, string> = {
   '/admin-dashboard/price-offers': 'הצעות מחיר',
   '/admin-dashboard/customers': 'לקוחות',
   '/admin-dashboard/leads': 'לידים',
-  '/admin-dashboard/photo-studio': 'סטודיו תמונות',
+  
   '/admin-dashboard/property-scout': 'סקאוט נדל"ן',
   '/admin-dashboard/devops': 'DevOps',
   '/alerts': 'התראות',

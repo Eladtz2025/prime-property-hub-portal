@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Check, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, Check, Loader2, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { PhotoStudioDialog } from '@/components/photo-studio/PhotoStudioDialog';
 
 interface BackgroundImagePickerProps {
   propertyId?: string;
@@ -17,6 +18,7 @@ interface BackgroundImagePickerProps {
 const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImagePickerProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [scrollIndex, setScrollIndex] = useState(0);
+  const [studioOpen, setStudioOpen] = useState(false);
 
   // Fetch images from property_images table
   const { data: propertyImages, isLoading } = useQuery({
@@ -181,7 +183,30 @@ const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImageP
               }}
             />
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setStudioOpen(true)}
+            title="עריכה בסטודיו"
+            className="h-8 w-8 p-0"
+          >
+            <Wand2 className="h-4 w-4 text-primary" />
+          </Button>
         </div>
+      )}
+
+      {/* Photo Studio Dialog */}
+      {value && (
+        <PhotoStudioDialog
+          open={studioOpen}
+          onOpenChange={setStudioOpen}
+          imageUrl={value}
+          onImageReplace={(newUrl) => {
+            onChange(newUrl);
+            setStudioOpen(false);
+          }}
+        />
       )}
     </div>
   );

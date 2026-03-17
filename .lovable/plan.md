@@ -1,27 +1,21 @@
 
 
-## שילוב סטודיו תמונות בכל מקום עם העלאת תמונות
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### קומפוננטה חדשה: `src/components/photo-studio/PhotoStudioDialog.tsx`
-- דיאלוג שמקבל URL של תמונה + callback להחלפה
-- 3 טאבים: שיפור אוטומטי, ריהוט וירטואלי, הסרת אלמנטים
-- התמונה נכנסת כ-input (בלי העלאה מחדש)
-- כפתור "החלף תמונה" מחזיר תוצאה ל-callback
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### שילוב ב-4 מקומות
-1. **`ImageUpload.tsx`** — כפתור עריכה (Wand2) על כל תמונה שהועלתה
-2. **`PropertyGallery.tsx`** — כפתור עריכה בתפריט hover של כל תמונה
-3. **`ImageUploader.tsx`** (הצעות מחיר) — כפתור עריכה על כל תמונה
-4. **`BackgroundImagePicker.tsx`** (מצגת) — כפתור עריכה על תמונת הרקע הנבחרת
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### הסרות
-- הסרת route `/photo-studio` מ-`App.tsx`
-- הסרת לינק מהניווט (אם קיים)
-- מחיקת `src/pages/PhotoStudio.tsx`
-- קבצי הטאבים ב-`photo-studio/` נשארים (משמשים את הדיאלוג)
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-### סיכום קבצים
-- **חדש:** `PhotoStudioDialog.tsx`
-- **עריכה:** `ImageUpload.tsx`, `PropertyGallery.tsx`, `ImageUploader.tsx`, `BackgroundImagePicker.tsx`, `App.tsx`, ניווט
-- **מחיקה:** `PhotoStudio.tsx`
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
