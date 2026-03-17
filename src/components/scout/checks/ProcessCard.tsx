@@ -87,12 +87,14 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
               <p className="text-sm font-medium truncate">{title}</p>
             </div>
             {onToggleEnabled && (
-              <Switch
-                checked={enabled}
-                onCheckedChange={onToggleEnabled}
-                disabled={isTogglePending}
-                className="scale-75"
-              />
+              <div className="overflow-hidden rounded-full">
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={onToggleEnabled}
+                  disabled={isTogglePending}
+                  className="scale-75"
+                />
+              </div>
             )}
             {statusIndicator(isDisabled ? 'idle' : status)}
           </div>
