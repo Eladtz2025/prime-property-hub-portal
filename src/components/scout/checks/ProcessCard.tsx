@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { History, Settings, Loader2, Square, TrendingUp, AlertTriangle, Info, ExternalLink } from 'lucide-react';
+import { History, Settings, Loader2, Pause, Play, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 
 export interface ProcessCardProps {
   title: string;
