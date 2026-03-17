@@ -2,8 +2,9 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff, Sofa } from 'lucide-react';
+import { Upload, X, Star, StarOff, Image as ImageIcon, MoveUp, MoveDown, Video, Play, Eye, EyeOff, Sofa, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { PhotoStudioDialog } from './photo-studio/PhotoStudioDialog';
 import { PropertyImage } from '../types/property';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
