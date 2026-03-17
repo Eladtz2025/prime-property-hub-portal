@@ -1556,7 +1556,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'}{property.address?.split(',')[0]?.trim() ? ` ב${property.address.split(',')[0].trim()}` : ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                          {property.address?.split(',')[0]?.trim() || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {property.city?.replace(' יפו', '') || 'תל אביב'}
