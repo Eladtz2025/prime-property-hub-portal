@@ -1530,7 +1530,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                   </TableRow>
                 ) : filteredProperties?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8 text-muted-foreground">
                       לא נמצאו דירות התואמות את החיפוש
                     </TableCell>
                   </TableRow>
