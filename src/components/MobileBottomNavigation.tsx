@@ -8,7 +8,6 @@ import {
   MoreVertical,
   ImagePlus,
   Search,
-  FileText,
   Settings,
   X
 } from 'lucide-react';
