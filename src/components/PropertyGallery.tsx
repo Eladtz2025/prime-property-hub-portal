@@ -411,6 +411,23 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Photo Studio Dialog */}
+      {studioImage && (
+        <PhotoStudioDialog
+          open={!!studioImage}
+          onOpenChange={(open) => !open && setStudioImage(null)}
+          imageUrl={studioImage.image_url}
+          onImageReplace={async (newUrl) => {
+            await supabase
+              .from('property_images')
+              .update({ image_url: newUrl })
+              .eq('id', studioImage.id);
+            loadImages();
+            setStudioImage(null);
+          }}
+        />
+      )}
     </div>
   );
 };

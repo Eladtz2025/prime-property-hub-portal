@@ -100,18 +100,44 @@ const ImageUploader = ({ offerId, images, onImagesChange }: ImageUploaderProps) 
                   alt={`תמונה ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg"
                 />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removeImage(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setStudioIndex(index)}
+                    title="עריכה בסטודיו"
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
+      )}
+
+      {/* Photo Studio Dialog */}
+      {studioIndex !== null && images[studioIndex] && (
+        <PhotoStudioDialog
+          open={studioIndex !== null}
+          onOpenChange={(open) => !open && setStudioIndex(null)}
+          imageUrl={images[studioIndex]}
+          onImageReplace={(newUrl) => {
+            const newImages = [...images];
+            newImages[studioIndex] = newUrl;
+            onImagesChange(newImages);
+            setStudioIndex(null);
+          }}
+        />
       )}
     </div>
   );
