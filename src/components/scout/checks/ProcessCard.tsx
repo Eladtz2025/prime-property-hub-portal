@@ -85,14 +85,6 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
             <span className="shrink-0">{icon}</span>
             <p className="text-sm font-semibold truncate flex-1">{title}</p>
             <span className={`text-[11px] ${st.color}`}>{st.label}</span>
-            {onToggleEnabled && (
-              <Switch
-                checked={enabled}
-                onCheckedChange={onToggleEnabled}
-                disabled={isTogglePending}
-                className="scale-[0.7]"
-              />
-            )}
           </div>
 
           {/* Center: compact metric */}
