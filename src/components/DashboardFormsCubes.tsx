@@ -174,10 +174,10 @@ export const DashboardFormsCubes = () => {
             <Popover key={cube.id}>
               <PopoverTrigger asChild>
                 <button className={cubeBase}>
-                  <Icon className="h-6 w-6 text-white" />
-                  <span className="text-xs font-medium text-white text-center">{cube.label}</span>
+                  <Icon className="h-6 w-6 text-foreground" />
+                  <span className="text-xs font-medium text-foreground text-center">{cube.label}</span>
                   {cube.count > 0 && (
-                    <Badge className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0 min-w-[18px] bg-white/25 text-white border-white/30 hover:bg-white/30">
+                    <Badge className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0 min-w-[18px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
                       {cube.count}
                     </Badge>
                   )}
