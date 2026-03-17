@@ -1,52 +1,21 @@
 
 
-## שדרוג פעולות אחרונות + לוח זמנים — Compact Redesign
+## תיקון עקביות casing ב-scout-madlan-jina
 
-שכתוב JSX בלבד ב-`ScheduleSummaryCard.tsx`. הלוגיקה והנתונים נשארים זהים.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
----
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### שינויים כלליים
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-- גובה כרטיס: `h-[340px]` (ירד מ-400)
-- padding: `p-4` (ירד מ-p-5)
-
-### 1. פעולות אחרונות — Compact Activity Feed
-
-**RunCard** — שכתוב מלא:
-- גובה שורה: `min-h-[54px]` (ירד מ-72)
-- `py-2 px-2` (ירד מ-py-3 px-3)
-- **הסרת StatusPill** — במקומו: נקודה צבעונית קטנה (`w-1.5 h-1.5`) + טקסט סטטוס פשוט (`text-[10px]`)
-- זמן יחסי מתחת לסטטוס
-
-**LedgerFooter** — שורה אחת דקה:
-- `pt-2` (ירד מ-pt-3)
-- ימין: `{completed} הושלמו · {warnings} אזהרות` + "הצג הכל" — הכל בשורה אחת
-- גובה מינימלי
-
-### 2. לוח זמנים → Next Runs (רשימה קומפקטית)
-
-**הסרת TimelineNode** לגמרי — אין קו אנכי, אין עיגולים.
-
-**במקומו:**
-
-**NextRunCard** — שורה ראשונה מיוחדת:
-- `bg-primary/5 rounded-lg p-2.5 mb-2`
-- שם פעולה + שעה + "הבאה בתור" טקסט קטן
-- highlight עדין
-
-**ScheduleRow** — שורות קומפקטיות (4-6):
-- גובה `h-[40px]`, `py-1.5 px-2`
-- שעה (`font-mono text-[11px]`) + נקודת צבע + שם משימה
-- `border-b border-border/15 last:border-0`
-
-**Footer** — שורה אחת:
-- `pt-2 border-t border-border/20`
-- "הצג הכל" בלבד
-
-### קובץ
-
-| קובץ | שינוי |
-|-------|--------|
-| `ScheduleSummaryCard.tsx` | שכתוב RunCard, LedgerFooter, החלפת TimelineNode ב-NextRunCard+ScheduleRow, עדכון container heights |
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

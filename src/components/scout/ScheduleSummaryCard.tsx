@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  StopCircle,
   Zap,
   AlertTriangle
 } from 'lucide-react';
@@ -84,65 +83,52 @@ const getTypeColors = (type: string, propertyType?: string) => {
   return TYPE_COLORS[getTypeKey(type, propertyType)] || TYPE_COLORS['cleanup'];
 };
 
-const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
-  completed: {
-    label: 'הושלם',
-    icon: <CheckCircle2 className="h-3 w-3" />,
-    className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  },
-  failed: {
-    label: 'נכשל',
-    icon: <XCircle className="h-3 w-3" />,
-    className: 'bg-destructive/10 text-destructive border-destructive/20',
-  },
-  running: {
-    label: 'בתהליך',
-    icon: <Loader2 className="h-3 w-3 animate-spin" />,
-    className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  },
-  stopped: {
-    label: 'אזהרה',
-    icon: <AlertTriangle className="h-3 w-3" />,
-    className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  },
+const STATUS_DOT: Record<string, string> = {
+  completed: 'bg-emerald-500',
+  failed: 'bg-destructive',
+  running: 'bg-blue-500',
+  stopped: 'bg-amber-500',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  completed: 'הושלם',
+  failed: 'נכשל',
+  running: 'בתהליך',
+  stopped: 'אזהרה',
 };
 
 // ── Sub-components ─────────────────────────────────────
 
-const StatusPill = ({ status }: { status: string }) => {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG['completed'];
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-none ${config.className}`}>
-      {config.icon}
-      {config.label}
-    </span>
-  );
-};
-
 const RunCard = ({ run }: { run: AggregatedRun }) => {
   const colors = getTypeColors(run.type, run.propertyType);
+  const statusDot = STATUS_DOT[run.status] || STATUS_DOT['completed'];
+  const statusLabel = STATUS_LABEL[run.status] || STATUS_LABEL['completed'];
+
   return (
-    <div className="flex items-center justify-between gap-3 min-h-[72px] py-3 px-3 border-b border-border/20 last:border-0 transition-colors hover:bg-muted/20">
-      {/* Right side — name + metadata */}
-      <div className="flex-1 min-w-0 space-y-1.5">
+    <div className="flex items-center justify-between gap-2 min-h-[54px] py-2 px-2 border-b border-border/15 last:border-0">
+      {/* Right — name + metadata */}
+      <div className="flex-1 min-w-0 space-y-0.5">
         <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
-          <span className="text-sm font-medium truncate">{run.task}</span>
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${colors.dot}`} />
+          <span className="text-[13px] font-medium truncate">{run.task}</span>
           {run.batchCount > 1 && (
             <Badge variant="secondary" className="text-[9px] h-4 px-1.5 shrink-0">
               ×{run.batchCount}
             </Badge>
           )}
         </div>
-        <p className="text-[11px] text-muted-foreground leading-tight truncate pr-3">
+        <p className="text-[10px] text-muted-foreground leading-tight truncate pr-2">
           {run.summary} · {run.duration}
         </p>
       </div>
 
-      {/* Left side — status + time */}
-      <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <StatusPill status={run.status} />
-        <span className="text-[10px] text-muted-foreground">
+      {/* Left — status dot + text + time */}
+      <div className="flex flex-col items-end gap-0.5 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
+          {statusLabel}
+        </span>
+        <span className="text-[10px] text-muted-foreground/70">
           {formatRelativeTime(run.startedAt)}
         </span>
       </div>
@@ -154,11 +140,8 @@ const LedgerFooter = ({ runs }: { runs: AggregatedRun[] }) => {
   const completed = runs.filter(r => r.status === 'completed').length;
   const warnings = runs.filter(r => r.status === 'stopped' || r.status === 'failed').length;
   return (
-    <div className="flex items-center justify-between pt-3 border-t border-border/30 mt-auto">
-      <button className="text-[11px] text-primary font-medium hover:underline">
-        הצג הכל
-      </button>
-      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+    <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-auto">
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
         {completed > 0 && (
           <span className="flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3 text-emerald-500" />
@@ -172,47 +155,53 @@ const LedgerFooter = ({ runs }: { runs: AggregatedRun[] }) => {
           </span>
         )}
       </div>
+      <button className="text-[10px] text-primary font-medium hover:underline">
+        הצג הכל
+      </button>
     </div>
   );
 };
 
-const TimelineNode = ({ time, endTime, items, isNext }: { time: string; endTime?: string; items: ScheduleItem[]; isNext: boolean }) => {
+const NextRunCard = ({ group }: { group: { time: string; endTime?: string; items: ScheduleItem[] } }) => {
+  const first = group.items[0];
+  const colors = getTypeColors(first.type, first.propertyType);
+  const timeDisplay = group.endTime ? `${group.time}–${group.endTime}` : group.time;
+
   return (
-    <div className="relative flex gap-3 min-h-[64px] pb-2">
-      {/* Vertical line */}
-      <div className="absolute right-[5px] top-4 bottom-0 w-0.5 bg-border/30" />
-
-      {/* Node dot */}
-      <div className="relative z-10 shrink-0 mt-1">
-        <div className={`w-3 h-3 rounded-full border-2 
-          ${isNext
-            ? 'border-primary bg-primary/20 ring-4 ring-primary/10'
-            : 'border-border bg-background'
-          }`}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1.5 pb-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-semibold text-foreground">
-            {endTime ? `${time}–${endTime}` : time}
-          </span>
-          {isNext && (
-            <span className="text-[9px] text-primary font-medium">הבאה בתור</span>
+    <div className="rounded-lg bg-primary/5 border border-primary/10 p-2.5 mb-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
+          <span className="text-[13px] font-semibold">{first.label}</span>
+          {group.items.length > 1 && (
+            <span className="text-[10px] text-muted-foreground">+{group.items.length - 1}</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((item, idx) => {
-            const colors = getTypeColors(item.type, item.propertyType);
-            return (
-              <span key={idx} className={`inline-flex items-center gap-1 rounded-md ${colors.bg} px-2 py-1 text-[11px] font-medium ${colors.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-                {item.label}
-              </span>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] font-medium text-foreground">{timeDisplay}</span>
+          <span className="text-[9px] text-primary font-medium">הבאה בתור</span>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ScheduleRow = ({ group }: { group: { time: string; endTime?: string; items: ScheduleItem[] } }) => {
+  const timeDisplay = group.endTime ? `${group.time}–${group.endTime}` : group.time;
+
+  return (
+    <div className="flex items-center gap-2 h-[40px] py-1.5 px-2 border-b border-border/15 last:border-0">
+      <span className="font-mono text-[11px] text-muted-foreground w-[90px] shrink-0 text-right">{timeDisplay}</span>
+      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+        {group.items.map((item, idx) => {
+          const colors = getTypeColors(item.type, item.propertyType);
+          return (
+            <span key={idx} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+              {item.label}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -431,17 +420,21 @@ export const ScheduleSummaryCard: React.FC = () => {
     return `עודכן לפני ${Math.floor(diffSec / 60)} דק׳`;
   }, [dataUpdatedAt]);
 
+  // Split schedule: next run + rest
+  const nextGroup = groupedByTime.find(g => g.time === nextTimeSlot);
+  const restGroups = groupedByTime.filter(g => g.time !== nextTimeSlot);
+
   return (
     <div className="mt-4 grid grid-cols-1 md:grid-cols-[58%_42%] gap-4">
-      {/* ── Activity Ledger ── */}
-      <div className="rounded-[20px] border border-border/40 bg-card p-5 h-[400px] flex flex-col shadow-sm">
+      {/* ── Activity Feed ── */}
+      <div className="rounded-[20px] border border-border/40 bg-card p-4 h-[340px] flex flex-col shadow-sm">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-foreground">פעולות אחרונות</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground">
             {lastHourCount > 0 && `${lastHourCount} בשעה האחרונה · `}{updatedAgo}
           </span>
         </div>
@@ -459,30 +452,32 @@ export const ScheduleSummaryCard: React.FC = () => {
         {aggregatedRuns.length > 0 && <LedgerFooter runs={aggregatedRuns} />}
       </div>
 
-      {/* ── Schedule Timeline ── */}
-      <div className="rounded-[20px] border border-border/40 bg-card p-5 h-[400px] flex flex-col shadow-sm">
+      {/* ── Schedule — Next Runs ── */}
+      <div className="rounded-[20px] border border-border/40 bg-card p-4 h-[340px] flex flex-col shadow-sm">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-foreground">לוח זמנים</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground">
             {groupedByTime.length} משימות מתוזמנות
           </span>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto min-h-0 pr-1">
-          {groupedByTime.map((group, idx) => (
-            <TimelineNode
-              key={`${group.time}-${idx}`}
-              time={group.time}
-              endTime={group.endTime}
-              items={group.items}
-              isNext={group.time === nextTimeSlot}
-            />
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {nextGroup && <NextRunCard group={nextGroup} />}
+          {restGroups.map((group, idx) => (
+            <ScheduleRow key={`${group.time}-${idx}`} group={group} />
           ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end pt-2 border-t border-border/20 mt-auto">
+          <button className="text-[10px] text-primary font-medium hover:underline">
+            הצג הכל
+          </button>
         </div>
       </div>
     </div>
