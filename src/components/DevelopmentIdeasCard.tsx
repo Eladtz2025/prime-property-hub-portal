@@ -52,7 +52,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
           רעיונות לפיתוח
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-y-auto">
         {/* Add new idea */}
         <div className="flex gap-2">
           <Select value={newPriority} onValueChange={setNewPriority}>

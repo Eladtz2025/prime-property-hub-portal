@@ -84,19 +84,14 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
       <ActivePropertiesCard properties={properties} />
 
       {/* שורה: פגישות קרובות + רעיונות לפיתוח + פניות מהאתר */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="flex flex-col">
-          <CardHeader className="pb-3 shrink-0">
-            <UpcomingAppointmentsCard 
-              limit={3} 
-              onAddAppointment={() => setIsAppointmentModalOpen(true)}
-              onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
-              embedded
-            />
-          </CardHeader>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 [&>*]:max-h-[400px] [&>*]:flex [&>*]:flex-col">
+        <UpcomingAppointmentsCard 
+          limit={3} 
+          onAddAppointment={() => setIsAppointmentModalOpen(true)}
+          onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
+        />
 
-        <DevelopmentIdeasCard maxHeight="max-h-[320px]" />
+        <DevelopmentIdeasCard />
 
         <Card className="flex flex-col">
           <CardHeader className="pb-3 shrink-0">
@@ -116,7 +111,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="max-h-[320px] overflow-y-auto">
+          <CardContent className="overflow-y-auto">
             <ContactLeadsListCompact limit={5} />
           </CardContent>
         </Card>

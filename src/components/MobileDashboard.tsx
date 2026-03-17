@@ -89,7 +89,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         <AnalyticsSummaryCard stats={stats} />
 
         {/* Development Ideas */}
-        <DevelopmentIdeasCard maxHeight="max-h-[320px]" />
+        <DevelopmentIdeasCard />
 
         {/* Website Inquiries */}
         <Card>
