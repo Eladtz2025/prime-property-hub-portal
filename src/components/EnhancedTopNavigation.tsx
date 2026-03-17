@@ -36,11 +36,13 @@ const navigationItems = [
 interface EnhancedTopNavigationProps {
   onLogout?: () => void;
   isMobile?: boolean;
+  today?: string;
 }
 
 export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({ 
   onLogout, 
-  isMobile = false 
+  isMobile = false,
+  today 
 }) => {
   const { profile } = useAuth();
   const navigate = useNavigate();
