@@ -1,26 +1,21 @@
 
 
-## הקטנת וצמצום כרטיסי התהליכים — Stat Tiles נקיים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### קובץ: `ProcessCard.tsx`
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-**שינויים:**
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-1. **הקטנת גובה ~25%**: `p-5` → `p-3.5`, `py-4` באזור המרכזי → `py-2`, הסרת `gap-1` מיותר
-2. **Footer דק**: הסרת כפתור "הפעל" גדול + אייקוני History/Settings נפרדים. במקום: שורה דקה אחת (`pt-2 border-t`) עם "פתח" קטן מימין, ואייקוני history+settings מוקטנים (`h-3 w-3`, `h-6 w-6` buttons) משמאל. כשרץ — "עצור" קטן במקום "פתח".
-3. **Header ללא שינוי** — כבר מכיל toggle+status+title באותה שורה (תקין)
-4. **מרכז מצומצם**: הקטנת מספר גדול מ-`text-4xl` → `text-3xl`, הקטנת `mt` בין אלמנטים, הסרת רווחים מיותרים
-5. **הסרת hover translate** — רק `hover:shadow-sm` בלי `-translate-y`
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-### קובץ: `ChecksDashboard.tsx`
-
-**שינויים:**
-
-1. **גריד אחיד**: שינוי מ-`lg:grid-cols-3` ל-`lg:grid-cols-5` כך שכל 5 הכרטיסים באותה שורה בדסקטופ (או `xl:grid-cols-5 lg:grid-cols-3` לרספונסיביות)
-2. **התאמות** — `primaryValue={0}`, העברת `leadCounts.eligible` ל-`secondaryLine`: `"43 לידים eligible"` במקום שיהיה המספר הראשי
-3. **gap**: `gap-3` → `gap-2.5`
-
-### סיכום ויזואלי
-
-כל כרטיס יהיה: header קומפקטי → מספר `text-3xl` → label → secondary line → insight → divider דק → "פתח" + 2 אייקונים קטנים. בלי כפתור כבד, בלי רווחים מיותרים.
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

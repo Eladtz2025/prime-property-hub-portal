@@ -415,7 +415,7 @@ export const ChecksDashboard: React.FC = () => {
       <LiveMonitor />
 
       {/* Process Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
 
         {/* Scans Jina */}
         <ProcessCard
@@ -529,10 +529,10 @@ export const ChecksDashboard: React.FC = () => {
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          primaryValue={leadCounts?.eligible ?? 0}
-          primaryLabel="ממתינים להתאמה"
-          secondaryLine={matchStats?.total_matches ? `${matchStats.total_matches} התאמות בריצה אחרונה` : undefined}
-          insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} לידים eligible`}
+          primaryValue={matchStats?.total_matches ?? 0}
+          primaryLabel="התאמות אחרונות"
+          secondaryLine={`${leadCounts?.eligible ?? 0} לידים eligible`}
+          insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} ממתינים להתאמה`}
           insightType={(leadCounts?.eligible ?? 0) === 0 ? 'ok' : 'info'}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
