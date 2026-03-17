@@ -119,29 +119,29 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           </div>
 
           {/* Thin footer */}
-          <div className="flex items-center gap-1 pt-2 border-t border-border/30">
-            {status === 'running' && onStop ? (
-              <button
-                className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 disabled:opacity-50"
-                onClick={onStop}
-                disabled={isStopPending}
-              >
-                {isStopPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Pause className="h-2.5 w-2.5" />}
-                השהה
-              </button>
-            ) : onRun ? (
-              <button
-                className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 disabled:opacity-50"
-                onClick={onRun}
-                disabled={isRunPending || status === 'running' || isDisabled}
-              >
-                {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-2.5 w-2.5" />}
-                הפעל
-              </button>
-            ) : (
-              <div className="flex-1" />
-            )}
-            <div className="flex items-center gap-0 mr-auto">
+          <div className="flex items-center gap-1 pt-2 border-t border-border/30 relative">
+            <div className="flex-1 flex justify-center">
+              {status === 'running' && onStop ? (
+                <button
+                  className="bg-muted text-muted-foreground rounded-md px-4 py-1 text-[11px] font-medium flex items-center gap-1 hover:bg-muted/80 disabled:opacity-50 transition-colors"
+                  onClick={onStop}
+                  disabled={isStopPending}
+                >
+                  {isStopPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Pause className="h-2.5 w-2.5" />}
+                  השהה
+                </button>
+              ) : onRun ? (
+                <button
+                  className="bg-primary text-primary-foreground rounded-md px-4 py-1 text-[11px] font-medium flex items-center gap-1 hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  onClick={onRun}
+                  disabled={isRunPending || status === 'running' || isDisabled}
+                >
+                  {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-2.5 w-2.5" />}
+                  הפעל
+                </button>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-0 absolute left-0">
               {historyContent && (
                 <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted/50" onClick={() => setHistoryOpen(true)}>
                   <History className="h-3 w-3 text-muted-foreground" />
