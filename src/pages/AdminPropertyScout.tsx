@@ -25,7 +25,7 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: React.Re
 );
 
 const AdminPropertyScout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('properties');
 
   // Global scout stats (unique queryKey to avoid collision with ChecksDashboard)
   const { data: stats } = useQuery({
