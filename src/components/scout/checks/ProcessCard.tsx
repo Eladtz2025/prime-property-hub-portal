@@ -135,8 +135,8 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
                 onClick={onRun}
                 disabled={isRunPending || status === 'running' || isDisabled}
               >
-                {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-2.5 w-2.5" />}
-                פתח
+                {isRunPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-2.5 w-2.5" />}
+                הפעל
               </button>
             ) : (
               <div className="flex-1" />
