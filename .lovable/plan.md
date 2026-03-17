@@ -1,21 +1,53 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שדרוג ריצות אחרונות + לוח זמנים
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+שכתוב מלא של `ScheduleSummaryCard.tsx` — אותו קובץ, אותו data fetching, עיצוב חדש לגמרי.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+---
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### 1. ריצות אחרונות → Activity Ledger
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**Header:**
+- כותרת "Activity Ledger" עם אייקון Activity
+- Subtitle דינמי: `{count} אירועים בשעה האחרונה · עודכן לפני X שניות` (מחושב מ-`recentRuns`)
+
+**כל שורה — כרטיסון:**
+- רקע `bg-muted/30 rounded-lg px-3 py-2` עם hover עדין
+- **צד ימין**: שם תהליך בולט (`text-sm font-medium`) + שורת metadata מתחת בטקסט קטן אפור (הסיכום — "467 נבדקו · 23 זמינים · 17 דק׳")
+- **צד שמאל**: Status pill צבעוני (`הושלם` ירוק, `נכשל` אדום, `אזהרה` צהוב, `בתהליך` כחול עם spinner) + זמן יחסי ("לפני 3 דק׳") או שעה מוחלטת
+- Badge קטן של type צבעוני (dot + source) ליד השם
+- Batch count badge אם `batchCount > 1`
+
+**Footer שורה:**
+- ספירה: `✓ completed · ✗ failed · ⚠ warnings`
+
+---
+
+### 2. לוח זמנים → Vertical Timeline
+
+**Header:**
+- כותרת "Schedule Timeline" עם אייקון Clock
+- Subtitle: `{count} משימות מתוזמנות היום`
+
+**מבנה Timeline:**
+- ציר אנכי — קו דק (`border-l-2 border-border/40`) בצד ימין
+- לכל שעה: נקודה עגולה צבעונית על הקו + שעה בצד ימין של הנקודה
+- Event capsules בצד שמאל — `rounded-lg bg-muted/30 px-3 py-1.5`
+- כל capsule: שם + טווח שעות + dot צבעוני לפי type
+- צבעים: זמינות=כחול, התאמות=ירוק, סריקה-השכרה=כתום, סריקה-מכירה=כתום כהה, backfill=צהוב, cleanup=אפור
+
+**חיבור ויזואלי:**
+- קו אנכי רציף שמחבר את כל הנקודות
+- נקודה גדולה יותר + ring לשעה הנוכחית/הקרובה
+
+---
+
+### קובץ אחד
+
+| קובץ | שינוי |
+|-------|--------|
+| `ScheduleSummaryCard.tsx` | שכתוב מלא — אותו data fetching, layout ו-UI חדשים לגמרי |
+
+הלוגיקה (queries, aggregation, schedule building) נשארת זהה. רק ה-JSX של ה-return משתנה.
 
