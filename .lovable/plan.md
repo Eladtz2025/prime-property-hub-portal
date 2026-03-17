@@ -1,31 +1,21 @@
 
 
-## העברת ברכה להדר + עיצוב מקצועי יותר
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### הרעיון
-כמו בתמונה — הדר צבעוני (primary) עם הברכה + ניווט, והעמוד למטה נקי ורגוע יותר.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### שינויים
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**`src/components/Layout.tsx` (דסקטופ + מובייל):**
-- שינוי ההדר ל-`bg-primary text-white` במקום `bg-card/80`
-- הניווט והלוגו יקבלו צבעי טקסט לבנים
-- הוספת שם המשתמש + ברכה בהדר (צד ימין ליד הלוגו)
-- הוספת התאריך הנוכחי קטן מתחת לברכה
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-**`src/components/EnhancedTopNavigation.tsx`:**
-- התאמת צבעי הניווט ללבן (active: `bg-white/20 text-white`, inactive: `text-white/70 hover:text-white`)
-- האווטר והדרופדאון יתאימו לרקע כהה
-
-**`src/components/Dashboard.tsx`:**
-- הסרת בלוק הברכה הצבעוני (gradient card, שורות 57-81) — כי הברכה עכשיו בהדר
-- ה-`DashboardFormsCubes` יעבור לשורה נפרדת מתחת או ישולב בהדר
-- העמוד יתחיל ישר מהתוכן (נכסים, כרטיסיות)
-
-**`src/components/MobileDashboard.tsx`:**
-- הסרת בלוק הברכה גם פה (כי הברכה בהדר)
-
-### תוצאה
-- הדר כחול/צבעוני עם ברכה + ניווט + לוגו
-- תוכן העמוד — רקע לבן/בהיר, נקי ומקצועי
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

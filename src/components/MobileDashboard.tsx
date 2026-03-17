@@ -55,25 +55,8 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         {/* PWA Install Prompt */}
         <AdminPWAInstallPrompt />
         
-        {/* Header with greeting */}
-        <div className="bg-gradient-primary rounded-2xl p-5 text-white shadow-elevated animate-fade-in overflow-hidden relative isolate">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20"></div>
-            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-white/10"></div>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="mb-4">
-              <h1 className="text-xl font-bold mb-1">
-                שלום{userName ? ` ${userName}` : ''}! 👋
-              </h1>
-              <p className="text-white/90 text-sm">ברוך הבא למערכת ניהול הנכסים</p>
-            </div>
-            
-            <DashboardFormsCubes />
-          </div>
-        </div>
+        {/* Quick Action Forms */}
+        <DashboardFormsCubes />
 
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
