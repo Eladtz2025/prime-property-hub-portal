@@ -64,7 +64,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
             >
               <div className="flex flex-col items-start">
                 <span className="text-sm font-medium text-primary-foreground">
-                  {firstName ? `👋 שלום ${firstName}` : 'תפריט'}
+                  {firstName ? `שלום ${firstName} 👋` : 'תפריט'}
                 </span>
                 {today && (
                   <span className="text-[10px] text-primary-foreground/60">{today}</span>
