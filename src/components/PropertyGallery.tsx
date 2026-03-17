@@ -45,6 +45,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
   const [selectedProperty, setSelectedProperty] = useState<string>(properties[0]?.id || '');
   const [uploading, setUploading] = useState(false);
   const [viewImage, setViewImage] = useState<PropertyImage | null>(null);
+  const [studioImage, setStudioImage] = useState<PropertyImage | null>(null);
   const isSuperAdmin = profile?.role === 'super_admin';
 
   useEffect(() => {
