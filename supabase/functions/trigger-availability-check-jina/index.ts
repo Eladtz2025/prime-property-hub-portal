@@ -1,5 +1,5 @@
-// trigger-availability-check-jina v1.0
-// Copy of trigger-availability-check that calls check-property-availability-jina instead
+// trigger-availability-check-jina v2.0
+// Architecture: 1 batch per invocation + self-chain with run_id continuity
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
@@ -12,7 +12,8 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const MAX_BATCHES_PER_RUN = 5;
+// Process exactly 1 batch per invocation to stay safely within Edge Function timeout
+const MAX_BATCHES_PER_RUN = 1;
 const BATCH_TIMEOUT_MS = 110000;
 
 serve(async (req) => {
@@ -28,97 +29,124 @@ serve(async (req) => {
   let runId: string | null = null;
 
   try {
-    const { manual, continue_run } = await req.json().catch(() => ({}));
+    const { manual, continue_run, run_id: existingRunId } = await req.json().catch(() => ({}));
     const isManual = manual === true;
+    const isContinuation = continue_run === true && !!existingRunId;
 
-    // Kill switch check (skip for manual runs)
-    if (!isManual && !continue_run && !await isProcessEnabled(supabase, 'availability_jina')) {
+    // Kill switch check (skip for manual runs and continuations)
+    if (!isManual && !isContinuation && !await isProcessEnabled(supabase, 'availability_jina')) {
       return new Response(JSON.stringify({ skipped: true, reason: 'Process disabled via kill switch' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`🔍 Starting availability check JINA (${isManual ? 'manual' : 'cron-based'})...`);
+    console.log(`🔍 Availability check JINA ${isContinuation ? `(continuation of ${existingRunId})` : `(${isManual ? 'manual' : 'cron-based'})`}...`);
 
-    // Await cleanup of stuck runs before lock check to avoid race conditions
-    try {
-      await fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (err) {
-      console.error('⚠️ Cleanup-stuck-runs failed:', err);
-    }
+    if (isContinuation) {
+      // === CONTINUATION: reuse existing run record ===
+      runId = existingRunId;
 
-    // === AUTO-CLEANUP: Mark stuck runs (>15min) as failed ===
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: stuckCleanup } = await supabase
-      .from('availability_check_runs')
-      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
-      .eq('status', 'running')
-      .lt('started_at', fiveMinutesAgo)
-      .select('id');
-    
-    if (stuckCleanup && stuckCleanup.length > 0) {
-      console.log(`🧹 Auto-cleaned ${stuckCleanup.length} stuck runs: ${stuckCleanup.map(r => r.id).join(', ')}`);
-    }
+      // Check if run was stopped
+      const { data: runCheck } = await supabase
+        .from('availability_check_runs')
+        .select('status, is_manual')
+        .eq('id', runId)
+        .single();
 
-    // === LOCK CHECK: Prevent parallel runs ===
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: runningCheck } = await supabase
-      .from('availability_check_runs')
-      .select('id, started_at, is_manual')
-      .eq('status', 'running')
-      .gt('started_at', fiveMinAgo)
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (runningCheck) {
-      if (isManual && !runningCheck.is_manual) {
-        await supabase
-          .from('availability_check_runs')
-          .update({ is_manual: true })
-          .eq('id', runningCheck.id);
-        console.log(`🔄 Upgraded existing run ${runningCheck.id} to manual mode`);
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Upgraded existing run to manual',
-          run_id: runningCheck.id
-        }), {
+      if (!runCheck || runCheck.status === 'stopped') {
+        console.log(`🛑 Run ${runId} was stopped or not found. Exiting.`);
+        return new Response(JSON.stringify({ success: true, message: 'Run stopped', run_id: runId }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      const runAge = (Date.now() - new Date(runningCheck.started_at).getTime()) / 1000;
-      console.log(`⏳ Already running: ${runningCheck.id} (${runAge.toFixed(0)}s ago). Skipping.`);
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Already running',
-        running_since: runningCheck.started_at,
-        run_id: runningCheck.id
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+
+      if (runCheck.status !== 'running') {
+        console.log(`⚠️ Run ${runId} status is '${runCheck.status}', not 'running'. Exiting.`);
+        return new Response(JSON.stringify({ success: true, message: 'Run not in running state', run_id: runId }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Update heartbeat timestamp
+      await supabase
+        .from('availability_check_runs')
+        .update({ started_at: new Date().toISOString() })
+        .eq('id', runId);
+
+    } else {
+      // === NEW RUN: cleanup + lock + create ===
+
+      // Await cleanup of stuck runs
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+      } catch (err) {
+        console.error('⚠️ Cleanup-stuck-runs failed:', err);
+      }
+
+      // Auto-cleanup: stuck runs > 5min
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: stuckCleanup } = await supabase
+        .from('availability_check_runs')
+        .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
+        .eq('status', 'running')
+        .lt('started_at', fiveMinutesAgo)
+        .select('id');
+      
+      if (stuckCleanup && stuckCleanup.length > 0) {
+        console.log(`🧹 Auto-cleaned ${stuckCleanup.length} stuck runs: ${stuckCleanup.map(r => r.id).join(', ')}`);
+      }
+
+      // Lock check: prevent parallel runs
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: runningCheck } = await supabase
+        .from('availability_check_runs')
+        .select('id, started_at, is_manual')
+        .eq('status', 'running')
+        .gt('started_at', fiveMinAgo)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (runningCheck) {
+        if (isManual && !runningCheck.is_manual) {
+          await supabase
+            .from('availability_check_runs')
+            .update({ is_manual: true })
+            .eq('id', runningCheck.id);
+          console.log(`🔄 Upgraded existing run ${runningCheck.id} to manual mode`);
+          return new Response(JSON.stringify({
+            success: true, message: 'Upgraded existing run to manual', run_id: runningCheck.id
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        const runAge = (Date.now() - new Date(runningCheck.started_at).getTime()) / 1000;
+        console.log(`⏳ Already running: ${runningCheck.id} (${runAge.toFixed(0)}s ago). Skipping.`);
+        return new Response(JSON.stringify({
+          success: true, message: 'Already running', running_since: runningCheck.started_at, run_id: runningCheck.id
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Create new run record
+      const { data: newRun, error: insertError } = await supabase
+        .from('availability_check_runs')
+        .insert({ status: 'running', is_manual: isManual })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('❌ Failed to create run record:', insertError);
+        throw insertError;
+      }
+
+      runId = newRun.id;
+      console.log(`🔒 Created run lock: ${runId}`);
     }
-
-    // Create new run record (claim the lock)
-    const { data: newRun, error: insertError } = await supabase
-      .from('availability_check_runs')
-      .insert({ status: 'running', is_manual: isManual })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      console.error('❌ Failed to create run record:', insertError);
-      throw insertError;
-    }
-
-    runId = newRun.id;
-    console.log(`🔒 Created run lock: ${runId}`);
 
     const settings = await fetchCategorySettings(supabase, 'availability');
     const batchSize = settings.batch_size;
@@ -127,8 +155,9 @@ serve(async (req) => {
     const firstRecheckDays = settings.first_recheck_interval_days || 8;
     const recurringRecheckDays = settings.recurring_recheck_interval_days || 2;
 
-    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}, firstRecheck=${firstRecheckDays}d, recurringRecheck=${recurringRecheckDays}d`);
+    console.log(`⚙️ Settings: batchSize=${batchSize}, dailyLimit=${dailyLimit}`);
 
+    // Check daily limit
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -141,25 +170,22 @@ serve(async (req) => {
     console.log(`📊 Already processed today: ${processedToday}/${dailyLimit}`);
 
     if (processedToday >= dailyLimit) {
-      console.log(`✅ Daily limit reached (${dailyLimit}). Stopping.`);
+      console.log(`✅ Daily limit reached (${dailyLimit}). Completing run.`);
       await supabase
         .from('availability_check_runs')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), properties_checked: 0 })
-        .eq('id', runId);
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', runId)
+        .eq('status', 'running');
       return new Response(JSON.stringify({
-        success: true,
-        message: 'Daily limit reached',
-        processed_today: processedToday,
-        daily_limit: dailyLimit
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+        success: true, message: 'Daily limit reached', processed_today: processedToday, daily_limit: dailyLimit
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const remainingQuota = dailyLimit - processedToday;
-    const fetchLimit = Math.min(remainingQuota, batchSize * (MAX_BATCHES_PER_RUN + 1));
+    // Only fetch 1 batch worth of properties
+    const fetchLimit = Math.min(remainingQuota, batchSize);
 
-    console.log(`📊 Fetching up to ${fetchLimit} properties (quota remaining: ${remainingQuota})`);
+    console.log(`📊 Fetching up to ${fetchLimit} properties`);
 
     const { data: properties, error: fetchError } = await supabase
       .rpc('get_properties_needing_availability_check', {
@@ -174,188 +200,137 @@ serve(async (req) => {
     const propertyIds = properties?.map(p => p.id) || [];
 
     if (propertyIds.length === 0) {
-      console.log('✅ No properties need checking');
+      console.log('✅ No properties need checking. Completing run.');
       await supabase
         .from('availability_check_runs')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), properties_checked: 0 })
-        .eq('id', runId);
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', runId)
+        .eq('status', 'running');
       return new Response(JSON.stringify({
-        success: true,
-        message: 'No properties need checking',
-        processed_today: processedToday,
-        properties_found: 0
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+        success: true, message: 'No properties need checking', run_id: runId, processed_today: processedToday
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log(`📦 Found ${propertyIds.length} properties to check`);
+    console.log(`🚀 Processing batch of ${propertyIds.length} properties...`);
 
-    const batches: string[][] = [];
-    for (let i = 0; i < propertyIds.length; i += batchSize) {
-      batches.push(propertyIds.slice(i, i + batchSize));
-    }
-
-    console.log(`📦 Split into ${batches.length} batches of up to ${batchSize} properties`);
-
-    const batchesToProcess = Math.min(batches.length, MAX_BATCHES_PER_RUN);
     let processedThisRun = 0;
     let inactiveThisRun = 0;
-    let failedBatches = 0;
-    const allRunDetails: any[] = [];
-
-    for (let i = 0; i < batchesToProcess; i++) {
-      const batch = batches[i];
-
-      // Check if run was stopped between batches
-      if (i > 0) {
-        const { data: midCheck } = await supabase
-          .from('availability_check_runs')
-          .select('status')
-          .eq('id', runId)
-          .single();
-        if (midCheck?.status === 'stopped') {
-          console.log(`🛑 Run stopped by user before batch ${i + 1}. Exiting.`);
-          break;
-        }
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
+    
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ property_ids: propertyIds, run_id: runId })
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ Batch completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
+        processedThisRun = result.checked || propertyIds.length;
+        inactiveThisRun = result.marked_inactive || 0;
+      } else {
+        console.error(`❌ Batch error status: ${response.status}`);
       }
-      
-      console.log(`🚀 Processing batch ${i + 1}/${batchesToProcess} (${batch.length} properties)...`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), BATCH_TIMEOUT_MS);
-      
-      try {
-        // THIS IS THE ONLY DIFFERENCE: calling check-property-availability-jina
-        const response = await fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ property_ids: batch, run_id: runId })
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log(`✅ Batch ${i + 1} completed: ${result.checked} checked, ${result.marked_inactive} inactive`);
-          processedThisRun += result.checked || batch.length;
-          inactiveThisRun += result.marked_inactive || 0;
-          
-          if (result.results && Array.isArray(result.results)) {
-            allRunDetails.push(...result.results);
-          }
-        } else {
-          console.error(`❌ Batch ${i + 1} error status: ${response.status}`);
-          failedBatches++;
-        }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.error(`⏱️ Batch ${i + 1} timed out after ${BATCH_TIMEOUT_MS}ms`);
-        } else {
-          console.error(`❌ Batch ${i + 1} error:`, error instanceof Error ? error.message : 'Unknown');
-        }
-        failedBatches++;
-      }
-
-      if (i < batchesToProcess - 1) {
-        await sleep(settings.delay_between_batches_ms);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`⏱️ Batch timed out after ${BATCH_TIMEOUT_MS}ms`);
+      } else {
+        console.error(`❌ Batch error:`, error instanceof Error ? error.message : 'Unknown');
       }
     }
 
-    const remainingBatches = batches.length - batchesToProcess;
-
-    console.log(`📊 RUN SUMMARY:`);
-    console.log(`   - Properties in queue: ${propertyIds.length}`);
-    console.log(`   - Batches attempted: ${batchesToProcess}`);
-    console.log(`   - Batches failed: ${failedBatches}`);
-    console.log(`   - Processed this run: ${processedThisRun}`);
-    console.log(`   - Inactive marked: ${inactiveThisRun}`);
-    console.log(`   - Remaining batches: ${remainingBatches}`);
-    console.log(`   - Daily limit remaining: ${remainingQuota - processedThisRun}`);
-
-    const remainingDailyQuota = remainingQuota - processedThisRun;
-
-    const { data: currentRun } = await supabase
+    // Incrementally update run stats
+    const { data: currentRunData } = await supabase
       .from('availability_check_runs')
-      .select('status, is_manual')
+      .select('status, is_manual, properties_checked, inactive_marked')
       .eq('id', runId)
       .single();
 
-    const wasStopped = currentRun?.status === 'stopped';
-    const effectiveManual = isManual || currentRun?.is_manual === true;
+    const wasStopped = currentRunData?.status === 'stopped';
+    const effectiveManual = isManual || currentRunData?.is_manual === true;
+    const totalChecked = (currentRunData?.properties_checked || 0) + processedThisRun;
+    const totalInactive = (currentRunData?.inactive_marked || 0) + inactiveThisRun;
 
+    // Check schedule end time
     let endTimeReached = false;
     if (!effectiveManual && !wasStopped) {
       try {
-        const availSettings = await fetchCategorySettings(supabase, 'availability');
-        endTimeReached = isPastEndTime(availSettings.schedule_end_time);
+        endTimeReached = isPastEndTime(settings.schedule_end_time);
       } catch (e) {
         console.warn('Failed to check end time:', e);
       }
-    } else if (effectiveManual) {
-      console.log('⏩ Manual run — skipping schedule_end_time check');
     }
 
-    // Re-check stopped status right before deciding to self-chain
-    let finalStopped = wasStopped;
+    // Determine if there are more properties to check
+    const remainingDailyQuota = remainingQuota - processedThisRun;
+    const hadFullBatch = propertyIds.length >= batchSize;
+    const shouldSelfChain = !wasStopped && hadFullBatch && remainingDailyQuota > 0 && !endTimeReached;
+
     if (!wasStopped) {
-      const { data: finalCheck } = await supabase
-        .from('availability_check_runs')
-        .select('status')
-        .eq('id', runId)
-        .single();
-      finalStopped = finalCheck?.status === 'stopped';
+      if (shouldSelfChain) {
+        // Update stats but keep running for next chain
+        await supabase
+          .from('availability_check_runs')
+          .update({
+            properties_checked: totalChecked,
+            inactive_marked: totalInactive,
+            started_at: new Date().toISOString(), // heartbeat
+          })
+          .eq('id', runId)
+          .eq('status', 'running');
+      } else {
+        // Final batch — mark completed
+        await supabase
+          .from('availability_check_runs')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            properties_checked: totalChecked,
+            inactive_marked: totalInactive,
+          })
+          .eq('id', runId)
+          .eq('status', 'running');
+      }
     }
 
-    const shouldSelfChain = !finalStopped && remainingBatches > 0 && remainingDailyQuota > 0 && !endTimeReached;
-
-    if (!finalStopped) {
-      await supabase
-        .from('availability_check_runs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          properties_checked: processedThisRun,
-          inactive_marked: inactiveThisRun,
-          run_details: allRunDetails
-        })
-        .eq('id', runId);
-    }
-
-    if (finalStopped) {
+    if (wasStopped) {
       console.log('🛑 Run was stopped by user, not self-chaining');
     } else if (shouldSelfChain) {
-      console.log(`🔄 Self-chaining: ${remainingBatches} batches remaining, ${remainingDailyQuota} daily quota left`);
-      await sleep(3000);
-      // Self-chain to THIS function (Jina version)
+      console.log(`🔄 Self-chaining: ${totalChecked} checked so far, ${remainingDailyQuota} daily quota left`);
+      await sleep(2000);
       fetch(`${supabaseUrl}/functions/v1/trigger-availability-check-jina`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseServiceKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ continue_run: true, manual: effectiveManual })
+        body: JSON.stringify({ continue_run: true, run_id: runId, manual: effectiveManual })
       }).catch(err => console.error('⚠️ Self-chain failed:', err));
     } else if (endTimeReached) {
-      console.log(`⏰ End time reached, stopping self-chain. ${remainingBatches} batches remaining.`);
+      console.log(`⏰ End time reached, stopping. ${totalChecked} total checked.`);
+    } else {
+      console.log(`✅ All properties checked. ${totalChecked} total.`);
     }
 
     return new Response(JSON.stringify({
       success: true,
       run_id: runId,
-      processed_this_run: processedThisRun,
+      processed_this_batch: processedThisRun,
+      total_checked: totalChecked,
+      total_inactive: totalInactive,
       processed_today: processedToday + processedThisRun,
-      inactive_this_run: inactiveThisRun,
-      failed_batches: failedBatches,
-      remaining_in_queue: remainingBatches > 0 ? remainingBatches * batchSize : 0,
       daily_limit: dailyLimit,
-      self_chained: remainingBatches > 0 && remainingDailyQuota > 0,
-      next_run: remainingBatches > 0 && remainingDailyQuota > 0 ? 'self-chaining now' : remainingBatches > 0 ? 'daily limit reached' : 'backlog cleared'
+      self_chained: shouldSelfChain,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
