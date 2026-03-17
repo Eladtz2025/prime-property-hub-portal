@@ -1567,64 +1567,52 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     </TableCell>
                     <TableCell>{property.rooms || '-'}</TableCell>
                     <TableCell>{property.size ? `${property.size} מ"ר` : '-'}</TableCell>
-                    <TableCell>{getStatusBadge(property.status, property.is_active)}</TableCell>
-                    {appliedFilters.status === 'check_failed' && (
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="text-xs w-fit bg-red-50 text-red-700 border-red-300">
-                            {getCheckReasonLabel(property.availability_check_reason)}
-                          </Badge>
-                          {property.availability_checked_at && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(property.availability_checked_at), { addSuffix: true, locale: he })}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
                     <TableCell>
-                      {property.matched_leads?.length > 0 ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedProperty(property)}
-                            >
-                              <Users className="h-4 w-4 ml-1" />
-                              {property.matched_leads.length} לקוחות
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>לקוחות שהותאמו</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              {property.matched_leads.map((match: any, idx: number) => (
-                                <div key={idx} className="p-3 border rounded-lg">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-medium">{match.name}</p>
-                                      <p className="text-sm text-muted-foreground">{match.phone}</p>
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(property.status, property.is_active)}
+                        {property.matched_leads?.length > 0 ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-6 px-1.5 text-xs"
+                                onClick={() => setSelectedProperty(property)}
+                              >
+                                <Users className="h-3 w-3 ml-1" />
+                                {property.matched_leads.length} לקוחות
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>לקוחות שהותאמו</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                {property.matched_leads.map((match: any, idx: number) => (
+                                  <div key={idx} className="p-3 border rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <p className="font-medium">{match.name}</p>
+                                        <p className="text-sm text-muted-foreground">{match.phone}</p>
+                                      </div>
+                                      <Badge>{match.score}% התאמה</Badge>
                                     </div>
-                                    <Badge>{match.score}% התאמה</Badge>
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      {match.reasons?.map((reason: string, i: number) => (
+                                        <Badge key={i} variant="outline" className="text-xs">
+                                          {reason}
+                                        </Badge>
+                                      ))}
+                                    </div>
                                   </div>
-                                  <div className="mt-2 flex flex-wrap gap-1">
-                                    {match.reasons?.map((reason: string, i: number) => (
-                                      <Badge key={i} variant="outline" className="text-xs">
-                                        {reason}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        ) : null}
+                      </div>
                     </TableCell>
+                    {appliedFilters.status === 'check_failed' && (
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(property.first_seen_at), { 
                         addSuffix: true,
