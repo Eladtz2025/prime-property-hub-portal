@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Wand2 } from 'lucide-react';
+import { PhotoStudioDialog } from '@/components/photo-studio/PhotoStudioDialog';
 
 interface ImageUploaderProps {
   offerId: string;
