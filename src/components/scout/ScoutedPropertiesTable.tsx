@@ -1546,6 +1546,11 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                         {property.is_private === false && (
                           <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300 w-fit">תיווך</Badge>
                         )}
+                        {property.property_type === 'rent' ? (
+                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-300 w-fit">השכרה</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300 w-fit">מכירה</Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
