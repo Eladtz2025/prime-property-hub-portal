@@ -24,7 +24,7 @@ const mainNavItems = [
 
 // Additional items in "More" menu
 const moreNavItems = [
-  { title: "סטודיו תמונות", url: "/admin-dashboard/photo-studio", icon: ImagePlus },
+  
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search },
   
   { title: "הגדרות", url: "/admin-dashboard/settings", icon: Settings },

@@ -406,16 +406,6 @@ const AppContent: React.FC = () => {
                 } 
               />
               <Route 
-                path="/admin-dashboard/photo-studio" 
-                element={
-                  <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
-                      <PhotoStudio />
-                    </ProtectedRoute>
-                  </Layout>
-                } 
-              />
-              <Route 
                 path="/admin-dashboard/property-scout" 
                 element={
                   <Layout onLogout={signOut}>
