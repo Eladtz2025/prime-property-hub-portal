@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database, Square, Trash2 } from 'lucide-react';
+import { ExternalLink, Users, MessageSquare, Archive, Search, Eye, Download, ChevronRight, ChevronLeft, ChevronsRight, ChevronsLeft, TrendingUp, TrendingDown, Building2, X, Filter, SlidersHorizontal, CheckCircle2, Loader2, Calculator, Copy, AlertTriangle, Check, RefreshCw, Info, Database, Square, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
@@ -1546,12 +1546,17 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                         {property.is_private === false && (
                           <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300 w-fit">תיווך</Badge>
                         )}
+                        {property.property_type === 'rent' ? (
+                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-300 w-fit">השכרה</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300 w-fit">מכירה</Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'}{property.address?.split(',')[0]?.trim() ? ` ב${property.address.split(',')[0].trim()}` : ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                          {property.address?.split(',')[0]?.trim() || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {property.city?.replace(' יפו', '') || 'תל אביב'}
@@ -1749,11 +1754,16 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                 {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="font-medium truncate flex-1 min-w-0">
-                    {property.property_type === 'rent' ? 'להשכרה' : 'למכירה'}{property.address?.split(',')[0]?.trim() ? ` ב${property.address.split(',')[0].trim()}` : ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                    {property.address?.split(',')[0]?.trim() || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
                   </span>
                   <span className="text-muted-foreground text-xs shrink-0">
                     {property.city?.replace(' יפו', '') || 'תל אביב'}
                   </span>
+                  {property.property_type === 'rent' ? (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-purple-50 text-purple-700 border-purple-300 shrink-0">השכרה</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-blue-50 text-blue-700 border-blue-300 shrink-0">מכירה</Badge>
+                  )}
                   {property.is_private === true && (
                     <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
                   )}
@@ -1855,38 +1865,94 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
-              <div className="text-sm text-muted-foreground order-2 sm:order-1">
-                מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
+          {totalPages > 1 && (() => {
+            const getPageNumbers = () => {
+              const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
+              const delta = window.innerWidth < 640 ? 1 : 2;
+              const start = Math.max(2, currentPage - delta);
+              const end = Math.min(totalPages - 1, currentPage + delta);
+              
+              pages.push(1);
+              if (start > 2) pages.push('ellipsis-start');
+              for (let i = start; i <= end; i++) pages.push(i);
+              if (end < totalPages - 1) pages.push('ellipsis-end');
+              if (totalPages > 1) pages.push(totalPages);
+              
+              return pages;
+            };
+
+            return (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                  מציג {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} מתוך {totalCount || 0}
+                </div>
+                <div className="flex items-center gap-1 order-1 sm:order-2">
+                  {/* First page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                    title="עמוד ראשון"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                  {/* Previous */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                    title="הקודם"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  {getPageNumbers().map((page, idx) => 
+                    typeof page === 'string' ? (
+                      <span key={page} className="h-8 w-6 flex items-center justify-center text-muted-foreground text-sm">...</span>
+                    ) : (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={cn("h-8 min-w-8 px-2 text-sm", page === currentPage && "pointer-events-none")}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  )}
+                  
+                  {/* Next */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                    title="הבא"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {/* Last page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                    title="עמוד אחרון"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 order-1 sm:order-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="h-9 px-2 sm:px-3"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="hidden sm:inline mr-1">הקודם</span>
-                </Button>
-                <span className="text-sm">
-                  {currentPage}/{totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="h-9 px-2 sm:px-3"
-                >
-                  <span className="hidden sm:inline ml-1">הבא</span>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 
