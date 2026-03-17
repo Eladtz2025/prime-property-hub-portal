@@ -979,7 +979,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
     }
     switch (status) {
       case 'new':
-        return <Badge variant="default" className="bg-green-500">חדש</Badge>;
+        return <Badge variant="default" className="bg-green-500 w-fit">חדש</Badge>;
       case 'matched':
         return <Badge variant="secondary">עבר התאמה</Badge>;
       case 'archived':
