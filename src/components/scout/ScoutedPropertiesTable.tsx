@@ -1613,6 +1613,19 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                       </div>
                     </TableCell>
                     {appliedFilters.status === 'check_failed' && (
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline" className="text-xs w-fit bg-red-50 text-red-700 border-red-300">
+                            {getCheckReasonLabel(property.availability_check_reason)}
+                          </Badge>
+                          {property.availability_checked_at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {formatDistanceToNow(new Date(property.availability_checked_at), { addSuffix: true, locale: he })}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(property.first_seen_at), { 
                         addSuffix: true,
