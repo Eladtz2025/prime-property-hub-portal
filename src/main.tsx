@@ -1,9 +1,9 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App'
-import './index.css'
-import { registerServiceWorker } from './utils/pwa'
-import { initSentry } from './lib/sentry'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './index.css';
+import { registerServiceWorker } from './utils/pwa';
+import { initSentry } from './lib/sentry';
 
 // Initialize Sentry first
 initSentry();
