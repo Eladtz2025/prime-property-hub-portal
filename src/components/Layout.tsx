@@ -1,6 +1,5 @@
 import React from 'react';
 import { EnhancedTopNavigation } from './EnhancedTopNavigation';
-import { BreadcrumbNav } from './ui/breadcrumb-nav';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 interface LayoutProps {
