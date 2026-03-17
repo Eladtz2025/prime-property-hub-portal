@@ -1846,7 +1846,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           {totalPages > 1 && (() => {
             const getPageNumbers = () => {
               const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
-              const delta = window.innerWidth < 640 ? 2 : 4;
+              const delta = window.innerWidth < 640 ? 4 : 8;
               const start = Math.max(2, currentPage - delta);
               const end = Math.min(totalPages - 1, currentPage + delta);
               
