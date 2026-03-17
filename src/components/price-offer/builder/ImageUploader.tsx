@@ -14,6 +14,7 @@ interface ImageUploaderProps {
 const ImageUploader = ({ offerId, images, onImagesChange }: ImageUploaderProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [studioIndex, setStudioIndex] = useState<number | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
