@@ -50,6 +50,19 @@ serve(async (req) => {
       body: JSON.stringify({}),
     }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
 
+    // === AUTO-CLEANUP: Mark stuck runs (>15min) as failed ===
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: stuckCleanup } = await supabase
+      .from('availability_check_runs')
+      .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 15min' })
+      .eq('status', 'running')
+      .lt('started_at', fifteenMinutesAgo)
+      .select('id');
+    
+    if (stuckCleanup && stuckCleanup.length > 0) {
+      console.log(`🧹 Auto-cleaned ${stuckCleanup.length} stuck runs: ${stuckCleanup.map(r => r.id).join(', ')}`);
+    }
+
     // === LOCK CHECK: Prevent parallel runs ===
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { data: runningCheck } = await supabase
