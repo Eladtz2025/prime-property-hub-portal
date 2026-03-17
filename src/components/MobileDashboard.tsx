@@ -75,10 +75,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           </div>
         </div>
 
-        {/* Priority Tasks Cards */}
-        <PriorityTasksCard taskType="daily" title="Daily Priority" />
-        <PriorityTasksCard taskType="weekly" title="General Priority" />
-
         {/* Active Properties Card */}
         <ActivePropertiesCard properties={properties} />
 
@@ -93,10 +89,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
         <AnalyticsSummaryCard stats={stats} />
 
         {/* Development Ideas */}
-        <DevelopmentIdeasCard />
-
-        {/* Site Issues */}
-        <SiteIssuesCard />
+        <DevelopmentIdeasCard maxHeight="max-h-[320px]" />
 
         {/* Website Inquiries */}
         <Card>
@@ -106,7 +99,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               פניות מהאתר
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-[320px] overflow-y-auto">
             <ContactLeadsListCompact limit={3} />
           </CardContent>
         </Card>
