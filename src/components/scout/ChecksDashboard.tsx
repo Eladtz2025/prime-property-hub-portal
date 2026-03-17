@@ -491,12 +491,11 @@ export const ChecksDashboard: React.FC = () => {
         <ProcessCard
           title="כפילויות"
           icon={<Copy className="h-4 w-4 text-purple-600" />}
-          iconColor="bg-purple-100 dark:bg-purple-900/30"
           status={dedupStats?.lastRun?.status === 'running' ? 'running' : dedupStats?.lastRun?.status === 'completed' ? 'completed' : dedupStats?.lastRun?.status === 'failed' ? 'failed' : dedupStats?.lastRun?.status === 'stopped' ? 'completed' : 'idle'}
-          primaryValue={dedupStats?.checked ?? 0}
-          primaryLabel="נבדקו"
-          secondaryLine={`${dedupStats?.unchecked ?? 0} נותרו לבדיקה`}
-          insight={dedupStats?.unchecked === 0 ? 'כל הנכסים נבדקו' : `${dedupStats?.unchecked ?? 0} ממתינים`}
+          primaryValue={dedupStats?.unchecked ?? 0}
+          primaryLabel="ממתינים לבדיקה"
+          secondaryLine={`${(dedupStats?.checked ?? 0).toLocaleString('he-IL')} נבדקו`}
+          insight={dedupStats?.unchecked === 0 ? 'כל הנתונים טופלו' : `${dedupStats?.unchecked ?? 0} ממתינים`}
           insightType={dedupStats?.unchecked === 0 ? 'ok' : 'info'}
           onRun={() => triggerDedup.mutate()}
           onStop={() => stopDedup.mutate()}
@@ -508,11 +507,7 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מזהה דירות כפולות בין מקורות שונים (cross-source) — למשל אותה דירה ביד2 ובמדלן.',
                 'התאמה לפי: כתובת מלאה (כולל מספר בית), מספר חדרים (סטייה של ±0.5), ושטח (סטייה של ±20%).',
-                'הפרדה חובה לפי סוג עסקה — דירה להשכרה ודירה למכירה באותה כתובת לא ייחשבו ככפילות.',
-                'כל קבוצת כפילויות מקבלת "נכס ראשי" (Winner) לפי היררכיה: פרטי > מתווך → עדכון אחרון → מחיר נמוך → זמן יצירה ישן.',
-                'נכסים שאינם ראשיים (Losers) מוסתרים מהתצוגה הראשית ומההתאמות, אבל נגישים דרך "עוד מודעות".',
-                'כפילויות מאותו מקור נחסמות אוטומטית לפי source + source_url (Unique Constraint).',
-                'ניקוי אוטומטי מריץ recompute_duplicate_winners אחרי כל זיהוי.',
+                'כל קבוצת כפילויות מקבלת "נכס ראשי" (Winner) לפי היררכיה: פרטי > מתווך → עדכון אחרון → מחיר נמוך.',
               ]} />
               <ScheduleTimeEditor
                 category="duplicates"
