@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut, Users, ImagePlus, Search } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut, Users, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
