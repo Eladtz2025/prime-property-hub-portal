@@ -1,48 +1,21 @@
 
 
-## שדרוג KPI Cards — Metric Tiles מתקדמים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### מה יש היום
-6 כרטיסי `StatCard` פשוטים עם אייקון + מספר + label. אין השוואה, אין trend, אין hover, עיצוב בסיסי.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### מה ייבנה
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**קומפוננטת `ScoutMetricTile`** חדשה שתחליף את `StatCard` הנוכחי, עם:
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-1. **מספר גדול** (text-2xl/3xl bold) + label קטן מתחת
-2. **שינוי מול אתמול** — חישוב דלתא: שליפת נתוני אתמול מ-`availability_check_runs` (סה"כ נבדקו אתמול, inactive שסומנו אתמול) + ספירת נכסים שנוספו אתמול. מוצג כ- `+12.4%` או `↓ 23%` בירוק/אדום
-3. **Sparkline** — SVG path קטן (inline, בלי ספריה) שמציג trend של 7 ימים אחרונים. הנתונים יגיעו מ-query שסוכם runs/counts לפי יום
-4. **Hover tooltip** — `HoverCard` עם פירוט: מספר מדויק, תאריך עדכון אחרון, פירוט נוסף רלוונטי
-5. **Indicator צבעוני** — פס glow עדין בתחתית הכרטיס לפי סטטוס (ירוק = תקין, צהוב = דורש תשומת לב, אדום = בעיה)
-
-### עיצוב
-
-- `bg-card/80 backdrop-blur-sm` — רקע שקוף מעט
-- `border border-white/10` — border עדין
-- `rounded-2xl` — פינות גדולות
-- `shadow-[0_0_15px_rgba(color,0.08)]` — glow חלש לצבע הסטטוס
-- אייקון קטן ועדין (h-4 w-4, opacity-60) בפינה, לא דומיננטי
-- אנימציית hover עדינה (scale-[1.02], shadow מוגבר)
-
-### מקור נתוני השוואה
-
-Query חדש שמחשב:
-- סה"כ נכסים אתמול (count של נכסים שנוצרו עד אתמול)
-- נבדקו אתמול (sum של properties_checked מ-runs של אתמול)
-- כפילויות אתמול (snapshot לא זמין — נשתמש בערך נוכחי בלבד, ללא delta)
-- התאמות אחרונות (מ-personal_scout_runs הקודם)
-
-לכרטיסים שאין להם היסטוריה טבעית (כפילויות, התאמות) — לא יוצג שינוי, רק הערך + sparkline ריק
-
-### Sparkline
-
-SVG inline פשוט — polyline על 7 נקודות, בלי ספריה חיצונית. גובה ~24px, רוחב ~60px. צבע תואם לצבע הסטטוס של הכרטיס.
-
-### קבצים
-
-| קובץ | שינוי |
-|-------|-------|
-| `src/components/scout/ScoutMetricTile.tsx` | קומפוננטה חדשה |
-| `src/components/scout/MiniSparkline.tsx` | קומפוננטת SVG sparkline |
-| `src/pages/AdminPropertyScout.tsx` | החלפת StatCard ב-ScoutMetricTile + query חדש לנתוני השוואה |
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
