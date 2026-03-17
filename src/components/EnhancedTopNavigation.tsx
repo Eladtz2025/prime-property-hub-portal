@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   Wrench,
-  ImagePlus,
   Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

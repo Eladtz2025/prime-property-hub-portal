@@ -6,7 +6,6 @@ import {
   Users,
   MessageSquare,
   MoreVertical,
-  ImagePlus,
   Search,
   Settings,
   X
