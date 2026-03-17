@@ -40,15 +40,19 @@ serve(async (req) => {
 
     console.log(`🔍 Starting availability check JINA (${isManual ? 'manual' : 'cron-based'})...`);
 
-    // Fire-and-forget cleanup of stuck runs before starting
-    fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({}),
-    }).catch(err => console.error('⚠️ Cleanup-stuck-runs failed:', err));
+    // Await cleanup of stuck runs before lock check to avoid race conditions
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/cleanup-stuck-runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err) {
+      console.error('⚠️ Cleanup-stuck-runs failed:', err);
+    }
 
     // === AUTO-CLEANUP: Mark stuck runs (>15min) as failed ===
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
