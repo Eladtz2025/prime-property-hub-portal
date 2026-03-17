@@ -1,21 +1,23 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## הסרת כרטיסיות + סידור שורה אחת עם גלילה
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### שינויים
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**`src/components/Dashboard.tsx` (דסקטופ):**
+- הסרת שורה 88-97: `PriorityTasksCard` (daily + weekly) + `UpcomingAppointmentsCard` מהגריד הנוכחי
+- הסרת שורה 99-103: `SiteIssuesCard` + `DevelopmentIdeasCard`
+- במקומם — שורה אחת עם 3 כרטיסיות: פגישות קרובות, רעיונות לפיתוח, פניות מהאתר
+- כל כרטיסיה תקבל `max-h-[320px] overflow-y-auto` בתוך ה-CardContent כדי להגביל ל~5 שורות עם גלילה
+- גריד: `grid-cols-1 md:grid-cols-3`
+- הסרת imports של `PriorityTasksCard`, `SiteIssuesCard`
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+**`src/components/MobileDashboard.tsx` (מובייל):**
+- הסרת שורות 80-82: שני ה-`PriorityTasksCard`
+- הסרת שורות 100-101: `SiteIssuesCard`
+- שלוש הכרטיסיות הנותרות (פגישות, רעיונות, פניות) יוצגו אחת מתחת לשנייה עם אותה הגבלת גובה וגלילה
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### קבצים
+- **עריכה:** `Dashboard.tsx`, `MobileDashboard.tsx`
+- **ללא מחיקה** של קומפוננטות (PriorityTasksCard, SiteIssuesCard נשארות קיימות למקרה שיצטרכו בעתיד)
 
