@@ -122,12 +122,12 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
           <div className="flex items-center gap-1 pt-2 border-t border-border/30">
             {status === 'running' && onStop ? (
               <button
-                className="text-[11px] text-destructive hover:underline flex items-center gap-1 disabled:opacity-50"
+                className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 disabled:opacity-50"
                 onClick={onStop}
                 disabled={isStopPending}
               >
-                {isStopPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-2.5 w-2.5" />}
-                עצור
+                {isStopPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Pause className="h-2.5 w-2.5" />}
+                השהה
               </button>
             ) : onRun ? (
               <button
