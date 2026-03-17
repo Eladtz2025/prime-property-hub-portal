@@ -1513,11 +1513,10 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                   <TableHead className="w-[100px]">מחיר</TableHead>
                   <TableHead className="w-[80px]">חדרים</TableHead>
                   <TableHead className="w-[80px]">גודל</TableHead>
-                  <TableHead className="w-[100px]">סטטוס</TableHead>
+                  <TableHead className="w-[140px]">סטטוס</TableHead>
                   {appliedFilters.status === 'check_failed' && (
                     <TableHead className="w-[120px]">סיבה</TableHead>
                   )}
-                  <TableHead className="w-[120px]">התאמות</TableHead>
                   <TableHead className="w-[100px]">נמצא</TableHead>
                   <TableHead className="w-[180px]">פעולות</TableHead>
                 </TableRow>
@@ -1525,13 +1524,13 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8">
                       טוען...
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8 text-muted-foreground">
                       לא נמצאו דירות התואמות את החיפוש
                     </TableCell>
                   </TableRow>
@@ -1568,7 +1567,51 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     </TableCell>
                     <TableCell>{property.rooms || '-'}</TableCell>
                     <TableCell>{property.size ? `${property.size} מ"ר` : '-'}</TableCell>
-                    <TableCell>{getStatusBadge(property.status, property.is_active)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(property.status, property.is_active)}
+                        {property.matched_leads?.length > 0 ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-6 px-1.5 text-xs"
+                                onClick={() => setSelectedProperty(property)}
+                              >
+                                <Users className="h-3 w-3 ml-1" />
+                                {property.matched_leads.length} לקוחות
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>לקוחות שהותאמו</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                {property.matched_leads.map((match: any, idx: number) => (
+                                  <div key={idx} className="p-3 border rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <p className="font-medium">{match.name}</p>
+                                        <p className="text-sm text-muted-foreground">{match.phone}</p>
+                                      </div>
+                                      <Badge>{match.score}% התאמה</Badge>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      {match.reasons?.map((reason: string, i: number) => (
+                                        <Badge key={i} variant="outline" className="text-xs">
+                                          {reason}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        ) : null}
+                      </div>
+                    </TableCell>
                     {appliedFilters.status === 'check_failed' && (
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -1583,49 +1626,6 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                         </div>
                       </TableCell>
                     )}
-                    <TableCell>
-                      {property.matched_leads?.length > 0 ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedProperty(property)}
-                            >
-                              <Users className="h-4 w-4 ml-1" />
-                              {property.matched_leads.length} לקוחות
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>לקוחות שהותאמו</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              {property.matched_leads.map((match: any, idx: number) => (
-                                <div key={idx} className="p-3 border rounded-lg">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-medium">{match.name}</p>
-                                      <p className="text-sm text-muted-foreground">{match.phone}</p>
-                                    </div>
-                                    <Badge>{match.score}% התאמה</Badge>
-                                  </div>
-                                  <div className="mt-2 flex flex-wrap gap-1">
-                                    {match.reasons?.map((reason: string, i: number) => (
-                                      <Badge key={i} variant="outline" className="text-xs">
-                                        {reason}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(property.first_seen_at), { 
                         addSuffix: true,
@@ -1655,17 +1655,6 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                         
-                        {property.status !== 'imported' && property.status !== 'archived' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleImportProperty(property)}
-                            disabled={importMutation.isPending}
-                            title="ייבא למערכת"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
                         
                         {property.status === 'new' && (
                           <Button
@@ -1800,17 +1789,6 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Button>
-                    {property.status !== 'imported' && property.status !== 'archived' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => handleImportProperty(property)}
-                        disabled={importMutation.isPending}
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
                     {property.status !== 'archived' && (
                       <Button
                         variant="ghost"
@@ -1868,7 +1846,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           {totalPages > 1 && (() => {
             const getPageNumbers = () => {
               const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
-              const delta = window.innerWidth < 640 ? 1 : 2;
+              const delta = window.innerWidth < 640 ? 2 : 4;
               const start = Math.max(2, currentPage - delta);
               const end = Math.min(totalPages - 1, currentPage + delta);
               
