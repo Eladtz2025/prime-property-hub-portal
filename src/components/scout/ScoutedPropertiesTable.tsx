@@ -1888,20 +1888,27 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   
-                  {/* Page numbers */}
+                  {/* Page dots */}
                   {getPageNumbers().map((page, idx) => 
                     typeof page === 'string' ? (
-                      <span key={page} className="h-8 w-6 flex items-center justify-center text-muted-foreground text-sm">...</span>
+                      <span key={page} className="h-6 w-4 flex items-center justify-center text-muted-foreground text-xs">...</span>
                     ) : (
-                      <Button
+                      <button
                         key={page}
-                        variant={page === currentPage ? 'default' : 'outline'}
-                        size="sm"
                         onClick={() => setCurrentPage(page)}
-                        className={cn("h-8 min-w-8 px-2 text-sm", page === currentPage && "pointer-events-none")}
+                        className={cn(
+                          "h-6 w-6 rounded-full flex items-center justify-center transition-colors",
+                          page === currentPage 
+                            ? "bg-primary pointer-events-none" 
+                            : "bg-muted hover:bg-muted-foreground/20"
+                        )}
+                        title={`עמוד ${page}`}
                       >
-                        {page}
-                      </Button>
+                        <span className={cn(
+                          "block rounded-full",
+                          page === currentPage ? "h-2.5 w-2.5 bg-primary-foreground" : "h-2 w-2 bg-muted-foreground/50"
+                        )} />
+                      </button>
                     )
                   )}
                   
