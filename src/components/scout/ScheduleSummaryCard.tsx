@@ -420,9 +420,21 @@ export const ScheduleSummaryCard: React.FC = () => {
     return `עודכן לפני ${Math.floor(diffSec / 60)} דק׳`;
   }, [dataUpdatedAt]);
 
-  // Split schedule: next run + rest
+  // Split schedule: next run + rest, then split by scan vs other
   const nextGroup = groupedByTime.find(g => g.time === nextTimeSlot);
   const restGroups = groupedByTime.filter(g => g.time !== nextTimeSlot);
+
+  const { scanGroups, otherGroups } = React.useMemo(() => {
+    const scanGroups: typeof restGroups = [];
+    const otherGroups: typeof restGroups = [];
+    for (const group of restGroups) {
+      const scanItems = group.items.filter(i => i.type === 'scan');
+      const otherItems = group.items.filter(i => i.type !== 'scan');
+      if (scanItems.length > 0) scanGroups.push({ ...group, items: scanItems });
+      if (otherItems.length > 0) otherGroups.push({ ...group, items: otherItems });
+    }
+    return { scanGroups, otherGroups };
+  }, [restGroups]);
 
   return (
     <div className="mt-4 grid grid-cols-1 md:grid-cols-[58%_42%] gap-4">
@@ -468,9 +480,22 @@ export const ScheduleSummaryCard: React.FC = () => {
         {/* Body */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {nextGroup && <NextRunCard group={nextGroup} />}
-          {restGroups.map((group, idx) => (
-            <ScheduleRow key={`${group.time}-${idx}`} group={group} />
-          ))}
+          <div className="grid grid-cols-2 gap-0">
+            {/* Right column — Scans */}
+            <div className="border-l border-border/20 pl-2">
+              <span className="text-[10px] font-medium text-muted-foreground mb-1 block">סריקות</span>
+              {scanGroups.map((group, idx) => (
+                <ScheduleRow key={`scan-${group.time}-${idx}`} group={group} />
+              ))}
+            </div>
+            {/* Left column — Other runs */}
+            <div className="pr-2">
+              <span className="text-[10px] font-medium text-muted-foreground mb-1 block">ריצות</span>
+              {otherGroups.map((group, idx) => (
+                <ScheduleRow key={`other-${group.time}-${idx}`} group={group} />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

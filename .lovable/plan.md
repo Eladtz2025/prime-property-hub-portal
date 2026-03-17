@@ -1,34 +1,21 @@
 
 
-## פיצול טבלת לוח זמנים: סריקות בימין, שאר ריצות בשמאל
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### קובץ: `ScheduleSummaryCard.tsx`
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-**שינוי בגוף (Body) של חלק לוח הזמנים (שורות 468-474):**
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-1. **פיצול הנתונים** — ב-`useMemo` חדש, נפריד את `groupedByTime` לשתי רשימות:
-   - `scanGroups` — קבוצות שכל הפריטים שלהן הם `type === 'scan'`
-   - `otherGroups` — כל השאר (availability, matching, backfill, cleanup)
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-2. **מבנה חדש בגוף** — במקום רשימה אחת, נציג שתי עמודות זו לצד זו:
-   - **עמודה ימנית (סריקות)**: כותרת קטנה "סריקות" + רשימת `scanGroups` עם `ScheduleRow`
-   - **עמודה שמאלית (ריצות)**: כותרת קטנה "ריצות" + רשימת `otherGroups` עם `ScheduleRow`
-   - Layout: `grid grid-cols-2 gap-3` עם divider ביניהם
-
-3. **NextRunCard** — יוצג מעל שתי העמודות כמו היום (ללא שינוי)
-
-### מבנה ויזואלי
-```text
-┌─────────────────────────────────┐
-│  🕐 לוח זמנים                   │
-├─────────────────────────────────┤
-│  [Next Run Card - full width]   │
-├────────────┬────────────────────┤
-│  ריצות     │  סריקות            │
-│  זמינות    │  יד2 השכרה         │
-│  כפילויות  │  יד2 מכירה         │
-│  התאמות    │  מדלן השכרה        │
-│  backfill  │  מדלן מכירה        │
-└────────────┴────────────────────┘
-```
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
