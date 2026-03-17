@@ -27,6 +27,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [studioImage, setStudioImage] = useState<PropertyImage | null>(null);
   const { toast } = useToast();
 
   // Upload video directly to Supabase Storage
