@@ -12,7 +12,7 @@ import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { PriorityTasksCard } from './PriorityTasksCard';
 import { SiteIssuesCard } from './SiteIssuesCard';
 import { ContactLeadsListCompact } from './ContactLeadsListCompact';
-import { DashboardGoalsGrid } from './DashboardGoalsGrid';
+import { DashboardFormsCubes } from './DashboardFormsCubes';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 interface MobileDashboardProps {
@@ -73,7 +73,7 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
               <p className="text-white/90 text-sm">ברוך הבא למערכת ניהול הנכסים</p>
             </div>
             
-            <DashboardGoalsGrid columns="grid-cols-2" />
+            <DashboardFormsCubes />
           </div>
         </div>
 

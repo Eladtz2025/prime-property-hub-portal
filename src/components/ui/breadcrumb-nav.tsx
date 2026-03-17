@@ -25,7 +25,7 @@ const routeLabels: Record<string, string> = {
   '/admin-dashboard/all-features': 'כל הפיצ\'רים',
   '/admin-dashboard/import-data': 'ייבוא נתונים',
   '/admin-dashboard/import-from-storage': 'ייבוא מאחסון',
-  '/admin-dashboard/forms': 'טפסים',
+  
   '/admin-dashboard/pitch-decks': 'מצגות',
   '/admin-dashboard/price-offers': 'הצעות מחיר',
   '/admin-dashboard/customers': 'לקוחות',

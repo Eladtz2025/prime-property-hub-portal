@@ -1,35 +1,21 @@
 
 
-## החלפת Goals בקוביות טפסים + הסרת טאב טפסים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### מה ישתנה
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-#### 1. קומפוננטה חדשה: `src/components/DashboardFormsCubes.tsx`
-- מכילה את כל הלוגיקה מ-`AdminForms.tsx` — actionCubes, fetchCounts, popovers, dialogs
-- מותאמת לסגנון הכחול של ההדר: `bg-white/15 backdrop-blur-lg`, אייקונים וטקסט בלבן, badges שקופים
-- גריד responsive: 5 עמודות בדסקטופ, 2 במובייל
-- כוללת את 2 כפתורי הלינק (לקוח + אנשי מקצוע) ו-8 קוביות הפעולה
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-#### 2. `src/components/Dashboard.tsx`
-- שורות 17, 77-80: החלפת `DashboardGoalsGrid` ב-`DashboardFormsCubes`
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-#### 3. `src/components/MobileDashboard.tsx`
-- שורה 76: החלפת `DashboardGoalsGrid columns="grid-cols-2"` ב-`DashboardFormsCubes`
-
-#### 4. הסרת טאב טפסים מהניווט
-- `src/components/EnhancedTopNavigation.tsx` שורה 32: הסרת שורת "טפסים"
-- `src/components/MobileBottomNavigation.tsx` שורה 30: הסרת שורת "טפסים"
-- `src/App.tsx`: הסרת ה-route של `/admin-dashboard/forms` + ה-redirect
-- `src/components/ui/breadcrumb-nav.tsx` שורה 28: הסרת הערך
-- `src/pages/PitchDeckBuilder.tsx` שורה 319: שינוי ה-navigate ל-`/admin-dashboard` במקום `/admin-dashboard/forms`
-
-#### 5. ניקוי קבצים שלא נצטרכים יותר
-- הסרת `src/pages/AdminForms.tsx`
-- הסרת `src/components/DashboardGoalsGrid.tsx`
-- הסרת `src/hooks/useDashboardGoals.ts`
-
-### מה לא ישתנה
-- כל קומפוננטות הרשימה (BrokerageFormsMobileList, LegalFormsList, etc.) — נשארות
-- הטפסים עצמים (/brokerage-form, /memorandum-form, etc.) — נשארים
-- טבלת dashboard_goals בסופאבייס — נשארת (לא מוחקים דאטה)
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

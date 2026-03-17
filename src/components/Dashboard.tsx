@@ -14,7 +14,7 @@ import { AddAppointmentModal } from './AddAppointmentModal';
 import { DevelopmentIdeasCard } from './DevelopmentIdeasCard';
 import { PriorityTasksCard } from './PriorityTasksCard';
 import { SiteIssuesCard } from './SiteIssuesCard';
-import { DashboardGoalsGrid } from './DashboardGoalsGrid';
+import { DashboardFormsCubes } from './DashboardFormsCubes';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -74,9 +74,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <p className="text-white/70 text-sm mt-1 text-right">עודכן לאחרונה: {new Date().toLocaleDateString('he-IL')}</p>
             </div>
             
-            {/* Goals Grid */}
+            {/* Forms Cubes */}
             <div className="flex-1">
-              <DashboardGoalsGrid />
+              <DashboardFormsCubes />
             </div>
           </div>
         </div>
