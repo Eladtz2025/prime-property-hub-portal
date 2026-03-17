@@ -27,7 +27,6 @@ export const Layout: React.FC<LayoutProps> = ({
         </header>
         <main className="flex-1 flex flex-col">
           <div className="flex-1 p-4 pb-20"> {/* Added bottom padding for mobile nav */}
-            <BreadcrumbNav />
             {children}
           </div>
         </main>
