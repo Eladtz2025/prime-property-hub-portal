@@ -1,21 +1,31 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שינוי לוגיקת זכאות בדיקת זמינות מ-שעות ל-תאריכים
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### הבעיה
+הלוגיקה הנוכחית דורשת בדיוק 48 שעות (או 8 ימים) מרגע הבדיקה האחרונה. אם נכס נבדק ב-16:00, הוא יהיה זכאי רק ב-16:00 עוד יומיים — אחרי שהקרון של 05:00 כבר סיים.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### הפתרון
+שינוי ה-RPC `get_properties_needing_availability_check` כך שההשוואה תהיה על בסיס **תאריך** (יום קלנדרי בשעון ישראל) ולא על בסיס שעות מדויקות.
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### שינוי טכני
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**עדכון הפונקציה `get_properties_needing_availability_check`** — החלפת תנאי ה-interval בהשוואת תאריכים:
+
+```sql
+-- במקום:
+sp.availability_checked_at < now() - (p_recurring_recheck_days || ' days')::interval
+
+-- יהיה:
+(sp.availability_checked_at AT TIME ZONE 'Asia/Jerusalem')::date 
+  <= (now() AT TIME ZONE 'Asia/Jerusalem')::date - p_recurring_recheck_days
+```
+
+אותו הדבר עבור `p_first_recheck_days` ו-`p_min_days_before_check`.
+
+**תוצאה**: נכס שנבדק ב-16:00 ביום 16/3 ייחשב כ"נבדק ב-16/3". בקרון של 05:00 ב-18/3 (יומיים אחרי), הוא כבר זכאי — כי 18 - 16 = 2 ≥ `p_recurring_recheck_days`.
+
+### היקף השינוי
+- קובץ אחד: מיגרציית SQL לעדכון ה-RPC
+- אין שינוי בקוד TypeScript, בקרון, או בפונקציות Edge
 
