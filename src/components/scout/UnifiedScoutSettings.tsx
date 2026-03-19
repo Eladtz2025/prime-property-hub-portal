@@ -258,17 +258,6 @@ const CITIES = [
   'באר שבע',
 ];
 
-const ScanLogicDescription: React.FC = () => (
-  <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed border mb-4">
-    <p className="font-medium text-foreground mb-1.5 text-sm">איך זה עובד?</p>
-    <ul className="space-y-1 list-disc list-inside">
-      <li>סורק דירות מ-Yad2, Madlan ו-Homeless לפי קונפיגורציות פעילות (עיר, שכונה, טווח מחיר/חדרים).</li>
-      <li>כל קונפיגורציה רצה בנפרד, דף אחרי דף, עם השהייה מוגדרת בין דפים.</li>
-      <li>דירות חדשות נשמרות אוטומטית. דירות קיימות מתעדכנות (מחיר, תאריך עדכון).</li>
-      <li>כפילויות מאותו מקור נחסמות אוטומטית לפי source + source_url.</li>
-    </ul>
-  </div>
-);
 
 export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ triggerFunction = 'trigger-scout-pages' }) => {
   const queryClient = useQueryClient();
