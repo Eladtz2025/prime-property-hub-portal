@@ -11,105 +11,94 @@ serve(async (req) => {
   }
 
   const testUrl = 'https://www.madlan.co.il/listings/ds0nyz2Jy7f';
-  const JINA_API_KEY = Deno.env.get('JINA_API_KEY');
+  const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
   const results: Record<string, any> = {};
 
-  // Test 1: Jina WITH API key (premium IPs)
-  if (JINA_API_KEY) {
+  // Test 1: Firecrawl scrape
+  if (FIRECRAWL_API_KEY) {
     try {
       const c1 = new AbortController();
-      const t1 = setTimeout(() => c1.abort(), 25000);
-      const r1 = await fetch(`https://r.jina.ai/${testUrl}`, {
+      const t1 = setTimeout(() => c1.abort(), 30000);
+      const r1 = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${JINA_API_KEY}`,
-          'Accept': 'text/markdown',
-          'X-Wait-For-Selector': 'body',
-          'X-Timeout': '20',
-          'X-Locale': 'he-IL',
-          'X-No-Cache': 'true',
+          'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          url: testUrl,
+          formats: ['markdown'],
+          waitFor: 3000,
+        }),
         signal: c1.signal,
       });
       clearTimeout(t1);
-      const body1 = await r1.text();
-      const hasRobotText = body1.includes('רובוט') || body1.includes('סליחה על ההפרעה');
-      const hasListingData = body1.includes('חדרים') || body1.includes('קומה') || body1.includes('מ"ר') || body1.includes('₪');
-      results['test1_jina_with_key'] = { 
-        status: r1.status, 
-        bodyLength: body1.length,
-        hasRobotText,
-        hasListingData,
-        snippet: body1.substring(0, 600),
+      const body1 = await r1.json();
+      const md = body1?.data?.markdown || '';
+      results['test1_firecrawl'] = { 
+        status: r1.status,
+        success: body1?.success,
+        markdownLength: md.length,
+        hasRobotText: md.includes('רובוט') || md.includes('סליחה על ההפרעה'),
+        hasListingData: md.includes('חדרים') || md.includes('קומה') || md.includes('מ"ר') || md.includes('₪'),
+        snippet: md.substring(0, 600),
       };
     } catch (e) {
-      results['test1_jina_with_key'] = { error: String(e) };
+      results['test1_firecrawl'] = { error: String(e) };
     }
   } else {
-    results['test1_jina_with_key'] = { error: 'No JINA_API_KEY set' };
+    results['test1_firecrawl'] = { error: 'No FIRECRAWL_API_KEY' };
   }
 
-  // Test 2: Jina WITH API key + X-Return-Format html
-  if (JINA_API_KEY) {
-    try {
-      const c2 = new AbortController();
-      const t2 = setTimeout(() => c2.abort(), 25000);
-      const r2 = await fetch(`https://r.jina.ai/${testUrl}`, {
-        headers: {
-          'Authorization': `Bearer ${JINA_API_KEY}`,
-          'Accept': 'text/html',
-          'X-Wait-For-Selector': 'body',
-          'X-Timeout': '20',
-          'X-Locale': 'he-IL',
-          'X-No-Cache': 'true',
-        },
-        signal: c2.signal,
-      });
-      clearTimeout(t2);
-      const body2 = await r2.text();
-      const hasRemoved = body2.includes('המודעה הוסרה');
-      const hasPrice = body2.includes('₪') || body2.includes('price');
-      results['test2_jina_html_with_key'] = { 
-        status: r2.status, 
-        bodyLength: body2.length,
-        hasRemoved,
-        hasPrice,
-      };
-    } catch (e) {
-      results['test2_jina_html_with_key'] = { error: String(e) };
-    }
+  // Test 2: Jina free tier - try with X-Set-Cookie header to pass challenge
+  try {
+    const c2 = new AbortController();
+    const t2 = setTimeout(() => c2.abort(), 25000);
+    const r2 = await fetch(`https://r.jina.ai/${testUrl}`, {
+      headers: {
+        'Accept': 'text/markdown',
+        'X-Wait-For-Selector': 'body',
+        'X-Timeout': '20',
+        'X-Locale': 'he-IL',
+        'X-No-Cache': 'true',
+        'X-With-Generated-Alt': 'false',
+        'X-With-Links-Summary': 'false',
+        'X-With-Images': 'false',
+      },
+      signal: c2.signal,
+    });
+    clearTimeout(t2);
+    const body2 = await r2.text();
+    results['test2_jina_free_optimized'] = { 
+      status: r2.status, 
+      bodyLength: body2.length,
+      hasRobotText: body2.includes('רובוט'),
+      hasListingData: body2.includes('חדרים') || body2.includes('₪'),
+      snippet: body2.substring(0, 400),
+    };
+  } catch (e) {
+    results['test2_jina_free_optimized'] = { error: String(e) };
   }
 
-  // Test 3: Try a second URL to rule out per-listing issues
-  if (JINA_API_KEY) {
-    const testUrl2 = 'https://www.madlan.co.il/listings/30FdJVMdXke';
-    try {
-      const c3 = new AbortController();
-      const t3 = setTimeout(() => c3.abort(), 25000);
-      const r3 = await fetch(`https://r.jina.ai/${testUrl2}`, {
-        headers: {
-          'Authorization': `Bearer ${JINA_API_KEY}`,
-          'Accept': 'text/markdown',
-          'X-Wait-For-Selector': 'body',
-          'X-Timeout': '20',
-          'X-Locale': 'he-IL',
-          'X-No-Cache': 'true',
-        },
-        signal: c3.signal,
-      });
-      clearTimeout(t3);
-      const body3 = await r3.text();
-      const hasRobotText = body3.includes('רובוט') || body3.includes('סליחה על ההפרעה');
-      const hasListingData = body3.includes('חדרים') || body3.includes('קומה') || body3.includes('מ"ר') || body3.includes('₪');
-      results['test3_jina_second_url'] = { 
-        status: r3.status, 
-        bodyLength: body3.length,
-        hasRobotText,
-        hasListingData,
-        snippet: body3.substring(0, 600),
-      };
-    } catch (e) {
-      results['test3_jina_second_url'] = { error: String(e) };
-    }
+  // Test 3: Try Google Webcache
+  try {
+    const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(testUrl)}`;
+    const c3 = new AbortController();
+    const t3 = setTimeout(() => c3.abort(), 15000);
+    const r3 = await fetch(cacheUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      },
+      signal: c3.signal,
+    });
+    clearTimeout(t3);
+    const body3 = await r3.text();
+    results['test3_google_cache'] = { 
+      status: r3.status, 
+      bodyLength: body3.length,
+    };
+  } catch (e) {
+    results['test3_google_cache'] = { error: String(e) };
   }
 
   return new Response(JSON.stringify(results, null, 2), {
