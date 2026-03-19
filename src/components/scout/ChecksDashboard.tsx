@@ -438,8 +438,10 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'תומכת בכל 3 המקורות: יד2, מדלן, הומלס באמצעות Jina AI Reader.',
-                'הומלס מקבל HTML מ-Jina (X-Return-Format: html) לתאימות עם הפרסר הקיים.',
+                'סורק דירות מ-יד2, מדלן והומלס באמצעות Jina AI Reader לפי קונפיגורציות פעילות (עיר, שכונה, טווח מחיר/חדרים).',
+                'כל קונפיגורציה רצה בנפרד, דף אחרי דף, עם השהייה מוגדרת בין דפים.',
+                'דירות חדשות נשמרות אוטומטית. דירות קיימות מתעדכנות (מחיר, תאריך עדכון).',
+                'כפילויות מאותו מקור נחסמות אוטומטית לפי source + source_url.',
               ]} />
               <UnifiedScoutSettings triggerFunction="trigger-scout-pages-jina" />
             </div>

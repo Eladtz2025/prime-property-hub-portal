@@ -659,7 +659,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
 
   return (
     <div className="space-y-4">
-      <ScanLogicDescription />
+      
       {/* Live Scan Progress - shown only when scans are active */}
       <LiveScanProgress />
       
