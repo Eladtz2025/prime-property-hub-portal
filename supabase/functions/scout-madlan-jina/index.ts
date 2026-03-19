@@ -19,7 +19,8 @@ async function scrapeMadlanDirect(url: string, maxRetries = 2, _timeoutSeconds =
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': '*/*',
+          'Accept': 'application/json',
+          'X-Nextjs-Data': '1',
           'Accept-Language': 'he-IL,he;q=0.9',
         },
         signal: controller.signal,
