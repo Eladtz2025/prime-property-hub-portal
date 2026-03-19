@@ -10,9 +10,10 @@ interface ScoutMetricTileProps {
   value: string | number;
   icon: React.ReactNode;
   statusColor?: StatusColor;
-  delta?: number | null; // percentage change, e.g. 12.4 or -23
+  delta?: number | null;
   sparklineData?: number[];
   hoverContent?: React.ReactNode;
+  subtitle?: string;
 }
 
 const glowMap: Record<StatusColor, string> = {
