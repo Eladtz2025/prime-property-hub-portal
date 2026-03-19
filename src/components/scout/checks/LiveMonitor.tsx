@@ -25,6 +25,7 @@ export const LiveMonitor: React.FC = () => {
     hasActivity,
     feedItems,
     dailyRunsHealth,
+    yesterdayScansHealth,
   } = useMonitorData();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
 
@@ -61,6 +62,7 @@ export const LiveMonitor: React.FC = () => {
         <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
         <span className={`text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
         <div className="w-px h-4 bg-white/[0.08] shrink-0" />
+        <div className="flex-1 flex justify-center gap-1">
         {tabs.map(tab => {
           const isActive = activeTab === tab.key;
           const count = tabCounts[tab.key];
@@ -87,6 +89,7 @@ export const LiveMonitor: React.FC = () => {
             </button>
           );
         })}
+        </div>
       </div>
 
       {/* Body */}
@@ -134,6 +137,45 @@ export const LiveMonitor: React.FC = () => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          {/* Yesterday scans health */}
+          {yesterdayScansHealth.total > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <p className="text-[10px] text-gray-500 mb-0.5">סריקות אתמול</p>
+                    <div className="flex items-center gap-1.5">
+                      {yesterdayScansHealth.passed === yesterdayScansHealth.total ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-400" />
+                      )}
+                      <span className={`text-lg font-bold ${
+                        yesterdayScansHealth.passed === yesterdayScansHealth.total
+                          ? 'text-emerald-400'
+                          : yesterdayScansHealth.passed >= yesterdayScansHealth.total / 2
+                            ? 'text-yellow-400'
+                            : 'text-red-400'
+                      }`}>
+                        {yesterdayScansHealth.passed}/{yesterdayScansHealth.total}
+                      </span>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="bg-gray-900 border-white/10 text-gray-200 text-xs space-y-1 p-3">
+                  {yesterdayScansHealth.details.map(d => (
+                    <div key={d.name} className="flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${d.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                      <span>{d.name}</span>
+                      <span className="text-gray-500 font-mono text-[10px]">{d.found} נמצאו, {d.isNew} חדשים</span>
+                      {d.time && <span className="text-gray-600 font-mono text-[10px]">{d.time}</span>}
+                    </div>
+                  ))}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
 
           <div>
             <p className="text-[10px] text-gray-500 mb-1">סטטוס</p>

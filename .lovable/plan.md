@@ -1,30 +1,21 @@
 
 
-## שדרוג המוניטור — 3 תיקונים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### 1. מרכוז הטאבים בשורת הכותרת
-הטאבים כרגע צמודים לשאר האלמנטים ב-flex. נעטוף אותם ב-div עם `flex-1 flex justify-center` כדי למרכז אותם.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### 2. תיקון באג ב-dailyRunsHealth — מציג 1/4 במקום 3/4 או 4/4
-**שורש הבעיה**: השאילתה של `backfillRuns` מסננת `status = 'running'` בלבד. ברגע שריצה מסתיימת היא לא נכללת ב-`backfillRuns`, ולכן `dailyRunsHealth` לא רואה אותה.
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**תיקון**: הוספת שאילתה חדשה `completedBackfillToday` שמושכת ריצות `completed` מ-`backfill_progress` מהיום. ה-`dailyRunsHealth` ישתמש בשתי המקורות — `backfillRuns` (running) + `completedBackfillToday` (completed) — כדי לבדוק אם data_completion ו-dedup רצו היום.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-### 3. מטריקה חדשה: "סריקות אתמול"
-**ההבדל**: "ריצות יומיות" = 4 התהליכים (השלמה, כפילויות, זמינות, התאמות). "סריקות" = סריקות אתרים לנכסים חדשים (scout_runs) — שרצות בערב (~23:00).
-
-**לוגיקה**: שאילתה חדשה שמביאה scout_runs מאתמול, מקובצים לפי source. לכל source נבדוק: האם הריצה הצליחה, כמה נכסים נמצאו. מוצג כמטריקה עם tooltip שמפרט כל source וסטטוס.
-
-### שינויים טכניים
-
-**`useMonitorData.ts`**:
-- שאילתה חדשה `completedBackfillToday` — `backfill_progress` עם `status in (completed)` מהיום
-- שאילתה חדשה `yesterdayScans` — `scout_runs` מאתמול
-- עדכון `dailyRunsHealth` להשתמש גם ב-`completedBackfillToday`
-- memo חדש `yesterdayScansHealth` — `{ passed, total, details[] }`
-- החזרת `yesterdayScansHealth` מה-hook
-
-**`LiveMonitor.tsx`**:
-- מרכוז טאבים בשורת הכותרת
-- הוספת מטריקת "סריקות אתמול" עם tooltip דומה לריצות יומיות
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
