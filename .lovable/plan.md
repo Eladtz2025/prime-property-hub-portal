@@ -1,48 +1,21 @@
 
 
-## תיקון: השלמת נתונים — מוניטור + היסטוריה ריקים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### שורש הבעיה
-`saveRecentItem` בפונקציית `backfill-property-data-jina` שומרת כל פריט מעובד ל-`summary_data.recent_items` — אבל השדה הזה **null בכל 15 הריצות ההיסטוריות**. הפונקציה כנראה לא נפרסה עם הקוד הזה, או שה-`saveRecentItem` נכשלת בשקט.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### תיקון נדרש
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**שלב 1: לפרוס מחדש את הפונקציה**
-- `supabase/functions/backfill-property-data-jina/index.ts` — לבצע deploy מחדש כדי לוודא שהגרסה הנוכחית (עם `saveRecentItem`) רצה בפועל.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-**שלב 2: הוספת לוג דיאגנוסטי ל-saveRecentItem**
-- להוסיף `console.log` לפני ואחרי השמירה ב-`saveRecentItem` כדי לוודא שהפונקציה נקראת ושה-update מצליח:
-```typescript
-async function saveRecentItem(item: {...}) {
-  try {
-    console.log(`📝 saveRecentItem: saving for ${item.address}`);
-    // ...existing code...
-    const { error: updateError } = await supabase
-      .from('backfill_progress')
-      .update({ summary_data: summary, updated_at: new Date().toISOString() })
-      .eq('id', progressId);
-    if (updateError) console.error('❌ saveRecentItem update failed:', updateError);
-    else console.log(`✅ saveRecentItem: saved, total items: ${recentItems.length}`);
-  } catch (e) {
-    console.error('Failed to save recent_item:', e);
-  }
-}
-```
-
-**שלב 3: תיקון BackfillJinaHistory — תמיכה בכל סוגי הריצות**
-- כרגע שואל רק `task_name = 'data_completion_jina'`, אבל יש גם ריצות אוטומטיות (`data_completion_auto_yad2`, `data_completion_auto_madlan`, וכו')
-- לשנות את השאילתה כך שתכסה את כל סוגי ריצות ההשלמה:
-```typescript
-.or('task_name.eq.data_completion_jina,task_name.like.data_completion_auto_%')
-.order('completed_at', { ascending: false })
-.limit(1)
-```
-
-### קבצים שישתנו
-1. `supabase/functions/backfill-property-data-jina/index.ts` — הוספת לוגים ל-saveRecentItem + re-deploy
-2. `src/components/scout/checks/BackfillJinaHistory.tsx` — הרחבת query לכלול ריצות אוטומטיות
-
-### תוצאה צפויה
-- אחרי הריצה הבאה: טאב "השלמה" במוניטור יציג פירוט מלא (כתובת, שכונה, מקור, שדות שעודכנו)
-- כפתור "היסטוריה" יציג את כל הפריטים מהריצה האחרונה (כולל אוטומטיות)
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

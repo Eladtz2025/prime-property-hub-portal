@@ -63,7 +63,8 @@ export const BackfillJinaHistory: React.FC = () => {
       const { data, error } = await supabase
         .from('backfill_progress')
         .select('summary_data')
-        .eq('task_name', 'data_completion_jina')
+        .or('task_name.eq.data_completion_jina,task_name.like.data_completion_jina_auto_%')
+        .not('summary_data', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
