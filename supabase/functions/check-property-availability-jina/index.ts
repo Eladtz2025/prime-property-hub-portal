@@ -419,15 +419,21 @@ serve(async (req) => {
       if (retryable) {
         errorCount++;
         try {
-          // Only update the reason — do NOT touch availability_checked_at or count
-          // so the property stays at the front of the queue for immediate retry
+          // For 403 blocks: also update availability_checked_at to send to end of queue
+          // so it won't be re-checked immediately in the same run
+          const updateData: Record<string, any> = {
+            availability_check_reason: result.reason,
+          };
+          if (result.reason === 'madlan_direct_status_403') {
+            updateData.availability_checked_at = new Date().toISOString();
+            console.log(`🔄 ${result.id} - 403 blocked, sent to end of queue`);
+          } else {
+            console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue for next run`);
+          }
           await supabase
             .from('scouted_properties')
-            .update({ 
-              availability_check_reason: result.reason,
-            })
+            .update(updateData)
             .eq('id', result.id);
-          console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue for next run`);
         } catch (dbError) {
           console.error(`DB update error for ${result.id}:`, dbError);
         }
