@@ -365,36 +365,54 @@ export function useMonitorData() {
     scanSource.forEach(run => {
       const config = (run as any).scout_configs;
       const pages = run.page_stats as unknown as PageStat[] | null;
-      if (!pages || pages.length === 0) return;
 
-      const maxPages = config?.max_pages || 8;
-      const completedPages = pages.filter(p => p.status === 'completed');
-      const failedPages = pages.filter(p => p.status === 'failed' || p.status === 'blocked');
-      const donePagesCount = pages.filter(p => ['completed', 'failed', 'blocked'].includes(p.status)).length;
-      const totalFound = pages.reduce((s, p) => s + (p.found || 0), 0);
-      const totalNew = pages.reduce((s, p) => s + (p.new || 0), 0);
+      if (pages && pages.length > 0) {
+        // Detailed page_stats available
+        const maxPages = config?.max_pages || 8;
+        const completedPages = pages.filter(p => p.status === 'completed');
+        const failedPages = pages.filter(p => p.status === 'failed' || p.status === 'blocked');
+        const donePagesCount = pages.filter(p => ['completed', 'failed', 'blocked'].includes(p.status)).length;
+        const totalFound = pages.reduce((s, p) => s + (p.found || 0), 0);
+        const totalNew = pages.reduce((s, p) => s + (p.new || 0), 0);
 
-      items.push({
-        type: 'scan',
-        timestamp: run.started_at,
-        primary: `סריקת ${config?.name || run.source} — עמ׳ ${donePagesCount}/${maxPages}`,
-        details: `${totalFound} נמצאו | ${totalNew} חדשים | ${completedPages.length} תקינים${failedPages.length > 0 ? ` | ${failedPages.length} נכשלו` : ''}`,
-        source: run.source,
-        status: failedPages.length > 0 ? 'warning' : 'ok',
-        eventKind: 'found',
-      });
-
-      failedPages.forEach(p => {
         items.push({
           type: 'scan',
           timestamp: run.started_at,
-          primary: `עמ׳ ${p.page} — ${p.error || 'שגיאה'}`,
-          details: truncateUrl(p.url),
+          primary: `סריקת ${config?.name || run.source} — עמ׳ ${donePagesCount}/${maxPages}`,
+          details: `${totalFound} נמצאו | ${totalNew} חדשים | ${completedPages.length} תקינים${failedPages.length > 0 ? ` | ${failedPages.length} נכשלו` : ''}`,
           source: run.source,
-          status: 'error',
-          eventKind: 'error',
+          status: failedPages.length > 0 ? 'warning' : 'ok',
+          eventKind: 'found',
         });
-      });
+
+        failedPages.forEach(p => {
+          items.push({
+            type: 'scan',
+            timestamp: run.started_at,
+            primary: `עמ׳ ${p.page} — ${p.error || 'שגיאה'}`,
+            details: truncateUrl(p.url),
+            source: run.source,
+            status: 'error',
+            eventKind: 'error',
+          });
+        });
+      } else {
+        // No page_stats — use summary fields as fallback
+        const found = (run as any).properties_found ?? 0;
+        const newProps = (run as any).new_properties ?? 0;
+        const isCompleted = run.status === 'completed';
+        const statusLabel = isCompleted ? 'הושלמה' : run.status === 'failed' ? 'נכשלה' : run.status || '';
+
+        items.push({
+          type: 'scan',
+          timestamp: run.completed_at || run.started_at,
+          primary: `סריקת ${config?.name || run.source} — ${statusLabel}`,
+          details: `${found} נמצאו | ${newProps} חדשים`,
+          source: run.source,
+          status: isCompleted ? (found > 0 ? 'ok' : 'warning') : 'error',
+          eventKind: isCompleted ? 'found' : 'error',
+        });
+      }
     });
 
     // Backfill per-task (running tasks)
