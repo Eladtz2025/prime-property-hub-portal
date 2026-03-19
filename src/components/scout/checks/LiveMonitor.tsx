@@ -1,20 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle } from 'lucide-react';
+import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMonitorData } from './monitor/useMonitorData';
 import { LiveFeedTab } from './monitor/LiveFeedTab';
 import { FeedItem } from './monitor/useMonitorData';
+import { ScheduleContent } from './ScheduleContent';
 
-type TabKey = 'all' | 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching';
+type TabKey = 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching' | 'schedule';
 
 const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
-  { key: 'all', label: 'הכל', icon: Monitor },
   { key: 'availability', label: 'זמינות', icon: Shield },
   { key: 'scan', label: 'סריקה', icon: Search },
   { key: 'backfill', label: 'השלמה', icon: Database },
   { key: 'dedup', label: 'כפילויות', icon: Copy },
   { key: 'matching', label: 'התאמות', icon: Users },
+  { key: 'schedule', label: 'לוח זמנים', icon: Clock },
 ];
 
 export const LiveMonitor: React.FC = () => {
@@ -27,7 +28,7 @@ export const LiveMonitor: React.FC = () => {
     dailyRunsHealth,
     yesterdayScansHealth,
   } = useMonitorData();
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('availability');
 
   const errorAlerts = alerts.filter(a => a.severity === 'error').length;
   const statusText = errorAlerts > 0 ? `${errorAlerts} חריגות` : hasActivity ? 'תקין' : 'Idle';
@@ -36,14 +37,14 @@ export const LiveMonitor: React.FC = () => {
 
   // Count items per tab for badges
   const tabCounts = useMemo(() => {
-    const counts: Record<TabKey, number> = { all: feedItems.length, availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0 };
+    const counts: Record<TabKey, number> = { availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0, schedule: 0 };
     feedItems.forEach(f => { if (counts[f.type] !== undefined) counts[f.type]++; });
     return counts;
   }, [feedItems]);
 
   // Filter feed by active tab
   const filteredFeed = useMemo(() => {
-    if (activeTab === 'all') return feedItems;
+    if (activeTab === 'schedule') return [];
     return feedItems.filter(f => f.type === activeTab);
   }, [feedItems, activeTab]);
 
@@ -198,14 +199,16 @@ export const LiveMonitor: React.FC = () => {
             </div>
           )}
 
-          {/* Live feed */}
+          {/* Content area */}
           <div className="flex-1 min-h-0">
-            {filteredFeed.length === 0 ? (
+            {activeTab === 'schedule' ? (
+              <ScheduleContent />
+            ) : filteredFeed.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-2">
                   <Activity className="h-8 w-8 text-gray-700 mx-auto" />
                   <p className="text-sm text-gray-400">
-                    {activeTab === 'all' ? 'אין פעילות כרגע' : `אין אירועי ${tabs.find(t => t.key === activeTab)?.label}`}
+                    {`אין אירועי ${tabs.find(t => t.key === activeTab)?.label}`}
                   </p>
                   <p className="text-xs text-gray-600">המערכת מאזינה ותציג כאן אירועים בזמן אמת</p>
                 </div>
