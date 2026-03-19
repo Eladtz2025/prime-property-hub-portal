@@ -53,6 +53,9 @@ export const ContactLeadsListCompact: React.FC<ContactLeadsListCompactProps> = (
           key={lead.id}
           className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
         >
+          <span className="flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold shrink-0 mt-0.5">
+            {lead.name?.charAt(0) || '?'}
+          </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="font-medium text-sm truncate">{lead.name}</p>
