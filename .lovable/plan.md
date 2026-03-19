@@ -1,21 +1,52 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## חקירה: שתי בעיות שזוהו
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### בעיה 1: המוניטור לא מציג פרטים
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**מה קורה**: הקומפוננטה `LiveMonitor.tsx` מציגה רק את שורת ההתקדמות ("בדיקת זמינות — 55 נבדקו") אבל **לא מרנדרת את `LiveFeedTab`** — הקומפוננטה שמציגה את הפיד המפורט (כתובת, סטטוס, מקור).
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+הקומפוננטה `LiveFeedTab` קיימת ועובדת, וה-hook `useMonitorData` אפילו מחזיר `feedItems`, אבל `LiveMonitor.tsx` פשוט לא משתמש בו.
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**תיקון**: להוסיף את `LiveFeedTab` בתוך `LiveMonitor.tsx` מתחת לשורות ההתקדמות, כולל `feedItems` מה-hook.
+
+---
+
+### בעיה 2: הקרון לא מפעיל את בדיקת הזמינות — חמורה
+
+**מה בדיוק קורה (עובדות מהDB)**:
+
+1. הקרון מוגדר ב-`0 3 * * *` UTC (06:00 ישראל) — **זמן שגוי**, אמור להיות 03:20 ישראל = 00:20 UTC
+2. הקרון **כן יורה** — `cron.job_run_details` מאשר `status: succeeded` ב-03:00 UTC היום
+3. הקריאה `net.http_post` **נכשלת ב-timeout של 5 שניות** — מהטבלה `net._http_response`:
+   ```
+   error_msg: "Timeout of 5000 ms reached. Total time: 5001.358000 ms"
+   ```
+4. **אין שום לוג** של Edge Function בשעה 03:00 — הפונקציה לא הספיקה לרוץ
+5. כל 3 הקריאות של היום (01:00, 03:00, 05:00 UTC) נכשלו באותו אופן
+6. ב-18/3 הקרון **כן עבד** (52 נכסים) — כלומר הבעיה אינטרמיטנטית
+
+**שורש הבעיה**: `pg_net` (הספרייה שמבצעת HTTP מתוך PostgreSQL) יש לה timeout ברירת מחדל של **5 שניות**. ה-Edge Function צריכה להתחיל (cold start), לעשות cleanup, lock check, לטעון הגדרות, ולשלוף נכסים — כל זה לוקח יותר מ-5 שניות. כשהחיבור נסגר, הפונקציה לא מקבלת את הבקשה בכלל או נקטעת.
+
+**תיקון** — שני שינויים נדרשים:
+
+1. **הגדלת timeout של net.http_post**: הוספת פרמטר `timeout_milliseconds` לקריאה בקרון:
+```sql
+net.http_post(
+  url := '...',
+  headers := '...'::jsonb,
+  body := '{}'::jsonb,
+  timeout_milliseconds := 120000  -- 2 דקות במקום 5 שניות
+)
+```
+
+2. **תיקון זמן הקרון**: שינוי מ-`0 3 * * *` ל-`20 0 * * *` (00:20 UTC = 03:20 ישראל IDT). אם רוצים לכסות גם DST, צריך לשקול.
+
+### סיכום השינויים
+
+| שינוי | קובץ/כלי | סוג |
+|--------|-----------|------|
+| הוספת LiveFeedTab למוניטור | `LiveMonitor.tsx` | קוד |
+| עדכון timeout בקרון | SQL (cron.schedule) | DB |
+| תיקון שעת קרון | SQL (cron.schedule) | DB |
 
