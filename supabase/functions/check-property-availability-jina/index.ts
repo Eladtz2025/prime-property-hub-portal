@@ -378,6 +378,15 @@ serve(async (req) => {
       'madlan_blocked_retry',
     ]);
 
+    // Also treat any non-OK madlan_direct_status_* as retryable
+    const isRetryableReason = (reason: string, hasError: boolean): boolean => {
+      if (hasError) return true;
+      if (retryableReasons.has(reason)) return true;
+      if (reason.startsWith('madlan_direct_status_') && reason !== 'madlan_direct_status_200') return true;
+      if (reason.startsWith('jina_status_')) return true;
+      return false;
+    };
+
     for (const result of results) {
       checkedCount++;
       
@@ -405,26 +414,20 @@ serve(async (req) => {
         }
       }
       
-      const isRetryable = result.error || retryableReasons.has(result.reason);
+      const retryable = isRetryableReason(result.reason, !!result.error);
       
-      if (isRetryable) {
+      if (retryable) {
         errorCount++;
         try {
-          const { data: curProp } = await supabase
-            .from('scouted_properties')
-            .select('availability_check_count')
-            .eq('id', result.id)
-            .single();
-          
+          // Only update the reason — do NOT touch availability_checked_at or count
+          // so the property stays at the front of the queue for immediate retry
           await supabase
             .from('scouted_properties')
             .update({ 
               availability_check_reason: result.reason,
-              availability_checked_at: new Date().toISOString(),
-              availability_check_count: (curProp?.availability_check_count ?? 0) + 1,
             })
             .eq('id', result.id);
-          console.log(`🔄 ${result.id} - retryable (${result.reason}), removed from immediate queue`);
+          console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue for next run`);
         } catch (dbError) {
           console.error(`DB update error for ${result.id}:`, dbError);
         }
