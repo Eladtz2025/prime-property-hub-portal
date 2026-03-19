@@ -287,6 +287,44 @@ export function useMonitorData() {
     refetchInterval: 15000,
   });
 
+  // Scouted properties from latest completed scan runs (per source)
+  const latestCompletedRuns = useMemo(() => {
+    if (!recentScoutRuns) return [];
+    const bySource = new Map<string, { started_at: string; completed_at: string }>();
+    for (const r of recentScoutRuns) {
+      if (r.status === 'completed' && r.completed_at && r.source && !bySource.has(r.source)) {
+        bySource.set(r.source, { started_at: r.started_at, completed_at: r.completed_at });
+      }
+    }
+    return Array.from(bySource.entries());
+  }, [recentScoutRuns]);
+
+  const { data: scanProperties } = useQuery({
+    queryKey: ['monitor-scan-properties', latestCompletedRuns.map(([s, r]) => `${s}:${r.started_at}`).join(',')],
+    queryFn: async () => {
+      if (latestCompletedRuns.length === 0) return [];
+      const allProps: Array<{
+        address: string | null; neighborhood: string | null; price: number | null;
+        rooms: number | null; source: string | null; source_url: string | null;
+        created_at: string; last_seen_at: string | null;
+      }> = [];
+      for (const [source, run] of latestCompletedRuns) {
+        const { data } = await supabase
+          .from('scouted_properties')
+          .select('address, neighborhood, price, rooms, source, source_url, created_at, last_seen_at')
+          .eq('source', source)
+          .gte('last_seen_at', run.started_at)
+          .lte('last_seen_at', run.completed_at)
+          .order('created_at', { ascending: false })
+          .limit(250);
+        if (data) allProps.push(...data);
+      }
+      return allProps;
+    },
+    enabled: latestCompletedRuns.length > 0,
+    refetchInterval: 30000,
+  });
+
   // Recent availability runs for pipeline
   const { data: recentAvailRuns } = useQuery({
     queryKey: ['monitor-recent-avail-runs'],
@@ -412,6 +450,48 @@ export function useMonitorData() {
           status: isCompleted ? (found > 0 ? 'ok' : 'warning') : 'error',
           eventKind: isCompleted ? 'found' : 'error',
         });
+      }
+
+      // Add individual scouted properties for this source's latest run
+      if (run.source && scanProperties?.length) {
+        const runWindow = latestCompletedRuns.find(([s]) => s === run.source);
+        if (runWindow) {
+          const [, runTimes] = runWindow;
+          const sourceProps = scanProperties.filter(p =>
+            p.source === run.source &&
+            p.last_seen_at &&
+            p.last_seen_at >= runTimes.started_at &&
+            p.last_seen_at <= runTimes.completed_at
+          );
+          // Sort: new (found) first, then checked
+          const sorted = sourceProps.sort((a, b) => {
+            const aIsNew = a.created_at >= runTimes.started_at && a.created_at <= runTimes.completed_at;
+            const bIsNew = b.created_at >= runTimes.started_at && b.created_at <= runTimes.completed_at;
+            if (aIsNew && !bIsNew) return -1;
+            if (!aIsNew && bIsNew) return 1;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
+
+          sorted.forEach(prop => {
+            const isNew = prop.created_at >= runTimes.started_at && prop.created_at <= runTimes.completed_at;
+            const detailParts: string[] = [];
+            if (prop.neighborhood) detailParts.push(prop.neighborhood);
+            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
+            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
+
+            items.push({
+              type: 'scan',
+              timestamp: prop.last_seen_at || prop.created_at,
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
+              details: detailParts.join(' | ') || 'ללא פרטים',
+              source: prop.source ?? undefined,
+              status: 'ok',
+              url: prop.source_url ?? undefined,
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              eventKind: isNew ? 'found' : 'checked',
+            });
+          });
+        }
       }
     });
 
