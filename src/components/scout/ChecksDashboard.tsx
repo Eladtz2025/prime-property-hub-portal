@@ -19,6 +19,7 @@ import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
+import { PendingPropertiesDialog } from './checks/PendingPropertiesDialog';
 
 
 // Logic description component
