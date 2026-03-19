@@ -107,7 +107,7 @@ export const DashboardFormsCubes = () => {
     setTimeout(() => setter(false), 2000);
   };
 
-  const cubeBase = "flex flex-col items-center justify-center p-3 rounded-xl bg-muted/80 backdrop-blur-sm text-foreground border border-border/50 shadow-sm hover:bg-accent transition-all duration-200 hover:scale-[1.03] min-h-[80px] gap-1.5 relative cursor-pointer";
+  const cubeBase = "flex flex-row items-center px-3 py-2 h-10 rounded-lg bg-muted/80 backdrop-blur-sm text-foreground border border-border/50 shadow-sm hover:bg-accent transition-all duration-200 cursor-pointer gap-2";
 
   return (
     <>
@@ -116,8 +116,8 @@ export const DashboardFormsCubes = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className={cubeBase}>
-              {copied ? <Check className="h-6 w-6 text-foreground" /> : <Link2 className="h-6 w-6 text-foreground" />}
-              <span className="text-xs font-medium text-foreground text-center">לינק ללקוח</span>
+              {copied ? <Check className="h-4 w-4 shrink-0 text-foreground" /> : <Link2 className="h-4 w-4 shrink-0 text-foreground" />}
+              <span className="flex-1 text-xs font-medium text-foreground text-center">לינק ללקוח</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="center">
@@ -136,8 +136,8 @@ export const DashboardFormsCubes = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className={cubeBase}>
-              {copiedPro ? <Check className="h-6 w-6 text-foreground" /> : <Link2 className="h-6 w-6 text-foreground" />}
-              <span className="text-xs font-medium text-foreground text-center">לינק אנשי מקצוע</span>
+              {copiedPro ? <Check className="h-4 w-4 shrink-0 text-foreground" /> : <Link2 className="h-4 w-4 shrink-0 text-foreground" />}
+              <span className="flex-1 text-xs font-medium text-foreground text-center">לינק אנשי מקצוע</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="center">
@@ -159,10 +159,10 @@ export const DashboardFormsCubes = () => {
           if (cube.directDialog) {
             return (
               <button key={cube.id} onClick={() => setActiveDialog(cube.dialogId)} className={cubeBase}>
-                <Icon className="h-6 w-6 text-foreground" />
-                <span className="text-xs font-medium text-foreground text-center">{cube.label}</span>
+                <Icon className="h-4 w-4 shrink-0 text-foreground" />
+                <span className="flex-1 text-xs font-medium text-foreground text-center">{cube.label}</span>
                 {cube.count > 0 && (
-                  <Badge className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0 min-w-[18px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 min-w-[18px]">
                     {cube.count}
                   </Badge>
                 )}
@@ -174,10 +174,10 @@ export const DashboardFormsCubes = () => {
             <Popover key={cube.id}>
               <PopoverTrigger asChild>
                 <button className={cubeBase}>
-                  <Icon className="h-6 w-6 text-foreground" />
-                  <span className="text-xs font-medium text-foreground text-center">{cube.label}</span>
+                  <Icon className="h-4 w-4 shrink-0 text-foreground" />
+                  <span className="flex-1 text-xs font-medium text-foreground text-center">{cube.label}</span>
                   {cube.count > 0 && (
-                    <Badge className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0 min-w-[18px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 min-w-[18px]">
                       {cube.count}
                     </Badge>
                   )}
