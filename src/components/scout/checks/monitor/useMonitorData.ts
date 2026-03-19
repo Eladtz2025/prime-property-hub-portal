@@ -276,13 +276,14 @@ export function useMonitorData() {
     refetchInterval: 15000,
   });
 
-  // ── Build feed items ──
+  // ── Build feed items (include completed runs so screen is never empty) ──
   const feedItems = useMemo(() => {
     const items: FeedItem[] = [];
 
-    // Availability details
-    const availDetails: AvailDetail[] = availRun?.run_details
-      ? (Array.isArray(availRun.run_details) ? availRun.run_details as unknown as AvailDetail[] : [])
+    // Availability details — from running run OR last completed run
+    const availSource = availRun ?? recentAvailRuns?.[0];
+    const availDetails: AvailDetail[] = availSource?.run_details
+      ? (Array.isArray(availSource.run_details) ? availSource.run_details as unknown as AvailDetail[] : [])
       : [];
 
     availDetails.forEach(d => {
