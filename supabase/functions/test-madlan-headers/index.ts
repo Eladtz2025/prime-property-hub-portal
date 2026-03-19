@@ -57,7 +57,7 @@ serve(async (req) => {
       .eq('source', 'madlan').eq('is_active', true)
       .not('source_url', 'is', null)
       .order('created_at', { ascending: false })
-      .limit(testType === 'mixed' ? 4 : 6);
+      .limit(testType === 'mixed' ? 4 : 4);
     if (data) urls.push(...data.map(d => ({ url: d.source_url, addr: d.address || '?', expected: 'active' })));
   }
 
