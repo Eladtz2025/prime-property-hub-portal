@@ -364,11 +364,17 @@ Deno.serve(async (req) => {
       timestamp: string;
     }) {
       try {
-        const { data: current } = await supabase
+        console.log(`📝 saveRecentItem: saving for ${item.address || 'unknown'} [${item.status}]`);
+        const { data: current, error: fetchError } = await supabase
           .from('backfill_progress')
           .select('summary_data')
           .eq('id', progressId)
           .single();
+        
+        if (fetchError) {
+          console.error('❌ saveRecentItem fetch failed:', fetchError.message);
+          return;
+        }
         
         const summary = (current?.summary_data as Record<string, any>) || {};
         const recentItems = Array.isArray(summary.recent_items) ? summary.recent_items : [];
@@ -376,10 +382,16 @@ Deno.serve(async (req) => {
         if (recentItems.length > 500) recentItems.splice(0, recentItems.length - 500);
         summary.recent_items = recentItems;
         
-        await supabase
+        const { error: updateError } = await supabase
           .from('backfill_progress')
           .update({ summary_data: summary, updated_at: new Date().toISOString() })
           .eq('id', progressId);
+
+        if (updateError) {
+          console.error('❌ saveRecentItem update failed:', updateError.message);
+        } else {
+          console.log(`✅ saveRecentItem: saved, total items: ${recentItems.length}`);
+        }
       } catch (e) {
         console.error('Failed to save recent_item:', e);
       }
