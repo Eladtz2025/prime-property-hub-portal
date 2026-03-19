@@ -323,12 +323,12 @@ export default function AdminCustomers() {
 
             {/* Compact search - pushed to opposite side */}
             <div className="relative w-full sm:w-[200px] sm:mr-auto">
-              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
               <Input
                 placeholder="חיפוש..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pr-8 text-sm"
+                className="h-9 pl-8 text-sm"
               />
             </div>
           </div>
