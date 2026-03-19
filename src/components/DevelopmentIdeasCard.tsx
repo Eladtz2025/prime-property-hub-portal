@@ -45,14 +45,21 @@ export const DevelopmentIdeasCard: React.FC = () => {
   const completedIdeas = ideas.filter(i => i.is_completed);
 
   return (
-    <Card className="h-full shadow-card animate-fade-in border border-border/50 bg-card flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg whitespace-nowrap shrink-0">
-          <Lightbulb className="h-5 w-5 text-yellow-500" />
+    <Card className="h-full shadow-card animate-fade-in border border-border/50 bg-card flex flex-col border-t-[3px] border-t-accent overflow-hidden relative">
+      {/* Notebook lines pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 31px, currentColor 31px, currentColor 32px)',
+        backgroundSize: '100% 32px'
+      }} />
+      <CardHeader className="pb-3 relative">
+        <CardTitle className="flex items-center gap-3 text-lg whitespace-nowrap shrink-0">
+          <span className="flex items-center justify-center h-9 w-9 rounded-full bg-yellow-500/10 shadow-[0_0_12px_rgba(234,179,8,0.15)]">
+            <Lightbulb className="h-5 w-5 text-yellow-500" />
+          </span>
           רעיונות לפיתוח
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 overflow-y-auto">
+      <CardContent className="space-y-4 overflow-y-auto relative">
         {/* Add new idea */}
         <div className="flex gap-2">
           <Select value={newPriority} onValueChange={setNewPriority}>

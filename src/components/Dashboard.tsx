@@ -69,10 +69,12 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
 
         <DevelopmentIdeasCard />
 
-        <Card className="flex flex-col">
+        <Card className="flex flex-col border-t-[3px] border-t-emerald-500/60 overflow-hidden bg-[radial-gradient(circle_at_1px_1px,hsl(var(--muted-foreground)/0.04)_1px,transparent_0)] [background-size:16px_16px]">
           <CardHeader className="pb-3 shrink-0">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageSquare className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-3 text-lg">
+              <span className="flex items-center justify-center h-9 w-9 rounded-full bg-emerald-500/10">
+                <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </span>
               פניות מהאתר
             </CardTitle>
             <div className="flex items-center gap-2 mt-2">
