@@ -521,7 +521,7 @@ export function useMonitorData() {
     }).length ?? 0;
 
     // Matching
-    const matchProcessed = lastMatchRun?.total_matches ?? 0;
+    const matchProcessed = lastMatchRun?.leads_matched ?? 0;
     const matchFailed = lastMatchRun?.status === 'failed' ? 1 : 0;
 
     // Backfill/Push
