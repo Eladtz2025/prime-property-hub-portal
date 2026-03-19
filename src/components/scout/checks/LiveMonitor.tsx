@@ -30,19 +30,14 @@ export const LiveMonitor: React.FC = () => {
       </div>
 
       {/* Body */}
-      <div className="flex" style={{ height: '320px' }}>
-        {/* Center */}
-        <div className="flex-1 min-w-0 flex items-center justify-center">
-          {!hasActivity && activeProcesses.length === 0 ? (
-            <div className="text-center space-y-2">
-              <Activity className="h-8 w-8 text-gray-700 mx-auto" />
-              <p className="text-sm text-gray-400">אין פעילות כרגע</p>
-              <p className="text-xs text-gray-600">המערכת מאזינה ותציג כאן אירועים בזמן אמת</p>
-            </div>
-          ) : (
-            <div className="w-full p-6 space-y-3">
+      <div className="flex" style={{ height: '420px' }}>
+        {/* Main content */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Active processes bar */}
+          {activeProcesses.length > 0 && (
+            <div className="border-b border-white/[0.05] p-3 space-y-2">
               {activeProcesses.map((proc, i) => (
-                <div key={i} className="flex items-center gap-3 bg-white/[0.02] rounded-xl px-4 py-3">
+                <div key={i} className="flex items-center gap-3 bg-white/[0.02] rounded-xl px-4 py-2">
                   <Loader2 className="h-4 w-4 animate-spin text-gray-500 shrink-0" />
                   <span className="text-sm text-gray-200 flex-1 truncate">{proc.label}</span>
                   <span className="text-[11px] text-gray-500 font-mono shrink-0">{proc.elapsed}</span>
@@ -55,6 +50,21 @@ export const LiveMonitor: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Live feed */}
+          <div className="flex-1 min-h-0">
+            {!hasActivity && feedItems.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center space-y-2">
+                  <Activity className="h-8 w-8 text-gray-700 mx-auto" />
+                  <p className="text-sm text-gray-400">אין פעילות כרגע</p>
+                  <p className="text-xs text-gray-600">המערכת מאזינה ותציג כאן אירועים בזמן אמת</p>
+                </div>
+              </div>
+            ) : (
+              <LiveFeedTab feedItems={feedItems} sourceFilter={sourceFilter} />
+            )}
+          </div>
         </div>
 
         {/* Metrics Rail */}
