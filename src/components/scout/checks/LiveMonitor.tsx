@@ -28,7 +28,7 @@ export const LiveMonitor: React.FC = () => {
     dailyRunsHealth,
     yesterdayScansHealth,
   } = useMonitorData();
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('availability');
 
   const errorAlerts = alerts.filter(a => a.severity === 'error').length;
   const statusText = errorAlerts > 0 ? `${errorAlerts} חריגות` : hasActivity ? 'תקין' : 'Idle';
