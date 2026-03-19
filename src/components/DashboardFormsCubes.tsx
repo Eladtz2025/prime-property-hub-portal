@@ -136,8 +136,8 @@ export const DashboardFormsCubes = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className={cubeBase}>
-              {copiedPro ? <Check className="h-4 w-4 shrink-0 text-foreground" /> : <Link2 className="h-4 w-4 shrink-0 text-foreground" />}
-              <span className="flex-1 text-xs font-medium text-foreground text-center">לינק אנשי מקצוע</span>
+              {copiedPro ? <Check className="h-4 w-4 shrink-0 text-white" /> : <Link2 className="h-4 w-4 shrink-0 text-white" />}
+              <span className="flex-1 text-xs font-medium text-white text-center">לינק אנשי מקצוע</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="center">
