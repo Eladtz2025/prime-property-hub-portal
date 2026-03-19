@@ -6,8 +6,6 @@ import { fetchCategorySettings } from "../_shared/settings.ts";
 import {
   isListingRemoved,
   isMadlanBlocked,
-  isMadlanHomepage,
-  isMadlanSearchResultsPage,
 } from "../_shared/availability-indicators.ts";
 
 const GLOBAL_TIMEOUT_MS = 55000;
