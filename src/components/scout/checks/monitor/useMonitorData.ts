@@ -576,6 +576,29 @@ export function useMonitorData() {
             eventKind: 'found',
           });
         }
+
+        // Add individual dedup properties
+        if (dedupProperties?.length) {
+          dedupProperties.forEach(prop => {
+            const detailParts: string[] = [];
+            if (prop.neighborhood) detailParts.push(prop.neighborhood);
+            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
+            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
+            if (prop.duplicate_group_id) detailParts.push(`קבוצה: ${prop.duplicate_group_id.slice(0, 6)}`);
+
+            items.push({
+              type: 'dedup',
+              timestamp: prop.duplicate_detected_at || '',
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
+              details: detailParts.join(' | ') || 'ללא פרטים',
+              source: prop.source ?? undefined,
+              status: 'ok',
+              url: prop.source_url ?? undefined,
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              eventKind: 'found',
+            });
+          });
+        }
       } else {
         const recentItems = summary?.recent_items || [];
         recentItems.forEach(item => {
