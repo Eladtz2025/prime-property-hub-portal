@@ -328,7 +328,7 @@ export default function AdminCustomers() {
                 placeholder="חיפוש..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pl-8 text-sm"
+                className="h-9 pl-8 text-sm text-right"
               />
             </div>
           </div>
