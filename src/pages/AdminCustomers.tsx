@@ -273,16 +273,6 @@ export default function AdminCustomers() {
           
           {/* Buttons row - two rows on mobile */}
           <div className="flex flex-col sm:flex-row gap-2 items-center">
-            {/* Compact search */}
-            <div className="relative w-full sm:w-[200px]">
-              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
-              <Input
-                placeholder="חיפוש..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pr-8 text-sm"
-              />
-            </div>
             {/* Add buttons */}
             <div className="flex gap-2">
               <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
@@ -329,6 +319,17 @@ export default function AdminCustomers() {
                 <span className="hidden sm:inline">סרוק נכסים שלנו</span>
                 <span className="sm:hidden">סרוק</span>
               </Button>
+            </div>
+
+            {/* Compact search - pushed to opposite side */}
+            <div className="relative w-full sm:w-[200px] sm:mr-auto">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+              <Input
+                placeholder="חיפוש..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9 pr-8 text-sm"
+              />
             </div>
           </div>
         </div>
