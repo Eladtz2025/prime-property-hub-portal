@@ -113,7 +113,6 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
             {formattedValue}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{label}</p>
-          {subtitle && <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>}
         </div>
         
         {/* Sparkline */}
@@ -128,6 +127,9 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
           <DeltaBadge delta={delta} />
         </div>
       )}
+
+      {/* Subtitle */}
+      {subtitle && <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>}
 
       {/* Bottom glow bar */}
       <div className={`absolute bottom-0 left-0 right-0 h-[2px] ${bottomBarMap[statusColor]}`} />
