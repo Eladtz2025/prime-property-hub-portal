@@ -296,13 +296,13 @@ export default function AdminCustomers() {
                 disabled={isMatchingAll}
                 className="flex-1 sm:flex-none"
               >
-                {isMatchingAll ? (
-                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 sm:ml-2" />
-                )}
                 <span className="hidden sm:inline">חשב התאמות מחדש</span>
                 <span className="sm:hidden">התאמות</span>
+                {isMatchingAll ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4 sm:mr-2" />
+                )}
               </Button>
               <Button 
                 onClick={handleScanOwnProperties} 
