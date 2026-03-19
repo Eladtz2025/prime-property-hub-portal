@@ -302,8 +302,9 @@ export function useMonitorData() {
       });
     });
 
-    // Scan runs
-    scanRuns?.forEach(run => {
+    // Scan runs — from running OR recent completed
+    const scanSource = (scanRuns && scanRuns.length > 0) ? scanRuns : recentScoutRuns?.slice(0, 3) ?? [];
+    scanSource.forEach(run => {
       const config = (run as any).scout_configs;
       const pages = run.page_stats as unknown as PageStat[] | null;
       if (!pages || pages.length === 0) return;
