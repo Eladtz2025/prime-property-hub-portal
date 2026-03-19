@@ -100,6 +100,7 @@ const AvailabilitySettingsContent: React.FC = () => {
 export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfillJina = useBackfillProgressJina();
+  const [pendingPropertiesOpen, setPendingPropertiesOpen] = React.useState(false);
 
 
   // Process kill switches (feature flags)
