@@ -19,7 +19,16 @@ const AdminPropertyScout: React.FC = () => {
       today.setHours(0, 0, 0, 0);
       const [totalRes, totalActiveRes, pendingRecheckRes, checkedTodayRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }),
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .or('duplicate_group_id.is.null,is_primary_listing.eq.true')
+          .ilike('city', '%תל אביב%')
+          .not('source_url', 'ilike', '%/yad1/%')
+          .not('source_url', 'ilike', '%/projects/%')
+          .not('source_url', 'ilike', '%forsale?%')
+          .not('source_url', 'ilike', '%forrent?%')
+          .not('source_url', 'ilike', '%/for-rent/%')
+          .not('source_url', 'ilike', '%/for-sale/%'),
         supabase.rpc('get_properties_needing_availability_check', {
           p_first_recheck_days: 8,
           p_recurring_recheck_days: 2,
