@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Activity, Hourglass, CheckCircle, Database, Copy, Users, LayoutGrid } from 'lucide-react';
+import { Search, Activity, Hourglass, CheckCircle, Database } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ChecksDashboard } from '@/components/scout/ChecksDashboard';
 import { ScoutMetricTile } from '@/components/scout/ScoutMetricTile';
+import { ScoutPieChart } from '@/components/scout/ScoutPieChart';
 
 const AdminPropertyScout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('properties');
@@ -48,31 +49,41 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  // Dedup stats
-  const { data: dedupStats } = useQuery({
-    queryKey: ['dedup-stats-summary-global'],
+  // Distribution stats for pie charts
+  const { data: distribution } = useQuery({
+    queryKey: ['scout-distribution-stats'],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from('scouted_properties')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_primary_listing', false)
-        .not('duplicate_group_id', 'is', null);
-      return { losers: count ?? 0 };
+        .select('source, is_private, property_type')
+        .eq('is_active', true);
+
+      const sources: Record<string, number> = {};
+      let privateCount = 0;
+      let brokerCount = 0;
+      let saleCount = 0;
+      let rentCount = 0;
+
+      if (data) {
+        for (const p of data) {
+          // Source
+          const src = p.source || 'אחר';
+          sources[src] = (sources[src] || 0) + 1;
+          // Private/broker
+          if (p.is_private === true) privateCount++;
+          else if (p.is_private === false) brokerCount++;
+          // Sale/rent
+          if (p.property_type === 'sale') saleCount++;
+          else if (p.property_type === 'rent') rentCount++;
+        }
+      }
+
+      return { sources, privateCount, brokerCount, saleCount, rentCount };
     },
     refetchInterval: 30000,
   });
 
-  // Matching stats
-  const { data: matchStats } = useQuery({
-    queryKey: ['matching-stats-summary'],
-    queryFn: async () => {
-      const { data } = await supabase.from('scout_runs').select('leads_matched').eq('source', 'matching').order('started_at', { ascending: false }).limit(1).maybeSingle();
-      return data;
-    },
-    refetchInterval: 30000,
-  });
-
-  // Historical comparison: yesterday's data for deltas
+  // Historical comparison
   const { data: historical } = useQuery({
     queryKey: ['scout-historical-stats'],
     queryFn: async () => {
@@ -83,14 +94,11 @@ const AdminPropertyScout: React.FC = () => {
       endOfYesterday.setHours(23, 59, 59, 999);
 
       const [checkedYesterdayRes, totalYesterdayRes, activeYesterdayRes] = await Promise.all([
-        // How many were checked yesterday
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
           .gte('availability_checked_at', yesterday.toISOString())
           .lte('availability_checked_at', endOfYesterday.toISOString()),
-        // Total properties that existed as of yesterday
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
           .lte('created_at', endOfYesterday.toISOString()),
-        // Active properties as of yesterday (approx — currently active minus those created today)
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true })
           .eq('is_active', true)
           .lte('created_at', endOfYesterday.toISOString()),
@@ -104,7 +112,7 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 60000,
   });
 
-  // Sparkline: daily counts for last 7 days
+  // Sparkline data
   const { data: sparklines } = useQuery({
     queryKey: ['scout-sparkline-data'],
     queryFn: async () => {
@@ -115,7 +123,6 @@ const AdminPropertyScout: React.FC = () => {
         d.setHours(0, 0, 0, 0);
         days.push(d.toISOString());
       }
-      // Fetch checked counts per day from availability_check_runs
       const { data: runs } = await supabase
         .from('availability_check_runs')
         .select('started_at, properties_checked')
@@ -138,7 +145,6 @@ const AdminPropertyScout: React.FC = () => {
         }
       }
 
-      // Fetch new properties per day
       const { data: newProps } = await supabase
         .from('scouted_properties')
         .select('created_at')
@@ -166,21 +172,47 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 60000,
   });
 
-  // Compute deltas
   const calcDelta = (current: number, previous: number): number | null => {
     if (previous === 0) return current > 0 ? 100 : null;
     return ((current - previous) / previous) * 100;
   };
 
-  const totalDelta = historical ? calcDelta(stats?.total ?? 0, historical.totalYesterday) : null;
   const activeDelta = historical ? calcDelta(stats?.totalActive ?? 0, historical.activeYesterday) : null;
   const checkedDelta = historical ? calcDelta(stats?.checkedToday ?? 0, historical.checkedYesterday) : null;
+
+  // Pie chart data
+  const sourceColors: Record<string, string> = {
+    yad2: 'hsl(25, 95%, 53%)',
+    madlan: 'hsl(210, 80%, 55%)',
+    homeless: 'hsl(150, 60%, 45%)',
+  };
+  const sourceData = distribution
+    ? Object.entries(distribution.sources).map(([key, value]) => ({
+        label: key === 'yad2' ? 'יד2' : key === 'madlan' ? 'מדלן' : key === 'homeless' ? 'הומלס' : key,
+        value,
+        color: sourceColors[key] || 'hsl(var(--muted-foreground))',
+      }))
+    : [];
+
+  const privateData = distribution
+    ? [
+        { label: 'פרטי', value: distribution.privateCount, color: 'hsl(150, 60%, 45%)' },
+        { label: 'תיווך', value: distribution.brokerCount, color: 'hsl(35, 90%, 55%)' },
+      ]
+    : [];
+
+  const dealData = distribution
+    ? [
+        { label: 'מכירה', value: distribution.saleCount, color: 'hsl(210, 80%, 55%)' },
+        { label: 'השכרה', value: distribution.rentCount, color: 'hsl(280, 60%, 55%)' },
+      ]
+    : [];
 
   return (
     <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
         {/* Metric Tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <ScoutMetricTile
             label="סה״כ אקטיביים"
             value={stats?.totalActive ?? '—'}
@@ -225,30 +257,13 @@ const AdminPropertyScout: React.FC = () => {
               </div>
             }
           />
-          <ScoutMetricTile
-            label="כפילויות"
-            value={dedupStats?.losers ?? '—'}
-            icon={<Copy className="h-4 w-4" />}
-            statusColor="purple"
-            hoverContent={
-              <div className="space-y-1">
-                <p className="font-semibold">כפילויות שזוהו</p>
-                <p>נכסים שסומנו כלא ראשוניים (losers)</p>
-              </div>
-            }
-          />
-          <ScoutMetricTile
-            label="התאמות אחרונות"
-            value={matchStats?.leads_matched ?? '—'}
-            icon={<Users className="h-4 w-4" />}
-            statusColor="green"
-            hoverContent={
-              <div className="space-y-1">
-                <p className="font-semibold">התאמות מהריצה האחרונה</p>
-                <p>מספר ההתאמות שנמצאו בריצת המאצ׳ר האחרונה</p>
-              </div>
-            }
-          />
+        </div>
+
+        {/* Pie Charts */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ScoutPieChart title="לפי מקור" data={sourceData} />
+          <ScoutPieChart title="פרטי / תיווך" data={privateData} />
+          <ScoutPieChart title="מכירה / השכרה" data={dealData} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
