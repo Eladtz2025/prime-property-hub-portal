@@ -1,49 +1,21 @@
 
 
-## ניקוי כפילויות קיימות מאותו מקור
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### ממצאים
-נמצאו **~25 קבוצות כפילויות** מאותו מקור (madlan, yad2, homeless) — כולן עם אותם כתובת+עיר+חדרים+קומה+מחיר+סוג נכס. חלקן עם 3 רשומות, רובן עם 2.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### תוכנית ביצוע
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**שלב 1: מיגרציית ניקוי אוטומטית**
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-במקום לכתוב ידנית כל ID, נריץ SQL שמטפל בכל הקבוצות בבת אחת:
-
-```sql
--- For each group of same-source duplicates (same address/city/rooms/floor/price/source/type),
--- keep the oldest record (first created) and deactivate the rest
-WITH duplicates AS (
-  SELECT id, 
-    ROW_NUMBER() OVER (
-      PARTITION BY address, city, rooms, floor, price, source, property_type
-      ORDER BY created_at ASC
-    ) as rn
-  FROM scouted_properties
-  WHERE is_active = true
-    AND address IS NOT NULL AND rooms IS NOT NULL 
-    AND floor IS NOT NULL AND price IS NOT NULL
-)
-UPDATE scouted_properties
-SET is_active = false, 
-    status = 'inactive',
-    availability_checked_at = now(),
-    availability_check_reason = 'merged_same_source_duplicate',
-    updated_at = now()
-WHERE id IN (SELECT id FROM duplicates WHERE rn > 1);
-
--- Clean orphan groups
-SELECT cleanup_orphan_duplicate_groups();
-```
-
-**שלב 2: אימות**
-
-שאילתת בדיקה שמוודאת שלא נשארו כפילויות.
-
-### קבצים
-- מיגרציית SQL בלבד (ניקוי דאטא). אין שינויי קוד — הלוגיקה למניעת כפילויות עתידיות כבר הוטמעה.
-
-### תוצאה
-~25 רשומות כפולות יסומנו כלא פעילות. קבוצות כפילויות יתומות ינוקו אוטומטית.
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
