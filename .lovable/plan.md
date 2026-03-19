@@ -1,21 +1,58 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## תיקון: נכסים לא אקטואליים שעדיין מוצגים כ-active
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### ממצאים
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**בעיה מרכזית: פונקציות זיהוי Madlan לא בשימוש**
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+הפונקציה `checkMadlanDirect` (שורות 38-120 ב-`check-property-availability-jina/index.ts`) מייבאת את `isMadlanHomepage` ו-`isMadlanSearchResultsPage` אבל **לא קוראת להן בפועל**. היא בודקת רק:
+- סטטוס HTTP 404/410
+- טקסט "המודעה הוסרה" ב-title/og:description/og:title
+- `isListingRemoved` על גוף ה-HTML
+- `isMadlanBlocked` לזיהוי CAPTCHA
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**מה חסר**: כש-Madlan מסירה מודעה, היא לפעמים מפנה (redirect) לדף הבית או לדף תוצאות חיפוש — במקום להחזיר 404. הפונקציות `isMadlanHomepage` ו-`isMadlanSearchResultsPage` נועדו בדיוק לתפוס את המקרים האלו, אבל הן לא נקראות.
+
+זו הסיבה שהנכס של מדלן `3BQqogDu770` קיבל `no_indicators_keeping_active` — הוא כנראה הופנה לדף הבית או לדף חיפוש, והמערכת לא זיהתה את זה.
+
+**בעיה משנית: 39 URLs של Yad2 עם query params**
+
+ה-migration הקודם לא הצליח לנרמל את כל ה-URLs בגלל unique constraint conflicts. עדיין יש 39 רשומות אקטיביות עם query params.
+
+### תיקונים
+
+**1. הוספת בדיקות homepage/search redirect ל-`checkMadlanDirect`**
+
+ב-`check-property-availability-jina/index.ts`, אחרי בדיקת `isMadlanBlocked` (שורה 109), להוסיף:
+
+```typescript
+// Check for homepage redirect (listing removed, redirected to homepage)
+if (isMadlanHomepage(html)) {
+  console.log(`🚫 Madlan homepage redirect detected for ${url}`);
+  return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+}
+
+// Check for search results redirect (listing removed, redirected to search)
+if (isMadlanSearchResultsPage(html)) {
+  console.log(`🚫 Madlan search results redirect detected for ${url}`);
+  return { isInactive: true, reason: 'listing_removed_search_redirect' };
+}
+```
+
+**2. ניקוי 39 URLs של Yad2 שנשארו** (SQL migration)
+
+ריצה שנייה של ניקוי — הפעם מוחקת קודם את הרשומות הלא-אקטיביות החוסמות, ואז מנרמלת.
+
+### סיכום
+
+| קובץ | שינוי |
+|---|---|
+| `check-property-availability-jina/index.ts` | הוספת `isMadlanHomepage` + `isMadlanSearchResultsPage` לפני return content_ok |
+| SQL migration | ניקוי 39 URLs נותרים של Yad2 |
+
+### תוצאה
+- מודעות Madlan שהוסרו והופנו לדף הבית/חיפוש יזוהו כלא אקטיביות
+- הנכס של מדלן בארלוזורוב 17 יזוהה בבדיקה הבאה
+- כל URLs של Yad2 ינורמלו סופית
 
