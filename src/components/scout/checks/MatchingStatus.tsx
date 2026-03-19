@@ -13,9 +13,10 @@ export const MatchingStatus: React.FC = () => {
     queryKey: ['matching-runs-recent'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('personal_scout_runs')
+        .from('scout_runs')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
         .limit(10);
       if (error) throw error;
       return data;
