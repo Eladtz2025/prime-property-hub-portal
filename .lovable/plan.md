@@ -1,21 +1,39 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## הצגת נכסים בודדים בטאב סריקה במוניטור
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### הבעיה
+כרגע טאב הסריקה מציג רק שורת סיכום אחת לכל מקור ("סריקת yad2 — 191 נמצאו | 22 חדשים"). המשתמש רוצה לראות את הנכסים עצמם — כמו שטאב הזמינות מציג כל נכס בשורה נפרדת.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### גישה
+נשלוף מ-`scouted_properties` את כל הנכסים שה-`last_seen_at` שלהם נופל בחלון הזמן של הריצה האחרונה (בין `started_at` ל-`completed_at`). נכסים שה-`created_at` שלהם גם בחלון הזה = חדשים (eventKind: `found`), והשאר = נראו שוב (eventKind: `checked`).
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### מה ישתנה
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**קובץ: `useMonitorData.ts`**
+
+1. **שאילתה חדשה** — לכל ריצת סריקה אחרונה (עד 3 מקורות), שליפת נכסים מ-`scouted_properties`:
+   - `source` = מקור הריצה (yad2/madlan/homeless)
+   - `last_seen_at` בין `started_at` ל-`completed_at` של הריצה
+   - שדות: `address`, `neighborhood`, `price`, `rooms`, `source`, `source_url`, `created_at`
+   - מוגבל ל-250 תוצאות (מספיק לכל ריצה)
+
+2. **בניית feed items** — כל נכס הופך לשורה בפיד:
+   - Primary: כתובת הנכס (כמו בטאב זמינות)
+   - Details: מחיר + חדרים + שכונה
+   - eventKind: `found` לחדשים, `checked` לקיימים
+   - Source badge: YAD2/MDLN/HMLS
+   - URL: קישור למודעה
+
+3. **שורת סיכום נשארת** — השורה המסכמת ("191 נמצאו | 22 חדשים") תישאר בראש כ-header, ומתחתיה הנכסים הבודדים
+
+4. **מיון** — חדשים (found) קודם, אח"כ קיימים (checked), לפי timestamp
+
+### פירוט טכני
+- שאילתה אחת מאוחדת עם `or` filter על שלושת המקורות וחלונות הזמן שלהם, או שאילתה נפרדת per-source
+- ה-FeedItem type כבר תומך בכל השדות הנדרשים (`url`, `extra.price`, `extra.rooms`, `eventKind`)
+- LiveFeedTab כבר יודע להציג source badges, מחירים, וקישורים — לא צריך לשנות אותו
+
+### תוצאה
+בטאב סריקה יופיעו כל הנכסים מהסריקה האחרונה — חדשים מסומנים ב-FOUND ירוק, קיימים ב-CHECK כחול — עם כתובת, מחיר, חדרים, וקישור למודעה.
 
