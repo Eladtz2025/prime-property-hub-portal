@@ -10,9 +10,10 @@ interface ScoutMetricTileProps {
   value: string | number;
   icon: React.ReactNode;
   statusColor?: StatusColor;
-  delta?: number | null; // percentage change, e.g. 12.4 or -23
+  delta?: number | null;
   sparklineData?: number[];
   hoverContent?: React.ReactNode;
+  subtitle?: string;
 }
 
 const glowMap: Record<StatusColor, string> = {
@@ -84,6 +85,7 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
   delta,
   sparklineData,
   hoverContent,
+  subtitle,
 }) => {
   const formattedValue = typeof value === 'number' ? value.toLocaleString('he-IL') : value;
 
@@ -111,6 +113,7 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
             {formattedValue}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{label}</p>
+          {subtitle && <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>}
         </div>
         
         {/* Sparkline */}
