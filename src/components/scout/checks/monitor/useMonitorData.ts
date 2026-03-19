@@ -348,17 +348,18 @@ export function useMonitorData() {
     return { started_at: dedup.started_at!, completed_at: dedup.completed_at! };
   }, [completedBackfillRecent]);
 
-  // Dedup properties — scouted_properties with duplicate_detected_at in dedup run window
+  // Dedup properties — scouted_properties with dedup_checked_at in dedup run window
   const { data: dedupProperties } = useQuery({
     queryKey: ['monitor-dedup-properties', latestDedupRun?.started_at],
     queryFn: async () => {
       if (!latestDedupRun) return [];
       const { data } = await supabase
         .from('scouted_properties')
-        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, duplicate_detected_at')
-        .gte('duplicate_detected_at', latestDedupRun.started_at)
-        .lte('duplicate_detected_at', latestDedupRun.completed_at)
-        .order('duplicate_detected_at', { ascending: false })
+        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, dedup_checked_at')
+        .not('duplicate_group_id', 'is', null)
+        .gte('dedup_checked_at', latestDedupRun.started_at)
+        .lte('dedup_checked_at', latestDedupRun.completed_at)
+        .order('dedup_checked_at', { ascending: false })
         .limit(250);
       return data ?? [];
     },
@@ -588,7 +589,7 @@ export function useMonitorData() {
 
             items.push({
               type: 'dedup',
-              timestamp: prop.duplicate_detected_at || '',
+              timestamp: prop.dedup_checked_at || '',
               primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: detailParts.join(' | ') || 'ללא פרטים',
               source: prop.source ?? undefined,

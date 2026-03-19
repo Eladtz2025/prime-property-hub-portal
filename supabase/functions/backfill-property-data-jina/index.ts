@@ -856,6 +856,8 @@ Deno.serve(async (req) => {
       floor: (existingFields.floor || 0) + batchStats.fields_updated.floor,
       neighborhood: (existingFields.neighborhood || 0) + batchStats.fields_updated.neighborhood,
     };
+    // Preserve recent_items saved by saveRecentItem
+    mergedSummary.recent_items = existingSummary.recent_items || [];
 
     await supabase
       .from('backfill_progress')
