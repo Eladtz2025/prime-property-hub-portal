@@ -325,6 +325,22 @@ export function useMonitorData() {
     refetchInterval: 30000,
   });
 
+  // Last matching run
+  const { data: lastMatchRun } = useQuery({
+    queryKey: ['monitor-last-match-run'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('scout_runs')
+        .select('*')
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    refetchInterval: 15000,
+  });
+
   // Latest completed dedup run window
   const latestDedupRun = useMemo(() => {
     const dedup = completedBackfillRecent?.find(r => r.task_name === 'dedup-scan' && r.completed_at);
