@@ -13,9 +13,10 @@ export const MatchingStatus: React.FC = () => {
     queryKey: ['matching-runs-recent'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('personal_scout_runs')
+        .from('scout_runs')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
         .limit(10);
       if (error) throw error;
       return data;
@@ -38,12 +39,12 @@ export const MatchingStatus: React.FC = () => {
           </p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
-          <p className="text-xs text-muted-foreground">לידים שנבדקו</p>
-          <p className="text-xl font-bold">{lastRun?.leads_completed ?? '—'}</p>
+          <p className="text-xs text-muted-foreground">נכסים שעובדו</p>
+          <p className="text-xl font-bold">{lastRun?.properties_found ?? '—'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
           <p className="text-xs text-muted-foreground">התאמות נמצאו</p>
-          <p className="text-xl font-bold text-green-600">{lastRun?.total_matches ?? '—'}</p>
+          <p className="text-xl font-bold text-green-600">{lastRun?.leads_matched ?? '—'}</p>
         </CardContent></Card>
       </div>
 
@@ -55,7 +56,7 @@ export const MatchingStatus: React.FC = () => {
               <TableRow className="h-9">
                 <TableHead className="py-2 text-xs">תאריך</TableHead>
                 <TableHead className="py-2 text-xs">סטטוס</TableHead>
-                <TableHead className="py-2 text-xs">לידים</TableHead>
+                <TableHead className="py-2 text-xs">נכסים</TableHead>
                 <TableHead className="py-2 text-xs">התאמות</TableHead>
                 <TableHead className="py-2 text-xs">שגיאה</TableHead>
               </TableRow>
@@ -72,8 +73,8 @@ export const MatchingStatus: React.FC = () => {
                     {run.status === 'failed' && <Badge className="bg-red-600 text-white text-[10px]"><XCircle className="h-3 w-3 mr-1" />נכשל</Badge>}
                     {!['completed', 'running', 'failed'].includes(run.status || '') && <Badge variant="outline" className="text-[10px]">{run.status}</Badge>}
                   </TableCell>
-                  <TableCell className="py-1.5 text-xs">{run.leads_completed ?? 0}/{run.leads_count ?? 0}</TableCell>
-                  <TableCell className="py-1.5 text-xs font-medium text-green-600">{run.total_matches ?? 0}</TableCell>
+                  <TableCell className="py-1.5 text-xs">{run.properties_found ?? 0}</TableCell>
+                  <TableCell className="py-1.5 text-xs font-medium text-green-600">{run.leads_matched ?? 0}</TableCell>
                   <TableCell className="py-1.5 text-[10px] text-red-500 truncate max-w-[150px]">{run.error_message || '—'}</TableCell>
                 </TableRow>
               ))}

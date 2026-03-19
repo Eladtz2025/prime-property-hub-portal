@@ -57,7 +57,7 @@ const AdminPropertyScout: React.FC = () => {
   const { data: matchStats } = useQuery({
     queryKey: ['matching-stats-summary'],
     queryFn: async () => {
-      const { data } = await supabase.from('personal_scout_runs').select('total_matches').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const { data } = await supabase.from('scout_runs').select('leads_matched').eq('source', 'matching').order('started_at', { ascending: false }).limit(1).maybeSingle();
       return data;
     },
     refetchInterval: 30000,
@@ -243,7 +243,7 @@ const AdminPropertyScout: React.FC = () => {
           />
           <ScoutMetricTile
             label="התאמות אחרונות"
-            value={matchStats?.total_matches ?? '—'}
+            value={matchStats?.leads_matched ?? '—'}
             icon={<Users className="h-4 w-4" />}
             statusColor="green"
             hoverContent={

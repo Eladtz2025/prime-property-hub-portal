@@ -241,7 +241,7 @@ export const ChecksDashboard: React.FC = () => {
   const { data: matchStats } = useQuery({
     queryKey: ['matching-stats-summary'],
     queryFn: async () => {
-      const { data } = await supabase.from('personal_scout_runs').select('total_matches, completed_at, leads_count, status').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const { data } = await supabase.from('scout_runs').select('leads_matched, completed_at, properties_found, status').eq('source', 'matching').order('started_at', { ascending: false }).limit(1).maybeSingle();
       return data;
     },
     refetchInterval: 30000,
@@ -529,7 +529,7 @@ export const ChecksDashboard: React.FC = () => {
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          primaryValue={matchStats?.total_matches ?? 0}
+          primaryValue={matchStats?.leads_matched ?? 0}
           primaryLabel="התאמות אחרונות"
           secondaryLine={`${leadCounts?.eligible ?? 0} לידים eligible`}
           insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} ממתינים להתאמה`}

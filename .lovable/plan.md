@@ -1,31 +1,21 @@
 
 
-## תיקון: העברת כל שאילתות ההתאמות מ-`personal_scout_runs` ל-`scout_runs`
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### הבעיה
-4 מקומות בקוד קוראים מטבלה ישנה (`personal_scout_runs`) שלא מתעדכנת מאז 28/01. ההתאמות רצות כל יום בהצלחה אבל נרשמות ב-`scout_runs` עם `source = 'matching'`.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### מה ישתנה
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**1. `useMonitorData.ts`** — מוניטור חי
-- שאילתת `lastMatchRun`: תעבור ל-`scout_runs` עם `.eq('source', 'matching')`
-- `dailyRunsHealth`: יתבסס על `started_at` במקום `created_at`
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-**2. `MatchingStatus.tsx`** — היסטוריית התאמות
-- תשלוף 10 ריצות אחרונות מ-`scout_runs` עם `source = 'matching'`
-- מיפוי שדות: `properties_found` במקום `leads_completed`, `leads_matched` במקום `total_matches`
-- עמודות הטבלה: "נכסים שעובדו" ו"התאמות" במקום "לידים" ו"התאמות"
-
-**3. `AdminPropertyScout.tsx`** — סטטיסטיקת סיכום
-- שאילתת `matchStats`: תעבור ל-`scout_runs` עם `source = 'matching'`
-- שדה `leads_matched` במקום `total_matches`
-
-**4. `ChecksDashboard.tsx`** — דשבורד בדיקות
-- אותו שינוי כמו AdminPropertyScout
-- מיפוי: `leads_matched`, `properties_found`, `started_at`/`completed_at`
-
-### תוצאה
-- המוניטור יציג 4/4 ריצות יומיות (במקום 3/4)
-- היסטוריית ההתאמות תציג את הריצות האמיתיות מכל יום
-- כל הנתונים יגיעו מהמקור הנכון והעדכני
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

@@ -290,9 +290,10 @@ export function useMonitorData() {
     queryKey: ['monitor-last-match-run'],
     queryFn: async () => {
       const { data } = await supabase
-        .from('personal_scout_runs')
+        .from('scout_runs')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       return data;
@@ -520,7 +521,7 @@ export function useMonitorData() {
     }).length ?? 0;
 
     // Matching
-    const matchProcessed = lastMatchRun?.total_matches ?? 0;
+    const matchProcessed = lastMatchRun?.leads_matched ?? 0;
     const matchFailed = lastMatchRun?.status === 'failed' ? 1 : 0;
 
     // Backfill/Push
@@ -625,10 +626,10 @@ export function useMonitorData() {
     }
 
     // Match rate drop
-    if (lastMatchRun?.total_matches === 0 && lastMatchRun?.status === 'completed') {
+    if (lastMatchRun?.leads_matched === 0 && lastMatchRun?.status === 'completed') {
       result.push({
         id: 'match-drop',
-        severity: 'warning',
+        severity: 'warning' as const,
         title: 'אפס התאמות',
         description: 'ריצת matching אחרונה הניבה 0 התאמות',
         timestamp: lastMatchRun.completed_at || now.toISOString(),
@@ -743,9 +744,9 @@ export function useMonitorData() {
     const availTime = availToday[0]?.started_at ? formatTime(availToday[0].started_at) : '';
 
     // 4. Matching
-    const matchToday = lastMatchRun && lastMatchRun.created_at && lastMatchRun.created_at >= todayStr;
+    const matchToday = lastMatchRun && lastMatchRun.started_at && lastMatchRun.started_at >= todayStr;
     const matchOk = !!matchToday;
-    const matchTime = lastMatchRun?.created_at && matchToday ? formatTime(lastMatchRun.created_at) : '';
+    const matchTime = lastMatchRun?.started_at && matchToday ? formatTime(lastMatchRun.started_at) : '';
 
     const details = [
       { name: 'השלמת נתונים', ok: dcOk, time: dcTime },
