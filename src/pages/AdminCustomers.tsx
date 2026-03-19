@@ -257,18 +257,7 @@ export default function AdminCustomers() {
     <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden" dir="rtl">
       <h1 className="text-2xl md:text-3xl font-bold">ניהול לקוחות ומתווכים</h1>
 
-      {/* Search bar - above tabs, aligned right */}
-      <div className="bg-card p-3 md:p-4 rounded-lg">
-        <div className="relative max-w-md">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="חיפוש..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
-        </div>
-      </div>
+      {/* Search bar moved into buttons row below */}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "brokers" | "not_relevant")} className="space-y-4">
         {/* Tabs + Buttons row */}
@@ -283,7 +272,17 @@ export default function AdminCustomers() {
           </div>
           
           {/* Buttons row - two rows on mobile */}
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 items-center">
+            {/* Compact search */}
+            <div className="relative w-full sm:w-[200px]">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+              <Input
+                placeholder="חיפוש..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9 pr-8 text-sm"
+              />
+            </div>
             {/* Add buttons */}
             <div className="flex gap-2">
               <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
