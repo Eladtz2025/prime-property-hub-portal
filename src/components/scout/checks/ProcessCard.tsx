@@ -90,9 +90,18 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
 
           {/* Center: compact metric */}
           <div className="flex-1 flex flex-col items-center justify-center text-center py-2 gap-0">
-            <p className="text-3xl font-bold leading-none tracking-tight">
-              {typeof primaryValue === 'number' ? primaryValue.toLocaleString('he-IL') : primaryValue}
-            </p>
+            {onPrimaryClick ? (
+              <button
+                onClick={onPrimaryClick}
+                className="text-3xl font-bold leading-none tracking-tight hover:text-primary transition-colors cursor-pointer"
+              >
+                {typeof primaryValue === 'number' ? primaryValue.toLocaleString('he-IL') : primaryValue}
+              </button>
+            ) : (
+              <p className="text-3xl font-bold leading-none tracking-tight">
+                {typeof primaryValue === 'number' ? primaryValue.toLocaleString('he-IL') : primaryValue}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">{primaryLabel}</p>
             {secondaryLine && (
               <p className="text-[11px] text-muted-foreground/70 mt-0.5">{secondaryLine}</p>

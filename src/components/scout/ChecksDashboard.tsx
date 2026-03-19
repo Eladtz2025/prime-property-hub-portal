@@ -596,6 +596,8 @@ export const ChecksDashboard: React.FC = () => {
 
       {/* Schedule Summary */}
       <ScheduleSummaryCard />
+
+      <PendingPropertiesDialog open={pendingPropertiesOpen} onOpenChange={setPendingPropertiesOpen} />
     </div>
   );
 };
