@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
-import { Monitor, Activity, Loader2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useMonitorData } from './monitor/useMonitorData';
 import { LiveFeedTab } from './monitor/LiveFeedTab';
+import { FeedItem } from './monitor/useMonitorData';
+
+type TabKey = 'all' | 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching';
+
+const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
+  { key: 'all', label: 'הכל', icon: Monitor },
+  { key: 'availability', label: 'זמינות', icon: Shield },
+  { key: 'scan', label: 'סריקה', icon: Search },
+  { key: 'backfill', label: 'השלמה', icon: Database },
+  { key: 'dedup', label: 'כפילויות', icon: Copy },
+  { key: 'matching', label: 'התאמות', icon: Users },
+];
 
 export const LiveMonitor: React.FC = () => {
   const {
@@ -12,25 +24,94 @@ export const LiveMonitor: React.FC = () => {
     hasActivity,
     feedItems,
   } = useMonitorData();
-  const [sourceFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('all');
 
   const errorAlerts = alerts.filter(a => a.severity === 'error').length;
   const statusText = errorAlerts > 0 ? `${errorAlerts} חריגות` : hasActivity ? 'תקין' : 'Idle';
   const statusDotClass = errorAlerts > 0 ? 'bg-red-400' : hasActivity ? 'bg-emerald-400' : 'bg-gray-600';
   const statusTextClass = errorAlerts > 0 ? 'text-red-400' : hasActivity ? 'text-emerald-400' : 'text-gray-500';
 
+  // Count items per tab for badges
+  const tabCounts = useMemo(() => {
+    const counts: Record<TabKey, number> = { all: feedItems.length, availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0 };
+    feedItems.forEach(f => { if (counts[f.type] !== undefined) counts[f.type]++; });
+    return counts;
+  }, [feedItems]);
+
+  // Filter feed by active tab
+  const filteredFeed = useMemo(() => {
+    if (activeTab === 'all') return feedItems;
+    return feedItems.filter(f => f.type === activeTab);
+  }, [feedItems, activeTab]);
+
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-sm overflow-hidden shadow-2xl" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.05]">
-        <Monitor className="h-4 w-4 text-gray-400" />
-        <span className="text-sm font-medium text-gray-200">מוניטור חי</span>
-        <span className={`h-2 w-2 rounded-full ${statusDotClass}`} />
-        <span className={`text-xs ${statusTextClass}`}>{statusText}</span>
+      {/* Header with tabs */}
+      <div className="border-b border-white/[0.05]">
+        <div className="flex items-center gap-3 px-4 py-2">
+          <Monitor className="h-4 w-4 text-gray-400 shrink-0" />
+          <span className="text-sm font-medium text-gray-200 shrink-0">מוניטור חי</span>
+          <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
+          <span className={`text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
+          <div className="flex-1" />
+        </div>
+        {/* Tabs row */}
+        <div className="flex items-center gap-0.5 px-3 pb-1 overflow-x-auto scrollbar-none">
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.key;
+            const count = tabCounts[tab.key];
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'bg-white/[0.08] text-gray-100'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                {tab.label}
+                {count > 0 && (
+                  <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                    isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Body */}
       <div className="flex" style={{ height: '420px' }}>
+        {/* Metrics Rail — LEFT side */}
+        <div className="w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex flex-col justify-center gap-6">
+          <MetricItem label="Events/min" value={String(intelligence.throughput)} />
+          <MetricItem
+            label="Avg latency"
+            value={intelligence.avgLatency !== null ? `${(intelligence.avgLatency / 1000).toFixed(1)}s` : '—'}
+          />
+          <MetricItem
+            label="Timeout rate"
+            value={`${intelligence.timeoutRate}%`}
+            valueClass={intelligence.timeoutRate > 20 ? 'text-red-400' : intelligence.timeoutRate > 10 ? 'text-yellow-400' : undefined}
+          />
+          <MetricItem label="תורים פעילים" value={String(activeProcesses.length)} />
+          <div>
+            <p className="text-[10px] text-gray-500 mb-1">סטטוס</p>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${statusDotClass}`} />
+              <span className={`text-sm font-semibold ${statusTextClass}`}>
+                {errorAlerts > 0 ? 'חריגות' : 'תקין'}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Main content */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Active processes bar */}
@@ -53,41 +134,19 @@ export const LiveMonitor: React.FC = () => {
 
           {/* Live feed */}
           <div className="flex-1 min-h-0">
-            {!hasActivity && feedItems.length === 0 ? (
+            {filteredFeed.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-2">
                   <Activity className="h-8 w-8 text-gray-700 mx-auto" />
-                  <p className="text-sm text-gray-400">אין פעילות כרגע</p>
+                  <p className="text-sm text-gray-400">
+                    {activeTab === 'all' ? 'אין פעילות כרגע' : `אין אירועי ${tabs.find(t => t.key === activeTab)?.label}`}
+                  </p>
                   <p className="text-xs text-gray-600">המערכת מאזינה ותציג כאן אירועים בזמן אמת</p>
                 </div>
               </div>
             ) : (
-              <LiveFeedTab feedItems={feedItems} sourceFilter={sourceFilter} />
+              <LiveFeedTab feedItems={filteredFeed} sourceFilter="all" />
             )}
-          </div>
-        </div>
-
-        {/* Metrics Rail */}
-        <div className="w-[150px] shrink-0 border-r border-white/[0.04] p-4 flex flex-col justify-center gap-6">
-          <MetricItem label="Events/min" value={String(intelligence.throughput)} />
-          <MetricItem
-            label="Avg latency"
-            value={intelligence.avgLatency !== null ? `${(intelligence.avgLatency / 1000).toFixed(1)}s` : '—'}
-          />
-          <MetricItem
-            label="Timeout rate"
-            value={`${intelligence.timeoutRate}%`}
-            valueClass={intelligence.timeoutRate > 20 ? 'text-red-400' : intelligence.timeoutRate > 10 ? 'text-yellow-400' : undefined}
-          />
-          <MetricItem label="תורים פעילים" value={String(activeProcesses.length)} />
-          <div>
-            <p className="text-[10px] text-gray-500 mb-1">סטטוס</p>
-            <div className="flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${statusDotClass}`} />
-              <span className={`text-sm font-semibold ${statusTextClass}`}>
-                {errorAlerts > 0 ? 'חריגות' : 'תקין'}
-              </span>
-            </div>
           </div>
         </div>
       </div>

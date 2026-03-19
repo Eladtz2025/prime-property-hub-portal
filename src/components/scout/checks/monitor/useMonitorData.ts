@@ -276,13 +276,14 @@ export function useMonitorData() {
     refetchInterval: 15000,
   });
 
-  // ── Build feed items ──
+  // ── Build feed items (include completed runs so screen is never empty) ──
   const feedItems = useMemo(() => {
     const items: FeedItem[] = [];
 
-    // Availability details
-    const availDetails: AvailDetail[] = availRun?.run_details
-      ? (Array.isArray(availRun.run_details) ? availRun.run_details as unknown as AvailDetail[] : [])
+    // Availability details — from running run OR last completed run
+    const availSource = availRun ?? recentAvailRuns?.[0];
+    const availDetails: AvailDetail[] = availSource?.run_details
+      ? (Array.isArray(availSource.run_details) ? availSource.run_details as unknown as AvailDetail[] : [])
       : [];
 
     availDetails.forEach(d => {
@@ -301,8 +302,9 @@ export function useMonitorData() {
       });
     });
 
-    // Scan runs
-    scanRuns?.forEach(run => {
+    // Scan runs — from running OR recent completed
+    const scanSource = (scanRuns && scanRuns.length > 0) ? scanRuns : recentScoutRuns?.slice(0, 3) ?? [];
+    scanSource.forEach(run => {
       const config = (run as any).scout_configs;
       const pages = run.page_stats as unknown as PageStat[] | null;
       if (!pages || pages.length === 0) return;
@@ -406,7 +408,7 @@ export function useMonitorData() {
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {

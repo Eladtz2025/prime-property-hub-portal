@@ -1,31 +1,21 @@
 
 
-## שדרוג המוניטור — העברת מטריקות + טאבים לפי מערכת
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### שינויים מבוקשים
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-1. **העברת עמודת המטריקות לצד שמאל** (כרגע היא בצד ימין עם `border-r`, צריך להעביר לצד שמאל עם `border-l` ולשנות את סדר ה-flex)
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-2. **הוספת טאבים בשורת הכותרת** — טאב לכל מערכת: זמינות, סריקה, השלמה, כפילויות, התאמות. לחיצה על טאב מסננת את הפיד לסוג הזה בלבד. טאב "הכל" מציג הכל.
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-3. **הצגת הסריקה האחרונה תמיד** — כשאין פעילות חיה, במקום מסך ריק, להציג את ה-feedItems האחרונים מהריצה האחרונה (שכבר נשמרים ב-hook מ-`recentAvailRuns`, `recentScoutRuns` וכו'). צריך להרחיב את ה-hook כדי לבנות feedItems גם מריצות שהסתיימו (completed), לא רק running.
-
-### שינויים טכניים
-
-**`LiveMonitor.tsx`**:
-- הוספת state של `activeTab` (all / availability / scan / backfill / dedup / matching)
-- העברת ה-Metrics Rail מצד ימין (סוף ה-flex) לצד שמאל (תחילת ה-flex), שינוי `border-r` ל-`border-l`
-- הוספת שורת טאבים בכותרת עם badges קטנים לכל מערכת
-- העברת `sourceFilter` ל-`activeTab` בפילטר של `LiveFeedTab`
-
-**`useMonitorData.ts`**:
-- הרחבת בניית `feedItems` כדי לכלול גם ריצות completed (מ-`recentAvailRuns` ו-`recentScoutRuns`) — כך שתמיד יהיו פריטים להצגה גם כשאין ריצה פעילה
-
-**`LiveFeedTab.tsx`**:
-- עדכון לוגיקת הפילטור לתמוך בסינון לפי `type` (availability, scan, backfill, dedup, matching)
-
-### תוצאה
-- המטריקות יופיעו בצד שמאל (כמו שסומן בצילום מסך)
-- טאבים בכותרת לניווט מהיר בין מערכות
-- המסך אף פעם לא ריק — תמיד מוצגת הסריקה/בדיקה האחרונה
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
