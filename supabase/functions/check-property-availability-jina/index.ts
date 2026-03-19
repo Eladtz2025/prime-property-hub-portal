@@ -106,7 +106,20 @@ async function checkMadlanDirect(
       return { isInactive: false, reason: 'madlan_blocked_retry' };
     }
 
-
+    // Strategy 5: Content size heuristic — removed listings return ~90KB shell,
+    // active listings return ~1.5MB+ with full SSR content
+    if (html.length < 200000) {
+      // Double-check with og:url — removed listings have og:url pointing to homepage
+      const ogUrl = html.match(/<meta[^>]*property="og:url"[^>]*content="([^"]*)"[^>]*>/)?.[1] || '';
+      const isOgHomepage = ogUrl === 'https://www.madlan.co.il' || ogUrl === 'https://www.madlan.co.il/';
+      
+      if (isOgHomepage) {
+        console.log(`🚫 Madlan-Direct removed: small HTML (${html.length} chars) + og:url is homepage for ${url}`);
+        return { isInactive: true, reason: 'listing_removed_small_html_og_homepage' };
+      }
+      
+      console.log(`⚠️ Madlan-Direct small HTML (${html.length} chars) but og:url=${ogUrl} — keeping active for ${url}`);
+    }
 
     console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
     return { isInactive: false, reason: 'content_ok' };
