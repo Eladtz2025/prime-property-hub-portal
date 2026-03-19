@@ -98,6 +98,7 @@ export const DeduplicationStatus: React.FC = () => {
         .from('scouted_properties')
         .select('id, address, city, price, rooms, floor, source_url, is_primary_listing, duplicate_group_id, source')
         .not('duplicate_group_id', 'is', null)
+        .eq('is_active', true)
         .order('duplicate_group_id');
       if (error) throw error;
       return data as DupProperty[];
