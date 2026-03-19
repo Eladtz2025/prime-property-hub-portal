@@ -1,21 +1,27 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## תיקון טאב כפילויות + השלמות במוניטור
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### בעיה 1: כפילויות — לא מוצגים נכסים בודדים
+השאילתה מחפשת `duplicate_detected_at` בחלון הריצה, אבל הפונקציה `detect_duplicates_batch` (SQL) לא מעדכנת את השדה הזה — היא מעדכנת רק `dedup_checked_at`.
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**תיקון** (`useMonitorData.ts`): להחליף את הפילטר מ-`duplicate_detected_at` ל-`dedup_checked_at`, ולהוסיף תנאי `duplicate_group_id IS NOT NULL` כדי להציג רק נכסים שזוהו בפועל ככפולים.
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### בעיה 2: השלמות — אין נתונים בפיד
+ב-edge function `backfill-property-data-jina`, שורה 866: כשמעדכנים את `summary_data` בסוף כל batch, ה-`mergedSummary` נבנה רק מהמפתחות הנומריים ולא שומר את `recent_items` שנשמרו קודם ע"י `saveRecentItem`. כל batch מוחק את ה-`recent_items`.
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**תיקון** (`backfill-property-data-jina/index.ts`): להוסיף את `recent_items` מה-`existingSummary` ל-`mergedSummary` לפני העדכון:
+```
+mergedSummary.recent_items = existingSummary.recent_items || [];
+```
+
+### סיכום שינויים
+| קובץ | שינוי |
+|---|---|
+| `useMonitorData.ts` | שאילתת dedup: `dedup_checked_at` במקום `duplicate_detected_at` + פילטר `duplicate_group_id` |
+| `backfill-property-data-jina/index.ts` | שימור `recent_items` ב-`mergedSummary` |
+
+### תוצאה
+- טאב כפילויות יציג את 12 הנכסים שזוהו ככפולים בריצה האחרונה
+- טאב השלמות יציג את הנכסים הבודדים שעובדו (מהריצה הבאה ואילך — הנתונים הקודמים נמחקו)
 
