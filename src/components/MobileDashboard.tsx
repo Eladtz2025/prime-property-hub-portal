@@ -68,9 +68,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
           onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
         />
 
-        {/* Analytics Summary Card */}
-        <AnalyticsSummaryCard stats={stats} />
-
         {/* Development Ideas */}
         <DevelopmentIdeasCard />
 
