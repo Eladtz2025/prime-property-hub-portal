@@ -1,21 +1,30 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## פתיחת רשימת נכסים ממתינים בלחיצה על המספר בכרטיסית בדיקת זמינות
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### מה ייבנה
+לחיצה על המספר הגדול (1,290) בכרטיסית "בדיקת זמינות" תפתח דיאלוג עם טבלה מלאה של כל הנכסים הממתינים לבדיקה, כולל שורת חיפוש חופשי (כתובת, עיר, מקור).
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+### שינויים טכניים
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+**1. ProcessCard.tsx — הוספת prop ללחיצה על המספר**
+- הוספת `onPrimaryClick?: () => void` ל-`ProcessCardProps`
+- עטיפת המספר הגדול ב-`button` עם cursor-pointer ו-hover effect כשה-prop קיים
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+**2. קומפוננטה חדשה: `PendingPropertiesDialog.tsx`**
+- דיאלוג עם טבלה שמציגה את כל הנכסים מתוצאות ה-RPC `get_properties_needing_availability_check`
+- שורת חיפוש שמסננת לפי כתובת, עיר, או מקור (client-side filter)
+- עמודות: כתובת, עיר, חדרים, קומה, מחיר, מקור, נבדק לאחרונה
+- ממוין לפי תאריך בדיקה אחרון (ישנים קודם)
+- קריאה ל-RPC עם limit גדול (למשל 5000) עם הנתונים המלאים (לא head: true)
+
+**3. ChecksDashboard.tsx — חיבור**
+- state לפתיחת הדיאלוג
+- העברת `onPrimaryClick` לכרטיסית בדיקת זמינות
+- רינדור `PendingPropertiesDialog`
+
+### קבצים
+1. `src/components/scout/checks/ProcessCard.tsx` — הוספת prop
+2. `src/components/scout/checks/PendingPropertiesDialog.tsx` — קומפוננטה חדשה
+3. `src/components/scout/ChecksDashboard.tsx` — חיבור
 
