@@ -159,8 +159,8 @@ export const DashboardFormsCubes = () => {
           if (cube.directDialog) {
             return (
               <button key={cube.id} onClick={() => setActiveDialog(cube.dialogId)} className={cubeBase}>
-                <Icon className="h-4 w-4 shrink-0 text-white" />
-                <span className="flex-1 text-xs font-medium text-white text-center">{cube.label}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 text-xs font-medium text-center">{cube.label}</span>
                 {cube.count > 0 && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 min-w-[18px]">
                     {cube.count}
