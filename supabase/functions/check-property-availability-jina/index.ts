@@ -108,6 +108,18 @@ async function checkMadlanDirect(
       return { isInactive: false, reason: 'madlan_blocked_retry' };
     }
 
+    // Strategy 5: Check for homepage redirect (removed listing redirected to homepage)
+    if (isMadlanHomepage(html)) {
+      console.log(`🚫 Madlan-Direct homepage redirect detected for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_homepage_redirect' };
+    }
+
+    // Strategy 6: Check for search results redirect (removed listing redirected to search)
+    if (isMadlanSearchResultsPage(html)) {
+      console.log(`🚫 Madlan-Direct search results redirect detected for ${url}`);
+      return { isInactive: true, reason: 'listing_removed_search_results_redirect' };
+    }
+
     console.log(`✅ Madlan-Direct OK for ${url} (${html.length} chars)`);
     return { isInactive: false, reason: 'content_ok' };
 

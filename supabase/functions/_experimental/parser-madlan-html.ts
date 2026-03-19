@@ -262,10 +262,17 @@ function parseHtmlCard(cardHtml: string, propertyType: 'rent' | 'sale'): ParsedP
   if (address) {
     address = address
       .replace(/<[^>]*$/g, '')  // Remove trailing broken HTML tags (e.g., "<div")
+      .replace(/\n+/g, ' ')    // Normalize newlines to spaces
+      .replace(/\s{2,}/g, ' ') // Collapse multiple spaces
       .replace(/,?\s*תל[\s-]אביב.*$/i, '')
       .replace(/,?\s*ישראל\s*$/i, '')
-      .replace(/^(דירה|דירת\s*גן|פנטהאוז|מיני\s*פנטהאוז|בית\s*פרטי|סטודיו|דופלקס|משרד|חנות)\s*,\s*/i, '')
+      .replace(/^(דירה|דירת\s*גן|פנטהאוז|מיני\s*פנטהאוז|בית\s*פרטי|סטודיו|דופלקס|משרד|חנות)\s*(להשכרה|למכירה)?\s*,?\s*/i, '')
+      .replace(/^(להשכרה|למכירה)\s*,?\s*/i, '')
       .trim();
+    // If after cleaning the address is just city name or empty, discard
+    if (!address || /^תל[\s-]אביב/i.test(address)) {
+      address = null;
+    }
   }
   
   // Skip if no useful data
