@@ -125,10 +125,10 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                       <TableCell>
                         {p.source_url ? (
                           <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                            <SearchHighlight text={p.address || '—'} searchTerm={search} />
+                            <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
                           </a>
                         ) : (
-                          <SearchHighlight text={p.address || '—'} searchTerm={search} />
+                          <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
                         )}
                       </TableCell>
                       <TableCell><SearchHighlight text={p.city || '—'} searchTerm={search} /></TableCell>
