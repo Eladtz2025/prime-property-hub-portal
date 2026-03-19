@@ -243,7 +243,7 @@ const AdminPropertyScout: React.FC = () => {
           />
           <ScoutMetricTile
             label="התאמות אחרונות"
-            value={matchStats?.total_matches ?? '—'}
+            value={matchStats?.leads_matched ?? '—'}
             icon={<Users className="h-4 w-4" />}
             statusColor="green"
             hoverContent={

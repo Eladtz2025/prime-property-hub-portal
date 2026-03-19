@@ -241,7 +241,7 @@ export const ChecksDashboard: React.FC = () => {
   const { data: matchStats } = useQuery({
     queryKey: ['matching-stats-summary'],
     queryFn: async () => {
-      const { data } = await supabase.from('personal_scout_runs').select('total_matches, completed_at, leads_count, status').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const { data } = await supabase.from('scout_runs').select('leads_matched, completed_at, properties_found, status').eq('source', 'matching').order('started_at', { ascending: false }).limit(1).maybeSingle();
       return data;
     },
     refetchInterval: 30000,

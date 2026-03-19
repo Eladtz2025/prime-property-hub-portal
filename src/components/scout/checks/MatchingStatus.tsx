@@ -73,8 +73,8 @@ export const MatchingStatus: React.FC = () => {
                     {run.status === 'failed' && <Badge className="bg-red-600 text-white text-[10px]"><XCircle className="h-3 w-3 mr-1" />נכשל</Badge>}
                     {!['completed', 'running', 'failed'].includes(run.status || '') && <Badge variant="outline" className="text-[10px]">{run.status}</Badge>}
                   </TableCell>
-                  <TableCell className="py-1.5 text-xs">{run.leads_completed ?? 0}/{run.leads_count ?? 0}</TableCell>
-                  <TableCell className="py-1.5 text-xs font-medium text-green-600">{run.total_matches ?? 0}</TableCell>
+                  <TableCell className="py-1.5 text-xs">{run.properties_found ?? 0}</TableCell>
+                  <TableCell className="py-1.5 text-xs font-medium text-green-600">{run.leads_matched ?? 0}</TableCell>
                   <TableCell className="py-1.5 text-[10px] text-red-500 truncate max-w-[150px]">{run.error_message || '—'}</TableCell>
                 </TableRow>
               ))}

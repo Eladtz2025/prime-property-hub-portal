@@ -744,9 +744,9 @@ export function useMonitorData() {
     const availTime = availToday[0]?.started_at ? formatTime(availToday[0].started_at) : '';
 
     // 4. Matching
-    const matchToday = lastMatchRun && lastMatchRun.created_at && lastMatchRun.created_at >= todayStr;
+    const matchToday = lastMatchRun && lastMatchRun.started_at && lastMatchRun.started_at >= todayStr;
     const matchOk = !!matchToday;
-    const matchTime = lastMatchRun?.created_at && matchToday ? formatTime(lastMatchRun.created_at) : '';
+    const matchTime = lastMatchRun?.started_at && matchToday ? formatTime(lastMatchRun.started_at) : '';
 
     const details = [
       { name: 'השלמת נתונים', ok: dcOk, time: dcTime },
