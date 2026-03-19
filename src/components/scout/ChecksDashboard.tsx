@@ -19,6 +19,7 @@ import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
+import { PendingPropertiesDialog } from './checks/PendingPropertiesDialog';
 
 
 // Logic description component
@@ -99,6 +100,7 @@ const AvailabilitySettingsContent: React.FC = () => {
 export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfillJina = useBackfillProgressJina();
+  const [pendingPropertiesOpen, setPendingPropertiesOpen] = React.useState(false);
 
 
   // Process kill switches (feature flags)
@@ -485,6 +487,7 @@ export const ChecksDashboard: React.FC = () => {
           enabled={processFlags?.process_availability_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
+          onPrimaryClick={() => setPendingPropertiesOpen(true)}
         />
 
         {/* Dedup */}
@@ -593,6 +596,8 @@ export const ChecksDashboard: React.FC = () => {
 
       {/* Schedule Summary */}
       <ScheduleSummaryCard />
+
+      <PendingPropertiesDialog open={pendingPropertiesOpen} onOpenChange={setPendingPropertiesOpen} />
     </div>
   );
 };
