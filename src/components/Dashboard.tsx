@@ -52,7 +52,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const userName = getUserName();
 
   return (
-    <div className="space-y-6">
+    <div className="bg-primary -m-6 p-6 min-h-full space-y-6">
       {/* Quick Action Forms */}
       <DashboardFormsCubes />
 
@@ -61,44 +61,38 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
 
       {/* שורה: פגישות קרובות + רעיונות לפיתוח + פניות מהאתר */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 [&>*]:max-h-[420px]">
-        <div className="bg-primary rounded-xl p-2 shadow-lg flex flex-col">
-          <UpcomingAppointmentsCard 
-            limit={3} 
-            onAddAppointment={() => setIsAppointmentModalOpen(true)}
-            onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
-          />
-        </div>
+        <UpcomingAppointmentsCard 
+          limit={3} 
+          onAddAppointment={() => setIsAppointmentModalOpen(true)}
+          onEditAppointment={(appt) => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }}
+        />
 
-        <div className="bg-primary rounded-xl p-2 shadow-lg flex flex-col">
-          <DevelopmentIdeasCard />
-        </div>
+        <DevelopmentIdeasCard />
 
-        <div className="bg-primary rounded-xl p-2 shadow-lg flex flex-col">
-          <Card className="flex flex-col flex-1 border-t-[3px] border-t-emerald-500/60 overflow-hidden">
-            <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <span className="flex items-center justify-center h-9 w-9 rounded-full bg-emerald-500/10">
-                  <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </span>
-                פניות מהאתר
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate('/admin/leads')}
-                  className="gap-1"
-                >
-                  ראה הכל
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="overflow-y-auto">
-              <ContactLeadsListCompact limit={5} />
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="flex flex-col flex-1 border border-white/20 border-t-[3px] border-t-emerald-500/60 overflow-hidden">
+          <CardHeader className="pb-3 shrink-0">
+            <CardTitle className="flex items-center gap-3 text-lg">
+              <span className="flex items-center justify-center h-9 w-9 rounded-full bg-emerald-500/10">
+                <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </span>
+              פניות מהאתר
+            </CardTitle>
+            <div className="flex items-center gap-2 mt-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/admin/leads')}
+                className="gap-1"
+              >
+                ראה הכל
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-y-auto">
+            <ContactLeadsListCompact limit={5} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* מודל הוספת פגישה */}

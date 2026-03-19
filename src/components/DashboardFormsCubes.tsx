@@ -107,7 +107,7 @@ export const DashboardFormsCubes = () => {
     setTimeout(() => setter(false), 2000);
   };
 
-  const cubeBase = "flex flex-row items-center px-3 py-2 h-10 rounded-lg bg-muted/80 backdrop-blur-sm text-foreground border border-border/50 shadow-sm hover:bg-accent transition-all duration-200 cursor-pointer gap-2";
+  const cubeBase = "flex flex-row items-center px-3 py-2 h-10 rounded-lg bg-white/10 backdrop-blur-sm text-white border border-white/20 shadow-sm hover:bg-white/20 transition-all duration-200 cursor-pointer gap-2";
 
   return (
     <>
@@ -116,8 +116,8 @@ export const DashboardFormsCubes = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className={cubeBase}>
-              {copied ? <Check className="h-4 w-4 shrink-0 text-foreground" /> : <Link2 className="h-4 w-4 shrink-0 text-foreground" />}
-              <span className="flex-1 text-xs font-medium text-foreground text-center">לינק ללקוח</span>
+              {copied ? <Check className="h-4 w-4 shrink-0 text-white" /> : <Link2 className="h-4 w-4 shrink-0 text-white" />}
+              <span className="flex-1 text-xs font-medium text-white text-center">לינק ללקוח</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="center">
@@ -136,8 +136,8 @@ export const DashboardFormsCubes = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className={cubeBase}>
-              {copiedPro ? <Check className="h-4 w-4 shrink-0 text-foreground" /> : <Link2 className="h-4 w-4 shrink-0 text-foreground" />}
-              <span className="flex-1 text-xs font-medium text-foreground text-center">לינק אנשי מקצוע</span>
+              {copiedPro ? <Check className="h-4 w-4 shrink-0 text-white" /> : <Link2 className="h-4 w-4 shrink-0 text-white" />}
+              <span className="flex-1 text-xs font-medium text-white text-center">לינק אנשי מקצוע</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="center">
@@ -159,8 +159,8 @@ export const DashboardFormsCubes = () => {
           if (cube.directDialog) {
             return (
               <button key={cube.id} onClick={() => setActiveDialog(cube.dialogId)} className={cubeBase}>
-                <Icon className="h-4 w-4 shrink-0 text-foreground" />
-                <span className="flex-1 text-xs font-medium text-foreground text-center">{cube.label}</span>
+                <Icon className="h-4 w-4 shrink-0 text-white" />
+                <span className="flex-1 text-xs font-medium text-white text-center">{cube.label}</span>
                 {cube.count > 0 && (
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 min-w-[18px]">
                     {cube.count}
@@ -174,8 +174,8 @@ export const DashboardFormsCubes = () => {
             <Popover key={cube.id}>
               <PopoverTrigger asChild>
                 <button className={cubeBase}>
-                  <Icon className="h-4 w-4 shrink-0 text-foreground" />
-                  <span className="flex-1 text-xs font-medium text-foreground text-center">{cube.label}</span>
+                  <Icon className="h-4 w-4 shrink-0 text-white" />
+                  <span className="flex-1 text-xs font-medium text-white text-center">{cube.label}</span>
                   {cube.count > 0 && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 min-w-[18px]">
                       {cube.count}

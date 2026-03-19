@@ -46,7 +46,7 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="border border-white/20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Building className="h-5 w-5 text-primary" />
