@@ -14,7 +14,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Get 10 different madlan URLs to test
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -27,135 +26,53 @@ serve(async (req) => {
     .eq('source', 'madlan')
     .eq('is_active', true)
     .not('source_url', 'is', null)
-    .limit(10);
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   if (!properties || properties.length === 0) {
-    return new Response(JSON.stringify({ error: 'No madlan properties found' }), {
+    return new Response(JSON.stringify({ error: 'No properties' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
   const results: any[] = [];
-  let successCount = 0;
-  let failCount = 0;
+  let ok = 0, fail = 0;
+  const DELAY = 8000;
 
   for (let i = 0; i < properties.length; i++) {
     const prop = properties[i];
-    const startTime = Date.now();
+    const t0 = Date.now();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
-      
-      const response = await fetch(prop.source_url, {
-        method: 'GET',
-        headers: {
-          'Accept': '*/*',
-          'Accept-Language': 'he-IL,he;q=0.9',
-        },
-        signal: controller.signal,
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 20000);
+      const r = await fetch(prop.source_url, {
+        headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
+        signal: ctrl.signal,
       });
-      clearTimeout(timeoutId);
+      clearTimeout(tid);
+      const html = await r.text();
+      const ms = Date.now() - t0;
 
-      const html = await response.text();
-      const elapsed = Date.now() - startTime;
-
-      if (response.status === 200) {
-        successCount++;
-        const hasContent = html.length > 200000;
-        results.push({
-          index: i + 1,
-          address: prop.address || prop.title,
-          status: response.status,
-          bodyLength: html.length,
-          hasFullContent: hasContent,
-          elapsed: `${elapsed}ms`,
-          result: '✅ OK',
-        });
+      if (r.status === 200) {
+        ok++;
+        results.push({ i: i+1, addr: (prop.address || '').substring(0, 30), status: 200, len: html.length, ms, v: '✅' });
       } else {
-        failCount++;
-        results.push({
-          index: i + 1,
-          address: prop.address || prop.title,
-          status: response.status,
-          bodyLength: html.length,
-          elapsed: `${elapsed}ms`,
-          result: `❌ ${response.status}`,
-        });
-
-        // If we got 403, try retry after 10 seconds
-        if (response.status === 403 && i < 3) {
-          console.log(`🔄 Got 403 on property ${i+1}, waiting 15s and retrying...`);
-          await sleep(15000);
-          
-          try {
-            const retryController = new AbortController();
-            const retryTimeout = setTimeout(() => retryController.abort(), 25000);
-            const retryStart = Date.now();
-            
-            const retryResponse = await fetch(prop.source_url, {
-              method: 'GET',
-              headers: {
-                'Accept': '*/*',
-                'Accept-Language': 'he-IL,he;q=0.9',
-              },
-              signal: retryController.signal,
-            });
-            clearTimeout(retryTimeout);
-            
-            const retryHtml = await retryResponse.text();
-            const retryElapsed = Date.now() - retryStart;
-            
-            results.push({
-              index: `${i + 1}-RETRY`,
-              address: prop.address || prop.title,
-              status: retryResponse.status,
-              bodyLength: retryHtml.length,
-              elapsed: `${retryElapsed}ms (after 15s wait)`,
-              result: retryResponse.status === 200 ? '✅ RETRY OK' : `❌ RETRY ${retryResponse.status}`,
-            });
-            
-            if (retryResponse.status === 200) {
-              successCount++;
-              failCount--;
-            }
-          } catch (retryErr) {
-            results.push({
-              index: `${i + 1}-RETRY`,
-              address: prop.address || prop.title,
-              result: `❌ RETRY ERROR: ${retryErr}`,
-            });
-          }
-        }
+        fail++;
+        results.push({ i: i+1, addr: (prop.address || '').substring(0, 30), status: r.status, len: html.length, ms, v: '❌' });
       }
     } catch (e) {
-      failCount++;
-      results.push({
-        index: i + 1,
-        address: prop.address || prop.title,
-        result: `❌ ERROR: ${String(e).substring(0, 100)}`,
-        elapsed: `${Date.now() - startTime}ms`,
-      });
+      fail++;
+      results.push({ i: i+1, addr: (prop.address || '').substring(0, 30), err: String(e).substring(0, 80), ms: Date.now() - t0, v: '❌' });
     }
 
-    // Wait 8 seconds between requests (the proposed delay)
-    if (i < properties.length - 1) {
-      console.log(`⏳ Waiting 8s before next request (${i+2}/${properties.length})...`);
-      await sleep(8000);
-    }
+    if (i < properties.length - 1) await sleep(DELAY);
   }
 
-  const summary = {
-    totalTested: properties.length,
-    success: successCount,
-    failed: failCount,
-    successRate: `${Math.round((successCount / properties.length) * 100)}%`,
-    delayBetweenRequests: '8 seconds',
-    retryDelayOn403: '15 seconds (tested on first 3 failures)',
-    results,
-  };
-
-  return new Response(JSON.stringify(summary, null, 2), {
+  return new Response(JSON.stringify({
+    count: properties.length, ok, fail, rate: `${Math.round(ok/properties.length*100)}%`,
+    delay: `${DELAY/1000}s`, results,
+  }, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
