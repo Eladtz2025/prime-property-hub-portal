@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,100 +12,82 @@ serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const testId = body.test || 1;
-  // A known active Madlan property URL for testing
-  const url = body.url || 'https://www.madlan.co.il/listings/דירה-להשכרה-גדליה-1-תל-אביב-יפו-1';
+  const count = Math.min(body.count || 5, 8);
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // Get active Madlan properties  
+  const { data: properties } = await supabase
+    .from('scouted_properties')
+    .select('source_url, address')
+    .eq('source', 'madlan')
+    .eq('is_active', true)
+    .not('source_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(count);
+
+  if (!properties?.length) {
+    return new Response(JSON.stringify({ error: 'No properties' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   const results: any[] = [];
+  let ok = 0, fail = 0;
 
-  async function tryFetch(label: string, fetchUrl: string, opts: RequestInit = {}): Promise<any> {
+  for (let i = 0; i < properties.length; i++) {
+    const p = properties[i];
     try {
       const c = new AbortController();
       const t = setTimeout(() => c.abort(), 8000);
-      const r = await fetch(fetchUrl, { ...opts, signal: c.signal });
+
+      // The magic combo: Accept JSON + X-Nextjs-Data header
+      const r = await fetch(p.source_url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-Nextjs-Data': '1',
+          'Accept-Language': 'he-IL,he;q=0.9',
+        },
+        signal: c.signal,
+      });
       clearTimeout(t);
       const txt = await r.text();
-      return {
-        label, status: r.status, len: txt.length,
-        hasData: txt.includes('data-auto') || txt.includes('bulletinId'),
-        isBlock: r.status === 403 || txt.includes('סליחה על ההפרעה'),
-        snippet: txt.substring(0, 200),
-      };
-    } catch (e) {
-      return { label, error: String(e).substring(0, 80) };
-    }
-  }
-
-  if (testId === 1) {
-    // Test 1: Google Webcache
-    const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}`;
-    results.push(await tryFetch('google-cache', cacheUrl));
-  }
-
-  if (testId === 2) {
-    // Test 2: Madlan's internal API (they have a GraphQL/REST API)
-    // Try to find the API endpoint that the frontend uses
-    const apiUrl = 'https://www.madlan.co.il/api2';
-    // Madlan uses a GraphQL API - let's try a simple query
-    results.push(await tryFetch('madlan-api-graphql', apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': 'https://www.madlan.co.il',
-        'Referer': 'https://www.madlan.co.il/',
-      },
-      body: JSON.stringify({
-        operationName: 'searchBulletins',
-        variables: {
-          filterBy: { dealType: 'rent', city: 'תל אביב יפו' },
-          limit: 5
-        },
-        query: `query searchBulletins($filterBy: BulletinFilterInput, $limit: Int) {
-          searchBulletins(filterBy: $filterBy, limit: $limit) {
-            bulletins { id address { streetName houseNumber } price }
-          }
-        }`
-      }),
-    }));
-  }
-
-  if (testId === 3) {
-    // Test 3: Try Madlan's Next.js data endpoint (_next/data)
-    // Madlan is built on Next.js - it has JSON data endpoints
-    const nextDataUrl = url.replace('https://www.madlan.co.il', 'https://www.madlan.co.il/_next/data') + '.json';
-    results.push(await tryFetch('nextjs-data', nextDataUrl));
-    
-    // Also try the __NEXT_DATA__ approach via a simple fetch with specific accept
-    results.push(await tryFetch('json-accept', url, {
-      headers: {
-        'Accept': 'application/json',
-        'X-Nextjs-Data': '1',
+      const isBlock = r.status === 403 || txt.includes('סליחה על ההפרעה');
+      
+      if (r.status === 200 && !isBlock) ok++; else fail++;
+      
+      // Check what kind of content we got
+      let contentType = 'unknown';
+      try {
+        JSON.parse(txt.substring(0, 100));
+        contentType = 'json';
+      } catch {
+        if (txt.startsWith('<!DOCTYPE') || txt.startsWith('<html')) contentType = 'html';
       }
-    }));
+
+      results.push({
+        i: i+1, 
+        addr: (p.address || '?').substring(0, 30),
+        status: r.status, 
+        len: txt.length, 
+        isBlock,
+        contentType,
+        hasRemoval: txt.includes('המודעה הוסרה'),
+        hasPrice: txt.includes('₪') || txt.includes('price'),
+        snippet: txt.substring(0, 150),
+      });
+    } catch (e) {
+      fail++;
+      results.push({ i: i+1, addr: (p.address || '?').substring(0, 30), error: String(e).substring(0, 80) });
+    }
+    if (i < properties.length - 1) await new Promise(r => setTimeout(r, 1500));
   }
 
-  if (testId === 4) {
-    // Test 4: archive.org wayback machine
-    const archiveUrl = `https://web.archive.org/web/2024/${url}`;
-    results.push(await tryFetch('archive-org', archiveUrl));
-  }
-
-  if (testId === 5) {
-    // Test 5: Try different Madlan URL formats
-    // Maybe the /listings/ path is blocked but other paths aren't
-    results.push(await tryFetch('madlan-homepage', 'https://www.madlan.co.il/', {
-      headers: { 'Accept': '*/*' }
-    }));
-  }
-
-  if (testId === 6) {
-    // Test 6: Fetch via Google's AMP cache or other CDN caches
-    const ampUrl = `https://www-madlan-co-il.cdn.ampproject.org/c/s/www.madlan.co.il/listings/`;
-    results.push(await tryFetch('amp-cache', ampUrl));
-  }
-
-  return new Response(JSON.stringify({ testId, results }, null, 2), {
+  return new Response(JSON.stringify({ strategy: 'nextjs-data', ok, fail, total: results.length, results }, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
