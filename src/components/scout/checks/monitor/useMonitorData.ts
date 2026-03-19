@@ -696,7 +696,7 @@ export function useMonitorData() {
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun, scanProperties, latestCompletedRuns, dedupProperties, matchingProperties]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {
