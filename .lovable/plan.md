@@ -1,38 +1,21 @@
 
 
-## תיקון: הצגת נתוני ריצות שהושלמו בכל טאבי המוניטור
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### הבעיה
-רק טאב הזמינות מציג נתונים כשאין ריצה פעילה, כי רק לו יש fallback לריצות שהסתיימו. שאר הטאבים (סריקה, השלמה, כפילויות, התאמות) מציגים נתונים רק כשתהליך רץ באותו רגע — ולכן הם ריקים רוב הזמן.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### מה ישתנה ב-`useMonitorData.ts`
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**1. השלמה (backfill) + כפילויות (dedup)**
-- הוספת שאילתה חדשה: שליפת ריצות `completed` מהיום מ-`backfill_progress` (בנוסף לשאילתה הקיימת של `running`)
-- בבניית ה-feed: אם אין ריצות `running`, להשתמש בריצות שהושלמו היום כ-fallback
-- זה יציג את נתוני ההשלמה והכפילויות מהבוקר גם כשהתהליכים כבר סיימו
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-**2. סריקה (scan)**
-- הרחבת ה-fallback הקיים: `recentScoutRuns` כבר שולף ריצות מהיום, אבל הסריקות רצות בלילה/אתמול
-- הוספת שליפה גם מאתמול (24 שעות אחורה במקום רק מחצות) כדי שסריקות אתמול יופיעו
-- סינון ל-`source` שאינו `matching` כדי לא לערבב
-
-**3. התאמות (matching)**
-- הוספת יצירת feed items מ-`lastMatchRun` (שכבר נשלף): הצגת סיכום הריצה האחרונה — כמה נכסים עובדו, כמה התאמות נמצאו
-- כך טאב ההתאמות יציג תמיד את תוצאות הריצה האחרונה
-
-### פירוט טכני
-
-קובץ אחד: `src/components/scout/checks/monitor/useMonitorData.ts`
-
-1. **שאילתה חדשה** `completedBackfillRecent`: שולפת מ-`backfill_progress` עם `status = 'completed'`, ממויינת לפי `completed_at` יורד, מוגבלת ל-5 ריצות אחרונות מהיום
-2. **שינוי `recentScoutRuns`**: שינוי ה-`since` ל-24 שעות אחורה במקום מחצות היום, וסינון `source != 'matching'`
-3. **בניית feed**: 
-   - Backfill/Dedup: אם `backfillRuns` ריק, שימוש ב-`completedBackfillRecent` עם אותו לוגיקת `summary_data`
-   - Matching: יצירת feed item מ-`lastMatchRun` עם סיכום (נכסים, התאמות, זמן)
-4. **עדכון ה-`useMemo` dependencies** להכיל את המקורות החדשים
-
-### תוצאה
-- כל הטאבים יציגו נתונים מהריצות האחרונות גם כשהתהליכים לא רצים כרגע
-- לא ישתנה שום דבר בזמן שתהליך רץ — הנתונים החיים עדיין מקבלים עדיפות
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 

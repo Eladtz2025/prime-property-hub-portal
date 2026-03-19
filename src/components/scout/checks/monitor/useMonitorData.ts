@@ -216,6 +216,24 @@ export function useMonitorData() {
     refetchInterval: 30000,
   });
 
+  // Completed backfill tasks with summary_data (fallback for feed when nothing is running)
+  const { data: completedBackfillRecent } = useQuery({
+    queryKey: ['monitor-completed-backfill-recent'],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { data, error } = await supabase
+        .from('backfill_progress')
+        .select('*')
+        .eq('status', 'completed')
+        .gte('completed_at', since.toISOString())
+        .order('completed_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
   // Yesterday's scout scans (for yesterdayScansHealth)
   const { data: yesterdayScans } = useQuery({
     queryKey: ['monitor-yesterday-scans'],
@@ -253,15 +271,15 @@ export function useMonitorData() {
     refetchInterval: 2000,
   });
 
-  // Recent scout runs for pipeline stats (last 24h)
+  // Recent scout runs for pipeline stats (last 24h, excluding matching)
   const { data: recentScoutRuns } = useQuery({
     queryKey: ['monitor-recent-scout-runs'],
     queryFn: async () => {
-      const since = new Date();
-      since.setHours(0, 0, 0, 0);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const { data } = await supabase
         .from('scout_runs')
         .select('source, properties_found, new_properties, started_at, completed_at, status, page_stats')
+        .neq('source', 'matching')
         .gte('started_at', since.toISOString())
         .order('started_at', { ascending: false });
       return data ?? [];
@@ -379,8 +397,12 @@ export function useMonitorData() {
       });
     });
 
-    // Backfill per-task
-    backfillRuns?.forEach(run => {
+    // Backfill per-task (running tasks)
+    const backfillDataSource = (backfillRuns && backfillRuns.length > 0)
+      ? backfillRuns
+      : completedBackfillRecent ?? [];
+
+    backfillDataSource.forEach(run => {
       const taskCfg = getTaskConfig(run.task_name);
       const summary = run.summary_data as unknown as (BackfillSummary & DedupSummary) | null;
 
@@ -442,13 +464,37 @@ export function useMonitorData() {
       }
     });
 
+    // Matching — feed items from last match run
+    if (lastMatchRun && lastMatchRun.status === 'completed') {
+      const matchTime = lastMatchRun.completed_at || lastMatchRun.started_at || '';
+      const propertiesFound = (lastMatchRun as any).properties_found ?? 0;
+      const leadsMatched = (lastMatchRun as any).leads_matched ?? 0;
+      items.push({
+        type: 'matching',
+        timestamp: matchTime,
+        primary: `ריצת התאמות הושלמה`,
+        details: `${propertiesFound} נכסים עובדו | ${leadsMatched} התאמות נמצאו`,
+        status: leadsMatched > 0 ? 'ok' : 'warning',
+        eventKind: leadsMatched > 0 ? 'matched' : 'checked',
+      });
+    } else if (lastMatchRun && lastMatchRun.status === 'running') {
+      items.push({
+        type: 'matching',
+        timestamp: lastMatchRun.started_at || '',
+        primary: `ריצת התאמות פעילה...`,
+        details: `${(lastMatchRun as any).properties_found ?? 0} נכסים | ${(lastMatchRun as any).leads_matched ?? 0} התאמות`,
+        status: 'pending',
+        eventKind: 'checked',
+      });
+    }
+
     items.sort((a, b) => {
       if (!a.timestamp || !b.timestamp) return 0;
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {
