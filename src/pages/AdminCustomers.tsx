@@ -276,14 +276,14 @@ export default function AdminCustomers() {
             {/* Add buttons */}
             <div className="flex gap-2">
               <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:ml-2" />
                 <span className="hidden sm:inline">לקוח חדש</span>
                 <span className="sm:hidden">לקוח</span>
+                <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
               <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:ml-2" />
                 <span className="hidden sm:inline">מתווך חדש</span>
                 <span className="sm:hidden">מתווך</span>
+                <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
             </div>
             
@@ -296,13 +296,13 @@ export default function AdminCustomers() {
                 disabled={isMatchingAll}
                 className="flex-1 sm:flex-none"
               >
-                {isMatchingAll ? (
-                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 sm:ml-2" />
-                )}
                 <span className="hidden sm:inline">חשב התאמות מחדש</span>
                 <span className="sm:hidden">התאמות</span>
+                {isMatchingAll ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4 sm:mr-2" />
+                )}
               </Button>
               <Button 
                 onClick={handleScanOwnProperties} 
@@ -311,24 +311,24 @@ export default function AdminCustomers() {
                 disabled={isScanningOwn}
                 className="flex-1 sm:flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
               >
-                {isScanningOwn ? (
-                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
-                ) : (
-                  <Building2 className="h-4 w-4 sm:ml-2" />
-                )}
                 <span className="hidden sm:inline">סרוק נכסים שלנו</span>
                 <span className="sm:hidden">סרוק</span>
+                {isScanningOwn ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <Building2 className="h-4 w-4 sm:mr-2" />
+                )}
               </Button>
             </div>
 
             {/* Compact search - pushed to opposite side */}
             <div className="relative w-full sm:w-[200px] sm:mr-auto">
-              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
               <Input
                 placeholder="חיפוש..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pr-8 text-sm"
+                className="h-9 pl-8 text-sm"
               />
             </div>
           </div>
