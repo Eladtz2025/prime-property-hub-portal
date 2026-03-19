@@ -1,20 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle } from 'lucide-react';
+import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMonitorData } from './monitor/useMonitorData';
 import { LiveFeedTab } from './monitor/LiveFeedTab';
 import { FeedItem } from './monitor/useMonitorData';
+import { ScheduleContent } from './ScheduleContent';
 
-type TabKey = 'all' | 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching';
+type TabKey = 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching' | 'schedule';
 
 const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
-  { key: 'all', label: 'הכל', icon: Monitor },
   { key: 'availability', label: 'זמינות', icon: Shield },
   { key: 'scan', label: 'סריקה', icon: Search },
   { key: 'backfill', label: 'השלמה', icon: Database },
   { key: 'dedup', label: 'כפילויות', icon: Copy },
   { key: 'matching', label: 'התאמות', icon: Users },
+  { key: 'schedule', label: 'לוח זמנים', icon: Clock },
 ];
 
 export const LiveMonitor: React.FC = () => {
