@@ -721,20 +721,21 @@ export function useMonitorData() {
       } catch { return ''; }
     };
 
-    // 1. Data Completion (backfill_progress task_name starts with 'data_completion')
-    const dataCompletionRuns = (backfillRuns ?? []).filter(
-      r => r.task_name.startsWith('data_completion') && r.started_at && r.started_at >= todayStr
-    );
-    // Also check recent completed ones from recentAvailRuns query (we don't have backfill completed data, so check if any ran today)
-    const dcOk = dataCompletionRuns.length > 0;
-    const dcTime = dataCompletionRuns[0]?.started_at ? formatTime(dataCompletionRuns[0].started_at) : '';
+    // Merge running + completed backfill runs from today
+    const allBackfillToday = [
+      ...(backfillRuns ?? []).filter(r => r.started_at && r.started_at >= todayStr),
+      ...(completedBackfillToday ?? []),
+    ];
 
-    // 2. Dedup (backfill_progress task_name = 'dedup-scan')
-    const dedupRuns = (backfillRuns ?? []).filter(
-      r => r.task_name === 'dedup-scan' && r.started_at && r.started_at >= todayStr
-    );
-    const dedupOk = dedupRuns.length > 0;
-    const dedupTime = dedupRuns[0]?.started_at ? formatTime(dedupRuns[0].started_at) : '';
+    // 1. Data Completion
+    const dcRun = allBackfillToday.find(r => r.task_name.startsWith('data_completion'));
+    const dcOk = !!dcRun;
+    const dcTime = dcRun?.started_at ? formatTime(dcRun.started_at) : '';
+
+    // 2. Dedup
+    const dedupRun = allBackfillToday.find(r => r.task_name === 'dedup-scan');
+    const dedupOk = !!dedupRun;
+    const dedupTime = dedupRun?.started_at ? formatTime(dedupRun.started_at) : '';
 
     // 3. Availability
     const availToday = (recentAvailRuns ?? []).filter(r => r.started_at >= todayStr);
@@ -758,7 +759,51 @@ export function useMonitorData() {
       total: 4,
       details,
     };
-  }, [backfillRuns, recentAvailRuns, lastMatchRun]);
+  }, [backfillRuns, completedBackfillToday, recentAvailRuns, lastMatchRun]);
+
+  // ── Yesterday scans health ──
+  const yesterdayScansHealth = useMemo(() => {
+    const scans = yesterdayScans ?? [];
+    if (scans.length === 0) return { passed: 0, total: 0, details: [] as { name: string; ok: boolean; found: number; isNew: number }[] };
+
+    const formatTime = (ts: string) => {
+      try {
+        const d = new Date(ts);
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      } catch { return ''; }
+    };
+
+    // Group by source
+    const bySource = new Map<string, typeof scans>();
+    scans.forEach(s => {
+      const src = s.source || 'unknown';
+      if (!bySource.has(src)) bySource.set(src, []);
+      bySource.get(src)!.push(s);
+    });
+
+    const details: { name: string; ok: boolean; found: number; isNew: number; time: string }[] = [];
+    bySource.forEach((runs, source) => {
+      const anyCompleted = runs.some(r => r.status === 'completed');
+      const totalFound = runs.reduce((s, r) => s + (r.properties_found ?? 0), 0);
+      const totalNew = runs.reduce((s, r) => s + (r.new_properties ?? 0), 0);
+      const lastRun = runs[0];
+      details.push({
+        name: source,
+        ok: anyCompleted,
+        found: totalFound,
+        isNew: totalNew,
+        time: lastRun?.started_at ? formatTime(lastRun.started_at) : '',
+      });
+    });
+
+    details.sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      passed: details.filter(d => d.ok).length,
+      total: details.length,
+      details,
+    };
+  }, [yesterdayScans]);
 
   return {
     feedItems,
@@ -770,5 +815,6 @@ export function useMonitorData() {
     lastEventTime,
     newPropsToday: newPropsToday ?? 0,
     dailyRunsHealth,
+    yesterdayScansHealth,
   };
 }
