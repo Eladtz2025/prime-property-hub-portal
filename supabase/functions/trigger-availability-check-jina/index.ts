@@ -39,13 +39,41 @@ async function selfChainWithRetry(
   try {
     const resp = await fetch(triggerUrl, options);
     if (!resp.ok) {
-      console.warn(`⚠️ Self-chain response ${resp.status}, retrying in 3s...`);
+      console.warn(`⚠️ Self-chain response ${resp.status}, checking heartbeat before retry...`);
       throw new Error(`status ${resp.status}`);
     }
     console.log(`✅ Self-chain succeeded`);
   } catch (err) {
-    console.warn(`⚠️ Self-chain attempt 1 failed: ${err instanceof Error ? err.message : err}. Retrying in 3s...`);
+    console.warn(`⚠️ Self-chain attempt 1 failed: ${err instanceof Error ? err.message : err}.`);
     await sleep(3000);
+
+    // Before retrying, check if the chain is already running via heartbeat.
+    // A 504 means the caller timed out but the new invocation likely started.
+    // If heartbeat was updated recently, the chain is alive — skip retry.
+    try {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: runData } = await supabase
+        .from('availability_check_runs')
+        .select('started_at, status')
+        .eq('id', runId)
+        .single();
+
+      if (runData) {
+        if (runData.status !== 'running') {
+          console.log(`⏹️ Run ${runId} is '${runData.status}', no retry needed.`);
+          return;
+        }
+        const heartbeatAge = Date.now() - new Date(runData.started_at).getTime();
+        if (heartbeatAge < 30000) {
+          console.log(`✅ Chain already running (heartbeat ${Math.round(heartbeatAge / 1000)}s old), skipping retry to prevent duplicate chains.`);
+          return;
+        }
+        console.log(`⚠️ Heartbeat is ${Math.round(heartbeatAge / 1000)}s old, chain may be dead. Retrying...`);
+      }
+    } catch (hbErr) {
+      console.warn(`⚠️ Heartbeat check failed: ${hbErr instanceof Error ? hbErr.message : hbErr}. Retrying anyway...`);
+    }
+
     try {
       const resp2 = await fetch(triggerUrl, options);
       if (!resp2.ok) {
