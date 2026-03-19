@@ -61,6 +61,7 @@ export const LiveMonitor: React.FC = () => {
         <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
         <span className={`text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
         <div className="w-px h-4 bg-white/[0.08] shrink-0" />
+        <div className="flex-1 flex justify-center gap-1">
         {tabs.map(tab => {
           const isActive = activeTab === tab.key;
           const count = tabCounts[tab.key];
