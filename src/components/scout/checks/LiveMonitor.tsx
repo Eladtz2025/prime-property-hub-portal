@@ -25,6 +25,7 @@ export const LiveMonitor: React.FC = () => {
     hasActivity,
     feedItems,
     dailyRunsHealth,
+    yesterdayScansHealth,
   } = useMonitorData();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
 
