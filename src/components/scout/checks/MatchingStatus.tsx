@@ -56,7 +56,7 @@ export const MatchingStatus: React.FC = () => {
               <TableRow className="h-9">
                 <TableHead className="py-2 text-xs">תאריך</TableHead>
                 <TableHead className="py-2 text-xs">סטטוס</TableHead>
-                <TableHead className="py-2 text-xs">לידים</TableHead>
+                <TableHead className="py-2 text-xs">נכסים</TableHead>
                 <TableHead className="py-2 text-xs">התאמות</TableHead>
                 <TableHead className="py-2 text-xs">שגיאה</TableHead>
               </TableRow>
