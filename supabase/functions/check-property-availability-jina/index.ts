@@ -466,6 +466,7 @@ serve(async (req) => {
           availability_checked_at: new Date().toISOString(),
           availability_check_reason: result.reason,
           availability_check_count: currentCount + 1,
+          availability_retry_count: 0, // Reset on successful check
         };
         
         if (result.isInactive) {
