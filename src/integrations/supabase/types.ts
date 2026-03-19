@@ -3051,6 +3051,7 @@ export type Database = {
           availability_check_count: number
           availability_check_reason: string | null
           availability_checked_at: string | null
+          availability_retry_count: number
           backfill_status: string | null
           city: string | null
           created_at: string
@@ -3089,6 +3090,7 @@ export type Database = {
           availability_check_count?: number
           availability_check_reason?: string | null
           availability_checked_at?: string | null
+          availability_retry_count?: number
           backfill_status?: string | null
           city?: string | null
           created_at?: string
@@ -3127,6 +3129,7 @@ export type Database = {
           availability_check_count?: number
           availability_check_reason?: string | null
           availability_checked_at?: string | null
+          availability_retry_count?: number
           backfill_status?: string | null
           city?: string | null
           created_at?: string
