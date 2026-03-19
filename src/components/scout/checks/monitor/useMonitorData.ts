@@ -216,6 +216,24 @@ export function useMonitorData() {
     refetchInterval: 30000,
   });
 
+  // Completed backfill tasks with summary_data (fallback for feed when nothing is running)
+  const { data: completedBackfillRecent } = useQuery({
+    queryKey: ['monitor-completed-backfill-recent'],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { data, error } = await supabase
+        .from('backfill_progress')
+        .select('*')
+        .eq('status', 'completed')
+        .gte('completed_at', since.toISOString())
+        .order('completed_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
   // Yesterday's scout scans (for yesterdayScansHealth)
   const { data: yesterdayScans } = useQuery({
     queryKey: ['monitor-yesterday-scans'],
