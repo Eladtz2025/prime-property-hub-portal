@@ -52,7 +52,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const userName = getUserName();
 
   return (
-    <div className="bg-primary -m-6 p-6 min-h-full space-y-6">
+    <div className="min-h-full space-y-6">
       {/* Quick Action Forms */}
       <DashboardFormsCubes />
 
@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
 
         <DevelopmentIdeasCard />
 
-        <Card className="flex flex-col flex-1 border border-white/20 border-t-[3px] border-t-emerald-500/60 overflow-hidden">
+        <Card className="flex flex-col flex-1 border-t-[3px] border-t-emerald-500/60 overflow-hidden">
           <CardHeader className="pb-3 shrink-0">
             <CardTitle className="flex items-center gap-3 text-lg">
               <span className="flex items-center justify-center h-9 w-9 rounded-full bg-emerald-500/10">

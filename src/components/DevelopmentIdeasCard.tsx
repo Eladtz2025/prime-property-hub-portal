@@ -45,7 +45,7 @@ export const DevelopmentIdeasCard: React.FC = () => {
   const completedIdeas = ideas.filter(i => i.is_completed);
 
   return (
-    <Card className="h-full shadow-card animate-fade-in border border-white/20 bg-card flex flex-col border-t-[3px] border-t-accent overflow-hidden relative">
+    <Card className="h-full shadow-card animate-fade-in border border-border/50 bg-card flex flex-col border-t-[3px] border-t-accent overflow-hidden relative">
       {/* Notebook lines pattern */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 31px, currentColor 31px, currentColor 32px)',
