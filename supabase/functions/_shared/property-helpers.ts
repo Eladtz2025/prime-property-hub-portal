@@ -54,8 +54,14 @@ export function normalizeSourceUrl(url: string, source: string): string {
     paramsToRemove.forEach(param => parsed.searchParams.delete(param));
     
     if (source === 'yad2') {
-      // Yad2: remove all query params (clean item URL)
-      return `${parsed.origin}${parsed.pathname}`;
+      // Yad2: remove all query params AND normalize path
+      // Strip area prefixes like /realestate/item/tel-aviv-area/ID → /realestate/item/ID
+      let path = parsed.pathname;
+      const yad2Match = path.match(/\/realestate\/item\/(?:[^\/]+\/)?([a-zA-Z0-9]+)/i);
+      if (yad2Match) {
+        path = `/realestate/item/${yad2Match[1]}`;
+      }
+      return `${parsed.origin}${path}`;
     }
     
     if (source === 'madlan') {
