@@ -44,7 +44,7 @@ export const LiveMonitor: React.FC = () => {
 
   // Filter feed by active tab
   const filteredFeed = useMemo(() => {
-    if (activeTab === 'all') return feedItems;
+    if (activeTab === 'schedule') return [];
     return feedItems.filter(f => f.type === activeTab);
   }, [feedItems, activeTab]);
 
