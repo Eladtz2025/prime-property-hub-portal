@@ -52,7 +52,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
   const userName = getUserName();
 
   return (
-    <div className="bg-primary -m-6 p-6 min-h-full space-y-6">
+    <div className="min-h-full space-y-6">
       {/* Quick Action Forms */}
       <DashboardFormsCubes />
 
