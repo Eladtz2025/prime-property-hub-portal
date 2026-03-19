@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Monitor, Activity, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useMonitorData } from './monitor/useMonitorData';
+import { LiveFeedTab } from './monitor/LiveFeedTab';
 
 export const LiveMonitor: React.FC = () => {
   const {
@@ -9,7 +10,9 @@ export const LiveMonitor: React.FC = () => {
     alerts,
     intelligence,
     hasActivity,
+    feedItems,
   } = useMonitorData();
+  const [sourceFilter] = useState('all');
 
   const errorAlerts = alerts.filter(a => a.severity === 'error').length;
   const statusText = errorAlerts > 0 ? `${errorAlerts} חריגות` : hasActivity ? 'תקין' : 'Idle';
