@@ -27,6 +27,7 @@ export interface ProcessCardProps {
   enabled?: boolean;
   onToggleEnabled?: (enabled: boolean) => void;
   isTogglePending?: boolean;
+  onPrimaryClick?: () => void;
 }
 
 const statusText = (status: string, enabled: boolean) => {
