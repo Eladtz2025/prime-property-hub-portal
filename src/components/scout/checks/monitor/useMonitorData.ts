@@ -397,8 +397,12 @@ export function useMonitorData() {
       });
     });
 
-    // Backfill per-task
-    backfillRuns?.forEach(run => {
+    // Backfill per-task (running tasks)
+    const backfillDataSource = (backfillRuns && backfillRuns.length > 0)
+      ? backfillRuns
+      : completedBackfillRecent ?? [];
+
+    backfillDataSource.forEach(run => {
       const taskCfg = getTaskConfig(run.task_name);
       const summary = run.summary_data as unknown as (BackfillSummary & DedupSummary) | null;
 
@@ -460,13 +464,37 @@ export function useMonitorData() {
       }
     });
 
+    // Matching — feed items from last match run
+    if (lastMatchRun && lastMatchRun.status === 'completed') {
+      const matchTime = lastMatchRun.completed_at || lastMatchRun.started_at || '';
+      const propertiesFound = (lastMatchRun as any).properties_found ?? 0;
+      const leadsMatched = (lastMatchRun as any).leads_matched ?? 0;
+      items.push({
+        type: 'matching',
+        timestamp: matchTime,
+        primary: `ריצת התאמות הושלמה`,
+        details: `${propertiesFound} נכסים עובדו | ${leadsMatched} התאמות נמצאו`,
+        status: leadsMatched > 0 ? 'ok' : 'warning',
+        eventKind: leadsMatched > 0 ? 'matched' : 'checked',
+      });
+    } else if (lastMatchRun && lastMatchRun.status === 'running') {
+      items.push({
+        type: 'matching',
+        timestamp: lastMatchRun.started_at || '',
+        primary: `ריצת התאמות פעילה...`,
+        details: `${(lastMatchRun as any).properties_found ?? 0} נכסים | ${(lastMatchRun as any).leads_matched ?? 0} התאמות`,
+        status: 'pending',
+        eventKind: 'checked',
+      });
+    }
+
     items.sort((a, b) => {
       if (!a.timestamp || !b.timestamp) return 0;
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {
