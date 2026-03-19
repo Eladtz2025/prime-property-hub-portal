@@ -271,15 +271,15 @@ export function useMonitorData() {
     refetchInterval: 2000,
   });
 
-  // Recent scout runs for pipeline stats (last 24h)
+  // Recent scout runs for pipeline stats (last 24h, excluding matching)
   const { data: recentScoutRuns } = useQuery({
     queryKey: ['monitor-recent-scout-runs'],
     queryFn: async () => {
-      const since = new Date();
-      since.setHours(0, 0, 0, 0);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const { data } = await supabase
         .from('scout_runs')
         .select('source, properties_found, new_properties, started_at, completed_at, status, page_stats')
+        .neq('source', 'matching')
         .gte('started_at', since.toISOString())
         .order('started_at', { ascending: false });
       return data ?? [];
