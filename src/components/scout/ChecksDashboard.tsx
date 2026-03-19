@@ -10,7 +10,7 @@ import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { LiveMonitor } from './checks/LiveMonitor';
 import { ProcessCard } from './checks/ProcessCard';
-import { ScheduleSummaryCard } from './ScheduleSummaryCard';
+
 import { ScoutRunHistory } from './ScoutRunHistory';
 import { AvailabilityHistorySection } from './checks/AvailabilityHistorySection';
 import { DeduplicationStatus } from './checks/DeduplicationStatus';
