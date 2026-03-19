@@ -626,10 +626,10 @@ export function useMonitorData() {
     }
 
     // Match rate drop
-    if (lastMatchRun?.total_matches === 0 && lastMatchRun?.status === 'completed') {
+    if (lastMatchRun?.leads_matched === 0 && lastMatchRun?.status === 'completed') {
       result.push({
         id: 'match-drop',
-        severity: 'warning',
+        severity: 'warning' as const,
         title: 'אפס התאמות',
         description: 'ריצת matching אחרונה הניבה 0 התאמות',
         timestamp: lastMatchRun.completed_at || now.toISOString(),
