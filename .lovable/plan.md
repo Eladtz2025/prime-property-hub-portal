@@ -1,30 +1,27 @@
 
 
-## העברת לוח זמנים לטאב במוניטור + הסרת כרטיסיות
+## תיקון "איך זה עובד" בכרטיסיות הדשבורד
 
-### מה נעשה
-1. **הוספת טאב "לוח זמנים"** למוניטור החי (LiveMonitor) — עם אייקון Clock ותוכן לוח הזמנים (NextRunCard + טבלת סריקות/ריצות)
-2. **הסרת טאב "הכל"** מהמוניטור
-3. **הסרת `<ScheduleSummaryCard />`** מ-ChecksDashboard (מסיר גם את "פעולות אחרונות" וגם את "לוח זמנים")
+### הבעיה שנמצאה
+**בסריקות יש כפל**: כשפותחים את ההגדרות של כרטיסיית "סריקות", מוצגים **שני** בלוקים של "איך זה עובד?" — אחד מה-`ProcessCard` (שורות 440-443 ב-ChecksDashboard) ואחד מתוך `UnifiedScoutSettings` (שורות 261-271) שנטען בתוכו. שניהם מוצגים אחד מתחת לשני.
 
-### שינויים בקבצים
+### מה צריך לתקן
 
-**1. `src/components/scout/checks/LiveMonitor.tsx`**
-- הסרת הטאב `all` ממערך הטאבים
-- הוספת טאב `schedule` עם אייקון `Clock`
-- שינוי ברירת המחדל של `activeTab` ל-`availability` (או `schedule`)
-- בתוך ה-body: כשהטאב הפעיל הוא `schedule`, להציג את תוכן לוח הזמנים (NextRunCard + שתי העמודות סריקות/ריצות)
-- חילוץ הלוגיקה של לוח הזמנים מ-`ScheduleSummaryCard` (ה-hooks של `useScoutSettings`, `scout_configs`, חישוב `groupedByTime`, `nextGroup`, `scanGroups`, `otherGroups`) — או ייבוא כ-sub-component
+**1. סריקות — הסרת הכפל**
+- **להסיר** את `ScanLogicDescription` מתוך `UnifiedScoutSettings.tsx` (שורות 261-271 + השימוש בו)
+- **לעדכן** את ה-`LogicDescription` ב-`ChecksDashboard.tsx` (שורות 440-443) כך שיכלול את כל המידע הרלוונטי במקום אחד:
+  - סורק דירות מ-יד2, מדלן והומלס באמצעות Jina AI Reader
+  - כל קונפיגורציה רצה בנפרד, דף אחרי דף
+  - דירות חדשות נשמרות, קיימות מתעדכנות
+  - כפילויות מאותו מקור נחסמות אוטומטית
 
-**2. `src/components/scout/ChecksDashboard.tsx`**
-- הסרת `<ScheduleSummaryCard />` (שורה 598) וה-import שלו (שורה 13)
+**2. סקירת שאר הכרטיסיות — תקינות**
+- ✅ **בדיקת זמינות** — תקין: HEAD check + Jina scan, מדויק
+- ✅ **כפילויות** — תקין: cross-source, קריטריונים, Winner hierarchy
+- ✅ **התאמות** — תקין: eligible leads, קריטריוני התאמה, שמירה ב-personal_scout_matches
+- ✅ **השלמת נתונים** — תקין: משלים נתונים חסרים עם Jina
 
-**3. `src/components/scout/ScheduleSummaryCard.tsx`**
-- חילוץ חלק לוח הזמנים (NextRunCard, ScheduleRow, הלוגיקה של scheduleItems/groupedByTime) ל-component נפרד שניתן לייבא מתוך LiveMonitor — למשל `ScheduleContent`
-- ה-component הראשי (`ScheduleSummaryCard`) יישאר בקובץ אבל לא ייובא יותר (או יימחק)
-
-### התוצאה
-- המוניטור יכיל 6 טאבים: זמינות, סריקה, השלמה, כפילויות, התאמות, **לוח זמנים**
-- לוח הזמנים יוצג בתוך ה-body של המוניטור בעיצוב הדארק שלו
-- הכרטיסייה הכפולה של "לוח זמנים + פעולות אחרונות" תוסר מהדשבורד
+### קבצים לשינוי
+1. **`src/components/scout/ChecksDashboard.tsx`** — עדכון LogicDescription של סריקות (מיזוג 2 הבלוקים לאחד)
+2. **`src/components/scout/UnifiedScoutSettings.tsx`** — הסרת `ScanLogicDescription` component והשימוש בו
 
