@@ -212,7 +212,10 @@ const AdminPropertyScout: React.FC = () => {
     <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
         {/* Metric Tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <ScoutPieChart title="לפי מקור" data={sourceData} />
+          <ScoutPieChart title="פרטי / תיווך" data={privateData} />
+          <ScoutPieChart title="מכירה / השכרה" data={dealData} />
           <ScoutMetricTile
             label="סה״כ אקטיביים"
             value={stats?.totalActive ?? '—'}
@@ -257,13 +260,6 @@ const AdminPropertyScout: React.FC = () => {
               </div>
             }
           />
-        </div>
-
-        {/* Pie Charts */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <ScoutPieChart title="לפי מקור" data={sourceData} />
-          <ScoutPieChart title="פרטי / תיווך" data={privateData} />
-          <ScoutPieChart title="מכירה / השכרה" data={dealData} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
