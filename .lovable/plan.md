@@ -1,21 +1,53 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## תיקון: same-source address dedup עם מחיר
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### מה משתנה
+ב-`property-helpers.ts`, אחרי ש-`findSameSourceDuplicate` לא מוצאת התאמה לפי source_id/URL, מוסיפים בדיקה שלישית — חיפוש לפי **אותו מקור + כתובת + עיר + חדרים + קומה + מחיר + סוג נכס**:
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+```typescript
+// 3) Same source + same address details + same price = same listing with different ID
+if (!existingSameSource && hasValidAddress && normalizedCity
+    && property.rooms !== undefined && property.floor !== undefined && property.price) {
+  const { data: existingByAddress } = await supabase
+    .from('scouted_properties')
+    .select('id, source_url')
+    .eq('source', property.source)
+    .eq('city', normalizedCity)
+    .eq('address', property.address)
+    .eq('rooms', property.rooms)
+    .eq('floor', property.floor)
+    .eq('price', property.price)
+    .eq('property_type', property.property_type)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle();
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+  if (existingByAddress) {
+    existingSameSource = existingByAddress;
+    console.log(`🔄 Same-source address+price match: ${property.source_url} → existing ${existingByAddress.id}`);
+  }
+}
+```
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+כשנמצאת התאמה — הנכס הקיים מתעדכן (כולל source_id ו-URL חדשים) **במקום ליצור רשומה חדשה**.
+
+### מיגרציית ניקוי
+SQL שימזג את הכפילויות הקיימות של ארלוזרוב 182 — ישאיר את הרשומה הראשונה ויבטל את 4 האחרות (is_active=false).
+
+### קבצים
+1. `supabase/functions/_shared/property-helpers.ts` — הוספת בדיקה שלישית
+2. מיגרציית SQL — ניקוי ארלוזרוב 182
+
+### קריטריוני התאמה מלאים
+| שדה | דרישה |
+|---|---|
+| source | אותו מקור |
+| city | זהה (מנורמל) |
+| address | זהה (רחוב + מספר) |
+| rooms | זהה |
+| floor | זהה |
+| price | **זהה** (חדש) |
+| property_type | זהה |
+| is_active | true |
 
