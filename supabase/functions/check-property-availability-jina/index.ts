@@ -430,6 +430,13 @@ serve(async (req) => {
           } else {
             console.log(`🔄 ${result.id} - retryable (${result.reason}), stays in queue for next run`);
           }
+          // Increment retry count for retryable errors
+          const { data: retryProp } = await supabase
+            .from('scouted_properties')
+            .select('availability_retry_count')
+            .eq('id', result.id)
+            .single();
+          updateData.availability_retry_count = (retryProp?.availability_retry_count ?? 0) + 1;
           await supabase
             .from('scouted_properties')
             .update(updateData)
