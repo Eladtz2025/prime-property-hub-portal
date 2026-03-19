@@ -1,5 +1,5 @@
-// trigger-availability-check-jina v2.0
-// Architecture: 1 batch per invocation + self-chain with run_id continuity
+// trigger-availability-check-jina v3.0
+// Architecture: 1 batch per invocation + self-chain with run_id continuity + watchdog recovery
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchCategorySettings, isPastEndTime } from "../_shared/settings.ts";
@@ -15,6 +15,49 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Process exactly 1 batch per invocation to stay safely within Edge Function timeout
 const MAX_BATCHES_PER_RUN = 1;
 const BATCH_TIMEOUT_MS = 110000;
+const STUCK_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Self-chain with retry: await the fetch, and if it fails, retry once after 3s.
+ */
+async function selfChainWithRetry(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  runId: string,
+  isManual: boolean
+): Promise<void> {
+  const triggerUrl = `${supabaseUrl}/functions/v1/trigger-availability-check-jina`;
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ continue_run: true, run_id: runId, manual: isManual }),
+  };
+
+  try {
+    const resp = await fetch(triggerUrl, options);
+    if (!resp.ok) {
+      console.warn(`⚠️ Self-chain response ${resp.status}, retrying in 3s...`);
+      throw new Error(`status ${resp.status}`);
+    }
+    console.log(`✅ Self-chain succeeded`);
+  } catch (err) {
+    console.warn(`⚠️ Self-chain attempt 1 failed: ${err instanceof Error ? err.message : err}. Retrying in 3s...`);
+    await sleep(3000);
+    try {
+      const resp2 = await fetch(triggerUrl, options);
+      if (!resp2.ok) {
+        console.error(`❌ Self-chain retry also returned ${resp2.status}`);
+      } else {
+        console.log(`✅ Self-chain retry succeeded`);
+      }
+    } catch (err2) {
+      console.error(`❌ Self-chain retry failed: ${err2 instanceof Error ? err2.message : err2}. Run ${runId} may be stuck.`);
+    }
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,9 +72,40 @@ serve(async (req) => {
   let runId: string | null = null;
 
   try {
-    const { manual, continue_run, run_id: existingRunId } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { manual, continue_run, run_id: existingRunId, watchdog } = body;
     const isManual = manual === true;
     const isContinuation = continue_run === true && !!existingRunId;
+    const isWatchdog = watchdog === true;
+
+    // === WATCHDOG MODE: check for stuck runs and resume them ===
+    if (isWatchdog) {
+      const cutoff = new Date(Date.now() - STUCK_THRESHOLD_MS).toISOString();
+      const { data: stuckRuns } = await supabase
+        .from('availability_check_runs')
+        .select('id, is_manual, started_at, properties_checked')
+        .eq('status', 'running')
+        .lt('started_at', cutoff)
+        .order('started_at', { ascending: true })
+        .limit(1);
+
+      if (!stuckRuns || stuckRuns.length === 0) {
+        return new Response(JSON.stringify({
+          success: true, watchdog: true, message: 'No stuck runs found'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const stuckRun = stuckRuns[0];
+      const stuckAge = Math.round((Date.now() - new Date(stuckRun.started_at).getTime()) / 1000);
+      console.log(`🐕 Watchdog: Found stuck run ${stuckRun.id} (${stuckAge}s old, ${stuckRun.properties_checked || 0} checked). Resuming...`);
+
+      // Resume by self-chaining
+      await selfChainWithRetry(supabaseUrl, supabaseServiceKey, stuckRun.id, stuckRun.is_manual || false);
+
+      return new Response(JSON.stringify({
+        success: true, watchdog: true, resumed_run_id: stuckRun.id, stuck_age_seconds: stuckAge
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Kill switch check (skip for manual runs and continuations)
     if (!isManual && !isContinuation && !await isProcessEnabled(supabase, 'availability_jina')) {
@@ -91,7 +165,7 @@ serve(async (req) => {
       }
 
       // Auto-cleanup: stuck runs > 5min
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const fiveMinutesAgo = new Date(Date.now() - STUCK_THRESHOLD_MS).toISOString();
       const { data: stuckCleanup } = await supabase
         .from('availability_check_runs')
         .update({ status: 'failed', completed_at: new Date().toISOString(), error_message: 'Auto-cleanup: stuck > 5min' })
@@ -104,7 +178,7 @@ serve(async (req) => {
       }
 
       // Lock check: prevent parallel runs
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const fiveMinAgo = new Date(Date.now() - STUCK_THRESHOLD_MS).toISOString();
       const { data: runningCheck } = await supabase
         .from('availability_check_runs')
         .select('id, started_at, is_manual')
@@ -308,14 +382,7 @@ serve(async (req) => {
     } else if (shouldSelfChain) {
       console.log(`🔄 Self-chaining: ${totalChecked} checked so far, ${remainingDailyQuota} daily quota left`);
       await sleep(2000);
-      fetch(`${supabaseUrl}/functions/v1/trigger-availability-check-jina`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ continue_run: true, run_id: runId, manual: effectiveManual })
-      }).catch(err => console.error('⚠️ Self-chain failed:', err));
+      await selfChainWithRetry(supabaseUrl, supabaseServiceKey, runId!, effectiveManual);
     } else if (endTimeReached) {
       console.log(`⏰ End time reached, stopping. ${totalChecked} total checked.`);
     } else {
