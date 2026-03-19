@@ -107,7 +107,7 @@ export const DashboardFormsCubes = () => {
     setTimeout(() => setter(false), 2000);
   };
 
-  const cubeBase = "flex flex-row items-center px-3 py-2 h-10 rounded-lg bg-muted/80 backdrop-blur-sm text-foreground border border-border/50 shadow-sm hover:bg-accent transition-all duration-200 cursor-pointer gap-2";
+  const cubeBase = "flex flex-row items-center px-3 py-2 h-10 rounded-lg bg-white/10 backdrop-blur-sm text-white border border-white/20 shadow-sm hover:bg-white/20 transition-all duration-200 cursor-pointer gap-2";
 
   return (
     <>
