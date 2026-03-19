@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, CalendarPlus } from 'lucide-react';
+import { FileText, CalendarPlus, ChevronDown } from 'lucide-react';
 import { Property } from '@/types/property';
 import { AddAppointmentModal } from './AddAppointmentModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PropertyQuickCardProps {
   property: Property;
@@ -49,63 +55,67 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
               {property.city} {property.rooms && `| ${property.rooms} חד׳`}
             </p>
             
-            {/* Action Buttons - Stacked */}
-            <div className="flex flex-col gap-1.5 mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const params = new URLSearchParams({
-                    address: property.address || '',
-                    city: property.city || '',
-                    rooms: property.rooms?.toString() || '',
-                    floor: property.floor?.toString() || '',
-                    price: property.monthlyRent?.toString() || '',
-                    type: property.property_type || 'rental'
-                  });
-                  window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
-                }}
-              >
-                <FileText className="h-4 w-4 ml-2" />
-                תיווך
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const params = new URLSearchParams({
-                    address: property.address || '',
-                    city: property.city || '',
-                    rooms: property.rooms?.toString() || '',
-                    floor: property.floor?.toString() || '',
-                    price: property.monthlyRent?.toString() || '',
-                  });
-                  // Choose form based on property type
-                  const formPath = property.property_type === 'sale' 
-                    ? '/sale-memorandum-form/new' 
-                    : '/memorandum-form/new';
-                  window.open(`${formPath}?${params.toString()}`, '_blank');
-                }}
-              >
-                <FileText className="h-4 w-4 ml-2" />
-                זכ״ד
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsAppointmentModalOpen(true);
-                }}
-              >
-                <CalendarPlus className="h-4 w-4 ml-2" />
-                פגישה
-              </Button>
+            {/* Action Dropdown */}
+            <div className="mt-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
+                  >
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                    פעולות
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[140px]">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const params = new URLSearchParams({
+                        address: property.address || '',
+                        city: property.city || '',
+                        rooms: property.rooms?.toString() || '',
+                        floor: property.floor?.toString() || '',
+                        price: property.monthlyRent?.toString() || '',
+                        type: property.property_type || 'rental'
+                      });
+                      window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
+                    }}
+                  >
+                    <FileText className="h-4 w-4 ml-2" />
+                    תיווך
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const params = new URLSearchParams({
+                        address: property.address || '',
+                        city: property.city || '',
+                        rooms: property.rooms?.toString() || '',
+                        floor: property.floor?.toString() || '',
+                        price: property.monthlyRent?.toString() || '',
+                      });
+                      const formPath = property.property_type === 'sale' 
+                        ? '/sale-memorandum-form/new' 
+                        : '/memorandum-form/new';
+                      window.open(`${formPath}?${params.toString()}`, '_blank');
+                    }}
+                  >
+                    <FileText className="h-4 w-4 ml-2" />
+                    זכ״ד
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsAppointmentModalOpen(true);
+                    }}
+                  >
+                    <CalendarPlus className="h-4 w-4 ml-2" />
+                    פגישה
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
