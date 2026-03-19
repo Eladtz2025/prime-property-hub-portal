@@ -45,7 +45,8 @@ async function checkMadlanDirect(
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': '*/*',
+        'Accept': 'application/json',
+        'X-Nextjs-Data': '1',
         'Accept-Language': 'he-IL,he;q=0.9',
       },
       signal: controller.signal,
