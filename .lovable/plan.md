@@ -1,16 +1,21 @@
 
 
-## הסרת בדיקות מיותרות מ-checkMadlanDirect
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### ממצאים
-- Direct Fetch של מדל"ן עובד מצוין ומחזיר HTML ישיר של הדף הספציפי
-- **0 מקרים** של redirect לדף הבית או תוצאות חיפוש ב-1,274 בדיקות
-- הבדיקות `isMadlanHomepage` ו-`isMadlanSearchResultsPage` רלוונטיות רק ל-Jina (markdown), לא ל-Direct Fetch (HTML)
-- הדירות הבעייתיות נסרקו לפני ה-15 כשהפארסר לא עבד טוב
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### תיקון
-הסרת Strategy 5 ו-Strategy 6 (שורות 111-120) מ-`checkMadlanDirect` ב-`check-property-availability-jina/index.ts`. הבדיקות הקיימות (title, og:description, og:title, body text, CAPTCHA) מספיקות לחלוטין.
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### קבצים
-1. `supabase/functions/check-property-availability-jina/index.ts` — הסרת שני הבלוקים המיותרים
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
