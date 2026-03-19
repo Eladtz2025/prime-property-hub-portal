@@ -487,6 +487,7 @@ export const ChecksDashboard: React.FC = () => {
           enabled={processFlags?.process_availability_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_availability_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
+          onPrimaryClick={() => setPendingPropertiesOpen(true)}
         />
 
         {/* Dedup */}
