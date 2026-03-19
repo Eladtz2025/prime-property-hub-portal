@@ -332,8 +332,8 @@ serve(async (req) => {
 
     const wasStopped = currentRunData?.status === 'stopped';
     const effectiveManual = isManual || currentRunData?.is_manual === true;
-    const totalChecked = (currentRunData?.properties_checked || 0) + processedThisRun;
-    const totalInactive = (currentRunData?.inactive_marked || 0) + inactiveThisRun;
+    const totalChecked = currentRunData?.properties_checked || 0;
+    const totalInactive = currentRunData?.inactive_marked || 0;
 
     // Check schedule end time
     let endTimeReached = false;
