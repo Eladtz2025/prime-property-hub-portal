@@ -764,7 +764,7 @@ export function useMonitorData() {
   // ── Yesterday scans health ──
   const yesterdayScansHealth = useMemo(() => {
     const scans = yesterdayScans ?? [];
-    if (scans.length === 0) return { passed: 0, total: 0, details: [] as { name: string; ok: boolean; found: number; isNew: number }[] };
+    if (scans.length === 0) return { passed: 0, total: 0, details: [] as { name: string; ok: boolean; found: number; isNew: number; time: string }[] };
 
     const formatTime = (ts: string) => {
       try {
