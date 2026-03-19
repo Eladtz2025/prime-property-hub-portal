@@ -325,6 +325,75 @@ export function useMonitorData() {
     refetchInterval: 30000,
   });
 
+  // Last matching run
+  const { data: lastMatchRun } = useQuery({
+    queryKey: ['monitor-last-match-run'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('scout_runs')
+        .select('*')
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    refetchInterval: 15000,
+  });
+
+  // Latest completed dedup run window
+  const latestDedupRun = useMemo(() => {
+    const dedup = completedBackfillRecent?.find(r => r.task_name === 'dedup-scan' && r.completed_at);
+    if (!dedup) return null;
+    return { started_at: dedup.started_at!, completed_at: dedup.completed_at! };
+  }, [completedBackfillRecent]);
+
+  // Dedup properties — scouted_properties with duplicate_detected_at in dedup run window
+  const { data: dedupProperties } = useQuery({
+    queryKey: ['monitor-dedup-properties', latestDedupRun?.started_at],
+    queryFn: async () => {
+      if (!latestDedupRun) return [];
+      const { data } = await supabase
+        .from('scouted_properties')
+        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, duplicate_detected_at')
+        .gte('duplicate_detected_at', latestDedupRun.started_at)
+        .lte('duplicate_detected_at', latestDedupRun.completed_at)
+        .order('duplicate_detected_at', { ascending: false })
+        .limit(250);
+      return data ?? [];
+    },
+    enabled: !!latestDedupRun,
+    refetchInterval: 30000,
+  });
+
+  // Matching properties — scouted_properties with matched_leads updated in matching run window
+  const latestMatchWindow = useMemo(() => {
+    if (!lastMatchRun || lastMatchRun.status !== 'completed' || !lastMatchRun.completed_at) return null;
+    return { started_at: lastMatchRun.started_at!, completed_at: lastMatchRun.completed_at };
+  }, [lastMatchRun]);
+
+  const { data: matchingProperties } = useQuery({
+    queryKey: ['monitor-matching-properties', latestMatchWindow?.started_at],
+    queryFn: async () => {
+      if (!latestMatchWindow) return [];
+      const { data } = await supabase
+        .from('scouted_properties')
+        .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at')
+        .gte('updated_at', latestMatchWindow.started_at)
+        .lte('updated_at', latestMatchWindow.completed_at)
+        .not('matched_leads', 'is', null)
+        .order('updated_at', { ascending: false })
+        .limit(250);
+      // Filter client-side: only properties with non-empty matched_leads array
+      return (data ?? []).filter(p => {
+        const ml = p.matched_leads;
+        return Array.isArray(ml) && ml.length > 0;
+      });
+    },
+    enabled: !!latestMatchWindow,
+    refetchInterval: 30000,
+  });
+
   // Recent availability runs for pipeline
   const { data: recentAvailRuns } = useQuery({
     queryKey: ['monitor-recent-avail-runs'],
@@ -341,21 +410,8 @@ export function useMonitorData() {
     refetchInterval: 15000,
   });
 
-  // Last matching run
-  const { data: lastMatchRun } = useQuery({
-    queryKey: ['monitor-last-match-run'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('scout_runs')
-        .select('*')
-        .eq('source', 'matching')
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-    refetchInterval: 15000,
-  });
+
+
 
   // Properties created today (for pipeline)
   const { data: newPropsToday } = useQuery({
@@ -520,6 +576,29 @@ export function useMonitorData() {
             eventKind: 'found',
           });
         }
+
+        // Add individual dedup properties
+        if (dedupProperties?.length) {
+          dedupProperties.forEach(prop => {
+            const detailParts: string[] = [];
+            if (prop.neighborhood) detailParts.push(prop.neighborhood);
+            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
+            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
+            if (prop.duplicate_group_id) detailParts.push(`קבוצה: ${prop.duplicate_group_id.slice(0, 6)}`);
+
+            items.push({
+              type: 'dedup',
+              timestamp: prop.duplicate_detected_at || '',
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
+              details: detailParts.join(' | ') || 'ללא פרטים',
+              source: prop.source ?? undefined,
+              status: 'ok',
+              url: prop.source_url ?? undefined,
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              eventKind: 'found',
+            });
+          });
+        }
       } else {
         const recentItems = summary?.recent_items || [];
         recentItems.forEach(item => {
@@ -586,13 +665,38 @@ export function useMonitorData() {
       });
     }
 
+    // Add individual matching properties
+    if (matchingProperties?.length) {
+      matchingProperties.forEach(prop => {
+        const ml = prop.matched_leads as unknown as any[];
+        const matchCount = ml?.length ?? 0;
+        const detailParts: string[] = [];
+        if (prop.neighborhood) detailParts.push(prop.neighborhood);
+        if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
+        if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
+        detailParts.push(`${matchCount} התאמות`);
+
+        items.push({
+          type: 'matching',
+          timestamp: prop.updated_at || '',
+          primary: formatCleanAddress(prop.address, prop.neighborhood),
+          details: detailParts.join(' | '),
+          source: prop.source ?? undefined,
+          status: 'ok',
+          url: prop.source_url ?? undefined,
+          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+          eventKind: 'matched',
+        });
+      });
+    }
+
     items.sort((a, b) => {
       if (!a.timestamp || !b.timestamp) return 0;
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns, completedBackfillRecent, lastMatchRun, scanProperties, latestCompletedRuns, dedupProperties, matchingProperties]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {
