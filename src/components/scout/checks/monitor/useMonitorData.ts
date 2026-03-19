@@ -665,6 +665,31 @@ export function useMonitorData() {
       });
     }
 
+    // Add individual matching properties
+    if (matchingProperties?.length) {
+      matchingProperties.forEach(prop => {
+        const ml = prop.matched_leads as unknown as any[];
+        const matchCount = ml?.length ?? 0;
+        const detailParts: string[] = [];
+        if (prop.neighborhood) detailParts.push(prop.neighborhood);
+        if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
+        if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
+        detailParts.push(`${matchCount} התאמות`);
+
+        items.push({
+          type: 'matching',
+          timestamp: prop.updated_at || '',
+          primary: formatCleanAddress(prop.address, prop.neighborhood),
+          details: detailParts.join(' | '),
+          source: prop.source ?? undefined,
+          status: 'ok',
+          url: prop.source_url ?? undefined,
+          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+          eventKind: 'matched',
+        });
+      });
+    }
+
     items.sort((a, b) => {
       if (!a.timestamp || !b.timestamp) return 0;
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
