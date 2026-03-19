@@ -70,6 +70,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   enabled = true,
   onToggleEnabled,
   isTogglePending,
+  onPrimaryClick,
 }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
