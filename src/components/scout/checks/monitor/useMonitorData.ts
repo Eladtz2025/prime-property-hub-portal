@@ -675,7 +675,10 @@ export function useMonitorData() {
         if (prop.neighborhood) detailParts.push(prop.neighborhood);
         if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
         if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
-        detailParts.push(`${matchCount} התאמות`);
+        const names = ml?.map((m: any) => m.name).filter(Boolean) ?? [];
+        const displayNames = names.slice(0, 4).join(', ');
+        const extra_names = names.length > 4 ? ` ועוד ${names.length - 4}` : '';
+        detailParts.push(`${matchCount} התאמות` + (displayNames ? ` — ${displayNames}${extra_names}` : ''));
 
         items.push({
           type: 'matching',

@@ -1,36 +1,21 @@
 
 
-## תשובות ותיקונים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### 1. התאמות — הצגת שמות הלקוחות (תיקון)
-כרגע כל שורת התאמה מציגה "X התאמות" אבל לא מראה מי הלקוחות. השדה `matched_leads` כבר נשלף בשאילתה וכולל `name` לכל ליד.
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-**שינוי ב-`useMonitorData.ts`** (שורות ~672-678): לחלץ את שמות הלקוחות מתוך `matched_leads` ולהוסיף אותם ל-details:
-```
-// במקום: "3 התאמות"
-// יהיה: "3 התאמות — דני, מיכל, יוסי"
-const names = ml?.map(m => m.name).filter(Boolean).slice(0, 4).join(', ');
-detailParts.push(`${matchCount} התאמות` + (names ? ` — ${names}` : ''));
-```
-אם יש יותר מ-4 לקוחות, יוצג "...ועוד X".
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### 2. ההבדל בין 4456 ל-3901 (תשובה)
-- **כרטיסית "סה״כ אקטיביים" (4456)**: סופרת כל נכסים עם `is_active = true` — ללא שום פילטר נוסף.
-- **הטבלה (3901)**: מפעילה פילטרים נוספים מעבר ל-`is_active`:
-  - מסתירה כפילויות (losers) — `duplicate_group_id IS NULL OR is_primary_listing = true`
-  - מסננת רק תל אביב — `city ILIKE '%תל אביב%'`
-  - מסננת URL שבורים (projects, yad1, forsale וכו')
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-ההפרש (~555 נכסים) הוא כפילויות, נכסים מחוץ לת"א, ו-URL לא תקינים. **זה התנהגות תקינה.** אין מה לתקן.
-
-### 3. כרטיסית התאמות (522) (תשובה)
-המספר 522 מגיע מהשאילתה `matchStats` — היא שולפת `leads_matched` מריצת ההתאמות האחרונה (`scout_runs` עם `source = 'matching'`). זה אומר שבריצת ההתאמות האחרונה נמצאו **522 התאמות** (צמדי נכס-ליד שקיבלו ציון מעל 60).
-
-### 4. השלמות ריק (תשובה)
-נכון, אין נתונים בטאב השלמות. הריצה האחרונה של `data_completion_jina` הייתה ב-18 במרץ (אתמול) בשעה 22:00 — אבל זה היה **לפני** שפרסנו את התיקון ששומר `recent_items`. לכן ה-`recent_items` ריק. **מהריצה הבאה** (הלילה ב-00:00) הנתונים יתחילו להיצבר ויוצגו.
-
-### סיכום שינויים
-| קובץ | שינוי |
-|---|---|
-| `useMonitorData.ts` | הוספת שמות לקוחות לפרטי ההתאמות |
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
