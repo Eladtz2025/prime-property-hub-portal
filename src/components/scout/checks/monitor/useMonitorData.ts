@@ -589,7 +589,7 @@ export function useMonitorData() {
 
             items.push({
               type: 'dedup',
-              timestamp: prop.duplicate_detected_at || '',
+              timestamp: prop.dedup_checked_at || '',
               primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: detailParts.join(' | ') || 'ללא פרטים',
               source: prop.source ?? undefined,
