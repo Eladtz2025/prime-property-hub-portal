@@ -39,12 +39,12 @@ export const MatchingStatus: React.FC = () => {
           </p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
-          <p className="text-xs text-muted-foreground">לידים שנבדקו</p>
-          <p className="text-xl font-bold">{lastRun?.leads_completed ?? '—'}</p>
+          <p className="text-xs text-muted-foreground">נכסים שעובדו</p>
+          <p className="text-xl font-bold">{lastRun?.properties_found ?? '—'}</p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
           <p className="text-xs text-muted-foreground">התאמות נמצאו</p>
-          <p className="text-xl font-bold text-green-600">{lastRun?.total_matches ?? '—'}</p>
+          <p className="text-xl font-bold text-green-600">{lastRun?.leads_matched ?? '—'}</p>
         </CardContent></Card>
       </div>
 
