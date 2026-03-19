@@ -69,7 +69,7 @@ serve(async (req) => {
       .in('availability_check_reason', ['listing_removed_410', 'listing_removed_small_html_og_homepage', 'listing_removed_og_description'])
       .not('source_url', 'is', null)
       .order('availability_checked_at', { ascending: false })
-      .limit(testType === 'mixed' ? 4 : 6);
+      .limit(testType === 'mixed' ? 4 : 4);
     if (data) urls.push(...data.map(d => ({ url: d.source_url, addr: d.address || '?', expected: 'removed' })));
   }
 
