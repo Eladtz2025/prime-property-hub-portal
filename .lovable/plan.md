@@ -1,12 +1,26 @@
 
 
-## תיקון פשוט: נכס עם 403 ישלח לסוף התור
+## רקע כהה לדשבורד — הכרטיסים נשארים לבנים מבפנים
 
-### שינוי אחד בלבד
+### עיקרון
 
-**קובץ: `supabase/functions/check-property-availability-jina/index.ts`**
+רק **רקע העמוד** משתנה לצבע ההדר (`bg-primary`). כל כרטיס/סקשן נשאר לבן מבפנים — בלי שום שינוי לתוכן הפנימי שלו.
 
-בבלוק של retryable errors (שורות ~419-434), נוסיף תנאי: אם הסיבה היא `madlan_direct_status_403` — נעדכן גם `availability_checked_at = now()` בנוסף ל-reason. זה ישלח את הנכס לסוף התור במקום שיחזור מיד.
+### שינויים
 
-כל שאר ה-retryable errors נשארים בדיוק כמו היום — בלי שינוי.
+**`src/components/Dashboard.tsx`**
+- הסרת 3 ה-wrappers הכהים (`bg-primary rounded-xl p-2 shadow-lg`)
+- הוספת `bg-primary` + margin שלילי/padding על ה-div הראשי כדי לכסות את כל רקע העמוד
+- הוספת `border border-white/20` לכרטיסים כדי שהמסגרת תיראה טוב על רקע כהה
+
+**`src/components/DashboardFormsCubes.tsx`**
+- הקוביות כבר בסגנון glassmorphism (`bg-white/10`) אז רק צריך לוודא שהטקסט לבן (`text-white`)
+
+**`src/components/ActivePropertiesCard.tsx`**
+- הוספת `border-white/20` לכרטיס החיצוני
+
+### מה לא משתנה
+- **כל תוכן פנימי** של כל כרטיס נשאר לבן — אין שינוי ל-UpcomingAppointmentsCard, DevelopmentIdeasCard, או ContactLeadsListCompact מבפנים
+- עמודים אחרים לא מושפעים
+- מובייל דשבורד לא מושפע
 
