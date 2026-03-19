@@ -183,7 +183,7 @@ export function useMonitorData() {
     refetchInterval: 2000,
   });
 
-  // Backfill tasks
+  // Backfill tasks (running)
   const { data: backfillRuns } = useQuery({
     queryKey: ['monitor-backfill-runs'],
     queryFn: async () => {
@@ -196,6 +196,45 @@ export function useMonitorData() {
       return data;
     },
     refetchInterval: 2000,
+  });
+
+  // Completed backfill tasks today (for dailyRunsHealth)
+  const { data: completedBackfillToday } = useQuery({
+    queryKey: ['monitor-completed-backfill-today'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { data, error } = await supabase
+        .from('backfill_progress')
+        .select('task_name, started_at, completed_at, status')
+        .eq('status', 'completed')
+        .gte('started_at', today.toISOString())
+        .order('started_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
+  // Yesterday's scout scans (for yesterdayScansHealth)
+  const { data: yesterdayScans } = useQuery({
+    queryKey: ['monitor-yesterday-scans'],
+    queryFn: async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      const endOfYesterday = new Date(yesterday);
+      endOfYesterday.setHours(23, 59, 59, 999);
+      const { data, error } = await supabase
+        .from('scout_runs')
+        .select('source, status, properties_found, new_properties, started_at, completed_at')
+        .gte('started_at', yesterday.toISOString())
+        .lte('started_at', endOfYesterday.toISOString())
+        .order('started_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 60000,
   });
 
   // Scan runs

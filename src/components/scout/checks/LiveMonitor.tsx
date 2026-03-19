@@ -88,6 +88,7 @@ export const LiveMonitor: React.FC = () => {
             </button>
           );
         })}
+        </div>
       </div>
 
       {/* Body */}
