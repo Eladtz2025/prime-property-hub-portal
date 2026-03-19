@@ -85,6 +85,7 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
   delta,
   sparklineData,
   hoverContent,
+  subtitle,
 }) => {
   const formattedValue = typeof value === 'number' ? value.toLocaleString('he-IL') : value;
 
