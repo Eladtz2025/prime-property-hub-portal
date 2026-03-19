@@ -79,7 +79,7 @@ export const DeduplicationStatus: React.FC = () => {
     queryKey: ['dedup-live-stats'],
     queryFn: async () => {
       const [losersRes, uncheckedRes] = await Promise.all([
-        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_primary_listing', false).not('duplicate_group_id', 'is', null).eq('is_active', true),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).is('dedup_checked_at', null).eq('is_active', true),
       ]);
       return {

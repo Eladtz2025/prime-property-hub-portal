@@ -1,55 +1,21 @@
 
 
-## Investigation: Arlozorov 17 — Inactive Properties Showing in Dedup Groups
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### Findings
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-I queried the database for all properties at "ארלוזורוב 17". The duplicate group `9d69f03f` contains **6 properties, ALL with `is_active = true`**. The code correctly filters by `is_active = true` (line 101), so the issue is **not a display bug** — it's a **data issue**: properties that should be inactive are still marked as active.
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-**The 6 properties in the group:**
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-| # | Source | Rooms | Price | URL ID | availability_check_reason |
-|---|--------|-------|-------|--------|---------------------------|
-| 1 | madlan | 3.0 | 23,000 | QCzULSlW4fm | null (unchecked) |
-| 2 | madlan | 2.5 | 24,000 | 3BQqogDu770 | no_indicators_keeping_active |
-| 3 | yad2 | 3.0 | 24,000 | **7zaubz5e** (with params) | content_ok |
-| 4 | yad2 | 2.5 | 24,000 | hng16rna | content_ok |
-| 5 | yad2 | 3.0 | 23,000 | **7zaubz5e** (no params) | content_ok |
-| 6 | madlan | 2.5 | 24,500 | tcKZQKtLlIN | null (unchecked) |
-
-**Also found separately** (not in the group, already `is_active = false`):
-- `tel-aviv-area/7zaubz5e` — same yad2 listing, detected as removed
-
-### Root Causes
-
-**Problem 1: URL Duplicates Not Caught**
-Properties #3 and #5 point to the **exact same yad2 listing** (`7zaubz5e`) but with different URL formats. One variant (`tel-aviv-area/7zaubz5e`) was already deactivated. The scraper is inserting the same listing multiple times with different URL formats, and the dedup/ingest logic doesn't normalize yad2 item IDs.
-
-**Problem 2: Availability Check Passing Dead Listings**
-Some of these may have been removed from the source site but passed the availability check with `content_ok` — possibly because the yad2 page returns generic content even for removed listings when accessed with certain URL formats.
-
-**Problem 3: Losers Count Includes Inactive**
-The losers count query (line 82 in `DeduplicationStatus.tsx`) doesn't filter by `is_active`, inflating the number.
-
-### Proposed Fixes
-
-**1. Add URL normalization for yad2 during ingest** (SQL + edge function)
-- Extract the yad2 item ID (e.g., `7zaubz5e`) and strip query params and `tel-aviv-area/` prefix
-- Before inserting, check if a property with the same normalized yad2 ID already exists
-- This prevents URL duplicates at the source
-
-**2. Fix losers count** (`DeduplicationStatus.tsx`, line 82)
-- Add `.eq('is_active', true)` to the losers count query
-
-**3. Clean existing URL duplicates** (one-time SQL)
-- Find yad2 properties that share the same item ID but have different URLs
-- Keep the one with the simplest URL, deactivate the rest
-
-### Summary of Changes
-
-| File/Location | Change |
-|---|---|
-| `DeduplicationStatus.tsx` line 82 | Add `is_active` filter to losers count |
-| Edge function (ingest) | Normalize yad2 URLs before insert to prevent duplicates |
-| One-time SQL cleanup | Deactivate yad2 URL duplicates |
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
