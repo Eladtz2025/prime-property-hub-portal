@@ -1,25 +1,21 @@
 
 
-## בדיקה מחדש של כל נכסי מדל"ן הפעילים
+## תיקון עקביות casing ב-scout-madlan-jina
 
-### מה נעשה
-נאפס את `availability_checked_at` לכל נכסי מדל"ן הפעילים שסומנו `content_ok` היום (לפני התיקון), כך שייכנסו מחדש לתור הבדיקה עם הלוגיקה החדשה (Strategy 5).
+### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
 
-### שלבים
-1. **איפוס** — הרצת UPDATE על `scouted_properties` שמאפס `availability_checked_at` ו-`availability_check_reason` לנכסי מדל"ן פעילים שנבדקו היום עם `content_ok`
-2. **הפעלת ריצה ידנית** — קריאה ל-`trigger-availability-check-jina` עם `manual: true` כדי שהמערכת תתחיל לעבד את הנכסים המאופסים
+1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
+2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
+3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
 
-### פרטים טכניים
-```sql
-UPDATE scouted_properties
-SET availability_checked_at = NULL,
-    availability_check_reason = NULL,
-    availability_check_count = GREATEST(availability_check_count - 1, 0)
-WHERE source = 'madlan'
-  AND is_active = true
-  AND availability_check_reason = 'content_ok'
-  AND availability_checked_at >= '2025-03-19'::date;
-```
+### מקומות לשנות
+- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
+- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
+- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
+- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
+- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
+- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
 
-אחרי האיפוס, הריצה הידנית תעבד את כל ~1,271 הנכסים בבאצ'ים של 10 עם self-chaining אוטומטי.
+### הערה חשובה
+זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
 
