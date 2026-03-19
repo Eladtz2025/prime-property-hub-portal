@@ -311,13 +311,13 @@ export default function AdminCustomers() {
                 disabled={isScanningOwn}
                 className="flex-1 sm:flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
               >
-                {isScanningOwn ? (
-                  <Loader2 className="h-4 w-4 sm:ml-2 animate-spin" />
-                ) : (
-                  <Building2 className="h-4 w-4 sm:ml-2" />
-                )}
                 <span className="hidden sm:inline">סרוק נכסים שלנו</span>
                 <span className="sm:hidden">סרוק</span>
+                {isScanningOwn ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <Building2 className="h-4 w-4 sm:mr-2" />
+                )}
               </Button>
             </div>
 
