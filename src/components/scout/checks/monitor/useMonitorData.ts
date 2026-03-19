@@ -367,21 +367,16 @@ export function useMonitorData() {
     refetchInterval: 30000,
   });
 
-  // Matching properties — scouted_properties with matched_leads updated in matching run window
-  const latestMatchWindow = useMemo(() => {
-    if (!lastMatchRun || lastMatchRun.status !== 'completed' || !lastMatchRun.completed_at) return null;
-    return { started_at: lastMatchRun.started_at!, completed_at: lastMatchRun.completed_at };
-  }, [lastMatchRun]);
+  // Matching properties — scouted_properties with matched_leads updated in last 24h
+  const since24h = useMemo(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), []);
 
   const { data: matchingProperties } = useQuery({
-    queryKey: ['monitor-matching-properties', latestMatchWindow?.started_at],
+    queryKey: ['monitor-matching-properties', since24h],
     queryFn: async () => {
-      if (!latestMatchWindow) return [];
       const { data } = await supabase
         .from('scouted_properties')
         .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at')
-        .gte('updated_at', latestMatchWindow.started_at)
-        .lte('updated_at', latestMatchWindow.completed_at)
+        .gte('updated_at', since24h)
         .not('matched_leads', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(250);
@@ -391,7 +386,6 @@ export function useMonitorData() {
         return Array.isArray(ml) && ml.length > 0;
       });
     },
-    enabled: !!latestMatchWindow,
     refetchInterval: 30000,
   });
 
