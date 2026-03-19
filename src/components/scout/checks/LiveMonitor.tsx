@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users } from 'lucide-react';
+import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMonitorData } from './monitor/useMonitorData';
 import { LiveFeedTab } from './monitor/LiveFeedTab';
 import { FeedItem } from './monitor/useMonitorData';
@@ -23,6 +24,7 @@ export const LiveMonitor: React.FC = () => {
     intelligence,
     hasActivity,
     feedItems,
+    dailyRunsHealth,
   } = useMonitorData();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
 
@@ -44,63 +46,95 @@ export const LiveMonitor: React.FC = () => {
     return feedItems.filter(f => f.type === activeTab);
   }, [feedItems, activeTab]);
 
+  const healthColor = dailyRunsHealth.passed === dailyRunsHealth.total
+    ? 'text-emerald-400'
+    : dailyRunsHealth.passed >= dailyRunsHealth.total / 2
+      ? 'text-yellow-400'
+      : 'text-red-400';
+
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-sm overflow-hidden shadow-2xl" dir="rtl">
-      {/* Header with tabs */}
-      <div className="border-b border-white/[0.05]">
-        <div className="flex items-center gap-3 px-4 py-2">
-          <Monitor className="h-4 w-4 text-gray-400 shrink-0" />
-          <span className="text-sm font-medium text-gray-200 shrink-0">מוניטור חי</span>
-          <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
-          <span className={`text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
-          <div className="flex-1" />
-        </div>
-        {/* Tabs row */}
-        <div className="flex items-center gap-0.5 px-3 pb-1 overflow-x-auto scrollbar-none">
-          {tabs.map(tab => {
-            const isActive = activeTab === tab.key;
-            const count = tabCounts[tab.key];
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'bg-white/[0.08] text-gray-100'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-                }`}
-              >
-                <Icon className="h-3 w-3" />
-                {tab.label}
-                {count > 0 && (
-                  <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
-                    isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      {/* Single header row: title + status + tabs */}
+      <div className="border-b border-white/[0.05] flex items-center gap-3 px-4 py-2 overflow-x-auto scrollbar-none">
+        <Monitor className="h-4 w-4 text-gray-400 shrink-0" />
+        <span className="text-sm font-medium text-gray-200 shrink-0">מוניטור חי</span>
+        <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
+        <span className={`text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
+        <div className="w-px h-4 bg-white/[0.08] shrink-0" />
+        {tabs.map(tab => {
+          const isActive = activeTab === tab.key;
+          const count = tabCounts[tab.key];
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                isActive
+                  ? 'bg-white/[0.08] text-gray-100'
+                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              {tab.label}
+              {count > 0 && (
+                <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                  isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Body */}
       <div className="flex" style={{ height: '420px' }}>
         {/* Metrics Rail — LEFT side */}
-        <div className="w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex flex-col justify-center gap-6">
-          <MetricItem label="Events/min" value={String(intelligence.throughput)} />
+        <div className="w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex flex-col justify-center gap-5">
+          <MetricItem label="אירועים/דקה" value={String(intelligence.throughput)} />
           <MetricItem
-            label="Avg latency"
+            label="זמן תגובה"
             value={intelligence.avgLatency !== null ? `${(intelligence.avgLatency / 1000).toFixed(1)}s` : '—'}
           />
           <MetricItem
-            label="Timeout rate"
+            label="אחוז timeout"
             value={`${intelligence.timeoutRate}%`}
             valueClass={intelligence.timeoutRate > 20 ? 'text-red-400' : intelligence.timeoutRate > 10 ? 'text-yellow-400' : undefined}
           />
           <MetricItem label="תורים פעילים" value={String(activeProcesses.length)} />
+
+          {/* Daily runs health */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="cursor-help">
+                  <p className="text-[10px] text-gray-500 mb-0.5">ריצות יומיות</p>
+                  <div className="flex items-center gap-1.5">
+                    {dailyRunsHealth.passed === dailyRunsHealth.total ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-400" />
+                    )}
+                    <span className={`text-lg font-bold ${healthColor}`}>
+                      {dailyRunsHealth.passed}/{dailyRunsHealth.total}
+                    </span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="bg-gray-900 border-white/10 text-gray-200 text-xs space-y-1 p-3">
+                {dailyRunsHealth.details.map(d => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${d.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span>{d.name}</span>
+                    {d.time && <span className="text-gray-500 font-mono text-[10px]">{d.time}</span>}
+                  </div>
+                ))}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <div>
             <p className="text-[10px] text-gray-500 mb-1">סטטוס</p>
             <div className="flex items-center gap-1.5">
