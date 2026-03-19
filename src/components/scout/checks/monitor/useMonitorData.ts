@@ -408,7 +408,7 @@ export function useMonitorData() {
     });
 
     return items;
-  }, [availRun, scanRuns, backfillRuns]);
+  }, [availRun, scanRuns, backfillRuns, recentAvailRuns, recentScoutRuns]);
 
   // ── Active processes ──
   const activeProcesses = useMemo(() => {
