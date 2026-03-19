@@ -276,14 +276,14 @@ export default function AdminCustomers() {
             {/* Add buttons */}
             <div className="flex gap-2">
               <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:ml-2" />
                 <span className="hidden sm:inline">לקוח חדש</span>
                 <span className="sm:hidden">לקוח</span>
+                <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
               <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:ml-2" />
                 <span className="hidden sm:inline">מתווך חדש</span>
                 <span className="sm:hidden">מתווך</span>
+                <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
             </div>
             
