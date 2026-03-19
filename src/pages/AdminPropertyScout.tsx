@@ -180,22 +180,7 @@ const AdminPropertyScout: React.FC = () => {
     <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
         {/* Metric Tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <ScoutMetricTile
-            label="סה״כ נכסים"
-            value={stats?.total ?? '—'}
-            icon={<LayoutGrid className="h-4 w-4" />}
-            statusColor="gray"
-            delta={totalDelta}
-            sparklineData={sparklines?.newPerDay}
-            hoverContent={
-              <div className="space-y-1">
-                <p className="font-semibold">סה״כ נכסים במאגר</p>
-                <p>כולל אקטיביים ולא אקטיביים</p>
-                {historical && <p>אתמול: {historical.totalYesterday.toLocaleString('he-IL')}</p>}
-              </div>
-            }
-          />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <ScoutMetricTile
             label="סה״כ אקטיביים"
             value={stats?.totalActive ?? '—'}
@@ -203,10 +188,12 @@ const AdminPropertyScout: React.FC = () => {
             statusColor="blue"
             delta={activeDelta}
             sparklineData={sparklines?.newPerDay}
+            subtitle={stats ? `לא אקטיביים: ${((stats.total ?? 0) - (stats.totalActive ?? 0)).toLocaleString('he-IL')}` : undefined}
             hoverContent={
               <div className="space-y-1">
                 <p className="font-semibold">נכסים אקטיביים</p>
                 <p>נכסים פעילים הזמינים לצפייה</p>
+                {stats && <p>סה״כ במאגר: {stats.total.toLocaleString('he-IL')}</p>}
                 {historical && <p>אתמול: {historical.activeYesterday.toLocaleString('he-IL')}</p>}
               </div>
             }

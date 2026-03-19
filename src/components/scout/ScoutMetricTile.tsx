@@ -113,6 +113,7 @@ export const ScoutMetricTile: React.FC<ScoutMetricTileProps> = ({
             {formattedValue}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{label}</p>
+          {subtitle && <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>}
         </div>
         
         {/* Sparkline */}
