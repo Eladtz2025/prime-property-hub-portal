@@ -10,103 +10,96 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const testUrl = 'https://www.madlan.co.il/listings/ds0nyz2Jy7f';
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
   const results: Record<string, any> = {};
 
-  // Quick test: just one direct fetch to see current IP status
-  try {
-    const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 15000);
-    const r = await fetch(testUrl, {
-      headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
-      signal: c.signal,
-    });
-    clearTimeout(t);
-    const html = await r.text();
-    // Check the _pxhd cookie and server info
-    const headers: Record<string,string> = {};
-    r.headers.forEach((v, k) => { if (k !== 'set-cookie') headers[k] = v; });
-    const pxCookie = r.headers.get('set-cookie') || '';
-    results['direct_fetch'] = { 
-      status: r.status, 
-      bodyLength: html.length,
-      server: r.headers.get('server'),
-      hasPxCookie: pxCookie.includes('_pxhd'),
-    };
-  } catch (e) {
-    results['direct_fetch'] = { error: String(e) };
-  }
+  // Test 1: HEAD on known-active listings (5 different)
+  const { data: activeProps } = await supabase
+    .from('scouted_properties')
+    .select('id, source_url, address')
+    .eq('source', 'madlan')
+    .eq('is_active', true)
+    .not('source_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(5);
 
-  // Test Madlan GraphQL API - this is what their frontend uses
-  try {
-    const c2 = new AbortController();
-    const t2 = setTimeout(() => c2.abort(), 15000);
-    const r2 = await fetch('https://www.madlan.co.il/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Accept-Language': 'he-IL,he;q=0.9',
-        'Origin': 'https://www.madlan.co.il',
-        'Referer': 'https://www.madlan.co.il/',
-      },
-      body: JSON.stringify({
-        operationName: "GetPoiData",
-        variables: { poiId: "ds0nyz2Jy7f" },
-        query: `query GetPoiData($poiId: String!) { poi(id: $poiId) { id title address { city { name } neighborhood { name } streetName houseNumber } price dealType } }`
-      }),
-      signal: c2.signal,
-    });
-    clearTimeout(t2);
-    const body2 = await r2.text();
-    results['graphql_api'] = { 
-      status: r2.status, 
-      bodyLength: body2.length,
-      snippet: body2.substring(0, 500),
-    };
-  } catch (e) {
-    results['graphql_api'] = { error: String(e) };
+  const activeResults: any[] = [];
+  for (const p of (activeProps || [])) {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 10000);
+      const r = await fetch(p.source_url, { method: 'HEAD', signal: c.signal });
+      clearTimeout(t);
+      activeResults.push({ 
+        addr: (p.address || '').substring(0, 25), 
+        status: r.status,
+        contentType: r.headers.get('content-type'),
+        location: r.headers.get('location'),
+      });
+    } catch (e) {
+      activeResults.push({ addr: (p.address || '').substring(0, 25), error: String(e).substring(0, 60) });
+    }
   }
+  results['active_listings_HEAD'] = activeResults;
 
-  // Test: Madlan's Next.js data endpoint
-  try {
-    const c3 = new AbortController();
-    const t3 = setTimeout(() => c3.abort(), 15000);
-    const r3 = await fetch('https://www.madlan.co.il/_next/data/listings/ds0nyz2Jy7f.json', {
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Language': 'he-IL,he;q=0.9',
-      },
-      signal: c3.signal,
-    });
-    clearTimeout(t3);
-    const body3 = await r3.text();
-    results['nextjs_data'] = { 
-      status: r3.status, 
-      bodyLength: body3.length,
-      snippet: body3.substring(0, 300),
-    };
-  } catch (e) {
-    results['nextjs_data'] = { error: String(e) };
+  // Test 2: HEAD on known-removed listings
+  const { data: removedProps } = await supabase
+    .from('scouted_properties')
+    .select('id, source_url, address, availability_check_reason')
+    .eq('source', 'madlan')
+    .eq('is_active', false)
+    .in('availability_check_reason', ['listing_removed_410', 'listing_removed_indicator', 'listing_removed_small_html_og_homepage', 'listing_removed_og_description'])
+    .not('source_url', 'is', null)
+    .order('availability_checked_at', { ascending: false })
+    .limit(5);
+
+  const removedResults: any[] = [];
+  for (const p of (removedProps || [])) {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 10000);
+      const r = await fetch(p.source_url, { method: 'HEAD', signal: c.signal });
+      clearTimeout(t);
+      removedResults.push({ 
+        addr: (p.address || '').substring(0, 25), 
+        reason: p.availability_check_reason,
+        status: r.status,
+        location: r.headers.get('location'),
+      });
+    } catch (e) {
+      removedResults.push({ addr: (p.address || '').substring(0, 25), error: String(e).substring(0, 60) });
+    }
   }
+  results['removed_listings_HEAD'] = removedResults;
 
-  // Test: Check if HEAD request works (lighter, might bypass)
-  try {
-    const c4 = new AbortController();
-    const t4 = setTimeout(() => c4.abort(), 10000);
-    const r4 = await fetch(testUrl, {
-      method: 'HEAD',
-      headers: { 'Accept': '*/*' },
-      signal: c4.signal,
-    });
-    clearTimeout(t4);
-    // Must consume for HEAD
-    results['head_request'] = { 
-      status: r4.status,
-      contentLength: r4.headers.get('content-length'),
-    };
-  } catch (e) {
-    results['head_request'] = { error: String(e) };
+  // Test 3: GET vs HEAD comparison on same URL
+  const compUrl = activeProps?.[0]?.source_url;
+  if (compUrl) {
+    try {
+      const ch = new AbortController();
+      const th = setTimeout(() => ch.abort(), 10000);
+      const rh = await fetch(compUrl, { method: 'HEAD', signal: ch.signal });
+      clearTimeout(th);
+
+      const cg = new AbortController();
+      const tg = setTimeout(() => cg.abort(), 10000);
+      const rg = await fetch(compUrl, { method: 'GET', headers: { 'Accept': '*/*' }, signal: cg.signal });
+      clearTimeout(tg);
+      await rg.text();
+
+      results['head_vs_get'] = {
+        url: compUrl,
+        HEAD_status: rh.status,
+        GET_status: rg.status,
+      };
+    } catch (e) {
+      results['head_vs_get'] = { error: String(e) };
+    }
   }
 
   return new Response(JSON.stringify(results, null, 2), {
