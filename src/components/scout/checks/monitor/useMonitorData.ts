@@ -290,9 +290,10 @@ export function useMonitorData() {
     queryKey: ['monitor-last-match-run'],
     queryFn: async () => {
       const { data } = await supabase
-        .from('personal_scout_runs')
+        .from('scout_runs')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('source', 'matching')
+        .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       return data;
