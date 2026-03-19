@@ -199,14 +199,16 @@ export const LiveMonitor: React.FC = () => {
             </div>
           )}
 
-          {/* Live feed */}
+          {/* Content area */}
           <div className="flex-1 min-h-0">
-            {filteredFeed.length === 0 ? (
+            {activeTab === 'schedule' ? (
+              <ScheduleContent />
+            ) : filteredFeed.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-2">
                   <Activity className="h-8 w-8 text-gray-700 mx-auto" />
                   <p className="text-sm text-gray-400">
-                    {activeTab === 'all' ? 'אין פעילות כרגע' : `אין אירועי ${tabs.find(t => t.key === activeTab)?.label}`}
+                    {`אין אירועי ${tabs.find(t => t.key === activeTab)?.label}`}
                   </p>
                   <p className="text-xs text-gray-600">המערכת מאזינה ותציג כאן אירועים בזמן אמת</p>
                 </div>
