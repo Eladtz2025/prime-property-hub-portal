@@ -669,6 +669,58 @@ export function useMonitorData() {
   // Last event time
   const lastEventTime = feedItems.length > 0 ? feedItems[feedItems.length - 1].timestamp : null;
 
+  // ── Daily runs health ──
+  const dailyRunsHealth = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+
+    const formatTime = (ts: string) => {
+      try {
+        const d = new Date(ts);
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      } catch { return ''; }
+    };
+
+    // 1. Data Completion (backfill_progress task_name starts with 'data_completion')
+    const dataCompletionRuns = (backfillRuns ?? []).filter(
+      r => r.task_name.startsWith('data_completion') && r.started_at && r.started_at >= todayStr
+    );
+    // Also check recent completed ones from recentAvailRuns query (we don't have backfill completed data, so check if any ran today)
+    const dcOk = dataCompletionRuns.length > 0;
+    const dcTime = dataCompletionRuns[0]?.started_at ? formatTime(dataCompletionRuns[0].started_at) : '';
+
+    // 2. Dedup (backfill_progress task_name = 'dedup-scan')
+    const dedupRuns = (backfillRuns ?? []).filter(
+      r => r.task_name === 'dedup-scan' && r.started_at && r.started_at >= todayStr
+    );
+    const dedupOk = dedupRuns.length > 0;
+    const dedupTime = dedupRuns[0]?.started_at ? formatTime(dedupRuns[0].started_at) : '';
+
+    // 3. Availability
+    const availToday = (recentAvailRuns ?? []).filter(r => r.started_at >= todayStr);
+    const availOk = availToday.length > 0 && availToday.some(r => r.status === 'completed' || r.status === 'running');
+    const availTime = availToday[0]?.started_at ? formatTime(availToday[0].started_at) : '';
+
+    // 4. Matching
+    const matchToday = lastMatchRun && lastMatchRun.created_at && lastMatchRun.created_at >= todayStr;
+    const matchOk = !!matchToday;
+    const matchTime = lastMatchRun?.created_at && matchToday ? formatTime(lastMatchRun.created_at) : '';
+
+    const details = [
+      { name: 'השלמת נתונים', ok: dcOk, time: dcTime },
+      { name: 'כפילויות', ok: dedupOk, time: dedupTime },
+      { name: 'זמינות', ok: availOk, time: availTime },
+      { name: 'התאמות', ok: matchOk, time: matchTime },
+    ];
+
+    return {
+      passed: details.filter(d => d.ok).length,
+      total: 4,
+      details,
+    };
+  }, [backfillRuns, recentAvailRuns, lastMatchRun]);
+
   return {
     feedItems,
     activeProcesses,
@@ -678,5 +730,6 @@ export function useMonitorData() {
     hasActivity,
     lastEventTime,
     newPropsToday: newPropsToday ?? 0,
+    dailyRunsHealth,
   };
 }
