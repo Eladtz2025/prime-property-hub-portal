@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,65 +10,42 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const body = await req.json().catch(() => ({}));
-  const strategy = body.strategy || 'no-ua'; // no-ua, with-ua, slow
-  const count = Math.min(body.count || 5, 8);
+  // Test both list pages AND individual property pages
+  const testUrls = [
+    { url: 'https://www.madlan.co.il/for-rent/tel-aviv-jaffa', type: 'list-rent' },
+    { url: 'https://www.madlan.co.il/for-sale/tel-aviv-jaffa', type: 'list-sale' },
+    { url: 'https://www.madlan.co.il/listings/for-rent/tel-aviv-jaffa?page=2', type: 'list-rent-p2' },
+  ];
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  );
-
-  const { data: properties } = await supabase
-    .from('scouted_properties')
-    .select('source_url, address')
-    .eq('source', 'madlan')
-    .eq('is_active', true)
-    .not('source_url', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(count);
-
-  if (!properties?.length) {
-    return new Response(JSON.stringify({ error: 'No properties' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  const headers: Record<string, string> = strategy === 'with-ua' 
-    ? {
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      }
-    : { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' };
-
-  const delay = strategy === 'slow' ? 5000 : 2000;
   const results: any[] = [];
-  let ok = 0, fail = 0;
 
-  for (let i = 0; i < properties.length; i++) {
-    const p = properties[i];
+  for (let i = 0; i < testUrls.length; i++) {
+    const t = testUrls[i];
     try {
       const c = new AbortController();
-      const t = setTimeout(() => c.abort(), 10000);
-      const r = await fetch(p.source_url, { method: 'GET', headers, signal: c.signal });
-      clearTimeout(t);
-      const txt = await r.text();
-      const isBlock = r.status === 403 || txt.includes('סליחה על ההפרעה') || txt.includes('captcha');
-      if (r.status === 200 && !isBlock) ok++; else fail++;
+      const tid = setTimeout(() => c.abort(), 12000);
+      const r = await fetch(t.url, { 
+        method: 'GET', 
+        headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
+        signal: c.signal 
+      });
+      clearTimeout(tid);
+      const body = await r.text();
       results.push({
-        i: i+1, addr: (p.address||'?').substring(0,25), 
-        status: r.status, len: txt.length, isBlock,
-        hasData: txt.includes('data-auto-bulletin-id'),
+        type: t.type,
+        status: r.status,
+        len: body.length,
+        hasListings: body.includes('data-auto-bulletin-id'),
+        isBlock: r.status === 403 || body.includes('סליחה על ההפרעה'),
+        snippet: body.substring(0, 200),
       });
     } catch (e) {
-      fail++;
-      results.push({ i: i+1, error: String(e).substring(0,60) });
+      results.push({ type: t.type, error: String(e).substring(0, 80) });
     }
-    if (i < properties.length - 1) await new Promise(r => setTimeout(r, delay));
+    if (i < testUrls.length - 1) await new Promise(r => setTimeout(r, 3000));
   }
 
-  return new Response(JSON.stringify({ strategy, ok, fail, total: results.length, results }, null, 2), {
+  return new Response(JSON.stringify({ results }, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
