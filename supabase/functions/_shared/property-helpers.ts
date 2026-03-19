@@ -326,7 +326,30 @@ export async function saveProperty(
   }
   
   // Check for same-source duplicates (source+source_id OR exact normalized URL)
-  const existingSameSource = await findSameSourceDuplicate(supabase, property, normalizedSourceUrl);
+  let existingSameSource = await findSameSourceDuplicate(supabase, property, normalizedSourceUrl);
+
+  // 3) Same source + same address/city/rooms/floor/price = same listing with different ID
+  if (!existingSameSource && hasValidAddress && normalizedCity
+      && property.rooms !== undefined && property.floor !== undefined && property.price) {
+    const { data: existingByAddress } = await supabase
+      .from('scouted_properties')
+      .select('id, source_url')
+      .eq('source', property.source)
+      .eq('city', normalizedCity)
+      .eq('address', property.address)
+      .eq('rooms', property.rooms)
+      .eq('floor', property.floor)
+      .eq('price', property.price)
+      .eq('property_type', property.property_type)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingByAddress) {
+      existingSameSource = existingByAddress;
+      console.log(`🔄 Same-source address+price match: ${property.source_url} → existing ${existingByAddress.id}`);
+    }
+  }
 
   if (existingSameSource) {
     // Update existing property with latest data and reactivate if needed
