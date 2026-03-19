@@ -96,16 +96,6 @@ export const LiveMonitor: React.FC = () => {
       <div className="flex" style={{ height: '420px' }}>
         {/* Metrics Rail — LEFT side */}
         <div className="w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex flex-col justify-center gap-5">
-          <MetricItem label="אירועים/דקה" value={String(intelligence.throughput)} />
-          <MetricItem
-            label="זמן תגובה"
-            value={intelligence.avgLatency !== null ? `${(intelligence.avgLatency / 1000).toFixed(1)}s` : '—'}
-          />
-          <MetricItem
-            label="אחוז timeout"
-            value={`${intelligence.timeoutRate}%`}
-            valueClass={intelligence.timeoutRate > 20 ? 'text-red-400' : intelligence.timeoutRate > 10 ? 'text-yellow-400' : undefined}
-          />
           <MetricItem label="תורים פעילים" value={String(activeProcesses.length)} />
 
           {/* Daily runs health */}
