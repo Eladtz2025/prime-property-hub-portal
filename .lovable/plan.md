@@ -1,21 +1,39 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## בעיה: פירוט התאמות לא מוצג במוניטור
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### סיבה
+הקוד מחפש נכסים שה-`updated_at` שלהם נמצא **בתוך חלון ריצת ההתאמות** (`started_at` עד `completed_at` של ה-`scout_run`). אבל:
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+- ריצת ההתאמות האחרונה: 05:00–05:01 (דקה אחת)
+- ה-`matched_leads` עודכנו בפועל: 08:34–09:10 (שלוש שעות וחצי אחרי)
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+זה קורה כי `trigger-matching` רץ בנפרד אחרי ה-`scout_run`, ומעדכן כל נכס — מה שמשנה את `updated_at` **מחוץ** לחלון הריצה. לכן השאילתה מחזירה 0 תוצאות, ורואים רק את שורת הסיכום.
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### תיקון
+ב-`useMonitorData.ts`, שינוי השאילתה של `matchingProperties` — במקום לסנן לפי `updated_at` בחלון הריצה, לסנן לפי:
+- `updated_at` ב-24 השעות האחרונות
+- `matched_leads` לא ריק
+- מגביל ל-250 תוצאות
+
+כלומר, להחליף את:
+```typescript
+.gte('updated_at', latestMatchWindow.started_at)
+.lte('updated_at', latestMatchWindow.completed_at)
+```
+
+ב:
+```typescript
+const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+// ...
+.gte('updated_at', since24h)
+```
+
+וגם להסיר את ה-dependency על `latestMatchWindow` ב-`enabled` — השאילתה תרוץ תמיד, ותציג את כל הנכסים שהותאמו ב-24 השעות האחרונות.
+
+### השפעה
+| מה | לפני | אחרי |
+|---|---|---|
+| טאב התאמות | שורת סיכום בלבד | פירוט מלא: כתובת, מחיר, חדרים, שמות לקוחות |
+| תלות בחלון ריצה | כן (דקה אחת) | לא — 24 שעות אחרונות |
 
