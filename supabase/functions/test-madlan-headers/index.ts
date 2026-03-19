@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 12000);
+    const t = setTimeout(() => c.abort(), 6000);
     const r = await fetch(url, { 
       method: 'GET', 
       headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
