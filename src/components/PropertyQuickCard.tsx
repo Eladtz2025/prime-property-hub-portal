@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, CalendarPlus } from 'lucide-react';
+import { FileText, CalendarPlus, ChevronDown } from 'lucide-react';
 import { Property } from '@/types/property';
 import { AddAppointmentModal } from './AddAppointmentModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PropertyQuickCardProps {
   property: Property;
