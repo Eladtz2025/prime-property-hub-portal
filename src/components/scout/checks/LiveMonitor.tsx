@@ -37,7 +37,7 @@ export const LiveMonitor: React.FC = () => {
 
   // Count items per tab for badges
   const tabCounts = useMemo(() => {
-    const counts: Record<TabKey, number> = { all: feedItems.length, availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0 };
+    const counts: Record<TabKey, number> = { availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0, schedule: 0 };
     feedItems.forEach(f => { if (counts[f.type] !== undefined) counts[f.type]++; });
     return counts;
   }, [feedItems]);
