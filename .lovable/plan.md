@@ -1,21 +1,43 @@
 
 
-## תיקון עקביות casing ב-scout-madlan-jina
+## שדרוג המוניטור — 3 שינויים
 
-### שינויים בקובץ `supabase/functions/scout-madlan-jina/index.ts`
+### 1. העברת טאבים לשורת הכותרת
+כרגע הטאבים בשורה נפרדת מתחת לכותרת. נאחד אותם לאותה שורה של "מוניטור חי" — הטאבים יהיו אחרי הסטטוס, עם `flex-1` ביניהם כדי לדחוף את הטאבים שמאלה (בRTL).
 
-1. **שינוי שם המשתנה**: `Madlan_CONFIG` → `MADLAN_CONFIG` (להתאים ל-`YAD2_CONFIG`)
-2. **תיקון כל הלוגים** לפורמט עקבי `Madlan-Jina` (כמו `Yad2-Jina` ביד2)
-3. **עדכון כל ההפניות** ל-`MADLAN_CONFIG.MAX_RETRIES`, `MADLAN_CONFIG.PAGE_DELAY_MS` וכו׳
+**שינוי ב-`LiveMonitor.tsx`**: מיזוג שתי שורות ה-header לשורה אחת — אייקון + "מוניטור חי" + סטטוס + רווח + טאבים.
 
-### מקומות לשנות
-- שורה 59: `Madlan_CONFIG` → `MADLAN_CONFIG`
-- שורה 133: `Madlan_CONFIG.MAX_RETRIES` → `MADLAN_CONFIG.MAX_RETRIES`
-- שורה 228: `Madlan_CONFIG.RETRY_DELAY_MS` → `MADLAN_CONFIG.RETRY_DELAY_MS`
-- שורה 230: `Madlan_CONFIG.PAGE_DELAY_MS` → `MADLAN_CONFIG.PAGE_DELAY_MS`
-- שורה 279: `Madlan_CONFIG.MAX_BLOCK_RETRIES` → `MADLAN_CONFIG.MAX_BLOCK_RETRIES`
-- כל הודעות console.log/warn/error: להחליף `madlan-Jina` ל-`Madlan-Jina` לעקביות
+### 2. תרגום כותרות המטריקות לעברית
+| נוכחי | חדש |
+|--------|------|
+| Events/min | אירועים/דקה |
+| Avg latency | זמן תגובה |
+| Timeout rate | אחוז timeout |
+| תורים פעילים | תורים פעילים (נשאר) |
+| סטטוס | סטטוס (נשאר) |
 
-### הערה חשובה
-זהו שינוי קוסמטי בלבד — לא ישפיע על בעיית ה-0 תוצאות שנובעת מחסימה חיצונית של מדל"ן. אבל יהפוך את הקוד לנקי ועקבי.
+### 3. מטריקת "בדיקת ריצות יומית" — האם כל הריצות רצו בזמן
+
+לפי לוח הזמנים הידוע:
+- 00:00–02:30 השלמת נתונים
+- 03:00–04:30 כפילויות  
+- 05:00–06:30 זמינות
+- 07:00–08:30 התאמות
+
+**לוגיקה**: ב-`useMonitorData` נוסיף בדיקה שמסתכלת על `backfill_progress` (data_completion, dedup-scan), `availability_check_runs`, ו-`personal_scout_runs` מהיום. לכל תהליך נבדוק:
+- האם יש ריצה שהתחילה בחלון הזמן הנכון
+- האם סיימה בהצלחה
+
+**תוצאה**: מטריקה חדשה ברייל שמציגה `✓ 4/4` (ירוק) או `✗ 2/4` (אדום/צהוב) עם tooltip שמפרט מה רץ ומה לא.
+
+### שינויים טכניים
+
+**`useMonitorData.ts`**:
+- הוספת `useMemo` חדש `dailyRunsHealth` שבודק 4 תהליכים ומחזיר `{ passed: number, total: 4, details: { name, ok, time? }[] }`
+- מבוסס על הנתונים שכבר נשלפים (`recentAvailRuns`, `backfillRuns`, `lastMatchRun`, `recentScoutRuns`) — רק בדיקת תנאים, בלי שאילתות חדשות
+
+**`LiveMonitor.tsx`**:
+- מיזוג header לשורה אחת
+- תרגום labels
+- הוספת MetricItem חדש "ריצות יומיות" עם צבע מותנה
 
