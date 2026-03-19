@@ -58,6 +58,11 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
     staleTime: 30000,
   });
 
+  const cleanAddress = (addr: string | null) => {
+    if (!addr) return '—';
+    return addr.replace(/\n+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  };
+
   const filtered = React.useMemo(() => {
     if (!properties) return [];
     if (!search.trim()) return properties;
@@ -65,7 +70,8 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
     return properties.filter((p: any) =>
       (p.address?.toLowerCase().includes(term)) ||
       (p.city?.toLowerCase().includes(term)) ||
-      (p.source?.toLowerCase().includes(term))
+      (p.source?.toLowerCase().includes(term)) ||
+      (p.source_url?.toLowerCase().includes(term))
     );
   }, [properties, search]);
 
