@@ -529,7 +529,7 @@ export const ChecksDashboard: React.FC = () => {
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          primaryValue={matchStats?.total_matches ?? 0}
+          primaryValue={matchStats?.leads_matched ?? 0}
           primaryLabel="התאמות אחרונות"
           secondaryLine={`${leadCounts?.eligible ?? 0} לידים eligible`}
           insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} ממתינים להתאמה`}
