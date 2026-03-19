@@ -1,47 +1,36 @@
 
 
-## תיקון באג 2 — ספירה כפולה של `properties_checked`
+## שדרוג עיצוב שלושת הסקשנים בדשבורד
 
-### הבעיה
+בהשראת התמונה, כל סקשן בדשבורד מרגיש כ"עולם" בפני עצמו -- עם header ייחודי, מבנה פנימי שונה, ואלמנטים דקורטיביים שמבדילים אותו מהשאר. כרגע שלושת הכרטיסים שלנו (פגישות, רעיונות, פניות) כולם אותו Card סטנדרטי עם אותו סטייל.
 
-`append_run_detail` (DB function) כבר מעדכן את `properties_checked` לאורך מערך ה-`run_details`. אבל אחר כך ב-`trigger-availability-check-jina` (שורה 335) מתבצע:
+### הגישה
 
-```
-totalChecked = currentRunData.properties_checked + processedThisRun
-```
+נתן לכל כרטיס אופי ויזואלי משלו, בלי לשנות צבעוניות כללית:
 
-זה מוסיף את הבאץ' **פעמיים** — פעם דרך `append_run_detail` ופעם דרך הטריגר.
+**1. פגישות קרובות** -- סגנון "לוח שנה"
+- Header עם רקע gradient עדין (primary/5 -> transparent)
+- קו צד שמאלי צבעוני (border-l-4 primary) שנותן תחושת timeline
+- האייקון של Calendar יקבל רקע עגול עדין
+- רווח פנימי מעט יותר נדיב
 
-אותו דבר קורה ל-`inactive_marked` (שורה 336).
+**2. רעיונות לפיתוח** -- סגנון "פנקס/todo"
+- Header עם pattern עדין של קווים אופקיים (pseudo-element או bg) שמזכיר מחברת
+- פס עליון דק בצבע accent (border-t-2)
+- האייקון של Lightbulb יקבל אפקט glow עדין (shadow)
+- הפריטים בפנים יקבלו מספור או bullets ויזואליים יותר בולטים
 
-### תיקון
+**3. פניות מהאתר** -- סגנון "הודעות/inbox"
+- רקע עדין שונה (bg-muted/30 או pattern נקודות)
+- פינה עליונה ימנית עם Badge שמראה מספר פניות חדשות
+- border-t-2 בצבע שונה (כמו amber או green)
+- כל פניה תקבל avatar placeholder עגול ליד השם
 
-**קובץ: `supabase/functions/trigger-availability-check-jina/index.ts`**
+### שינויים טכניים
 
-בשורות 335-336, במקום לחבר את `processedThisRun` ו-`inactiveThisRun` לערך הקיים, פשוט להשתמש בערך שכבר נמצא ב-DB (ש-`append_run_detail` כבר עדכן):
+- **`UpcomingAppointmentsCard.tsx`** -- עדכון ה-Card wrapper עם classes ייחודיים, gradient header, border-l accent
+- **`DevelopmentIdeasCard.tsx`** -- עדכון עם border-t accent, header styling ייחודי, אפקט glow על האייקון
+- **`Dashboard.tsx`** -- עדכון כרטיס הפניות עם border-t בצבע אחר, badge counter, רקע עדין שונה
 
-```
-const totalChecked = currentRunData?.properties_checked || 0;
-const totalInactive = currentRunData?.inactive_marked || 0;
-```
-
-בנוסף, צריך לוודא שגם `inactive_marked` מתעדכן ב-`append_run_detail`. כרגע הוא לא — רק `properties_checked` מתעדכן שם. יש שתי אפשרויות:
-
-**אפשרות א׳ (מועדפת):** עדכון `append_run_detail` לספור גם `inactive_marked` מתוך ה-details שיש בהם `is_inactive = true`:
-
-```sql
-inactive_marked = (
-  SELECT count(*) FROM jsonb_array_elements(updated_details) d 
-  WHERE (d->>'is_inactive')::boolean = true
-)
-```
-
-**אפשרות ב׳:** להשאיר את `inactive_marked` מחושב רק בטריגר, אבל אז צריך לשמור את ה-`+inactiveThisRun` רק עבורו.
-
-אני ממליץ על אפשרות א׳ — כך שני המספרים מחושבים ממקור אמת אחד (`run_details`), והטריגר רק קורא אותם.
-
-### שינויים
-
-1. **DB migration** — עדכון `append_run_detail` לחשב `properties_checked` כ-count distinct ולספור גם `inactive_marked`
-2. **`trigger-availability-check-jina/index.ts`** — שורות 335-336: הסרת החיבור הכפול, שימוש בערכי DB כמות שהם
+כל השינויים הם Tailwind classes בלבד -- ללא קומפוננטות חדשות, ללא שינוי בלוגיקה.
 
