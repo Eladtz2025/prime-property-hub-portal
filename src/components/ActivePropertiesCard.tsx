@@ -66,7 +66,7 @@ export const ActivePropertiesCard: React.FC<ActivePropertiesCardProps> = ({
           >
             <CarouselContent className="-mr-2">
               {activeProperties.map((property) => (
-                <CarouselItem key={property.id} className="pr-2 basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
+                <CarouselItem key={property.id} className="pr-2 basis-1/2 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
                   <PropertyQuickCard 
                     property={property} 
                     onClick={handlePropertyClick}
