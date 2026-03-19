@@ -1,53 +1,30 @@
 
 
-## Watchdog חכם — רץ כל 5 דקות אבל יוצא מיד אם אין ריצות
+## העברת לוח זמנים לטאב במוניטור + הסרת כרטיסיות
 
-### הרעיון
-ה-cron job עצמו הוא קל מאוד — הוא רק עושה `SELECT` אחד על `availability_check_runs` לראות אם יש ריצה בסטטוס `running` עם heartbeat ישן מ-5 דקות. אם אין — יוצא מיד (פחות מ-100ms, אפס עלות). רק אם יש ריצה תקועה הוא עושה משהו.
+### מה נעשה
+1. **הוספת טאב "לוח זמנים"** למוניטור החי (LiveMonitor) — עם אייקון Clock ותוכן לוח הזמנים (NextRunCard + טבלת סריקות/ריצות)
+2. **הסרת טאב "הכל"** מהמוניטור
+3. **הסרת `<ScheduleSummaryCard />`** מ-ChecksDashboard (מסיר גם את "פעולות אחרונות" וגם את "לוח זמנים")
 
-אבל יש גישה אפילו יותר חכמה: **במקום cron חיצוני, לשפר את ה-self-chain עצמו** עם retry מובנה.
+### שינויים בקבצים
 
-### הפתרון המשולב
+**1. `src/components/scout/checks/LiveMonitor.tsx`**
+- הסרת הטאב `all` ממערך הטאבים
+- הוספת טאב `schedule` עם אייקון `Clock`
+- שינוי ברירת המחדל של `activeTab` ל-`availability` (או `schedule`)
+- בתוך ה-body: כשהטאב הפעיל הוא `schedule`, להציג את תוכן לוח הזמנים (NextRunCard + שתי העמודות סריקות/ריצות)
+- חילוץ הלוגיקה של לוח הזמנים מ-`ScheduleSummaryCard` (ה-hooks של `useScoutSettings`, `scout_configs`, חישוב `groupedByTime`, `nextGroup`, `scanGroups`, `otherGroups`) — או ייבוא כ-sub-component
 
-**שלב 1: Retry מובנה ב-self-chain** (הגנה ראשית)
-ב-`trigger-availability-check-jina`, כשה-self-chain HTTP call נכשל — לנסות שוב פעם אחת אחרי 3 שניות. זה יתפוס את רוב המקרים (timeout חד-פעמי, שגיאת רשת זמנית).
+**2. `src/components/scout/ChecksDashboard.tsx`**
+- הסרת `<ScheduleSummaryCard />` (שורה 598) וה-import שלו (שורה 13)
 
-**שלב 2: Watchdog cron קל** (רשת ביטחון)
-Cron כל 5 דקות שעושה:
-1. `SELECT` — יש ריצה `running` עם heartbeat > 5 דק?
-2. אם לא → `return` מיד (עלות אפסית)
-3. אם כן → קורא ל-`trigger-availability-check-jina` עם `{ "watchdog": true, "run_id": "..." }` להמשיך אותה
+**3. `src/components/scout/ScheduleSummaryCard.tsx`**
+- חילוץ חלק לוח הזמנים (NextRunCard, ScheduleRow, הלוגיקה של scheduleItems/groupedByTime) ל-component נפרד שניתן לייבא מתוך LiveMonitor — למשל `ScheduleContent`
+- ה-component הראשי (`ScheduleSummaryCard`) יישאר בקובץ אבל לא ייובא יותר (או יימחק)
 
-### קבצים
-1. **`supabase/functions/trigger-availability-check-jina/index.ts`** — הוספת retry ל-self-chain + טיפול בפרמטר `watchdog`
-2. **Cron job חדש** — `availability-watchdog` כל 5 דקות
-
-### למה שני השלבים?
-- ה-retry יתפוס 95% מהמקרים בלי שום עלות נוספת
-- ה-watchdog הוא רק לתרחישים קיצוניים (שני כשלונות רצופים, crash של ה-function) — ורוב הזמן הוא רק SELECT אחד ויציאה
-
-### פרטים טכניים
-
-**Retry ב-self-chain (בתוך trigger-availability-check-jina):**
-```text
-קוד קיים:
-  fetch(triggerUrl, ...) // fire-and-forget
-
-קוד חדש:
-  try {
-    await fetch(triggerUrl, ...) // await the response
-  } catch {
-    await sleep(3000)
-    try { await fetch(triggerUrl, ...) } catch { /* log and give up */ }
-  }
-```
-
-**Watchdog Edge Function logic (בתוך אותו trigger):**
-```text
-if body.watchdog:
-  SELECT from availability_check_runs 
-    WHERE status='running' AND started_at < now()-5min
-  if no stuck run → return "nothing to do"
-  else → continue that run (same as self-chain)
-```
+### התוצאה
+- המוניטור יכיל 6 טאבים: זמינות, סריקה, השלמה, כפילויות, התאמות, **לוח זמנים**
+- לוח הזמנים יוצג בתוך ה-body של המוניטור בעיצוב הדארק שלו
+- הכרטיסייה הכפולה של "לוח זמנים + פעולות אחרונות" תוסר מהדשבורד
 
