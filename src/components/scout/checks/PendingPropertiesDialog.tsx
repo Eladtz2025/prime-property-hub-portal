@@ -180,7 +180,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                       </div>
                       {p._isManualCheck && p.source_url && (
                         <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 shrink-0 mt-0.5" title="בדיקה ידנית">
-                          <Eye className="h-5 w-5" />
+                          <ClipboardCheck className="h-5 w-5" />
                         </a>
                       )}
                     </div>
