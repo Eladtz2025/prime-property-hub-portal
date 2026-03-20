@@ -1738,37 +1738,47 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
             ) : filteredProperties?.map((property) => (
                 <div
                   key={property.id}
-                  className={`border border-gray-200 rounded-lg p-2.5 shadow-sm bg-white ${property.is_active === false ? 'opacity-60' : ''}`}
+                  className={`border border-border rounded-lg p-2.5 shadow-sm bg-card ${property.is_active === false ? 'opacity-60' : ''}`}
               >
-                {/* Row 1: Title/Address, City-Neighborhood, Private/Broker, Source */}
-                <div className="flex items-center gap-1.5 text-sm">
-                  <span className="font-medium truncate flex-1 min-w-0">
-                    {property.address?.split(',')[0]?.trim() || ''}{property.neighborhood ? `, ${property.neighborhood}` : ''}
+                {/* Row 1: Badges + Price */}
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1 flex-wrap min-w-0">
+                    {getSourceBadge(property.source)}
+                    {property.property_type === 'rent' ? (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1 bg-purple-50 text-purple-700 border-purple-300 shrink-0">השכרה</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1 bg-blue-50 text-blue-700 border-blue-300 shrink-0">מכירה</Badge>
+                    )}
+                    {property.is_private === true && (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
+                    )}
+                    {property.is_private === false && (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1 bg-orange-50 text-orange-700 border-orange-300 shrink-0">תיווך</Badge>
+                    )}
+                    {appliedFilters.status === 'check_failed' && property.availability_check_reason && (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1 bg-red-50 text-red-700 border-red-300 shrink-0">
+                        {getCheckReasonLabel(property.availability_check_reason)}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="font-bold text-base text-primary shrink-0">
+                    {property.price ? `₪${property.price.toLocaleString()}` : '-'}
                   </span>
-                  <span className="text-muted-foreground text-xs shrink-0">
-                    {property.city?.replace(' יפו', '') || 'תל אביב'}
-                  </span>
-                  {property.property_type === 'rent' ? (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-purple-50 text-purple-700 border-purple-300 shrink-0">השכרה</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-blue-50 text-blue-700 border-blue-300 shrink-0">מכירה</Badge>
-                  )}
-                  {property.is_private === true && (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-green-50 text-green-700 border-green-300 shrink-0">פרטי</Badge>
-                  )}
-                  {property.is_private === false && (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-orange-50 text-orange-700 border-orange-300 shrink-0">תיווך</Badge>
-                  )}
-                  {getSourceBadge(property.source)}
-                  {appliedFilters.status === 'check_failed' && property.availability_check_reason && (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1 bg-red-50 text-red-700 border-red-300 shrink-0">
-                      {getCheckReasonLabel(property.availability_check_reason)}
-                    </Badge>
-                  )}
                 </div>
 
-                {/* Row 2: Actions | Price+Time */}
-                <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t">
+                {/* Row 2: Address + City — full width */}
+                <div className="mt-1 text-sm">
+                  <span className="font-medium">
+                    {property.address?.split(',')[0]?.trim() || ''}
+                    {property.neighborhood ? `, ${property.neighborhood}` : ''}
+                  </span>
+                  <span className="text-muted-foreground text-xs mr-1.5">
+                    {property.city?.replace(' יפו', '') || 'תל אביב'}
+                  </span>
+                </div>
+
+                {/* Row 3: Actions + Time */}
+                <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-border">
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button
                       variant="ghost"
@@ -1827,16 +1837,9 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                       )}
                     </Button>
                   </div>
-                  
-                  {/* Price + Time grouped together */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-semibold text-sm shrink-0">
-                      {property.price ? `₪${property.price.toLocaleString()}` : '-'}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
-                    </span>
-                  </div>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {formatDistanceToNow(new Date(property.first_seen_at), { addSuffix: true, locale: he })}
+                  </span>
                 </div>
               </div>
             ))}
