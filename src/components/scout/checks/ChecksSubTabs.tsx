@@ -15,26 +15,26 @@ export const ChecksSubTabs: React.FC = () => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/50 p-1" dir="ltr">
-        <TabsTrigger value="backfill" className="flex items-center gap-1 text-xs flex-1 min-w-[80px]">
+      <TabsList className="w-full flex h-auto gap-1 bg-muted/50 p-1 overflow-x-auto scrollbar-none" dir="ltr">
+        <TabsTrigger value="backfill" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <Database className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">Backfill</span>
+          <span>Backfill</span>
         </TabsTrigger>
-        <TabsTrigger value="matching" className="flex items-center gap-1 text-xs flex-1 min-w-[80px]">
+        <TabsTrigger value="matching" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <Users className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">התאמות</span>
+          <span>התאמות</span>
         </TabsTrigger>
-        <TabsTrigger value="dedup" className="flex items-center gap-1 text-xs flex-1 min-w-[80px]">
+        <TabsTrigger value="dedup" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <Copy className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">כפילויות</span>
+          <span>כפילויות</span>
         </TabsTrigger>
-        <TabsTrigger value="availability" className="flex items-center gap-1 text-xs flex-1 min-w-[80px]">
+        <TabsTrigger value="availability" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <Shield className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">זמינות</span>
+          <span>זמינות</span>
         </TabsTrigger>
-        <TabsTrigger value="scans" className="flex items-center gap-1 text-xs flex-1 min-w-[80px]">
+        <TabsTrigger value="scans" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <History className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">סריקות</span>
+          <span>סריקות</span>
         </TabsTrigger>
       </TabsList>
 
