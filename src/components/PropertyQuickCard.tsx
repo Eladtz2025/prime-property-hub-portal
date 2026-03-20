@@ -62,7 +62,7 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
+                      className="w-full text-xs h-9 md:h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
                     >
                       <ChevronDown className="h-4 w-4 ml-2" />
                       פעולות
