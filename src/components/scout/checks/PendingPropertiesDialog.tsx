@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Loader2, Eye } from 'lucide-react';
+import { Search, Loader2, ClipboardCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { SearchHighlight } from '@/components/SearchHighlight';
@@ -180,7 +180,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                       </div>
                       {p._isManualCheck && p.source_url && (
                         <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 shrink-0 mt-0.5" title="בדיקה ידנית">
-                          <Eye className="h-5 w-5" />
+                          <ClipboardCheck className="h-5 w-5" />
                         </a>
                       )}
                     </div>
@@ -237,7 +237,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                         <TableCell>
                           {p._isManualCheck && p.source_url && (
                             <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 transition-colors" title="בדיקה ידנית">
-                              <Eye className="h-4 w-4" />
+                              <ClipboardCheck className="h-4 w-4" />
                             </a>
                           )}
                         </TableCell>
