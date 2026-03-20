@@ -137,82 +137,116 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
           />
         </div>
 
-        {/* Table */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              {search ? 'לא נמצאו תוצאות' : 'אין נכסים ממתינים'}
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>כתובת</TableHead>
-                  <TableHead>עיר</TableHead>
-                  <TableHead>חדרים</TableHead>
-                  <TableHead>קומה</TableHead>
-                  <TableHead>מחיר</TableHead>
-                  <TableHead>מקור</TableHead>
-                  <TableHead>סיבה</TableHead>
-                  <TableHead>נבדק לאחרונה</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                      {search ? 'לא נמצאו תוצאות' : 'אין נכסים ממתינים'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((p: any) => (
-                    <TableRow
-                      key={p.id}
-                      className={p._isManualCheck ? 'bg-destructive/10' : ''}
-                    >
-                      <TableCell>
+            <>
+              {/* Mobile: card list */}
+              <div className="md:hidden space-y-2 p-2">
+                {filtered.map((p: any) => (
+                  <div
+                    key={p.id}
+                    className={`rounded-lg border p-3 ${p._isManualCheck ? 'bg-destructive/10 border-destructive/20' : 'border-border'}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
                         {p.source_url ? (
-                          <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                          <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-primary transition-colors line-clamp-1">
                             <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
                           </a>
                         ) : (
-                          <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
+                          <p className="text-sm font-medium line-clamp-1">
+                            <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
+                          </p>
                         )}
-                      </TableCell>
-                      <TableCell><SearchHighlight text={p.city || '—'} searchTerm={search} /></TableCell>
-                      <TableCell>{p.rooms ?? '—'}</TableCell>
-                      <TableCell>{p.floor ?? '—'}</TableCell>
-                      <TableCell>{p.price ? `₪${p.price.toLocaleString('he-IL')}` : '—'}</TableCell>
-                      <TableCell><SearchHighlight text={p.source || '—'} searchTerm={search} /></TableCell>
-                      <TableCell className="text-xs">
-                        {p._isManualCheck ? (
-                          <span className="text-destructive font-medium">{reasonLabel(p.availability_check_reason)}</span>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.availability_checked_at
-                          ? format(new Date(p.availability_checked_at), 'dd/MM HH:mm', { locale: he })
-                          : 'לא נבדק'}
-                      </TableCell>
-                      <TableCell>
-                        {p._isManualCheck && p.source_url && (
-                          <a
-                            href={p.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-destructive hover:text-destructive/80 transition-colors"
-                            title="בדיקה ידנית"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </a>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <SearchHighlight text={p.city || '—'} searchTerm={search} />
+                          <span>·</span>
+                          <span>{p.price ? `₪${p.price.toLocaleString('he-IL')}` : '—'}</span>
+                          <span>·</span>
+                          <span>{p.availability_checked_at ? format(new Date(p.availability_checked_at), 'dd/MM HH:mm', { locale: he }) : 'לא נבדק'}</span>
+                        </div>
+                        {p._isManualCheck && (
+                          <p className="text-xs text-destructive mt-1">{reasonLabel(p.availability_check_reason)}</p>
                         )}
-                      </TableCell>
+                      </div>
+                      {p._isManualCheck && p.source_url && (
+                        <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 shrink-0 mt-0.5" title="בדיקה ידנית">
+                          <Eye className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>כתובת</TableHead>
+                      <TableHead>עיר</TableHead>
+                      <TableHead>חדרים</TableHead>
+                      <TableHead>קומה</TableHead>
+                      <TableHead>מחיר</TableHead>
+                      <TableHead>מקור</TableHead>
+                      <TableHead>סיבה</TableHead>
+                      <TableHead>נבדק לאחרונה</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((p: any) => (
+                      <TableRow
+                        key={p.id}
+                        className={p._isManualCheck ? 'bg-destructive/10' : ''}
+                      >
+                        <TableCell>
+                          {p.source_url ? (
+                            <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                              <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
+                            </a>
+                          ) : (
+                            <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
+                          )}
+                        </TableCell>
+                        <TableCell><SearchHighlight text={p.city || '—'} searchTerm={search} /></TableCell>
+                        <TableCell>{p.rooms ?? '—'}</TableCell>
+                        <TableCell>{p.floor ?? '—'}</TableCell>
+                        <TableCell>{p.price ? `₪${p.price.toLocaleString('he-IL')}` : '—'}</TableCell>
+                        <TableCell><SearchHighlight text={p.source || '—'} searchTerm={search} /></TableCell>
+                        <TableCell className="text-xs">
+                          {p._isManualCheck ? (
+                            <span className="text-destructive font-medium">{reasonLabel(p.availability_check_reason)}</span>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {p.availability_checked_at
+                            ? format(new Date(p.availability_checked_at), 'dd/MM HH:mm', { locale: he })
+                            : 'לא נבדק'}
+                        </TableCell>
+                        <TableCell>
+                          {p._isManualCheck && p.source_url && (
+                            <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 transition-colors" title="בדיקה ידנית">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           {filtered.length > 0 && (
             <p className="text-xs text-muted-foreground text-center py-2">

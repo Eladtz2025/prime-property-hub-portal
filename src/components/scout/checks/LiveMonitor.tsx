@@ -99,8 +99,8 @@ export const LiveMonitor: React.FC = () => {
 
       {/* Body */}
       <div className="flex" style={{ height: '420px' }}>
-        {/* Metrics Rail — LEFT side */}
-        <div className="w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex flex-col justify-center gap-5">
+        {/* Metrics Rail — LEFT side (hidden on mobile) */}
+        <div className="hidden md:flex w-[140px] shrink-0 border-l border-white/[0.04] p-4 flex-col justify-center gap-5">
           <MetricItem label="תורים פעילים" value={String(activeProcesses.length)} />
 
           {/* Daily runs health */}
