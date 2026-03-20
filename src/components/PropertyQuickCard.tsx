@@ -56,50 +56,13 @@ export const PropertyQuickCard: React.FC<PropertyQuickCardProps> = ({ property, 
             
             {/* Mobile: icon buttons row | Desktop: dropdown */}
             <div className="mt-2">
-              {/* Mobile icon buttons */}
-              <div className="flex gap-1.5 md:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-9 text-xs font-medium border-primary/30 hover:bg-primary/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const params = new URLSearchParams({
-                      address: property.address || '',
-                      city: property.city || '',
-                      rooms: property.rooms?.toString() || '',
-                      floor: property.floor?.toString() || '',
-                      price: property.monthlyRent?.toString() || '',
-                      type: property.property_type || 'rental'
-                    });
-                    window.open(`/brokerage-form/new?${params.toString()}`, '_blank');
-                  }}
-                >
-                  <FileText className="h-4 w-4 ml-1" />
-                  תיווך
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-9 text-xs font-medium border-primary/30 hover:bg-primary/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsAppointmentModalOpen(true);
-                  }}
-                >
-                  <CalendarPlus className="h-4 w-4 ml-1" />
-                  פגישה
-                </Button>
-              </div>
-
-              {/* Desktop dropdown */}
-              <div className="hidden md:block">
+              <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-xs h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
+                      className="w-full text-xs h-9 md:h-8 px-3 font-medium border-primary/30 hover:bg-primary/10"
                     >
                       <ChevronDown className="h-4 w-4 ml-2" />
                       פעולות
