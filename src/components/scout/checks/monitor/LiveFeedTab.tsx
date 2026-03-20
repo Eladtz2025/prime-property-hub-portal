@@ -114,7 +114,8 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                   key={`${item.type}-${i}`}
                   className={`${cfg.bgClass} ${isLast ? 'animate-in fade-in-50 slide-in-from-bottom-1 duration-300' : ''} transition-colors hover:bg-white/[0.03]`}
                 >
-                  <div className="flex items-center gap-2 px-3 py-1.5 pb-0.5">
+                  {/* Desktop: single row */}
+                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 pb-0.5">
                     <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
                       {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
                     </span>
@@ -122,30 +123,43 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                     <span className="shrink-0">{statusIcon(item.status)}</span>
                     {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
                     {item.url ? (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[13px] text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors"
-                        onClick={e => e.stopPropagation()}
-                      >
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
                         {item.primary}
                       </a>
                     ) : (
                       <span className="text-[13px] text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
                     )}
                     {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
-                    {item.extra?.price && (
-                      <span className="text-[10px] text-gray-500 shrink-0 font-mono">
-                        ₪{(item.extra.price / 1000).toFixed(0)}K
-                      </span>
-                    )}
-                    {item.extra?.rooms && (
-                      <span className="text-[10px] text-gray-500 shrink-0">{item.extra.rooms}ח׳</span>
-                    )}
+                    {item.extra?.price && <span className="text-[10px] text-gray-500 shrink-0 font-mono">₪{(item.extra.price / 1000).toFixed(0)}K</span>}
+                    {item.extra?.rooms && <span className="text-[10px] text-gray-500 shrink-0">{item.extra.rooms}ח׳</span>}
                   </div>
-                  <div className="flex items-center gap-2 px-3 pb-1.5 pr-[72px]">
+                  <div className="hidden md:flex items-center gap-2 px-3 pb-1.5 pr-[72px]">
                     <span className="text-[11px] text-gray-500 truncate flex-1">{item.details}</span>
+                  </div>
+
+                  {/* Mobile: two rows */}
+                  <div className="md:hidden px-3 py-1.5 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
+                      {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
+                      <span className="shrink-0">{statusIcon(item.status)}</span>
+                      {item.extra?.price && <span className="text-[10px] text-gray-400 font-mono shrink-0">₪{(item.extra.price / 1000).toFixed(0)}K</span>}
+                      {item.extra?.rooms && <span className="text-[10px] text-gray-500 shrink-0">{item.extra.rooms}ח׳</span>}
+                      <span className="flex-1" />
+                      <span className="text-[10px] text-gray-600 font-mono shrink-0" dir="ltr">
+                        {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
+                      </span>
+                    </div>
+                    <div>
+                      {item.url ? (
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-gray-200 font-medium hover:text-white transition-colors line-clamp-1" onClick={e => e.stopPropagation()}>
+                          {item.primary}
+                        </a>
+                      ) : (
+                        <span className="text-[12px] text-gray-200 font-medium line-clamp-1">{item.primary}</span>
+                      )}
+                      {item.details && <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{item.details}</p>}
+                    </div>
                   </div>
                 </div>
               );

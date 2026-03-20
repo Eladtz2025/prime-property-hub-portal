@@ -56,44 +56,76 @@ export const LiveMonitor: React.FC = () => {
 
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-sm overflow-hidden shadow-2xl" dir="rtl">
-      {/* Single header row: title + status + tabs */}
-      <div className="border-b border-white/[0.05] flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 overflow-x-auto scrollbar-none">
-        <Monitor className="h-4 w-4 text-gray-400 shrink-0 hidden md:block" />
-        <span className="text-xs md:text-sm font-medium text-gray-200 shrink-0">מוניטור</span>
-        <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
-        <span className={`text-[10px] md:text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
-        {/* Mobile compact health */}
-        <span className={`md:hidden text-[10px] font-mono ${healthColor} shrink-0`}>
-          {dailyRunsHealth.passed}/{dailyRunsHealth.total}
-        </span>
-        <div className="w-px h-4 bg-white/[0.08] shrink-0" />
-        <div className="flex-1 flex justify-center gap-0.5 md:gap-1">
-        {tabs.map(tab => {
-          const isActive = activeTab === tab.key;
-          const count = tabCounts[tab.key];
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2.5 py-1.5 rounded-lg text-[10px] md:text-[11px] font-medium transition-colors whitespace-nowrap shrink-0 ${
-                isActive
-                  ? 'bg-white/[0.08] text-gray-100'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-              }`}
-            >
-              <Icon className="h-3 w-3 hidden md:block" />
-              {tab.label}
-              {count > 0 && (
-                <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
-                  isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
-                }`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* Header: single row on desktop, two rows on mobile */}
+      <div className="border-b border-white/[0.05]">
+        {/* Row 1: title + status */}
+        <div className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2">
+          <Monitor className="h-4 w-4 text-gray-400 shrink-0 hidden md:block" />
+          <span className="text-xs md:text-sm font-medium text-gray-200 shrink-0">מוניטור</span>
+          <span className={`h-2 w-2 rounded-full ${statusDotClass} shrink-0`} />
+          <span className={`text-[10px] md:text-xs ${statusTextClass} shrink-0`}>{statusText}</span>
+          <span className={`md:hidden text-[10px] font-mono ${healthColor} shrink-0`}>
+            {dailyRunsHealth.passed}/{dailyRunsHealth.total}
+          </span>
+
+          {/* Desktop: tabs inline */}
+          <div className="hidden md:flex items-center gap-1 flex-1 justify-center">
+            <div className="w-px h-4 bg-white/[0.08] shrink-0 mr-2" />
+            {tabs.map(tab => {
+              const isActive = activeTab === tab.key;
+              const count = tabCounts[tab.key];
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? 'bg-white/[0.08] text-gray-100'
+                      : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {tab.label}
+                  {count > 0 && (
+                    <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                      isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 2 (mobile only): scrollable tabs */}
+        <div className="md:hidden flex gap-1 px-2 pb-2 overflow-x-auto scrollbar-none">
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.key;
+            const count = tabCounts[tab.key];
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-white/[0.08] text-gray-100'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                }`}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                    isActive ? 'bg-white/10 text-gray-300' : 'bg-white/[0.04] text-gray-600'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
