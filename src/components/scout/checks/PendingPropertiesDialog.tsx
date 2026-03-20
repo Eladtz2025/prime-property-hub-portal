@@ -237,7 +237,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                         <TableCell>
                           {p._isManualCheck && p.source_url && (
                             <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 transition-colors" title="בדיקה ידנית">
-                              <Eye className="h-4 w-4" />
+                              <ClipboardCheck className="h-4 w-4" />
                             </a>
                           )}
                         </TableCell>
