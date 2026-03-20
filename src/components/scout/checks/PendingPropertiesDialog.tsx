@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { SearchHighlight } from '@/components/SearchHighlight';
+import { toast } from '@/hooks/use-toast';
 
 interface PendingPropertiesDialogProps {
   open: boolean;
@@ -16,6 +18,8 @@ interface PendingPropertiesDialogProps {
 
 export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = ({ open, onOpenChange }) => {
   const [search, setSearch] = useState('');
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Fetch pending properties (from RPC)
   const { data: pendingProperties, isLoading: loadingPending } = useQuery({
@@ -70,6 +74,34 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
     },
     enabled: open,
     staleTime: 30000,
+  });
+
+  // Manual availability check mutation
+  const checkAvailabilityMutation = useMutation({
+    mutationFn: async (propertyId: string) => {
+      setCheckingId(propertyId);
+      const { data, error } = await supabase.functions.invoke('check-property-availability-jina', {
+        body: { property_ids: [propertyId] },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      const result = data?.results?.[0];
+      if (result?.is_inactive) {
+        toast({ title: 'הנכס סומן כלא פעיל', description: result.reason });
+      } else {
+        toast({ title: 'הנכס פעיל', description: 'הבדיקה הושלמה בהצלחה' });
+      }
+      queryClient.invalidateQueries({ queryKey: ['pending-availability-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['manual-check-properties'] });
+    },
+    onError: (error) => {
+      toast({ title: 'שגיאה בבדיקה', description: error.message, variant: 'destructive' });
+    },
+    onSettled: () => {
+      setCheckingId(null);
+    },
   });
 
   const isLoading = loadingPending || loadingManual;
@@ -178,10 +210,21 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                           <p className="text-xs text-destructive mt-1">{reasonLabel(p.availability_check_reason)}</p>
                         )}
                       </div>
-                      {p._isManualCheck && p.source_url && (
-                        <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 shrink-0 mt-0.5" title="בדיקה ידנית">
-                          <RefreshCw className="h-5 w-5" />
-                        </a>
+                      {p._isManualCheck && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive/80 shrink-0 h-8 w-8"
+                          title="בדיקת זמינות ידנית"
+                          disabled={checkingId === p.id}
+                          onClick={() => checkAvailabilityMutation.mutate(p.id)}
+                        >
+                          {checkingId === p.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-5 w-5" />
+                          )}
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -235,10 +278,21 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                             : 'לא נבדק'}
                         </TableCell>
                         <TableCell>
-                          {p._isManualCheck && p.source_url && (
-                            <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="text-destructive hover:text-destructive/80 transition-colors" title="בדיקה ידנית">
-                              <RefreshCw className="h-4 w-4" />
-                            </a>
+                          {p._isManualCheck && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive/80 h-8 w-8"
+                              title="בדיקת זמינות ידנית"
+                              disabled={checkingId === p.id}
+                              onClick={() => checkAvailabilityMutation.mutate(p.id)}
+                            >
+                              {checkingId === p.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
