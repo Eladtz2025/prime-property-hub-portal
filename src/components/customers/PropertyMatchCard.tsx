@@ -102,7 +102,7 @@ export const ScoutedPropertyCard = ({
         </AlertDialog>
       )}
 
-      <div className="flex items-center gap-1 flex-wrap mb-1 pr-6">
+      <div className="flex items-center gap-1 flex-wrap mb-1 pr-6 pl-6">
         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
           {match.source}
         </Badge>
