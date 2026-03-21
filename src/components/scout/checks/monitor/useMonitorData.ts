@@ -77,7 +77,7 @@ export interface FeedItem {
   source?: string;
   status: 'ok' | 'error' | 'warning' | 'pending';
   url?: string;
-  extra?: { price?: number; rooms?: number; floor?: number };
+  extra?: { price?: number; rooms?: number; floor?: number; neighborhood?: string; is_private?: boolean };
   eventKind?: 'found' | 'matched' | 'timeout' | 'pushed' | 'skipped' | 'checked' | 'inactive' | 'error';
 }
 
