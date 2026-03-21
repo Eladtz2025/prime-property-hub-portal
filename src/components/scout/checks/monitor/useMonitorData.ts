@@ -311,7 +311,7 @@ export function useMonitorData() {
       for (const [source, run] of latestCompletedRuns) {
         const { data } = await supabase
           .from('scouted_properties')
-          .select('address, neighborhood, price, rooms, source, source_url, created_at, last_seen_at')
+          .select('address, neighborhood, price, rooms, source, source_url, created_at, last_seen_at, is_private, floor')
           .eq('source', source)
           .gte('last_seen_at', run.started_at)
           .lte('last_seen_at', run.completed_at)
