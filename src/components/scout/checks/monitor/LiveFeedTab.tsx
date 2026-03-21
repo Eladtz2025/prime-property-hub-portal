@@ -58,8 +58,8 @@ const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
   if (extra.is_private !== undefined) {
     badges.push(
       extra.is_private
-        ? <span key="prv" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-2.5 w-2.5" />פרטי</span>
-        : <span key="brk" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />תיווך</span>
+        ? <span key="prv" className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-3 w-3" />פרטי</span>
+        : <span key="brk" className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-3 w-3" />תיווך</span>
     );
   }
   if (extra.price) {
