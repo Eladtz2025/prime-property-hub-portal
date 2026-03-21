@@ -451,7 +451,7 @@ export async function saveProperty(
         price: property.price,
         title: property.title,
         city: normalizedCity,
-        neighborhood: property.neighborhood,
+        neighborhood: normalizedNeighborhood,
         address: property.address,
         rooms: property.rooms,
         size: property.size,
