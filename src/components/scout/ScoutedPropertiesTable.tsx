@@ -394,6 +394,31 @@ export const ScoutedPropertiesTable: React.FC = () => {
     ownerType: 'all'
   });
 
+  // Street-to-neighborhood lookup cache
+  const { data: streetNeighborhoodMap } = useQuery({
+    queryKey: ['street-neighborhood-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('street_neighborhoods')
+        .select('street_name, neighborhood')
+        .eq('city', 'תל אביב יפו');
+      
+      if (error) {
+        console.error('Failed to load street neighborhoods:', error);
+        return new Map<string, string>();
+      }
+      
+      const map = new Map<string, string>();
+      for (const row of data || []) {
+        if (row.street_name && row.neighborhood) {
+          map.set(row.street_name, row.neighborhood);
+        }
+      }
+      return map;
+    },
+    staleTime: 1000 * 60 * 30, // Cache for 30 minutes
+  });
+
   // Statistics query
   const { data: stats } = useQuery({
     queryKey: ['scouted-properties-stats'],
