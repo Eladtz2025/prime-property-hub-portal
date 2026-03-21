@@ -529,7 +529,7 @@ export function useMonitorData() {
             items.push({
               type: 'scan',
               timestamp: prop.last_seen_at || prop.created_at,
-              primary: formatCleanAddress(prop.address, undefined),
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: '',
               source: prop.source ?? undefined,
               status: 'ok',
@@ -576,7 +576,7 @@ export function useMonitorData() {
             items.push({
               type: 'dedup',
               timestamp: prop.dedup_checked_at || '',
-              primary: formatCleanAddress(prop.address, undefined),
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: groupLabel,
               source: prop.source ?? undefined,
               status: 'ok',
@@ -622,6 +622,7 @@ export function useMonitorData() {
             source: item.source,
             status: statusMap[item.status] || 'warning',
             url: item.source_url,
+            extra: { neighborhood: item.neighborhood ?? undefined },
             eventKind: item.status === 'ok' ? 'pushed' : item.status === 'no_new_data' ? 'skipped' : 'error',
           });
         });
@@ -665,7 +666,7 @@ export function useMonitorData() {
         items.push({
           type: 'matching',
           timestamp: prop.updated_at || '',
-          primary: formatCleanAddress(prop.address, undefined),
+          primary: formatCleanAddress(prop.address, prop.neighborhood),
           details: matchDetail,
           source: prop.source ?? undefined,
           status: 'ok',
