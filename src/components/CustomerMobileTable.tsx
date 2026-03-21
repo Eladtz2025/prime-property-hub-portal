@@ -251,107 +251,87 @@ export const CustomerMobileTable = ({
 
   return (
     <>
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="text-right font-semibold py-2 px-2 text-xs">שם</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-9">סוג</TableHead>
-              <TableHead className="text-right font-semibold py-2 px-1 text-xs w-16">תקציב</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-12">עדיפות</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-10">התאמות</TableHead>
-              <TableHead className="text-center font-semibold py-2 px-1 text-xs w-10">זמן</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {customers.map((customer) => {
-              const timeAgo = getTimeAgo(customer.last_contact_date, customer.created_at);
-              
-              return (
-                <TableRow
-                  key={customer.id}
-                  className={`cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''}`}
-                  onClick={() => handleSelectCustomer(customer)}
-                >
-                  <TableCell className="py-2.5 px-2">
-                    <div className="flex items-center gap-1.5">
-                      {customer.phone && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-6 w-6 p-0 text-green-600 shrink-0" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const message = encodeURIComponent(`שלום ${customer.name}!`);
-                            window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <div className="flex flex-col gap-0.5">
-                        {customer.phone ? (
-                          <a 
-                            href={`tel:${customer.phone}`}
-                            className="font-medium text-sm text-blue-600 hover:text-blue-800 truncate max-w-[80px]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {customer.name}
-                          </a>
-                        ) : (
-                          <span className="font-medium text-sm truncate max-w-[80px]">
-                            {customer.name}
-                          </span>
-                        )}
-                        {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0">מוסתר</Badge>}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-1 text-center">
-                    <Badge variant="outline" className="text-[9px] px-1 py-0">
-                      {propertyTypeLabels[customer.property_type] || '-'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-1 text-right">
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatBudget(customer.budget_min, customer.budget_max)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-1 text-center">
-                    <span 
-                      className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium text-white ${priorityColors[customer.priority]}`}
-                    >
-                      {priorityLabels[customer.priority]}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-1 text-center">
-                    <MobileMatchesCell
-                      customerId={customer.id}
-                      preferredNeighborhoods={customer.preferred_neighborhoods}
-                      preferredCities={customer.preferred_cities}
-                      budgetMin={customer.budget_min}
-                      budgetMax={customer.budget_max}
-                      roomsMin={customer.rooms_min}
-                      roomsMax={customer.rooms_max}
-                      propertyType={customer.property_type}
-                      onMatchesClick={(data) => {
-                        setMatchesData({
-                          customerName: customer.name,
-                          customerPhone: customer.phone,
-                          scoutedMatchGroups: data.scoutedMatchGroups,
-                        });
-                        setMatchesSheetOpen(true);
+      <div className="space-y-1.5">
+        {customers.map((customer) => {
+          const timeAgo = getTimeAgo(customer.last_contact_date, customer.created_at);
+          
+          return (
+            <div
+              key={customer.id}
+              className={`rounded-lg border bg-card p-2.5 cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''}`}
+              onClick={() => handleSelectCustomer(customer)}
+            >
+              {/* Row 1: WhatsApp + Name + Type badge ... Budget + Priority */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  {customer.phone && (
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 w-6 p-0 text-green-600 shrink-0" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const message = encodeURIComponent(`שלום ${customer.name}!`);
+                        window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
                       }}
-                    />
-                  </TableCell>
-                  <TableCell className={`py-2.5 px-1 text-center text-[10px] font-medium ${timeAgo.color}`}>
-                    {timeAgo.text}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {customer.phone ? (
+                    <a 
+                      href={`tel:${customer.phone}`}
+                      className="font-medium text-sm text-blue-600 truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {customer.name}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-sm truncate">{customer.name}</span>
+                  )}
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">
+                    {propertyTypeLabels[customer.property_type] || '-'}
+                  </Badge>
+                  {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0 shrink-0">מוסתר</Badge>}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {formatBudget(customer.budget_min, customer.budget_max)}
+                  </span>
+                  <span 
+                    className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium text-white ${priorityColors[customer.priority]}`}
+                  >
+                    {priorityLabels[customer.priority]}
+                  </span>
+                </div>
+              </div>
+              {/* Row 2: Matches + Last contact time */}
+              <div className="flex items-center justify-between mt-1">
+                <MobileMatchesCell
+                  customerId={customer.id}
+                  preferredNeighborhoods={customer.preferred_neighborhoods}
+                  preferredCities={customer.preferred_cities}
+                  budgetMin={customer.budget_min}
+                  budgetMax={customer.budget_max}
+                  roomsMin={customer.rooms_min}
+                  roomsMax={customer.rooms_max}
+                  propertyType={customer.property_type}
+                  onMatchesClick={(data) => {
+                    setMatchesData({
+                      customerName: customer.name,
+                      customerPhone: customer.phone,
+                      scoutedMatchGroups: data.scoutedMatchGroups,
+                    });
+                    setMatchesSheetOpen(true);
+                  }}
+                />
+                <span className={`text-[10px] font-medium ${timeAgo.color}`}>
+                  {timeAgo.text}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Mobile Edit Sheet */}
