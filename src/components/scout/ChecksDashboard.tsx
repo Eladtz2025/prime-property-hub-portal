@@ -172,15 +172,63 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  // Eligible & ineligible leads count for matching
+  // Pending properties for matching (status='new' and active)
+  const { data: matchingPendingCount } = useQuery({
+    queryKey: ['matching-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('status', 'new');
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 15000,
+  });
+
+  // Lead stats for matching card
   const { data: leadCounts } = useQuery({
     queryKey: ['lead-eligibility-counts'],
     queryFn: async () => {
-      const [eligibleRes, ineligibleRes] = await Promise.all([
+      const [eligibleRes, incompleteRes] = await Promise.all([
         supabase.from('contact_leads').select('id', { count: 'exact', head: true }).eq('matching_status', 'eligible'),
         supabase.from('contact_leads').select('id', { count: 'exact', head: true }).eq('matching_status', 'incomplete'),
       ]);
-      return { eligible: eligibleRes.count ?? 0, ineligible: ineligibleRes.count ?? 0 };
+      const eligible = eligibleRes.count ?? 0;
+      const incomplete = incompleteRes.count ?? 0;
+
+      // Get unique lead_ids that have matches in active properties
+      const { data: matchedProps } = await supabase
+        .from('scouted_properties')
+        .select('matched_leads')
+        .eq('is_active', true)
+        .not('matched_leads', 'is', null)
+        .neq('matched_leads', '[]');
+
+      const matchedLeadIds = new Set<string>();
+      if (matchedProps) {
+        for (const prop of matchedProps) {
+          const leads = prop.matched_leads as any[];
+          if (Array.isArray(leads)) {
+            for (const l of leads) {
+              if (l?.lead_id) matchedLeadIds.add(l.lead_id);
+            }
+          }
+        }
+      }
+
+      // Get all eligible lead IDs to intersect
+      const { data: eligibleLeads } = await supabase
+        .from('contact_leads')
+        .select('id')
+        .eq('matching_status', 'eligible');
+
+      const eligibleIds = new Set((eligibleLeads || []).map(l => l.id));
+      const withMatches = [...matchedLeadIds].filter(id => eligibleIds.has(id)).length;
+      const withoutMatches = eligible - withMatches;
+
+      return { eligible, incomplete, total: eligible + incomplete, withMatches, withoutMatches };
     },
     refetchInterval: 30000,
   });
