@@ -665,7 +665,7 @@ export function useMonitorData() {
         items.push({
           type: 'matching',
           timestamp: prop.updated_at || '',
-          primary: formatCleanAddress(prop.address, undefined),
+          primary: formatCleanAddress(prop.address, prop.neighborhood),
           details: matchDetail,
           source: prop.source ?? undefined,
           status: 'ok',
