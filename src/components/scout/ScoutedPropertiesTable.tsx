@@ -1515,7 +1515,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                   <TableHead className="w-[100px]">מחיר</TableHead>
                   <TableHead className="w-[80px]">חדרים</TableHead>
                   <TableHead className="w-[80px]">גודל</TableHead>
-                  <TableHead className="w-[140px]">סטטוס</TableHead>
+                  <TableHead className="w-[110px]">סטטוס</TableHead>
                   {appliedFilters.status === 'check_failed' && (
                     <TableHead className="w-[120px]">סיבה</TableHead>
                   )}
