@@ -153,10 +153,7 @@ export const WhatsAppCompose: React.FC = () => {
     setSelectedTemplate(templateId);
   };
 
-  const formatPhone = (phone: string) => {
-    if (phone.startsWith('972')) return '0' + phone.substring(3);
-    return phone;
-  };
+  const formatPhone = (phone: string) => formatIsraeliPhone(phone);
 
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !message.trim()) {
