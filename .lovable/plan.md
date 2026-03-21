@@ -1,20 +1,32 @@
 
 
-## הסרת auto-scroll מהמוניטור
+## איחוד כפתורי הוספה לתפריט דרופדאון אחד
 
-### בעיה
-כשמחליפים טאב במוניטור, ה-`LiveFeedTab` גולל אוטומטית לתחתית הרשימה בגלל `autoScroll` שמופעל כברירת מחדל ו-`useEffect` שמזיז את `scrollTop` ל-`scrollHeight` בכל פעם שנוספים פריטים.
+### מה ישתנה
+ב-`AdminCustomers.tsx`, שני הכפתורים "לקוח חדש" ו"מתווך חדש" יוחלפו בכפתור אחד **"+ הוספה"** עם DropdownMenu שמציע שתי אפשרויות: "לקוח" ו"מתווך".
 
-### פתרון
-הסרת כל לוגיקת ה-auto-scroll מ-`LiveFeedTab.tsx`:
+### שינוי — `src/pages/AdminCustomers.tsx`
+- הוספת imports: `DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger`
+- החלפת שני כפתורי ה-Plus בכפתור דרופדאון אחד:
 
-- מחיקת `useState(autoScroll)` ו-`useState(prevLength)`
-- מחיקת ה-`useEffect` שמבצע `scrollTop = scrollHeight`
-- מחיקת `handleScroll` שמזהה גלילה ידנית
-- מחיקת `onScroll={handleScroll}` מה-div
-- מחיקת כפתור "חזור למטה" (`ArrowDown`)
-- הסרת imports מיותרים (`useEffect`, `useState`, `ArrowDown`)
+```tsx
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button size="sm">
+      הוספה
+      <Plus className="h-4 w-4 sm:mr-2" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="start">
+    <DropdownMenuItem onClick={() => setAddCustomerModalOpen(true)}>
+      לקוח חדש
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }}>
+      מתווך חדש
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
 
-### קובץ: `src/components/scout/checks/monitor/LiveFeedTab.tsx`
-~30 שורות פחות. הרשימה תמיד תתחיל מלמעלה ולא תזוז אוטומטית.
+קובץ אחד, ~10 שורות שינוי.
 
