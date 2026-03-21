@@ -11,7 +11,7 @@ const navigationItems = [
   { title: "דף הבית", url: "/", icon: Home },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: BarChart3, requireAdmin: true },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
-  
+  { title: "שיווק", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search, requireAdmin: true },
   { title: "צור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },

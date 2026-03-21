@@ -807,26 +807,6 @@ export const Properties: React.FC = memo(() => {
                   </div>
                 )}
               </PullToRefresh>
-            </TabsContent>
-
-            <TabsContent value="automations" className="space-y-4">
-              <WhatsAppAutomations />
-            </TabsContent>
-
-            <TabsContent value="history" className="space-y-4">
-              <PropertyWhatsAppHistory 
-                properties={filteredAndSortedProperties}
-                onPropertySelect={(property) => handleViewDetails(property.id)}
-              />
-            </TabsContent>
-
-            <TabsContent value="whatsapp">
-              <PropertyWhatsAppTab 
-                properties={filteredAndSortedProperties}
-                searchTerm={filters.searchTerm}
-              />
-            </TabsContent>
-          </Tabs>
         </Card>
 
         {/* Property Detail Modal */}
