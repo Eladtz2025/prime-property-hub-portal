@@ -285,16 +285,6 @@ const AppContent: React.FC = () => {
                 } 
               />
               <Route 
-                path="/admin-dashboard/whatsapp" 
-                element={
-                  <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
-                      <WhatsAppCenter />
-                    </ProtectedRoute>
-                  </Layout>
-                } 
-              />
-              <Route 
                 path="/admin-dashboard/marketing" 
                 element={
                   <Layout onLogout={signOut}>
