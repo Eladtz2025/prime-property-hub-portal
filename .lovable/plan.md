@@ -1,22 +1,15 @@
 
-## עדכון כרטיס ההתאמות הראשי (ProcessCard)
+
+## תיקון גלילה לתחתית בהחלפת טאבים
 
 ### בעיה
-ה-4 כרטיסים החדשים (ממתינים, לקוחות, עברו התאמה, ללא התאמות) נמצאים רק בדיאלוג ההיסטוריה. הכרטיס הראשי (`ProcessCard`) עדיין מציג את הנתונים הישנים: "531 התאמות אחרונות" + "43 ממתינים להתאמה".
+כשמחליפים טאב ב-ChecksSubTabs (זמינות, השלמה וכו'), הדף נשאר במיקום הגלילה הנוכחי. אם הטאב הקודם היה ארוך והגללת למטה, הטאב החדש נפתח "באמצע" או בתחתית — כי מיקום ה-scroll לא מתאפס.
 
-### פתרון — עדכון ה-ProcessCard props
+### פתרון
+ב-`ChecksSubTabs.tsx` — כשמחליפים טאב (`onValueChange`), לגלול את החלון לראש אזור הטאבים (לא לראש הדף, כי יש מעלה מטריקות וכרטיסים שלא צריך לחזור אליהם).
 
-**`ChecksDashboard.tsx`**, שורות 533-541 — שינוי ה-props של ProcessCard:
+### שינוי טכני (`src/components/scout/checks/ChecksSubTabs.tsx`)
+- הוספת `useRef` על ה-`Tabs` wrapper
+- ב-`onValueChange` callback — קריאה ל-`ref.scrollIntoView({ behavior: 'smooth', block: 'start' })` כדי לגלול לראש הטאבים
+- זה פותר את הבעיה בכל הטאבים בבת אחת
 
-- **primaryValue**: במקום `matchStats?.leads_matched` (531) → מספר הנכסים שממתינים להתאמה (צריך שאילתה חדשה ל-`scouted_properties` עם `status='new'` ו-`is_active=true`)
-- **primaryLabel**: "ממתינים להתאמה" (במקום "התאמות אחרונות")
-- **secondaryLine**: `"43 לידים פעילים | 31 עם התאמות"` — מידע על לידים
-- **insight**: `"12 לידים ללא התאמות"` אם יש כאלה, או `"כל הלידים הותאמו ✓"` אם כולם עם התאמות
-- **insightType**: `warning` אם יש ללא התאמות, `ok` אם כולם הותאמו
-
-### שינויים טכניים
-
-**`ChecksDashboard.tsx`**:
-1. הוספת שאילתה חדשה לספירת נכסים `status='new'` + `is_active=true` (כמו ב-MatchingStatus)
-2. הוספת שאילתה לספירת לידים עם/בלי התאמות (דומה ל-MatchingStatus — שליפת `matched_leads` וחיתוך עם eligible leads)
-3. עדכון 4 ה-props של ProcessCard בשורות 537-541
