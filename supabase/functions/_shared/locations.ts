@@ -209,11 +209,13 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'נוה שאנן', 
         'התקווה', 
         'שכונת התקווה', 
-        'כפר שלם', 
-        'יד אליהו',
+        'כפר שלם',
         'south tel aviv',
         'שפירא, נחלת יצחק',
-        'נחלת יצחק, שפירא'
+        'נחלת יצחק, שפירא',
+        'התקוה, בית יעקב, נווה צה"ל',
+        'בית יעקב',
+        'נווה צה"ל'
       ] 
     },
     { 
@@ -263,6 +265,63 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
       aliases: [
         'yad eliyahu',
         'איצטדיון רמת גן'
+      ] 
+    },
+    { 
+      value: 'רמת_החייל', 
+      label: 'רמת החייל', 
+      aliases: [
+        'ramat hachayal',
+        'רמת החיל',
+        'ramat hahayal'
+      ] 
+    },
+    { 
+      value: 'אפקה', 
+      label: 'אפקה', 
+      aliases: [
+        'נאות אפקה',
+        "נאות אפקה ב'",
+        'afeka'
+      ] 
+    },
+    { 
+      value: 'קרית_שלום', 
+      label: 'קרית שלום', 
+      aliases: [
+        'kiryat shalom'
+      ] 
+    },
+    { 
+      value: 'נווה_עופר', 
+      label: 'נווה עופר', 
+      aliases: [
+        'נוה עופר',
+        'neve ofer'
+      ] 
+    },
+    { 
+      value: 'המשתלה', 
+      label: 'המשתלה', 
+      aliases: [
+        'hamishtala'
+      ] 
+    },
+    { 
+      value: 'ביצרון', 
+      label: 'ביצרון', 
+      aliases: [
+        'bitzaron'
+      ] 
+    },
+    { 
+      value: 'תכנית_ל', 
+      label: 'תכנית ל׳', 
+      aliases: [
+        "תכנית ל'",
+        'תכנית ל, למד',
+        "תכנית ל', למד",
+        'למד'
       ] 
     },
   ],
