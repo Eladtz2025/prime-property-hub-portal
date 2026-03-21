@@ -241,6 +241,9 @@ export const WhatsAppCompose: React.FC = () => {
             <div className="flex gap-2 items-center">
               <Button size="sm" variant="ghost" onClick={selectAll} className="text-xs">בחר הכל</Button>
               <Button size="sm" variant="ghost" onClick={clearAll} className="text-xs">נקה</Button>
+              {selectedRecipients.length > 0 && (
+                <span className="text-xs font-medium text-primary">{selectedRecipients.length} נבחרו</span>
+              )}
               <span className="text-xs text-muted-foreground mr-auto">
                 {filteredRecipients.length} תוצאות
               </span>
