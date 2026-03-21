@@ -20,6 +20,57 @@ import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 
+// Clean address for display — removes city names, duplicates, generic words, artifacts
+const cleanDisplayAddress = (address: string | null, neighborhood: string | null): string => {
+  const hood = neighborhood?.trim() || '';
+  if (!address?.trim()) return hood || '—';
+
+  let clean = address.trim();
+
+  // Remove city names
+  clean = clean.replace(/,?\s*תל\s*אביב[\s-]*יפו/g, '').replace(/,?\s*תל\s*אביב/g, '').trim();
+
+  // Remove leading artifacts: /לופט, בניין
+  clean = clean.replace(/^\/לופט\s*,?\s*/i, '').replace(/^בניין\s*/i, '').trim();
+
+  // Remove trailing artifacts: גג/, /
+  clean = clean.replace(/\s*גג\/\s*$/, '').replace(/\/\s*$/, '').trim();
+
+  // Generic words → fallback to neighborhood
+  const genericWords = ['דירה', 'דירה להשכרה', 'דירה למכירה', 'דירת גג', 'פנטהאוז', 'סטודיו'];
+  if (genericWords.includes(clean)) return hood || '—';
+
+  // English-only text (likely broker name) → fallback
+  if (/^[a-zA-Z\s.&'-]+$/.test(clean)) return hood || '—';
+
+  // Remove neighborhood from comma-separated parts
+  if (hood) {
+    const parts = clean.split(',').map(p => p.trim()).filter(Boolean);
+    const filtered = parts.filter(p => {
+      const normalized = p.replace(/[\s_-]+/g, '');
+      const hoodNormalized = hood.replace(/[\s_-]+/g, '');
+      return normalized !== hoodNormalized;
+    });
+    clean = filtered.join(', ').trim();
+  }
+
+  // Remove leading/trailing commas and whitespace
+  clean = clean.replace(/^[,\s]+|[,\s]+$/g, '').trim();
+
+  // If nothing left after cleaning, fallback
+  if (!clean) return hood || '—';
+
+  // If address equals neighborhood, show just once
+  if (clean.replace(/[\s_-]+/g, '') === hood.replace(/[\s_-]+/g, '')) return hood;
+
+  // Append neighborhood if not already contained
+  if (hood && !clean.includes(hood)) {
+    return `${clean}, ${hood}`;
+  }
+
+  return clean;
+};
+
 
 // Track which property is being checked for availability
 type CheckingPropertyId = string | null;
