@@ -19,10 +19,11 @@ interface Recipient {
   phone: string;
   type: 'lead' | 'owner' | 'manual';
   extra?: string;
-  status?: string;
-  priority?: string;
-  preferred_cities?: string[];
+  property_type?: string;
+  rooms_min?: number;
+  rooms_max?: number;
   budget_max?: number;
+  city?: string;
 }
 
 interface MessageTemplate {
@@ -32,19 +33,10 @@ interface MessageTemplate {
   category: string;
 }
 
-const statusMap: Record<string, string> = {
-  new: 'חדש',
-  active: 'פעיל',
-  contacted: 'נוצר קשר',
-  matched: 'שודך',
-  closed: 'סגור',
-  inactive: 'לא פעיל',
-};
-
-const priorityMap: Record<string, string> = {
-  high: 'גבוהה',
-  medium: 'בינונית',
-  low: 'נמוכה',
+const propertyTypeMap: Record<string, string> = {
+  buy: 'קנייה',
+  rent: 'שכירות',
+  sale: 'מכירה',
 };
 
 export const WhatsAppCompose: React.FC = () => {
@@ -85,7 +77,7 @@ export const WhatsAppCompose: React.FC = () => {
       if (recipientSource === 'leads') {
         const { data } = await supabase
           .from('contact_leads')
-          .select('id, name, phone, source, status, priority, preferred_cities, budget_max')
+          .select('id, name, phone, property_type, rooms_min, rooms_max, budget_max')
           .not('phone', 'is', null)
           .neq('phone', '')
           .order('name');
@@ -96,39 +88,30 @@ export const WhatsAppCompose: React.FC = () => {
             name: l.name,
             phone: l.phone,
             type: 'lead' as const,
-            status: l.status || undefined,
-            priority: l.priority || undefined,
-            preferred_cities: l.preferred_cities || undefined,
+            property_type: l.property_type || undefined,
+            rooms_min: l.rooms_min || undefined,
+            rooms_max: l.rooms_max || undefined,
             budget_max: l.budget_max || undefined,
           }))
         );
       } else if (recipientSource === 'owners') {
         const { data } = await supabase
-          .from('property_owners')
-          .select(`
-            property_id,
-            properties!inner(id, address),
-            profiles!inner(id, full_name, phone)
-          `)
-          .not('profiles.phone', 'is', null)
-          .neq('profiles.phone', '');
+          .from('properties')
+          .select('id, address, city, owner_name, owner_phone')
+          .not('owner_phone', 'is', null)
+          .neq('owner_phone', '')
+          .order('owner_name');
 
-        const seen = new Set<string>();
-        const recipients: Recipient[] = [];
-        (data || []).forEach((item: any) => {
-          const phone = item.profiles?.phone;
-          if (phone && !seen.has(phone)) {
-            seen.add(phone);
-            recipients.push({
-              id: item.profiles?.id || item.property_id,
-              name: item.profiles?.full_name || '',
-              phone,
-              type: 'owner',
-              extra: item.properties?.address || ''
-            });
-          }
-        });
-        setAvailableRecipients(recipients);
+        setAvailableRecipients(
+          (data || []).map(p => ({
+            id: p.id,
+            name: p.owner_name || '',
+            phone: p.owner_phone!,
+            type: 'owner' as const,
+            extra: p.address || '',
+            city: p.city || '',
+          }))
+        );
       }
     } catch (err) {
       console.error('Error loading recipients:', err);
@@ -143,7 +126,8 @@ export const WhatsAppCompose: React.FC = () => {
     return availableRecipients.filter(r =>
       r.name.toLowerCase().includes(q) ||
       r.phone.includes(q) ||
-      (r.extra && r.extra.toLowerCase().includes(q))
+      (r.extra && r.extra.toLowerCase().includes(q)) ||
+      (r.city && r.city.toLowerCase().includes(q))
     );
   }, [availableRecipients, searchQuery]);
 
@@ -218,6 +202,12 @@ export const WhatsAppCompose: React.FC = () => {
       : `₪${(n / 1_000).toFixed(0)}K`;
   };
 
+  const formatRooms = (min?: number, max?: number) => {
+    if (!min && !max) return '—';
+    if (min && max) return min === max ? `${min}` : `${min}-${max}`;
+    return `${min || max}`;
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -287,14 +277,16 @@ export const WhatsAppCompose: React.FC = () => {
                     <TableHead className="px-2 py-1.5 text-xs">טלפון</TableHead>
                     {recipientSource === 'leads' && (
                       <>
-                        <TableHead className="px-2 py-1.5 text-xs">סטטוס</TableHead>
-                        <TableHead className="px-2 py-1.5 text-xs">עדיפות</TableHead>
-                        <TableHead className="px-2 py-1.5 text-xs">ערים</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">סוג עסקה</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">חדרים</TableHead>
                         <TableHead className="px-2 py-1.5 text-xs">תקציב</TableHead>
                       </>
                     )}
                     {recipientSource === 'owners' && (
-                      <TableHead className="px-2 py-1.5 text-xs">כתובת נכס</TableHead>
+                      <>
+                        <TableHead className="px-2 py-1.5 text-xs">כתובת</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">עיר</TableHead>
+                      </>
                     )}
                   </TableRow>
                 </TableHeader>
@@ -316,23 +308,23 @@ export const WhatsAppCompose: React.FC = () => {
                         </TableCell>
                         {recipientSource === 'leads' && (
                           <>
-                            <TableCell className="px-2 py-1.5">{statusMap[r.status || ''] || '—'}</TableCell>
-                            <TableCell className="px-2 py-1.5">{priorityMap[r.priority || ''] || '—'}</TableCell>
-                            <TableCell className="px-2 py-1.5 max-w-[120px] truncate">
-                              {r.preferred_cities?.join(', ') || '—'}
-                            </TableCell>
+                            <TableCell className="px-2 py-1.5">{propertyTypeMap[r.property_type || ''] || '—'}</TableCell>
+                            <TableCell className="px-2 py-1.5">{formatRooms(r.rooms_min, r.rooms_max)}</TableCell>
                             <TableCell className="px-2 py-1.5" dir="ltr">{formatBudget(r.budget_max)}</TableCell>
                           </>
                         )}
                         {recipientSource === 'owners' && (
-                          <TableCell className="px-2 py-1.5">{r.extra || '—'}</TableCell>
+                          <>
+                            <TableCell className="px-2 py-1.5">{r.extra || '—'}</TableCell>
+                            <TableCell className="px-2 py-1.5">{r.city || '—'}</TableCell>
+                          </>
                         )}
                       </TableRow>
                     );
                   })}
                   {filteredRecipients.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={recipientSource === 'leads' ? 7 : 4} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={recipientSource === 'leads' ? 6 : recipientSource === 'owners' ? 5 : 3} className="text-center py-4 text-muted-foreground">
                         {searchQuery ? 'לא נמצאו תוצאות' : 'אין נמענים זמינים'}
                       </TableCell>
                     </TableRow>
