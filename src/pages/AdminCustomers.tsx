@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, RefreshCcw, Loader2, Building2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { useBrokerData, type BrokerWithPropertyNames } from "@/hooks/useBrokerData";
@@ -275,15 +276,22 @@ export default function AdminCustomers() {
           <div className="flex flex-col sm:flex-row gap-2 items-center">
             {/* All action buttons in one row */}
             <div className="flex gap-1.5 flex-wrap">
-              <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-none">
-                <span className="hidden sm:inline">לקוח חדש</span>
-                <span className="sm:hidden">לקוח</span>
-                <Plus className="h-4 w-4 sm:mr-2" />
-              </Button>
-              <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-none">
-                <span className="hidden sm:inline">מתווך חדש</span>
-                <Plus className="h-4 w-4 sm:mr-2" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="flex-none">
+                    הוספה
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => setAddCustomerModalOpen(true)}>
+                    לקוח חדש
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }}>
+                    מתווך חדש
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button 
                 onClick={handleResetAllMatches} 
                 size="sm" 
