@@ -52,8 +52,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
-        {/* PWA Install Prompt */}
-        <AdminPWAInstallPrompt />
         
         {/* Quick Action Forms */}
         <DashboardFormsCubes />

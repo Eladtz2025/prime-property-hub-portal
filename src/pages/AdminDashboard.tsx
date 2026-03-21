@@ -145,7 +145,7 @@ const AdminDashboard = memo(() => {
   return (
     <>
       <div className="space-y-6">
-        <AdminPWAInstallPrompt />
+        
         <Dashboard
           properties={properties} 
           stats={stats ? {
