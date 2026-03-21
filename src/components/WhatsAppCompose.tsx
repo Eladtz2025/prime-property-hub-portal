@@ -5,7 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Send, X, Users, User, Phone } from 'lucide-react';
+import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
@@ -74,7 +76,6 @@ export const WhatsAppCompose: React.FC = () => {
             name: l.name,
             phone: l.phone,
             type: 'lead' as const,
-            extra: l.source || l.status || ''
           }))
         );
       } else if (recipientSource === 'owners') {
@@ -152,10 +153,7 @@ export const WhatsAppCompose: React.FC = () => {
     setSelectedTemplate(templateId);
   };
 
-  const formatPhone = (phone: string) => {
-    if (phone.startsWith('972')) return '0' + phone.substring(3);
-    return phone;
-  };
+  const formatPhone = (phone: string) => formatIsraeliPhone(phone);
 
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !message.trim()) {
@@ -243,11 +241,14 @@ export const WhatsAppCompose: React.FC = () => {
             <div className="flex gap-2 items-center">
               <Button size="sm" variant="ghost" onClick={selectAll} className="text-xs">בחר הכל</Button>
               <Button size="sm" variant="ghost" onClick={clearAll} className="text-xs">נקה</Button>
+              {selectedRecipients.length > 0 && (
+                <span className="text-xs font-medium text-primary">{selectedRecipients.length} נבחרו</span>
+              )}
               <span className="text-xs text-muted-foreground mr-auto">
                 {filteredRecipients.length} תוצאות
               </span>
             </div>
-            <div className="max-h-40 overflow-y-auto border rounded-md divide-y">
+            <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
               {filteredRecipients.map(r => {
                 const isSelected = selectedRecipients.some(s => s.phone === r.phone);
                 return (
@@ -258,15 +259,13 @@ export const WhatsAppCompose: React.FC = () => {
                     }`}
                     onClick={() => toggleRecipient(r)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{r.name}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isSelected} className="pointer-events-none" />
+                      <span className="font-medium flex-1">{r.name}</span>
                       <span className="text-muted-foreground text-xs" dir="ltr">
-                        {formatPhone(r.phone)}
+                        {formatIsraeliPhone(r.phone)}
                       </span>
                     </div>
-                    {r.extra && (
-                      <span className="text-xs text-muted-foreground">{r.extra}</span>
-                    )}
                   </div>
                 );
               })}
@@ -316,7 +315,7 @@ export const WhatsAppCompose: React.FC = () => {
         <Button
           onClick={handleSend}
           disabled={isSending || selectedRecipients.length === 0 || !message.trim()}
-          className="w-full"
+          className="w-full bg-green-600 hover:bg-green-700 text-white"
         >
           <Send className="h-4 w-4 ml-2" />
           {isSending
