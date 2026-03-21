@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Megaphone, Lightbulb } from 'lucide-react';
 import { WhatsAppCompose } from '@/components/WhatsAppCompose';
-import { WhatsAppRecentChats } from '@/components/WhatsAppRecentChats';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 const MarketingHub: React.FC = () => {
@@ -30,7 +29,6 @@ const MarketingHub: React.FC = () => {
 
         <TabsContent value="whatsapp" className="space-y-4 mt-4">
           <WhatsAppCompose />
-          <WhatsAppRecentChats />
         </TabsContent>
 
         <TabsContent value="advertising" className="mt-4">
