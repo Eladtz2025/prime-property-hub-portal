@@ -282,7 +282,6 @@ export default function AdminCustomers() {
               </Button>
               <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-none">
                 <span className="hidden sm:inline">מתווך חדש</span>
-                <span className="sm:hidden">מתווך</span>
                 <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
               <Button 
@@ -293,7 +292,6 @@ export default function AdminCustomers() {
                 className="flex-none"
               >
                 <span className="hidden sm:inline">חשב התאמות מחדש</span>
-                <span className="sm:hidden">התאמות</span>
                 {isMatchingAll ? (
                   <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
@@ -308,7 +306,6 @@ export default function AdminCustomers() {
                 className="flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
               >
                 <span className="hidden sm:inline">סרוק נכסים שלנו</span>
-                <span className="sm:hidden">סרוק</span>
                 {isScanningOwn ? (
                   <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (

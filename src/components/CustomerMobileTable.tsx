@@ -295,6 +295,24 @@ export const CustomerMobileTable = ({
                   {customer.is_hidden && <Badge variant="secondary" className="text-[8px] px-1 py-0 shrink-0">מוסתר</Badge>}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <MobileMatchesCell
+                    customerId={customer.id}
+                    preferredNeighborhoods={customer.preferred_neighborhoods}
+                    preferredCities={customer.preferred_cities}
+                    budgetMin={customer.budget_min}
+                    budgetMax={customer.budget_max}
+                    roomsMin={customer.rooms_min}
+                    roomsMax={customer.rooms_max}
+                    propertyType={customer.property_type}
+                    onMatchesClick={(data) => {
+                      setMatchesData({
+                        customerName: customer.name,
+                        customerPhone: customer.phone,
+                        scoutedMatchGroups: data.scoutedMatchGroups,
+                      });
+                      setMatchesSheetOpen(true);
+                    }}
+                  />
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                     {formatBudget(customer.budget_min, customer.budget_max)}
                   </span>
@@ -303,31 +321,10 @@ export const CustomerMobileTable = ({
                   >
                     {priorityLabels[customer.priority]}
                   </span>
+                  <span className={`text-[10px] font-medium ${timeAgo.color}`}>
+                    {timeAgo.text}
+                  </span>
                 </div>
-              </div>
-              {/* Row 2: Matches + Last contact time */}
-              <div className="flex items-center justify-between mt-1">
-                <MobileMatchesCell
-                  customerId={customer.id}
-                  preferredNeighborhoods={customer.preferred_neighborhoods}
-                  preferredCities={customer.preferred_cities}
-                  budgetMin={customer.budget_min}
-                  budgetMax={customer.budget_max}
-                  roomsMin={customer.rooms_min}
-                  roomsMax={customer.rooms_max}
-                  propertyType={customer.property_type}
-                  onMatchesClick={(data) => {
-                    setMatchesData({
-                      customerName: customer.name,
-                      customerPhone: customer.phone,
-                      scoutedMatchGroups: data.scoutedMatchGroups,
-                    });
-                    setMatchesSheetOpen(true);
-                  }}
-                />
-                <span className={`text-[10px] font-medium ${timeAgo.color}`}>
-                  {timeAgo.text}
-                </span>
               </div>
             </div>
           );
