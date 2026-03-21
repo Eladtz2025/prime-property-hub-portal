@@ -48,7 +48,7 @@ const sourceBadge = (source?: string) => {
   };
   const s = map[source?.toLowerCase() || ''];
   if (!s) return null;
-  return <span className={`${s.cls} font-mono text-[10px] font-bold px-1.5 py-0.5 rounded`}>{s.text}</span>;
+  return <span className={`${s.cls} font-mono text-[11px] font-bold px-1.5 py-0.5 rounded`}>{s.text}</span>;
 };
 
 const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
