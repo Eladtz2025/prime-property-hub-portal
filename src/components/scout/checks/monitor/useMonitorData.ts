@@ -529,7 +529,7 @@ export function useMonitorData() {
             items.push({
               type: 'scan',
               timestamp: prop.last_seen_at || prop.created_at,
-              primary: formatCleanAddress(prop.address, undefined),
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: '',
               source: prop.source ?? undefined,
               status: 'ok',
