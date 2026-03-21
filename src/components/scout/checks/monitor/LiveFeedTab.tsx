@@ -91,10 +91,6 @@ interface LiveFeedTabProps {
 }
 
 export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilter }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [prevLength, setPrevLength] = useState(0);
-
   // Filter by source
   const filtered = sourceFilter === 'all'
     ? feedItems
@@ -104,22 +100,6 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
           f.source?.toLowerCase() === sourceFilter ||
           (sourceFilter === 'avail' && f.type === 'availability')
         );
-
-  // Auto-scroll
-  useEffect(() => {
-    if (autoScroll && scrollRef.current && filtered.length > prevLength) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-    setPrevLength(filtered.length);
-  }, [filtered.length, autoScroll]);
-
-  // Detect manual scroll-up
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
-    setAutoScroll(isAtBottom);
-  };
 
   return (
     <div className="relative h-full">
