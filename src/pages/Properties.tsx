@@ -46,12 +46,9 @@ import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditRow } from '../components/PropertyEditRow';
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
-import { PropertyWhatsAppHistory } from '../components/PropertyWhatsAppHistory';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
-import { PropertyWhatsAppTab } from '../components/PropertyWhatsAppTab';
-import { WhatsAppAutomations } from '../components/WhatsAppAutomations';
 
 import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
