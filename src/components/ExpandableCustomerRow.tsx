@@ -648,7 +648,7 @@ export const ExpandableCustomerRow = ({
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs flex items-center gap-1"><Dog className="h-3 w-3" />חיות</Label>
+                        <Label className="text-xs">חיות</Label>
                         <Select 
                           value={formData.pets === true ? 'yes' : formData.pets === false ? 'no' : ''} 
                           onValueChange={(value) => setFormData({ ...formData, pets: value === 'yes' ? true : value === 'no' ? false : null })}
